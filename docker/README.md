@@ -14,8 +14,8 @@
   (`PROJECTK_API_URL`), назва середовища в бейджі сайдбару (`PROJECTK_ENVIRONMENT_NAME`) і корінь
   сайту довідки (`PROJECTK_DOCS_URL`): «Довідка»
   на вітальній веде на нього, а в сайдбарі — на його сторінку `/user/start/what-is/`. Дев-контейнери
-  типово дивляться на dev-деплой `docs-dev-projectk.rostyslav-mukha.dev`, реліз і self-host — на
-  production `docs-projectk.rostyslav-mukha.dev`.
+  типово дивляться на dev-деплой `docs-dev.lileyka.app`, реліз і self-host — на
+  production `docs.lileyka.app`.
 - **SQL Server + Azurite — спільна інфраструктура.** Вони запускаються один раз
   (`compose.tools.yml`) у мережі `projectk-dev-net`. Стек кожного середовища підключається до неї і
   працює зі **своєю базою** на тому ж сервері (`projectK_dev`, `projectK_e2e`, …): інструменти

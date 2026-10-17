@@ -70,7 +70,7 @@ services:
     environment:
       PROJECTK_API_URL: ${PROJECTK_API_URL:-http://localhost:5205/api}
       PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Development}
-      PROJECTK_DOCS_URL: ${PROJECTK_DOCS_URL:-https://docs-dev-projectk.rostyslav-mukha.dev/}
+      PROJECTK_DOCS_URL: ${PROJECTK_DOCS_URL:-https://docs-dev.lileyka.app/}
     ports:
       - "${PROJECTK_WEB_PORT:-4200}:80"
     depends_on:

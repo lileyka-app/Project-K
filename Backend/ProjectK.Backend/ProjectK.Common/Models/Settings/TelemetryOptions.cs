@@ -18,7 +18,7 @@ public sealed class TelemetryOptions
     /// <summary>Only a clear "on" (<c>true</c>, <c>1</c>, <c>yes</c>, <c>on</c>) pings; anything else, empty included, does not.</summary>
     public bool IsEnabled => IsOn(Enabled);
 
-    public string Endpoint { get; set; } = "https://status.rostyslav-mukha.dev/v1/ping";
+    public string Endpoint { get; set; } = "https://status.lileyka.app/v1/ping";
 
     /// <summary>The first ping waits this long after startup, so a crash loop does not ping.</summary>
     public int InitialDelayMinutes { get; set; } = 5;

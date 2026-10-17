@@ -7,7 +7,7 @@ sidebar:
 
 Модуль відстежує складання **проб** і здобуття **вмілостей** членами куреня. Каталог (вимоги проб,
 перелік вмілостей, зображення) не зберігається в базі: його віддає сервіс каталогу
-(`https://catalog.rostyslav-mukha.dev`, опис API — `/docs`).
+(`https://catalog.lileyka.app`, опис API — `/docs`).
 
 ## Джерело каталогу
 
@@ -32,7 +32,7 @@ sidebar:
 Вбудовану копію оновлюй перед релізом: `bash scripts/update-catalog-seed.sh` (або
 `pwsh scripts/update-catalog-seed.ps1`). Скрипт перевіряє, що каталог говорить схемою 2.
 
-Сервіс каталогу стоїть за Cloudflare. Bot Fight Mode на зоні `rostyslav-mukha.dev` відповідає
+Сервіс каталогу стоїть за Cloudflare. Bot Fight Mode на зонах `lileyka.app` і `rostyslav-mukha.dev` відповідає
 запитам з адрес дата-центрів (Azure, раннери GitHub) перевіркою, яку `HttpClient` не пройде, тож
 API лишається без каталогу. Bot Fight Mode на зоні вимкнений; правилами WAF його не обійти,
 пропускають повз нього лише IP Access Rules.
