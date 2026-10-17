@@ -254,8 +254,8 @@ export class PrivacyPage {
 
   protected readonly links = {
     site: 'https://rostyslav-mukha.dev',
-    github: 'https://github.com/iamavasya/Project-K',
-    security: 'https://github.com/iamavasya/Project-K/security/policy',
+    github: 'https://github.com/lileyka-app/Project-K',
+    security: 'https://github.com/lileyka-app/Project-K/security/policy',
   };
 
   protected readonly dataRows: PersonalDataRow[] = [

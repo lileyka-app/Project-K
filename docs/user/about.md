@@ -15,8 +15,8 @@ description: Хто створив, навіщо, як розвивалась і
 код і три роки від ідеї до першого живого куреня.
 
 - Сайт: [rostyslav-mukha.dev](https://rostyslav-mukha.dev)
-- Код: [github.com/iamavasya/Project-K](https://github.com/iamavasya/Project-K)
-- Релізи й нотатки до них: [github.com/iamavasya/Project-K/releases](https://github.com/iamavasya/Project-K/releases)
+- Код: [github.com/lileyka-app/Project-K](https://github.com/lileyka-app/Project-K)
+- Релізи й нотатки до них: [github.com/lileyka-app/Project-K/releases](https://github.com/lileyka-app/Project-K/releases)
 
 ## Ідея і проблема
 
@@ -63,4 +63,4 @@ ASP.NET Core API і Angular. Далі альфа, бета, а у вересні
 Яка версія працює зараз, показує сама сторінка «Про Лілейку» в застосунку: версію застосунку і
 версію API. Старіші релізи мали ще й кодову назву — мурашину, в лапках; від 1.0 їх немає.
 Що змінилось у кожній версії, читай у
-[релізах на GitHub](https://github.com/iamavasya/Project-K/releases).
+[релізах на GitHub](https://github.com/lileyka-app/Project-K/releases).

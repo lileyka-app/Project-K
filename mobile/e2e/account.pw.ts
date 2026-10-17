@@ -90,7 +90,7 @@ function accountApi(options: { password: string; mfa: boolean; kurins?: Record<s
         shots += 1;
         return ok({ url: `${blobHost}/photos/feedback-screenshots/shot-${shots}.png` });
       case 'POST feedback/problems':
-        return ok({ issueUrl: 'https://github.com/iamavasya/Project-K/issues/321', issueNumber: 321 });
+        return ok({ issueUrl: 'https://github.com/lileyka-app/Project-K/issues/321', issueNumber: 321 });
       default:
         return null;
     }

@@ -14,11 +14,11 @@
 **[Демо](https://docs.lileyka.app/demo/)** ·
 **[Приєднати курінь](https://lileyka.app/join)** ·
 **[Власний сервер](https://docs.lileyka.app/user/self-host/)** ·
-**[Релізи](https://github.com/iamavasya/Project-K/releases)**
+**[Релізи](https://github.com/lileyka-app/Project-K/releases)**
 
-[![Release](https://img.shields.io/github/v/release/iamavasya/Project-K)](https://github.com/iamavasya/Project-K/releases)
-[![.NET](https://github.com/iamavasya/Project-K/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/iamavasya/Project-K/actions/workflows/dotnet.yml)
-[![Angular](https://github.com/iamavasya/Project-K/actions/workflows/angular.yml/badge.svg?branch=main)](https://github.com/iamavasya/Project-K/actions/workflows/angular.yml)
+[![Release](https://img.shields.io/github/v/release/lileyka-app/Project-K)](https://github.com/lileyka-app/Project-K/releases)
+[![.NET](https://github.com/lileyka-app/Project-K/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/lileyka-app/Project-K/actions/workflows/dotnet.yml)
+[![Angular](https://github.com/lileyka-app/Project-K/actions/workflows/angular.yml/badge.svg?branch=main)](https://github.com/lileyka-app/Project-K/actions/workflows/angular.yml)
 
 ## Документація
 
@@ -46,7 +46,7 @@
 
 ## Хочеш допомогти
 
-Є ідея чи знайшов, що виправити, — спершу відкрий [issue](https://github.com/iamavasya/Project-K/issues),
+Є ідея чи знайшов, що виправити, — спершу відкрий [issue](https://github.com/lileyka-app/Project-K/issues),
 обговоримо. Далі — pull request. Форк для цього можна, для іншого — ні (див. нижче).
 
 ## Ліцензія

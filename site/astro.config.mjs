@@ -46,7 +46,7 @@ export default defineConfig({
 			// The middleware only keeps prev/next from stepping across the border between them.
 			routeMiddleware: './src/route-middleware.ts',
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/iamavasya/Project-K' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/lileyka-app/Project-K' },
 			],
 			sidebar: [
 				{

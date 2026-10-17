@@ -184,7 +184,7 @@ bash — те саме з `./dev.sh`:
 (див. [NuGet-токен](#nuget-токен-ніколи-не-комітити)), далі `./dev.ps1 up <env> --build`.
 
 **Готовий образ.** Постав `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` в env-файлі на конкретний тег
-(наприклад `ghcr.io/iamavasya/projectk-api:1.0`), далі `./dev.ps1 pull <env>` і
+(наприклад `ghcr.io/lileyka-app/projectk-api:1.0`), далі `./dev.ps1 pull <env>` і
 `./dev.ps1 up <env>` — ні збірки, ні токена.
 
 ## Телефонна PWA (`/m/`)

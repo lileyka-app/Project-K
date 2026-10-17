@@ -41,7 +41,7 @@ services:
       # and would report a v0.0.0-dev install to the real status service.
       Telemetry__Enabled: ${PROJECTK_TELEMETRY:-false}
       Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
-      Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
+      Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-lileyka-app/Project-K}
       # Web Push to the PWA (VAPID). Both keys or none: without them push is off. The e2e env sets a
       # throwaway test pair; real deployments generate their own and keep the private key secret.
       WebPush__PublicKey: ${PROJECTK_WEBPUSH_PUBLIC_KEY:-}
