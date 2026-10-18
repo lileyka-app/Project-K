@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 $subscription = 'projectk-prod-sub'
 $group        = 'rg-projectk-prod-paid'
 $app          = 'api-projectk-prod-new'
-$hostName     = 'api-projectk.rostyslav-mukha.dev'
+$hostName     = 'api.lileyka.app'
 
 function Invoke-Az {
     param([string[]]$Arguments, [string]$What)

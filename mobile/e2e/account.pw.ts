@@ -90,7 +90,7 @@ function accountApi(options: { password: string; mfa: boolean; kurins?: Record<s
         shots += 1;
         return ok({ url: `${blobHost}/photos/feedback-screenshots/shot-${shots}.png` });
       case 'POST feedback/problems':
-        return ok({ issueUrl: 'https://github.com/iamavasya/Project-K/issues/321', issueNumber: 321 });
+        return ok({ issueUrl: 'https://github.com/lileyka-app/Project-K/issues/321', issueNumber: 321 });
       default:
         return null;
     }
@@ -146,12 +146,12 @@ test('Меню repeats the web sidebar, then the look, the kurins and privacy', 
   // Help is the web's docs site, opened outside the app.
   const opened = await catchOpened(page);
   await more.getByTestId('menu-help').click();
-  expect(await opened()).toBe('https://docs-projectk.rostyslav-mukha.dev/user/start/what-is/');
+  expect(await opened()).toBe('https://docs.lileyka.app/user/start/what-is/');
 
   // An item the app has a screen for opens it: Планування under Календар, Точкування under Курінь.
   await more.getByTestId('menu-planning').click();
   await expect(page).toHaveURL(/\/tabs\/calendar\/planning$/);
-  expect(await opened()).toBe('https://docs-projectk.rostyslav-mukha.dev/user/start/what-is/');
+  expect(await opened()).toBe('https://docs.lileyka.app/user/start/what-is/');
   await openMore(page);
   await more.getByTestId('menu-score').click();
   await expect(page).toHaveURL(/\/tabs\/kurin\/score$/);

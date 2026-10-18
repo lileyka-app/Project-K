@@ -56,7 +56,7 @@ sidebar:
 ### 1. Клонувати
 
 ```bash
-git clone https://github.com/iamavasya/Project-K.git
+git clone https://github.com/lileyka-app/Project-K.git
 ```
 
 У корені — `Backend/`, `Frontend/`, `site/`, `docker/`, `docs/`.

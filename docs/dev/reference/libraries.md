@@ -15,7 +15,7 @@ sidebar:
 
 ## ProjectK.3PDB.Standalone
 
-Окремий застосунок «база третьопробників» ([код](https://github.com/iamavasya/ProjectK.3PDB.Standalone)).
+Окремий застосунок «база третьопробників» ([код](https://github.com/lileyka-app/ProjectK.3PDB.Standalone)).
 
 - **Імпорт CSV.** Дані зводяться в таблицю (найпростіше в Google Таблицях) за
   [шаблоном](https://docs.google.com/spreadsheets/d/1mEPSekOaTu657UiXf6jgqu3bRScOASFC1z1i1cUIeIA/edit?usp=sharing);

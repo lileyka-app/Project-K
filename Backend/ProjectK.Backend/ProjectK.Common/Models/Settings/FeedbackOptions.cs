@@ -14,7 +14,7 @@ public sealed class GitHubFeedbackOptions
     public string? Token { get; set; }
 
     /// <summary><c>owner/name</c>.</summary>
-    public string Repository { get; set; } = "iamavasya/Project-K";
+    public string Repository { get; set; } = "lileyka-app/Project-K";
 
     /// <summary>Labels put on every issue the app opens, comma-separated.</summary>
     public string Labels { get; set; } = "bug,from client";

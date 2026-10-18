@@ -67,7 +67,7 @@ function importRootDoc({ from, to, order, description }) {
 		'---',
 		'',
 		`:::note[Джерело]`,
-		`Ця сторінка збирається з [\`${from}\`](https://github.com/iamavasya/Project-K/blob/main/${from}) у репозиторії. Правити треба там.`,
+		`Ця сторінка збирається з [\`${from}\`](https://github.com/lileyka-app/Project-K/blob/main/${from}) у репозиторії. Правити треба там.`,
 		':::',
 		'',
 	].join('\n');

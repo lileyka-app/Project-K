@@ -10,7 +10,7 @@ sidebar:
 звичайний застосунок, і може надсилати сповіщення.
 
 Найпростіше — відкрити на телефоні сторінку
-**[projectk.rostyslav-mukha.dev/m/install](https://projectk.rostyslav-mukha.dev/m/install)** (на
+**[lileyka.app/m/install](https://lileyka.app/m/install)** (на
 власному сервері куреня — `/m/install` на його адресі): вона
 сама розпізнає телефон і браузер і покаже або кнопку «Встановити», або кроки з картинками саме
 для твого випадку.
