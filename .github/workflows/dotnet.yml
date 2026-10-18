@@ -125,13 +125,13 @@ jobs:
         path: ./publish/
 
   deploy:
-    # Only the long-lived branches and releases deploy. The push trigger above now covers every
-    # branch, so without this a feature branch would ship straight to staging.
+    # Releases deploy production, a push to dev deploys staging. The push trigger above covers every
+    # branch, so without this a feature branch would ship straight to staging. A push to main is
+    # left out: it lands just before the release and would ship a 0.0.0-dev build over it.
     if: >-
       github.event_name == 'release'
       || github.event_name == 'workflow_dispatch'
-      || (github.event_name == 'push'
-          && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'))
+      || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     needs: build-and-test
     runs-on: ubuntu-latest
     environment: 
