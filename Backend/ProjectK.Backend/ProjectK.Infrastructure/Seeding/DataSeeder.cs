@@ -139,7 +139,13 @@ public static class DataSeeder
 
     private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
     {
-        var kurin1 = await dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Number == 1);
+        // The seeder's kurin is number 1 of Україна. One moved to another край by hand on a dev
+        // database still holds the seeded accounts, and left alone it made the next run reuse them
+        // on top of the old rows; with no Ukrainian kurin 1, that one is the seeder's.
+        var kurin1 = await dbContext.Kurins
+            .Where(k => k.Number == 1)
+            .OrderBy(k => k.KraiCode == Krai.Ukraine ? 0 : 1)
+            .FirstOrDefaultAsync();
         if (kurin1 == null)
         {
             return;
@@ -329,6 +335,26 @@ public static class DataSeeder
             .Where(c => c.KurinKey == kurinKey)
             .ToListAsync();
         dbContext.AgendaCategories.RemoveRange(agendaCategories);
+
+        // Dues and score hold the kurin by key with no foreign key, so removing the kurin leaves
+        // them behind; the next run would add a second year of вкладка and points on top.
+        dbContext.DuesEntries.RemoveRange(await dbContext.DuesEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.DuesCharges.RemoveRange(await dbContext.DuesCharges.Where(c => c.KurinKey == kurinKey).ToListAsync());
+        dbContext.DuesConcessions.RemoveRange(await dbContext.DuesConcessions.Where(c => c.KurinKey == kurinKey).ToListAsync());
+        dbContext.GroupDuesRates.RemoveRange(await dbContext.GroupDuesRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
+        dbContext.KurinDuesRates.RemoveRange(await dbContext.KurinDuesRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
+
+        dbContext.KurinScoreSettings.RemoveRange(await dbContext.KurinScoreSettings.Where(s => s.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreRules.RemoveRange(await dbContext.ScoreRules.Where(r => r.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreAttendanceRates.RemoveRange(await dbContext.ScoreAttendanceRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreItems.RemoveRange(await dbContext.ScoreItems.Where(i => i.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreStages.RemoveRange(await dbContext.ScoreStages.Where(s => s.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreAttendances.RemoveRange(await dbContext.ScoreAttendances.Where(a => a.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreEntries.RemoveRange(await dbContext.ScoreEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreGroupMoves.RemoveRange(await dbContext.ScoreGroupMoves.Where(m => m.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreTrailEvents.RemoveRange(await dbContext.ScoreTrailEvents.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.PrivateScoreEntries.RemoveRange(await dbContext.PrivateScoreEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.PrivateScoreCriteria.RemoveRange(await dbContext.PrivateScoreCriteria.Where(c => c.KurinKey == kurinKey).ToListAsync());
 
         // The seeder wipes its own demo kurin outright, people included — the reset exists to
         // give every run the same starting point, and these are not real people.

@@ -6,14 +6,15 @@ sidebar:
 ---
 
 Лілейка — **модульний моноліт**: один процес `.NET`, одна база, один образ на всі середовища, але
-всередині пʼять модулів із контрактами між ними, які колись можна винести окремо. Словами це
+всередині девʼять модулів із контрактами між ними, які колись можна винести окремо. Словами це
 описано в [Архітектурі](/dev/core/architecture/); тут ті самі речі намальовані. Діаграми
 підлаштовуються під ширину екрана і тему сайту.
 
 ## 1. Клієнт і сервер
 
 Браузер тримає Angular-застосунок і ходить до одного API. Усе, що API потрібно ззовні, стоїть
-праворуч: база, сховище файлів, пошта, GitHub для звітів про проблеми, логи.
+праворуч: база, сховище файлів, пошта, GitHub для звітів про проблеми, каталог вмілостей і проб,
+сервіс статусу для щоденного пінгу, логи.
 
 ```mermaid
 flowchart TB
@@ -28,7 +29,12 @@ flowchart TB
         KURIN["KurinModule"]
         PB["ProbesAndBadges<br/>Module"]
         INFRA["Infrastructure<br/>Module"]
+        DUES["DuesModule"]
+        SCORE["ScoreModule"]
+        KRAI["KraiModule"]
+        ME["MeModule"]
         HTTP --> AUTH & USERS & KURIN & PB & INFRA
+        HTTP --> DUES & SCORE & KRAI & ME
     end
 
     subgraph ext["Зовнішні служби"]
@@ -37,13 +43,17 @@ flowchart TB
         BLOB[("Blob Storage")]
         MAIL["Resend"]
         GH["GitHub Issues"]
+        CAT["Сервіс каталогу<br/>GET /v1/catalog"]
+        STATUS["Сервіс статусу<br/>POST /v1/ping · GET /health"]
         LOGS["Serilog · App Insights · Telegram"]
     end
 
     SPA -- "HTTPS · access-токен у заголовку<br/>refresh у httpOnly-cookie" --> PROXY
     PROXY --> HTTP
     KURIN ~~~ DB
-    api --> DB & BLOB & MAIL & GH
+    api --> DB & BLOB & MAIL & GH & CAT
+    api -. "щоденний пінг" .-> STATUS
+    STATUS -. "перевірка /health" .-> PROXY
     api -.-> LOGS
 ```
 
@@ -96,9 +106,9 @@ sequenceDiagram
 flowchart TB
     subgraph API["ProjectK.API"]
         direction LR
-        CTRL["Контролери по модулях<br/>Auth · Users · Kurin · ProbesAndBadges · Infrastructure"]
+        CTRL["Контролери по модулях<br/>Auth · Users · Kurin · ProbesAndBadges · Infrastructure<br/>Dues · Score · Krai · Me"]
         POL["AuthorizationPolicies<br/>ResourceAuthorize"]
-        DI["Program.cs · DI · Serilog"]
+        DI["Program.cs · DI · Serilog<br/>middleware · прогрів після старту"]
     end
 
     subgraph BL["ProjectK.BusinessLogic"]
@@ -111,17 +121,17 @@ flowchart TB
         direction LR
         ENT["Сутності<br/>Member · Membership · Kurin · Group · AgendaItem …"]
         IFACE["Інтерфейси<br/>IUnitOfWork · IEmailService · IBlobStorageService …"]
-        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory"]
+        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory<br/>IDuesDirectory · IKraiProfileProvider"]
     end
 
     subgraph INFRA["ProjectK.Infrastructure"]
         direction LR
         DBC["DbContext · міграції · репозиторії"]
         SVC["Сервіси<br/>Resend · Blob · QuestPDF · GitHub · JWT"]
-        BG["Фонові служби<br/>аудит · перестороги · осиротілі фото · архів задач"]
+        BG["Фонові служби<br/>аудит · перестороги · осиротілі фото · архів задач<br/>каталог · телеметрія · сповіщення · демо-скидання"]
     end
 
-    EXT["Зовнішнє<br/>пакет ProjectK.Optimization · API каталогу"]
+    EXT["Зовнішнє<br/>пакет ProjectK.Optimization · API каталогу · сервіс статусу"]
 
     API --> BL
     API --> INFRA
@@ -181,8 +191,10 @@ flowchart LR
 | Пошта | `Email:Provider` | `Resend` (`Email:ApiKey`) | будь-що інше → `MockEmailService` |
 | Файли | `ConnectionStrings:BlobStorage` | рядок Azure | порожньо → `UseDevelopmentStorage=true` (Azurite) |
 | Звіти про проблеми | `Feedback:GitHub:Token` | є → GitHub Issues | нема → лог |
-| Демо-дані | `ASPNETCORE_ENVIRONMENT` | `Production`, `Staging`, `SelfHost`, `Tailscale`: нічого | `Development`, `E2E`: демо-курінь, стирається при старті |
+| Демо-дані | `ASPNETCORE_ENVIRONMENT` | `Production`, `Staging`, `SelfHost`, `Tailscale`: нічого | `Development`, `E2E`, `Demo`: демо-курінь, стирається при старті (`Demo` — ще й щоночі) |
 | Дев-контролери | `ASPNETCORE_ENVIRONMENT` | знімаються з моделі | `Development`, `E2E`, `Tailscale` |
+| Телеметрія | `Telemetry:Enabled` | `Production`, `SelfHost`: щоденний пінг сервісу статусу (`PROJECTK_TELEMETRY=false` вимикає на self-host) | вимкнена, служба не реєструється |
+| Прогрів | `Startup:WarmUp` | без ключа ввімкнений: після старту компілює мапінги й запити дашборда | `Development`, `Testing`, `E2E`: вимкнений |
 
 `SelfHost` живе між двома колонками: заглушки вмикаються не середовищем, а відсутністю ключа, тож
 станиця може поставити систему без пошти й GitHub і додати їх пізніше, не міняючи образ.

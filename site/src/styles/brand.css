@@ -188,14 +188,20 @@
 .mermaid svg .node circle,
 .mermaid svg .node polygon,
 .mermaid svg .node path,
-.mermaid svg rect.actor {
+.mermaid svg rect.actor,
+.mermaid svg .labelBox {
   fill: #FFFFFF !important;
   stroke: #C9D0CD !important;
 }
 
-.mermaid svg .cluster rect {
+.mermaid svg .cluster rect,
+.mermaid svg rect.note {
   fill: #F7F9F8 !important;
   stroke: #E4E8E6 !important;
+}
+
+.mermaid svg .loopLine {
+  stroke: #C9D0CD !important;
 }
 
 .mermaid svg .nodeLabel,
@@ -249,14 +255,20 @@
 :root[data-theme='dark'] .mermaid svg .node circle,
 :root[data-theme='dark'] .mermaid svg .node polygon,
 :root[data-theme='dark'] .mermaid svg .node path,
-:root[data-theme='dark'] .mermaid svg rect.actor {
+:root[data-theme='dark'] .mermaid svg rect.actor,
+:root[data-theme='dark'] .mermaid svg .labelBox {
   fill: #161B19 !important;
   stroke: #3A423E !important;
 }
 
-:root[data-theme='dark'] .mermaid svg .cluster rect {
+:root[data-theme='dark'] .mermaid svg .cluster rect,
+:root[data-theme='dark'] .mermaid svg rect.note {
   fill: #0D1110 !important;
   stroke: #232A27 !important;
+}
+
+:root[data-theme='dark'] .mermaid svg .loopLine {
+  stroke: #3A423E !important;
 }
 
 :root[data-theme='dark'] .mermaid svg .nodeLabel,
