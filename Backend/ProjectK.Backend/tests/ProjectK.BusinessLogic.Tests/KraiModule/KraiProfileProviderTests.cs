@@ -203,4 +203,27 @@ public class KraiProfileProviderTests
         result.Type.Should().Be(ResultType.NotFound);
         result.ErrorCode.Should().Be("KurinNotFound");
     }
+
+    [Fact]
+    public async Task Concessions_KeepOnlyTheRulesItCanWorkOut()
+    {
+        Given("cz", """
+            {
+              "dues": {
+                "concessions": [
+                  { "key": "sibling", "name": "Брат чи сестра", "kind": "percent", "value": 20, "appliesTo": ["stanytsia", "kurin"] },
+                  { "key": "free", "name": "Звільнення", "kind": "exempt", "appliesTo": ["group"] },
+                  { "key": "broken", "name": "Зламана", "kind": "percent", "value": 150, "appliesTo": ["kurin"] },
+                  { "key": "nothing", "name": "Ні на що", "kind": "amount", "value": 10, "appliesTo": ["moon"] }
+                ]
+              }
+            }
+            """);
+
+        var concessions = (await _provider.GetForKraiAsync("cz"))!.Dues.Concessions;
+
+        concessions.Select(c => c.Key).Should().Equal("sibling", "free");
+        concessions[0].Parts.Should().Be(Common.Models.Enums.DuesParts.Stanytsia | Common.Models.Enums.DuesParts.Kurin);
+        concessions[0].Value.Should().Be(20);
+    }
 }

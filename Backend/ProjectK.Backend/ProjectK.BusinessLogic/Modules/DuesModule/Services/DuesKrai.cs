@@ -48,8 +48,9 @@ public static class DuesKrais
     public static async Task<DuesKrai> DuesKraiForKurinAsync(this IKraiProfileProvider profiles, Guid kurinKey, CancellationToken cancellationToken)
     {
         var profile = await profiles.GetForKurinAsync(kurinKey, cancellationToken);
-        return profile is null
-            ? DuesKrai.Default
-            : new DuesKrai(profile.Locale.Currency, profile.Locale.NumberLocale, AgendaRecurrence.ResolveZone(profile.Locale.TimeZone), profile.Dues);
+        return profile is null ? DuesKrai.Default : profile.ToDuesKrai();
     }
+
+    public static DuesKrai ToDuesKrai(this KraiProfile profile) =>
+        new(profile.Locale.Currency, profile.Locale.NumberLocale, AgendaRecurrence.ResolveZone(profile.Locale.TimeZone), profile.Dues);
 }

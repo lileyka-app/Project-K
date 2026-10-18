@@ -10,6 +10,7 @@ public interface IDuesUnitOfWork
     IKurinDuesRateRepository KurinDuesRates { get; }
     IGroupDuesRateRepository GroupDuesRates { get; }
     IDuesConcessionRepository DuesConcessions { get; }
+    IDuesConcessionGrantRepository DuesConcessionGrants { get; }
     IDuesChargeRepository DuesCharges { get; }
     IDuesEntryRepository DuesEntries { get; }
 

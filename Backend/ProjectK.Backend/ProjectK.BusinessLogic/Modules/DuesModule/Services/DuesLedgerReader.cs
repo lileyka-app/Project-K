@@ -26,6 +26,7 @@ public sealed class DuesLedgerReader
             await _dues.GroupDuesRates.GetForKurinAsync(kurinKey, cancellationToken),
             await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken),
             await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken),
-            await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken));
+            await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken),
+            await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken));
     }
 }

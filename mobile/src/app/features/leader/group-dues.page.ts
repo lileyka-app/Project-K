@@ -74,6 +74,7 @@ type Part = 'box' | 'people' | 'history';
 /** The API's dues error codes, in the web's words. */
 const DUES_ERRORS: Record<string, string> = {
   EntryVerified: 'Операцію вже перевірено, її не змінити.',
+  TransferReceived: 'Курінний уже прийняв цю передачу. Змінити її можна, лише коли він зніме підтвердження.',
   EntryNotFound: 'Цієї операції вже немає.',
   NotOfThisGroup: 'У цього юнака немає вкладки в цьому гуртку.',
   NotInGroup: 'Цей юнак не з цього гуртка.',
@@ -686,7 +687,7 @@ export class GroupDuesPage implements OnInit, OnDestroy {
   /** As the web: the впорядник marks; the keeper edits what is not checked yet. */
   protected hasActions(entry: DuesEntryDto): boolean {
     const viewer = this.data()?.viewer;
-    return !!viewer && (viewer.canVerify || (viewer.canKeep && !entry.isVerified));
+    return !!viewer && (viewer.canVerify || (viewer.canKeep && !entry.isVerified && !entry.receivedAtUtc));
   }
 
   protected async personActions(account: DuesAccountDto): Promise<void> {
@@ -720,7 +721,7 @@ export class GroupDuesPage implements OnInit, OnDestroy {
           : { text: 'Позначити перевіреною', data: 'verify' },
       );
     }
-    if (viewer.canKeep && !entry.isVerified) {
+    if (viewer.canKeep && !entry.isVerified && !entry.receivedAtUtc) {
       buttons.push({ text: 'Змінити', data: 'edit' }, { text: 'Видалити', role: 'destructive', data: 'delete' });
     }
     buttons.push({ text: 'Скасувати', role: 'cancel' });

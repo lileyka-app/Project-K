@@ -1,4 +1,5 @@
 import { DuesUpstream } from '../../duesModule/models/dues.enums';
+import { KraiConcessionDocument } from '../../duesModule/models/concession.dto';
 import { CardExtraFieldDto, CardFieldMode } from '../../kurinModule/models/card-fields.dto';
 
 /** A край's profile as it is stored. Every value is optional: what is left out comes from code. */
@@ -17,6 +18,8 @@ export interface KraiProfileDocument {
   dues?: {
     /** Where the kurins hand the вкладка up; unset means through the станиця. */
     upstream?: DuesUpstream;
+    /** The край's own пільги and знижки. */
+    concessions?: KraiConcessionDocument[];
   };
 }
 

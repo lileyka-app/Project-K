@@ -160,6 +160,40 @@ public class DuesEntryHandlerTests
     }
 
     [Fact]
+    public async Task ATransferTheKurinReceived_CannotBeChangedOrDeletedByTheGroup()
+    {
+        var transfer = new DuesEntry
+        {
+            KurinKey = _kurin.KurinKey,
+            GroupKey = _group.GroupKey,
+            Kind = DuesEntryKind.TransferToKurin,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 200,
+            OccurredOn = new DateOnly(2026, 5, 2),
+            ReceivedAtUtc = _time.GetUtcNow().UtcDateTime
+        };
+        _entries.Add(transfer);
+        var edited = new UpsertDuesEntryRequest
+        {
+            Kind = DuesEntryKind.TransferToKurin,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 400,
+            OccurredOn = new DateOnly(2026, 5, 2)
+        };
+
+        var update = await new UpdateDuesEntryCommandHandler(Access(), Writer(), _dues.Object, _user.Object, _time)
+            .Handle(new UpdateDuesEntryCommand(_group.GroupKey, transfer.DuesEntryKey, edited), CancellationToken.None);
+        var delete = await new DeleteDuesEntryCommandHandler(Access(), _dues.Object, _user.Object, _time)
+            .Handle(new DeleteDuesEntryCommand(_group.GroupKey, transfer.DuesEntryKey), CancellationToken.None);
+
+        update.Type.Should().Be(ResultType.Conflict);
+        update.ErrorCode.Should().Be("TransferReceived");
+        delete.ErrorCode.Should().Be("TransferReceived");
+        transfer.Amount.Should().Be(200);
+        transfer.IsDeleted.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Unverifying_OpensTheEntryAgain()
     {
         await CreateAsync(Contribution(_youth.MembershipKey));

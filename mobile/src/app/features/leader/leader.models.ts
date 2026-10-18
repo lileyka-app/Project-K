@@ -162,6 +162,8 @@ export interface DuesEntryDto {
   isVerified: boolean;
   verifiedAtUtc: string | null;
   verifiedByName: string | null;
+  /** Set once the kurin treasurer received a transfer to the kurin; the гурток can no longer change it. */
+  receivedAtUtc: string | null;
   createdAtUtc: string;
 }
 

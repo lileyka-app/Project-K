@@ -112,6 +112,9 @@ public sealed class MyDuesDto
     /// <summary>What the running quarter costs them; null when they stand in no гурток.</summary>
     public decimal? QuarterRate { get; set; }
     public bool IsConcession { get; set; }
+
+    /// <summary>The край's пільги the person holds this quarter.</summary>
+    public IReadOnlyList<string> ConcessionNames { get; set; } = [];
 }
 
 /// <summary>The person's own points this пластовий рік in one kurin, and where their гурток stands.</summary>

@@ -1,6 +1,7 @@
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
+using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Models;
@@ -18,6 +19,9 @@ public sealed class GroupDuesResponse
     public string NumberLocale { get; init; } = "uk-UA";
     /// <summary>Where the край's kurins hand the вкладка up: stanytsia, krai or both.</summary>
     public string Upstream { get; init; } = KraiDues.Stanytsia;
+
+    /// <summary>The пільги of the край the гурток may give.</summary>
+    public IReadOnlyList<KraiConcessionDto> KraiConcessions { get; init; } = [];
 
     public QuarterDto CurrentQuarter { get; init; } = new();
 
@@ -119,6 +123,70 @@ public sealed class DuesAccountQuarterDto
     public DuesAmountDto Paid { get; init; } = new();
     public decimal Balance { get; init; }
     public bool IsConcession { get; init; }
+
+    /// <summary>The пільга of the край that set this quarter's amount, if one did.</summary>
+    public string? ConcessionName { get; init; }
+}
+
+/// <summary>A пільга the край offers: what the гурток may give.</summary>
+public sealed class KraiConcessionDto
+{
+    public string Key { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Kind { get; init; } = string.Empty;
+    public decimal Value { get; init; }
+    public IReadOnlyList<string> AppliesTo { get; init; } = [];
+
+    public static KraiConcessionDto From(DuesConcessionRule rule) => new()
+    {
+        Key = rule.Key,
+        Name = rule.Name,
+        Kind = rule.Kind,
+        Value = rule.Value,
+        AppliesTo = PartNames(rule.Parts)
+    };
+
+    public static IReadOnlyList<string> PartNames(DuesParts parts) =>
+    [
+        .. (parts & DuesParts.Stanytsia) != 0 ? [KraiDues.PartStanytsia] : Array.Empty<string>(),
+        .. (parts & DuesParts.Krai) != 0 ? [KraiDues.PartKrai] : Array.Empty<string>(),
+        .. (parts & DuesParts.Kurin) != 0 ? [KraiDues.PartKurin] : Array.Empty<string>(),
+        .. (parts & DuesParts.Group) != 0 ? [KraiDues.PartGroup] : Array.Empty<string>()
+    ];
+}
+
+/// <summary>A пільга of the край given to a person, with its rule as it was when given.</summary>
+public sealed class DuesConcessionGrantDto
+{
+    public Guid GrantKey { get; init; }
+    public string ConcessionKey { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Kind { get; init; } = string.Empty;
+    public decimal Value { get; init; }
+    public IReadOnlyList<string> AppliesTo { get; init; } = [];
+    public QuarterDto FromQuarter { get; init; } = new();
+    public QuarterDto? ToQuarter { get; init; }
+    public string? Reason { get; init; }
+    public bool IsActiveNow { get; init; }
+
+    public static DuesConcessionGrantDto From(DuesConcessionGrant grant, DuesQuarter current)
+    {
+        var from = DuesQuarter.FromIndex(grant.FromQuarter);
+        var to = grant.ToQuarter is { } end ? DuesQuarter.FromIndex(end) : (DuesQuarter?)null;
+        return new DuesConcessionGrantDto
+        {
+            GrantKey = grant.DuesConcessionGrantKey,
+            ConcessionKey = grant.ConcessionKey,
+            Name = grant.Name,
+            Kind = grant.Kind,
+            Value = grant.Value,
+            AppliesTo = KraiConcessionDto.PartNames(grant.Parts),
+            FromQuarter = new QuarterDto { Year = from.Year, Number = from.Number },
+            ToQuarter = to is { } t ? new QuarterDto { Year = t.Year, Number = t.Number } : null,
+            Reason = grant.Reason,
+            IsActiveNow = grant.AppliesTo(current)
+        };
+    }
 }
 
 /// <summary>Where the person stands towards this гурток's box.</summary>
@@ -155,6 +223,10 @@ public sealed class DuesAccountDto
     public string FullName { get; init; } = string.Empty;
     public DuesAccountStanding Standing { get; init; }
     public bool IsConcessionNow { get; init; }
+
+    /// <summary>The пільги of the край given to the person, newest first.</summary>
+    public IReadOnlyList<DuesConcessionGrantDto> Grants { get; init; } = [];
+
     public IReadOnlyList<DuesAccountQuarterDto> Quarters { get; init; } = [];
     public decimal Charged { get; init; }
     public decimal Payments { get; init; }

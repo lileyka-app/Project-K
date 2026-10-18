@@ -29,3 +29,19 @@ public sealed class SaveKraiProfileRequest
     public KraiProfileDocument Document { get; init; } = new();
     public string? Note { get; init; }
 }
+
+/// <summary>
+/// A край to add. <see cref="Document"/> is its first profile; left out, the край reads Ukraine's
+/// вмілості and the defaults in code for the rest.
+/// </summary>
+public sealed class CreateKraiRequest
+{
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public KraiProfileDocument? Document { get; init; }
+}
+
+public sealed class RenameKraiRequest
+{
+    public string Name { get; init; } = string.Empty;
+}

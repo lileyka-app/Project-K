@@ -5,6 +5,8 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Models.Dues;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
@@ -102,7 +104,34 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
             CardFields(document.CardFields),
             new KraiDuesSettings(Text(document.Dues?.Upstream)?.ToLowerInvariant() is { } upstream && KraiDues.Upstreams.Contains(upstream)
                 ? upstream
-                : KraiDues.Stanytsia));
+                : KraiDues.Stanytsia)
+            {
+                Concessions = Concessions(document.Dues?.Concessions)
+            });
+    }
+
+    // Only a rule this Lilejka can work out is offered; a broken one is left out, not guessed at.
+    private static IReadOnlyList<DuesConcessionRule> Concessions(IReadOnlyList<KraiConcessionDocument>? concessions)
+    {
+        return (concessions ?? [])
+            .Select(c => new DuesConcessionRule(
+                Text(c.Key) ?? string.Empty,
+                Text(c.Name) ?? string.Empty,
+                Text(c.Kind)?.ToLowerInvariant() ?? string.Empty,
+                c.Value ?? 0,
+                DuesConcessionRule.PartsOf(c.AppliesTo)))
+            .Where(rule => rule.Key.Length > 0
+                && rule.Name.Length > 0
+                && rule.Parts != DuesParts.None
+                && rule.Kind switch
+                {
+                    KraiDues.Exempt => true,
+                    KraiDues.Percent => rule.Value is > 0 and <= 100,
+                    KraiDues.Amount => rule.Value > 0,
+                    _ => false
+                })
+            .DistinctBy(rule => rule.Key)
+            .ToList();
     }
 
     // The card as it was before profiles, with whatever the край changed over it. A mode or a
