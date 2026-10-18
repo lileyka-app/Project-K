@@ -59,6 +59,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IKurinDuesRateRepository _kurinDuesRates;
     private IGroupDuesRateRepository _groupDuesRates;
     private IDuesConcessionRepository _duesConcessions;
+    private IDuesConcessionGrantRepository _duesConcessionGrants;
     private IDuesChargeRepository _duesCharges;
     private IDuesEntryRepository _duesEntries;
     private IKurinScoreSettingsRepository _kurinScoreSettings;
@@ -101,6 +102,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IKurinDuesRateRepository KurinDuesRates => _kurinDuesRates ??= new KurinDuesRateRepository(_context);
     public IGroupDuesRateRepository GroupDuesRates => _groupDuesRates ??= new GroupDuesRateRepository(_context);
     public IDuesConcessionRepository DuesConcessions => _duesConcessions ??= new DuesConcessionRepository(_context);
+    public IDuesConcessionGrantRepository DuesConcessionGrants => _duesConcessionGrants ??= new DuesConcessionGrantRepository(_context);
     public IDuesChargeRepository DuesCharges => _duesCharges ??= new DuesChargeRepository(_context);
     public IDuesEntryRepository DuesEntries => _duesEntries ??= new DuesEntryRepository(_context);
     public IKurinScoreSettingsRepository KurinScoreSettings => _kurinScoreSettings ??= new KurinScoreSettingsRepository(_context);

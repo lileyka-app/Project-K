@@ -19,6 +19,7 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
+import { KraiConcessionGrantsComponent } from '../../components/krai-concession-grants/krai-concession-grants';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
@@ -56,7 +57,7 @@ interface AccountRow {
   imports: [
     DatePipe, NgTemplateOutlet, FormsModule, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule, DialogModule,
     InputTextModule, ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule,
-    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent
+    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent, KraiConcessionGrantsComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './group-dues.html',
@@ -180,6 +181,11 @@ export class GroupDuesComponent implements OnInit {
   readonly concessionFromQuarter = signal<string>('');
   readonly concessionOn = signal(true);
   readonly savingConcession = signal(false);
+  /** The person in the пільга dialog as the last read has them, so a saved grant shows at once. */
+  readonly concessionAccount = computed(() => {
+    const target = this.concessionTarget();
+    return this.data()?.accounts.find(a => a.membershipKey === target?.membershipKey) ?? target;
+  });
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -209,6 +215,10 @@ export class GroupDuesComponent implements OnInit {
 
   togglePerson(account: DuesAccountDto): void {
     this.personFilter.set(this.personFilter() === account.membershipKey ? null : account.membershipKey);
+  }
+
+  activeGrantNames(account: DuesAccountDto): string[] {
+    return (account.grants ?? []).filter(g => g.isActiveNow).map(g => g.name);
   }
 
   standingLabel(account: DuesAccountDto): string | null {
@@ -335,7 +345,7 @@ export class GroupDuesComponent implements OnInit {
     }
     this.savingConcession.set(true);
     this.dues.setConcession(this.groupKey, target.membershipKey, { fromQuarter: from, isConcession: this.concessionOn() }).subscribe({
-      next: () => { this.savingConcession.set(false); this.concessionDialogVisible.set(false); this.load(); },
+      next: () => { this.savingConcession.set(false); this.load(); },
       error: () => this.savingConcession.set(false)
     });
   }

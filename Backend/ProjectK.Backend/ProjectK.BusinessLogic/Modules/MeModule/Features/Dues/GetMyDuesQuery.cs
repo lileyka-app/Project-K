@@ -65,7 +65,8 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
                 QuarterNumber = quarter.Number,
                 Balance = accounts.Sum(a => a.Balance),
                 QuarterRate = membership.GroupKey is { } group ? ledger.AmountFor(membership.MembershipKey, group, quarter).Total : null,
-                IsConcession = ledger.IsConcession(membership.MembershipKey, quarter)
+                IsConcession = ledger.IsConcession(membership.MembershipKey, quarter),
+                ConcessionNames = ledger.GrantsIn(membership.MembershipKey, quarter).Select(g => g.Name).ToList()
             });
         }
 

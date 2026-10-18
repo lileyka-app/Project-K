@@ -65,11 +65,12 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         var concessions = await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken);
         var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
         var entries = await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken);
+        var grants = await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken);
         var names = await DuesNames.LoadAsync(_memberships, _members, kurinKey, cancellationToken);
         var groupNames = (await _unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken))
             .ToDictionary(g => g.GroupKey, g => g.Name);
 
-        var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries);
+        var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries, grants);
         // Memberships the kurin no longer has are removed people; see GetGroupDuesQuery.
         var accounts = ledger.Accounts().Where(a => names.Memberships.ContainsKey(a.MembershipKey)).ToList();
         var kurinBox = ledger.KurinBox(accounts);

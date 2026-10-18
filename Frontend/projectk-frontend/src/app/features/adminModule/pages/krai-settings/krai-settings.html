@@ -97,6 +97,17 @@
     <app-krai-card-fields [(value)]="cardFields" [disabled]="saving()" />
   </section>
 
+  <section class="kurin-tile" aria-labelledby="concessions-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="concessions-title">Пільги краю</h2>
+        <p>Пільги й знижки, які гуртки краю «{{ e.kraiName }}» можуть надати людині поверх пільги куреня: з якого й до якого кварталу і з якої підстави. Діє найвигідніша з пільг людини. Зміна правила діє лише на пільги, надані після збереження.</p>
+      </div>
+    </div>
+    <app-krai-concessions [(value)]="concessions" [currencySymbol]="currencyMark()" [disabled]="saving()" />
+    <small class="krai-muted">Зберігається разом з усім профілем кнопкою «Зберегти» нижче.</small>
+  </section>
+
   <section class="kurin-tile" aria-labelledby="locale-title">
     <div class="lil-tile-head">
       <div>
@@ -182,6 +193,16 @@
       <p-button label="Скасувати" severity="secondary" variant="text" [disabled]="!dirty() || saving()" (onClick)="reset()" />
       <p-button label="Зберегти" icon="pi pi-check" [disabled]="!dirty() || saving()" [loading]="saving()" (onClick)="save()" />
     </div>
+  </section>
+
+  <section class="kurin-tile" aria-labelledby="concession-report-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="concession-report-title">Звіт про пільги</h2>
+        <p>Скільки людей у куренях краю платять менше завдяки кожній його пільзі і на скільки зменшилась кожна частина вкладки за квартал.</p>
+      </div>
+    </div>
+    <app-krai-concession-report [kraiCode]="e.kraiCode" />
   </section>
 
   <section class="kurin-tile" aria-labelledby="history-title">

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
+using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
@@ -74,6 +76,17 @@ public class KraiController : ControllerBase
     public async Task<IActionResult> RestoreProfileRevision(string kraiCode, int revision)
     {
         var response = await _mediator.Send(new RestoreKraiProfileRevisionCommand(kraiCode, revision));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>What each of the край's пільги took off its kurins' вкладка in one quarter.</summary>
+    [HttpGet("{kraiCode}/dues/concessions")]
+    [ProducesResponseType(typeof(KraiConcessionReportResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetConcessionReport(string kraiCode, [FromQuery] int year, [FromQuery] int number)
+    {
+        var response = await _mediator.Send(new GetKraiConcessionReportQuery(kraiCode, year, number));
         return response.ToActionResult(this);
     }
 }

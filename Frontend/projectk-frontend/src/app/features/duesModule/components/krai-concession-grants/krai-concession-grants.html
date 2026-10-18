@@ -1,0 +1,126 @@
+<section class="grants" aria-labelledby="krai-grants-title">
+  <h3 id="krai-grants-title" class="grants__title">Пільги краю</h3>
+
+  @if (grants().length) {
+    <ul class="grants__list" data-testid="krai-grants">
+      @for (grant of grants(); track grant.grantKey) {
+        <li class="grants__item">
+          <div class="grants__head">
+            <strong>{{ grant.name }}</strong>
+            @if (grant.isActiveNow) {
+              <p-tag value="діє" severity="success" />
+            }
+          </div>
+          <div class="grants__meta">{{ describe(grant) }} · {{ period(grant) }}</div>
+          @if (grant.reason) {
+            <div class="grants__reason">{{ grant.reason }}</div>
+          }
+
+          @if (editingKey() === grant.grantKey) {
+            <div class="lil-dialog-form grants__edit">
+              <div class="lil-dialog-field">
+                <label [for]="'grant-to-' + grant.grantKey">Останній квартал</label>
+                <p-select
+                  [inputId]="'grant-to-' + grant.grantKey"
+                  [options]="editOptions(grant)"
+                  [ngModel]="editTo()"
+                  (ngModelChange)="editTo.set($event ?? null)"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="Без кінця"
+                  appendTo="body"
+                  styleClass="w-full" />
+              </div>
+              <div class="lil-dialog-field">
+                <label [for]="'grant-reason-' + grant.grantKey">Підстава</label>
+                <input pInputText [id]="'grant-reason-' + grant.grantKey" type="text" maxlength="500" [ngModel]="editReason()" (ngModelChange)="editReason.set($event)" />
+              </div>
+              <div class="grants__actions">
+                <p-button label="Видалити" severity="danger" variant="text" size="small" [disabled]="saving()" (onClick)="remove(grant)" />
+                <span class="grants__spacer"></span>
+                <p-button label="Скасувати" severity="secondary" variant="text" size="small" [disabled]="saving()" (onClick)="editingKey.set(null)" />
+                <p-button label="Зберегти" size="small" [loading]="saving()" (onClick)="saveEdit(grant)" />
+              </div>
+            </div>
+          } @else {
+            <p-button label="Змінити" icon="pi pi-pencil" severity="secondary" variant="text" size="small" [disabled]="saving()" (onClick)="edit(grant)" />
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (concessions().length) {
+    <div class="lil-dialog-form grants__new" data-testid="krai-grant-new">
+      <div class="lil-dialog-field">
+        <label for="grant-concession">Надати пільгу</label>
+        <p-select
+          inputId="grant-concession"
+          [options]="concessionOptions()"
+          [ngModel]="concessionKey()"
+          (ngModelChange)="concessionKey.set($event ?? null); startGranting()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Обери пільгу краю"
+          appendTo="body"
+          styleClass="w-full">
+          <ng-template #item let-option>
+            <div class="grants__option">
+              <span>{{ option.label }}</span>
+              <small>{{ option.rule }}</small>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+      @if (concessionKey()) {
+        <div class="grants__quarters">
+          <div class="lil-dialog-field">
+            <label for="grant-from">З кварталу</label>
+            <p-select
+              inputId="grant-from"
+              [options]="fromOptions()"
+              [ngModel]="fromQuarter()"
+              (ngModelChange)="fromQuarter.set($event); toQuarter.set(null)"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              styleClass="w-full" />
+          </div>
+          <div class="lil-dialog-field">
+            <label for="grant-to">До кварталу</label>
+            <p-select
+              inputId="grant-to"
+              [options]="toOptions()"
+              [ngModel]="toQuarter()"
+              (ngModelChange)="toQuarter.set($event ?? null)"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              placeholder="Без кінця"
+              appendTo="body"
+              styleClass="w-full" />
+          </div>
+        </div>
+        <div class="lil-dialog-field">
+          <label for="grant-reason">Підстава</label>
+          <input pInputText id="grant-reason" type="text" maxlength="500" [ngModel]="reason()" (ngModelChange)="reason.set($event)" placeholder="Наприклад, брат у цьому ж курені" />
+        </div>
+        <div class="grants__actions">
+          <span class="grants__spacer"></span>
+          <p-button label="Надати" icon="pi pi-check" size="small" [disabled]="!canGrant()" [loading]="saving()" (onClick)="grant()" />
+        </div>
+      }
+    </div>
+  } @else if (!grants().length) {
+    <p class="lil-dialog-hint">Край ще не задав власних пільг. Їх налаштовує адміністратор у профілі краю.</p>
+  }
+
+  @if (error(); as message) {
+    <p class="grants__error" role="alert">{{ message }}</p>
+  }
+
+  @if (concessions().length || grants().length) {
+    <p class="lil-dialog-hint">Якщо в людини кілька пільг, діє найвигідніша з них.</p>
+  }
+</section>

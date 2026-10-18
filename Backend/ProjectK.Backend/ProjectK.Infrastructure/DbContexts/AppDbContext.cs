@@ -51,6 +51,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<KurinDuesRate> KurinDuesRates { get; set; }
     public DbSet<GroupDuesRate> GroupDuesRates { get; set; }
     public DbSet<DuesConcession> DuesConcessions { get; set; }
+    public DbSet<DuesConcessionGrant> DuesConcessionGrants { get; set; }
     public DbSet<DuesCharge> DuesCharges { get; set; }
     public DbSet<DuesEntry> DuesEntries { get; set; }
     public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
@@ -272,6 +273,19 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasKey(e => e.DuesConcessionKey);
             entity.HasIndex(e => new { e.MembershipKey, e.FromQuarter }).IsUnique();
             entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesConcessionGrant>(entity =>
+        {
+            entity.HasKey(e => e.DuesConcessionGrantKey);
+            entity.HasIndex(e => e.KurinKey);
+            entity.HasIndex(e => e.MembershipKey);
+            entity.Property(e => e.ConcessionKey).HasMaxLength(40);
+            entity.Property(e => e.Name).HasMaxLength(80);
+            entity.Property(e => e.Kind).HasMaxLength(16);
+            entity.Property(e => e.Value).HasPrecision(18, 2);
+            entity.Property(e => e.Parts).HasConversion<int>();
+            entity.Property(e => e.Reason).HasMaxLength(500);
         });
 
         builder.Entity<DuesCharge>(entity =>

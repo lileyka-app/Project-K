@@ -93,6 +93,8 @@ export interface MyDuesDto {
   balance: number;
   quarterRate: number | null;
   isConcession: boolean;
+  /** The край's пільги the person holds this quarter. */
+  concessionNames: string[];
 }
 
 export interface MyScoreDto {
