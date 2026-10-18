@@ -59,8 +59,10 @@ export class KraiConcessionsComponent {
       this.update(index, { kind, value: undefined });
       return;
     }
+    // A percent and a sum are different units: «20» kept across the switch would mean something else.
+    const item = this.items()[index];
     const startingValue = kind === 'percent' ? 10 : 100;
-    this.update(index, { kind, value: this.items()[index].value ?? startingValue });
+    this.update(index, { kind, value: item.kind === kind ? item.value ?? startingValue : startingValue });
   }
 
   setValue(index: number, value: string | number | null): void {

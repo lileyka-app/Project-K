@@ -39,17 +39,9 @@ public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEn
             return ServiceResult<object>.Failure(ResultType.NotFound, "EntryNotFound", "There is no such operation here.");
         }
 
-        if (entry.IsVerified)
+        if (DuesEntryLock.Check(entry) is { } locked)
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "EntryVerified",
-                "A verified operation is locked. Add a correction, or have the впорядник unmark it.");
-        }
-
-        // The kurin counted this money as received; changing it here would quietly change the kurin's box.
-        if (entry.ReceivedAtUtc.HasValue)
-        {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "TransferReceived",
-                "The kurin treasurer has received this transfer. They have to take the confirmation back first.");
+            return locked;
         }
 
         var now = _time.GetUtcNow().UtcDateTime;

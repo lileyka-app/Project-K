@@ -51,6 +51,11 @@ public sealed class CreateKraiCommandHandler : IRequestHandler<CreateKraiCommand
             return ServiceResult<KraiResponse>.Failure(ResultType.Conflict, "KraiExists", $"Край «{code}» уже є.");
         }
 
+        if (await KraiNames.TakenAsync(_unitOfWork, name, except: null, cancellationToken))
+        {
+            return KraiNames.Taken(name);
+        }
+
         // Left to the defaults, a край offers the вмілості marked with its own code, and the
         // catalogue marks only ua and pl: a new край would see none.
         var document = KraiProfileJson.Normalize(request.Document
@@ -117,6 +122,11 @@ public sealed class RenameKraiCommandHandler : IRequestHandler<RenameKraiCommand
             return ServiceResult<KraiResponse>.Failure(ResultType.NotFound, "KraiNotFound", "Krai not found.");
         }
 
+        if (krai.Name != name && await KraiNames.TakenAsync(_unitOfWork, name, except: krai.Code, cancellationToken))
+        {
+            return KraiNames.Taken(name);
+        }
+
         if (krai.Name != name)
         {
             krai.Name = name;
@@ -137,6 +147,19 @@ public sealed class RenameKraiCommandHandler : IRequestHandler<RenameKraiCommand
 internal static class KraiNames
 {
     public const int MaxLength = 120;
+
+    /// <summary>
+    /// Whether another край already goes by this name. Pickers show names only, so two краї with one
+    /// name could not be told apart.
+    /// </summary>
+    public static async Task<bool> TakenAsync(IUnitOfWork unitOfWork, string name, string? except, CancellationToken cancellationToken)
+    {
+        return (await unitOfWork.Krais.GetAllAsync(cancellationToken))
+            .Any(k => k.Code != except && string.Equals(k.Name.Trim(), name, StringComparison.CurrentCultureIgnoreCase));
+    }
+
+    public static ServiceResult<KraiResponse> Taken(string name) =>
+        ServiceResult<KraiResponse>.Failure(ResultType.Conflict, "KraiNameTaken", $"Край з назвою «{name}» уже є.");
 
     public static string? Clean(string? name)
     {

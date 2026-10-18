@@ -104,12 +104,7 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
         }
 
         // The same пільга twice over the same quarters would only hide which one counts.
-        var overlaps = (await _dues.DuesConcessionGrants.GetForKurinAsync(group.KurinKey, cancellationToken))
-            .Any(g => g.MembershipKey == request.MembershipKey
-                && g.ConcessionKey == rule.Key
-                && g.FromQuarter <= (to ?? int.MaxValue)
-                && from <= (g.ToQuarter ?? int.MaxValue));
-        if (overlaps)
+        if (await DuesConcessionGrants.OverlapsAsync(_dues, group.KurinKey, request.MembershipKey, rule.Key, from, to, null, cancellationToken))
         {
             return ServiceResult<Guid>.Failure(ResultType.Conflict, "ConcessionOverlaps", "Ця пільга вже діє в цих кварталах.");
         }
@@ -168,6 +163,12 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
             return ServiceResult<object>.Failure(ResultType.BadRequest, "EndsBeforeStart", "Пільга не може закінчитися раніше, ніж почнеться.");
         }
 
+        // A later end may run into another grant of the same пільга, as a new grant would.
+        if (await DuesConcessionGrants.OverlapsAsync(_dues, grant.KurinKey, grant.MembershipKey, grant.ConcessionKey, grant.FromQuarter, to, grant.DuesConcessionGrantKey, cancellationToken))
+        {
+            return ServiceResult<object>.Failure(ResultType.Conflict, "ConcessionOverlaps", "Ця пільга вже діє в цих кварталах.");
+        }
+
         grant.ToQuarter = to;
         grant.Reason = DuesConcessionGrants.Reason(request.Request.Reason);
         grant.SetByUserKey = _currentUser.UserId;
@@ -209,6 +210,18 @@ internal static class DuesConcessionGrants
 {
     public static int? Index(QuarterRequest? quarter) =>
         quarter is null ? null : new DuesQuarter(quarter.Year, quarter.Number).Index;
+
+    /// <summary>Whether the person already holds this пільга in any of the quarters from..to, leaving out one grant.</summary>
+    public static async Task<bool> OverlapsAsync(
+        IDuesUnitOfWork dues, Guid kurinKey, Guid membershipKey, string concessionKey, int from, int? to, Guid? except, CancellationToken cancellationToken)
+    {
+        return (await dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken))
+            .Any(g => g.MembershipKey == membershipKey
+                && g.ConcessionKey == concessionKey
+                && g.DuesConcessionGrantKey != except
+                && g.FromQuarter <= (to ?? int.MaxValue)
+                && from <= (g.ToQuarter ?? int.MaxValue));
+    }
 
     public static string? Reason(string? reason)
     {

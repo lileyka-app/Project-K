@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from '@openng/optimus-ui/select';
 import { KraiConcessionReportDto } from '../../../../duesModule/models/concession.dto';
@@ -25,11 +25,21 @@ export class KraiConcessionReportComponent {
 
   readonly kraiCode = input.required<string>();
 
-  readonly quarterOptions = quartersUpTo(currentQuarter());
-  readonly quarter = signal(quarterKey(currentQuarter()));
+  /** The quarter running now by the край's clock, as the first report tells it. */
+  private readonly current = signal<QuarterDto | null>(null);
+  readonly quarterOptions = computed(() => {
+    const current = this.current();
+    return current ? quartersUpTo(current) : [];
+  });
+  /** The picked quarter; null until the first report names the running one. */
+  readonly quarter = signal<string | null>(null);
   readonly report = signal<KraiConcessionReportDto | null>(null);
   readonly loading = signal(false);
   readonly failed = signal(false);
+
+  /** Only the latest request may fill the table: an older answer arriving late is dropped. */
+  private request = 0;
+  private shownKey: string | null = null;
 
   readonly money = computed(() => {
     const report = this.report();
@@ -44,10 +54,12 @@ export class KraiConcessionReportComponent {
   constructor() {
     effect(() => {
       const code = this.kraiCode();
-      const quarter = this.quarterOptions.find(o => o.value === this.quarter())?.quarter;
-      if (code && quarter) {
-        this.load(code, quarter);
+      const key = this.quarter();
+      if (!code || (key !== null && `${code}:${key}` === this.shownKey)) {
+        return;
       }
+      const quarter = untracked(() => this.quarterOptions()).find(o => o.value === key)?.quarter ?? null;
+      this.load(code, quarter);
     });
   }
 
@@ -55,27 +67,34 @@ export class KraiConcessionReportComponent {
     return number === null ? 'Підготовчий курінь' : `Курінь ${number}`;
   }
 
-  private load(code: string, quarter: QuarterDto): void {
+  private load(code: string, quarter: QuarterDto | null): void {
+    const request = ++this.request;
     this.loading.set(true);
     this.failed.set(false);
     this.profiles.concessionReport(code, quarter).subscribe({
       next: report => {
+        if (request !== this.request) {
+          return;
+        }
+        const key = quarterKey(report.quarter);
+        this.shownKey = `${code}:${key}`;
+        if (!this.current()) {
+          this.current.set(report.quarter);
+        }
+        this.quarter.set(key);
         this.report.set(report);
         this.loading.set(false);
       },
       error: () => {
+        if (request !== this.request) {
+          return;
+        }
         this.report.set(null);
         this.loading.set(false);
         this.failed.set(true);
       }
     });
   }
-}
-
-/** The quarter running now by the calendar; the край's own clock moves it by a day at most. */
-function currentQuarter(): QuarterDto {
-  const now = new Date();
-  return { year: now.getFullYear(), number: Math.floor(now.getMonth() / 3) + 1 };
 }
 
 function quartersUpTo(last: QuarterDto): { label: string; value: string; quarter: QuarterDto }[] {

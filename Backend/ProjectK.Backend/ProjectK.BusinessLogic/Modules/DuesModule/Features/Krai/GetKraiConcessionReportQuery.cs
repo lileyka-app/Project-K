@@ -14,7 +14,8 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
 /// how much each part of the вкладка came out lower than without them. Only a пільга that set
 /// someone's price counts for them; one outdone by a cheaper пільга does not.
 /// </summary>
-public sealed record GetKraiConcessionReportQuery(string KraiCode, int Year, int Number)
+/// <remarks>Without a quarter it reads the one running now by the край's own clock.</remarks>
+public sealed record GetKraiConcessionReportQuery(string KraiCode, int? Year = null, int? Number = null)
     : IRequest<ServiceResult<KraiConcessionReportResponse>>;
 
 public sealed class GetKraiConcessionReportQueryHandler
@@ -23,17 +24,19 @@ public sealed class GetKraiConcessionReportQueryHandler
     private readonly IUnitOfWork _unitOfWork;
     private readonly DuesLedgerReader _ledgers;
     private readonly IKraiProfileProvider _profiles;
+    private readonly TimeProvider _time;
 
-    public GetKraiConcessionReportQueryHandler(IUnitOfWork unitOfWork, DuesLedgerReader ledgers, IKraiProfileProvider profiles)
+    public GetKraiConcessionReportQueryHandler(IUnitOfWork unitOfWork, DuesLedgerReader ledgers, IKraiProfileProvider profiles, TimeProvider time)
     {
         _unitOfWork = unitOfWork;
         _ledgers = ledgers;
         _profiles = profiles;
+        _time = time;
     }
 
     public async Task<ServiceResult<KraiConcessionReportResponse>> Handle(GetKraiConcessionReportQuery request, CancellationToken cancellationToken)
     {
-        if (request.Number is < 1 or > 4 || request.Year is < 2000 or > 2100)
+        if ((request.Year is null) != (request.Number is null) || request.Number is < 1 or > 4 || request.Year is < 2000 or > 2100)
         {
             return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.BadRequest, "InvalidQuarter", "Квартал задано неправильно.");
         }
@@ -45,11 +48,13 @@ public sealed class GetKraiConcessionReportQueryHandler
             return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.NotFound, "KraiNotFound", "Krai not found.");
         }
 
-        var quarter = new DuesQuarter(request.Year, request.Number);
-        var kurins = (await _unitOfWork.Kurins.GetAllAsync(cancellationToken))
-            .Where(k => k.KraiCode == code)
-            .OrderBy(k => k.Number ?? int.MaxValue)
-            .ToList();
+        var quarter = request is { Year: int year, Number: int number }
+            ? new DuesQuarter(year, number)
+            : profile.ToDuesKrai().QuarterOf(_time.GetUtcNow());
+
+        // Each ledger is opened in turn: they share one DbContext, and opening one brings its
+        // charges up to the running quarter, as every read of the вкладка does.
+        var kurins = await _unitOfWork.Kurins.GetInKraiAsync(code, cancellationToken);
 
         var rows = new Dictionary<string, ReportRow>(StringComparer.Ordinal);
         foreach (var kurin in kurins)

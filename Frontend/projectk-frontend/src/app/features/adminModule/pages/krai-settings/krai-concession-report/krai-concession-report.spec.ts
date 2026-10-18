@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { KraiConcessionReportComponent } from './krai-concession-report';
 import { KraiProfileService } from '../../../services/krai-profile-service/krai-profile.service';
 import { KraiConcessionReportDto } from '../../../../duesModule/models/concession.dto';
@@ -40,8 +40,12 @@ describe('KraiConcessionReportComponent', () => {
     fixture.detectChanges();
   });
 
-  it('reads the current quarter for the край and shows each пільга with its kurins', () => {
-    expect(profiles.concessionReport).toHaveBeenCalledWith('cz', component.quarterOptions[0].quarter);
+  it('first asks for the quarter running by the край\'s clock and picks the one the server names', () => {
+    fixture.detectChanges();
+
+    expect(profiles.concessionReport).toHaveBeenCalledOnceWith('cz', null);
+    expect(component.quarter()).toBe('2026-4');
+    expect(component.quarterOptions()[0].value).toBe('2026-4');
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Брат чи сестра');
     expect(text).toContain('Курінь 12: 2');
@@ -50,9 +54,27 @@ describe('KraiConcessionReportComponent', () => {
   });
 
   it('reads again when another quarter is picked', () => {
-    component.quarter.set(component.quarterOptions[1].value);
+    fixture.detectChanges();
+    component.quarter.set(component.quarterOptions()[1].value);
     fixture.detectChanges();
 
-    expect(profiles.concessionReport).toHaveBeenCalledWith('cz', component.quarterOptions[1].quarter);
+    expect(profiles.concessionReport).toHaveBeenCalledWith('cz', { year: 2026, number: 3 });
+  });
+
+  it('drops an older answer that arrives after a newer one', () => {
+    const older = new Subject<KraiConcessionReportDto>();
+    const newer = new Subject<KraiConcessionReportDto>();
+    fixture.detectChanges();
+    profiles.concessionReport.and.returnValues(older, newer);
+
+    component.quarter.set('2026-3');
+    fixture.detectChanges();
+    component.quarter.set('2026-2');
+    fixture.detectChanges();
+    newer.next({ ...report, quarter: { year: 2026, number: 2 }, concessions: [] });
+    older.next({ ...report, quarter: { year: 2026, number: 3 } });
+
+    expect(component.quarter()).toBe('2026-2');
+    expect(component.report()!.concessions).toEqual([]);
   });
 });

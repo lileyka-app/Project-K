@@ -35,10 +35,10 @@ export class KraiProfileService {
     return this.http.get<KraiProfileRevisionDto[]>(`${this.apiUrl}/${kraiCode}/profile/revisions`);
   }
 
-  /** What the край's пільги took off its kurins' вкладка in one quarter. */
-  concessionReport(kraiCode: string, quarter: QuarterDto): Observable<KraiConcessionReportDto> {
+  /** What the край's пільги took off its kurins' вкладка in one quarter; without one, the quarter running now by the край's clock. */
+  concessionReport(kraiCode: string, quarter: QuarterDto | null): Observable<KraiConcessionReportDto> {
     return this.http.get<KraiConcessionReportDto>(`${this.apiUrl}/${kraiCode}/dues/concessions`, {
-      params: { year: quarter.year, number: quarter.number }
+      params: quarter ? { year: quarter.year, number: quarter.number } : {}
     });
   }
 

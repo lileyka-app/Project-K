@@ -24,6 +24,7 @@ public class KraiCommandsTests
     private readonly Guid _admin = Guid.NewGuid();
     private readonly List<Krai> _addedKrais = [];
     private readonly List<KraiProfileRevision> _addedRevisions = [];
+    private readonly List<Krai> _existing = [new Krai { Code = "ua", Name = "Україна" }, new Krai { Code = "cz", Name = "Чехія" }];
 
     public KraiCommandsTests()
     {
@@ -31,6 +32,7 @@ public class KraiCommandsTests
         _krais.Setup(r => r.Add(It.IsAny<Krai>())).Callback<Krai>(_addedKrais.Add);
         _krais.Setup(r => r.AddProfileRevision(It.IsAny<KraiProfileRevision>())).Callback<KraiProfileRevision>(_addedRevisions.Add);
         _kurins.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _krais.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => _existing);
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
@@ -112,6 +114,21 @@ public class KraiCommandsTests
         krai.Name.Should().Be("Пласт Чехія");
         result.Data!.KurinCount.Should().Be(1);
         _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+    }
+
+    [Fact]
+    public async Task ANameAnotherKraiGoesBy_IsAConflict_WhenCreatingOrRenaming()
+    {
+        var created = await Create().Handle(new CreateKraiCommand("sk", " чехія ", null), default);
+        _krais.Setup(r => r.GetForUpdateAsync("ua", It.IsAny<CancellationToken>())).ReturnsAsync(_existing[0]);
+        var renamed = await new RenameKraiCommandHandler(_unitOfWork.Object, _cache.Object)
+            .Handle(new RenameKraiCommand("ua", "Чехія"), default);
+
+        created.Type.Should().Be(ResultType.Conflict);
+        created.ErrorCode.Should().Be("KraiNameTaken");
+        renamed.Type.Should().Be(ResultType.Conflict);
+        _addedKrais.Should().BeEmpty();
+        _existing[0].Name.Should().Be("Україна");
     }
 
     [Fact]

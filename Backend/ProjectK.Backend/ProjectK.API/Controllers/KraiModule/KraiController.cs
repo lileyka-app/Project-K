@@ -104,12 +104,15 @@ public class KraiController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    /// <summary>What each of the край's пільги took off its kurins' вкладка in one quarter.</summary>
+    /// <summary>
+    /// What each of the край's пільги took off its kurins' вкладка in one quarter; without one, the
+    /// quarter running now by the край's clock.
+    /// </summary>
     [HttpGet("{kraiCode}/dues/concessions")]
     [ProducesResponseType(typeof(KraiConcessionReportResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetConcessionReport(string kraiCode, [FromQuery] int year, [FromQuery] int number)
+    public async Task<IActionResult> GetConcessionReport(string kraiCode, [FromQuery] int? year, [FromQuery] int? number)
     {
         var response = await _mediator.Send(new GetKraiConcessionReportQuery(kraiCode, year, number));
         return response.ToActionResult(this);

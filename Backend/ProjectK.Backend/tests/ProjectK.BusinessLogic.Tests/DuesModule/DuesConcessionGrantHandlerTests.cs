@@ -134,6 +134,20 @@ public class DuesConcessionGrantHandlerTests
     }
 
     [Fact]
+    public async Task MovingTheEnd_IntoAnotherGrantOfTheSamePilha_IsAConflict()
+    {
+        await GrantAsync(_youth.MembershipKey, "sibling", (2026, 1), (2026, 2));
+        await GrantAsync(_youth.MembershipKey, "sibling", (2026, 4));
+        var first = _grants.Single(g => g.FromQuarter == new DuesQuarter(2026, 1).Index);
+
+        var result = await new UpdateDuesConcessionGrantCommandHandler(Access(), _dues.Object, Memberships(), _user.Object)
+            .Handle(new UpdateDuesConcessionGrantCommand(_group.GroupKey, first.DuesConcessionGrantKey, new UpdateDuesConcessionGrantRequest()), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        first.ToQuarter.Should().Be(new DuesQuarter(2026, 2).Index);
+    }
+
+    [Fact]
     public async Task Ending_SetsTheLastQuarter_AndDeleting_RemovesIt()
     {
         await GrantAsync(_youth.MembershipKey, "sibling", (2026, 1));

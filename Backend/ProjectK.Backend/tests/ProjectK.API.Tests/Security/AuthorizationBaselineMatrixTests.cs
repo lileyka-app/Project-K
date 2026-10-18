@@ -222,7 +222,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KraiController, string, SaveKraiProfileRequest>>(nameof(KraiController.SaveProfile), "RequireAdmin");
         yield return Row<Action<KraiController, string>>(nameof(KraiController.GetProfileRevisions), "RequireAdmin");
         yield return Row<Action<KraiController, string, int>>(nameof(KraiController.RestoreProfileRevision), "RequireAdmin");
-        yield return Row<Action<KraiController, string, int, int>>(nameof(KraiController.GetConcessionReport), "RequireAdmin");
+        yield return Row<Action<KraiController, string, int?, int?>>(nameof(KraiController.GetConcessionReport), "RequireAdmin");
         yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), "RequireUser");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), "RequireUser");
 

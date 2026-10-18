@@ -43,6 +43,17 @@ describe('KraiConcessionsComponent', () => {
     expect(component.unit(component.value()![0])).toBe('₴');
   });
 
+  it('does not carry a percent over as a sum when the kind changes', () => {
+    component.add();
+    component.setValue(0, 20);
+    component.setKind(0, 'amount');
+
+    expect(component.value()![0].value).toBe(100);
+
+    component.setKind(0, 'percent');
+    expect(component.value()![0].value).toBe(10);
+  });
+
   it('leaves nothing set when the last пільга is removed', () => {
     component.add();
     component.remove(0);

@@ -2,7 +2,7 @@
   <label for="concession-report-quarter">Квартал</label>
   <p-select
     inputId="concession-report-quarter"
-    [options]="quarterOptions"
+    [options]="quarterOptions()"
     optionLabel="label"
     optionValue="value"
     [ngModel]="quarter()"
