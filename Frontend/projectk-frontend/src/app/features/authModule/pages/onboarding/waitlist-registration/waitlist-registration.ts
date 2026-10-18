@@ -1,13 +1,14 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { KurinNumberRange, OnboardingService } from '../../../services/onboarding-service/onboarding.service';
+import { KraiOption, KurinNumberRange, OnboardingService } from '../../../services/onboarding-service/onboarding.service';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
 import { MessageModule } from '@openng/optimus-ui/message';
+import { SelectModule } from '@openng/optimus-ui/select';
 import { MessageService } from '@openng/optimus-ui/api';
 import { RouterLink } from '@angular/router';
 import { PhoneInputComponent } from '../../../../../shared/phone-input/phone-input';
@@ -23,6 +24,7 @@ import { PhoneInputComponent } from '../../../../../shared/phone-input/phone-inp
     ButtonModule,
     CardModule,
     MessageModule,
+    SelectModule,
     RouterLink
 ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -78,10 +80,28 @@ import { PhoneInputComponent } from '../../../../../shared/phone-input/phone-inp
               <label for="stanytsia">Станиця</label>
               <input pInputText id="stanytsia" formControlName="stanytsia" maxlength="120" autocomplete="address-level2" />
             </div>
-            <div class="flex flex-col gap-2">
-              <label for="regionOrCountry">Край</label>
-              <input pInputText id="regionOrCountry" formControlName="regionOrCountry" maxlength="120" autocomplete="country-name" />
-            </div>
+            @if (kraisUnavailable) {
+              <div class="flex flex-col gap-2">
+                <label for="regionOrCountry">Край</label>
+                <input pInputText id="regionOrCountry" formControlName="regionOrCountry" maxlength="120" autocomplete="country-name" />
+              </div>
+            } @else {
+              <div class="flex flex-col gap-2">
+                <label for="krai">Край</label>
+                <p-select
+                  inputId="krai"
+                  formControlName="kraiCode"
+                  [options]="krais"
+                  optionLabel="name"
+                  optionValue="code"
+                  [filter]="true"
+                  filterBy="name"
+                  placeholder="Оберіть край"
+                  emptyFilterMessage="Такого краю немає"
+                  appendTo="body"
+                  styleClass="w-full" />
+              </div>
+            }
           </div>
 
           <div class="flex items-center gap-2 mt-2">
@@ -151,6 +171,9 @@ export class WaitlistRegistrationComponent {
   maxDate = new Date();
   /** The server says the real range; this is its default until it answers. */
   numberRange: KurinNumberRange = { min: 1, max: 200 };
+  krais: KraiOption[] = [];
+  /** The list did not load: the applicant names the край in words, as the form used to ask. */
+  kraisUnavailable = false;
 
   // Only a Зв'язковий may apply for now: the kurin is what gets onboarded, and a person on
   // their own has nowhere to be placed. The box is required, so the button stays disabled
@@ -167,7 +190,8 @@ export class WaitlistRegistrationComponent {
       phoneNumber: ['', Validators.required],
       dateOfBirth: [null, Validators.required],
       stanytsia: ['', [Validators.required, Validators.maxLength(120)]],
-      regionOrCountry: ['', [Validators.required, Validators.maxLength(120)]],
+      kraiCode: [null as string | null, Validators.required],
+      regionOrCountry: [{ value: '', disabled: true }, [Validators.required, Validators.maxLength(120)]],
       isKurinLeaderCandidate: [false, Validators.requiredTrue],
       isPreparatoryKurin: [false],
       claimedKurinNameOrNumber: ['', this.kurinNumberValidators()]
@@ -193,6 +217,22 @@ export class WaitlistRegistrationComponent {
       },
       // The default range stands in; the server still checks the real one.
       error: () => undefined
+    });
+
+    this.onboardingService.getKrais().subscribe({
+      next: krais => {
+        this.krais = krais;
+        const krai = this.form.get('kraiCode')!;
+        // Most applicants are in the default край, so it comes picked.
+        if (!krai.value) {
+          krai.setValue(krais.find(k => k.isDefault)?.code ?? null);
+        }
+      },
+      error: () => {
+        this.kraisUnavailable = true;
+        this.form.get('kraiCode')!.disable();
+        this.form.get('regionOrCountry')!.enable();
+      }
     });
   }
 

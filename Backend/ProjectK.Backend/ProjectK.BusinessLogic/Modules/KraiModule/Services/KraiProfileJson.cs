@@ -80,6 +80,9 @@ public static partial class KraiProfileJson
     }
 
     /// <summary>What is wrong with a normalized document, or nothing.</summary>
+    /// <summary>Whether <paramref name="code"/> can name a край: 2 to 8 lowercase latin letters.</summary>
+    public static bool IsKraiCode(string code) => KraiCodePattern().IsMatch(code);
+
     public static IReadOnlyList<string> Validate(KraiProfileDocument document)
     {
         var errors = new List<string>();

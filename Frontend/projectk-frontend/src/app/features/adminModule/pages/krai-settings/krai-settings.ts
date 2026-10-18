@@ -106,6 +106,16 @@ export class KraiSettingsComponent implements OnInit {
   readonly loading = signal(false);
   readonly saving = signal(false);
 
+  readonly adding = signal(false);
+  readonly newCode = signal('');
+  readonly newName = signal('');
+  readonly newCodeValid = computed(() => /^[a-z]{2,8}$/.test(this.newCode().trim().toLowerCase()));
+  readonly name = signal('');
+  readonly renamed = computed(() => {
+    const name = this.name().trim();
+    return !!name && name !== this.editor()?.kraiName;
+  });
+
   readonly sourceOptions = computed<SourceOption[]>(() => {
     const byCode = new Map<string, SourceOption>();
     for (const badge of this.badges()) {
@@ -175,7 +185,7 @@ export class KraiSettingsComponent implements OnInit {
       badges: this.badgesCatalog.getAll(1000)
     }).subscribe({
       next: ({ krais, badges }) => {
-        this.krais.set(krais);
+        this.krais.set(byName(krais));
         this.badges.set(badges);
         const wanted = this.route.snapshot.queryParamMap.get('code');
         const first = krais.find(krai => krai.code === wanted) ?? krais[0];
@@ -209,6 +219,57 @@ export class KraiSettingsComponent implements OnInit {
       error: () => {
         this.loading.set(false);
         this.fail('Не вдалося завантажити профіль краю.');
+      }
+    });
+  }
+
+  startAdding(): void {
+    this.newCode.set('');
+    this.newName.set('');
+    this.adding.set(true);
+  }
+
+  /** Новий край читає українські вмілості; решту адмін задає тут же, у його профілі. */
+  addKrai(): void {
+    const code = this.newCode().trim().toLowerCase();
+    const name = this.newName().trim();
+    if (!this.newCodeValid() || !name) {
+      return;
+    }
+    this.saving.set(true);
+    this.profiles.create(code, name).subscribe({
+      next: krai => {
+        this.saving.set(false);
+        this.adding.set(false);
+        this.krais.update(krais => byName([...krais, krai]));
+        this.messages.add({ severity: 'success', summary: 'Збережено', detail: `Край «${krai.name}» додано.` });
+        this.select(krai.code);
+      },
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.fail(serverMessage(error) ?? 'Не вдалося додати край.');
+      }
+    });
+  }
+
+  renameKrai(): void {
+    const code = this.kraiCode();
+    const name = this.name().trim();
+    if (!code || !this.renamed()) {
+      return;
+    }
+    this.saving.set(true);
+    this.profiles.rename(code, name).subscribe({
+      next: krai => {
+        this.saving.set(false);
+        this.krais.update(krais => byName(krais.map(item => item.code === krai.code ? krai : item)));
+        this.editor.update(editor => editor ? { ...editor, kraiName: krai.name } : editor);
+        this.name.set(krai.name);
+        this.messages.add({ severity: 'success', summary: 'Збережено', detail: 'Назву краю змінено.' });
+      },
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.fail(serverMessage(error) ?? 'Не вдалося перейменувати край.');
       }
     });
   }
@@ -353,11 +414,16 @@ export class KraiSettingsComponent implements OnInit {
     this.upstream.set(editor.document.dues?.upstream ?? DuesUpstream.Stanytsia);
     this.cardFields.set(editor.document.cardFields);
     this.note.set('');
+    this.name.set(editor.kraiName);
   }
 
   private fail(detail: string): void {
     this.messages.add({ severity: 'error', summary: 'Помилка', detail });
   }
+}
+
+function byName(krais: KraiDto[]): KraiDto[] {
+  return [...krais].sort((a, b) => a.name.localeCompare(b.name, 'uk'));
 }
 
 /** The list with the saved value in it, so a value this browser does not know still shows. */

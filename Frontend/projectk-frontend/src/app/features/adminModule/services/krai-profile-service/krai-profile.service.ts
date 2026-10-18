@@ -3,12 +3,22 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
+import { KraiDto } from '../../../kurinModule/models/krai.dto';
 
-/** The admin's view of a край's profile: the stored document and its history. */
+/** The admin's view of the краї: adding and renaming one, its stored profile and its history. */
 @Injectable({ providedIn: 'root' })
 export class KraiProfileService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/krai`;
+
+  /** Adds a край; 409 when its code is taken. Without a document it reads Ukraine's вмілості. */
+  create(code: string, name: string): Observable<KraiDto> {
+    return this.http.post<KraiDto>(this.apiUrl, { code, name });
+  }
+
+  rename(kraiCode: string, name: string): Observable<KraiDto> {
+    return this.http.put<KraiDto>(`${this.apiUrl}/${kraiCode}`, { name });
+  }
 
   get(kraiCode: string): Observable<KraiProfileEditorDto> {
     return this.http.get<KraiProfileEditorDto>(`${this.apiUrl}/${kraiCode}/profile`);

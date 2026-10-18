@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Manage;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 
@@ -29,6 +30,30 @@ public class KraiController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var response = await _mediator.Send(new GetKraisQuery());
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Adds a край, such as one Plast registers later. Refused with 409 when the code is taken.
+    /// </summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(KraiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Create([FromBody] CreateKraiRequest request)
+    {
+        var response = await _mediator.Send(new CreateKraiCommand(request.Code, request.Name, request.Document));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Renames a край; its code stays.</summary>
+    [HttpPut("{kraiCode}")]
+    [ProducesResponseType(typeof(KraiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Rename(string kraiCode, [FromBody] RenameKraiRequest request)
+    {
+        var response = await _mediator.Send(new RenameKraiCommand(kraiCode, request.Name));
         return response.ToActionResult(this);
     }
 

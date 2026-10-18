@@ -19,14 +19,46 @@
         optionValue="code"
         [ngModel]="kraiCode()"
         (ngModelChange)="select($event)"
-        [disabled]="loading() || saving() || dirty()"
+        [filter]="true"
+        [disabled]="loading() || saving() || dirty() || adding()"
         appendTo="body" />
       @if (editor(); as e) {
         <span class="krai-muted">Ревізія {{ e.revision }}</span>
       }
+      @if (!adding()) {
+        <p-button label="Новий край" icon="pi pi-plus" severity="secondary" variant="text" [disabled]="saving() || dirty()" (onClick)="startAdding()" />
+      }
     </div>
     @if (dirty()) {
       <p class="krai-muted">Є незбережені зміни. Збережи або скасуй їх, щоб перейти до іншого краю.</p>
+    }
+
+    @if (adding()) {
+      <form class="krai-new" (ngSubmit)="addKrai()" data-testid="krai-new">
+        <div class="krai-field">
+          <label for="krai-new-name">Назва</label>
+          <input pInputText id="krai-new-name" name="name" type="text" maxlength="120" [ngModel]="newName()" (ngModelChange)="newName.set($event)" placeholder="Словаччина" />
+        </div>
+        <div class="krai-field">
+          <label for="krai-new-code">Код</label>
+          <input pInputText id="krai-new-code" name="code" type="text" maxlength="8" [ngModel]="newCode()" (ngModelChange)="newCode.set($event)" placeholder="sk" />
+          <small class="krai-muted">Дволітерний код країни (ISO 3166), як pl чи sk: за ним телефон пропонує країну. Змінити його потім не можна.</small>
+        </div>
+        <p class="krai-muted">Новий край бере українські вмілості, гривню й київський час. Налаштуй його профіль одразу після додавання.</p>
+        <div class="krai-actions">
+          <p-button label="Скасувати" severity="secondary" variant="text" [disabled]="saving()" (onClick)="adding.set(false)" />
+          <p-button type="submit" label="Додати край" icon="pi pi-check" [disabled]="!newCodeValid() || !newName().trim() || saving()" [loading]="saving()" />
+        </div>
+      </form>
+    } @else if (editor(); as e) {
+      <div class="krai-field krai-rename">
+        <label for="krai-name">Назва краю</label>
+        <div class="krai-actions">
+          <input pInputText id="krai-name" type="text" maxlength="120" [ngModel]="name()" (ngModelChange)="name.set($event)" [disabled]="saving()" />
+          <p-button label="Перейменувати" severity="secondary" [disabled]="!renamed() || saving()" (onClick)="renameKrai()" />
+        </div>
+        <small class="krai-muted">Код «{{ e.kraiCode }}» лишається: на нього посилаються курені й каталог.</small>
+      </div>
     }
   </section>
 

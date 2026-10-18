@@ -11,6 +11,7 @@ public class Krai
 {
     public const string Ukraine = "ua";
     public const string Czechia = "cz";
+    public const string Poland = "pl";
 
     /// <summary>A short code, the same one the catalogue marks its entries with (<c>ua</c>, <c>cz</c>).</summary>
     [Key]
@@ -23,4 +24,8 @@ public class Krai
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public ICollection<KraiProfileRevision> ProfileRevisions { get; set; } = new List<KraiProfileRevision>();
+
+    /// <summary>Codes are stored lower-case; a code from a form is read the same way, and a blank one as none.</summary>
+    public static string? NormalizeCode(string? code)
+        => string.IsNullOrWhiteSpace(code) ? null : code.Trim().ToLowerInvariant();
 }

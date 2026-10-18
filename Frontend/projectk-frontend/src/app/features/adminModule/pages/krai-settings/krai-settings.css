@@ -133,3 +133,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+.krai-new,
+.krai-rename {
+  margin: 1rem 0 0;
+}
+
+.krai-rename .krai-actions input {
+  flex: 1 1 240px;
+}
