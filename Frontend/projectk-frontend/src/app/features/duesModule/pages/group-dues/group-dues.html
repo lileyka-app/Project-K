@@ -384,17 +384,17 @@
       (save)="saveKurinRate($event)" />
 
     <p-dialog
-      header="Пільгова вкладка"
+      header="Пільги"
       [visible]="concessionDialogVisible()"
       (visibleChange)="concessionDialogVisible.set($event)"
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
       [dismissableMask]="!savingConcession()"
-      [style]="{ width: 'min(92vw, 26rem)' }">
-      @if (concessionTarget(); as target) {
+      [style]="{ width: 'min(92vw, 30rem)' }">
+      @if (concessionAccount(); as target) {
         <p class="lil-dialog-hint">
-          {{ target.fullName }}. Пільга знижує лише станичну частину; курінь і гурток платяться повністю.
+          {{ target.fullName }}. Пільга куреня бере суми «з пільгою» зі статей куреня; гурткова частина платиться повністю.
         </p>
         <div class="lil-dialog-form">
           <div class="lil-dialog-field">
@@ -413,11 +413,22 @@
             <p-toggleswitch inputId="dues-concession-on" [ngModel]="concessionOn()" (ngModelChange)="concessionOn.set($event)" />
             <label for="dues-concession-on">{{ concessionOn() ? 'Пільгова вкладка' : 'Повна вкладка' }}</label>
           </div>
+          <p-button label="Зберегти пільгу куреня" severity="secondary" size="small" [loading]="savingConcession()" (onClick)="saveConcession()" />
         </div>
+        @if (data(); as d) {
+          <app-krai-concession-grants
+            [groupKey]="groupKey"
+            [membershipKey]="target.membershipKey"
+            [grants]="target.grants ?? []"
+            [concessions]="d.kraiConcessions ?? []"
+            [fromOptions]="fromQuarterOptions()"
+            [currentQuarter]="d.currentQuarter"
+            [money]="money"
+            (changed)="load()" />
+        }
       }
       <ng-template #footer>
-        <p-button label="Скасувати" variant="text" severity="secondary" [disabled]="savingConcession()" (onClick)="concessionDialogVisible.set(false)" />
-        <p-button label="Зберегти" [loading]="savingConcession()" (onClick)="saveConcession()" />
+        <p-button label="Закрити" variant="text" severity="secondary" [disabled]="savingConcession()" (onClick)="concessionDialogVisible.set(false)" />
       </ng-template>
     </p-dialog>
   }
@@ -439,6 +450,9 @@
           }
           @if (row.account.isConcessionNow) {
             <p-tag value="пільгова" severity="info" />
+          }
+          @for (name of activeGrantNames(row.account); track name) {
+            <p-tag [value]="name" severity="info" />
           }
         </span>
       </td>

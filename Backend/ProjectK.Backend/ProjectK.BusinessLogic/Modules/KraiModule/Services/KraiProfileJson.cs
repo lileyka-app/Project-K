@@ -13,6 +13,7 @@ public static partial class KraiProfileJson
     public const int MaxLength = 64 * 1024;
 
     private const int MaxListItems = 2000;
+    private const int MaxConcessions = 50;
     private const int MaxExtraFields = 30;
     private const int MaxLabelLength = 80;
 
@@ -74,7 +75,8 @@ public static partial class KraiProfileJson
             }),
             Dues = dues is null ? null : Empty(new KraiDuesDocument
             {
-                Upstream = Text(dues.Upstream)?.ToLowerInvariant()
+                Upstream = Text(dues.Upstream)?.ToLowerInvariant(),
+                Concessions = Concessions(dues.Concessions)
             })
         };
     }
@@ -125,6 +127,11 @@ public static partial class KraiProfileJson
         if (document.Dues?.Upstream is { } upstream && !KraiDues.Upstreams.Contains(upstream))
         {
             errors.Add($"Вкладку можна передавати лише stanytsia, krai чи both, а не «{upstream}».");
+        }
+
+        if (document.Dues?.Concessions is { } concessions)
+        {
+            errors.AddRange(ConcessionErrors(concessions));
         }
 
         return errors;
@@ -198,6 +205,74 @@ public static partial class KraiProfileJson
         return list is { Count: > 0 } ? list : null;
     }
 
+    private static IReadOnlyList<KraiConcessionDocument>? Concessions(IReadOnlyList<KraiConcessionDocument>? concessions)
+    {
+        var list = concessions?
+            .Where(c => c is not null)
+            .Select(c => new KraiConcessionDocument
+            {
+                Key = c.Key?.Trim() ?? string.Empty,
+                Name = c.Name?.Trim() ?? string.Empty,
+                Kind = c.Kind?.Trim().ToLowerInvariant() ?? string.Empty,
+                Value = c.Kind?.Trim().ToLowerInvariant() == KraiDues.Exempt ? null : c.Value,
+                AppliesTo = List(c.AppliesTo?.Select(part => part?.Trim().ToLowerInvariant()))
+            })
+            .ToList();
+        return list is { Count: > 0 } ? list : null;
+    }
+
+    private static IEnumerable<string> ConcessionErrors(IReadOnlyList<KraiConcessionDocument> concessions)
+    {
+        if (concessions.Count > MaxConcessions)
+        {
+            yield return "Пільг забагато.";
+        }
+
+        foreach (var key in concessions.GroupBy(c => c.Key).Where(g => g.Count() > 1).Select(g => g.Key))
+        {
+            yield return $"Дві пільги мають однаковий ключ «{key}».";
+        }
+
+        foreach (var concession in concessions)
+        {
+            var name = string.IsNullOrEmpty(concession.Name) ? concession.Key : concession.Name;
+            if (!ConcessionKeyPattern().IsMatch(concession.Key))
+            {
+                yield return $"Ключ пільги «{name}» — латиниця, цифри й дефіс, до 40 символів.";
+            }
+
+            if (concession.Name.Length is 0 or > 80)
+            {
+                yield return $"Назва пільги «{concession.Key}» — від 1 до 80 символів.";
+            }
+
+            if (!KraiDues.ConcessionKinds.Contains(concession.Kind))
+            {
+                yield return $"Пільга «{name}» може бути лише percent, amount чи exempt, а не «{concession.Kind}».";
+            }
+            else if (concession.Kind == KraiDues.Percent && concession.Value is not (> 0 and <= 100))
+            {
+                yield return $"Знижка пільги «{name}» — від 0 до 100 відсотків.";
+            }
+            else if (concession.Kind == KraiDues.Amount && concession.Value is not > 0)
+            {
+                yield return $"Знижка пільги «{name}» має бути більшою за нуль.";
+            }
+
+            if (concession.AppliesTo is not { Count: > 0 } parts)
+            {
+                yield return $"Пільга «{name}» має знижувати хоч одну частину вкладки.";
+            }
+            else
+            {
+                foreach (var part in parts.Where(part => !KraiDues.Parts.Contains(part)))
+                {
+                    yield return $"Пільга «{name}» не знає частини вкладки «{part}».";
+                }
+            }
+        }
+    }
+
     private static T? Empty<T>(T section) where T : class
     {
         // A section with nothing set is the same as no section.
@@ -238,6 +313,9 @@ public static partial class KraiProfileJson
 
     [GeneratedRegex("^[a-z][a-zA-Z0-9]{0,39}$")]
     private static partial Regex ExtraKeyPattern();
+
+    [GeneratedRegex("^[a-z0-9][a-z0-9-]{0,39}$")]
+    private static partial Regex ConcessionKeyPattern();
 
     [GeneratedRegex("^[A-Z]{3}$")]
     private static partial Regex CurrencyPattern();

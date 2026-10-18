@@ -23,6 +23,9 @@ public sealed class MemberDuesResponse
     public DuesAmountDto? QuarterRate { get; init; }
     public bool IsConcessionNow { get; init; }
 
+    /// <summary>The край's пільги the person holds this quarter.</summary>
+    public IReadOnlyList<string> ConcessionNamesNow { get; init; } = [];
+
     public Guid? CurrentGroupKey { get; init; }
     public string? CurrentGroupName { get; init; }
 

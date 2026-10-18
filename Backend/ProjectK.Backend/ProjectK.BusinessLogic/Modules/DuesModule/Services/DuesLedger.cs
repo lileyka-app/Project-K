@@ -19,6 +19,7 @@ public sealed class DuesLedger
     private readonly IReadOnlyList<KurinDuesRate> _kurinRates;
     private readonly ILookup<Guid, GroupDuesRate> _groupRates;
     private readonly ILookup<Guid, DuesConcession> _concessions;
+    private readonly ILookup<Guid, DuesConcessionGrant> _grants;
     private readonly IReadOnlyList<DuesCharge> _charges;
     private readonly IReadOnlyList<DuesEntry> _entries;
 
@@ -27,8 +28,10 @@ public sealed class DuesLedger
         IEnumerable<GroupDuesRate> groupRates,
         IEnumerable<DuesConcession> concessions,
         IEnumerable<DuesCharge> charges,
-        IEnumerable<DuesEntry> entries)
+        IEnumerable<DuesEntry> entries,
+        IEnumerable<DuesConcessionGrant>? grants = null)
     {
+        _grants = (grants ?? []).ToLookup(g => g.MembershipKey);
         _kurinRates = kurinRates.OrderBy(r => r.FromQuarter).ToList();
         _groupRates = groupRates.OrderBy(r => r.FromQuarter).ToLookup(r => r.GroupKey);
         _concessions = concessions.OrderBy(c => c.FromQuarter).ToLookup(c => c.MembershipKey);
@@ -40,22 +43,45 @@ public sealed class DuesLedger
     public bool IsConcession(Guid membershipKey, DuesQuarter quarter) =>
         _concessions[membershipKey].LastOrDefault(c => c.FromQuarter <= quarter.Index)?.IsConcession ?? false;
 
+    /// <summary>The пільги of the край a membership holds in that quarter.</summary>
+    public IReadOnlyList<DuesConcessionGrant> GrantsIn(Guid membershipKey, DuesQuarter quarter) =>
+        _grants[membershipKey].Where(g => g.AppliesTo(quarter)).ToList();
+
     /// <summary>What one quarter costs a membership in a гурток.</summary>
-    public DuesAmount AmountFor(Guid membershipKey, Guid groupKey, DuesQuarter quarter)
+    public DuesAmount AmountFor(Guid membershipKey, Guid groupKey, DuesQuarter quarter) =>
+        Priced(membershipKey, groupKey, quarter).Amount;
+
+    /// <summary>
+    /// The quarter's price, the пільга of the край behind it, and what it would cost without the
+    /// край's пільги. The full вкладка, the kurin's пільга and each of the край's пільги the person
+    /// holds are worked out apart; the cheapest counts, and on a tie the kurin's own price stands.
+    /// </summary>
+    public DuesPrice Priced(Guid membershipKey, Guid groupKey, DuesQuarter quarter)
     {
         var kurin = _kurinRates.LastOrDefault(r => r.FromQuarter <= quarter.Index);
         var group = _groupRates[groupKey].LastOrDefault(r => r.FromQuarter <= quarter.Index);
+        var groupShare = group?.GroupShare ?? 0;
 
-        decimal stanytsia = 0, krai = 0, own = 0;
-        if (kurin is not null)
+        var full = kurin is null
+            ? new DuesAmount(0, 0, groupShare)
+            : new DuesAmount(kurin.StanytsiaFull, kurin.KurinShare, groupShare, kurin.KraiFull);
+        var price = kurin is not null && IsConcession(membershipKey, quarter)
+            ? new DuesAmount(kurin.StanytsiaReduced, kurin.KurinReduced ?? kurin.KurinShare, groupShare, kurin.KraiReduced)
+            : full;
+
+        var withoutGrants = price;
+        DuesConcessionGrant? applied = null;
+        foreach (var grant in GrantsIn(membershipKey, quarter))
         {
-            var concession = IsConcession(membershipKey, quarter);
-            stanytsia = concession ? kurin.StanytsiaReduced : kurin.StanytsiaFull;
-            krai = concession ? kurin.KraiReduced : kurin.KraiFull;
-            own = concession ? kurin.KurinReduced ?? kurin.KurinShare : kurin.KurinShare;
+            var granted = grant.Rule.Apply(full);
+            if (granted.Total < price.Total)
+            {
+                price = granted;
+                applied = grant;
+            }
         }
 
-        return new DuesAmount(stanytsia, own, group?.GroupShare ?? 0, krai);
+        return new DuesPrice(price, applied, withoutGrants);
     }
 
     /// <summary>Every account in the kurin, one per membership per гурток it was charged or paid in.</summary>
@@ -149,7 +175,8 @@ public sealed class DuesLedger
             .OrderBy(c => c.Quarter))
         {
             var quarter = DuesQuarter.FromIndex(charge.Quarter);
-            var due = AmountFor(membershipKey, groupKey, quarter);
+            var priced = Priced(membershipKey, groupKey, quarter);
+            var due = priced.Amount;
             var stanytsia = Take(ref remaining, due.Stanytsia);
             var krai = Take(ref remaining, due.Krai);
             var kurin = Take(ref remaining, due.Kurin);
@@ -158,7 +185,10 @@ public sealed class DuesLedger
                 quarter,
                 due,
                 new DuesAmount(stanytsia, kurin, group, krai),
-                IsConcession(membershipKey, quarter)));
+                IsConcession(membershipKey, quarter))
+            {
+                ConcessionName = priced.Grant?.Name
+            });
         }
 
         return new DuesAccount(membershipKey, groupKey, quarters, payments);
@@ -224,3 +254,6 @@ public sealed class DuesLedger
         return (cash, card);
     }
 }
+
+/// <summary>A quarter's price for one person, with the пільга of the край that set it, if one did.</summary>
+public sealed record DuesPrice(DuesAmount Amount, DuesConcessionGrant? Grant, DuesAmount WithoutGrants);

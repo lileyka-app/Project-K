@@ -18,6 +18,9 @@ public sealed record DuesAccountQuarter(
     DuesAmount Paid,
     bool IsConcession)
 {
+    /// <summary>The пільга of the край that set the quarter's amount; null when none of them did.</summary>
+    public string? ConcessionName { get; init; }
+
     /// <summary>Zero when paid up, negative while owed. Never positive: a surplus is the account's.</summary>
     public decimal Balance => Paid.Total - Charged.Total;
 }

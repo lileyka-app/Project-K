@@ -65,6 +65,7 @@ public class DuesCleanupHandlerTests
         var membershipKey = Guid.NewGuid();
         var charges = new Mock<IDuesChargeRepository>();
         var concessions = new Mock<IDuesConcessionRepository>();
+        var grants = new Mock<IDuesConcessionGrantRepository>();
         var entries = new Mock<IDuesEntryRepository>();
         var payment = new DuesEntry { MembershipKey = membershipKey, Amount = 50, Kind = DuesEntryKind.Contribution };
         entries
@@ -73,6 +74,7 @@ public class DuesCleanupHandlerTests
         var dues = new Mock<IDuesUnitOfWork>();
         dues.SetupGet(d => d.DuesCharges).Returns(charges.Object);
         dues.SetupGet(d => d.DuesConcessions).Returns(concessions.Object);
+        dues.SetupGet(d => d.DuesConcessionGrants).Returns(grants.Object);
         dues.SetupGet(d => d.DuesEntries).Returns(entries.Object);
 
         await new DuesCleanupEventHandler(dues.Object, new FixedTimeProvider(Now))
@@ -80,6 +82,7 @@ public class DuesCleanupHandlerTests
 
         charges.Verify(r => r.DeleteForMembershipsAsync(It.Is<IReadOnlyCollection<Guid>>(k => k.Contains(membershipKey)), It.IsAny<CancellationToken>()), Times.Once);
         concessions.Verify(r => r.DeleteForMembershipsAsync(It.Is<IReadOnlyCollection<Guid>>(k => k.Contains(membershipKey)), It.IsAny<CancellationToken>()), Times.Once);
+        grants.Verify(r => r.DeleteForMembershipsAsync(It.Is<IReadOnlyCollection<Guid>>(k => k.Contains(membershipKey)), It.IsAny<CancellationToken>()), Times.Once);
         entries.Verify(r => r.Delete(It.IsAny<DuesEntry>(), It.IsAny<CancellationToken>()), Times.Never, "money is marked, never removed");
         payment.DeletedAtUtc.Should().Be(Now);
         payment.Events.Should().ContainSingle(e => e.Action == DuesEntryTrail.Deleted && e.ActorUserKey == null);

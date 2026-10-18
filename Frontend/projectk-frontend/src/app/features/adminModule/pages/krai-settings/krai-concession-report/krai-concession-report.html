@@ -1,0 +1,60 @@
+<div class="report__picker">
+  <label for="concession-report-quarter">Квартал</label>
+  <p-select
+    inputId="concession-report-quarter"
+    [options]="quarterOptions"
+    optionLabel="label"
+    optionValue="value"
+    [ngModel]="quarter()"
+    (ngModelChange)="quarter.set($event)"
+    appendTo="body" />
+</div>
+
+@if (failed()) {
+  <p class="report__muted">Не вдалося зібрати звіт. Онови сторінку.</p>
+} @else if (report(); as r) {
+  @if (r.concessions.length) {
+    <p class="report__summary">
+      Людей із пільгою краю: {{ totalPeople() }}. Разом вкладка менша на {{ money()(totalOff()) }}.
+    </p>
+    <div class="report__table-wrap">
+      <table class="report__table" data-testid="krai-concession-report">
+        <thead>
+          <tr>
+            <th scope="col">Пільга</th>
+            <th scope="col">Людей</th>
+            <th scope="col">Станиця</th>
+            <th scope="col">Край</th>
+            <th scope="col">Курінь</th>
+            <th scope="col">Гурток</th>
+            <th scope="col">Разом</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of r.concessions; track row.key) {
+            <tr>
+              <th scope="row">
+                {{ row.name }}
+                <span class="report__kurins">
+                  @for (kurin of row.kurins; track kurin.kurinKey) {
+                    <span>{{ kurinLabel(kurin.number) }}: {{ kurin.people }}</span>
+                  }
+                </span>
+              </th>
+              <td>{{ row.people }}</td>
+              <td>{{ money()(row.reduction.stanytsia) }}</td>
+              <td>{{ money()(row.reduction.krai) }}</td>
+              <td>{{ money()(row.reduction.kurin) }}</td>
+              <td>{{ money()(row.reduction.group) }}</td>
+              <td><strong>{{ money()(row.reduction.total) }}</strong></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="report__muted">У цьому кварталі жодна пільга краю не знизила нікому вкладку.</p>
+  }
+} @else if (loading()) {
+  <p class="report__muted">Збираю звіт…</p>
+}

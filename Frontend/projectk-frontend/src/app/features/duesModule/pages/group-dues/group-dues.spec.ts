@@ -25,6 +25,7 @@ describe('GroupDuesComponent', () => {
     fullName: 'Юнак',
     standing: 'Current',
     isConcessionNow: false,
+    grants: [],
     quarters: [],
     charged: 0,
     payments: 0,
@@ -56,8 +57,8 @@ describe('GroupDuesComponent', () => {
     membershipKey: 'm-ok',
     fullName: 'Оксана Паливода',
     quarters: [
-      { quarter: q(2025, 4), charged: amount(240, 15, 45), paid: amount(240, 15, 45), balance: 0, isConcession: false },
-      { quarter: q(2026, 1), charged: amount(240, 15, 45), paid: amount(240, 15, 45), balance: 0, isConcession: false }
+      { quarter: q(2025, 4), charged: amount(240, 15, 45), paid: amount(240, 15, 45), balance: 0, isConcession: false, concessionName: null },
+      { quarter: q(2026, 1), charged: amount(240, 15, 45), paid: amount(240, 15, 45), balance: 0, isConcession: false, concessionName: null }
     ],
     charged: 600,
     payments: 600,
@@ -67,7 +68,7 @@ describe('GroupDuesComponent', () => {
   const debtor = account({
     membershipKey: 'm-debt',
     fullName: 'Тарас Борг',
-    quarters: [{ quarter: q(2026, 1), charged: amount(240, 15, 45), paid: amount(150, 0, 0), balance: -150, isConcession: false }],
+    quarters: [{ quarter: q(2026, 1), charged: amount(240, 15, 45), paid: amount(150, 0, 0), balance: -150, isConcession: false, concessionName: null }],
     charged: 300,
     payments: 150,
     balance: -150
@@ -82,6 +83,7 @@ describe('GroupDuesComponent', () => {
     currency: 'UAH',
     numberLocale: 'uk-UA',
     upstream: DuesUpstream.Stanytsia,
+    kraiConcessions: [],
     currentQuarter: q(2026, 2),
     years: [
       { startYear: 2025, label: '25–26', quarters: [q(2025, 4), q(2026, 1), q(2026, 2), q(2026, 3)] },

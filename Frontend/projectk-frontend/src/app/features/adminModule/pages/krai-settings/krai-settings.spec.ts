@@ -32,7 +32,8 @@ describe('KraiSettingsComponent', () => {
   };
 
   beforeEach(async () => {
-    profiles = jasmine.createSpyObj<KraiProfileService>('KraiProfileService', ['create', 'rename', 'get', 'save', 'revisions', 'restore']);
+    profiles = jasmine.createSpyObj<KraiProfileService>('KraiProfileService', ['create', 'rename', 'get', 'save', 'revisions', 'restore', 'concessionReport']);
+    profiles.concessionReport.and.returnValue(of({ kraiCode: 'cz', kraiName: 'Чехія', currency: 'CZK', numberLocale: 'uk-UA', quarter: { year: 2026, number: 4 }, kurinCount: 1, concessions: [] }));
     profiles.get.and.returnValue(of(czProfile));
     profiles.revisions.and.returnValue(of([
       { revision: 2, createdAtUtc: '2026-10-14T10:00:00Z', createdByName: 'Адмін', note: 'Українські вмілості' },
@@ -117,6 +118,18 @@ describe('KraiSettingsComponent', () => {
       dues: { upstream: DuesUpstream.Krai },
       cardFields: undefined
     }, null);
+  });
+
+  it('saves the край\'s пільги inside the dues section', () => {
+    profiles.save.and.returnValue(of(czProfile));
+    const concessions = [{ key: 'p-sib', name: 'Брат чи сестра', kind: 'percent' as const, value: 20, appliesTo: ['stanytsia' as const] }];
+
+    component.concessions.set(concessions);
+    expect(component.dirty()).toBeTrue();
+    component.save();
+
+    expect(profiles.save).toHaveBeenCalledWith('cz', 2, jasmine.objectContaining({ dues: jasmine.objectContaining({ concessions }) }), null);
+    expect(fixture.nativeElement.textContent).toContain('Пільги краю');
   });
 
   it('saves the card fields with the rest of the profile', () => {

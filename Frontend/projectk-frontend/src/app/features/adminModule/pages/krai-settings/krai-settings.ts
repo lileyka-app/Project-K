@@ -17,6 +17,9 @@ import { KraiProfileService } from '../../services/krai-profile-service/krai-pro
 import { KraiCardFieldsDocument, KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { KraiCardFieldsComponent, sameCardFields } from './krai-card-fields/krai-card-fields';
+import { KraiConcessionsComponent } from './krai-concessions/krai-concessions';
+import { KraiConcessionReportComponent } from './krai-concession-report/krai-concession-report';
+import { KraiConcessionDocument } from '../../../duesModule/models/concession.dto';
 import { currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../../duesModule/functions/dues-format.function';
 import { DUES_UPSTREAM_LABELS, DuesUpstream } from '../../../duesModule/models/dues.enums';
 
@@ -62,7 +65,7 @@ function sample(locale: string): string {
  */
 @Component({
   selector: 'app-krai-settings',
-  imports: [FormsModule, ButtonModule, SelectModule, MultiSelectModule, InputTextModule, ToggleSwitchModule, KraiCardFieldsComponent],
+  imports: [FormsModule, ButtonModule, SelectModule, MultiSelectModule, InputTextModule, ToggleSwitchModule, KraiCardFieldsComponent, KraiConcessionsComponent, KraiConcessionReportComponent],
   templateUrl: './krai-settings.html',
   styleUrl: './krai-settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -90,6 +93,8 @@ export class KraiSettingsComponent implements OnInit {
   readonly upstreamOptions = Object.values(DuesUpstream).map(value => ({ value, label: DUES_UPSTREAM_LABELS[value] }));
   readonly defaultNumberLocale = DEFAULT_NUMBER_LOCALE;
   readonly cardFields = signal<KraiCardFieldsDocument | undefined>(undefined);
+  readonly concessions = signal<KraiConcessionDocument[] | undefined>(undefined);
+  readonly currencyMark = computed(() => currencySymbol(this.currency() ?? DEFAULT_CURRENCY));
   readonly note = signal('');
 
   readonly defaultCurrency = DEFAULT_CURRENCY;
@@ -175,6 +180,7 @@ export class KraiSettingsComponent implements OnInit {
       || (locale?.timeZone ?? null) !== this.timeZone()
       || (locale?.numberLocale ?? null) !== this.numberLocale()
       || (editor.document.dues?.upstream ?? DuesUpstream.Stanytsia) !== this.upstream()
+      || JSON.stringify(editor.document.dues?.concessions ?? []) !== JSON.stringify(this.concessions() ?? [])
       || !sameCardFields(editor.document.cardFields, this.cardFields());
   });
 
@@ -322,12 +328,25 @@ export class KraiSettingsComponent implements OnInit {
         timeZone: this.timeZone() ?? undefined,
         numberLocale: this.numberLocale() ?? undefined
       },
-      dues: this.upstream() === DuesUpstream.Stanytsia && !editor.document.dues
+      dues: this.upstream() === DuesUpstream.Stanytsia && !this.concessions()?.length && !editor.document.dues
         ? undefined
-        : { ...editor.document.dues, upstream: this.upstream() === DuesUpstream.Stanytsia ? undefined : this.upstream() },
+        : this.duesDocument(editor.document.dues),
       cardFields: this.cardFields()
     };
     this.write(this.profiles.save(editor.kraiCode, editor.revision, document, this.note().trim() || null), 'Профіль збережено.');
+  }
+
+  /** The dues section with only what is set: an unset key stays out rather than going as null. */
+  private duesDocument(saved: KraiProfileDocument['dues']): KraiProfileDocument['dues'] {
+    const dues = { ...saved };
+    delete dues.upstream;
+    delete dues.concessions;
+    const concessions = this.concessions();
+    return {
+      ...dues,
+      ...(this.upstream() === DuesUpstream.Stanytsia ? {} : { upstream: this.upstream() }),
+      ...(concessions?.length ? { concessions } : {})
+    };
   }
 
   restore(revision: KraiProfileRevisionDto): void {
@@ -413,6 +432,7 @@ export class KraiSettingsComponent implements OnInit {
     this.numberLocale.set(editor.document.locale?.numberLocale ?? null);
     this.upstream.set(editor.document.dues?.upstream ?? DuesUpstream.Stanytsia);
     this.cardFields.set(editor.document.cardFields);
+    this.concessions.set(editor.document.dues?.concessions?.map(c => ({ ...c, appliesTo: [...c.appliesTo] })));
     this.note.set('');
     this.name.set(editor.kraiName);
   }

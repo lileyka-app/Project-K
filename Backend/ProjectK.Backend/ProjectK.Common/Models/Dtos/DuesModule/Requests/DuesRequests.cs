@@ -50,6 +50,22 @@ public sealed class SetDuesConcessionRequest
     public bool IsConcession { get; set; }
 }
 
+/// <summary>A пільга of the край given to one membership, from a quarter on, with or without an end.</summary>
+public sealed class GrantDuesConcessionRequest
+{
+    public string ConcessionKey { get; set; } = string.Empty;
+    public QuarterRequest FromQuarter { get; set; } = new();
+    public QuarterRequest? ToQuarter { get; set; }
+    public string? Reason { get; set; }
+}
+
+/// <summary>A given пільга's end and reason changed; its rule and start stay.</summary>
+public sealed class UpdateDuesConcessionGrantRequest
+{
+    public QuarterRequest? ToQuarter { get; set; }
+    public string? Reason { get; set; }
+}
+
 /// <summary>One operation of a гурток's box, new or edited.</summary>
 public sealed class UpsertDuesEntryRequest
 {

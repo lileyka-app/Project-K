@@ -800,6 +800,7 @@ describe('MemberCardComponent', () => {
       balance: -300,
       quarterRate: { stanytsia: 240, krai: 0, kurin: 15, group: 45, total: 300 },
       isConcessionNow: false,
+      concessionNamesNow: [],
       currentGroupKey: member.groupKey,
       currentGroupName: 'Соколи',
       canOpenGroupDues: false,

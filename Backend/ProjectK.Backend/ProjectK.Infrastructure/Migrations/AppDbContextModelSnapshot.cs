@@ -532,6 +532,68 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("DuesConcessions");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesConcessionGrant", b =>
+                {
+                    b.Property<Guid>("DuesConcessionGrantKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcessionKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FromQuarter")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembershipKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("Parts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("SetByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ToQuarter")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("DuesConcessionGrantKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.HasIndex("MembershipKey");
+
+                    b.ToTable("DuesConcessionGrants");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntry", b =>
                 {
                     b.Property<Guid>("DuesEntryKey")
