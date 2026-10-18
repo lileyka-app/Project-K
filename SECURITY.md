@@ -4,7 +4,7 @@
 
 **Не відкривай публічний issue для проблем безпеки.**
 
-Повідом приватно через **[Private vulnerability reporting](https://github.com/iamavasya/Project-K/security/advisories/new)**
+Повідом приватно через **[Private vulnerability reporting](https://github.com/lileyka-app/Project-K/security/advisories/new)**
 на GitHub (вкладка Security → *Report a vulnerability*). Це створює приватний advisory, який бачиш
 лише ти і мейнтейнер.
 

@@ -10,20 +10,20 @@
 
 Незалежний проєкт, не офіційний ресурс НСОУ «Пласт». Зроблено пластуном для пластунів.
 
-**[Довідка](https://docs-projectk.rostyslav-mukha.dev/)** ·
-**[Демо](https://docs-projectk.rostyslav-mukha.dev/demo/)** ·
-**[Приєднати курінь](https://projectk.rostyslav-mukha.dev/join)** ·
-**[Власний сервер](https://docs-projectk.rostyslav-mukha.dev/user/self-host/)** ·
-**[Релізи](https://github.com/iamavasya/Project-K/releases)**
+**[Довідка](https://docs.lileyka.app/)** ·
+**[Демо](https://docs.lileyka.app/demo/)** ·
+**[Приєднати курінь](https://lileyka.app/join)** ·
+**[Власний сервер](https://docs.lileyka.app/user/self-host/)** ·
+**[Релізи](https://github.com/lileyka-app/Project-K/releases)**
 
-[![Release](https://img.shields.io/github/v/release/iamavasya/Project-K)](https://github.com/iamavasya/Project-K/releases)
-[![.NET](https://github.com/iamavasya/Project-K/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/iamavasya/Project-K/actions/workflows/dotnet.yml)
-[![Angular](https://github.com/iamavasya/Project-K/actions/workflows/angular.yml/badge.svg?branch=main)](https://github.com/iamavasya/Project-K/actions/workflows/angular.yml)
+[![Release](https://img.shields.io/github/v/release/lileyka-app/Project-K)](https://github.com/lileyka-app/Project-K/releases)
+[![.NET](https://github.com/lileyka-app/Project-K/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/lileyka-app/Project-K/actions/workflows/dotnet.yml)
+[![Angular](https://github.com/lileyka-app/Project-K/actions/workflows/angular.yml/badge.svg?branch=main)](https://github.com/lileyka-app/Project-K/actions/workflows/angular.yml)
 
 ## Документація
 
-Уся документація — на сайті: [для користувачів](https://docs-projectk.rostyslav-mukha.dev/) і
-[для розробників](https://docs-projectk.rostyslav-mukha.dev/dev/) — архітектура, запуск, сутності,
+Уся документація — на сайті: [для користувачів](https://docs.lileyka.app/) і
+[для розробників](https://docs.lileyka.app/dev/) — архітектура, запуск, сутності,
 міграції, власний сервер, DevLog. Джерела лежать у `docs/`, сайт збирається з `site/`.
 
 ## Запуск для розробки
@@ -46,7 +46,7 @@
 
 ## Хочеш допомогти
 
-Є ідея чи знайшов, що виправити, — спершу відкрий [issue](https://github.com/iamavasya/Project-K/issues),
+Є ідея чи знайшов, що виправити, — спершу відкрий [issue](https://github.com/lileyka-app/Project-K/issues),
 обговоримо. Далі — pull request. Форк для цього можна, для іншого — ні (див. нижче).
 
 ## Ліцензія

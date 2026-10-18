@@ -6,7 +6,7 @@ sidebar:
 ---
 
 Історичний документ 2025 року, збережений як є. Що робиться зараз — у `todo/PLANNING.md` (локально)
-і в [релізах на GitHub](https://github.com/iamavasya/Project-K/releases).
+і в [релізах на GitHub](https://github.com/lileyka-app/Project-K/releases).
 
 ## Project K
 

@@ -8,7 +8,7 @@ import docsEditor from './src/integrations/docs-editor.mjs';
 // репозиторію і копіюється сюди скриптом `scripts/sync-docs.mjs` перед dev і build, тож одна
 // правда і для сайту, і для тих, хто читає markdown на GitHub.
 export default defineConfig({
-	site: 'https://docs-projectk.rostyslav-mukha.dev',
+	site: 'https://docs.lileyka.app',
 	integrations: [
 		// Лише під `astro dev`: сторінка /editor — джерело зліва, сторінка справа.
 		docsEditor(),
@@ -46,7 +46,7 @@ export default defineConfig({
 			// The middleware only keeps prev/next from stepping across the border between them.
 			routeMiddleware: './src/route-middleware.ts',
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/iamavasya/Project-K' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/lileyka-app/Project-K' },
 			],
 			sidebar: [
 				{

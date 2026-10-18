@@ -9,7 +9,7 @@ public sealed class CatalogOptions
 {
     public const string SectionName = "Catalog";
 
-    public string BaseUrl { get; set; } = "https://catalog.rostyslav-mukha.dev";
+    public string BaseUrl { get; set; } = "https://catalog.lileyka.app";
 
     /// <summary>Only this krai's entries (<c>?krai=</c>); empty takes the whole catalogue.</summary>
     public string? Krai { get; set; }

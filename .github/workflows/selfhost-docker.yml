@@ -21,6 +21,8 @@ permissions:
 jobs:
   docker-and-bundle:
     runs-on: ubuntu-latest
+    env:
+      GHCR_LEGACY_TOKEN: ${{ secrets.GHCR_LEGACY_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
@@ -85,8 +87,8 @@ jobs:
           secrets: |
             nuget_auth_token=${{ secrets.NUGET_AUTH_TOKEN }}
           tags: |
-            ghcr.io/iamavasya/projectk-api:${{ env.IMAGE_VERSION }}
-            ghcr.io/iamavasya/projectk-api:beta
+            ghcr.io/lileyka-app/projectk-api:${{ env.IMAGE_VERSION }}
+            ghcr.io/lileyka-app/projectk-api:beta
           labels: |
             org.opencontainers.image.title=Project-K API
             org.opencontainers.image.description=Project-K self-host ASP.NET Core API
@@ -101,14 +103,28 @@ jobs:
           file: Frontend/projectk-frontend/Dockerfile
           push: true
           tags: |
-            ghcr.io/iamavasya/projectk-web:${{ env.IMAGE_VERSION }}
-            ghcr.io/iamavasya/projectk-web:beta
+            ghcr.io/lileyka-app/projectk-web:${{ env.IMAGE_VERSION }}
+            ghcr.io/lileyka-app/projectk-web:beta
           labels: |
             org.opencontainers.image.title=Project-K Web
             org.opencontainers.image.description=Project-K self-host Angular frontend
             org.opencontainers.image.version=${{ env.RELEASE_INFO_VERSION }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      # Installs set up before the move to the org pull from ghcr.io/iamavasya. The repo's own token
+      # cannot write there, so a personal token with write:packages copies the images over.
+      - name: Mirror images to the pre-org namespace
+        if: env.GHCR_LEGACY_TOKEN != ''
+        shell: bash
+        run: |
+          echo "$GHCR_LEGACY_TOKEN" | docker login ghcr.io -u iamavasya --password-stdin
+          for image in projectk-api projectk-web; do
+            for tag in "$IMAGE_VERSION" beta; do
+              docker buildx imagetools create \
+                -t "ghcr.io/iamavasya/$image:$tag" "ghcr.io/lileyka-app/$image:$tag"
+            done
+          done
 
       - name: Build self-host bundle
         shell: bash

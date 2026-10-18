@@ -4,7 +4,7 @@
  */
 
 /** Where the web's docs point when its env.js names none (the web's environment.prod.ts). */
-const DEFAULT_DOCS_URL = 'https://docs-projectk.rostyslav-mukha.dev/';
+const DEFAULT_DOCS_URL = 'https://docs.lileyka.app/';
 
 /**
  * The docs site's root. The server's /env.js names it (`PROJECTK_DOCS_URL`) for the web and the

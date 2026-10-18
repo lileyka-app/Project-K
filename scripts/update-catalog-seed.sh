@@ -7,7 +7,7 @@
 #   bash scripts/update-catalog-seed.sh https://catalog.example.dev
 set -euo pipefail
 
-base_url="${1:-https://catalog.rostyslav-mukha.dev}"
+base_url="${1:-https://catalog.lileyka.app}"
 target="$(cd "$(dirname "$0")/.." && pwd)/Backend/ProjectK.Backend/ProjectK.Infrastructure/Services/Catalog/Seed/catalog.json"
 temp="$(mktemp)"
 trap 'rm -f "$temp"' EXIT

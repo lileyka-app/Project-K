@@ -4,7 +4,7 @@
 #
 #   pwsh scripts/update-catalog-seed.ps1
 #   pwsh scripts/update-catalog-seed.ps1 -BaseUrl https://catalog.example.dev
-param([string]$BaseUrl = "https://catalog.rostyslav-mukha.dev")
+param([string]$BaseUrl = "https://catalog.lileyka.app")
 $ErrorActionPreference = "Stop"
 
 $target = Join-Path $PSScriptRoot "../Backend/ProjectK.Backend/ProjectK.Infrastructure/Services/Catalog/Seed/catalog.json"
