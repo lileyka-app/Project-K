@@ -1,4 +1,5 @@
 import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
+import type { DuesConcessionGrantDto, KraiConcessionDto } from './concession.dto';
 
 export interface QuarterDto {
   year: number;
@@ -52,6 +53,8 @@ export interface DuesAccountQuarterDto {
   paid: DuesAmountDto;
   balance: number;
   isConcession: boolean;
+  /** The пільга of the край that set this quarter's amount, if one did. */
+  concessionName: string | null;
 }
 
 export type DuesAccountStanding = 'Current' | 'Moved' | 'Left';
@@ -62,6 +65,8 @@ export interface DuesAccountDto {
   fullName: string;
   standing: DuesAccountStanding;
   isConcessionNow: boolean;
+  /** The пільги of the край given to the person, newest first. */
+  grants: DuesConcessionGrantDto[];
   quarters: DuesAccountQuarterDto[];
   charged: number;
   payments: number;
@@ -124,6 +129,8 @@ export interface GroupDuesDto {
   numberLocale: string;
   /** Where the край's kurins hand the вкладка up. */
   upstream: DuesUpstream;
+  /** The пільги of the край the гурток may give. */
+  kraiConcessions: KraiConcessionDto[];
   groupName: string;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
@@ -244,6 +251,8 @@ export interface MemberDuesDto {
   balance: number;
   quarterRate: DuesAmountDto | null;
   isConcessionNow: boolean;
+  /** The край's пільги the person holds this quarter. */
+  concessionNamesNow: string[];
   currentGroupKey: string | null;
   currentGroupName: string | null;
   canOpenGroupDues: boolean;

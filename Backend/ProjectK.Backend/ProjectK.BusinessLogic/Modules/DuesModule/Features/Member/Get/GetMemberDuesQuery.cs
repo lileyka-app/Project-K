@@ -106,6 +106,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
             Balance = accounts.Sum(a => a.Balance),
             QuarterRate = rate is null ? null : Amount(rate),
             IsConcessionNow = standing is not null && ledger.IsConcession(standing.MembershipKey, current),
+            ConcessionNamesNow = standing is null ? [] : ledger.GrantsIn(standing.MembershipKey, current).Select(g => g.Name).ToList(),
             CurrentGroupKey = currentGroup,
             CurrentGroupName = currentGroup is { } ck ? groupNames.GetValueOrDefault(ck) : null,
             CanOpenGroupDues = canOpenGroup,

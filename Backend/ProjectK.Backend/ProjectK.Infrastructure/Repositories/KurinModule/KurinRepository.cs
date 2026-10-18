@@ -46,6 +46,16 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
         return await Context.Kurins.AnyAsync(k => k.KraiCode == kraiCode && k.Number == number, token);
     }
 
+    public async Task<IReadOnlyList<Kurin>> GetInKraiAsync(string kraiCode, CancellationToken token = default)
+    {
+        return await Context.Kurins
+            .AsNoTracking()
+            .Where(k => k.KraiCode == kraiCode)
+            .OrderBy(k => k.Number == null)
+            .ThenBy(k => k.Number)
+            .ToListAsync(token);
+    }
+
     public override void Update(Kurin kurin, CancellationToken token = default)
     {
         Context.Kurins.Update(kurin);

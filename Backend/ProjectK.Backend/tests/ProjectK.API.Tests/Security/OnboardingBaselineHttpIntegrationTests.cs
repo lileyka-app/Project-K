@@ -25,11 +25,13 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
@@ -60,6 +62,57 @@ public class OnboardingBaselineHttpIntegrationTests
         var response = await host.Client.PostAsync("/api/auth/onboarding/waitlist", content);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task KraiNames_ShouldBeReadableAnonymously_ForTheJoinForm()
+    {
+        await using var host = await OnboardingBaselineTestHost.StartAsync();
+
+        var response = await host.Client.GetAsync("/api/auth/onboarding/krais");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"code\":\"pl\"", body);
+        Assert.Contains("\"isDefault\":true", body);
+        // The public list says nothing about the kurins in each край.
+        Assert.DoesNotContain("kurinCount", body);
+    }
+
+    [Theory]
+    [InlineData("pl", HttpStatusCode.Created)]
+    [InlineData("zz", HttpStatusCode.BadRequest)]
+    public async Task WaitlistRegistration_ShouldCheckTheKraiExists(string kraiCode, HttpStatusCode expected)
+    {
+        await using var host = await OnboardingBaselineTestHost.StartAsync();
+        var payload = JsonSerializer.Serialize(new
+        {
+            firstName = "Olena",
+            lastName = "Nowak",
+            email = "olena.nowak@example.com",
+            phoneNumber = "+38 (099) 111-22-44",
+            dateOfBirth = "1996-03-02",
+            stanytsia = "Warszawa",
+            kraiCode,
+            isKurinLeaderCandidate = true,
+            claimedKurinNameOrNumber = "12"
+        });
+
+        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+        var response = await host.Client.PostAsync("/api/auth/onboarding/waitlist", content);
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminApproveWaitlist_ShouldAcceptAKraiInTheBody()
+    {
+        await using var host = await OnboardingBaselineTestHost.StartAsync("Admin");
+
+        using var content = new StringContent("""{"kraiCode":"pl"}""", Encoding.UTF8, "application/json");
+        var response = await host.Client.PostAsync($"/api/auth/onboarding/waitlist/{Guid.NewGuid():D}/approve", content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -212,6 +265,16 @@ public class OnboardingBaselineHttpIntegrationTests
             mockUnitOfWork.Setup(u => u.Memberships).Returns(new Mock<IMembershipRepository>().Object);
             mockUnitOfWork.Setup(u => u.Kurins).Returns(mockKurinRepo.Object);
             mockUnitOfWork.Setup(u => u.Groups).Returns(mockGroupRepo.Object);
+
+            var mockKraiRepo = new Mock<IKraiRepository>();
+            mockKraiRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Krai>
+            {
+                new() { Code = Krai.Poland, Name = "Польща" },
+                new() { Code = Krai.Ukraine, Name = "Україна" }
+            });
+            mockKraiRepo.Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string code, CancellationToken _) => code is Krai.Poland or Krai.Ukraine);
+            mockUnitOfWork.Setup(u => u.Krais).Returns(mockKraiRepo.Object);
 
             var mockEmailService = new Mock<IEmailService>();
             var mockUserManager = MockUserManager<AppUser>();

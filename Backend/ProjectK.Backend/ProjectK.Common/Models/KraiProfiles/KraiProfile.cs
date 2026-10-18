@@ -1,3 +1,5 @@
+using ProjectK.Common.Models.Dues;
+
 namespace ProjectK.Common.Models.KraiProfiles;
 
 /// <summary>
@@ -23,6 +25,31 @@ public sealed record KraiDuesDocument
     /// <see cref="KraiDues.Krai"/> or <see cref="KraiDues.Both"/>.
     /// </summary>
     public string? Upstream { get; init; }
+
+    /// <summary>The край's own пільги and знижки, which a гурток gives a person on top of the kurin's пільга.</summary>
+    public IReadOnlyList<KraiConcessionDocument>? Concessions { get; init; }
+}
+
+/// <summary>
+/// One пільга of the край, such as «Брат чи сестра в курені» −20 %. A person given it pays the
+/// full вкладка changed by this rule; the край's rules are copied onto each grant, so a later edit
+/// here changes only what is granted after it.
+/// </summary>
+public sealed record KraiConcessionDocument
+{
+    /// <summary>Stays the same when the name changes: the grants point at it.</summary>
+    public string Key { get; init; } = string.Empty;
+
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary><see cref="KraiDues.Percent"/>, <see cref="KraiDues.Amount"/> or <see cref="KraiDues.Exempt"/>.</summary>
+    public string Kind { get; init; } = KraiDues.Percent;
+
+    /// <summary>The percent taken off, or the sum taken off per quarter. Unused for an exemption.</summary>
+    public decimal? Value { get; init; }
+
+    /// <summary>Which parts of the вкладка it lowers: <see cref="KraiDues.Parts"/>.</summary>
+    public IReadOnlyList<string>? AppliesTo { get; init; }
 }
 
 public static class KraiDues
@@ -37,6 +64,19 @@ public static class KraiDues
     public const string Both = "both";
 
     public static readonly IReadOnlyList<string> Upstreams = [Stanytsia, Krai, Both];
+
+    public const string Percent = "percent";
+    public const string Amount = "amount";
+    public const string Exempt = "exempt";
+
+    public static readonly IReadOnlyList<string> ConcessionKinds = [Percent, Amount, Exempt];
+
+    public const string PartStanytsia = "stanytsia";
+    public const string PartKrai = "krai";
+    public const string PartKurin = "kurin";
+    public const string PartGroup = "group";
+
+    public static readonly IReadOnlyList<string> Parts = [PartStanytsia, PartKrai, PartKurin, PartGroup];
 }
 
 public sealed record KraiCatalogDocument
@@ -147,6 +187,9 @@ public sealed record KraiDuesSettings(string Upstream)
 
     public bool PaysStanytsia => Upstream != KraiDues.Krai;
     public bool PaysKrai => Upstream != KraiDues.Stanytsia;
+
+    /// <summary>The край's пільги a гурток may give, with valid rules only.</summary>
+    public IReadOnlyList<DuesConcessionRule> Concessions { get; init; } = [];
 }
 
 public sealed record KraiCatalogSettings(

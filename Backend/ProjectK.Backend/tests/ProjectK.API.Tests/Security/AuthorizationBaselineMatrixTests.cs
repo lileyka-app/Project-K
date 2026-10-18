@@ -137,6 +137,9 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupDuesController, Guid>>(nameof(GroupDuesController.Get), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, SetGroupDuesRateRequest>>(nameof(GroupDuesController.SetRate), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesConcessionRequest>>(nameof(GroupDuesController.SetConcession), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, GrantDuesConcessionRequest>>(nameof(GroupDuesController.GrantConcession), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid, UpdateDuesConcessionGrantRequest>>(nameof(GroupDuesController.UpdateConcessionGrant), "RequireUser");
+        yield return Row<Action<GroupDuesController, Guid, Guid>>(nameof(GroupDuesController.DeleteConcessionGrant), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, UpsertDuesEntryRequest>>(nameof(GroupDuesController.CreateEntry), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(GroupDuesController.UpdateEntry), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, Guid>>(nameof(GroupDuesController.DeleteEntry), "RequireUser");
@@ -213,10 +216,13 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
 
         yield return Row<Action<KraiController>>(nameof(KraiController.GetAll), "RequireAdmin");
+        yield return Row<Action<KraiController, CreateKraiRequest>>(nameof(KraiController.Create), "RequireAdmin");
+        yield return Row<Action<KraiController, string, RenameKraiRequest>>(nameof(KraiController.Rename), "RequireAdmin");
         yield return Row<Action<KraiController, string>>(nameof(KraiController.GetProfile), "RequireAdmin");
         yield return Row<Action<KraiController, string, SaveKraiProfileRequest>>(nameof(KraiController.SaveProfile), "RequireAdmin");
         yield return Row<Action<KraiController, string>>(nameof(KraiController.GetProfileRevisions), "RequireAdmin");
         yield return Row<Action<KraiController, string, int>>(nameof(KraiController.RestoreProfileRevision), "RequireAdmin");
+        yield return Row<Action<KraiController, string, int?, int?>>(nameof(KraiController.GetConcessionReport), "RequireAdmin");
         yield return Row<Action<KurinController, Guid, UpdateKurinRequest>>(nameof(KurinController.Upsert), "RequireUser");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.Delete), "RequireUser");
 
@@ -335,6 +341,8 @@ public class AuthorizationBaselineMatrixTests
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResetPassword));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.SubmitWaitlistRegistration));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.GetKurinNumberRange));
+        // Codes and names only, for the join form; the admin list with kurin counts stays behind RequireAdmin.
+        yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.GetKraiNames));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ValidateInvitationToken));
         yield return AnonymousEndpoint<SetupController>(nameof(SetupController.GetStatus));
         yield return AnonymousEndpoint<SetupController>(nameof(SetupController.Initialize));

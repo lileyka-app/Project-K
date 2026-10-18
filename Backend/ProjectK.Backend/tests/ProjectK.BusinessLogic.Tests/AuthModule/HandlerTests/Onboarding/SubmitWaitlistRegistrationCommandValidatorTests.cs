@@ -1,7 +1,11 @@
 using System;
 using FluentValidation.TestHelper;
 using Microsoft.Extensions.Options;
+using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.Common.Entities.KraiModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Settings;
 using Xunit;
 
@@ -9,7 +13,7 @@ namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 
 public class SubmitWaitlistRegistrationCommandValidatorTests
 {
-    private readonly SubmitWaitlistRegistrationCommandValidator _validator = new(Options.Create(new KurinNumberOptions()));
+    private readonly SubmitWaitlistRegistrationCommandValidator _validator = new(Options.Create(new KurinNumberOptions()), UnitOfWorkKnowingPoland());
 
     [Fact]
     public void Validate_ShouldPass_ForValidCommand()
@@ -42,6 +46,20 @@ public class SubmitWaitlistRegistrationCommandValidatorTests
     {
         var result = _validator.TestValidate(CreateCommand(regionOrCountry: region));
         result.ShouldHaveValidationErrorFor(x => x.RegionOrCountry).WithErrorMessage("Region is required.");
+    }
+
+    [Fact]
+    public async Task Validate_ShouldPass_WhenAKnownKraiStandsInForTheRegion()
+    {
+        var result = await _validator.TestValidateAsync(CreateCommand(regionOrCountry: null, kraiCode: " PL "));
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public async Task Validate_ShouldFail_WhenTheKraiIsUnknown()
+    {
+        var result = await _validator.TestValidateAsync(CreateCommand(kraiCode: "zz"));
+        result.ShouldHaveValidationErrorFor(x => x.KraiCode).WithErrorCode("KraiNotFound");
     }
 
     [Fact]
@@ -106,7 +124,8 @@ public class SubmitWaitlistRegistrationCommandValidatorTests
         string? regionOrCountry = "Ukraine",
         bool isKurinLeaderCandidate = true,
         string? claimedKurinNumber = "97",
-        bool isPreparatoryKurin = false)
+        bool isPreparatoryKurin = false,
+        string? kraiCode = null)
         => new(
             "Ihor",
             "Kovalenko",
@@ -117,5 +136,16 @@ public class SubmitWaitlistRegistrationCommandValidatorTests
             regionOrCountry,
             isKurinLeaderCandidate,
             claimedKurinNumber,
-            isPreparatoryKurin);
+            isPreparatoryKurin,
+            kraiCode);
+
+    private static IUnitOfWork UnitOfWorkKnowingPoland()
+    {
+        var krais = new Mock<IKraiRepository>();
+        krais.Setup(x => x.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string code, CancellationToken _) => code == Krai.Poland);
+        var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(x => x.Krais).Returns(krais.Object);
+        return unitOfWork.Object;
+    }
 }

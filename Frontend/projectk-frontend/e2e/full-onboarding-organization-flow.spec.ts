@@ -41,7 +41,7 @@ test.describe('Full onboarding organization workflow', () => {
       await page.locator('#lastName').fill('Leader');
       await page.locator('#email').fill(managerEmail);
       await page.locator('#stanytsia').fill('Flow Stanytsia');
-      await page.locator('#regionOrCountry').fill('Flow Region');
+      await expect(page.locator('#krai')).toHaveText('Україна');
       await fillPhone(page.locator('input#phone'), '501112233');
 
       const dateOfBirth = page.locator('#dob input');

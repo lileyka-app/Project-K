@@ -51,6 +51,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<KurinDuesRate> KurinDuesRates { get; set; }
     public DbSet<GroupDuesRate> GroupDuesRates { get; set; }
     public DbSet<DuesConcession> DuesConcessions { get; set; }
+    public DbSet<DuesConcessionGrant> DuesConcessionGrants { get; set; }
     public DbSet<DuesCharge> DuesCharges { get; set; }
     public DbSet<DuesEntry> DuesEntries { get; set; }
     public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
@@ -101,15 +102,10 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     {
         base.OnModelCreating(builder);
 
-        // The two краї every instance starts with. Their first profile revision is empty: a
-        // section a profile leaves out takes its value from code, which is how Lilejka works today.
-        var seededAt = new DateTime(2026, 10, 14, 0, 0, 0, DateTimeKind.Utc);
         builder.Entity<Krai>(entity =>
         {
             entity.HasKey(e => e.Code);
-            entity.HasData(
-                new Krai { Code = Krai.Ukraine, Name = "Україна", CreatedAtUtc = seededAt },
-                new Krai { Code = Krai.Czechia, Name = "Чехія", CreatedAtUtc = seededAt });
+            entity.HasData(KraiSeed.All.Select(seed => new Krai { Code = seed.Code, Name = seed.Name, CreatedAtUtc = seed.SeededAtUtc }));
         });
 
         builder.Entity<KraiProfileRevision>(entity =>
@@ -122,27 +118,16 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany(k => k.ProfileRevisions)
                   .HasForeignKey(e => e.KraiCode)
                   .OnDelete(DeleteBehavior.Cascade);
-            entity.HasData(
-                new KraiProfileRevision
-                {
-                    KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a01"),
-                    KraiCode = Krai.Ukraine,
-                    Revision = 1,
-                    SchemaVersion = 1,
-                    Json = "{}",
-                    CreatedAtUtc = seededAt,
-                    Note = "Початковий профіль"
-                },
-                new KraiProfileRevision
-                {
-                    KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a02"),
-                    KraiCode = Krai.Czechia,
-                    Revision = 1,
-                    SchemaVersion = 1,
-                    Json = "{}",
-                    CreatedAtUtc = seededAt,
-                    Note = "Початковий профіль"
-                });
+            entity.HasData(KraiSeed.All.Select(seed => new KraiProfileRevision
+            {
+                KraiProfileRevisionKey = seed.RevisionKey,
+                KraiCode = seed.Code,
+                Revision = 1,
+                SchemaVersion = 1,
+                Json = seed.Profile,
+                CreatedAtUtc = seed.SeededAtUtc,
+                Note = "Початковий профіль"
+            }));
         });
 
         builder.Entity<Kurin>(entity =>
@@ -272,6 +257,19 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasKey(e => e.DuesConcessionKey);
             entity.HasIndex(e => new { e.MembershipKey, e.FromQuarter }).IsUnique();
             entity.HasIndex(e => e.KurinKey);
+        });
+
+        builder.Entity<DuesConcessionGrant>(entity =>
+        {
+            entity.HasKey(e => e.DuesConcessionGrantKey);
+            entity.HasIndex(e => e.KurinKey);
+            entity.HasIndex(e => e.MembershipKey);
+            entity.Property(e => e.ConcessionKey).HasMaxLength(40);
+            entity.Property(e => e.Name).HasMaxLength(80);
+            entity.Property(e => e.Kind).HasMaxLength(16);
+            entity.Property(e => e.Value).HasPrecision(18, 2);
+            entity.Property(e => e.Parts).HasConversion<int>();
+            entity.Property(e => e.Reason).HasMaxLength(500);
         });
 
         builder.Entity<DuesCharge>(entity =>
@@ -699,6 +697,12 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasMaxLength(120);
             entity.Property(e => e.RegionOrCountry)
                 .HasMaxLength(120);
+            entity.Property(e => e.KraiCode)
+                .HasMaxLength(8);
+            entity.HasOne<Krai>()
+                  .WithMany()
+                  .HasForeignKey(e => e.KraiCode)
+                  .OnDelete(DeleteBehavior.Restrict);
             entity.Property(e => e.VerificationStatus)
                 .HasConversion<string>();
             entity.Property(e => e.Source)

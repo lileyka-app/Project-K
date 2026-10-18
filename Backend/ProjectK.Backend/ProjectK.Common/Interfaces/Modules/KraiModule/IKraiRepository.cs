@@ -10,6 +10,11 @@ public interface IKraiRepository
 
     Task<Krai?> GetAsync(string code, CancellationToken token = default);
 
+    /// <summary>The край tracked, so a change to it is saved.</summary>
+    Task<Krai?> GetForUpdateAsync(string code, CancellationToken token = default);
+
+    void Add(Krai krai);
+
     /// <summary>The profile revision in force: the latest one saved for the край.</summary>
     Task<KraiProfileRevision?> GetLatestProfileRevisionAsync(string code, CancellationToken token = default);
 
