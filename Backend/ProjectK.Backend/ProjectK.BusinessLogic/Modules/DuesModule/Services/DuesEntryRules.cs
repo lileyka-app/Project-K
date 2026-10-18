@@ -14,7 +14,7 @@ public static class DuesEntryRules
     public static readonly IReadOnlySet<DuesEntryKind> PersonalKinds =
         new HashSet<DuesEntryKind> { DuesEntryKind.Contribution, DuesEntryKind.Refund, DuesEntryKind.Correction };
 
-    /// <summary>Kinds a гурток's box may hold. Handing to the станиця is the kurin's business.</summary>
+    /// <summary>Kinds a гурток's box may hold. Handing to the станиця or the край is the kurin's business.</summary>
     public static readonly IReadOnlySet<DuesEntryKind> GroupKinds = new HashSet<DuesEntryKind>
     {
         DuesEntryKind.Contribution, DuesEntryKind.Refund, DuesEntryKind.Correction,
@@ -27,7 +27,8 @@ public static class DuesEntryRules
     /// </summary>
     public static readonly IReadOnlySet<DuesEntryKind> KurinKinds = new HashSet<DuesEntryKind>
     {
-        DuesEntryKind.Expense, DuesEntryKind.OtherIncome, DuesEntryKind.Exchange, DuesEntryKind.TransferToStanytsia
+        DuesEntryKind.Expense, DuesEntryKind.OtherIncome, DuesEntryKind.Exchange, DuesEntryKind.TransferToStanytsia,
+        DuesEntryKind.TransferToKrai
     };
 
     public static void Apply(AbstractValidator<UpsertDuesEntryRequest> validator, TimeProvider time, IReadOnlySet<DuesEntryKind> allowedKinds)

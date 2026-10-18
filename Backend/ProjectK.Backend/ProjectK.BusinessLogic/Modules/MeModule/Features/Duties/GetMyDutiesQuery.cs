@@ -71,11 +71,9 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
 
             var rights = new DutyRights(context.Roles, context.LedGroupKeys);
             var kurin = MeKurins.Ref(context.Membership, _currentUser.KurinKey);
-            var groupNames = (await _unitOfWork.Groups.GetAllAsync(context.Membership.KurinKey, cancellationToken))
-                .ToDictionary(g => g.GroupKey, g => g.Name);
 
             await AddBadgesAsync(duties, context, rights, kurin, cancellationToken);
-            await AddDuesAsync(duties, context, rights, kurin, groupNames, cancellationToken);
+            await AddDuesAsync(duties, context, rights, kurin, cancellationToken);
             await AddAttendanceAsync(duties, context, rights, kurin, cancellationToken);
         }
 
@@ -106,8 +104,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
     /// each box — a гурток's, or the kurin's own — that nobody has verified.
     /// </summary>
     private async Task AddDuesAsync(
-        List<MyDutyDto> duties, MeKurinContext context, DutyRights rights, MyKurinRefDto kurin,
-        IReadOnlyDictionary<Guid, string> groupNames, CancellationToken cancellationToken)
+        List<MyDutyDto> duties, MeKurinContext context, DutyRights rights, MyKurinRefDto kurin, CancellationToken cancellationToken)
     {
         var keepsKurinBox = rights.WholeKurin(ResourceType.KurinDues, ResourceAction.Update);
         if (!keepsKurinBox && !rights.ForAnyGroup(ResourceType.GroupDues, ResourceAction.Update))
@@ -132,19 +129,28 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
             }
         }
 
-        foreach (var group in entries.Where(e => e.GroupKey.HasValue && !e.IsVerified).GroupBy(e => e.GroupKey!.Value))
+        var unverified = entries
+            .Where(e => e.GroupKey.HasValue && !e.IsVerified)
+            .GroupBy(e => e.GroupKey!.Value)
+            .Where(g => rights.ForGroup(ResourceType.GroupDues, ResourceAction.Update, g.Key))
+            .ToList();
+        if (unverified.Count == 0)
         {
-            if (rights.ForGroup(ResourceType.GroupDues, ResourceAction.Update, group.Key))
+            return;
+        }
+
+        var groupNames = (await _unitOfWork.Groups.GetAllAsync(context.Membership.KurinKey, cancellationToken))
+            .ToDictionary(g => g.GroupKey, g => g.Name);
+        foreach (var group in unverified)
+        {
+            duties.Add(new MyDutyDto
             {
-                duties.Add(new MyDutyDto
-                {
-                    Kind = MyDutyKind.EntriesToVerify,
-                    Kurin = kurin,
-                    Count = group.Count(),
-                    GroupKey = group.Key,
-                    GroupName = groupNames.GetValueOrDefault(group.Key, "—")
-                });
-            }
+                Kind = MyDutyKind.EntriesToVerify,
+                Kurin = kurin,
+                Count = group.Count(),
+                GroupKey = group.Key,
+                GroupName = groupNames.GetValueOrDefault(group.Key, "—")
+            });
         }
     }
 
@@ -161,7 +167,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
 
         var now = _time.GetUtcNow().UtcDateTime;
         var from = now.AddDays(-AttendanceWindowDays);
-        var book = await _books.OpenAsync(context.Membership.KurinKey, cancellationToken);
+        var book = await _books.OpenAttendanceAsync(context.Membership.KurinKey, cancellationToken);
         var zone = await _profiles.ForKurinAsync(context.Membership.KurinKey, cancellationToken);
         var marked = book.Attendances
             .Where(a => a.RemovedAtUtc is null)

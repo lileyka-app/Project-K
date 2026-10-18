@@ -7,6 +7,7 @@ function dues(balance: number, kurinNumber = 1): MyDuesDto {
     kurin: { kurinKey: `k${kurinNumber}`, kurinNumber, namedAfter: null, isCurrent: kurinNumber === 1 },
     groupName: 'Соколи',
     currency: 'UAH',
+    numberLocale: 'uk-UA',
     quarterYear: 2026,
     quarterNumber: 4,
     balance,

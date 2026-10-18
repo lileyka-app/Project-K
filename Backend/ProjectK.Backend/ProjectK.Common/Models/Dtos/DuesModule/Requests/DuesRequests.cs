@@ -16,13 +16,31 @@ public sealed class SetGroupDuesRateRequest
     public decimal GroupShare { get; set; }
 }
 
-/// <summary>The станиця and kurin parts of the вкладка, from a quarter on, for the whole kurin.</summary>
+/// <summary>
+/// The kurin's статті of the вкладка, from a quarter on, for the whole kurin.
+/// <para>
+/// A client that does not know статті yet leaves <see cref="Articles"/> out and sends the three
+/// amounts instead; they become a «Станиця» and a «Курінь» стаття.
+/// </para>
+/// </summary>
 public sealed class SetKurinDuesRateRequest
 {
     public QuarterRequest FromQuarter { get; set; } = new();
+    public List<DuesArticleRequest>? Articles { get; set; }
     public decimal StanytsiaFull { get; set; }
     public decimal StanytsiaReduced { get; set; }
     public decimal KurinShare { get; set; }
+}
+
+/// <summary>One стаття of the вкладка: its name, where the money goes, and what it costs.</summary>
+public sealed class DuesArticleRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public DuesRecipient Recipient { get; set; }
+    public decimal Amount { get; set; }
+
+    /// <summary>With a пільга. Left out, it is the full amount.</summary>
+    public decimal? ReducedAmount { get; set; }
 }
 
 /// <summary>A пільга switched on or off for one membership, from a quarter on.</summary>

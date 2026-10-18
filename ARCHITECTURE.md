@@ -188,7 +188,9 @@ Permission                           напр. Group:Manage:KurinWide
 Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог
 (`MemberWarningExpiryBackgroundService`), прибирання осиротілих фото
 (`OrphanPhotoCleanupService`), архів задач — зроблені в архів і давні архівні геть, за строками
-кожного куреня (`AgendaArchiveBackgroundService`).
+кожного куреня (`AgendaArchiveBackgroundService`), прогрів після старту — AutoMapper, MediatR і
+запити дашборда «Я» з порожнім ключем, щоб першу людину після деплою не чекали JIT і компіляція
+запитів EF (`StartupWarmUpService`, `Startup:WarmUp`; локально й під тестами вимкнений).
 
 ---
 

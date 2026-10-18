@@ -11,6 +11,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 using Xunit;
 
@@ -26,6 +27,7 @@ public class KurinDuesHandlerTests
     private readonly List<DuesEntry> _entries = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
     private readonly Mock<ICurrentUserContext> _user = new();
+    private string _upstream = KraiDues.Stanytsia;
 
     public KurinDuesHandlerTests()
     {
@@ -45,7 +47,7 @@ public class KurinDuesHandlerTests
     {
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(Kurin);
-        return new DuesEntryWriter(_dues.Object, new Mock<IMembershipDirectory>().Object, members.Object);
+        return new DuesEntryWriter(_dues.Object, new Mock<IMembershipDirectory>().Object, members.Object, KraiProfiles.Paying(Kurin, _upstream));
     }
 
     private DuesEntry Transfer(decimal amount)
@@ -123,6 +125,24 @@ public class KurinDuesHandlerTests
         entry.KurinKey.Should().Be(Kurin);
         delete.Type.Should().Be(ResultType.Conflict);
         entry.Events.Select(e => e.Action).Should().Equal(DuesEntryTrail.Created, DuesEntryTrail.Verified);
+    }
+
+    [Theory]
+    [InlineData(KraiDues.Stanytsia, DuesEntryKind.TransferToKrai, false)]
+    [InlineData(KraiDues.Krai, DuesEntryKind.TransferToStanytsia, false)]
+    [InlineData(KraiDues.Krai, DuesEntryKind.TransferToKrai, true)]
+    [InlineData(KraiDues.Both, DuesEntryKind.TransferToStanytsia, true)]
+    [InlineData(KraiDues.Both, DuesEntryKind.TransferToKrai, true)]
+    public async Task TheKurin_HandsMoneyOnOnlyTheWayItsKraiTakesIt(string upstream, DuesEntryKind kind, bool taken)
+    {
+        _upstream = upstream;
+        var request = new UpsertDuesEntryRequest { Kind = kind, Method = DuesPaymentMethod.Card, Amount = 240, OccurredOn = new DateOnly(2026, 10, 5) };
+
+        var result = await new CreateKurinDuesEntryCommandHandler(Access(), Writer(), _dues.Object, _user.Object, _time)
+            .Handle(new CreateKurinDuesEntryCommand(Kurin, request), CancellationToken.None);
+
+        result.Type.Should().Be(taken ? ResultType.Created : ResultType.BadRequest);
+        _entries.Should().HaveCount(taken ? 1 : 0);
     }
 
     [Fact]

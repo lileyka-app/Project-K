@@ -45,8 +45,8 @@ chmod +x ./scripts/*.sh
 
 Образи публікуються в GitHub Container Registry:
 
-- `ghcr.io/iamavasya/projectk-api:<версія>`
-- `ghcr.io/iamavasya/projectk-web:<версія>`
+- `ghcr.io/lileyka-app/projectk-api:<версія>`
+- `ghcr.io/lileyka-app/projectk-web:<версія>`
 
 Найпростіший шлях — bundle з GitHub Releases: `projectk-<версія>-docker-selfhost.zip` або `.tar.gz`.
 Всередині `docker-compose.yml`, `.env.example` і ця документація. Бінарників там немає і нічого не
@@ -190,10 +190,23 @@ PROJECTK_EMAIL_REPLY_TO=hello@твій-домен.org
 
 «Повідомити про проблему» в сайдбарі застосунку відкриває issue в GitHub. Для цього в `.env`
 потрібен `PROJECTK_FEEDBACK_GITHUB_TOKEN` — fine-grained токен з правом «Issues: write» на
-репозиторій із `PROJECTK_FEEDBACK_GITHUB_REPOSITORY` (типово `iamavasya/Project-K`, тобто
+репозиторій із `PROJECTK_FEEDBACK_GITHUB_REPOSITORY` (типово `lileyka-app/Project-K`, тобто
 повідомлення йдуть авторові системи). Без токена повідомлення пишуться в лог API
 (`docker compose logs projectk-api`) і нікуди не надсилаються. Скриншоти з повідомлень лежать у
 теці `feedback-screenshots` того ж сховища, що й фото, а в issue йде посилання на них, чинне рік.
+
+## Телеметрія
+
+Раз на добу API надсилає авторові Лілейки анонімний пінг на `https://status.lileyka.app/v1/ping`. Так автор бачить, скільки інсталяцій працює, на яких версіях і з яким навантаженням. Перший пінг іде через 5 хвилин після старту. У пінгу є:
+
+- випадковий id інсталяції (створюється при першому пінгу й лежить у таблиці `SystemSettings`);
+- версія і тип (`selfhost`);
+- коди країв, у яких є курені;
+- кількість куренів, членів і користувачів, що входили за 7 і 30 днів;
+- кількість запитів до API і відповідей 5xx від попереднього пінгу;
+- скільки годин працює процес.
+
+Імен, пошт, назв куренів, адреси сервера в пінгу немає, а IP сервіс не зберігає. У відповідь приходить номер останнього релізу, і застаріла інсталяція пише про це в лог API. Щоб вимкнути пінг, задай `PROJECTK_TELEMETRY=false` у `.env`. Пінг працює лише за значень `true`, `1`, `yes` або `on`; будь-яке інше (`false`, `0`, `no`, `off`, порожнє `PROJECTK_TELEMETRY=`) його вимикає. Якщо рядка в `.env` немає зовсім, пінг увімкнений.
 
 ## Установка прямо з образів GHCR
 
@@ -209,8 +222,8 @@ docker compose up -d
 Перевірити доступність образів:
 
 ```bash
-docker pull ghcr.io/iamavasya/projectk-api:<версія>
-docker pull ghcr.io/iamavasya/projectk-web:<версія>
+docker pull ghcr.io/lileyka-app/projectk-api:<версія>
+docker pull ghcr.io/lileyka-app/projectk-web:<версія>
 ```
 
 Тег `beta` вказує на останню бету. Для живих інсталяцій бери явну версію; `beta` — лише якщо
@@ -225,7 +238,7 @@ Compose-файл bundle запускає лише готові образи:
 - `projectk-sql` — SQL Server;
 - `projectk-azurite` — емулятор сховища Azurite.
 
-Фронтенд читає `PROJECTK_API_URL`, `PROJECTK_ENVIRONMENT_NAME` і `PROJECTK_DOCS_URL` (корінь сайту довідки; «Довідка» на вітальній веде на нього, у сайдбарі — на сторінку `/user/start/what-is/`; типово — `https://docs-projectk.rostyslav-mukha.dev/`) при старті
+Фронтенд читає `PROJECTK_API_URL`, `PROJECTK_ENVIRONMENT_NAME` і `PROJECTK_DOCS_URL` (корінь сайту довідки; «Довідка» на вітальній веде на нього, у сайдбарі — на сторінку `/user/start/what-is/`; типово — `https://docs.lileyka.app/`) при старті
 контейнера і записує в `env.js`, тож один образ працює на будь-якому домені без перезбірки.
 
 ## Томи

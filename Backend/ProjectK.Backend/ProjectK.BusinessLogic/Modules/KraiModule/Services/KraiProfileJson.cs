@@ -52,6 +52,7 @@ public static partial class KraiProfileJson
         var catalog = document.Catalog;
         var locale = document.Locale;
         var card = document.CardFields;
+        var dues = document.Dues;
 
         return new KraiProfileDocument
         {
@@ -70,6 +71,10 @@ public static partial class KraiProfileJson
             {
                 Fields = Modes(card.Fields),
                 Extra = Extra(card.Extra)
+            }),
+            Dues = dues is null ? null : Empty(new KraiDuesDocument
+            {
+                Upstream = Text(dues.Upstream)?.ToLowerInvariant()
             })
         };
     }
@@ -112,6 +117,11 @@ public static partial class KraiProfileJson
         if (document.CardFields is { } card)
         {
             errors.AddRange(CardFieldErrors(card));
+        }
+
+        if (document.Dues?.Upstream is { } upstream && !KraiDues.Upstreams.Contains(upstream))
+        {
+            errors.Add($"Вкладку можна передавати лише stanytsia, krai чи both, а не «{upstream}».");
         }
 
         return errors;

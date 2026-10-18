@@ -221,17 +221,7 @@ public sealed class ScoreBook
         IsArchived = i.IsArchived
     };
 
-    /// <summary>What a mark at this event is worth now: its own rate, else its group's, else nothing.</summary>
-    public int AttendancePoints(Guid agendaItemKey, Guid? categoryKey)
-    {
-        var own = AttendanceRates.FirstOrDefault(r => r.AgendaItemKey == agendaItemKey);
-        if (own is not null)
-        {
-            return own.Points;
-        }
-
-        return categoryKey is { } category
-            ? AttendanceRates.FirstOrDefault(r => r.AgendaCategoryKey == category)?.Points ?? 0
-            : 0;
-    }
+    /// <inheritdoc cref="ScoreAttendanceBook.PointsFor"/>
+    public int AttendancePoints(Guid agendaItemKey, Guid? categoryKey) =>
+        ScoreAttendanceBook.PointsFor(AttendanceRates, agendaItemKey, categoryKey);
 }

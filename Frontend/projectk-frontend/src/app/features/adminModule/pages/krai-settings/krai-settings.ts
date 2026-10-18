@@ -17,7 +17,8 @@ import { KraiProfileService } from '../../services/krai-profile-service/krai-pro
 import { KraiCardFieldsDocument, KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { KraiCardFieldsComponent, sameCardFields } from './krai-card-fields/krai-card-fields';
-import { currencySymbol, DEFAULT_CURRENCY } from '../../../duesModule/functions/dues-format.function';
+import { currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../../duesModule/functions/dues-format.function';
+import { DUES_UPSTREAM_LABELS, DuesUpstream } from '../../../duesModule/models/dues.enums';
 
 interface SourceOption {
   code: string;
@@ -39,6 +40,21 @@ function supported(key: 'currency' | 'timeZone'): string[] {
 
 const CURRENCIES = supported('currency');
 const TIME_ZONES = supported('timeZone');
+
+/** Number formats a край is likely to want; one saved by hand outside this list is kept as an option. */
+const NUMBER_LOCALES = [
+  'uk-UA', 'en-US', 'en-GB', 'en-CA', 'fr-CA', 'en-AU', 'de-DE', 'de-AT', 'de-CH', 'cs-CZ', 'sk-SK', 'pl-PL',
+  'fr-FR', 'it-IT', 'es-ES', 'pt-BR', 'nl-NL', 'ro-RO', 'hu-HU', 'lt-LT', 'lv-LV', 'et-EE', 'sv-SE', 'nb-NO', 'da-DK'
+];
+
+/** «1 234,5» as the locale writes it, so the admin picks by what they see. */
+function sample(locale: string): string {
+  try {
+    return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(1234.5);
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Профіль краю: з яких країв курені бачать вмілості і які з них сховано. Кожне збереження —
@@ -69,6 +85,10 @@ export class KraiSettingsComponent implements OnInit {
   readonly hidden = signal<ReadonlySet<string>>(new Set());
   readonly currency = signal<string | null>(null);
   readonly timeZone = signal<string | null>(null);
+  readonly numberLocale = signal<string | null>(null);
+  readonly upstream = signal<DuesUpstream>(DuesUpstream.Stanytsia);
+  readonly upstreamOptions = Object.values(DuesUpstream).map(value => ({ value, label: DUES_UPSTREAM_LABELS[value] }));
+  readonly defaultNumberLocale = DEFAULT_NUMBER_LOCALE;
   readonly cardFields = signal<KraiCardFieldsDocument | undefined>(undefined);
   readonly note = signal('');
 
@@ -78,6 +98,8 @@ export class KraiSettingsComponent implements OnInit {
     withValue(CURRENCIES, this.currency()).map(code => ({ code, label: `${code} · ${currencySymbol(code)}` })));
   readonly timeZoneOptions = computed<SourceOption[]>(() =>
     withValue(TIME_ZONES, this.timeZone()).map(code => ({ code, label: code })));
+  readonly numberLocaleOptions = computed<SourceOption[]>(() =>
+    withValue(NUMBER_LOCALES, this.numberLocale()).map(code => ({ code, label: `${code} · ${sample(code)}` })));
   readonly search = signal('');
   readonly shown = signal(PAGE_SIZE);
 
@@ -141,6 +163,8 @@ export class KraiSettingsComponent implements OnInit {
       || !sameSet(saved?.hiddenBadges ?? [], [...this.hidden()])
       || (locale?.currency ?? null) !== this.currency()
       || (locale?.timeZone ?? null) !== this.timeZone()
+      || (locale?.numberLocale ?? null) !== this.numberLocale()
+      || (editor.document.dues?.upstream ?? DuesUpstream.Stanytsia) !== this.upstream()
       || !sameCardFields(editor.document.cardFields, this.cardFields());
   });
 
@@ -234,8 +258,12 @@ export class KraiSettingsComponent implements OnInit {
       locale: {
         ...editor.document.locale,
         currency: this.currency() ?? undefined,
-        timeZone: this.timeZone() ?? undefined
+        timeZone: this.timeZone() ?? undefined,
+        numberLocale: this.numberLocale() ?? undefined
       },
+      dues: this.upstream() === DuesUpstream.Stanytsia && !editor.document.dues
+        ? undefined
+        : { ...editor.document.dues, upstream: this.upstream() === DuesUpstream.Stanytsia ? undefined : this.upstream() },
       cardFields: this.cardFields()
     };
     this.write(this.profiles.save(editor.kraiCode, editor.revision, document, this.note().trim() || null), 'Профіль збережено.');
@@ -321,6 +349,8 @@ export class KraiSettingsComponent implements OnInit {
     this.hidden.set(new Set(editor.document.catalog?.hiddenBadges ?? []));
     this.currency.set(editor.document.locale?.currency ?? null);
     this.timeZone.set(editor.document.locale?.timeZone ?? null);
+    this.numberLocale.set(editor.document.locale?.numberLocale ?? null);
+    this.upstream.set(editor.document.dues?.upstream ?? DuesUpstream.Stanytsia);
     this.cardFields.set(editor.document.cardFields);
     this.note.set('');
   }

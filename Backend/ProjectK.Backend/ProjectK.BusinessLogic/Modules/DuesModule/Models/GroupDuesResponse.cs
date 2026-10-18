@@ -1,3 +1,6 @@
+using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Models;
@@ -11,6 +14,10 @@ public sealed class GroupDuesResponse
 
     /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
     public string Currency { get; init; } = "UAH";
+    /// <summary>How the край writes numbers, such as uk-UA.</summary>
+    public string NumberLocale { get; init; } = "uk-UA";
+    /// <summary>Where the край's kurins hand the вкладка up: stanytsia, krai or both.</summary>
+    public string Upstream { get; init; } = KraiDues.Stanytsia;
 
     public QuarterDto CurrentQuarter { get; init; } = new();
 
@@ -48,9 +55,46 @@ public sealed class PlastYearDto
 public sealed class KurinDuesRateDto
 {
     public QuarterDto FromQuarter { get; init; } = new();
+
+    /// <summary>The kurin's статті, in the order it set them. The amounts below are their totals.</summary>
+    public IReadOnlyList<DuesArticleDto> Articles { get; init; } = [];
+
     public decimal StanytsiaFull { get; init; }
     public decimal StanytsiaReduced { get; init; }
     public decimal KurinShare { get; init; }
+    public decimal KurinReduced { get; init; }
+    public decimal KraiFull { get; init; }
+    public decimal KraiReduced { get; init; }
+
+    public static KurinDuesRateDto From(KurinDuesRate rate, QuarterDto fromQuarter) => new()
+    {
+        FromQuarter = fromQuarter,
+        Articles = (rate.Articles.Count > 0
+                ? rate.Articles
+                : KurinDuesArticles.Standard(rate.StanytsiaFull, rate.StanytsiaReduced, rate.KurinShare))
+            .Select(a => new DuesArticleDto
+            {
+                Name = a.Name,
+                Recipient = a.Recipient,
+                Amount = a.Amount,
+                ReducedAmount = a.ReducedAmount
+            })
+            .ToList(),
+        StanytsiaFull = rate.StanytsiaFull,
+        StanytsiaReduced = rate.StanytsiaReduced,
+        KurinShare = rate.KurinShare,
+        KurinReduced = rate.KurinReduced ?? rate.KurinShare,
+        KraiFull = rate.KraiFull,
+        KraiReduced = rate.KraiReduced
+    };
+}
+
+public sealed class DuesArticleDto
+{
+    public string Name { get; init; } = string.Empty;
+    public DuesRecipient Recipient { get; init; }
+    public decimal Amount { get; init; }
+    public decimal ReducedAmount { get; init; }
 }
 
 public sealed class GroupDuesRateDto
@@ -62,6 +106,7 @@ public sealed class GroupDuesRateDto
 public sealed class DuesAmountDto
 {
     public decimal Stanytsia { get; init; }
+    public decimal Krai { get; init; }
     public decimal Kurin { get; init; }
     public decimal Group { get; init; }
     public decimal Total { get; init; }

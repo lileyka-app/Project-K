@@ -1,3 +1,4 @@
+import { DuesUpstream } from '../../duesModule/models/dues.enums';
 import { CardExtraFieldDto, CardFieldMode } from '../../kurinModule/models/card-fields.dto';
 
 /** A край's profile as it is stored. Every value is optional: what is left out comes from code. */
@@ -13,6 +14,10 @@ export interface KraiProfileDocument {
     numberLocale?: string;
   };
   cardFields?: KraiCardFieldsDocument;
+  dues?: {
+    /** Where the kurins hand the вкладка up; unset means through the станиця. */
+    upstream?: DuesUpstream;
+  };
 }
 
 /** The card: modes of its own fields that differ from the default, and the край's own fields. */

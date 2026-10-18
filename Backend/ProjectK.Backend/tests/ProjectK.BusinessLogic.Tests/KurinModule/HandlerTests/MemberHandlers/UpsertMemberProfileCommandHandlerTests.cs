@@ -223,7 +223,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var group = MakeGroup();
         _profilesMock.Setup(p => p.GetForKurinAsync(group.KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new KraiProfile("cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
-                new KraiCardFieldsSettings(KraiCardFields.Configurable, [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }])));
+                new KraiCardFieldsSettings(KraiCardFields.Configurable, [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }]), KraiDuesSettings.Default));
         var cmd = new UpsertMemberProfileCommand
         {
             GroupKey = group.GroupKey,

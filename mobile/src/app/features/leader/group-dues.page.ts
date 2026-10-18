@@ -1,4 +1,4 @@
-import { DEFAULT_CURRENCY } from '../../me/labels';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -43,6 +43,7 @@ import {
   STANDING_LABELS,
   allQuarters,
   amountLabel,
+  articlesAreStandard,
   balanceLabel,
   duesMoney,
   fromQuarterOptions,
@@ -54,6 +55,7 @@ import {
   sameQuarter,
   shortDate,
   signedAmount,
+  withPilha,
 } from './dues-format';
 import { DuesEntryForm, DuesKurinRateForm, DuesQuarterForm } from './dues-forms';
 import {
@@ -77,6 +79,7 @@ const DUES_ERRORS: Record<string, string> = {
   NotInGroup: 'Цей юнак не з цього гуртка.',
   CollectorNotInKurin: 'Той, хто збирав, має бути з цього куреня.',
   GroupNotFound: 'Такого гуртка немає.',
+  DuesArticlesInUse: 'У куреня власні статті вкладки, їх змінюють у вебі.',
 };
 
 interface PersonRow {
@@ -273,10 +276,18 @@ interface PersonRow {
                       </ion-item>
                     }
                     @if (d.viewer.canSetKurinRates) {
-                      <ion-item [button]="true" [detail]="true" (click)="openKurinRate()" data-testid="kurin-rate">
-                        <ion-label>Ставки куреня</ion-label>
-                        @if (!kurinRateNow()) { <ion-note slot="end">не задано</ion-note> }
-                      </ion-item>
+                      @if (standardArticles()) {
+                        <ion-item [button]="true" [detail]="true" (click)="openKurinRate()" data-testid="kurin-rate">
+                          <ion-label>Ставки куреня</ion-label>
+                          @if (!kurinRateNow()) { <ion-note slot="end">не задано</ion-note> }
+                        </ion-item>
+                      } @else {
+                        <ion-item data-testid="kurin-rate-web">
+                          <ion-label class="ion-text-wrap">
+                            <p>У куреня власні статті вкладки, їх змінюють у вебі.</p>
+                          </ion-label>
+                        </ion-item>
+                      }
                     }
                   </ion-item-group>
                 </ion-list>
@@ -487,6 +498,7 @@ interface PersonRow {
         <ng-template>
           @if (data(); as d) {
             <app-dues-kurin-rate-form
+              [upstream]="d.upstream"
               [currency]="currency()"
               [rates]="d.kurinRates"
               [quarters]="fromQuarters()"
@@ -516,9 +528,10 @@ export class GroupDuesPage implements OnInit, OnDestroy {
   protected readonly kindLabels = KIND_LABELS;
   /** What this kurin counts its вкладка in, from its край's profile. */
   protected readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
-  protected readonly money = (amount: number): string => duesMoney(amount, this.currency());
-  protected readonly balance = balanceLabel;
-  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency());
+  protected readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
+  protected readonly money = (amount: number): string => duesMoney(amount, this.currency(), this.numberLocale());
+  protected readonly balance = (balance: number): string => balanceLabel(balance, this.currency(), this.numberLocale());
+  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency(), this.numberLocale());
   protected readonly signed = signedAmount;
   protected readonly key = quarterKey;
 
@@ -587,6 +600,7 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     const d = this.data();
     return d ? rateAt(d.kurinRates, d.currentQuarter) : null;
   });
+  protected readonly standardArticles = computed(() => articlesAreStandard(this.kurinRateNow()));
   protected readonly groupRateNow = computed(() => {
     const d = this.data();
     return d ? (rateAt(d.groupRates, d.currentQuarter)?.groupShare ?? null) : null;
@@ -607,15 +621,24 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     const kurin = this.kurinRateNow();
     const group = this.groupRateNow();
     if (kurin) {
+      const stanytsia = `${this.money(kurin.stanytsiaFull)}${withPilha(kurin.stanytsiaFull, kurin.stanytsiaReduced, this.currency(), this.numberLocale())}`;
+      const own = `${this.money(kurin.kurinShare)}${withPilha(kurin.kurinShare, kurin.kurinReduced, this.currency(), this.numberLocale())}`;
+      const krai = `${this.money(kurin.kraiFull)}${withPilha(kurin.kraiFull, kurin.kraiReduced, this.currency(), this.numberLocale())}`;
+      // A край paid straight has no станиця part, unless an old rate still sets one.
+      const parts = [
+        kurin.stanytsiaFull > 0 || d.upstream !== 'krai' ? `станиця ${stanytsia}` : '',
+        kurin.kraiFull > 0 ? `край ${krai}` : '',
+        `курінь ${own}`,
+      ].filter(Boolean);
       if (group === null) {
-        return `Станиця ${this.money(kurin.stanytsiaFull)} · курінь ${this.money(kurin.kurinShare)}. Гурткову частину ще не задано, поки вона нуль.`;
+        const line = parts.join(' · ');
+        return `${line.charAt(0).toUpperCase()}${line.slice(1)}. Гурткову частину ще не задано, поки вона нуль.`;
       }
-      const reduced = kurin.stanytsiaReduced !== kurin.stanytsiaFull ? ` (пільгова ${this.money(kurin.stanytsiaReduced)})` : '';
-      const total = kurin.stanytsiaFull + kurin.kurinShare + group;
-      return `Квартальна вкладка ${this.money(total)} = станиця ${this.money(kurin.stanytsiaFull)}${reduced} · курінь ${this.money(kurin.kurinShare)} · гурток ${this.money(group)}`;
+      const total = kurin.stanytsiaFull + kurin.kraiFull + kurin.kurinShare + group;
+      return `Квартальна вкладка ${this.money(total)} = ${parts.join(' · ')} · гурток ${this.money(group)}`;
     }
     const tail = group !== null ? `Гурток свою задав: ${this.money(group)} за квартал.` : 'Нарахувань поки немає.';
-    return `Курінь ще не задав станичної та курінної частини вкладки. ${tail}`;
+    return `Курінь ще не задав своїх статей вкладки. ${tail}`;
   });
 
   constructor() {

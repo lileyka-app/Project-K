@@ -1,0 +1,38 @@
+.rate-articles {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rate-article {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.rate-articles__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.rate-articles__total {
+  color: var(--lil-faint);
+  font-size: var(--lil-text-caption);
+}
+
+@media (max-width: 640px) {
+  .rate-article {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--p-content-border-color);
+  }
+
+  .rate-article__name {
+    grid-column: 1 / -1;
+  }
+}

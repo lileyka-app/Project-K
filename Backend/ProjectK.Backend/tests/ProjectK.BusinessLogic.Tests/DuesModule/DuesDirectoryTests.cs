@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using Xunit;
@@ -40,7 +41,7 @@ public class DuesDirectoryTests
         dues.SetupGet(d => d.DuesConcessions).Returns(Mock.Of<IDuesConcessionRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(concessions)));
         dues.SetupGet(d => d.DuesCharges).Returns(Mock.Of<IDuesChargeRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(charges)));
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
-        return new DuesDirectory(new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), _time);
+        return new DuesDirectory(new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), _time, Mock.Of<IKraiProfileProvider>());
     }
 
     private void Pay(decimal amount) => _entries.Add(new DuesEntry

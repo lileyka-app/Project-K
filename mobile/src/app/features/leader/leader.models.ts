@@ -73,9 +73,13 @@ export type DuesEntryKind =
   | 'Expense'
   | 'OtherIncome'
   | 'Exchange'
-  | 'Correction';
+  | 'Correction'
+  | 'TransferToKrai';
 
 export type DuesPaymentMethod = 'Cash' | 'Card';
+
+/** Through the станиця, straight to the край, or both, by стаття (the web's DuesUpstream). */
+export type DuesUpstream = 'stanytsia' | 'krai' | 'both';
 
 export type DuesAccountStanding = 'Current' | 'Moved' | 'Left';
 
@@ -90,11 +94,24 @@ export interface PlastYearDto {
   quarters: QuarterDto[];
 }
 
+/** A стаття of the kurin's вкладка; reducedAmount is what a person with a пільга pays. */
+export interface DuesArticleDto {
+  name: string;
+  amount: number;
+  reducedAmount: number;
+  recipient: 'Stanytsia' | 'Krai' | 'Kurin';
+}
+
+/** The kurin's rate from a quarter on: the totals by recipient, and the статті they add up from. */
 export interface KurinDuesRateDto {
   fromQuarter: QuarterDto;
   stanytsiaFull: number;
   stanytsiaReduced: number;
   kurinShare: number;
+  kurinReduced: number;
+  kraiFull: number;
+  kraiReduced: number;
+  articles: DuesArticleDto[];
 }
 
 export interface GroupDuesRateDto {
@@ -104,6 +121,7 @@ export interface GroupDuesRateDto {
 
 export interface DuesAmountDto {
   stanytsia: number;
+  krai: number;
   kurin: number;
   group: number;
   total: number;
@@ -180,6 +198,10 @@ export interface GroupDuesDto {
   groupName: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   kurinRates: KurinDuesRateDto[];
@@ -251,6 +273,8 @@ export interface KurinDuesQuarterGroupDto {
   debtUp: number;
   stanytsiaExpected: number;
   stanytsiaCollected: number;
+  kraiExpected: number;
+  kraiCollected: number;
 }
 
 export interface KurinDuesQuarterDto {
@@ -271,12 +295,20 @@ export interface KurinDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
-  /** `toForward` is what still goes to the станиця; `inTransit` — handed over by гуртки, not confirmed yet. */
+  /** `toForward` is what still goes to the станиця and the край; `inTransit` — handed over by гуртки, not confirmed yet. */
   box: DuesBoxDto;
+  /** Of `box.toForward`, the станиця's and the край's. */
+  toStanytsia: number;
+  toKrai: number;
   sentToStanytsia: number;
+  sentToKrai: number;
   groups: KurinGroupHandoverDto[];
   /** Oldest quarter first; only quarters somebody was charged in. */
   quarters: KurinDuesQuarterDto[];

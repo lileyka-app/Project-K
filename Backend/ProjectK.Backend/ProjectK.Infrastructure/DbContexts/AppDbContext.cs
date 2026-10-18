@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.ScoreModule;
@@ -241,6 +243,19 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.StanytsiaFull).HasPrecision(18, 2);
             entity.Property(e => e.StanytsiaReduced).HasPrecision(18, 2);
             entity.Property(e => e.KurinShare).HasPrecision(18, 2);
+            entity.Property(e => e.KurinReduced).HasPrecision(18, 2);
+            entity.Property(e => e.KraiFull).HasPrecision(18, 2);
+            entity.Property(e => e.KraiReduced).HasPrecision(18, 2);
+            // A plain JSON column rather than an owned collection: rates are read untracked and saved
+            // back with Update, which owned collections cannot do.
+            entity.Property(e => e.Articles)
+                  .HasConversion(
+                      a => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null),
+                      json => JsonSerializer.Deserialize<List<KurinDuesArticle>>(json, (JsonSerializerOptions?)null) ?? new List<KurinDuesArticle>(),
+                      new ValueComparer<List<KurinDuesArticle>>(
+                          (a, b) => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(b, (JsonSerializerOptions?)null),
+                          a => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null).GetHashCode(),
+                          a => JsonSerializer.Deserialize<List<KurinDuesArticle>>(JsonSerializer.Serialize(a, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!));
             entity.HasIndex(e => new { e.KurinKey, e.FromQuarter }).IsUnique();
         });
 

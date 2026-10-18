@@ -6,10 +6,12 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 using Xunit;
 
@@ -22,7 +24,10 @@ public class DuesAccrualTests
     private static readonly Guid GroupB = Guid.NewGuid();
 
     // Now is the second quarter of 2026.
-    private readonly FixedTimeProvider _time = new(new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero));
+    private FixedTimeProvider _time = new(new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero));
+
+    // No profile: the instance's zone, Europe/Kyiv.
+    private string? _zone;
 
     private readonly List<KurinDuesRate> _rates = [];
     private readonly List<DuesCharge> _existing = [];
@@ -47,7 +52,14 @@ public class DuesAccrualTests
     {
         var directory = new Mock<IMembershipDirectory>();
         directory.Setup(d => d.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
-        return new DuesAccrual(_dues.Object, directory.Object, _time);
+        var profiles = new Mock<IKraiProfileProvider>();
+        if (_zone is not null)
+        {
+            profiles.Setup(p => p.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(
+                "ca", "Канада", 1, new KraiCatalogSettings(["ca"], []), new KraiLocaleSettings("CAD", _zone, "en-CA"), KraiCardFieldsSettings.Default, KraiDuesSettings.Default));
+        }
+
+        return new DuesAccrual(_dues.Object, directory.Object, _time, profiles.Object);
     }
 
     private void RateFrom(DuesQuarter quarter) =>
@@ -94,6 +106,32 @@ public class DuesAccrualTests
         await Accrual().AccrueKurinAsync(Kurin);
 
         QuartersOf(youth).Should().Equal(new DuesQuarter(2026, 1), new DuesQuarter(2026, 2));
+    }
+
+    [Fact]
+    public async Task TheQuarter_TurnsAtMidnightInTheKrai_NotInUtc()
+    {
+        // 22:30 UTC on 30 June is already 1 July in Kyiv, and still 30 June in Toronto.
+        _time = new FixedTimeProvider(new DateTimeOffset(2026, 6, 30, 22, 30, 0, TimeSpan.Zero));
+        RateFrom(new DuesQuarter(2026, 1));
+        var youth = Member(GroupA, new DateTime(2026, 6, 30, 22, 0, 0, DateTimeKind.Utc));
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        QuartersOf(youth).Should().Equal(new DuesQuarter(2026, 3));
+    }
+
+    [Fact]
+    public async Task AKraiBehindUtc_IsNotChargedTheNextQuarterEarly()
+    {
+        _time = new FixedTimeProvider(new DateTimeOffset(2026, 6, 30, 22, 30, 0, TimeSpan.Zero));
+        _zone = "America/Toronto";
+        RateFrom(new DuesQuarter(2026, 1));
+        var youth = Member(GroupA, new DateTime(2026, 5, 1));
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        QuartersOf(youth).Should().Equal(new DuesQuarter(2026, 2));
     }
 
     [Fact]

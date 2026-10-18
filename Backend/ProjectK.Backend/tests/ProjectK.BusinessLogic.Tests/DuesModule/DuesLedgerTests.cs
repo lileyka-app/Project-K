@@ -129,6 +129,26 @@ public class DuesLedgerTests
     }
 
     [Fact]
+    public void Concession_TakesThePilhovyAmountOfEveryStattia()
+    {
+        var rate = new KurinDuesRate { KurinKey = Kurin, FromQuarter = Q2.Index };
+        rate.SetArticles(
+        [
+            new KurinDuesArticle { Name = "Станиця", Recipient = DuesRecipient.Stanytsia, Amount = 240, ReducedAmount = 180 },
+            new KurinDuesArticle { Name = "Курінь", Recipient = DuesRecipient.Kurin, Amount = 15, ReducedAmount = 15 },
+            new KurinDuesArticle { Name = "Табірний фонд", Recipient = DuesRecipient.Kurin, Amount = 50, ReducedAmount = 25 }
+        ]);
+        _kurinRates.Add(rate);
+        _concessions.Add(new DuesConcession { KurinKey = Kurin, MembershipKey = Youth, FromQuarter = Q2.Index, IsConcession = true });
+        Charge(GroupA, Q1, Q2);
+
+        var quarters = Account(GroupA).Quarters;
+
+        quarters[0].Charged.Should().Be(new DuesAmount(240, 15, 45));
+        quarters[1].Charged.Should().Be(new DuesAmount(180, 40, 45));
+    }
+
+    [Fact]
     public void RateChange_AppliesFromItsQuarter()
     {
         _kurinRates.Add(new KurinDuesRate { KurinKey = Kurin, FromQuarter = Q3.Index, StanytsiaFull = 300, StanytsiaReduced = 200, KurinShare = 20 });
@@ -257,5 +277,74 @@ public class DuesLedgerTests
         box.Card.Should().Be(-240);
         box.ToForward.Should().Be(0);
         box.Own.Should().Be(15);
+    }
+
+    private void KraiArticleFromQ1() =>
+        _kurinRates[0].SetArticles(
+        [
+            new KurinDuesArticle { Name = "Станиця", Recipient = DuesRecipient.Stanytsia, Amount = 240, ReducedAmount = 180 },
+            new KurinDuesArticle { Name = "Крайова вкладка", Recipient = DuesRecipient.Krai, Amount = 60, ReducedAmount = 30 },
+            new KurinDuesArticle { Name = "Курінь", Recipient = DuesRecipient.Kurin, Amount = 15, ReducedAmount = 15 }
+        ]);
+
+    [Fact]
+    public void AKraiArticle_IsPaidAfterTheStanytsia_AndBeforeTheKurin()
+    {
+        KraiArticleFromQ1();
+        Charge(GroupA, Q1);
+        Pay(270);
+
+        var quarter = Account(GroupA).Quarters.Single();
+
+        quarter.Charged.Should().Be(new DuesAmount(240, 15, 45, 60));
+        quarter.Paid.Should().Be(new DuesAmount(240, 0, 0, 30));
+    }
+
+    [Fact]
+    public void AKraiArticle_TakesItsPilhaAmount_WithAPilha()
+    {
+        KraiArticleFromQ1();
+        Charge(GroupA, Q1);
+        _concessions.Add(new DuesConcession { KurinKey = Kurin, MembershipKey = Youth, FromQuarter = Q1.Index, IsConcession = true });
+
+        Account(GroupA).Quarters.Single().Charged.Should().Be(new DuesAmount(180, 15, 45, 30));
+    }
+
+    [Fact]
+    public void KurinBox_KeepsTheKraisMoneyApartFromTheStanytsias_UntilEachIsHandedOn()
+    {
+        KraiArticleFromQ1();
+        Charge(GroupA, Q1);
+        Pay(360);
+        Entry(DuesEntryKind.TransferToKurin, 315, GroupA).ReceivedAtUtc = DateTime.UtcNow;
+
+        var before = Ledger().KurinBox();
+        before.ToStanytsia.Should().Be(240);
+        before.ToKrai.Should().Be(60);
+        before.Box.ToForward.Should().Be(300);
+        before.Handovers.Single().OwedUp.Should().Be(315);
+
+        Entry(DuesEntryKind.TransferToKrai, 60, null, DuesPaymentMethod.Card);
+
+        var after = Ledger().KurinBox();
+        after.ToStanytsia.Should().Be(240);
+        after.ToKrai.Should().Be(0);
+        after.Box.Card.Should().Be(-60);
+        after.Box.Own.Should().Be(15);
+    }
+
+    [Fact]
+    public void KurinBox_CountsAPartialHandoverAsStanytsiaMoney_ThenKraiMoney()
+    {
+        KraiArticleFromQ1();
+        Charge(GroupA, Q1);
+        Pay(360);
+        Entry(DuesEntryKind.TransferToKurin, 270, GroupA).ReceivedAtUtc = DateTime.UtcNow;
+
+        var box = Ledger().KurinBox();
+
+        box.ToStanytsia.Should().Be(240);
+        box.ToKrai.Should().Be(30);
+        box.Box.Own.Should().Be(0);
     }
 }

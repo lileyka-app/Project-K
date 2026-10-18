@@ -4,8 +4,25 @@ import { DuesEntryDto, QuarterDto } from '../models/group-dues.dto';
 /** Lilejka counted in гривні before краї had profiles; a response without a currency is still that. */
 export const DEFAULT_CURRENCY = 'UAH';
 
-const amounts = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+/** How numbers were written before краї had profiles; a response without a locale is still that. */
+export const DEFAULT_NUMBER_LOCALE = 'uk-UA';
+
+const amountFormats = new Map<string, Intl.NumberFormat>();
 const symbols = new Map<string, string>();
+
+/** «1 240,5» in uk-UA, «1,240.5» in en-CA. A locale the browser does not know falls back to uk-UA. */
+function amountFormat(locale: string): Intl.NumberFormat {
+  let format = amountFormats.get(locale);
+  if (format === undefined) {
+    try {
+      format = new Intl.NumberFormat(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    } catch {
+      format = new Intl.NumberFormat(DEFAULT_NUMBER_LOCALE, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+    amountFormats.set(locale, format);
+  }
+  return format;
+}
 
 /** «₴», «Kč», «zł»: how the край's currency is written after an amount. */
 export function currencySymbol(currency: string = DEFAULT_CURRENCY): string {
@@ -23,15 +40,15 @@ export function currencySymbol(currency: string = DEFAULT_CURRENCY): string {
   return symbol;
 }
 
-/** «1 240 ₴», «−300 Kč». A real minus, not a hyphen. */
-export function money(amount: number, currency: string = DEFAULT_CURRENCY): string {
+/** «1 240 ₴», «−300 Kč», the number written the край's way. A real minus, not a hyphen. */
+export function money(amount: number, currency: string = DEFAULT_CURRENCY, locale: string = DEFAULT_NUMBER_LOCALE): string {
   const sign = amount < 0 ? '−' : '';
-  return `${sign}${amounts.format(Math.abs(amount))} ${currencySymbol(currency)}`;
+  return `${sign}${amountFormat(locale).format(Math.abs(amount))} ${currencySymbol(currency)}`;
 }
 
 /** The same with an explicit plus, for movements in and out of the box. */
-export function signedMoney(amount: number, currency: string = DEFAULT_CURRENCY): string {
-  return amount > 0 ? `+${money(amount, currency)}` : money(amount, currency);
+export function signedMoney(amount: number, currency: string = DEFAULT_CURRENCY, locale: string = DEFAULT_NUMBER_LOCALE): string {
+  return amount > 0 ? `+${money(amount, currency, locale)}` : money(amount, currency, locale);
 }
 
 /**
@@ -49,9 +66,13 @@ export function signedDuesAmount(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): 
 }
 
 /** The amount as the history shows it: signed, or bare for an exchange. */
-export function duesAmountLabel(entry: Pick<DuesEntryDto, 'kind' | 'amount'>, currency: string = DEFAULT_CURRENCY): string {
+export function duesAmountLabel(
+  entry: Pick<DuesEntryDto, 'kind' | 'amount'>,
+  currency: string = DEFAULT_CURRENCY,
+  locale: string = DEFAULT_NUMBER_LOCALE
+): string {
   const signed = signedDuesAmount(entry);
-  return signed === null ? money(entry.amount, currency) : signedMoney(signed, currency);
+  return signed === null ? money(entry.amount, currency, locale) : signedMoney(signed, currency, locale);
 }
 
 /** Whether the history paints the amount as coming in; null for an exchange. */

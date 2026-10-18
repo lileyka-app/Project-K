@@ -11,7 +11,7 @@ export const environment = {
   // The docs site's root (runtime PROJECTK_DOCS_URL): the welcome page links to it as is, the
   // sidebar appends the guide's own page. Production points at the site's production deployment;
   // every other tier reads the dev-branch deployment, which is where docs land first.
-  docsUrl: runtimeConfig?.docsUrl || 'https://docs-dev-projectk.rostyslav-mukha.dev/',
+  docsUrl: runtimeConfig?.docsUrl || 'https://docs-dev.lileyka.app/',
   isF1TierBackend: false,
   isStaticDemo: false
 };

@@ -85,6 +85,8 @@ export interface MyDuesDto {
   groupName: string | null;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
   quarterYear: number;
   quarterNumber: number;
   /** Negative is debt, positive a surplus. */

@@ -52,7 +52,7 @@ const catalog = [
 ];
 
 const q = (year: number, number: number) => ({ year, number });
-const amount = (total: number) => ({ stanytsia: 0, kurin: 0, group: total, total });
+const amount = (total: number) => ({ stanytsia: 0, krai: 0, kurin: 0, group: total, total });
 const cell = (quarter: { year: number; number: number }, charged: number, paid: number, isConcession = false) => ({
   quarter, charged: amount(charged), paid: amount(paid), balance: paid - charged, isConcession,
 });
@@ -63,7 +63,7 @@ function groupDues(viewer = KEEPER) {
   return {
     groupKey: 'g1', kurinKey: 'k1', groupName: 'Соколи', currentQuarter: q(2026, 4),
     years: [{ startYear: 2026, label: '2026/27', quarters: [q(2026, 3), q(2026, 4), q(2027, 1), q(2027, 2)] }],
-    kurinRates: [{ fromQuarter: q(2026, 3), stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30 }],
+    kurinRates: [{ fromQuarter: q(2026, 3), articles: [{ name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 }, { name: 'Курінь', recipient: 'Kurin', amount: 30, reducedAmount: 30 }], stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30, kurinReduced: 30, kraiFull: 0, kraiReduced: 0 }],
     groupRates: [{ fromQuarter: q(2026, 3), groupShare: 20 }],
     accounts: [
       { membershipKey: 'ms1', memberKey: 'm3', fullName: 'Остап Коваль', standing: 'Current', isConcessionNow: false,
@@ -305,7 +305,7 @@ test('shows a гурток’s box, its youth by quarter and the history', async
   const box = page.getByTestId('box');
   await expect(box).toContainText('190 ₴');
   await expect(box).toContainText('готівка 230 ₴ · картка −40 ₴');
-  await expect(page.getByTestId('rates')).toContainText('Квартальна вкладка 150 ₴ = станиця 100 ₴ (пільгова 50 ₴) · курінь 30 ₴ · гурток 20 ₴');
+  await expect(page.getByTestId('rates')).toContainText('Квартальна вкладка 150 ₴ = станиця 100 ₴ (з пільгою 50 ₴) · курінь 30 ₴ · гурток 20 ₴');
   await expect(page.getByText('Соколи · зараз IV кв. 2026 · 2 у складі · з боргом: 2')).toBeVisible();
   await shot(page, project, 'leader-dues-box');
 

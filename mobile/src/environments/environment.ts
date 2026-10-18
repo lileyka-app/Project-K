@@ -3,5 +3,5 @@ export const environment = {
   production: true,
   version: 'v0.0.0-dev',
   codename: 'LocalDevelopment',
-  apiUrl: 'https://api-projectk.rostyslav-mukha.dev/api',
+  apiUrl: 'https://api.lileyka.app/api',
 };

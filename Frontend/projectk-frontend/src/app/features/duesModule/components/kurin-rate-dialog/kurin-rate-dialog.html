@@ -7,9 +7,10 @@
   [resizable]="false"
   [dismissableMask]="!saving()"
   [closable]="!saving()"
-  [style]="{ width: 'min(92vw, 28rem)' }">
+  [style]="{ width: 'min(94vw, 44rem)' }">
   <p class="lil-dialog-hint">
-    Станична й курінна частини квартальної вкладки — однакові для всіх гуртків куреня. Пільга знижує лише станичну.
+    Статті квартальної вкладки, однакові для всіх гуртків куреня. Для кожної вкажи, куди йдуть гроші,
+    і скільки платить юнак з пільгою. Гурткову частину кожен гурток задає собі.
   </p>
   <div class="lil-dialog-form">
     <div class="lil-dialog-field">
@@ -24,25 +25,68 @@
         appendTo="body"
         styleClass="w-full" />
     </div>
-    <div class="lil-dialog-grid">
-      <div class="lil-dialog-field">
-        <label for="kurin-rate-full">Станиця, повна</label>
-        <input pInputText id="kurin-rate-full" type="number" inputmode="decimal" min="0" step="0.01"
-          [ngModel]="stanytsiaFull()" (ngModelChange)="stanytsiaFull.set($event)" />
-      </div>
-      <div class="lil-dialog-field">
-        <label for="kurin-rate-reduced">Станиця, пільгова</label>
-        <input pInputText id="kurin-rate-reduced" type="number" inputmode="decimal" min="0" step="0.01"
-          [ngModel]="stanytsiaReduced()" (ngModelChange)="stanytsiaReduced.set($event)" />
-      </div>
-      <div class="lil-dialog-field">
-        <label for="kurin-rate-share">Курінь</label>
-        <input pInputText id="kurin-rate-share" type="number" inputmode="decimal" min="0" step="0.01"
-          [ngModel]="kurinShare()" (ngModelChange)="kurinShare.set($event)" />
-      </div>
+
+    <ol class="rate-articles" aria-label="Статті вкладки">
+      @for (article of articles(); track article.id; let i = $index) {
+        <li class="rate-article" [attr.data-testid]="'rate-article-' + i">
+          <div class="lil-dialog-field rate-article__name">
+            <label [for]="'rate-article-name-' + i">Назва</label>
+            <input pInputText [id]="'rate-article-name-' + i" [maxlength]="maxNameLength"
+              [ngModel]="article.name" (ngModelChange)="setArticle(article.id, { name: $event })" />
+          </div>
+          <div class="lil-dialog-field">
+            <label [for]="'rate-article-recipient-' + i">Кому</label>
+            <p-select
+              [inputId]="'rate-article-recipient-' + i"
+              [options]="recipientOptions()"
+              [ngModel]="article.recipient"
+              (ngModelChange)="setArticle(article.id, { recipient: $event })"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              styleClass="w-full" />
+          </div>
+          <div class="lil-dialog-field">
+            <label [for]="'rate-article-amount-' + i">Сума</label>
+            <input pInputText [id]="'rate-article-amount-' + i" type="number" inputmode="decimal" min="0" step="0.01"
+              [ngModel]="article.amount" (ngModelChange)="setArticle(article.id, { amount: $event })" />
+          </div>
+          <div class="lil-dialog-field">
+            <label [for]="'rate-article-reduced-' + i">З пільгою</label>
+            <input pInputText [id]="'rate-article-reduced-' + i" type="number" inputmode="decimal" min="0" step="0.01"
+              [placeholder]="article.amount === null ? '' : '' + article.amount"
+              [ngModel]="article.reducedAmount" (ngModelChange)="setArticle(article.id, { reducedAmount: $event === '' ? null : $event })" />
+          </div>
+          <p-button
+            icon="pi pi-trash"
+            severity="secondary"
+            variant="text"
+            styleClass="rate-article__remove"
+            [ariaLabel]="'Прибрати статтю ' + (article.name || (i + 1))"
+            [disabled]="saving()"
+            (onClick)="removeArticle(article.id)" />
+        </li>
+      }
+    </ol>
+
+    <div class="rate-articles__foot">
+      <p-button
+        label="Додати статтю"
+        icon="pi pi-plus"
+        iconPos="left"
+        severity="secondary"
+        variant="text"
+        size="small"
+        [disabled]="saving() || articles().length >= maxArticles"
+        (onClick)="addArticle()" />
+      <span class="rate-articles__total" data-testid="rate-total">
+        Разом {{ money(totals().full) }}
+        @if (totals().reduced !== totals().full) { · з пільгою {{ money(totals().reduced) }} }
+      </span>
     </div>
-    @if (reducedAboveFull()) {
-      <p class="lil-dialog-error">Пільгова не може бути вищою за повну.</p>
+
+    @for (error of errors(); track error) {
+      <p class="lil-dialog-error">{{ error }}</p>
     }
   </div>
   <ng-template #footer>

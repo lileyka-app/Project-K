@@ -114,7 +114,9 @@ jobs:
       run: bash .github/scripts/send-telegram-message.sh
 
     - name: Publish Artifact
-      run: dotnet publish Backend/ProjectK.Backend/ProjectK.API/ProjectK.API.csproj -c Release -o ./publish
+      # ReadyToRun: App Service is linux-x64 on one B1 core, where JIT after a deploy made the first
+      # dashboard take 13 s. Precompiled code cuts that; the Docker image stays portable.
+      run: dotnet publish Backend/ProjectK.Backend/ProjectK.API/ProjectK.API.csproj -c Release -r linux-x64 --self-contained false -p:PublishReadyToRun=true -o ./publish
       
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v7

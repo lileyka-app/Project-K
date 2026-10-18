@@ -1,9 +1,10 @@
-import { currencySymbol, DEFAULT_CURRENCY } from '../../me/labels';
+import { amountFormat, currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import {
   DuesAccountStanding,
   DuesEntryDto,
   DuesEntryKind,
   DuesPaymentMethod,
+  DuesUpstream,
   KurinDuesRateDto,
   PlastYearDto,
   QuarterDto,
@@ -17,6 +18,7 @@ export const KIND_LABELS: Record<DuesEntryKind, string> = {
   Refund: 'Повернення',
   TransferToKurin: 'Передача курінному',
   TransferToStanytsia: 'Передача в станицю',
+  TransferToKrai: 'Передача в край',
   Expense: 'Витрата',
   OtherIncome: 'Інший прихід',
   Exchange: 'Обмін готівка ↔ картка',
@@ -40,7 +42,17 @@ export const GROUP_KINDS: readonly DuesEntryKind[] = [
 ];
 
 /** What the kurin's own box records: nothing personal, and what goes up to the станиця. */
-export const KURIN_KINDS: readonly DuesEntryKind[] = ['Expense', 'OtherIncome', 'TransferToStanytsia', 'Exchange'];
+export const KURIN_KINDS: readonly DuesEntryKind[] = ['Expense', 'OtherIncome', 'TransferToStanytsia', 'TransferToKrai', 'Exchange'];
+
+export const paysStanytsia = (upstream: DuesUpstream): boolean => upstream !== 'krai';
+export const paysKrai = (upstream: DuesUpstream): boolean => upstream !== 'stanytsia';
+
+/** The web's kurinDuesKinds: a transfer only where the край takes money. */
+export function kurinKinds(upstream: DuesUpstream): DuesEntryKind[] {
+  return KURIN_KINDS.filter(
+    (kind) => (kind !== 'TransferToStanytsia' || paysStanytsia(upstream)) && (kind !== 'TransferToKrai' || paysKrai(upstream)),
+  );
+}
 
 export const STANDING_LABELS: Record<DuesAccountStanding, string | null> = {
   Current: null,
@@ -49,12 +61,11 @@ export const STANDING_LABELS: Record<DuesAccountStanding, string | null> = {
 };
 
 const INCOMING: ReadonlySet<DuesEntryKind> = new Set<DuesEntryKind>(['Contribution', 'OtherIncome']);
-const hryvnia = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const ROMAN = ['I', 'II', 'III', 'IV'];
 
 /** «1 240 ₴», «−300 Kč»: a real minus, not a hyphen. */
-export function duesMoney(amount: number, currency: string = DEFAULT_CURRENCY): string {
-  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ${currencySymbol(currency)}`;
+export function duesMoney(amount: number, currency: string = DEFAULT_CURRENCY, locale: string = DEFAULT_NUMBER_LOCALE): string {
+  return `${amount < 0 ? '−' : ''}${amountFormat(locale).format(Math.abs(amount))} ${currencySymbol(currency)}`;
 }
 
 /** What an operation does to the box: plus in, minus out, a correction as entered, null for an exchange. */
@@ -65,16 +76,20 @@ export function signedAmount(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): numb
 }
 
 /** The amount as the history shows it: signed, or bare for an exchange. */
-export function amountLabel(entry: Pick<DuesEntryDto, 'kind' | 'amount'>, currency: string = DEFAULT_CURRENCY): string {
+export function amountLabel(
+  entry: Pick<DuesEntryDto, 'kind' | 'amount'>,
+  currency: string = DEFAULT_CURRENCY,
+  locale: string = DEFAULT_NUMBER_LOCALE,
+): string {
   const signed = signedAmount(entry);
-  if (signed === null) return duesMoney(entry.amount, currency);
-  return signed > 0 ? `+${duesMoney(signed, currency)}` : duesMoney(signed, currency);
+  if (signed === null) return duesMoney(entry.amount, currency, locale);
+  return signed > 0 ? `+${duesMoney(signed, currency, locale)}` : duesMoney(signed, currency, locale);
 }
 
 /** A person's balance: «сплачено», «+20 ₴» ahead, «−150 ₴» owed. */
-export function balanceLabel(balance: number): string {
+export function balanceLabel(balance: number, currency: string = DEFAULT_CURRENCY, locale: string = DEFAULT_NUMBER_LOCALE): string {
   if (balance === 0) return 'сплачено';
-  return balance > 0 ? `+${duesMoney(balance)}` : duesMoney(balance);
+  return balance > 0 ? `+${duesMoney(balance, currency, locale)}` : duesMoney(balance, currency, locale);
 }
 
 export function methodLabel(entry: Pick<DuesEntryDto, 'method' | 'counterMethod'>): string {
@@ -179,12 +194,41 @@ export function entryRequest(draft: EntryDraft): UpsertDuesEntryRequest {
 }
 
 /** The web's line under the kurin's box about the станиця and kurin parts in force now. */
-export function kurinRatesText(rate: KurinDuesRateDto | null): string {
+export function kurinRatesText(
+  rate: KurinDuesRateDto | null,
+  currency: string = DEFAULT_CURRENCY,
+  locale: string = DEFAULT_NUMBER_LOCALE,
+): string {
   if (!rate) return 'Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.';
-  const reduced = rate.stanytsiaReduced !== rate.stanytsiaFull ? ` (пільгова ${duesMoney(rate.stanytsiaReduced)})` : '';
+  const articles = rate.articles
+    .map((a) => `${a.name} ${duesMoney(a.amount, currency, locale)}${withPilha(a.amount, a.reducedAmount, currency, locale)}`)
+    .join(' · ');
+  return `${articles} за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.`;
+}
+
+/** " (з пільгою …)" when a пільга lowers the amount, else nothing. */
+export function withPilha(
+  full: number,
+  reduced: number,
+  currency: string = DEFAULT_CURRENCY,
+  locale: string = DEFAULT_NUMBER_LOCALE,
+): string {
+  return reduced !== full ? ` (з пільгою ${duesMoney(reduced, currency, locale)})` : '';
+}
+
+/**
+ * The server's KurinDuesArticles.AreStandard: only the two standard статті, which the phone's
+ * three-amount form can change without losing anything. Any other set is edited on the web.
+ */
+export function articlesAreStandard(rate: KurinDuesRateDto | null): boolean {
+  if (!rate || rate.articles.length === 0) return true;
+  const [up, kurin] = rate.articles;
   return (
-    `Станиця ${duesMoney(rate.stanytsiaFull)}${reduced} · курінь ${duesMoney(rate.kurinShare)} за квартал з кожного юнака. ` +
-    'Гурткову частину кожен гурток задає собі.'
+    rate.articles.length === 2 &&
+    ((up.name === 'Станиця' && up.recipient === 'Stanytsia') || (up.name === 'Край' && up.recipient === 'Krai')) &&
+    kurin.name === 'Курінь' &&
+    kurin.recipient === 'Kurin' &&
+    kurin.reducedAmount === kurin.amount
   );
 }
 

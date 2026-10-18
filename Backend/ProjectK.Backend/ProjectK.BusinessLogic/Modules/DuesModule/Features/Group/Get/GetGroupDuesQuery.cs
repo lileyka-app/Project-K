@@ -70,7 +70,8 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
 
         var ledger = new DuesLedger(kurinRates, groupRates, concessions, charges, entries);
         var accounts = ledger.Accounts();
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        var current = krai.QuarterOf(_time.GetUtcNow());
 
         // A membership the kurin no longer has is a removed person, not someone who left: their rows
         // were closed on removal, and older leftovers must not show as a nameless line.
@@ -126,16 +127,12 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             GroupKey = group.GroupKey,
             KurinKey = kurinKey,
             GroupName = group.Name,
-            Currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken),
+            Currency = krai.Currency,
+            NumberLocale = krai.NumberLocale,
+            Upstream = krai.Dues.Upstream,
             CurrentQuarter = Quarter(current),
             Years = Years(charges, current),
-            KurinRates = kurinRates.Select(r => new KurinDuesRateDto
-            {
-                FromQuarter = Quarter(DuesQuarter.FromIndex(r.FromQuarter)),
-                StanytsiaFull = r.StanytsiaFull,
-                StanytsiaReduced = r.StanytsiaReduced,
-                KurinShare = r.KurinShare
-            }).ToList(),
+            KurinRates = kurinRates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
             GroupRates = groupRates.Where(r => r.GroupKey == group.GroupKey).Select(r => new GroupDuesRateDto
             {
                 FromQuarter = Quarter(DuesQuarter.FromIndex(r.FromQuarter)),
@@ -185,5 +182,5 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
     private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
 
     private static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
+        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }

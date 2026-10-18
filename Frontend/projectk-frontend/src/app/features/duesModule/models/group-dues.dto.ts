@@ -1,4 +1,4 @@
-import { DuesEntryKind, DuesPaymentMethod } from './dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
 
 export interface QuarterDto {
   year: number;
@@ -11,11 +11,26 @@ export interface PlastYearDto {
   quarters: QuarterDto[];
 }
 
+/** One стаття of the kurin's вкладка, such as «Станична вкладка» or «Табірний фонд». */
+export interface DuesArticleDto {
+  name: string;
+  recipient: DuesRecipient;
+  amount: number;
+  /** What a person with a пільга pays for it. */
+  reducedAmount: number;
+}
+
 export interface KurinDuesRateDto {
   fromQuarter: QuarterDto;
+  /** The kurin's статті, in its order; the amounts below are their totals. */
+  articles: DuesArticleDto[];
   stanytsiaFull: number;
   stanytsiaReduced: number;
   kurinShare: number;
+  kurinReduced: number;
+  /** What goes to the край on its own transfer; zero until the kurin names a край стаття. */
+  kraiFull: number;
+  kraiReduced: number;
 }
 
 export interface GroupDuesRateDto {
@@ -25,6 +40,7 @@ export interface GroupDuesRateDto {
 
 export interface DuesAmountDto {
   stanytsia: number;
+  krai: number;
   kurin: number;
   group: number;
   total: number;
@@ -104,6 +120,10 @@ export interface GroupDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   groupName: string;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
@@ -153,6 +173,8 @@ export interface KurinDuesQuarterGroupDto {
   debtUp: number;
   stanytsiaExpected: number;
   stanytsiaCollected: number;
+  kraiExpected: number;
+  kraiCollected: number;
 }
 
 export interface KurinDuesQuarterDto {
@@ -178,12 +200,20 @@ export interface KurinDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
-  /** `toForward` is what still goes to the станиця; `inTransit` — handed over by гуртки, not confirmed yet. */
+  /** `toForward` is what still goes to the станиця and the край; `inTransit` — handed over by гуртки, not confirmed yet. */
   box: DuesBoxDto;
+  /** Of `box.toForward`, the станиця's and the край's. */
+  toStanytsia: number;
+  toKrai: number;
   sentToStanytsia: number;
+  sentToKrai: number;
   groups: KurinGroupHandoverDto[];
   quarters: KurinDuesQuarterDto[];
   transfers: DuesTransferDto[];
@@ -208,6 +238,8 @@ export interface MemberDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
   quarterRate: DuesAmountDto | null;
@@ -237,9 +269,14 @@ export interface SetGroupDuesRateRequest {
 
 export interface SetKurinDuesRateRequest {
   fromQuarter: QuarterDto;
-  stanytsiaFull: number;
-  stanytsiaReduced: number;
-  kurinShare: number;
+  articles: DuesArticleRequest[];
+}
+
+export interface DuesArticleRequest {
+  name: string;
+  recipient: DuesRecipient;
+  amount: number;
+  reducedAmount: number;
 }
 
 export interface SetDuesConcessionRequest {

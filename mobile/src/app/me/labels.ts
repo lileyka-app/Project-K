@@ -42,6 +42,25 @@ export function initials(firstName: string | null | undefined, lastName: string 
 /** Lilejka counted in гривні before краї had profiles; a response without a currency is still that. */
 export const DEFAULT_CURRENCY = 'UAH';
 
+/** How numbers were written before краї had profiles; a response without a locale is still that. */
+export const DEFAULT_NUMBER_LOCALE = 'uk-UA';
+
+const numberFormats = new Map<string, Intl.NumberFormat>();
+
+/** «1 240,5» in uk-UA, «1,240.5» in en-CA (the web's dues-format). An unknown locale falls back to uk-UA. */
+export function amountFormat(locale: string = DEFAULT_NUMBER_LOCALE): Intl.NumberFormat {
+  let format = numberFormats.get(locale);
+  if (!format) {
+    try {
+      format = new Intl.NumberFormat(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    } catch {
+      format = new Intl.NumberFormat(DEFAULT_NUMBER_LOCALE, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+    numberFormats.set(locale, format);
+  }
+  return format;
+}
+
 const symbols = new Map<string, string>();
 
 function symbolOf(currency: string): string {
@@ -59,9 +78,9 @@ export function currencySymbol(currency: string = DEFAULT_CURRENCY): string {
   return symbols.get(currency) ?? currency;
 }
 
-/** «150 ₴» with the sign kept for a debt. */
-export function money(amount: number, currency: string = DEFAULT_CURRENCY): string {
-  return `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 }).format(amount)} ${currencySymbol(currency)}`;
+/** «150 ₴» with the sign kept for a debt, the number written the край's way. */
+export function money(amount: number, currency: string = DEFAULT_CURRENCY, locale: string = DEFAULT_NUMBER_LOCALE): string {
+  return `${amountFormat(locale).format(amount)} ${currencySymbol(currency)}`;
 }
 
 function clock(date: Date): string {

@@ -3,7 +3,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { ConfirmationService } from '@openng/optimus-ui/api';
-import { DuesEntryKind, DuesPaymentMethod } from '../../models/dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from '../../models/dues.enums';
 import { DuesAccountDto, DuesEntryDto, GroupDuesDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { GroupDuesComponent } from './group-dues';
@@ -17,7 +17,7 @@ describe('GroupDuesComponent', () => {
   let dues: jasmine.SpyObj<DuesService>;
 
   const q = (year: number, number: number) => ({ year, number });
-  const amount = (stanytsia: number, kurin: number, group: number) => ({ stanytsia, kurin, group, total: stanytsia + kurin + group });
+  const amount = (stanytsia: number, kurin: number, group: number) => ({ stanytsia, krai: 0, kurin, group, total: stanytsia + kurin + group });
 
   const account = (over: Partial<DuesAccountDto>): DuesAccountDto => ({
     membershipKey: 'm-' + nextKey(),
@@ -80,12 +80,26 @@ describe('GroupDuesComponent', () => {
     kurinKey: 'k1',
     groupName: 'Соколи',
     currency: 'UAH',
+    numberLocale: 'uk-UA',
+    upstream: DuesUpstream.Stanytsia,
     currentQuarter: q(2026, 2),
     years: [
       { startYear: 2025, label: '25–26', quarters: [q(2025, 4), q(2026, 1), q(2026, 2), q(2026, 3)] },
       { startYear: 2024, label: '24–25', quarters: [q(2024, 4), q(2025, 1), q(2025, 2), q(2025, 3)] }
     ],
-    kurinRates: [{ fromQuarter: q(2025, 4), stanytsiaFull: 240, stanytsiaReduced: 180, kurinShare: 15 }],
+    kurinRates: [{
+      fromQuarter: q(2025, 4),
+      articles: [
+        { name: 'Станиця', recipient: DuesRecipient.Stanytsia, amount: 240, reducedAmount: 180 },
+        { name: 'Курінь', recipient: DuesRecipient.Kurin, amount: 15, reducedAmount: 15 }
+      ],
+      stanytsiaFull: 240,
+      stanytsiaReduced: 180,
+      kurinShare: 15,
+      kurinReduced: 15,
+      kraiFull: 0,
+      kraiReduced: 0
+    }],
     groupRates: [{ fromQuarter: q(2025, 4), groupShare: 45 }],
     accounts: [paidUp, debtor, moved],
     entries: [
@@ -141,6 +155,21 @@ describe('GroupDuesComponent', () => {
     expect(component.quarterTotal()).toBe(300);
     expect(text()).toContain('300 ₴');
     expect(text()).toContain('25 ₴');
+  });
+
+  it('показує пільгу курінної частини, коли курінь її задав', () => {
+    create({ ...data, kurinRates: [{ ...data.kurinRates[0], kurinReduced: 10 }] });
+
+    const rates = (fixture.nativeElement as HTMLElement).querySelector('.dues-rates')?.textContent ?? '';
+    expect(rates).toContain('з пільгою 180 ₴');
+    expect(rates).toContain('з пільгою 10 ₴');
+  });
+
+  it('не показує пільги курінної частини, коли вона дорівнює повній', () => {
+    create();
+
+    const rates = (fixture.nativeElement as HTMLElement).querySelector('.dues-rates')?.textContent ?? '';
+    expect(rates).not.toContain('з пільгою 15 ₴');
   });
 
   it('клік по юнаку лишає в історії тільки його операції, другий клік знімає фільтр', () => {

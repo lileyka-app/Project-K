@@ -1,4 +1,4 @@
-import { DEFAULT_CURRENCY } from '../../me/labels';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -42,8 +42,12 @@ import { GlassEffects } from '../../ui/glass';
 import {
   KIND_LABELS,
   KURIN_KINDS,
+  kurinKinds,
+  paysKrai,
+  paysStanytsia,
   allQuarters,
   amountLabel,
+  articlesAreStandard,
   duesMoney,
   fromQuarterOptions,
   kurinRatesText,
@@ -79,6 +83,7 @@ const DUES_ERRORS: Record<string, string> = {
   EntryNotFound: 'Цієї операції вже немає.',
   TransferNotFound: 'Цієї передачі вже немає.',
   CollectorNotInKurin: 'Той, хто збирав, має бути з цього куреня.',
+  DuesArticlesInUse: 'У куреня власні статті вкладки, їх змінюють у вебі.',
 };
 
 /**
@@ -247,13 +252,24 @@ const DUES_ERRORS: Record<string, string> = {
                         </ion-label>
                         <span slot="end" class="money ok">{{ money(d.box.own) }}</span>
                       </ion-item>
-                      <ion-item>
-                        <ion-label class="ion-text-wrap">
-                          <h3>До передачі в станицю</h3>
-                          <p>передано {{ money(d.sentToStanytsia) }}</p>
-                        </ion-label>
-                        <span slot="end" class="money">{{ money(d.box.toForward) }}</span>
-                      </ion-item>
+                      @if (hasStanytsia()) {
+                        <ion-item data-testid="to-stanytsia">
+                          <ion-label class="ion-text-wrap">
+                            <h3>До передачі в станицю</h3>
+                            <p>передано {{ money(d.sentToStanytsia) }}</p>
+                          </ion-label>
+                          <span slot="end" class="money">{{ money(d.toStanytsia) }}</span>
+                        </ion-item>
+                      }
+                      @if (hasKrai()) {
+                        <ion-item data-testid="to-krai">
+                          <ion-label class="ion-text-wrap">
+                            <h3>До передачі в край</h3>
+                            <p>передано {{ money(d.sentToKrai) }}</p>
+                          </ion-label>
+                          <span slot="end" class="money">{{ money(d.toKrai) }}</span>
+                        </ion-item>
+                      }
                       <ion-item>
                         <ion-label class="ion-text-wrap">
                           <h3>В дорозі від гуртків</h3>
@@ -282,10 +298,18 @@ const DUES_ERRORS: Record<string, string> = {
                         <div class="rates" data-testid="rates">{{ ratesText() }}</div>
                       </ion-item>
                       @if (d.viewer.canSetRates) {
-                        <ion-item [button]="true" [detail]="true" (click)="openRate()" data-testid="kurin-rate">
-                          <ion-label>Ставки куреня</ion-label>
-                          @if (!rateNow()) { <ion-note slot="end">не задано</ion-note> }
-                        </ion-item>
+                        @if (standardArticles()) {
+                          <ion-item [button]="true" [detail]="true" (click)="openRate()" data-testid="kurin-rate">
+                            <ion-label>Ставки куреня</ion-label>
+                            @if (!rateNow()) { <ion-note slot="end">не задано</ion-note> }
+                          </ion-item>
+                        } @else {
+                          <ion-item data-testid="kurin-rate-web">
+                            <ion-label class="ion-text-wrap">
+                              <p>У куреня власні статті вкладки, їх змінюють у вебі.</p>
+                            </ion-label>
+                          </ion-item>
+                        }
                       }
                     </ion-item-group>
                   </ion-list>
@@ -343,7 +367,8 @@ const DUES_ERRORS: Record<string, string> = {
                               <ion-label class="ion-text-wrap">
                                 <h3>{{ group.groupName }}</h3>
                                 <p>{{ quarterLine(group) }}</p>
-                                <p>До станиці {{ money(group.stanytsiaCollected) }} з {{ money(group.stanytsiaExpected) }}</p>
+                                @if (hasStanytsia()) { <p>До станиці {{ money(group.stanytsiaCollected) }} з {{ money(group.stanytsiaExpected) }}</p> }
+                                @if (hasKrai()) { <p>До краю {{ money(group.kraiCollected) }} з {{ money(group.kraiExpected) }}</p> }
                               </ion-label>
                               <span slot="end" class="money" [class.debt]="group.debtUp > 0" [class.ok]="group.debtUp <= 0">
                                 {{ group.debtUp > 0 ? money(group.debtUp) : 'сплачено' }}
@@ -354,7 +379,8 @@ const DUES_ERRORS: Record<string, string> = {
                             <ion-label class="ion-text-wrap">
                               <h3>Разом</h3>
                               <p>{{ quarterLine(row.total) }}</p>
-                              <p>До станиці {{ money(row.total.stanytsiaCollected) }} з {{ money(row.total.stanytsiaExpected) }}</p>
+                              @if (hasStanytsia()) { <p>До станиці {{ money(row.total.stanytsiaCollected) }} з {{ money(row.total.stanytsiaExpected) }}</p> }
+                              @if (hasKrai()) { <p>До краю {{ money(row.total.kraiCollected) }} з {{ money(row.total.kraiExpected) }}</p> }
                             </ion-label>
                             <span slot="end" class="money" [class.debt]="row.total.debtUp > 0" [class.ok]="row.total.debtUp <= 0">
                               {{ row.total.debtUp > 0 ? money(row.total.debtUp) : 'сплачено' }}
@@ -459,7 +485,7 @@ const DUES_ERRORS: Record<string, string> = {
                           data-testid="history-kind"
                         >
                           <ion-select-option value="all">Усі види</ion-select-option>
-                          @for (kind of kinds; track kind) {
+                          @for (kind of allKinds; track kind) {
                             <ion-select-option [value]="kind">{{ kindLabels[kind] }}</ion-select-option>
                           }
                         </ion-select>
@@ -521,7 +547,7 @@ const DUES_ERRORS: Record<string, string> = {
         <ng-template>
           <app-dues-entry-form
             [currency]="currency()"
-            [kinds]="kinds"
+            [kinds]="kinds()"
             [people]="data()?.people ?? []"
             [entry]="entryToEdit()"
             [saving]="saving()"
@@ -542,6 +568,7 @@ const DUES_ERRORS: Record<string, string> = {
         <ng-template>
           @if (data(); as d) {
             <app-dues-kurin-rate-form
+              [upstream]="d.upstream"
               [currency]="currency()"
               [rates]="d.rates"
               [quarters]="fromQuarters()"
@@ -569,12 +596,16 @@ export class KurinDuesPage implements OnInit, OnDestroy {
   protected readonly failedText = FAILED_TEXT;
   /** iOS names where back leads; Material shows the arrow alone. */
   protected readonly backText = inject(Config).get('mode') === 'ios' ? 'Курінь' : undefined;
-  protected readonly kinds = KURIN_KINDS;
+  protected readonly upstream = computed(() => this.data()?.upstream ?? 'stanytsia');
+  protected readonly kinds = computed(() => kurinKinds(this.upstream()));
+  /** The history filter keeps every kind: old operations stay whatever the край takes now. */
+  protected readonly allKinds = KURIN_KINDS;
   protected readonly kindLabels = KIND_LABELS;
   /** What this kurin counts its вкладка in, from its край's profile. */
   protected readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
-  protected readonly money = (amount: number): string => duesMoney(amount, this.currency());
-  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency());
+  protected readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
+  protected readonly money = (amount: number): string => duesMoney(amount, this.currency(), this.numberLocale());
+  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency(), this.numberLocale());
   protected readonly signed = signedAmount;
   protected readonly key = quarterKey;
 
@@ -605,7 +636,18 @@ export class KurinDuesPage implements OnInit, OnDestroy {
     const d = this.data();
     return d ? rateAt(d.rates, d.currentQuarter) : null;
   });
-  protected readonly ratesText = computed(() => kurinRatesText(this.rateNow()));
+  protected readonly ratesText = computed(() => kurinRatesText(this.rateNow(), this.currency(), this.numberLocale()));
+  protected readonly standardArticles = computed(() => articlesAreStandard(this.rateNow()));
+  /** The web's: the край takes money straight, or some of it is still here or was sent before. */
+  protected readonly hasKrai = computed(() => {
+    const d = this.data();
+    return !!d && (paysKrai(this.upstream()) || d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some((r) => r.kraiFull > 0));
+  });
+  /** The same for the станиця, which a край paid straight does not have. */
+  protected readonly hasStanytsia = computed(() => {
+    const d = this.data();
+    return !!d && (paysStanytsia(this.upstream()) || d.toStanytsia !== 0 || d.sentToStanytsia !== 0 || d.rates.some((r) => r.stanytsiaFull > 0));
+  });
   protected readonly pending = computed(() => (this.data()?.transfers ?? []).filter((t) => !t.isReceived));
   protected readonly outstanding = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
 

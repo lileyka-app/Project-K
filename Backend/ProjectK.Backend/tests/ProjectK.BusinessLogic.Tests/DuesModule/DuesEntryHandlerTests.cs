@@ -72,7 +72,7 @@ public class DuesEntryHandlerTests
             .ReturnsAsync([_youth, _moved]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(_kurin.KurinKey);
-        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object);
+        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Interfaces.Modules.KraiModule.IKraiProfileProvider>());
     }
 
     private static UpsertDuesEntryRequest Contribution(Guid membershipKey, decimal amount = 300) => new()

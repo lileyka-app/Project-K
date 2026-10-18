@@ -100,8 +100,8 @@
   <section class="kurin-tile" aria-labelledby="locale-title">
     <div class="lil-tile-head">
       <div>
-        <h2 id="locale-title">Валюта й час</h2>
-        <p>Валюта, в якій курені краю рахують вкладку, і часовий пояс, за яким повторюються події в порядку денному.</p>
+        <h2 id="locale-title">Валюта, час і вкладка</h2>
+        <p>Валюта, в якій курені краю рахують вкладку, як записуються суми, часовий пояс, за яким повторюються події й починається новий квартал, і куди курені передають вкладку.</p>
       </div>
     </div>
 
@@ -122,6 +122,23 @@
     </div>
 
     <div class="krai-field">
+      <label for="krai-number-locale">Запис чисел</label>
+      <p-select
+        inputId="krai-number-locale"
+        [options]="numberLocaleOptions()"
+        optionLabel="label"
+        optionValue="code"
+        [filter]="true"
+        [showClear]="true"
+        [ngModel]="numberLocale()"
+        (ngModelChange)="numberLocale.set($event ?? null)"
+        [placeholder]="'Як за замовчуванням (' + defaultNumberLocale + ')'"
+        [disabled]="saving()"
+        appendTo="body" />
+      <small class="krai-muted">Розділювач тисяч і копійок у сумах вкладки.</small>
+    </div>
+
+    <div class="krai-field">
       <label for="krai-time-zone">Часовий пояс</label>
       <p-select
         inputId="krai-time-zone"
@@ -136,6 +153,20 @@
         [disabled]="saving()"
         appendTo="body" />
       <small class="krai-muted">Сходини о 18:30 лишаються о 18:30 і після переведення годинника в цьому поясі.</small>
+    </div>
+
+    <div class="krai-field">
+      <label for="krai-dues-upstream">Куди курені передають вкладку</label>
+      <p-select
+        inputId="krai-dues-upstream"
+        [options]="upstreamOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="upstream()"
+        (ngModelChange)="upstream.set($event)"
+        [disabled]="saving()"
+        appendTo="body" />
+      <small class="krai-muted">Від цього залежить, кому можуть іти статті вкладки куреня і які передачі є в касі куреня. Задані раніше статті не змінюються.</small>
     </div>
 
     <div class="krai-save">

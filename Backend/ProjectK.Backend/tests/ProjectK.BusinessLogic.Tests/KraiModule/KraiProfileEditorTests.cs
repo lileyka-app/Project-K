@@ -51,7 +51,8 @@ public class KraiProfileEditorTests
         var result = await _editor.SaveAsync(" CZ ", 1, new KraiProfileDocument
         {
             Catalog = new KraiCatalogDocument { BadgeSources = [" CZ ", "ua", "cz", ""], HiddenBadges = [] },
-            Locale = new KraiLocaleDocument { Currency = "czk" }
+            Locale = new KraiLocaleDocument { Currency = "czk" },
+            Dues = new KraiDuesDocument { Upstream = " Krai " }
         }, " перше налаштування ", default);
 
         result.Type.Should().Be(ResultType.Success);
@@ -60,7 +61,7 @@ public class KraiProfileEditorTests
         saved.Revision.Should().Be(2);
         saved.CreatedByUserKey.Should().Be(_admin);
         saved.Note.Should().Be("перше налаштування");
-        saved.Json.Should().Be("""{"catalog":{"badgeSources":["cz","ua"]},"locale":{"currency":"CZK"}}""");
+        saved.Json.Should().Be("""{"catalog":{"badgeSources":["cz","ua"]},"locale":{"currency":"CZK"},"dues":{"upstream":"krai"}}""");
         _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
     }
 
@@ -81,6 +82,7 @@ public class KraiProfileEditorTests
     [InlineData("""{"locale":{"currency":"korun"}}""")]
     [InlineData("""{"locale":{"timeZone":"Mars/Olympus"}}""")]
     [InlineData("""{"locale":{"numberLocale":"xx-NOPE"}}""")]
+    [InlineData("""{"dues":{"upstream":"oblast"}}""")]
     [InlineData("""{"cardFields":{"fields":{"email":"hidden"}}}""")]
     [InlineData("""{"cardFields":{"fields":{"middleName":"sometimes"}}}""")]
     [InlineData("""{"cardFields":{"extra":[{"key":"тип","label":"Тип візи"}]}}""")]

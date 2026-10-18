@@ -8,7 +8,7 @@ COPY Backend/ProjectK.Backend/ Backend/ProjectK.Backend/
 RUN --mount=type=secret,id=nuget_auth_token,env=NUGET_AUTH_TOKEN \
     if [ -z "${NUGET_AUTH_TOKEN:-}" ]; then \
       echo "NUGET_AUTH_TOKEN is required to restore Project-K private GitHub NuGet packages when building the API image locally."; \
-      echo "Set PROJECTK_NUGET_AUTH_TOKEN in .env, or use the published ghcr.io/iamavasya/projectk-api image from the release bundle."; \
+      echo "Set PROJECTK_NUGET_AUTH_TOKEN in .env, or use the published ghcr.io/lileyka-app/projectk-api image from the release bundle."; \
       exit 1; \
     fi \
     && dotnet restore Backend/ProjectK.Backend/ProjectK.API/ProjectK.API.csproj

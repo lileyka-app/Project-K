@@ -39,7 +39,7 @@ public class KurinCatalogTests
             "ua", "Україна", 1,
             new KraiCatalogSettings(badgeSources, hiddenBadges ?? []),
             new KraiLocaleSettings("UAH", "Europe/Kyiv", "uk-UA"),
-            KraiCardFieldsSettings.Default));
+            KraiCardFieldsSettings.Default, KraiDuesSettings.Default));
     }
 
     [Fact]

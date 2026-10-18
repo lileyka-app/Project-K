@@ -13,6 +13,30 @@ public sealed record KraiProfileDocument
     public KraiCatalogDocument? Catalog { get; init; }
     public KraiLocaleDocument? Locale { get; init; }
     public KraiCardFieldsDocument? CardFields { get; init; }
+    public KraiDuesDocument? Dues { get; init; }
+}
+
+public sealed record KraiDuesDocument
+{
+    /// <summary>
+    /// Where the kurins hand up the вкладка: <see cref="KraiDues.Stanytsia"/>,
+    /// <see cref="KraiDues.Krai"/> or <see cref="KraiDues.Both"/>.
+    /// </summary>
+    public string? Upstream { get; init; }
+}
+
+public static class KraiDues
+{
+    /// <summary>Everything goes up through the станиця, which pays the край itself. How Lilejka began.</summary>
+    public const string Stanytsia = "stanytsia";
+
+    /// <summary>The край has no станиці in between: the kurins pay it straight.</summary>
+    public const string Krai = "krai";
+
+    /// <summary>Some статті go to the станиця, others to the край on their own transfer.</summary>
+    public const string Both = "both";
+
+    public static readonly IReadOnlyList<string> Upstreams = [Stanytsia, Krai, Both];
 }
 
 public sealed record KraiCatalogDocument
@@ -113,7 +137,17 @@ public sealed record KraiProfile(
     int Revision,
     KraiCatalogSettings Catalog,
     KraiLocaleSettings Locale,
-    KraiCardFieldsSettings CardFields);
+    KraiCardFieldsSettings CardFields,
+    KraiDuesSettings Dues);
+
+/// <summary>Where the kurins of the край hand up their вкладка.</summary>
+public sealed record KraiDuesSettings(string Upstream)
+{
+    public static readonly KraiDuesSettings Default = new(KraiDues.Stanytsia);
+
+    public bool PaysStanytsia => Upstream != KraiDues.Krai;
+    public bool PaysKrai => Upstream != KraiDues.Stanytsia;
+}
 
 public sealed record KraiCatalogSettings(
     IReadOnlyList<string> BadgeSources,

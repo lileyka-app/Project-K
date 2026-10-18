@@ -1,4 +1,5 @@
 using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Records;
 
@@ -14,18 +15,20 @@ public sealed class DuesDirectory : IDuesDirectory
 {
     private readonly DuesLedgerReader _ledgers;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
-    public DuesDirectory(DuesLedgerReader ledgers, TimeProvider time)
+    public DuesDirectory(DuesLedgerReader ledgers, TimeProvider time, IKraiProfileProvider profiles)
     {
         _ledgers = ledgers;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<IReadOnlyCollection<PaidQuarterRecord>> GetPaidQuartersAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
         var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
 
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
+        var current = (await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).QuarterOf(_time.GetUtcNow());
         return ledger.Accounts()
             .SelectMany(account => account.Quarters
                 .Where(q => q.Quarter < current && q.Charged.Total > 0 && q.Balance >= 0)

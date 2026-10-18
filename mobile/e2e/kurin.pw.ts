@@ -130,7 +130,7 @@ function kurinApi(options: { canUpdate: (memberKey: string) => boolean; duesGrou
           case '/dues':
             return key !== 'm1' ? refuse(403) : ok({
               hasAccount: true, kurinKey: 'k1', currentQuarter: { year: 2026, number: 4 }, balance: -150,
-              quarterRate: { stanytsia: 100, kurin: 30, group: 20, total: 150 }, isConcessionNow: false,
+              quarterRate: { stanytsia: 100, krai: 0, kurin: 30, group: 20, total: 150 }, isConcessionNow: false,
               currentGroupKey: 'g1', currentGroupName: 'Соколи', canOpenGroupDues: false, accounts: [],
               entries: [{ duesEntryKey: 'de1', kind: 'Contribution', amount: 150, occurredOn: '2026-07-02' }],
             });

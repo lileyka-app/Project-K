@@ -99,7 +99,10 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
                 Currency: Text(locale?.Currency)?.ToUpperInvariant() ?? "UAH",
                 TimeZone: Text(locale?.TimeZone) ?? AgendaRecurrence.DefaultZone.Id,
                 NumberLocale: Text(locale?.NumberLocale) ?? "uk-UA"),
-            CardFields(document.CardFields));
+            CardFields(document.CardFields),
+            new KraiDuesSettings(Text(document.Dues?.Upstream)?.ToLowerInvariant() is { } upstream && KraiDues.Upstreams.Contains(upstream)
+                ? upstream
+                : KraiDues.Stanytsia));
     }
 
     // The card as it was before profiles, with whatever the край changed over it. A mode or a

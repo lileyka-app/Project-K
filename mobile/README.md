@@ -24,7 +24,7 @@ npm run e2e               # прод-збірка + PWA-смоук у Playwright
 ## PWA
 
 PWA живе на тому ж домені, що й веб, під шляхом `/m/` (наприклад
-`projectk.rostyslav-mukha.dev/m/`): той самий origin у CORS, ті самі cookie і той самий `/env.js`
+`lileyka.app/m/`): той самий origin у CORS, ті самі cookie і той самий `/env.js`
 з адресою API, тож self-host працює без окремого домену. Збирає її `npm run build:pwa`
 (`--base-href /m/`); у хмарі її кладе в сайт `angular.yml`, у self-host — `Frontend/projectk-frontend/Dockerfile`
 (nginx: `docker/nginx/projectk-frontend.conf`).

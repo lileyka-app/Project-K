@@ -18,7 +18,7 @@ echo "== badge pictures for the demo"
 # The pictures are heavy (46 MB of Illustrator SVG) and public, so they are not in git: they come
 # from the same PlastBadgesParser release the API extracts, once per checkout.
 badges="$frontend/public/assets/demo/badges_images"
-repo="iamavasya/PlastBadgesParser"
+repo="lileyka-app/PlastBadgesParser"
 
 # The API is the obvious way to find the latest asset and the wrong one for a build machine:
 # api.github.com allows 60 unauthenticated calls an hour per address, and shared CI addresses

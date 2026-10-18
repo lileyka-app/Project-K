@@ -8,7 +8,7 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 
-/// <summary>What a kurin takes from its край's profile: the zone its week runs in and the currency of its вкладка.</summary>
+/// <summary>What a kurin takes from its край's profile: the zone its week runs in, and the currency, number format and clock of its вкладка.</summary>
 public class KurinLocaleTests
 {
     private static readonly Guid Kurin = Guid.NewGuid();
@@ -17,7 +17,7 @@ public class KurinLocaleTests
     {
         var profiles = new Mock<IKraiProfileProvider>();
         profiles.Setup(p => p.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(
-            "cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", timeZone, "uk-UA"), KraiCardFieldsSettings.Default));
+            "cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", timeZone, "cs-CZ"), KraiCardFieldsSettings.Default, KraiDuesSettings.Default));
         return profiles;
     }
 
@@ -35,13 +35,29 @@ public class KurinLocaleTests
         var profiles = new Mock<IKraiProfileProvider>().Object;
 
         (await profiles.ForKurinAsync(Kurin, default)).Should().Be(AgendaRecurrence.DefaultZone);
-        (await profiles.CurrencyForKurinAsync(Kurin, default)).Should().Be("UAH");
+        (await profiles.DuesKraiForKurinAsync(Kurin, default)).Should().Be(DuesKrai.Default);
     }
 
     [Fact]
-    public async Task AKurin_CountsItsDues_InItsKraisCurrency()
+    public async Task AKurin_CountsItsDues_InItsKraisCurrency_AndWritesThemItsWay()
     {
-        (await Profile("Europe/Prague").Object.CurrencyForKurinAsync(Kurin, default)).Should().Be("CZK");
+        var krai = await Profile("Europe/Prague").Object.DuesKraiForKurinAsync(Kurin, default);
+
+        krai.Currency.Should().Be("CZK");
+        krai.NumberLocale.Should().Be("cs-CZ");
+        krai.Zone.Id.Should().Be("Europe/Prague");
+    }
+
+    [Fact]
+    public async Task AKurinsQuarter_TurnsAtMidnightInItsKrai()
+    {
+        var prague = await Profile("Europe/Prague").Object.DuesKraiForKurinAsync(Kurin, default);
+        var toronto = await Profile("America/Toronto").Object.DuesKraiForKurinAsync(Kurin, default);
+        var lateOn31March = new DateTimeOffset(2026, 3, 31, 23, 30, 0, TimeSpan.Zero);
+
+        prague.QuarterOf(lateOn31March).Should().Be(new Common.Models.Dues.DuesQuarter(2026, 2));
+        toronto.QuarterOf(lateOn31March).Should().Be(new Common.Models.Dues.DuesQuarter(2026, 1));
+        prague.Today(lateOn31March).Should().Be(new DateOnly(2026, 4, 1));
     }
 
     [Fact]

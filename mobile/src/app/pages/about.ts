@@ -353,8 +353,8 @@ export class AboutPage implements OnInit {
 
   protected readonly links = {
     site: 'https://rostyslav-mukha.dev',
-    github: 'https://github.com/iamavasya/Project-K',
-    releases: 'https://github.com/iamavasya/Project-K/releases',
+    github: 'https://github.com/lileyka-app/Project-K',
+    releases: 'https://github.com/lileyka-app/Project-K/releases',
   };
 
   /** The web's milestones (about-page.ts), with ionicons for its PrimeIcons. */

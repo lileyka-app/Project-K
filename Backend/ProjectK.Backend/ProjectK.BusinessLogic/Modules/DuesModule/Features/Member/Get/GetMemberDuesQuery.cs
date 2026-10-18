@@ -62,7 +62,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
             return new ServiceResult<MemberDuesResponse>(ResultType.Forbidden);
         }
 
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        var current = krai.QuarterOf(_time.GetUtcNow());
         var memberships = (await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken))
             .Where(m => m.KurinKey == kurinKey)
             .ToList();
@@ -95,13 +96,12 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         var canOpenGroup = currentGroup is { } groupKey
             && (await _resourceAccess.CheckAccessAsync(ResourceType.GroupDues, ResourceAction.Read, groupKey, cancellationToken)).IsAllowed;
 
-        var currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken);
-
         return new ServiceResult<MemberDuesResponse>(ResultType.Success, new MemberDuesResponse
         {
             HasAccount = true,
             KurinKey = kurinKey,
-            Currency = currency,
+            Currency = krai.Currency,
+            NumberLocale = krai.NumberLocale,
             CurrentQuarter = Quarter(current),
             Balance = accounts.Sum(a => a.Balance),
             QuarterRate = rate is null ? null : Amount(rate),
@@ -142,5 +142,5 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
 
     private static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
+        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }

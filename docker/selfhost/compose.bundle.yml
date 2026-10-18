@@ -1,12 +1,12 @@
 services:
   projectk-web:
-    image: "ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION:?задай PROJECTK_VERSION у .env, приклад у .env.example}"
+    image: "ghcr.io/lileyka-app/projectk-web:${PROJECTK_VERSION:?задай PROJECTK_VERSION у .env, приклад у .env.example}"
     environment:
       # Relative on purpose: nginx inside this container proxies /api to the API, so the browser
       # never needs a second host or port and the API is not reachable from outside at all.
       PROJECTK_API_URL: ${PROJECTK_API_URL:-/api}
       PROJECTK_ENVIRONMENT_NAME: ${PROJECTK_ENVIRONMENT_NAME:-Self-Host}
-      PROJECTK_DOCS_URL: ${PROJECTK_DOCS_URL:-https://docs-projectk.rostyslav-mukha.dev/}
+      PROJECTK_DOCS_URL: ${PROJECTK_DOCS_URL:-https://docs.lileyka.app/}
     # The only port the bundle publishes. Put a TLS-terminating reverse proxy in front of it
     # before exposing the host to the internet (README, "Before exposing to the internet").
     ports:
@@ -23,7 +23,7 @@ services:
       retries: 10
 
   projectk-api:
-    image: "ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION:?задай PROJECTK_VERSION у .env, приклад у .env.example}"
+    image: "ghcr.io/lileyka-app/projectk-api:${PROJECTK_VERSION:?задай PROJECTK_VERSION у .env, приклад у .env.example}"
     environment:
       ASPNETCORE_ENVIRONMENT: SelfHost
       ASPNETCORE_URLS: http://+:8080
@@ -58,7 +58,11 @@ services:
       # «Повідомити про проблему» opens a GitHub issue with this token; empty means the report
       # is written to the API log instead.
       Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
-      Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
+      Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-lileyka-app/Project-K}
+      # Anonymous daily ping to the status service: release, counts, nothing personal
+      # (docs/self-host/README.md, «Телеметрія»). Only true/1/yes/on pings; unset means true,
+      # empty or anything else (false, 0, no, off) turns it off.
+      Telemetry__Enabled: ${PROJECTK_TELEMETRY-true}
       # Push notifications to the phone app (/m/). Empty keys mean no push; see .env.example.
       WebPush__PublicKey: ${PROJECTK_WEBPUSH_PUBLIC_KEY:-}
       WebPush__PrivateKey: ${PROJECTK_WEBPUSH_PRIVATE_KEY:-}

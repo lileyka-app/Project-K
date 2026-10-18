@@ -253,6 +253,8 @@ export interface MemberDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
   quarterRate: { total: number } | null;

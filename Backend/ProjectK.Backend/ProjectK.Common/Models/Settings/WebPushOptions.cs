@@ -14,7 +14,7 @@ public sealed class WebPushOptions
     /// <summary>The private scalar, base64url (32 bytes). A secret: configuration only, never the repository.</summary>
     public string? PrivateKey { get; set; }
 
-    public const string DefaultSubject = "mailto:projectk-system@mail-noreply.rostyslav-mukha.dev";
+    public const string DefaultSubject = "mailto:projectk-system@mail.lileyka.app";
 
     /// <summary>Who push services may contact about this sender: a <c>mailto:</c> or <c>https:</c> URL.</summary>
     public string? Subject { get; set; }

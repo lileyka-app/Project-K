@@ -99,17 +99,37 @@
         @if (kurinRateNow(); as kurin) {
           @if (groupRateNow() !== null) {
             Квартальна вкладка <strong>{{ money(quarterTotal()) }}</strong>
-            = станиця {{ money(kurin.stanytsiaFull) }}
-            @if (kurin.stanytsiaReduced !== kurin.stanytsiaFull) { (пільгова {{ money(kurin.stanytsiaReduced) }}) }
-            · курінь {{ money(kurin.kurinShare) }}
+            =
+            @if (showStanytsia(kurin.stanytsiaFull)) {
+              станиця {{ money(kurin.stanytsiaFull) }}
+              @if (kurin.stanytsiaReduced !== kurin.stanytsiaFull) { (з пільгою {{ money(kurin.stanytsiaReduced) }}) }
+              ·
+            }
+            @if (kurin.kraiFull > 0) {
+              край {{ money(kurin.kraiFull) }}
+              @if (kurin.kraiReduced !== kurin.kraiFull) { (з пільгою {{ money(kurin.kraiReduced) }}) }
+              ·
+            }
+            курінь {{ money(kurin.kurinShare) }}
+            @if (kurin.kurinReduced !== kurin.kurinShare) { (з пільгою {{ money(kurin.kurinReduced) }}) }
             · гурток {{ money(groupRateNow()!) }}
           } @else {
-            Станиця {{ money(kurin.stanytsiaFull) }} · курінь {{ money(kurin.kurinShare) }}.
+            @if (showStanytsia(kurin.stanytsiaFull)) {
+              Станиця {{ money(kurin.stanytsiaFull) }}
+              @if (kurin.stanytsiaReduced !== kurin.stanytsiaFull) { (з пільгою {{ money(kurin.stanytsiaReduced) }}) }
+              ·
+            }
+            @if (kurin.kraiFull > 0) {
+              Край {{ money(kurin.kraiFull) }}
+              @if (kurin.kraiReduced !== kurin.kraiFull) { (з пільгою {{ money(kurin.kraiReduced) }}) }
+              ·
+            }
+            Курінь {{ money(kurin.kurinShare) }}@if (kurin.kurinReduced !== kurin.kurinShare) { (з пільгою {{ money(kurin.kurinReduced) }})}.
             Гурткову частину ще не задано — поки вона нуль.
           }
         } @else {
           <i class="pi pi-info-circle"></i>
-          Курінь ще не задав станичної та курінної частини вкладки.
+          Курінь ще не задав своїх статей вкладки.
           @if (groupRateNow(); as share) {
             Гурток свою задав: {{ money(share) }} за квартал.
           } @else {
@@ -358,6 +378,9 @@
       [years]="d.years"
       [currentQuarter]="d.currentQuarter"
       [saving]="savingKurinRate()"
+      [currency]="currency()"
+      [numberLocale]="numberLocale()"
+      [upstream]="upstream()"
       (save)="saveKurinRate($event)" />
 
     <p-dialog

@@ -24,6 +24,7 @@ using ProjectK.Infrastructure.Services.Feedback;
 using ProjectK.Infrastructure.Services.GeoIP;
 using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.Spreadsheets;
+using ProjectK.Infrastructure.Services.Telemetry;
 using ProjectK.Infrastructure.Services.WebPush;
 using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
@@ -72,8 +73,29 @@ public static class DependencyInjection
         AddEmail(services, configuration);
         AddFeedback(services, configuration);
         AddWebPush(services, configuration);
+        AddTelemetry(services, configuration);
 
         return services;
+    }
+
+    /// <summary>
+    /// The anonymous daily ping to the status service. The request counters are always there for
+    /// the API's middleware to write to; the ping itself only runs when it is enabled.
+    /// </summary>
+    private static void AddTelemetry(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<TelemetryOptions>(configuration.GetSection(TelemetryOptions.SectionName));
+        services.AddSingleton<TelemetryCounters>();
+
+        var options = configuration.GetSection(TelemetryOptions.SectionName).Get<TelemetryOptions>() ?? new TelemetryOptions();
+        if (!options.IsEnabled)
+        {
+            return;
+        }
+
+        services.AddScoped<TelemetryCollector>();
+        services.AddHttpClient(TelemetryBackgroundService.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(Math.Max(1, options.TimeoutSeconds)));
+        services.AddHostedService<TelemetryBackgroundService>();
     }
 
     /// <summary>

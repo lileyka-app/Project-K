@@ -33,4 +33,11 @@ public sealed class ScoreBookReader
 
     public Task<ScoreBook> OpenAsync(Guid kurinKey, CancellationToken cancellationToken) =>
         ScoreBook.OpenAsync(kurinKey, _score, _unitOfWork, _memberships, _members, _facts, _time, cancellationToken);
+
+    public async Task<ScoreAttendanceBook> OpenAttendanceAsync(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var rates = await _score.ScoreAttendanceRates.GetForKurinAsync(kurinKey, cancellationToken);
+        var attendances = await _score.ScoreAttendances.GetForKurinAsync(kurinKey, cancellationToken);
+        return new ScoreAttendanceBook(rates, attendances);
+    }
 }
