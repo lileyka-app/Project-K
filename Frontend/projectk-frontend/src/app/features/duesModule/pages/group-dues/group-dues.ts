@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -243,7 +244,8 @@ export class GroupDuesComponent implements OnInit {
   }
 
   canEdit(entry: DuesEntryDto): boolean {
-    return !!this.data()?.viewer.canKeep && !entry.isVerified;
+    // A transfer the kurin received is the kurin's money now: changing it here would change its box.
+    return !!this.data()?.viewer.canKeep && !entry.isVerified && !entry.receivedAtUtc;
   }
 
   openEntryDialog(entry: DuesEntryDto | null = null): void {
@@ -267,7 +269,7 @@ export class GroupDuesComponent implements OnInit {
       },
       error: (error: unknown) => {
         this.savingEntry.set(false);
-        this.entryError.set(failureDetail(error, 'Не вдалося записати. Спробуй ще раз.'));
+        this.entryError.set(lockedReason(error) ?? failureDetail(error, 'Не вдалося записати. Спробуй ще раз.'));
       }
     });
   }
@@ -366,4 +368,13 @@ export class GroupDuesComponent implements OnInit {
       .filter(r => index(from(r)) <= index(current))
       .sort((a, b) => index(from(b)) - index(from(a)))[0] ?? null;
   }
+}
+
+/** Why the server kept an operation as it was, when someone locked it while the dialog was open. */
+function lockedReason(error: unknown): string | null {
+  const code = error instanceof HttpErrorResponse && error.status === 409 ? (error.error as { error?: unknown } | null)?.error : null;
+  if (code === 'TransferReceived') {
+    return 'Курінний уже прийняв цю передачу. Змінити її можна, лише коли він зніме підтвердження.';
+  }
+  return code === 'EntryVerified' ? 'Операцію вже перевірено, її не змінити.' : null;
 }

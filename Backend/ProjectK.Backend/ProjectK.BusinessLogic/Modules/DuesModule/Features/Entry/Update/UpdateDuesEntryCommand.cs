@@ -65,6 +65,13 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
                 "A verified operation is locked. Add a correction, or have the впорядник unmark it.");
         }
 
+        // The kurin counted this money as received; changing it here would quietly change the kurin's box.
+        if (entry.ReceivedAtUtc.HasValue)
+        {
+            return ServiceResult<object>.Failure(ResultType.Conflict, "TransferReceived",
+                "The kurin treasurer has received this transfer. They have to take the confirmation back first.");
+        }
+
         if (await _writer.CheckForGroupAsync<object>(group, request.Request, cancellationToken) is { } problem)
         {
             return problem;

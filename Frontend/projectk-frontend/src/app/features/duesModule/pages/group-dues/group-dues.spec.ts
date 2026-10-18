@@ -203,6 +203,15 @@ describe('GroupDuesComponent', () => {
     expect(component.canEdit(data.entries[1])).toBeTrue();
   });
 
+  // Передачу, яку курінний уже прийняв, гурток не міняє: інакше тихо змінилася б і каса куреня.
+  it('прийняту курінним передачу не дає ні змінити, ні видалити', () => {
+    create();
+
+    const received = entry({ duesEntryKey: 'e-t', kind: DuesEntryKind.TransferToKurin, amount: 200, receivedAtUtc: '2026-05-02T10:00:00Z' });
+    expect(component.canEdit(received)).toBeFalse();
+    expect(component.canEdit({ ...received, receivedAtUtc: null })).toBeTrue();
+  });
+
   it('витрата й повернення показуються зі знаком мінус, внесок — з плюсом', () => {
     create();
 
