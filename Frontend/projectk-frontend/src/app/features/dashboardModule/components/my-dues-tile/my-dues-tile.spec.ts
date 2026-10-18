@@ -12,7 +12,8 @@ function dues(balance: number, kurinNumber = 1): MyDuesDto {
     quarterNumber: 4,
     balance,
     quarterRate: 150,
-    isConcession: false
+    isConcession: false,
+    concessionNames: []
   };
 }
 

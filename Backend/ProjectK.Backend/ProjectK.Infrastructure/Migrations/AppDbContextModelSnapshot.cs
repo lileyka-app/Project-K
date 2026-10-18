@@ -399,6 +399,10 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<bool>("IsPreparatoryKurin")
                         .HasColumnType("bit");
 
+                    b.Property<string>("KraiCode")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -451,6 +455,8 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("FoundedKurinKey");
+
+                    b.HasIndex("KraiCode");
 
                     b.ToTable("WaitlistEntries");
                 });
@@ -524,6 +530,68 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("DuesConcessions");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesConcessionGrant", b =>
+                {
+                    b.Property<Guid>("DuesConcessionGrantKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcessionKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FromQuarter")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembershipKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("Parts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("SetByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ToQuarter")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("DuesConcessionGrantKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.HasIndex("MembershipKey");
+
+                    b.ToTable("DuesConcessionGrants");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntry", b =>
@@ -898,6 +966,162 @@ namespace ProjectK.Infrastructure.Migrations
                             Code = "cz",
                             CreatedAtUtc = new DateTime(2026, 10, 14, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Чехія"
+                        },
+                        new
+                        {
+                            Code = "pl",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Польща"
+                        },
+                        new
+                        {
+                            Code = "au",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Австралія"
+                        },
+                        new
+                        {
+                            Code = "at",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Австрія"
+                        },
+                        new
+                        {
+                            Code = "ar",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Аргентина"
+                        },
+                        new
+                        {
+                            Code = "gb",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Велика Британія"
+                        },
+                        new
+                        {
+                            Code = "ca",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Канада"
+                        },
+                        new
+                        {
+                            Code = "de",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Німеччина"
+                        },
+                        new
+                        {
+                            Code = "us",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Сполучені Штати Америки"
+                        },
+                        new
+                        {
+                            Code = "be",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Бельгія"
+                        },
+                        new
+                        {
+                            Code = "ge",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Грузія"
+                        },
+                        new
+                        {
+                            Code = "dk",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Данія"
+                        },
+                        new
+                        {
+                            Code = "is",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Ісландія"
+                        },
+                        new
+                        {
+                            Code = "es",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Іспанія"
+                        },
+                        new
+                        {
+                            Code = "it",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Італія"
+                        },
+                        new
+                        {
+                            Code = "cn",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Китай"
+                        },
+                        new
+                        {
+                            Code = "cy",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Кіпр"
+                        },
+                        new
+                        {
+                            Code = "lv",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Латвія"
+                        },
+                        new
+                        {
+                            Code = "lt",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Литва"
+                        },
+                        new
+                        {
+                            Code = "nl",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Нідерланди"
+                        },
+                        new
+                        {
+                            Code = "pe",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Перу"
+                        },
+                        new
+                        {
+                            Code = "sk",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Словаччина"
+                        },
+                        new
+                        {
+                            Code = "fi",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Фінляндія"
+                        },
+                        new
+                        {
+                            Code = "fr",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Франція"
+                        },
+                        new
+                        {
+                            Code = "ch",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Швейцарія"
+                        },
+                        new
+                        {
+                            Code = "se",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Швеція"
+                        },
+                        new
+                        {
+                            Code = "jp",
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Японія"
                         });
                 });
 
@@ -956,6 +1180,266 @@ namespace ProjectK.Infrastructure.Migrations
                             CreatedAtUtc = new DateTime(2026, 10, 14, 0, 0, 0, 0, DateTimeKind.Utc),
                             Json = "{}",
                             KraiCode = "cz",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a03"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"pl\"]},\"locale\":{\"currency\":\"PLN\",\"timeZone\":\"Europe/Warsaw\"}}",
+                            KraiCode = "pl",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a04"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"AUD\",\"timeZone\":\"Australia/Sydney\"}}",
+                            KraiCode = "au",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a05"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Vienna\"}}",
+                            KraiCode = "at",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a06"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"ARS\",\"timeZone\":\"America/Argentina/Buenos_Aires\"}}",
+                            KraiCode = "ar",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a07"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"GBP\",\"timeZone\":\"Europe/London\"}}",
+                            KraiCode = "gb",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a08"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"CAD\",\"timeZone\":\"America/Toronto\"}}",
+                            KraiCode = "ca",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a09"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Berlin\"}}",
+                            KraiCode = "de",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a0a"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"USD\",\"timeZone\":\"America/New_York\"}}",
+                            KraiCode = "us",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a0b"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Brussels\"}}",
+                            KraiCode = "be",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a0c"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"GEL\",\"timeZone\":\"Asia/Tbilisi\"}}",
+                            KraiCode = "ge",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a0d"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"DKK\",\"timeZone\":\"Europe/Copenhagen\"}}",
+                            KraiCode = "dk",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a0e"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"ISK\",\"timeZone\":\"Atlantic/Reykjavik\"}}",
+                            KraiCode = "is",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a0f"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Madrid\"}}",
+                            KraiCode = "es",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a10"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Rome\"}}",
+                            KraiCode = "it",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a11"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"CNY\",\"timeZone\":\"Asia/Shanghai\"}}",
+                            KraiCode = "cn",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a12"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Asia/Nicosia\"}}",
+                            KraiCode = "cy",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a13"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Riga\"}}",
+                            KraiCode = "lv",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a14"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Vilnius\"}}",
+                            KraiCode = "lt",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a15"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Amsterdam\"}}",
+                            KraiCode = "nl",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a16"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"PEN\",\"timeZone\":\"America/Lima\"}}",
+                            KraiCode = "pe",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a17"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Bratislava\"}}",
+                            KraiCode = "sk",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a18"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Helsinki\"}}",
+                            KraiCode = "fi",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a19"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"EUR\",\"timeZone\":\"Europe/Paris\"}}",
+                            KraiCode = "fr",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a1a"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"CHF\",\"timeZone\":\"Europe/Zurich\"}}",
+                            KraiCode = "ch",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a1b"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"SEK\",\"timeZone\":\"Europe/Stockholm\"}}",
+                            KraiCode = "se",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a1c"),
+                            CreatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{\"catalog\":{\"badgeSources\":[\"ua\"]},\"locale\":{\"currency\":\"JPY\",\"timeZone\":\"Asia/Tokyo\"}}",
+                            KraiCode = "jp",
                             Note = "Початковий профіль",
                             Revision = 1,
                             SchemaVersion = 1
@@ -2607,6 +3091,11 @@ namespace ProjectK.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("FoundedKurinKey")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProjectK.Common.Entities.KraiModule.Krai", null)
+                        .WithMany()
+                        .HasForeignKey("KraiCode")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntryEvent", b =>

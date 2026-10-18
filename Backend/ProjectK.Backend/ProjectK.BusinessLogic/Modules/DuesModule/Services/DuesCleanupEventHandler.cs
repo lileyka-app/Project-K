@@ -32,6 +32,7 @@ public sealed class DuesCleanupEventHandler : INotificationHandler<DomainEventNo
 
         await _dues.DuesCharges.DeleteForMembershipsAsync(keys, cancellationToken);
         await _dues.DuesConcessions.DeleteForMembershipsAsync(keys, cancellationToken);
+        await _dues.DuesConcessionGrants.DeleteForMembershipsAsync(keys, cancellationToken);
 
         var now = _time.GetUtcNow().UtcDateTime;
         foreach (var entry in await _dues.DuesEntries.GetForMembershipsAsync(keys, cancellationToken))

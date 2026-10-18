@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -61,6 +62,16 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
             return ServiceResult<Guid>.Failure(ResultType.Conflict, "WaitlistEntryAlreadyApproved", "Waitlist entry is already approved.");
         }
 
+        // The admin's pick wins over the applicant's; an entry from before the form asked has neither,
+        // and its kurin opens in the instance's default край.
+        var chosenKrai = Krai.NormalizeCode(request.KraiCode);
+        if (chosenKrai is not null && !await _unitOfWork.Krais.ExistsAsync(chosenKrai, cancellationToken))
+        {
+            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "KraiNotFound", "Такого краю немає в списку.");
+        }
+
+        var kraiCode = chosenKrai ?? entry.KraiCode ?? _krai.Default;
+
         // A leader's kurin opens with the number they claimed, or none when they lead a підготовчий
         // курінь. A claim outside the range (an early form let "0" through) is read the same way:
         // the number is theirs to set later in the kurin's settings.
@@ -71,9 +82,10 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
             && _numbers.IsAllowed(claimed))
         {
             kurinNumber = claimed;
-            if (await _unitOfWork.Kurins.ExistsAsync(_krai.Default, claimed, cancellationToken))
+            // A number is the kurin's within its край, so it is only taken if this край has it.
+            if (await _unitOfWork.Kurins.ExistsAsync(kraiCode, claimed, cancellationToken))
             {
-                return ServiceResult<Guid>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists.");
+                return ServiceResult<Guid>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this krai.");
             }
         }
 
@@ -97,9 +109,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         // 3. Create Kurin Placeholder if leader candidate
         if (entry.IsKurinLeaderCandidate)
         {
-            // The waitlist does not ask for a край yet, so the kurin opens in the instance's default
-            // one; an admin moves it from the kurin list if it belongs elsewhere.
-            var kurin = new Kurin(kurinNumber) { KraiCode = _krai.Default };
+            var kurin = new Kurin(kurinNumber) { KraiCode = kraiCode };
             _unitOfWork.Kurins.Create(kurin, cancellationToken);
 
             // The entry remembers which kurin it opened, so activation can seat the founder in it.
@@ -108,6 +118,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         }
 
         // 4. Update Waitlist Entry
+        entry.KraiCode = kraiCode;
         entry.VerificationStatus = WaitlistVerificationStatus.ApprovedForInvitation;
         entry.ApprovedAtUtc = DateTime.UtcNow;
         entry.ReviewedAtUtc = DateTime.UtcNow;

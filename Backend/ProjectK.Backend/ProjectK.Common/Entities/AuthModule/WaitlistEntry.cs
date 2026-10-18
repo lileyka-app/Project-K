@@ -29,6 +29,14 @@ public class WaitlistEntry : Entity
     [MaxLength(120)]
     public string? RegionOrCountry { get; set; }
 
+    /// <summary>
+    /// The край the applicant's kurin belongs to, picked from the list on the form; the admin may
+    /// change it on approval. Empty on entries from before the form asked, and then the kurin opens
+    /// in the instance's default край.
+    /// </summary>
+    [MaxLength(8)]
+    public string? KraiCode { get; set; }
+
     public bool IsKurinLeaderCandidate { get; set; }
 
     [MaxLength(200)]

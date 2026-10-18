@@ -1,4 +1,5 @@
 using ProjectK.Common.Models.Catalog;
+using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Services.Catalog;
 
@@ -8,18 +9,8 @@ namespace ProjectK.Infrastructure.Services.Catalog;
 /// </summary>
 internal static class CatalogMapper
 {
-    private static readonly Dictionary<string, string> KraiNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["ua"] = "Україна",
-        ["pl"] = "Польща",
-        ["cz"] = "Чехія",
-        ["de"] = "Німеччина",
-        ["gb"] = "Велика Британія",
-        ["us"] = "США",
-        ["ca"] = "Канада",
-        ["au"] = "Австралія",
-        ["ar"] = "Аргентина",
-    };
+    private static readonly Dictionary<string, string> KraiNames = KraiSeed.All.ToDictionary(
+        seed => seed.Code, seed => seed.Name, StringComparer.OrdinalIgnoreCase);
 
     private static readonly Dictionary<string, string> Statuses = new(StringComparer.OrdinalIgnoreCase)
     {

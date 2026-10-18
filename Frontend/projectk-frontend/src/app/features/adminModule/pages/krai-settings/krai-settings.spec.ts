@@ -32,7 +32,8 @@ describe('KraiSettingsComponent', () => {
   };
 
   beforeEach(async () => {
-    profiles = jasmine.createSpyObj<KraiProfileService>('KraiProfileService', ['get', 'save', 'revisions', 'restore']);
+    profiles = jasmine.createSpyObj<KraiProfileService>('KraiProfileService', ['create', 'rename', 'get', 'save', 'revisions', 'restore', 'concessionReport']);
+    profiles.concessionReport.and.returnValue(of({ kraiCode: 'cz', kraiName: 'Чехія', currency: 'CZK', numberLocale: 'uk-UA', quarter: { year: 2026, number: 4 }, kurinCount: 1, concessions: [] }));
     profiles.get.and.returnValue(of(czProfile));
     profiles.revisions.and.returnValue(of([
       { revision: 2, createdAtUtc: '2026-10-14T10:00:00Z', createdByName: 'Адмін', note: 'Українські вмілості' },
@@ -119,6 +120,18 @@ describe('KraiSettingsComponent', () => {
     }, null);
   });
 
+  it('saves the край\'s пільги inside the dues section', () => {
+    profiles.save.and.returnValue(of(czProfile));
+    const concessions = [{ key: 'p-sib', name: 'Брат чи сестра', kind: 'percent' as const, value: 20, appliesTo: ['stanytsia' as const] }];
+
+    component.concessions.set(concessions);
+    expect(component.dirty()).toBeTrue();
+    component.save();
+
+    expect(profiles.save).toHaveBeenCalledWith('cz', 2, jasmine.objectContaining({ dues: jasmine.objectContaining({ concessions }) }), null);
+    expect(fixture.nativeElement.textContent).toContain('Пільги краю');
+  });
+
   it('saves the card fields with the rest of the profile', () => {
     profiles.save.and.returnValue(of(czProfile));
     const cardFields = {
@@ -142,5 +155,45 @@ describe('KraiSettingsComponent', () => {
     expect(profiles.restore).toHaveBeenCalledWith('cz', 1);
     expect(component.sources()).toEqual([]);
     expect(component.effectiveSources()).toEqual(['cz']);
+  });
+
+  it('adds a край and opens its profile', () => {
+    profiles.create.and.returnValue(of({ code: 'sk', name: 'Словаччина', kurinCount: 0 }));
+    profiles.get.and.returnValue(of({ kraiCode: 'sk', kraiName: 'Словаччина', revision: 1, document: { catalog: { badgeSources: ['ua'] } } }));
+
+    component.startAdding();
+    component.newCode.set(' SK ');
+    component.newName.set(' Словаччина ');
+    expect(component.newCodeValid()).toBeTrue();
+    component.addKrai();
+
+    expect(profiles.create).toHaveBeenCalledWith('sk', 'Словаччина');
+    expect(component.adding()).toBeFalse();
+    expect(component.krais().map(k => k.code)).toEqual(['sk', 'cz']);
+    expect(component.kraiCode()).toBe('sk');
+    expect(component.editor()!.kraiName).toBe('Словаччина');
+  });
+
+  it('does not send a code that cannot name a край', () => {
+    component.startAdding();
+    component.newCode.set('sk-1');
+    component.newName.set('Словаччина');
+    component.addKrai();
+
+    expect(component.newCodeValid()).toBeFalse();
+    expect(profiles.create).not.toHaveBeenCalled();
+  });
+
+  it('renames the край, keeping its code', () => {
+    profiles.rename.and.returnValue(of({ code: 'cz', name: 'Пласт Чехія', kurinCount: 1 }));
+
+    expect(component.renamed()).toBeFalse();
+    component.name.set('Пласт Чехія');
+    component.renameKrai();
+
+    expect(profiles.rename).toHaveBeenCalledWith('cz', 'Пласт Чехія');
+    expect(component.krais()[0].name).toBe('Пласт Чехія');
+    expect(component.editor()!.kraiName).toBe('Пласт Чехія');
+    expect(component.renamed()).toBeFalse();
   });
 });
