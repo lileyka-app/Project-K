@@ -48,7 +48,7 @@ function readSource(source) {
 		absolute,
 		bom: raw.startsWith('﻿'),
 		crlf: raw.includes('\r\n'),
-		text: raw.replace(/^﻿/, '').replace(/\r\n/g, '\n'),
+		text: raw.replace(/^﻿/, '').replaceAll('\r\n', '\n'),
 		modified: statSync(absolute).mtimeMs,
 	};
 }
@@ -90,9 +90,9 @@ async function handle(req, res) {
 			return send(res, 409, { message: 'Файл змінено поза редактором', text: current.text, modified: current.modified });
 		}
 
-		let text = (await readBody(req)).replace(/\r\n/g, '\n');
+		let text = (await readBody(req)).replaceAll('\r\n', '\n');
 		if (current.crlf) {
-			text = text.replace(/\n/g, '\r\n');
+			text = text.replaceAll('\n', '\r\n');
 		}
 		writeFileSync(current.absolute, (current.bom ? '﻿' : '') + text, 'utf8');
 		return send(res, 200, { source, modified: statSync(current.absolute).mtimeMs });

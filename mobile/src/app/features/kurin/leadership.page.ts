@@ -35,6 +35,8 @@ import { LeadershipSheet } from './leadership.sheet';
 /** Below this many past offices a search field is more clutter than help. */
 const SEARCH_FROM = 9;
 
+const BACK_TEXT = { kurin: 'Курінь', group: 'Гурток' } as const;
+
 /**
  * A kurin's or a гурток's провід (web leadership-panel): who holds each office now and, as its
  * «Архів», who held them before and when — everyone reads both. The gear opens the form
@@ -155,8 +157,7 @@ export class LeadershipPage implements OnInit {
   private readonly entityKey = this.groupKey ?? this.auth.user()?.kurinKey ?? '';
   protected readonly title = this.kind === 'kurin' ? 'Провід куреня' : 'Провід гуртка';
   protected readonly backHref = this.groupKey ? `/tabs/kurin/group/${this.groupKey}` : '/tabs/kurin';
-  protected readonly backText =
-    inject(Config).get('mode') === 'ios' ? (this.kind === 'kurin' ? 'Курінь' : 'Гурток') : undefined;
+  protected readonly backText = inject(Config).get('mode') === 'ios' ? BACK_TEXT[this.kind] : undefined;
 
   protected readonly failedText = FAILED_TEXT;
   protected readonly officeTag = officeTag;
@@ -223,11 +224,11 @@ export class LeadershipPage implements OnInit {
 
   private async load(): Promise<void> {
     if (!this.entityKey) return;
-    await Promise.all([
-      this.loadLeadership(),
-      this.canSetup()
-        ? settle(this.kind === 'kurin' ? this.data.kurinMembers(this.entityKey) : this.data.groupMembers(this.entityKey), this.members)
-        : Promise.resolve(),
-    ]);
+    await Promise.all([this.loadLeadership(), this.canSetup() ? this.loadMembers() : Promise.resolve()]);
+  }
+
+  private loadMembers(): Promise<void> {
+    const request = this.kind === 'kurin' ? this.data.kurinMembers(this.entityKey) : this.data.groupMembers(this.entityKey);
+    return settle(request, this.members);
   }
 }

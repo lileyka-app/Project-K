@@ -62,7 +62,7 @@ describe('memberProbeDetailsViewMapper', () => {
       })
     );
 
-    expect(rows.length).toBe(2);
+    expect(rows).toHaveSize(2);
     expect(rows.every(row => row.isSigned)).toBeTrue();
     expect(rows[0].signedByUserKey).toBe('f0f4a2bd-1530-4ba3-b5b2-56f337f7f70d');
     expect(rows[0].signedByName).toBe('Впорядник');

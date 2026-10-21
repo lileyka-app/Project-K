@@ -41,5 +41,6 @@ export function leadershipRoleDisplayName(role: LeadershipRole | string): string
 
 /** "Прізвище Ім'я По батькові", the way every list renders a member. */
 export function memberDisplayName(member: MemberLookupDto): string {
-  return `${member.lastName} ${member.firstName}${member.middleName ? ` ${member.middleName}` : ''}`;
+  const middleName = member.middleName ? ` ${member.middleName}` : '';
+  return `${member.lastName} ${member.firstName}${middleName}`;
 }

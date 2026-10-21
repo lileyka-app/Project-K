@@ -61,7 +61,7 @@ export function defaultLevelsFor(branch: KurinBranch | null | undefined): readon
   }
 }
 
-const SENIOR_LEVELS: readonly PlastLevel[] = [PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.SeniorDovirja, PlastLevel.SeniorKerivnytstva];
+const SENIOR_LEVELS: ReadonlySet<PlastLevel> = new Set<PlastLevel>([PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.SeniorDovirja, PlastLevel.SeniorKerivnytstva]);
 
 /** Гілка, до якої належить сам ступінь: ст. пл. — УСП, будь-який сеніорський — УПС, решта — УПЮ. */
 export function branchOfLevel(level: PlastLevel): KurinBranch {
@@ -69,7 +69,7 @@ export function branchOfLevel(level: PlastLevel): KurinBranch {
     return KurinBranch.USP;
   }
 
-  return SENIOR_LEVELS.includes(level) ? KurinBranch.UPS : KurinBranch.UPYu;
+  return SENIOR_LEVELS.has(level) ? KurinBranch.UPS : KurinBranch.UPYu;
 }
 
 /** Найвищий ступінь за місцем на драбині, а не за значенням enum. */

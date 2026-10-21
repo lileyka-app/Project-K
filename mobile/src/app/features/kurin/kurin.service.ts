@@ -346,7 +346,8 @@ export class ProtectedImages {
       return imagePath.startsWith(`${this.origin}/`) ? this.resolve(imagePath) : imagePath;
     }
     const path = imagePath.replace(/^\//, '');
-    return this.resolve(`${this.origin}/${path.startsWith('badges_images/') ? path : `badges_images/${path}`}`);
+    const relative = path.startsWith('badges_images/') ? path : `badges_images/${path}`;
+    return this.resolve(`${this.origin}/${relative}`);
   }
 
   /** An award's medal, coloured once confirmed. */

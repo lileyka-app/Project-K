@@ -163,7 +163,7 @@ describe('SidebarMenuComponent', () => {
       const items = await itemsAt('/kurin/kurin-1/settings');
 
       const marked = items.filter(item => item.styleClass === 'lil-menu-item--current');
-      expect(marked.length).toBe(1);
+      expect(marked).toHaveSize(1);
       expect(marked[0].label).toBe('Налаштування куреня');
     });
 

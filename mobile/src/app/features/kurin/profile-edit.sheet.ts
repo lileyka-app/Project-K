@@ -115,6 +115,13 @@ function saveErrorText(error: unknown, fallback: string): string {
   return cardFieldError(error) ?? apiErrorText(error, fallback, SAVE_ERRORS);
 }
 
+function resendErrorText(error: unknown): string {
+  const status = error instanceof HttpErrorResponse ? error.status : 0;
+  if (status === 409) return 'Акаунт уже активовано — запрошення більше не потрібне. Онови сторінку.';
+  if (status === 500) return 'Поштовий сервіс не прийняв лист. Спробуй за хвилину; попереднє посилання ще діє.';
+  return apiErrorText(error, 'Лист не надіслано. Спробуй ще раз.');
+}
+
 /**
  * What the card does once the sheet is gone: nothing, read itself again, or leave (the profile is
  * deleted). A new member comes back as their key, for the caller to open their card.
@@ -630,14 +637,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
       await this.data.resendInvitation(member.memberKey);
       await this.toasts.show(`Нове посилання пішло на ${member.email}. Попереднє більше не діє.`);
     } catch (error) {
-      const status = error instanceof HttpErrorResponse ? error.status : 0;
-      const text =
-        status === 409
-          ? 'Акаунт уже активовано — запрошення більше не потрібне. Онови сторінку.'
-          : status === 500
-            ? 'Поштовий сервіс не прийняв лист. Спробуй за хвилину; попереднє посилання ще діє.'
-            : apiErrorText(error, 'Лист не надіслано. Спробуй ще раз.');
-      await this.toasts.show(text, 'danger');
+      await this.toasts.show(resendErrorText(error), 'danger');
     } finally {
       this.sending.set(false);
     }

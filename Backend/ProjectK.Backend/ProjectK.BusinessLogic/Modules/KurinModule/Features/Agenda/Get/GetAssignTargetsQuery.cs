@@ -49,17 +49,17 @@ public sealed class GetAssignTargetsQueryHandler
             : groups.Where(g => viewer.VisibilityGroupKeys.Contains(g.GroupKey)).ToList();
 
         var targetableGroups = new HashSet<Guid>();
-        foreach (var group in visibleGroups)
+        foreach (var groupKey in visibleGroups.Select(group => group.GroupKey))
         {
             var groupDecision = kurinDecision.IsAllowed
                 ? kurinDecision
                 : await _access.AuthorizeTargetAsync(
-                    new AgendaTargetInput { TargetType = AgendaTargetType.Group, TargetKey = group.GroupKey },
+                    new AgendaTargetInput { TargetType = AgendaTargetType.Group, TargetKey = groupKey },
                     ResourceAction.Create,
                     cancellationToken);
             if (groupDecision.IsAllowed)
             {
-                targetableGroups.Add(group.GroupKey);
+                targetableGroups.Add(groupKey);
             }
         }
 

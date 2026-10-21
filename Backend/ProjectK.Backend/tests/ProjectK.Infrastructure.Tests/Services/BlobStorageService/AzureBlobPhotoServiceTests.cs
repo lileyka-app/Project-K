@@ -32,7 +32,7 @@ public class AzureBlobPhotoServiceTests
             ContainerName = "test-photos"
         };
 
-        _service = new AzureBlobPhotoService(options, null, Mock.Of<IBlobReadLinks>(), _loggerMock.Object);
+        _service = new AzureBlobPhotoService(options, Mock.Of<IBlobReadLinks>(), _loggerMock.Object);
     }
 
     [Fact]
@@ -176,8 +176,8 @@ public class AzureBlobPhotoServiceTests
         var utcNow = new DateTime(2026, 5, 27, 10, 30, 0, DateTimeKind.Utc);
 
         // Act
-        var memberBlobName = _service.BuildBlobName(BlobUploadContext.MemberPhoto, ".jpg", utcNow);
-        var silhouetteBlobName = _service.BuildBlobName(BlobUploadContext.GroupSilhouette, ".png", utcNow);
+        var memberBlobName = AzureBlobPhotoService.BuildBlobName(BlobUploadContext.MemberPhoto, ".jpg", utcNow);
+        var silhouetteBlobName = AzureBlobPhotoService.BuildBlobName(BlobUploadContext.GroupSilhouette, ".png", utcNow);
 
         // Assert
         Assert.Matches(@"^member-photos/2026/05/27/[a-f0-9]{32}\.jpg$", memberBlobName);

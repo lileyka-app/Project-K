@@ -43,6 +43,15 @@ function accountApi(options: { password: string; mfa: boolean; kurins?: Record<s
   const current = { kurinKey: 'k1' };
   const kurins = options.kurins ?? [k1, k2];
   let shots = 0;
+  const me = (email: string) =>
+    ok({ userKey: `u-${email}`, memberKey: 'm1', firstName: 'Остап', lastName: 'Коваль', role: 'Member', ...account });
+  const updateMe = (email: string, body: any) => {
+    const changed = body.email.toLowerCase() !== account.email.toLowerCase();
+    if (changed && body.currentPassword !== options.password) return refuse(401, 'InvalidCredentials');
+    account.phoneNumber = body.phoneNumber;
+    if (changed) account.pendingEmail = body.email;
+    return me(email);
+  };
   const extra: ExtraApi = ({ method, path, body, state }) => {
     const email = state.session ?? '';
     account.email ||= email;
@@ -51,14 +60,9 @@ function accountApi(options: { password: string; mfa: boolean; kurins?: Record<s
     if (method !== 'GET' && path.startsWith('auth/')) authWrites.push({ path, body });
     switch (`${method} ${path}`) {
       case 'GET user/me':
-        return ok({ userKey: `u-${email}`, memberKey: 'm1', firstName: 'Остап', lastName: 'Коваль', role: 'Member', ...account });
-      case 'PUT user/me': {
-        const changed = body.email.toLowerCase() !== account.email.toLowerCase();
-        if (changed && body.currentPassword !== options.password) return refuse(401, 'InvalidCredentials');
-        account.phoneNumber = body.phoneNumber;
-        if (changed) account.pendingEmail = body.email;
-        return ok({ userKey: `u-${email}`, memberKey: 'm1', firstName: 'Остап', lastName: 'Коваль', role: 'Member', ...account });
-      }
+        return me(email);
+      case 'PUT user/me':
+        return updateMe(email, body);
       case 'POST user/me/password':
         return body.currentPassword === options.password ? ok(true) : refuse(400, 'PasswordChangeFailed');
       case 'POST user/me/mfa/disable':
@@ -99,7 +103,7 @@ function accountApi(options: { password: string; mfa: boolean; kurins?: Record<s
 }
 
 /** The stored session's kurin: what the next start of the app reads. */
-async function storedKurin(page: Page): Promise<string | null> {
+function storedKurin(page: Page): Promise<string | null> {
   return page.evaluate(() => JSON.parse(localStorage.getItem('authState') ?? '{}').kurinKey ?? null);
 }
 

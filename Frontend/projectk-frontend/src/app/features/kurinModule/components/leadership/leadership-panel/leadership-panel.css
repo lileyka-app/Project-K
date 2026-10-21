@@ -37,8 +37,8 @@
 }
 
 :host ::ng-deep .leadership-table .p-datatable-table {
-    width: 100% !important;
-    min-width: 0 !important;
+    width: 100%;
+    min-width: 0;
 }
 
 :host ::ng-deep .leadership-table.p-datatable-scrollable .p-datatable-table-container {
@@ -76,8 +76,8 @@
         gap: 0.6rem;
         align-items: center;
         min-width: 0;
-        padding: 0.1rem 0 !important;
-        border: 0 !important;
+        padding: 0.1rem 0;
+        border: 0;
         overflow-wrap: anywhere;
     }
 

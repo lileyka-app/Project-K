@@ -10,6 +10,9 @@ namespace ProjectK.Infrastructure.Reports;
 
 public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
 {
+    private const string PhoneLabel = "Телефон";
+    private const string LevelLabel = "Ступінь";
+
     /// <summary>
     /// Draws the report. Every timestamp in <paramref name="report"/> is UTC — that is how they are
     /// stored — and every one of them is printed in <paramref name="timeZoneId"/>, so a провід reads
@@ -104,11 +107,11 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                         ("Ініціали", member.Initials),
                         ("Гурток", member.GroupName ?? "-"),
                         ("Пошта", member.Email),
-                        ("Телефон", member.PhoneNumber),
+                        (PhoneLabel, member.PhoneNumber),
                         ("Дата народження", member.DateOfBirth.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
                         ("Адреса", member.Address ?? "-"),
                         ("Школа", member.School ?? "-"),
-                        ("Ступінь", KurinReportTerminology.PlastLevel(member.LatestPlastLevel)),
+                        (LevelLabel, KurinReportTerminology.PlastLevel(member.LatestPlastLevel)),
                         ("Діловодство", FormatList(CurrentOffices(member)))
                     }));
                 });
@@ -328,8 +331,8 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
 
                 HeaderCell(table, "ПІБ");
                 HeaderCell(table, "Гурток");
-                HeaderCell(table, "Ступінь");
-                HeaderCell(table, "Телефон");
+                HeaderCell(table, LevelLabel);
+                HeaderCell(table, PhoneLabel);
 
                 foreach (var member in members)
                 {
@@ -373,7 +376,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 HeaderCell(table, "ПІБ");
                 HeaderCell(table, "Гурток (закріплення)");
                 HeaderCell(table, "Пошта");
-                HeaderCell(table, "Телефон");
+                HeaderCell(table, PhoneLabel);
                 HeaderCell(table, "Діловодство");
 
                 foreach (var member in members)
@@ -412,7 +415,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     columns.RelativeColumn(1);
                 });
 
-                HeaderCell(table, "Ступінь");
+                HeaderCell(table, LevelLabel);
                 HeaderCell(table, "Кількість");
 
                 foreach (var row in rows)
@@ -449,8 +452,8 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
 
                 HeaderCell(table, "ПІБ");
                 HeaderCell(table, "Пошта");
-                HeaderCell(table, "Телефон");
-                HeaderCell(table, "Ступінь");
+                HeaderCell(table, PhoneLabel);
+                HeaderCell(table, LevelLabel);
 
                 foreach (var member in members)
                 {

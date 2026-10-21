@@ -24,7 +24,7 @@
             @if (row.dues.groupName) { <span>· {{ row.dues.groupName }}</span> }
             @if (namesKurin()) { <span>· {{ kurinLabel(row) }}</span> }
             @if (row.dues.isConcession) { <p-tag value="пільгова" severity="info" styleClass="rounded-full !text-xs" /> }
-            @for (name of row.dues.concessionNames ?? []; track name) { <p-tag [value]="name" severity="info" styleClass="rounded-full !text-xs" /> }
+            @for (name of row.dues.concessionNames; track name) { <p-tag [value]="name" severity="info" styleClass="rounded-full !text-xs" /> }
           </span>
         </li>
       }

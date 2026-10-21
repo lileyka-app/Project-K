@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -27,7 +28,7 @@ public class DemoController : ControllerBase
         _mediator = mediator;
     }
 
-    public sealed record EnterRequest(DemoSeat Seat);
+    public sealed record EnterRequest([property: JsonRequired] DemoSeat Seat);
 
     /// <summary>
     /// Signs the visitor into the demo kurin as the chosen seat. No password; the same strict

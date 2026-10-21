@@ -52,6 +52,7 @@ namespace ProjectK.API;
 public static class Program
 {
     private const string UnknownValue = "unknown";
+    private const string ReleaseVersionKey = "ReleaseInfo:Version";
     private const int DefaultDevBannerPauseMs = 2000;
 
     public static async Task Main(string[] args)
@@ -83,7 +84,7 @@ public static class Program
                     .WriteTo.TelegramDevAlerts(
                         devAlerts,
                         context.HostingEnvironment.EnvironmentName,
-                        context.Configuration["ReleaseInfo:Version"] ?? UnknownValue,
+                        context.Configuration[ReleaseVersionKey] ?? UnknownValue,
                         ResolveCodeName(context.Configuration)));
             }
         });
@@ -202,10 +203,8 @@ public static class Program
         builder.Services.AddScoped<IPhotoService, AzureBlobPhotoService>(sp =>
         {
             var opts = sp.GetRequiredService<BlobStorageOptions>();
-            var refProvider = sp.GetService<IPhotoReferenceProvider>();
             return new AzureBlobPhotoService(
                 opts,
-                refProvider,
                 sp.GetRequiredService<IBlobReadLinks>(),
                 sp.GetRequiredService<ILogger<AzureBlobPhotoService>>());
         });
@@ -270,7 +269,7 @@ public static class Program
             options.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "ProjectK API",
-                Version = builder.Configuration["ReleaseInfo:Version"] ?? "v1",
+                Version = builder.Configuration[ReleaseVersionKey] ?? "v1",
                 Description = "Management API for a Plast kurin: membership, leadership offices, "
                     + "agenda and planning, probes and badges, announcements and onboarding. "
                     + "Every failure answers with { error, message }; access is decided by the "
@@ -390,7 +389,7 @@ public static class Program
         app.MapGet("/health", (IConfiguration config, RequestTimings timings) => Results.Ok(new
         {
             status = "ready",
-            version = config["ReleaseInfo:Version"] ?? UnknownValue,
+            version = config[ReleaseVersionKey] ?? UnknownValue,
             // null, not "unknown", when the release carries no code name: the key stays in the
             // payload so nothing reading it has to change, and absence reads as absence.
             codeName = ResolveCodeName(config),
@@ -413,7 +412,7 @@ public static class Program
 
     private static void PrintTitle(IConfiguration config, IHostEnvironment env)
     {
-        var version = config["ReleaseInfo:Version"] ?? "v0.0.0";
+        var version = config[ReleaseVersionKey] ?? "v0.0.0";
 
         AnsiConsole.Write(new FigletText("Project K").Color(Spectre.Console.Color.Green));
 

@@ -201,8 +201,8 @@
     gap: 0.6rem;
     align-items: center;
     min-width: 0;
-    padding: 0.1rem 0 !important;
-    border: 0 !important;
+    padding: 0.1rem 0;
+    border: 0;
     overflow-wrap: anywhere;
     text-align: left;
   }
@@ -234,7 +234,7 @@
   :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row--account > td.dues-name-col {
     grid-column: 1 / -1;
     display: block;
-    background: transparent !important;
+    background: transparent;
   }
 
   :host ::ng-deep .dues-table .p-datatable-tbody > tr.dues-row--account > td.dues-name-col::before {
@@ -246,8 +246,8 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
-    padding: 0.5rem 0.625rem !important;
-    border: 1px solid var(--p-content-border-color) !important;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--p-content-border-color);
     border-radius: var(--lil-radius);
   }
 

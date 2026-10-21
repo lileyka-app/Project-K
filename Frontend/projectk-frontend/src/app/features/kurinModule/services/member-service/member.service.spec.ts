@@ -74,7 +74,7 @@ describe('MemberService', () => {
     const groupKey = 'g1';
 
     service.getAll(groupKey).subscribe(res => {
-      expect(res.length).toBe(1);
+      expect(res).toHaveSize(1);
     });
 
     const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
@@ -124,7 +124,7 @@ describe('MemberService', () => {
     const kurinKey = 'k1';
 
     service.getAll(undefined, kurinKey).subscribe(res => {
-      expect(res.length).toBe(1);
+      expect(res).toHaveSize(1);
     });
 
     const req = httpMock.expectOne(`${apiUrl}/kurins/${kurinKey}/members`);
@@ -352,7 +352,7 @@ describe('MemberService', () => {
 
   it('getMentorCandidates should call mentor-candidates endpoint', () => {
     service.getMentorCandidates('k-1').subscribe(res => {
-      expect(res.length).toBe(1);
+      expect(res).toHaveSize(1);
       expect(res[0].userKey).toBe('u1');
     });
 

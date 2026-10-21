@@ -328,7 +328,7 @@
                     @if (d.isConcessionNow) {
                         <p-tag value="пільгова" severity="info" />
                     }
-                    @for (name of d.concessionNamesNow ?? []; track name) {
+                    @for (name of d.concessionNamesNow; track name) {
                         <p-tag [value]="name" severity="info" />
                     }
                 </div>

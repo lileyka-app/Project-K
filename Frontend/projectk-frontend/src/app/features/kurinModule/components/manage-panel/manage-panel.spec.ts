@@ -80,7 +80,7 @@ describe('ManagePanelComponent', () => {
 
       expect(component.form).toBeDefined();
       expect(component.ready).toBeTrue();
-      expect(Object.keys(component.form.controls).length).toBe(4);
+      expect(Object.keys(component.form.controls)).toHaveSize(4);
     });
   });
 
@@ -498,19 +498,19 @@ describe('ManagePanelComponent', () => {
     it('should return all fields when no fields are hidden', () => {
       fixture.componentRef.setInput('parameter', 'create');
       const visible = component.visibleFields();
-      expect(visible.length).toBe(4);
+      expect(visible).toHaveSize(4);
     });
 
     it('should filter out hidden fields', () => {
       fixture.componentRef.setInput('parameter', 'delete');
       const visible = component.visibleFields();
-      expect(visible.length).toBe(3);
+      expect(visible).toHaveSize(3);
       expect(visible.find(f => f.name === 'description')).toBeUndefined();
     });
 
     it('should return empty array when config is not set', () => {
       fixture.componentRef.setInput('config', undefined as unknown as ManagePanelConfig);
-      expect(component.visibleFields().length).toBe(0);
+      expect(component.visibleFields()).toHaveSize(0);
     });
   });
 

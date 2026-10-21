@@ -249,7 +249,7 @@ export async function signIn(
   // A form typed into the moment the page shows can lose the typing on a busy CI WebKit (the form
   // binds a beat later); a person types slower, so the test types again rather than fail.
   await expect(async () => {
-    if (/\/m\/login$/.test(page.url())) await fillCredentials(page, account);
+    if (page.url().endsWith('/m/login')) await fillCredentials(page, account);
     await expect(page).toHaveURL(/\/m\/tabs\/home$/, { timeout: 5_000 });
   }).toPass({ timeout: 20_000 });
   await expect(page.getByText('Сходини гуртка')).toBeVisible();

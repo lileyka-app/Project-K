@@ -65,17 +65,7 @@ public static class AgendaRecurrence
         foreach (var localOcc in EnumerateStarts(item, localStart, interval, localWindowTo))
         {
             var occStart = ToUtc(localOcc, zone);
-            if (produced >= SafetyCap)
-            {
-                yield break;
-            }
-
-            if (maxCount.HasValue && produced >= maxCount.Value)
-            {
-                yield break;
-            }
-
-            if (seriesEnd.HasValue && occStart > seriesEnd.Value)
+            if (SeriesIsOver(produced, maxCount, seriesEnd, occStart))
             {
                 yield break;
             }
@@ -89,6 +79,11 @@ public static class AgendaRecurrence
             }
         }
     }
+
+    private static bool SeriesIsOver(int produced, int? maxCount, DateTime? seriesEnd, DateTime occStart)
+        => produced >= SafetyCap
+            || (maxCount.HasValue && produced >= maxCount.Value)
+            || (seriesEnd.HasValue && occStart > seriesEnd.Value);
 
     /// <summary>A wall-clock moment as the instant it names; a moment the zone skips is taken an hour later.</summary>
     private static DateTime ToUtc(DateTime local, TimeZoneInfo zone)
@@ -107,8 +102,8 @@ public static class AgendaRecurrence
         return item.RecurrenceFrequency switch
         {
             RecurrenceFrequency.Weekly => WeeklyStarts(item, start, interval, windowTo),
-            RecurrenceFrequency.Monthly => SteppedStarts(start, windowTo, k => AddMonthsExact(start, k * interval)),
-            RecurrenceFrequency.Yearly => SteppedStarts(start, windowTo, k => AddYearsExact(start, k * interval)),
+            RecurrenceFrequency.Monthly => SteppedStarts(windowTo, k => AddMonthsExact(start, k * interval)),
+            RecurrenceFrequency.Yearly => SteppedStarts(windowTo, k => AddYearsExact(start, k * interval)),
             _ => Enumerable.Empty<DateTime>()
         };
     }
@@ -119,14 +114,8 @@ public static class AgendaRecurrence
         var timeOfDay = start.TimeOfDay;
         var weekStart = DateTime.SpecifyKind(start.Date.AddDays(-(int)start.DayOfWeek), start.Kind);
 
-        for (var week = 0; ; week += interval)
+        for (var baseDate = weekStart; baseDate <= windowTo.Date.AddDays(7); baseDate = baseDate.AddDays(interval * 7))
         {
-            var baseDate = weekStart.AddDays(week * 7);
-            if (baseDate > windowTo.Date.AddDays(7))
-            {
-                yield break;
-            }
-
             for (var day = 0; day < 7; day++)
             {
                 if ((mask & (1 << day)) == 0)
@@ -145,17 +134,13 @@ public static class AgendaRecurrence
         }
     }
 
-    private static IEnumerable<DateTime> SteppedStarts(DateTime start, DateTime windowTo, Func<int, DateTime?> at)
+    private static IEnumerable<DateTime> SteppedStarts(DateTime windowTo, Func<int, DateTime?> at)
     {
-        for (var k = 0; ; k++)
+        var k = 0;
+        for (var occ = at(k); occ is not null || k <= SafetyCap; occ = at(++k))
         {
-            var occ = at(k);
             if (occ is null)
             {
-                if (k > SafetyCap)
-                {
-                    yield break;
-                }
                 continue;
             }
 

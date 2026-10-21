@@ -97,8 +97,8 @@
 }
 
 :host ::ng-deep .project-table .p-datatable-table {
-  width: 100% !important;
-  min-width: 0 !important;
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 640px) {

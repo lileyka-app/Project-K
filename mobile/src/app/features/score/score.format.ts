@@ -95,13 +95,18 @@ export function rsvpLabel(person: SheetPersonDto): string | null {
 }
 
 /** «mine» — the гуртки I score; «all» — the whole kurin; else one гурток's key. */
-export type SheetGroupFilter = 'mine' | 'all' | string;
+export type SheetGroupFilter = string;
+
+function inGroup(person: SheetPersonDto, group: SheetGroupFilter): boolean {
+  if (group === 'mine') return person.canScore;
+  return group === 'all' || person.groupKey === group;
+}
 
 /** Who the sheet lists: by гурток, then by name, case-insensitive. */
 export function filterSheet(people: SheetPersonDto[], group: SheetGroupFilter, term: string): SheetPersonDto[] {
   const needle = term.trim().toLocaleLowerCase('uk');
   return people
-    .filter((p) => (group === 'mine' ? p.canScore : group === 'all' ? true : p.groupKey === group))
+    .filter((p) => inGroup(p, group))
     .filter((p) => !needle || p.fullName.toLocaleLowerCase('uk').includes(needle));
 }
 

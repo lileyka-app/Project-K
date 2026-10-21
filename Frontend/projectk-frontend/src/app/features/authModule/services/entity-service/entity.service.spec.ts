@@ -63,23 +63,26 @@ describe('EntityService', () => {
     service.checkEntityAccess('group', 'g-1', 'Update').subscribe();
     service.checkEntityAccess('group', 'g-1', 'Create').subscribe();
 
-    expect(httpMock.match(url).length).toBe(2);
+    expect(httpMock.match(url)).toHaveSize(2);
   });
 
   it('asks again from another kurin, and after the kurin scope is dropped', () => {
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    const answers: boolean[] = [];
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answers.push(a));
     httpMock.expectOne(url).flush(true);
 
     state = signedIn('kurin-2');
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answers.push(a));
     httpMock.expectOne(url).flush(false);
 
     // What the auth service does on a scope switch.
     for (const prefix of KURIN_SCOPED_CACHE_PREFIXES) {
       cache.invalidateByPrefix(prefix);
     }
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answers.push(a));
     httpMock.expectOne(url).flush(true);
+
+    expect(answers).toEqual([true, false, true]);
   });
 
   it('keeps one person\'s answer from another person', () => {
@@ -95,11 +98,16 @@ describe('EntityService', () => {
   });
 
   it('does not keep a refused answer', () => {
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe({ error: () => undefined });
+    let failed = false;
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe({ error: () => failed = true });
     httpMock.expectOne(url).flush('nope', { status: 500, statusText: 'Server Error' });
 
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    let answer: boolean | undefined;
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answer = a);
     httpMock.expectOne(url).flush(true);
+
+    expect(failed).toBeTrue();
+    expect(answer).toBeTrue();
   });
 
   it('is scoped to the kurin, so a scope switch forgets it', () => {

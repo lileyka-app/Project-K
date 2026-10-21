@@ -17,7 +17,6 @@ public class ProvisionMemberAccountCommandHandler
     private readonly IAccountProvisioningService _accountProvisioning;
     private readonly IDomainEventPublisher _events;
     private readonly IEmailService _emailService;
-    private readonly ICurrentUserContext _currentUserContext;
     private readonly ILogger<ProvisionMemberAccountCommandHandler> _logger;
 
     public ProvisionMemberAccountCommandHandler(
@@ -25,7 +24,6 @@ public class ProvisionMemberAccountCommandHandler
         IAccountProvisioningService accountProvisioning,
         IDomainEventPublisher events,
         IEmailService emailService,
-        ICurrentUserContext currentUserContext,
         ILogger<ProvisionMemberAccountCommandHandler> logger)
     {
         _logger = logger;
@@ -33,7 +31,6 @@ public class ProvisionMemberAccountCommandHandler
         _accountProvisioning = accountProvisioning;
         _events = events;
         _emailService = emailService;
-        _currentUserContext = currentUserContext;
     }
 
     public async Task<ServiceResult<MemberInvitation>> Handle(

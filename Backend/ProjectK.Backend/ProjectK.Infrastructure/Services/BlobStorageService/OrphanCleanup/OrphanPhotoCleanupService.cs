@@ -236,6 +236,6 @@ public sealed class OrphanPhotoCleanupService : BackgroundService
         return deleted;
     }
 
-    private IEnumerable<string> GetCleanupPrefixes()
+    private static IEnumerable<string> GetCleanupPrefixes()
         => BlobUploadFolders.ScenarioFolders;
 }

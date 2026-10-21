@@ -315,7 +315,8 @@ export function kvRows(kvMembers: MemberLookupDto[], assignments: MentorAssignme
  * them amber), then each гурток.
  */
 export function kvRowTags(row: Pick<KvRow, 'status' | 'groups' | 'isManager'>): RoleTag[] {
-  const tone: TagTone = row.isManager ? 'danger' : row.groups.length ? 'success' : 'warn';
+  let tone: TagTone = row.groups.length ? 'success' : 'warn';
+  if (row.isManager) tone = 'danger';
   return [{ label: row.status, tone }, ...row.groups.map((group) => ({ label: group, tone: 'info' as const }))];
 }
 
@@ -343,7 +344,7 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 const LADDER = Object.keys(LEVEL_LABELS);
-const SENIOR = ['Senior', 'SeniorPratsi', 'SeniorDovirja', 'SeniorKerivnytstva'];
+const SENIOR = new Set(['Senior', 'SeniorPratsi', 'SeniorDovirja', 'SeniorKerivnytstva']);
 
 /** The ступінь as the web prints it before a name («пл. уч.», «ст. пл. скоб»); null when none. */
 export function plastLevelLabel(member: Pick<MemberLookupDto, 'latestPlastLevel' | 'plastLevelHistories'>): string | null {
@@ -351,9 +352,9 @@ export function plastLevelLabel(member: Pick<MemberLookupDto, 'latestPlastLevel'
   if (!level) return null;
   if (!(level in LEVEL_LABELS)) return level;
   if (level === 'Starshoplastun') {
-    const levels = (member.plastLevelHistories ?? []).map((h) => h.plastLevel);
-    if (levels.includes('HetmanskiySkob')) return 'ст. пл. гетьм. скоб';
-    if (levels.includes('Skob')) return 'ст. пл. скоб';
+    const levels = new Set((member.plastLevelHistories ?? []).map((h) => h.plastLevel));
+    if (levels.has('HetmanskiySkob')) return 'ст. пл. гетьм. скоб';
+    if (levels.has('Skob')) return 'ст. пл. скоб';
   }
   return LEVEL_LABELS[level] || null;
 }
@@ -371,7 +372,7 @@ export function memberBranch(
   if (member.latestPlastLevel) levels.push(member.latestPlastLevel);
   const top = levels.reduce<string | null>((best, l) => (best === null || LADDER.indexOf(l) > LADDER.indexOf(best) ? l : best), null);
   if (top === 'Starshoplastun') return 'USP';
-  if (top && SENIOR.includes(top)) return 'UPS';
+  if (top && SENIOR.has(top)) return 'UPS';
   return here?.branch ?? 'UPYu';
 }
 
@@ -513,6 +514,11 @@ const PROBE_ROWS = [
 
 const closed = (status: ProbeStatus) => status === 'Completed' || status === 'Verified';
 
+function probePercent(signedPoints: number, total: number, status: ProbeStatus): number | null {
+  if (total) return Math.round((signedPoints / total) * 100);
+  return closed(status) ? 100 : null;
+}
+
 /** The three probes as the card lists them; the second opens once the first is closed (web buildMemberProbeRows). */
 export function probeRows(probes: ProbeSummaryDto[], progresses: ProbeProgressDto[]): ProbeRow[] {
   const rows = PROBE_ROWS.map((template) => {
@@ -532,7 +538,7 @@ export function probeRows(probes: ProbeSummaryDto[], progresses: ProbeProgressDt
       canOpen: !template.policyDisabled && !!probe,
       pointsCount: probe?.pointsCount ?? null,
       signedPoints,
-      percent: total ? Math.round((signedPoints / total) * 100) : closed(status) ? 100 : null,
+      percent: probePercent(signedPoints, total, status),
     };
   });
   const firstClosed = rows[0].isCompleted;
@@ -716,7 +722,8 @@ export function duesAmountLabel(
   locale: string = DEFAULT_NUMBER_LOCALE,
 ): string {
   if (entry.kind === 'Exchange') return duesMoney(entry.amount, currency, locale);
-  const signed = entry.kind === 'Correction' ? entry.amount : ['Contribution', 'OtherIncome'].includes(entry.kind) ? entry.amount : -entry.amount;
+  const incoming = entry.kind === 'Correction' || ['Contribution', 'OtherIncome'].includes(entry.kind);
+  const signed = incoming ? entry.amount : -entry.amount;
   return signed > 0 ? `+${duesMoney(signed, currency, locale)}` : duesMoney(signed, currency, locale);
 }
 

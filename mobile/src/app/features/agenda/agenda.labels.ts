@@ -129,7 +129,7 @@ export function monthGrid(month: Date): Date[][] {
 /** The API window for a grid: its first day's midnight to the midnight after its last day. */
 export function gridWindow(weeks: Date[][]): { fromUtc: string; toUtc: string } {
   const first = weeks[0][0];
-  const last = weeks[weeks.length - 1][6];
+  const last = weeks.at(-1)?.[6] ?? first;
   return { fromUtc: first.toISOString(), toUtc: addDays(last, 1).toISOString() };
 }
 
@@ -142,13 +142,14 @@ export function weekOf(date: Date): Date[] {
 /** «5–11 жовтня», «28 вер – 4 жов»; the year only when the week is not in this one. */
 export function weekTitle(week: Date[], today = new Date()): string {
   const first = week[0];
-  const last = week[week.length - 1];
+  const last = week.at(-1) ?? first;
   const thisYear = first.getFullYear() === today.getFullYear() && last.getFullYear() === today.getFullYear();
   if (first.getMonth() === last.getMonth()) {
     const year = thisYear ? '' : ` ${first.getFullYear()}`;
     return `${first.getDate()}–${last.getDate()} ${MONTHS_OF[first.getMonth()]}${year}`;
   }
-  const short = (date: Date) => `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}${thisYear ? '' : ` ${date.getFullYear()}`}`;
+  const yearOf = (date: Date) => (thisYear ? '' : ` ${date.getFullYear()}`);
+  const short = (date: Date) => `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}${yearOf(date)}`;
   return `${short(first)} – ${short(last)}`;
 }
 

@@ -178,9 +178,9 @@ export class WaitlistRegistrationComponent {
   // Only a Зв'язковий may apply for now: the kurin is what gets onboarded, and a person on
   // their own has nowhere to be placed. The box is required, so the button stays disabled
   // and the notice explains why, instead of letting a lone пластун submit and hear nothing.
-  private fb = inject(FormBuilder);
-  private onboardingService = inject(OnboardingService);
-  private messageService = inject(MessageService);
+  private readonly fb = inject(FormBuilder);
+  private readonly onboardingService = inject(OnboardingService);
+  private readonly messageService = inject(MessageService);
 
   constructor() {
     this.form = this.fb.group({
@@ -244,7 +244,7 @@ export class WaitlistRegistrationComponent {
   private kurinNumberValidators() {
     return [
       Validators.required,
-      Validators.pattern(/^[0-9]+$/),
+      Validators.pattern(/^\d+$/),
       Validators.min(this.numberRange.min),
       Validators.max(this.numberRange.max)
     ];

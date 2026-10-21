@@ -92,7 +92,7 @@ describe('MemberListComponent', () => {
       fixture.componentRef.setInput('typeKey', 'g1');
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith('g1');
-      expect(component.membersLookup.length).toBe(1);
+      expect(component.membersLookup).toHaveSize(1);
       expect(component.membersLookup[0].phoneNumber).toBeUndefined();
       expect(component.membersLookup[0].fullNameSort).toBe('doe john m');
       expect(component.membersLookup[0].roleSortWeight).toBe(Number.MAX_SAFE_INTEGER);
@@ -103,7 +103,7 @@ describe('MemberListComponent', () => {
       fixture.componentRef.setInput('typeKey', 'k1');
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith(undefined, 'k1');
-      expect(component.membersLookup.length).toBe(1);
+      expect(component.membersLookup).toHaveSize(1);
     });
 
     it('should give a manager a higher status priority than a kurinnuy', () => {
@@ -169,7 +169,7 @@ describe('MemberListComponent', () => {
       component.ngOnInit();
       expect(leadershipServiceSpy.getLeadershipByTypeAndKey).toHaveBeenCalledWith('kurin', 'k1');
       expect(component.leadership).toEqual(mockLeadership);
-      expect(component.allHistories.length).toBe(2);
+      expect(component.allHistories).toHaveSize(2);
     });
   });
 
@@ -182,14 +182,14 @@ describe('MemberListComponent', () => {
 
     it('should filter archived rows by default', () => {
       expect(component.showArchived).toBeFalse();
-      expect(component.leadershipHistories.length).toBe(1);
+      expect(component.leadershipHistories).toHaveSize(1);
       expect(component.leadershipHistories[0].role).toBe(LeadershipRole.Kurinnuy);
     });
 
     it('should show all rows when showArchived is true', () => {
       component.showArchived = true;
       component.refreshList();
-      expect(component.leadershipHistories.length).toBe(2);
+      expect(component.leadershipHistories).toHaveSize(2);
     });
 
     it('should sort active rows first', () => {
@@ -375,13 +375,13 @@ describe('MemberListComponent', () => {
 
     it('should filter members by search query', () => {
       component.memberSearchQuery = 'smith';
-      expect(component.filteredMembersLookup.length).toBe(1);
+      expect(component.filteredMembersLookup).toHaveSize(1);
       expect(component.filteredMembersLookup[0].memberKey).toBe('m2');
     });
 
     it('should filter by plast level localized label', () => {
       component.memberSearchQuery = 'скоб';
-      expect(component.filteredMembersLookup.length).toBe(1);
+      expect(component.filteredMembersLookup).toHaveSize(1);
       expect(component.filteredMembersLookup[0].memberKey).toBe('m2');
     });
 

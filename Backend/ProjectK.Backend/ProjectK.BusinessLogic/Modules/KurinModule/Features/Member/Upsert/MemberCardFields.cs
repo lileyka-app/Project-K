@@ -20,6 +20,23 @@ public static class MemberCardFields
 
     public static Outcome Apply(KraiCardFieldsSettings card, UpsertMemberProfileCommand request, MemberEntity? existing)
     {
+        KeepWhatTheFormDidNotSend(card, request, existing);
+
+        var error = TooLongField(request) ?? MissingRequiredField(card, request);
+        if (error is not null)
+        {
+            return new Outcome(existing?.CardExtras, error);
+        }
+
+        var values = MemberCardExtras.Read(existing?.CardExtras);
+        error = MergeExtras(card, request, values);
+        return error is null
+            ? new Outcome(MemberCardExtras.Write(values), null)
+            : new Outcome(existing?.CardExtras, error);
+    }
+
+    private static void KeepWhatTheFormDidNotSend(KraiCardFieldsSettings card, UpsertMemberProfileCommand request, MemberEntity? existing)
+    {
         if (card.ModeOf(KraiCardFields.MiddleName) == KraiCardFields.Hidden)
         {
             request.MiddleName = existing?.MiddleName ?? string.Empty;
@@ -53,21 +70,30 @@ public static class MemberCardFields
         foreach (var field in ParentContacts.Fields)
         {
             var sent = field.Get(request);
-            field.Set(request, EmptyAsNull(parentsHidden || sent is null ? (existing is null ? null : field.Get(existing)) : sent));
+            var kept = existing is null ? null : field.Get(existing);
+            field.Set(request, EmptyAsNull(parentsHidden || sent is null ? kept : sent));
         }
+    }
 
+    private static string? TooLongField(UpsertMemberProfileCommand request)
+    {
         var parentNames = new[] { request.MotherFirstName, request.MotherLastName, request.FatherFirstName, request.FatherLastName };
         if (parentNames.Any(name => name?.Length > MaxValueLength))
         {
-            return new Outcome(existing?.CardExtras, $"Поле «{KraiCardFields.Labels[KraiCardFields.Parents]}» задовге.");
+            return $"Поле «{KraiCardFields.Labels[KraiCardFields.Parents]}» задовге.";
         }
 
         if (request.Address?.Length > MaxValueLength || request.School?.Length > MaxValueLength)
         {
             var field = request.Address?.Length > MaxValueLength ? KraiCardFields.Address : KraiCardFields.School;
-            return new Outcome(existing?.CardExtras, $"Поле «{KraiCardFields.Labels[field]}» задовге.");
+            return $"Поле «{KraiCardFields.Labels[field]}» задовге.";
         }
 
+        return null;
+    }
+
+    private static string? MissingRequiredField(KraiCardFieldsSettings card, UpsertMemberProfileCommand request)
+    {
         var missing = new[]
             {
                 (Field: KraiCardFields.MiddleName, Value: request.MiddleName),
@@ -84,12 +110,11 @@ public static class MemberCardFields
             missing.Field = KraiCardFields.Parents;
         }
 
-        if (missing.Field is not null)
-        {
-            return new Outcome(existing?.CardExtras, $"Поле «{KraiCardFields.Labels[missing.Field]}» обовʼязкове.");
-        }
+        return missing.Field is null ? null : $"Поле «{KraiCardFields.Labels[missing.Field]}» обовʼязкове.";
+    }
 
-        var values = MemberCardExtras.Read(existing?.CardExtras);
+    private static string? MergeExtras(KraiCardFieldsSettings card, UpsertMemberProfileCommand request, Dictionary<string, string> values)
+    {
         foreach (var field in card.Extra)
         {
             if (request.CardExtras?.TryGetValue(field.Key, out var sent) == true)
@@ -97,13 +122,13 @@ public static class MemberCardFields
                 var value = sent?.Trim() ?? string.Empty;
                 if (value.Length > MaxValueLength)
                 {
-                    return new Outcome(existing?.CardExtras, $"Поле «{field.Label}» задовге.");
+                    return $"Поле «{field.Label}» задовге.";
                 }
 
                 if (value.Length > 0 && field.Type == KraiCardFields.Date
                     && !DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
                 {
-                    return new Outcome(existing?.CardExtras, $"Поле «{field.Label}» має бути датою.");
+                    return $"Поле «{field.Label}» має бути датою.";
                 }
 
                 if (value.Length == 0)
@@ -118,11 +143,11 @@ public static class MemberCardFields
 
             if (field.Required && !values.ContainsKey(field.Key))
             {
-                return new Outcome(existing?.CardExtras, $"Поле «{field.Label}» обовʼязкове.");
+                return $"Поле «{field.Label}» обовʼязкове.";
             }
         }
 
-        return new Outcome(MemberCardExtras.Write(values), null);
+        return null;
     }
 
     private static string? EmptyAsNull(string? value)

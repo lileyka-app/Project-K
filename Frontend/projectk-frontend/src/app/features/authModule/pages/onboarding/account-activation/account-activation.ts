@@ -86,12 +86,12 @@ export class AccountActivationComponent implements OnInit {
   validationData: InvitationValidationResponse | null = null;
   form: FormGroup;
 
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private fb = inject(FormBuilder);
-  private onboardingService = inject(OnboardingService);
-  private authService = inject(AuthService);
-  private messageService = inject(MessageService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly onboardingService = inject(OnboardingService);
+  private readonly authService = inject(AuthService);
+  private readonly messageService = inject(MessageService);
 
   constructor() {
     this.form = this.fb.group({

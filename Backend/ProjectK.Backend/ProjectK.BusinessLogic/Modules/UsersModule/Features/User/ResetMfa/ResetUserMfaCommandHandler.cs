@@ -18,7 +18,6 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
     private readonly UserManager<AppUser> _userManager;
     private readonly IRefreshTokenStore _refreshTokens;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly ILogger<ResetUserMfaCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
     private readonly IAccessContextResolver _access;
     private readonly IMembershipDirectory _memberships;
@@ -26,7 +25,6 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
     public ResetUserMfaCommandHandler(
         UserManager<AppUser> userManager,
         ICurrentUserContext currentUserContext,
-        ILogger<ResetUserMfaCommandHandler> logger,
         IActivityLogger activityLogger,
         IRefreshTokenStore refreshTokens,
         IAccessContextResolver access,
@@ -34,7 +32,6 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
     {
         _userManager = userManager;
         _currentUserContext = currentUserContext;
-        _logger = logger;
         _activityLogger = activityLogger;
         _refreshTokens = refreshTokens;
         _access = access;

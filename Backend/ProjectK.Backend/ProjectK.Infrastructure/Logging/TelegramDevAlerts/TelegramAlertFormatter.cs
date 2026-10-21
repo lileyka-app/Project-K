@@ -57,9 +57,7 @@ public static class TelegramAlertFormatter
         var traceId = Prop("TraceId") ?? Prop("RequestId") ?? Prop("CorrelationId");
         var isProbe = !string.IsNullOrWhiteSpace(path) && SafeMatch(ProbePath, path);
 
-        var title = isSecurity
-            ? ActionTitles.GetValueOrDefault(action ?? string.Empty, action ?? "Підозріла подія")
-            : logEvent.Exception is { } ex ? $"Помилка: {ex.GetType().Name}" : LevelTitle(logEvent.Level);
+        var title = TitleOf(logEvent, isSecurity, action);
 
         var text = new StringBuilder()
             .Append(LevelMark(logEvent.Level)).Append(' ')
@@ -72,30 +70,8 @@ public static class TelegramAlertFormatter
 
         text.AppendLine();
 
-        if (logEvent.Exception is { } exception)
-        {
-            text.AppendLine(Escape(Shorten(exception.Message, 400)));
-            if (exception.InnerException is { } inner)
-            {
-                text.Append("<b>Причина:</b> ").Append(Escape(inner.GetType().Name)).Append(": ").AppendLine(Escape(Shorten(inner.Message, 300)));
-            }
-        }
-        else if (!isSecurity)
-        {
-            text.AppendLine(Escape(Shorten(logEvent.RenderMessage(), 600)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            var request = $"{method} {path}{query}".Trim();
-            var status = Prop("StatusCode");
-            text.Append("<b>Запит:</b> <code>").Append(Escape(Shorten(request, 300))).Append("</code>");
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                text.Append(" → ").Append(Escape(status));
-            }
-            text.AppendLine();
-        }
+        AppendMessage(text, logEvent, isSecurity);
+        AppendRequest(text, method, path, query, Prop("StatusCode"));
 
         Field(text, "Хост", Prop("Host") ?? Prop("RequestHost"));
         if (!string.IsNullOrWhiteSpace(ip) || !string.IsNullOrWhiteSpace(country))
@@ -117,20 +93,90 @@ public static class TelegramAlertFormatter
             Field(text, "Причина", Prop("Reason"));
         }
 
-        if (logEvent.Exception is { } thrown && OurFrames(thrown) is { Count: > 0 } frames)
-        {
-            text.AppendLine("<b>Де:</b>");
-            foreach (var frame in frames)
-            {
-                text.Append("<code>").Append(Escape(frame)).AppendLine("</code>");
-            }
-        }
+        AppendFrames(text, logEvent.Exception);
 
         if (!isSecurity && Scalar(logEvent, "SourceContext") is { } source)
         {
             Field(text, "Джерело", source[(source.LastIndexOf('.') + 1)..], code: true);
         }
 
+        AppendFooter(text, version, codename, traceId);
+
+        var groupKey = GroupKeyOf(logEvent, isSecurity, action, ip, path);
+
+        return new TelegramAlert(groupKey, Redaction.Apply(text.ToString()), title, logEvent.Level, ip, country, path, traceId, isRequestLog);
+    }
+
+    private static string TitleOf(LogEvent logEvent, bool isSecurity, string? action)
+    {
+        if (isSecurity)
+        {
+            return ActionTitles.GetValueOrDefault(action ?? string.Empty, action ?? "Підозріла подія");
+        }
+
+        return logEvent.Exception is { } ex ? $"Помилка: {ex.GetType().Name}" : LevelTitle(logEvent.Level);
+    }
+
+    private static string GroupKeyOf(LogEvent logEvent, bool isSecurity, string? action, string? ip, string? path)
+    {
+        if (isSecurity)
+        {
+            return $"sec|{action}|{ip}";
+        }
+
+        return logEvent.Exception is { } e
+            ? $"err|{e.GetType().FullName}|{Shorten(e.Message, 120)}|{path}"
+            : $"log|{logEvent.Level}|{logEvent.MessageTemplate.Text}|{path}";
+    }
+
+    private static void AppendMessage(StringBuilder text, LogEvent logEvent, bool isSecurity)
+    {
+        if (logEvent.Exception is { } exception)
+        {
+            text.AppendLine(Escape(Shorten(exception.Message, 400)));
+            if (exception.InnerException is { } inner)
+            {
+                text.Append("<b>Причина:</b> ").Append(Escape(inner.GetType().Name)).Append(": ").AppendLine(Escape(Shorten(inner.Message, 300)));
+            }
+        }
+        else if (!isSecurity)
+        {
+            text.AppendLine(Escape(Shorten(logEvent.RenderMessage(), 600)));
+        }
+    }
+
+    private static void AppendRequest(StringBuilder text, string? method, string? path, string? query, string? status)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var request = $"{method} {path}{query}".Trim();
+        text.Append("<b>Запит:</b> <code>").Append(Escape(Shorten(request, 300))).Append("</code>");
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            text.Append(" → ").Append(Escape(status));
+        }
+        text.AppendLine();
+    }
+
+    private static void AppendFrames(StringBuilder text, Exception? exception)
+    {
+        if (exception is null || OurFrames(exception) is not { Count: > 0 } frames)
+        {
+            return;
+        }
+
+        text.AppendLine("<b>Де:</b>");
+        foreach (var frame in frames)
+        {
+            text.Append("<code>").Append(Escape(frame)).AppendLine("</code>");
+        }
+    }
+
+    private static void AppendFooter(StringBuilder text, string version, string? codename, string? traceId)
+    {
         text.AppendLine();
         text.Append("<i>").Append(Escape(version));
         if (!string.IsNullOrWhiteSpace(codename))
@@ -142,14 +188,6 @@ public static class TelegramAlertFormatter
             text.Append(" · trace ").Append(Escape(traceId));
         }
         text.Append("</i>");
-
-        var groupKey = isSecurity
-            ? $"sec|{action}|{ip}"
-            : logEvent.Exception is { } e
-                ? $"err|{e.GetType().FullName}|{Shorten(e.Message, 120)}|{path}"
-                : $"log|{logEvent.Level}|{logEvent.MessageTemplate.Text}|{path}";
-
-        return new TelegramAlert(groupKey, Redaction.Apply(text.ToString()), title, logEvent.Level, ip, country, path, traceId, isRequestLog);
     }
 
     /// <summary>

@@ -148,8 +148,8 @@
     gap: 0.6rem;
     align-items: center;
     min-width: 0;
-    padding: 0.1rem 0 !important;
-    border: 0 !important;
+    padding: 0.1rem 0;
+    border: 0;
     overflow-wrap: anywhere;
     text-align: left;
   }

@@ -132,8 +132,8 @@ describe('MemberProbePageComponent', () => {
     fixture.detectChanges();
 
     expect(component).toBeTruthy();
-    expect(component.probeSections.length).toBe(1);
-    expect(component.probeSections[0].points.length).toBe(2);
+    expect(component.probeSections).toHaveSize(1);
+    expect(component.probeSections[0].points).toHaveSize(2);
     expect(component.probeSections[0].points[0].isSigned).toBeFalse();
   });
 
@@ -165,7 +165,7 @@ describe('MemberProbePageComponent', () => {
 
     expect(component.isArchive).toBeTrue();
     expect(component.canManageProbePoints).toBeFalse();
-    expect(component.probeSections[0].points.length).toBe(2);
+    expect(component.probeSections[0].points).toHaveSize(2);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Архів юнацтва');
 
     component.onSignPoint(component.probeSections[0].points[0]);

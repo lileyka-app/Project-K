@@ -34,6 +34,17 @@ function isCompletedStatus(status: ProbeProgressStatus): boolean {
   return status === ProbeProgressStatus.Completed || status === ProbeProgressStatus.Verified;
 }
 
+/**
+ * A закрита проба reads as full even when the point-by-point data never arrived: the probe is
+ * done, and showing a half-filled bar under the word "завершено" would contradict it.
+ */
+function completionPercentOf(signedPoints: number, totalPoints: number, status: ProbeProgressStatus): number | null {
+  if (totalPoints) {
+    return Math.round((signedPoints / totalPoints) * 100);
+  }
+  return isCompletedStatus(status) ? 100 : null;
+}
+
 export function normalizeProbeProgressStatus(status: ProbeProgressStatusLike): ProbeProgressStatus {
   if (typeof status === 'number' && ProbeProgressStatus[status] !== undefined) {
     return status as ProbeProgressStatus;
@@ -77,11 +88,7 @@ export function buildMemberProbeRows(
       pointsCount: probe?.pointsCount ?? null,
       sectionsCount: probe?.sectionsCount ?? null,
       signedPointsCount: signedPoints,
-      // A закрита проба reads as full even when the point-by-point data never arrived: the probe is
-      // done, and showing a half-filled bar under the word "завершено" would contradict it.
-      completionPercent: totalPoints
-        ? Math.round((signedPoints / totalPoints) * 100)
-        : (isCompletedStatus(status) ? 100 : null)
+      completionPercent: completionPercentOf(signedPoints, totalPoints, status)
     };
   });
 

@@ -8,10 +8,10 @@
 /* FullCalendar renders at natural height ('auto'); this wrapper caps it and scrolls, so the timegrid
    scrolls inside the card instead of the whole page. */
 .agenda-calendar-host { max-block-size: calc(100vh - 19rem); min-block-size: 18rem; overflow: auto; }
-:host ::ng-deep full-calendar { display: block; }
 
 /* FullCalendar theming — map its --fc-* tokens onto the brandbook palette (no new colours). */
 :host ::ng-deep full-calendar {
+  display: block;
   --fc-border-color: var(--p-content-border-color);
   --fc-page-bg-color: var(--p-content-background);
   --fc-neutral-bg-color: var(--p-content-hover-background);

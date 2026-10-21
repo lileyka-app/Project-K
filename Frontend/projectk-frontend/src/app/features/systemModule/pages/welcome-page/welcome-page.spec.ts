@@ -54,8 +54,8 @@ describe('WelcomePageComponent', () => {
 
     expect(el.querySelector('.preview-window__bar')).not.toBeNull();
     expect(el.querySelector('a.preview-window')).toBeNull();
-    expect(el.querySelectorAll('.preview-window__frame').length).toBe(component.screens.length);
-    expect(el.querySelectorAll('.preview-window__frame--active').length).toBe(1);
+    expect(el.querySelectorAll('.preview-window__frame')).toHaveSize(component.screens.length);
+    expect(el.querySelectorAll('.preview-window__frame--active')).toHaveSize(1);
   });
 
   it('lists calendars before the documentation that is still to come', () => {
@@ -65,6 +65,6 @@ describe('WelcomePageComponent', () => {
 
     expect(headings).toEqual(['Реєстр куреня', 'Календарі', 'Документація']);
     const tags = (fixture.nativeElement as HTMLElement).querySelectorAll('.feature-card p-tag');
-    expect(tags.length).toBe(1);
+    expect(tags).toHaveSize(1);
   });
 });

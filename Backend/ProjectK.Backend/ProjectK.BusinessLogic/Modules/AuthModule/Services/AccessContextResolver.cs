@@ -101,12 +101,12 @@ public sealed class AccessContextResolver : IAccessContextResolver
             return (null, []);
         }
 
-        foreach (var membership in newestFirst)
+        foreach (var kurinKey in newestFirst.Select(membership => membership.KurinKey))
         {
-            var offices = await _offices.GetForAccountInKurinAsync(userKey, membership.KurinKey, cancellationToken);
+            var offices = await _offices.GetForAccountInKurinAsync(userKey, kurinKey, cancellationToken);
             if (offices.Count > 0)
             {
-                return (membership.KurinKey, offices);
+                return (kurinKey, offices);
             }
         }
 

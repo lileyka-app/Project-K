@@ -31,7 +31,7 @@ describe('UpcomingBirthdaysTileComponent', () => {
 
     const result = component.buildUpcomingBirthdays(referenceDate);
 
-    expect(result.length).toBe(3);
+    expect(result).toHaveSize(3);
     expect(result.map(item => item.member.memberKey)).toEqual(['a', 'b', 'c']);
     expect(result.map(item => item.daysUntilBirthday)).toEqual([0, 14, 30]);
   });
@@ -45,6 +45,6 @@ describe('UpcomingBirthdaysTileComponent', () => {
 
     const result = component.buildUpcomingBirthdays(referenceDate);
 
-    expect(result.length).toBe(0);
+    expect(result).toHaveSize(0);
   });
 });

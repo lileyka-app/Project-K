@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
@@ -13,16 +12,13 @@ public class GenerateMfaRecoveryCodesCommandHandler
     : IRequestHandler<GenerateMfaRecoveryCodesCommand, ServiceResult<MfaRecoveryCodesResponseDto>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly ILogger<GenerateMfaRecoveryCodesCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
 
     public GenerateMfaRecoveryCodesCommandHandler(
         UserManager<AppUser> userManager,
-        ILogger<GenerateMfaRecoveryCodesCommandHandler> logger,
         IActivityLogger activityLogger)
     {
         _userManager = userManager;
-        _logger = logger;
         _activityLogger = activityLogger;
     }
 

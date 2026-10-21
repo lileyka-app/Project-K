@@ -139,7 +139,7 @@ export function stripBar(
 export function stripMonths(axis: StripAxis): { label: string; from: number; span: number }[] {
   const months: { label: string; from: number; span: number }[] = [];
   axis.days.forEach((day, index) => {
-    const last = months[months.length - 1];
+    const last = months.at(-1);
     const label = MONTH_NAMES[day.getMonth()];
     if (last && day.getDate() !== 1) last.span++;
     else months.push({ label, from: index, span: 1 });

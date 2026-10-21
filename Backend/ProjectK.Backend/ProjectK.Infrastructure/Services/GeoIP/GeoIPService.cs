@@ -107,5 +107,5 @@ public sealed class GeoIPService
         };
     }
 
-    private record IpApiResponse(string status, string countryCode);
+    private sealed record IpApiResponse(string status, string countryCode);
 }

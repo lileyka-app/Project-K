@@ -45,7 +45,7 @@ describe('reconcileOrder', () => {
 
   it('de-duplicates repeated keys in the saved order', () => {
     const result = reconcileOrder(['skills', 'skills', 'probes'], defs).map(d => d.key);
-    expect(result.filter(k => k === 'skills').length).toBe(1);
+    expect(result.filter(k => k === 'skills')).toHaveSize(1);
   });
 
   it('keeps pinned tiles at the top even if saved order buries them', () => {

@@ -1,11 +1,10 @@
 import { inject, Injectable } from "@angular/core";
 import { environment } from "../../../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
-import { UserDto } from "../../models/user.dto";
+import { SystemUserRole, UserDto } from "../../models/user.dto";
 import { tap } from "rxjs";
 import { ClientCacheService } from "../../../kurinModule/services/client-cache/client-cache.service";
 import { GROUP_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from "../../../kurinModule/services/client-cache/cache-policy";
-import { SystemUserRole } from '../../models/user.dto';
 
 @Injectable({
     providedIn: 'root'

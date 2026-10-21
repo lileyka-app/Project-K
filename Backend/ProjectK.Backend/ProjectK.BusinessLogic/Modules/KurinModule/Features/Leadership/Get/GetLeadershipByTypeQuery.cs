@@ -40,7 +40,7 @@ public class GetLeadershipByTypeQueryHandler : IRequestHandler<GetLeadershipByTy
         var currentLeadership = leadership.Where(l => l.EndDate == null);
         if (leadership.Count() > 1)
         {
-            throw new ArgumentOutOfRangeException("Multiple leaderships found for the given type and key.");
+            throw new ArgumentOutOfRangeException(nameof(request), "Multiple leaderships found for the given type and key.");
         }
         LeadershipResponse leadershipResponse = _mapper.Map<LeadershipResponse>(currentLeadership.FirstOrDefault());
         return new ServiceResult<LeadershipResponse>(

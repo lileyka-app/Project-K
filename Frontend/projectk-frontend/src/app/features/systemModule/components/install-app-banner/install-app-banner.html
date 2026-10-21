@@ -1,7 +1,7 @@
 @if (offersMobileVersion()) {
-  <aside class="mobile-version" data-testid="mobile-version-banner">
+  <aside class="mobile-version" data-testid="mobile-version-banner" aria-labelledby="mobile-version-text">
     <span class="pi pi-mobile" aria-hidden="true"></span>
-    <span class="mobile-version__text">Це повна версія сайту.</span>
+    <span class="mobile-version__text" id="mobile-version-text">Це повна версія сайту.</span>
     <button type="button" class="install-banner__link" (click)="openMobile()">Мобільна версія</button>
   </aside>
 } @else if (isVisible()) {

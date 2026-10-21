@@ -563,7 +563,7 @@ describe('AuthService', () => {
       });
 
       const requests = httpMock.match(`${apiUrl}/auth/refresh`);
-      expect(requests.length).toBe(1);
+      expect(requests).toHaveSize(1);
       requests[0].flush({ accessToken: 'shared-access-token' });
 
       setTimeout(() => {

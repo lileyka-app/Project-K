@@ -7,7 +7,7 @@ export interface OfficeRef {
   role: LeadershipRole;
 }
 
-const LEADERSHIP_TYPES: readonly LeadershipTypeName[] = ['Kurin', 'Group', 'KV'];
+const LEADERSHIP_TYPES: ReadonlySet<LeadershipTypeName> = new Set<LeadershipTypeName>(['Kurin', 'Group', 'KV']);
 const LEADERSHIP_ROLES = new Set<string>(Object.values(LeadershipRole));
 
 /**
@@ -24,7 +24,7 @@ export function parseOfficeRole(systemRole?: string | null): OfficeRef | null {
   }
 
   const [type, role] = parts;
-  if (!LEADERSHIP_TYPES.includes(type as LeadershipTypeName) || !LEADERSHIP_ROLES.has(role)) {
+  if (!LEADERSHIP_TYPES.has(type as LeadershipTypeName) || !LEADERSHIP_ROLES.has(role)) {
     return null;
   }
 

@@ -144,7 +144,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(0);
+        expect(breadcrumbs).toHaveSize(0);
         done();
       }
     });
@@ -173,7 +173,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveSize(1);
         expect(breadcrumbs[0].label).toBe('Dashboard');
         expect(breadcrumbs[0].routerLink).toBe('/dashboard');
         done();
@@ -204,7 +204,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveSize(1);
         expect(breadcrumbs[0].label).toBe('User Profile');
         expect(breadcrumbs[0].routerLink).toBe('/users/123');
         done();
@@ -236,7 +236,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs).toHaveSize(2);
         expect(breadcrumbs[0].label).toBe('Settings');
         expect(breadcrumbs[0].routerLink).toBe('settings');
         expect(breadcrumbs[1].label).toBe('Profile');
@@ -273,7 +273,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs).toHaveSize(2);
         expect(breadcrumbs[0].label).toBe('Project Details');
         expect(breadcrumbs[0].routerLink).toBe('projects/42');
         expect(breadcrumbs[1].label).toBe('Task Details');
@@ -309,7 +309,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveSize(1);
         expect(breadcrumbs[0].label).toBe('Member Details');
         expect(breadcrumbs[0].routerLink).toBe('/org/10/team/20/member/30');
         done();
@@ -345,7 +345,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(3);
+        expect(breadcrumbs).toHaveSize(3);
         expect(breadcrumbs[0].label).toBe('Level 1');
         expect(breadcrumbs[0].routerLink).toBe('level1');
         expect(breadcrumbs[1].label).toBe('Level 2');
@@ -419,7 +419,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveSize(1);
         expect(breadcrumbs[0].label).toBe('Child Page');
         expect(breadcrumbs[0].routerLink).toBe('/parent/child/555');
         done();
@@ -454,7 +454,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs).toHaveSize(2);
         expect(breadcrumbs[0].label).toBe('Category');
         expect(breadcrumbs[0].routerLink).toBe('category/electronics');
         expect(breadcrumbs[1].label).toBe('Product');
@@ -692,7 +692,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(0);
+        expect(breadcrumbs).toHaveSize(0);
         done();
       }
     });
@@ -965,7 +965,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(3);
+        expect(breadcrumbs).toHaveSize(3);
         expect(breadcrumbs[0].label).toBe('Admin');
         expect(breadcrumbs[1].label).toBe('User Details');
         expect(breadcrumbs[1].routerLink).toBe('admin/users/123');

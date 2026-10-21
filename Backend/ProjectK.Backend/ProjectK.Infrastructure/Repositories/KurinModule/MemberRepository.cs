@@ -61,8 +61,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         return await Context.Members.AsSplitQuery()
                                      .Include(m => m.PlastLevelHistory)
                                      .Include(m => m.LeadershipHistories)
-                                        .ThenInclude(h => h.Leadership)
-                                            .ThenInclude(l => l.Group)
+                                        .ThenInclude(h => h.Leadership.Group)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
                                      .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
@@ -80,8 +79,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         return await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
                                      .Include(m => m.PlastLevelHistory)
                                      .Include(m => m.LeadershipHistories)
-                                        .ThenInclude(h => h.Leadership)
-                                            .ThenInclude(l => l.Group)
+                                        .ThenInclude(h => h.Leadership.Group)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
                                      .AsSplitQuery()
@@ -109,7 +107,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     {
         var canSeeAll = visibility.CanSeeAllPrivate;
         var currentUserId = visibility.CurrentUserId;
-        var visibleGroupKeys = visibility.VisibleGroupKeys as IReadOnlyCollection<Guid> ?? visibility.VisibleGroupKeys.ToList();
+        var visibleGroupKeys = visibility.VisibleGroupKeys;
 
         var source = from ms in memberships
                      join person in Context.Members on ms.MemberKey equals person.MemberKey

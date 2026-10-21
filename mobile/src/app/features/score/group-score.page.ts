@@ -396,7 +396,7 @@ type Kind = 'all' | 'people' | 'group';
                   [errorMessage]="editor.error()"
                   (save)="editor.save($event)"
                   (remove)="editor.remove($event)"
-                  (cancel)="editor.close()"
+                  (cancelled)="editor.close()"
                 />
               </ng-template>
             </ion-modal>

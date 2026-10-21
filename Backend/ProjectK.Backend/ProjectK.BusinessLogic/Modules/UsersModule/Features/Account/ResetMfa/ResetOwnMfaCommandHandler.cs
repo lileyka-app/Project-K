@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -14,17 +13,14 @@ public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, Ser
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IRefreshTokenStore _refreshTokens;
-    private readonly ILogger<ResetOwnMfaCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
 
     public ResetOwnMfaCommandHandler(
         UserManager<AppUser> userManager,
-        ILogger<ResetOwnMfaCommandHandler> logger,
         IActivityLogger activityLogger,
         IRefreshTokenStore refreshTokens)
     {
         _userManager = userManager;
-        _logger = logger;
         _activityLogger = activityLogger;
         _refreshTokens = refreshTokens;
     }

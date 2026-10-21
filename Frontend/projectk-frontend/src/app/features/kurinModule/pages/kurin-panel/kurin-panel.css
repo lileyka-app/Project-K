@@ -158,8 +158,8 @@
 }
 
 :host ::ng-deep .project-table .p-datatable-table {
-    width: 100% !important;
-    min-width: 0 !important;
+    width: 100%;
+    min-width: 0;
 }
 
 @media (max-width: 768px) {
@@ -234,8 +234,8 @@
 
     :host ::ng-deep .project-table .p-datatable-tbody > tr.group-row > td {
         min-width: 0;
-        padding: 0 !important;
-        border: 0 !important;
+        padding: 0;
+        border: 0;
     }
 
     :host ::ng-deep .project-table .p-datatable-tbody > tr.group-row > td::before {

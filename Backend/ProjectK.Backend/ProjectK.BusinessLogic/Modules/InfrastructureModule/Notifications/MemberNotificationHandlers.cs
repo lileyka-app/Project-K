@@ -294,17 +294,15 @@ public sealed class BadgeProgressReviewedEventHandler
     {
         var raised = notification.Event;
 
-        var title = raised.IsApproved
-            ? "Вмілість зараховано"
-            : raised.ConfirmationWithdrawn
-                ? "Підтвердження вмілості скасовано"
-                : "Вмілість потребує доопрацювання";
-
-        var body = raised.IsApproved
-            ? "Вашу вмілість зараховано."
-            : raised.ConfirmationWithdrawn
-                ? "Раніше зараховану вмілість вилучено."
-                : "Вашу вмілість не зараховано. Перегляньте зауваження та подайте її повторно.";
+        var (title, body) = raised switch
+        {
+            { IsApproved: true } => ("Вмілість зараховано",
+                "Вашу вмілість зараховано."),
+            { ConfirmationWithdrawn: true } => ("Підтвердження вмілості скасовано",
+                "Раніше зараховану вмілість вилучено."),
+            _ => ("Вмілість потребує доопрацювання",
+                "Вашу вмілість не зараховано. Перегляньте зауваження та подайте її повторно.")
+        };
 
         return _notifications.NotifyAsync(
             new NotificationRequest

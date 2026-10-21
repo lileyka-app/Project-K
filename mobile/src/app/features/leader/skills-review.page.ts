@@ -381,6 +381,8 @@ function time(utc: string | null): number {
 function queueCountLabel(count: number): string {
   const rest = count % 10;
   const teens = count % 100 >= 11 && count % 100 <= 14;
-  const noun = !teens && rest === 1 ? 'заявка' : !teens && rest >= 2 && rest <= 4 ? 'заявки' : 'заявок';
+  let noun = 'заявок';
+  if (!teens && rest === 1) noun = 'заявка';
+  else if (!teens && rest >= 2 && rest <= 4) noun = 'заявки';
   return `${count} ${noun} на розгляді`;
 }

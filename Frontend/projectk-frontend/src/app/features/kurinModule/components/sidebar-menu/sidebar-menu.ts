@@ -10,6 +10,7 @@ import { catchError, combineLatest, defer, filter, map, Observable, of, startWit
 import { AuthState } from '../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
+import { trimTrailingSlashes } from '../../../../shared/functions/trim-trailing-slashes.function';
 import { AccountRoleTag, GENERIC_MEMBER_TAG, signedInRoleTag } from '../../functions/account-role-tag.function';
 import { AccountSwitcherComponent } from '../../../authModule/components/account-switcher/account-switcher';
 import { InstallOnPhoneDialogComponent } from '../../../systemModule/components/install-on-phone-dialog/install-on-phone-dialog';
@@ -123,7 +124,7 @@ export class SidebarMenuComponent implements OnChanges {
     if (!Array.isArray(routerLink) || routerLink.length === 0) {
       return null;
     }
-    return `/${routerLink.map(part => String(part)).join('/').replace(/^\/+/, '')}`;
+    return `/${routerLink.map(String).join('/').replace(/^\/+/, '')}`;
   }
 
   /**
@@ -158,296 +159,161 @@ export class SidebarMenuComponent implements OnChanges {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
-    const canReviewSkills = this.permissionService.canReviewSkills();
-    const canManageKurinSettings = this.permissionService.canManageKurinSettings();
-    const canSeeKurinDues = this.permissionService.canSeeKurinDues();
-    const canSeeRegistry = isAdmin
+
+    return [
+      ...(memberKey ? this.personalItems(memberKey) : []),
+      ...(kurinKey ? this.kurinItems(kurinKey, isYouthKurin, duesGroups) : []),
+      ...(isAdmin && !kurinKey ? this.adminItems(pendingWaitlist) : []),
+      ...this.commonItems()
+    ];
+  }
+
+  private navItem(item: MenuItem & { routerLink: unknown[] }): MenuItem {
+    return {
+      ...item,
+      command: () => {
+        this.close();
+        this.router.navigate(item.routerLink);
+      }
+    };
+  }
+
+  private personalItems(memberKey: string): MenuItem[] {
+    return [
+      this.navItem({ label: 'Головна', icon: 'pi pi-home', routerLink: ['/'] }),
+      this.navItem({ label: 'Мій профіль', icon: 'pi pi-user', routerLink: ['/member', memberKey] })
+    ];
+  }
+
+  private kurinItems(kurinKey: string, isYouthKurin: boolean, duesGroups: DuesGroupLinkDto[]): MenuItem[] {
+    const canSeeRegistry = this.permissionService.isAdmin()
       || this.permissionService.canManageWholeKurin()
       || this.permissionService.canLeadGroups();
+    const canManageKurinSettings = this.permissionService.canManageKurinSettings();
     const disabled = !kurinKey;
+    const items: MenuItem[] = [
+      this.navItem({ label: 'Курінь', icon: 'pi pi-flag', routerLink: ['/kurin'], disabled })
+    ];
 
-    const items: MenuItem[] = [];
-
-    if (memberKey) {
-      items.push({
-        label: 'Головна',
-        icon: 'pi pi-home',
-        routerLink: ['/'],
-        command: () => {
-          this.close();
-          this.router.navigate(['/']);
-        }
-      });
-      items.push({
-        label: 'Мій профіль',
-        icon: 'pi pi-user',
-        routerLink: ['/member', memberKey],
-        command: () => {
-          this.close();
-          this.router.navigate(['/member', memberKey]);
-        }
-      });
+    // Реєстр — суцільний склад куреня рядками, з контактами. Це інструмент проводу, тож
+    // юнакові його не показуємо; сторінка так само закрита capabilityGuard.
+    if (canSeeRegistry) {
+      items.push(this.navItem({ label: 'Реєстр', icon: 'pi pi-table', routerLink: ['/kurin/registry'], disabled }));
     }
 
-    if (kurinKey) {
-      items.push(
-        {
-          label: 'Курінь',
-          icon: 'pi pi-flag',
-          routerLink: ['/kurin'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/kurin']);
-          },
-          disabled
-        }
-      );
-
-      // Реєстр — суцільний склад куреня рядками, з контактами. Це інструмент проводу, тож
-      // юнакові його не показуємо; сторінка так само закрита capabilityGuard.
-      if (canSeeRegistry) {
-        items.push({
-          label: 'Реєстр',
-          icon: 'pi pi-table',
-          routerLink: ['/kurin/registry'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/kurin/registry']);
-          },
-          disabled
-        });
-      }
-
-      // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового.
-      if (canManageKurinSettings) {
-        items.push({
-          label: 'Імпорт складу',
-          icon: 'pi pi-upload',
-          routerLink: ['/kurin/import'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/kurin/import']);
-          },
-          disabled
-        });
-      }
-
-      // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
-      // провід керує. Створення обмежене на рівні сторінки/бекенду (canManageAgenda).
-      items.push({
-        label: 'Календар',
-        icon: 'pi pi-calendar',
-        routerLink: ['/calendar', kurinKey],
-        command: () => {
-          this.close();
-          this.router.navigate(['/calendar', kurinKey]);
-        }
-      });
-
-      items.push({
-        label: 'Задачі',
-        icon: 'pi pi-check-square',
-        routerLink: ['/tasks', kurinKey],
-        command: () => {
-          this.close();
-          this.router.navigate(['/tasks', kurinKey]);
-        }
-      });
-
-      items.push({
-        label: 'Планування',
-        icon: 'pi pi-clock',
-        routerLink: ['/planning', kurinKey],
-        command: () => {
-          this.close();
-          this.router.navigate(['/planning', kurinKey]);
-        }
-      });
-
-      // Таблицю гуртків бачить кожен у курені; хто ставить бали, вирішує сторінка.
-      items.push({
-        label: 'Точкування',
-        icon: 'pi pi-trophy',
-        routerLink: ['/kurin', kurinKey, 'score'],
-        command: () => {
-          this.close();
-          this.router.navigate(['/kurin', kurinKey, 'score']);
-        }
-      });
-
-      // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
-      // сторінки, разом із іконками pi-sitemap і pi-address-book.
-
-      if (canReviewSkills && isYouthKurin) {
-        items.push({
-          label: 'Модерація вмілостей',
-          icon: 'pi pi-verified',
-          routerLink: ['/kurin', kurinKey, 'review', 'skills'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/kurin', kurinKey, 'review', 'skills']);
-          }
-        });
-      }
-
-      // One гурток — straight to its box; several — a fold with one entry each.
-      if (duesGroups.length === 1) {
-        const [group] = duesGroups;
-        items.push({
-          label: 'Вкладка гуртка',
-          icon: 'pi pi-wallet',
-          routerLink: ['/group', group.groupKey, 'dues'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/group', group.groupKey, 'dues']);
-          }
-        });
-      } else if (duesGroups.length > 1) {
-        items.push({
-          label: 'Вкладка гуртків',
-          icon: 'pi pi-wallet',
-          items: duesGroups.map(group => ({
-            label: group.groupName,
-            routerLink: ['/group', group.groupKey, 'dues'],
-            command: () => {
-              this.close();
-              this.router.navigate(['/group', group.groupKey, 'dues']);
-            }
-          }))
-        });
-      }
-
-      if (canSeeKurinDues) {
-        items.push({
-          label: 'Вкладка куреня',
-          icon: 'pi pi-wallet',
-          routerLink: ['/kurin', kurinKey, 'dues'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/kurin', kurinKey, 'dues']);
-          }
-        });
-      }
-
-      if (canManageKurinSettings) {
-        items.push({
-          label: 'Налаштування куреня',
-          icon: 'pi pi-cog',
-          routerLink: ['/kurin', kurinKey, 'settings'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/kurin', kurinKey, 'settings']);
-          }
-        });
-      }
+    // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового.
+    if (canManageKurinSettings) {
+      items.push(this.navItem({ label: 'Імпорт складу', icon: 'pi pi-upload', routerLink: ['/kurin/import'], disabled }));
     }
 
-    if (isAdmin && !kurinKey) {
-      items.push(
-        {
-          label: 'Адміністрація',
-          icon: 'pi pi-lock',
-          routerLink: ['/panel'],
-          // The dot, not a number: «there is something to decide» is all the sidebar has to say.
-          styleClass: pendingWaitlist > 0 ? 'lil-menu-item--attention' : undefined,
-          command: () => {
-            this.close();
-            this.router.navigate(['/panel']);
-          }
-        },
-        {
-          label: 'Користувачі',
-          icon: 'pi pi-users',
-          routerLink: ['/users'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/users']);
-          }
-        },
-        {
-          label: 'Краї',
-          icon: 'pi pi-map',
-          routerLink: ['/krai'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/krai']);
-          }
-        },
-        {
-          label: 'Системні налаштування',
-          icon: 'pi pi-sliders-h',
-          routerLink: ['/system-settings'],
-          command: () => {
-            this.close();
-            this.router.navigate(['/system-settings']);
-          }
-        }
-      );
+    // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
+    // провід керує. Створення обмежене на рівні сторінки/бекенду (canManageAgenda).
+    // Таблицю гуртків бачить кожен у курені; хто ставить бали, вирішує сторінка.
+    items.push(
+      this.navItem({ label: 'Календар', icon: 'pi pi-calendar', routerLink: ['/calendar', kurinKey] }),
+      this.navItem({ label: 'Задачі', icon: 'pi pi-check-square', routerLink: ['/tasks', kurinKey] }),
+      this.navItem({ label: 'Планування', icon: 'pi pi-clock', routerLink: ['/planning', kurinKey] }),
+      this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] })
+    );
+
+    // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
+    // сторінки, разом із іконками pi-sitemap і pi-address-book.
+
+    if (this.permissionService.canReviewSkills() && isYouthKurin) {
+      items.push(this.navItem({ label: 'Модерація вмілостей', icon: 'pi pi-verified', routerLink: ['/kurin', kurinKey, 'review', 'skills'] }));
     }
 
-    items.push({
-      label: 'Налаштування акаунта',
-      icon: 'pi pi-shield',
-      routerLink: ['/settings/account'],
-      command: () => {
-        this.close();
-        this.router.navigate(['/settings/account']);
-      }
-    });
+    items.push(...this.duesGroupItems(duesGroups));
 
-    // The guide is another site (PROJECTK_DOCS_URL is its root), so it opens in a new tab and never
-    // takes the «current» mark: markCurrent only knows routerLinks. The welcome page sends people
-    // to the root; from inside the app they already know what Лілейка is, so straight to the guide.
-    items.push({
-      label: 'Довідка',
-      icon: 'pi pi-book',
-      url: `${environment.docsUrl.replace(/\/+$/, '')}/user/start/what-is/`,
-      target: '_blank',
-      command: () => this.close()
-    });
-
-    // The phone app is the PWA under /m/ on this origin: a page load, not a route of this app.
-    // Its /install page offers the one-tap install or shows the steps for the phone at hand. A
-    // computer gets a code for the phone instead: /m/ there read as «install it on this computer».
-    // The demo on the docs site has no phone app next to it.
-    if (this.installApp.available) {
-      items.push(this.installApp.onPhone
-        ? {
-          label: 'Встановити на телефон',
-          icon: 'pi pi-mobile',
-          url: '/m/install',
-          command: () => this.close()
-        }
-        : {
-          label: 'Встановити на телефон',
-          icon: 'pi pi-mobile',
-          command: () => {
-            this.close();
-            this.installOnPhoneVisible.set(true);
-          }
-        });
+    if (this.permissionService.canSeeKurinDues()) {
+      items.push(this.navItem({ label: 'Вкладка куреня', icon: 'pi pi-wallet', routerLink: ['/kurin', kurinKey, 'dues'] }));
     }
 
-    items.push({
-      label: 'Повідомити про проблему',
-      icon: 'icon-bug',
-      command: () => {
-        this.close();
-        this.reportVisible.set(true);
-      }
-    });
-
-    items.push({
-      label: 'Про Лілейку',
-      icon: 'pi pi-info-circle',
-      routerLink: ['/about'],
-      command: () => {
-        this.close();
-        this.router.navigate(['/about']);
-      }
-    });
+    if (canManageKurinSettings) {
+      items.push(this.navItem({ label: 'Налаштування куреня', icon: 'pi pi-cog', routerLink: ['/kurin', kurinKey, 'settings'] }));
+    }
 
     return items;
+  }
+
+  /** One гурток — straight to its box; several — a fold with one entry each. */
+  private duesGroupItems(duesGroups: DuesGroupLinkDto[]): MenuItem[] {
+    if (duesGroups.length === 1) {
+      const [group] = duesGroups;
+      return [this.navItem({ label: 'Вкладка гуртка', icon: 'pi pi-wallet', routerLink: ['/group', group.groupKey, 'dues'] })];
+    }
+    if (duesGroups.length > 1) {
+      return [{
+        label: 'Вкладка гуртків',
+        icon: 'pi pi-wallet',
+        items: duesGroups.map(group => this.navItem({ label: group.groupName, routerLink: ['/group', group.groupKey, 'dues'] }))
+      }];
+    }
+    return [];
+  }
+
+  private adminItems(pendingWaitlist: number): MenuItem[] {
+    return [
+      this.navItem({
+        label: 'Адміністрація',
+        icon: 'pi pi-lock',
+        routerLink: ['/panel'],
+        // The dot, not a number: «there is something to decide» is all the sidebar has to say.
+        styleClass: pendingWaitlist > 0 ? 'lil-menu-item--attention' : undefined
+      }),
+      this.navItem({ label: 'Користувачі', icon: 'pi pi-users', routerLink: ['/users'] }),
+      this.navItem({ label: 'Краї', icon: 'pi pi-map', routerLink: ['/krai'] }),
+      this.navItem({ label: 'Системні налаштування', icon: 'pi pi-sliders-h', routerLink: ['/system-settings'] })
+    ];
+  }
+
+  private commonItems(): MenuItem[] {
+    return [
+      this.navItem({ label: 'Налаштування акаунта', icon: 'pi pi-shield', routerLink: ['/settings/account'] }),
+      // The guide is another site (PROJECTK_DOCS_URL is its root), so it opens in a new tab and never
+      // takes the «current» mark: markCurrent only knows routerLinks. The welcome page sends people
+      // to the root; from inside the app they already know what Лілейка is, so straight to the guide.
+      {
+        label: 'Довідка',
+        icon: 'pi pi-book',
+        url: `${trimTrailingSlashes(environment.docsUrl)}/user/start/what-is/`,
+        target: '_blank',
+        command: () => this.close()
+      },
+      ...this.installItems(),
+      {
+        label: 'Повідомити про проблему',
+        icon: 'icon-bug',
+        command: () => {
+          this.close();
+          this.reportVisible.set(true);
+        }
+      },
+      this.navItem({ label: 'Про Лілейку', icon: 'pi pi-info-circle', routerLink: ['/about'] })
+    ];
+  }
+
+  /**
+   * The phone app is the PWA under /m/ on this origin: a page load, not a route of this app.
+   * Its /install page offers the one-tap install or shows the steps for the phone at hand. A
+   * computer gets a code for the phone instead: /m/ there read as «install it on this computer».
+   * The demo on the docs site has no phone app next to it.
+   */
+  private installItems(): MenuItem[] {
+    if (!this.installApp.available) {
+      return [];
+    }
+    if (this.installApp.onPhone) {
+      return [{ label: 'Встановити на телефон', icon: 'pi pi-mobile', url: '/m/install', command: () => this.close() }];
+    }
+    return [{
+      label: 'Встановити на телефон',
+      icon: 'pi pi-mobile',
+      command: () => {
+        this.close();
+        this.installOnPhoneVisible.set(true);
+      }
+    }];
   }
 
   close() {

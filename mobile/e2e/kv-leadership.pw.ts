@@ -55,28 +55,37 @@ function kvApi(withLeadership = true): ExtraApi {
       .filter((n: any) => !before.some((h) => !h.endDate && h.role === n.role && h.member.memberKey === n.member.memberKey))
       .map((n: any, i: number) => ({ leadershipHistoryKey: `${key}-n${i}`, leadershipKey: key, role: n.role, startDate: n.startDate, endDate: null, member: n.member })),
   ];
-  return ({ method, path, body }): Answer | null => {
-    if (method === 'GET') {
-      switch (path) {
-        case 'kurin/k1': return ok(kurin);
-        case 'group/groups': return ok(groups);
-        case 'group/g1': return ok(groups[0]);
-        case 'member/kurins/k1/members': return ok(people);
-        case 'member/groups/g1/members': return ok([marta, ivan]);
-        case 'member/members/kv/k1': return ok(kvMembers);
-        case 'member/members/mentor-candidates/k1': return ok(people);
-        case 'group/groups/k1/mentor-assignments': return ok(assignments);
-        case 'leadership/type/kurin/k1': return ok(leadership);
-        case 'leadership/type/kv/k1': return ok(kv);
-        case 'leadership/type/group/g1':
-          return ok({ leadershipKey: 'lg', startDate: '2024-09-01', endDate: null, leadershipHistories: [
-            office('g-h1', 'Hurtkoviy', marta, '2025-09-01', null, 'lg'),
-            office('g-h0', 'Hurtkoviy', ivan, '2024-09-01', '2025-08-31', 'lg'),
-          ] });
-        case 'kurin/k1/dues/groups': return ok([]);
-      }
-      return null;
+  const read = (path: string): Answer | null => {
+    switch (path) {
+      case 'kurin/k1': return ok(kurin);
+      case 'group/groups': return ok(groups);
+      case 'group/g1': return ok(groups[0]);
+      case 'member/kurins/k1/members': return ok(people);
+      case 'member/groups/g1/members': return ok([marta, ivan]);
+      case 'member/members/kv/k1': return ok(kvMembers);
+      case 'member/members/mentor-candidates/k1': return ok(people);
+      case 'group/groups/k1/mentor-assignments': return ok(assignments);
+      case 'leadership/type/kurin/k1': return ok(leadership);
+      case 'leadership/type/kv/k1': return ok(kv);
+      case 'leadership/type/group/g1':
+        return ok({ leadershipKey: 'lg', startDate: '2024-09-01', endDate: null, leadershipHistories: [
+          office('g-h1', 'Hurtkoviy', marta, '2025-09-01', null, 'lg'),
+          office('g-h0', 'Hurtkoviy', ivan, '2024-09-01', '2025-08-31', 'lg'),
+        ] });
+      case 'kurin/k1/dues/groups': return ok([]);
     }
+    return null;
+  };
+  const assign = (groupKey: string, userKey: string) => {
+    const who = people.find((p) => p.userKey === userKey)!;
+    assignments = [...assignments, { mentorAssignmentKey: `ma-${groupKey}-${userKey}`, mentorUserKey: userKey, groupKey, groupName: groups.find((g) => g.groupKey === groupKey)!.name, assignedAtUtc: '2026-10-11T08:00:00Z', revokedAtUtc: null, member: who }];
+    if (!kvMembers.includes(who)) kvMembers = [...kvMembers, { ...who, userRole: 'KV.Vykhovnyk' }];
+  };
+  const revoke = (groupKey: string, userKey: string) => {
+    assignments = assignments.map((a) => (a.mentorUserKey === userKey && a.groupKey === groupKey && !a.revokedAtUtc ? { ...a, revokedAtUtc: '2026-10-11T08:00:00Z' } : a));
+  };
+  return ({ method, path, body }): Answer | null => {
+    if (method === 'GET') return read(path);
     if (path === 'auth/check-access') return ok(false);
     if (path === 'auth/kurin-scope') {
       // Rights come from the offices: with the office gone, so are the Звʼязковий's.
@@ -85,13 +94,8 @@ function kvApi(withLeadership = true): ExtraApi {
     const mentor = /^group\/(g\d)\/mentors\/(u-m\d)$/.exec(path);
     if (mentor) {
       const [, groupKey, userKey] = mentor;
-      const who = people.find((p) => p.userKey === userKey)!;
-      if (method === 'POST') {
-        assignments = [...assignments, { mentorAssignmentKey: `ma-${groupKey}-${userKey}`, mentorUserKey: userKey, groupKey, groupName: groups.find((g) => g.groupKey === groupKey)!.name, assignedAtUtc: '2026-10-11T08:00:00Z', revokedAtUtc: null, member: who }];
-        if (!kvMembers.includes(who)) kvMembers = [...kvMembers, { ...who, userRole: 'KV.Vykhovnyk' }];
-      } else {
-        assignments = assignments.map((a) => (a.mentorUserKey === userKey && a.groupKey === groupKey && !a.revokedAtUtc ? { ...a, revokedAtUtc: '2026-10-11T08:00:00Z' } : a));
-      }
+      if (method === 'POST') assign(groupKey, userKey);
+      else revoke(groupKey, userKey);
       return { status: 200, empty: true };
     }
     if (path === 'leadership/kv1' && method === 'PUT') {
@@ -145,7 +149,7 @@ test('shows everyone the КВ and the провід with their archives, and noth
   await expect(rows.nth(1).locator('ion-badge')).toHaveText(['Впорядник', 'Соколи']);
   await expect(page.getByTestId('kv-archived')).toContainText('Коваль');
   await expect(page.getByTestId('kv-archived')).toContainText('01.09.23 – 30.06.25');
-  for (const part of ['add-mentor', 'edit-mentor', 'hand-over']) await expect(page.getByTestId(part)).toHaveCount(0);
+  await Promise.all(['add-mentor', 'edit-mentor', 'hand-over'].map((part) => expect(page.getByTestId(part)).toHaveCount(0)));
   await shot(page, project, 'kv-page');
 
   await page.locator('app-kv ion-back-button').click();
@@ -230,7 +234,7 @@ test('lets the Звʼязковий add a впорядник, change their гу�
   await expect(page.locator('ion-toast')).toContainText(/Роль Звʼязкового передано: Андрій.* Мельник/);
   // His rights went with the office: nothing left to manage here.
   await expect(page.getByTestId('kv-row').first()).toContainText('Мельник');
-  for (const part of ['add-mentor', 'edit-mentor', 'hand-over']) await expect(page.getByTestId(part)).toHaveCount(0);
+  await Promise.all(['add-mentor', 'edit-mentor', 'hand-over'].map((part) => expect(page.getByTestId(part)).toHaveCount(0)));
 });
 
 test('lets the курінний seat the kurin’s провід, all but himself', async ({ page }, info) => {

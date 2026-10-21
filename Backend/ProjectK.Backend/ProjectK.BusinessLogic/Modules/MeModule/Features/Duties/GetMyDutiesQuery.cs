@@ -177,27 +177,20 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         var items = await _unitOfWork.AgendaItems.GetForViewerAsync(
             context.Viewer.ToScope(), from, now, onlyDated: true, kind: AgendaItemKind.Event, cancellationToken);
 
-        foreach (var item in items)
+        foreach (var item in items.Where(candidate => book.AttendancePoints(candidate.AgendaItemKey, candidate.AgendaCategoryKey) > 0))
         {
-            if (book.AttendancePoints(item.AgendaItemKey, item.AgendaCategoryKey) <= 0)
+            var unmarkedStarts = AgendaRecurrence.Expand(item, from, now, zone)
+                .Select(occurrence => occurrence.StartUtc)
+                .Where(startUtc => startUtc <= now && !marked.Contains((item.AgendaItemKey, startUtc)));
+            foreach (var startUtc in unmarkedStarts)
             {
-                continue;
-            }
-
-            foreach (var occurrence in AgendaRecurrence.Expand(item, from, now, zone))
-            {
-                if (occurrence.StartUtc > now || marked.Contains((item.AgendaItemKey, occurrence.StartUtc)))
-                {
-                    continue;
-                }
-
                 duties.Add(new MyDutyDto
                 {
                     Kind = MyDutyKind.EventWithoutAttendance,
                     Kurin = kurin,
                     Count = 1,
                     AgendaItemKey = item.AgendaItemKey,
-                    OccurrenceStartUtc = DateTime.SpecifyKind(occurrence.StartUtc, DateTimeKind.Utc),
+                    OccurrenceStartUtc = DateTime.SpecifyKind(startUtc, DateTimeKind.Utc),
                     Title = item.Title
                 });
             }

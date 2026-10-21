@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { UserService } from '../../services/user-service/user.service';
-import { UserDto } from '../../models/user.dto';
+import { SystemUserRole, UserDto } from '../../models/user.dto';
 import { TableModule } from '@openng/optimus-ui/table';
 import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
@@ -13,7 +13,6 @@ import { MessageService, ConfirmationService } from '@openng/optimus-ui/api';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
-import { SystemUserRole } from '../../models/user.dto';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 
 @Component({

@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -18,22 +17,16 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly ILogger<ChangeUserRoleCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
-    private readonly ProjectK.Common.Interfaces.IUnitOfWork _unitOfWork;
 
     public ChangeUserRoleCommandHandler(
         UserManager<AppUser> userManager,
         ICurrentUserContext currentUserContext,
-        ILogger<ChangeUserRoleCommandHandler> logger,
-        IActivityLogger activityLogger,
-        ProjectK.Common.Interfaces.IUnitOfWork unitOfWork)
+        IActivityLogger activityLogger)
     {
         _userManager = userManager;
         _currentUserContext = currentUserContext;
-        _logger = logger;
         _activityLogger = activityLogger;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<ServiceResult<bool>> Handle(ChangeUserRoleCommand request, CancellationToken cancellationToken)

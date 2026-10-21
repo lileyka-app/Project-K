@@ -35,16 +35,16 @@ export function routePathRegExp(path: string): RegExp {
   providedIn: 'root'
 })
 export class BreadcrumbService {
-  private breadcrumbsSubject = new BehaviorSubject<MenuItem[]>([]);
+  private readonly breadcrumbsSubject = new BehaviorSubject<MenuItem[]>([]);
   public breadcrumbs$: Observable<MenuItem[]> = this.breadcrumbsSubject.asObservable();
-  private homeSubject = new BehaviorSubject<MenuItem>({ icon: 'pi pi-home' });
+  private readonly homeSubject = new BehaviorSubject<MenuItem>({ icon: 'pi pi-home' });
   public home$: Observable<MenuItem> = this.homeSubject.asObservable();
   // A Map, not an object keyed by route-parameter names: the names come from route definitions,
   // but a plain object makes a key such as "__proto__" a write to the prototype.
-  private paramCache = new Map<string, string>();
-  private entityTargets = new Map<string, EntityTarget>();
-  private entityLabels = new Map<string, string>();
-  private requestedEntities = new Set<string>();
+  private readonly paramCache = new Map<string, string>();
+  private readonly entityTargets = new Map<string, EntityTarget>();
+  private readonly entityLabels = new Map<string, string>();
+  private readonly requestedEntities = new Set<string>();
   private navigationToken = 0;
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
@@ -55,7 +55,7 @@ export class BreadcrumbService {
   private readonly memberService = inject(MemberService);
 
   constructor() {
-    if (this.router && this.router.events) {
+    if (this.router?.events) {
       this.router.events.pipe(
         filter(event => event instanceof NavigationEnd)
       ).subscribe(() => this.refresh());
@@ -133,34 +133,35 @@ export class BreadcrumbService {
     // groupKey may be injected again after the destination entity is loaded.
     this.paramCache.clear();
 
-    const urlSegments = (this.router.url ?? '').split('/').filter(s => s);
+    const urlSegments = (this.router.url ?? '').split('/').filter(Boolean);
     const routes = this.router.config ?? [];
-    
+
     for (const route of routes) {
       if (!route.path) continue;
-      
-      const routeSegments = route.path.split('/').filter(s => s);
-      if (routeSegments.length <= urlSegments.length) {
-        let match = true;
-        const extractedParams: Record<string, string> = {};
-        
-        for (let i = 0; i < routeSegments.length; i++) {
-          if (routeSegments[i].startsWith(':')) {
-            const paramName = routeSegments[i].substring(1);
-            extractedParams[paramName] = urlSegments[i];
-          } else if (routeSegments[i] !== urlSegments[i]) {
-            match = false;
-            break;
-          }
-        }
-        
-        if (match) {
-          this.cacheParams(extractedParams);
-        }
+
+      const extractedParams = this.matchRouteParams(route.path.split('/').filter(Boolean), urlSegments);
+      if (extractedParams) {
+        this.cacheParams(extractedParams);
       }
     }
-    
+
     this.addParamsFromRoute(this.activatedRoute);
+  }
+
+  private matchRouteParams(routeSegments: string[], urlSegments: string[]): Record<string, string> | null {
+    if (routeSegments.length > urlSegments.length) {
+      return null;
+    }
+
+    const extractedParams: Record<string, string> = {};
+    for (let i = 0; i < routeSegments.length; i++) {
+      if (routeSegments[i].startsWith(':')) {
+        extractedParams[routeSegments[i].substring(1)] = urlSegments[i];
+      } else if (routeSegments[i] !== urlSegments[i]) {
+        return null;
+      }
+    }
+    return extractedParams;
   }
   
   private addParamsFromRoute(route: ActivatedRoute): void {
@@ -302,12 +303,12 @@ export class BreadcrumbService {
   }
 
   private toPath(segments: unknown[]): string {
-    return segments.map(segment => String(segment)).join('/');
+    return segments.map(String).join('/');
   }
 
-  private normalizePath(link: unknown): string {
+  private normalizePath(link: string | unknown[] | null | undefined): string {
     const raw = Array.isArray(link) ? this.toPath(link) : String(link ?? '');
-    return raw.split(/[?#]/)[0].split('/').filter(segment => segment).join('/');
+    return raw.split(/[?#]/)[0].split('/').filter(Boolean).join('/');
   }
 
   private processRoute(route: ActivatedRoute, breadcrumbs: MenuItem[]): void {
@@ -354,7 +355,7 @@ export class BreadcrumbService {
     const resolvedPath = this.resolveParameters(parentPath);
 
     const route = this.findRouteByPattern(parentPath);
-    if (route && route.data?.['breadcrumb']) {
+    if (route?.data?.['breadcrumb']) {
       // A path we could not fill in is a dead link — skip the crumb, but keep walking up
       // so the trail still reaches somewhere the user can actually go.
       if (!resolvedPath.includes(':')) {

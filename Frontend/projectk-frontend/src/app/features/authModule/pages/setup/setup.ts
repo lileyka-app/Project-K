@@ -32,9 +32,9 @@ export class SetupComponent {
   isSubmitting = false;
   error: string | null = null;
 
-  private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
-  private router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   constructor() {
     this.setupForm = this.fb.group({

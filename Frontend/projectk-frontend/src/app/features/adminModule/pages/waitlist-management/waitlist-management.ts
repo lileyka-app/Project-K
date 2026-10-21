@@ -80,8 +80,8 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
                         styleClass="w-full" />
                     <small class="text-muted-color">
                         Курінь відкриється в цьому краї, і його число має бути вільним саме тут.
-                        @if (!approvalEntry?.kraiCode && approvalEntry?.regionOrCountry) {
-                            Заявник написав: «{{ approvalEntry?.regionOrCountry }}».
+                        @if (!approvalEntry.kraiCode && approvalEntry.regionOrCountry) {
+                            Заявник написав: «{{ approvalEntry.regionOrCountry }}».
                         }
                     </small>
                 </div>
@@ -208,11 +208,11 @@ export class WaitlistManagementComponent implements OnInit {
   rejectionNote = '';
   selectedEntry: WaitlistEntry | null = null;
 
-  private onboardingService = inject(OnboardingService);
-  private messageService = inject(MessageService);
-  private confirmationService = inject(ConfirmationService);
-  private authService = inject(AuthService);
-  private waitlistAttention = inject(WaitlistAttentionService);
+  private readonly onboardingService = inject(OnboardingService);
+  private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly authService = inject(AuthService);
+  private readonly waitlistAttention = inject(WaitlistAttentionService);
 
   krais: KraiOption[] = [];
   approvalDialogVisible = false;

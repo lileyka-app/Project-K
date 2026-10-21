@@ -3,6 +3,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { MessageService } from '@openng/optimus-ui/api';
 import { environment } from '../../../../../environments/environment';
+import { trimTrailingSlashes } from '../../../../shared/functions/trim-trailing-slashes.function';
 import { PhoneAppInstallCode, PhoneAppService } from '../../services/phone-app-service/phone-app.service';
 
 /**
@@ -24,7 +25,7 @@ export class InstallOnPhoneDialogComponent {
   readonly visible = model(false);
   readonly code = signal<PhoneAppInstallCode | null>(null);
   readonly failed = signal(false);
-  readonly helpUrl = `${environment.docsUrl.replace(/\/+$/, '')}/user/howto/install-app/`;
+  readonly helpUrl = `${trimTrailingSlashes(environment.docsUrl)}/user/howto/install-app/`;
 
   constructor() {
     // Asked when the dialog first opens: nobody who never opens it pays for the picture.

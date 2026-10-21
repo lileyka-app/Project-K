@@ -11,7 +11,7 @@ namespace ProjectK.Infrastructure.Services.Feedback;
 public static class GitHubIssueBody
 {
     /// <summary>Zero-width joiner after the at-sign: reads the same, no longer a mention.</summary>
-    private const string DefusedAt = "@‍";
+    private const string DefusedAt = "@\u200D";
 
     public static string Compose(ProblemReport report, string? apiVersion)
     {

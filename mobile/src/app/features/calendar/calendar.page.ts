@@ -60,7 +60,7 @@ const VIEW_KEY = 'lil.agenda.calendarView';
 const HOUR_PX = 52;
 
 type CalendarView = 'month' | 'week' | 'day' | 'list';
-const VIEWS: CalendarView[] = ['month', 'week', 'day', 'list'];
+const VIEWS: ReadonlySet<CalendarView> = new Set<CalendarView>(['month', 'week', 'day', 'list']);
 /** What prev/next steps through in each view, for its buttons' names. */
 const STEP_NAMES: Record<Exclude<CalendarView, 'list'>, [string, string]> = {
   month: ['Попередній місяць', 'Наступний місяць'],
@@ -809,7 +809,7 @@ export class CalendarPage implements ViewWillEnter, OnDestroy {
 
   protected setView(event: Event): void {
     const value = (event as CustomEvent<{ value?: string }>).detail.value as CalendarView | undefined;
-    if (value && VIEWS.includes(value)) this.changeView(value);
+    if (value && VIEWS.has(value)) this.changeView(value);
   }
 
   private changeView(view: CalendarView): void {
@@ -936,7 +936,7 @@ function dayHeading(day: string, today: string): string {
 function readView(): CalendarView {
   try {
     const stored = localStorage.getItem(VIEW_KEY) as CalendarView | null;
-    return stored && VIEWS.includes(stored) ? stored : 'month';
+    return stored && VIEWS.has(stored) ? stored : 'month';
   } catch {
     return 'month';
   }

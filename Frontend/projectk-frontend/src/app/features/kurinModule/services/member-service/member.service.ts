@@ -5,6 +5,7 @@ import { map, Observable, tap, throwError } from 'rxjs';
 import { MemberDto } from '../../models/member.dto';
 import { MembershipDto } from '../../models/membership.dto';
 import { UpsertMemberDto } from '../../models/requests/member/upsert-member.dto';
+import { PlastLevelHistoryDto } from '../../models/plast-level-history.dto';
 import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto';
 import { mapMemberForView } from '../../functions/member-view-mapper.function';
 import { ClientCacheService } from '../client-cache/client-cache.service';
@@ -146,7 +147,7 @@ export class MemberService {
           }
 
         if (key === 'plastLevelHistories' && Array.isArray(value)) {
-            value.forEach((historyItem, index) => {
+            (value as PlastLevelHistoryDto[]).forEach((historyItem, index) => {
                 Object.entries(historyItem).forEach(([itemKey, itemValue]) => {
                     if (itemValue !== null && itemValue !== undefined) {
                         const formattedKey = `${key}[${index}].${itemKey}`;

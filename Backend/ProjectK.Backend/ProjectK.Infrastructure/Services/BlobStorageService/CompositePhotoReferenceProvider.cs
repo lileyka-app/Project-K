@@ -18,11 +18,7 @@ public sealed class CompositePhotoReferenceProvider : IPhotoReferenceProvider
             var providerReferences = await provider.GetAllReferencedBlobNamesAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            foreach (var blobName in providerReferences)
-            {
-                if (!string.IsNullOrWhiteSpace(blobName))
-                    references.Add(blobName);
-            }
+            references.UnionWith(providerReferences.Where(blobName => !string.IsNullOrWhiteSpace(blobName)));
         }
 
         return references.ToList();

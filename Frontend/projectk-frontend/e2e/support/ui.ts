@@ -120,7 +120,7 @@ export async function openWarningPanel(page: Page): Promise<void> {
   await expect(page.getByRole('dialog', { name: 'Перестороги' })).toBeVisible();
 }
 
-export async function acceptBrowserConfirm(page: Page): Promise<void> {
+export function acceptBrowserConfirm(page: Page): void {
   page.once('dialog', async confirmDialog => {
     await confirmDialog.accept();
   });

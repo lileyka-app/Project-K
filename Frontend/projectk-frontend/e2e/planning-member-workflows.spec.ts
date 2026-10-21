@@ -22,7 +22,7 @@ describeRole('manager', 'Planning and member detail workflows', ({ user }) => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByRole('dialog').getByRole('button').last().click();
 
-    await acceptBrowserConfirm(page);
+    acceptBrowserConfirm(page);
     await row.getByRole('button').last().click();
     await expect(row).toBeHidden();
 

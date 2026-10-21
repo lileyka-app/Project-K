@@ -47,7 +47,6 @@ public class AzureBlobPhotoService : IPhotoService
     private readonly BlobStorageOptions _options;
     private volatile bool _containerInitialized;
     private readonly SemaphoreSlim _containerInitLock = new(1, 1);
-    private readonly IPhotoReferenceProvider? _referenceProvider;
     private readonly IBlobReadLinks _links;
     private readonly ILogger<AzureBlobPhotoService>? _logger;
 
@@ -55,7 +54,6 @@ public class AzureBlobPhotoService : IPhotoService
 
     public AzureBlobPhotoService(
         BlobStorageOptions options,
-        IPhotoReferenceProvider? referenceProvider,
         IBlobReadLinks links,
         ILogger<AzureBlobPhotoService>? logger = null)
     {
@@ -66,7 +64,6 @@ public class AzureBlobPhotoService : IPhotoService
         }
         var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
         _container = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
-        _referenceProvider = referenceProvider;
         _links = links;
         _logger = logger;
     }
@@ -334,10 +331,10 @@ public class AzureBlobPhotoService : IPhotoService
         _logger?.LogWarning("Closed public access on blob container {Container}; photos are now read through signed links.", _container.Name);
     }
 
-    internal string BuildBlobName(BlobUploadContext uploadContext, string extension)
+    internal static string BuildBlobName(BlobUploadContext uploadContext, string extension)
         => BuildBlobName(uploadContext, extension, DateTime.UtcNow);
 
-    internal string BuildBlobName(BlobUploadContext uploadContext, string extension, DateTime utcNow)
+    internal static string BuildBlobName(BlobUploadContext uploadContext, string extension, DateTime utcNow)
     {
         var folder = NormalizeFolder(uploadContext.Folder);
         var datePath = $"{utcNow:yyyy'/'MM'/'dd}";
@@ -371,9 +368,6 @@ public class AzureBlobPhotoService : IPhotoService
 
         return normalized;
     }
-
-    private IEnumerable<string> GetCleanupPrefixes()
-        => BlobUploadFolders.ScenarioFolders;
 }
 
 internal sealed record PreparedBlobUpload(byte[] ProcessedBytes, string FinalExtension, string ContentType);

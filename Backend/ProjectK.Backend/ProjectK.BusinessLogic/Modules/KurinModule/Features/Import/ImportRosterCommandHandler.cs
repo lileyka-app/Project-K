@@ -22,7 +22,6 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
 {
     private readonly IUnitOfWork _kurinData;
     private readonly IMemberUnitOfWork _memberData;
-    private readonly IMembershipRepository _memberships;
     private readonly IMediator _mediator;
 
     public ImportRosterCommandHandler(
@@ -32,7 +31,6 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
     {
         _kurinData = kurinData;
         _memberData = memberData;
-        _memberships = kurinData.Memberships;
         _mediator = mediator;
     }
 

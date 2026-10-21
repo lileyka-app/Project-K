@@ -40,24 +40,25 @@ function peopleApi(opts: { canCreate: boolean; withLeadership: boolean }): Extra
     leadershipHistoryKey: `n${i}`, leadershipKey: 'l1', role: h.role, startDate: h.startDate, endDate: null,
     member: people.find((p) => p.memberKey === h.member.memberKey),
   }));
-  return ({ method, path, body }): Answer | null => {
-    if (method === 'GET') {
-      switch (path) {
-        case 'kurin/k1': return ok(kurin);
-        case 'group/groups': return ok(groups);
-        case 'group/g1': return ok(groups[0]);
-        case 'member/kurins/k1/members': return ok(people);
-        case 'member/groups/g1/members': return ok(people.filter((p) => p.groupKey === 'g1'));
-        case 'member/members/mentor-candidates/k1': return ok(kv);
-        case 'group/g1/mentors': return ok(mentors);
-        case 'leadership/type/group/g1': return ok(leadership);
-        case 'member/members/kv/k1':
-        case 'group/groups/k1/mentor-assignments':
-        case 'kurin/k1/dues/groups':
-          return ok([]);
-      }
-      return null;
+  const read = (path: string): Answer | null => {
+    switch (path) {
+      case 'kurin/k1': return ok(kurin);
+      case 'group/groups': return ok(groups);
+      case 'group/g1': return ok(groups[0]);
+      case 'member/kurins/k1/members': return ok(people);
+      case 'member/groups/g1/members': return ok(people.filter((p) => p.groupKey === 'g1'));
+      case 'member/members/mentor-candidates/k1': return ok(kv);
+      case 'group/g1/mentors': return ok(mentors);
+      case 'leadership/type/group/g1': return ok(leadership);
+      case 'member/members/kv/k1':
+      case 'group/groups/k1/mentor-assignments':
+      case 'kurin/k1/dues/groups':
+        return ok([]);
     }
+    return null;
+  };
+  return ({ method, path, body }): Answer | null => {
+    if (method === 'GET') return read(path);
     if (path === 'auth/check-access') return ok(body?.entityType === 'group' && body?.action === 'Create' && opts.canCreate);
     const placement = /^kurin\/k1\/memberships\/(m\d)\/group$/.exec(path);
     if (placement && method === 'PUT') {
@@ -200,7 +201,7 @@ test('lets a Виховник seat a first провід and add a new member, bu
   const log = await signIn(page, member, peopleApi({ canCreate: true, withLeadership: false }), VYKHOVNYK);
   await openGroup(page);
   await expect(page.getByTestId('group-new-member')).toBeVisible();
-  for (const part of ['add-from-kurin', 'group-mentors', 'member-actions']) await expect(page.getByTestId(part)).toHaveCount(0);
+  await Promise.all(['add-from-kurin', 'group-mentors', 'member-actions'].map((part) => expect(page.getByTestId(part)).toHaveCount(0)));
 
   await page.getByTestId('setup-leadership').click();
   const form = page.locator('ion-modal app-leadership-sheet');
@@ -219,9 +220,11 @@ test('gives a youth none of the people controls on a гурток', async ({ pag
   await signIn(page, member, peopleApi({ canCreate: false, withLeadership: true }));
   await openGroup(page);
   await expect(page.getByTestId('group-leadership')).toContainText('Гуртковий');
-  for (const part of ['group-new-member', 'add-from-kurin', 'group-mentors', 'member-actions', 'setup-leadership', 'edit-group']) {
-    await expect(page.getByTestId(part)).toHaveCount(0);
-  }
+  await Promise.all(
+    ['group-new-member', 'add-from-kurin', 'group-mentors', 'member-actions', 'setup-leadership', 'edit-group'].map((part) =>
+      expect(page.getByTestId(part)).toHaveCount(0),
+    ),
+  );
   // No swipe actions behind the rows either.
   await expect(page.locator('ion-item-options')).toHaveCount(0);
 });

@@ -57,8 +57,8 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Service
                 Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
                 TwoFactorEnabled = user.TwoFactorEnabled,
                 IsSuspended = !user.CanSignIn(),
-                FirstName = user.FirstName!,
-                LastName = user.LastName!
+                FirstName = user.FirstName,
+                LastName = user.LastName
             };
             result.Add(userDto);
         }

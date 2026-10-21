@@ -46,6 +46,13 @@ type Calls = { path: string; body: unknown }[];
 /** The admin's endpoints; a non-admin is refused by the API too. */
 function waitlistApi(options: { admin: boolean }, calls: Calls = []): ExtraApi {
   const list = entries();
+  const decide = (key: string, verb: string, path: string, body: unknown): Answer => {
+    calls.push({ path, body });
+    const entry = list.find((e) => e.waitlistEntryKey === key)!;
+    if (verb === 'approve') entry.verificationStatus = 'ApprovedForInvitation';
+    if (verb === 'reject') Object.assign(entry, { verificationStatus: 'Rejected', verificationNote: body });
+    return ok(entry.waitlistEntryKey);
+  };
   return ({ method, path, body }): Answer | null => {
     if (path.startsWith('auth/onboarding/waitlist') && !options.admin) return refuse(403);
     if (method === 'GET' && path === 'auth/onboarding/waitlist') return ok(list);
@@ -53,13 +60,7 @@ function waitlistApi(options: { admin: boolean }, calls: Calls = []): ExtraApi {
     if (method === 'GET' && path === 'notifications/unread-count') return ok(notification.isRead ? 0 : 1);
     if (method === 'PUT' && path === 'notifications/n1/read') return ok(Object.assign(notification, { isRead: true }));
     const action = /^auth\/onboarding\/waitlist\/(w\d)\/(approve|reject|resend-invitation)$/.exec(path);
-    if (method === 'POST' && action) {
-      calls.push({ path, body });
-      const entry = list.find((e) => e.waitlistEntryKey === action[1])!;
-      if (action[2] === 'approve') entry.verificationStatus = 'ApprovedForInvitation';
-      if (action[2] === 'reject') Object.assign(entry, { verificationStatus: 'Rejected', verificationNote: body });
-      return ok(entry.waitlistEntryKey);
-    }
+    if (method === 'POST' && action) return decide(action[1], action[2], path, body);
     return null;
   };
 }

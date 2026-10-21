@@ -12,6 +12,7 @@ for arg in "$@"; do
     --skip-azurite) skip_azurite=true ;;
     --open) open_browser=true ;;
     --backend-profile=*) backend_profile="${arg#*=}" ;;
+    *) ;;
   esac
 done
 
@@ -23,9 +24,9 @@ frontend_path="$repo_root/Frontend/projectk-frontend"
 
 mkdir -p "$log_root"
 
-if [ "$skip_doctor" = false ]; then
+if [[ "$skip_doctor" = false ]]; then
   doctor_args=()
-  if [ "$skip_azurite" = true ]; then doctor_args+=(--skip-azurite); fi
+  if [[ "$skip_azurite" = true ]]; then doctor_args+=(--skip-azurite); fi
   "$repo_root/scripts/doctor.sh" "${doctor_args[@]}"
 fi
 
@@ -43,7 +44,7 @@ start_process() {
   echo "Started $name (PID $!)"
 }
 
-if [ "$skip_azurite" = false ]; then
+if [[ "$skip_azurite" = false ]]; then
   mkdir -p "$run_root/azurite"
   start_process "azurite" "$repo_root" azurite --silent --location "$run_root/azurite"
 fi
@@ -61,6 +62,6 @@ echo "Logs:     $log_root"
 echo
 echo "Stop with: ./scripts/stop-local.sh"
 
-if [ "$open_browser" = true ]; then
+if [[ "$open_browser" = true ]]; then
   if command -v xdg-open >/dev/null 2>&1; then xdg-open http://localhost:4200 >/dev/null 2>&1 || true; elif command -v open >/dev/null 2>&1; then open http://localhost:4200 >/dev/null 2>&1 || true; fi
 fi

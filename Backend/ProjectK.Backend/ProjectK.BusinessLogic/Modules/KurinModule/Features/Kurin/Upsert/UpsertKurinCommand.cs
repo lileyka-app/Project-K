@@ -75,24 +75,9 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         var namedAfter = NormalizeOptionalText(request.NamedAfter);
         var description = NormalizeOptionalText(request.Description);
 
-        if (stanytsia?.Length > 120)
+        if (TooLongField(stanytsia, regionOrCountry, namedAfter, description) is { } tooLong)
         {
-            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "StanytsiaTooLong", "Stanytsia must be 120 characters or fewer.");
-        }
-
-        if (regionOrCountry?.Length > 120)
-        {
-            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "RegionOrCountryTooLong", "Region must be 120 characters or fewer.");
-        }
-
-        if (namedAfter?.Length > 200)
-        {
-            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "NamedAfterTooLong", "Named after must be 200 characters or fewer.");
-        }
-
-        if (description?.Length > 4000)
-        {
-            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "DescriptionTooLong", "Description must be 4000 characters or fewer.");
+            return tooLong;
         }
 
         var existing = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
@@ -107,24 +92,9 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
 
         // A number is checked only when it changes: a kurin keeps the one it already has, so the
         // team's own kurins outside the range (a test kurin 0) can still be edited.
-        var numberChanges = existing is null || existing.Number != request.Number;
-        if (numberChanges && request.Number is int number)
+        if (await NumberRefusalAsync(existing, request.Number, kraiCode, cancellationToken) is { } numberRefused)
         {
-            if (!_numbers.IsAllowed(number))
-            {
-                return ServiceResult<KurinResponse>.Failure(
-                    ResultType.BadRequest,
-                    "KurinNumberOutOfRange",
-                    $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
-            }
-
-            var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken);
-            if (existingByNumber is not null)
-            {
-                return existing is null
-                    ? new ServiceResult<KurinResponse>(ResultType.Conflict, _mapper.Map<KurinResponse>(existingByNumber))
-                    : ServiceResult<KurinResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this край.");
-            }
+            return numberRefused;
         }
 
         if (existing is null)
@@ -166,6 +136,58 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
                 CreatedAtActionName: "GetByKey",
                 CreatedAtRouteValues: new { kurinKey = kurinResponse.KurinKey })
             : new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
+    }
+
+    private static ServiceResult<KurinResponse>? TooLongField(string? stanytsia, string? regionOrCountry, string? namedAfter, string? description)
+    {
+        if (stanytsia?.Length > 120)
+        {
+            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "StanytsiaTooLong", "Stanytsia must be 120 characters or fewer.");
+        }
+
+        if (regionOrCountry?.Length > 120)
+        {
+            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "RegionOrCountryTooLong", "Region must be 120 characters or fewer.");
+        }
+
+        if (namedAfter?.Length > 200)
+        {
+            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "NamedAfterTooLong", "Named after must be 200 characters or fewer.");
+        }
+
+        if (description?.Length > 4000)
+        {
+            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "DescriptionTooLong", "Description must be 4000 characters or fewer.");
+        }
+
+        return null;
+    }
+
+    private async Task<ServiceResult<KurinResponse>?> NumberRefusalAsync(Common.Entities.KurinModule.Kurin? existing, int? requestedNumber, string kraiCode, CancellationToken cancellationToken)
+    {
+        var numberChanges = existing is null || existing.Number != requestedNumber;
+        if (!numberChanges || requestedNumber is not int number)
+        {
+            return null;
+        }
+
+        if (!_numbers.IsAllowed(number))
+        {
+            return ServiceResult<KurinResponse>.Failure(
+                ResultType.BadRequest,
+                "KurinNumberOutOfRange",
+                $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
+        }
+
+        var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken);
+        if (existingByNumber is not null)
+        {
+            return existing is null
+                ? new ServiceResult<KurinResponse>(ResultType.Conflict, _mapper.Map<KurinResponse>(existingByNumber))
+                : ServiceResult<KurinResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this край.");
+        }
+
+        return null;
     }
 
     private static string? NormalizeOptionalText(string? value)

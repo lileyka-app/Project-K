@@ -134,7 +134,7 @@ describe('UsersListComponent', () => {
 
       expect(mockUserService.getAllUsers).toHaveBeenCalled();
       expect(component.users).toEqual(mockUsers);
-      expect(component.users.length).toBe(3);
+      expect(component.users).toHaveSize(3);
     });
 
     it('should handle empty users list', () => {
@@ -142,7 +142,7 @@ describe('UsersListComponent', () => {
       fixture.detectChanges();
 
       expect(component.users).toEqual([]);
-      expect(component.users.length).toBe(0);
+      expect(component.users).toHaveSize(0);
     });
 
     it('should handle error when loading users', () => {
@@ -204,7 +204,7 @@ describe('UsersListComponent', () => {
       component.onRowEditInit(user1);
       component.onRowEditInit(user2);
 
-      expect(Object.keys(component.clonedUsers).length).toBe(2);
+      expect(Object.keys(component.clonedUsers)).toHaveSize(2);
       expect(component.clonedUsers['user-1']).toBeDefined();
       expect(component.clonedUsers['user-2']).toBeDefined();
     });
@@ -406,7 +406,7 @@ describe('UsersListComponent', () => {
       
       expect(component.users[0].firstName).toBe('Updated1');
       expect(component.users[1].firstName).toBe('Updated2');
-      expect(Object.keys(component.clonedUsers).length).toBe(0);
+      expect(Object.keys(component.clonedUsers)).toHaveSize(0);
     });
 
     it('should handle mix of save and cancel operations', () => {
@@ -429,14 +429,14 @@ describe('UsersListComponent', () => {
     });
 
     it('should maintain data integrity when loading and editing users', () => {
-      expect(component.users.length).toBe(3);
+      expect(component.users).toHaveSize(3);
       
       const user = component.users[0];
       component.onRowEditInit(user);
       user.role = 'Admin';
       component.onRowEditSave(user);
       
-      expect(component.users.length).toBe(3);
+      expect(component.users).toHaveSize(3);
       expect(component.users[0].userId).toBe('user-1');
       expect(component.users[0].role).toBe('Admin');
     });
@@ -478,7 +478,7 @@ describe('UsersListComponent', () => {
       mockUserService.getAllUsers.and.returnValue(of([]));
       component.ngOnInit();
       
-      expect(component.users.length).toBe(0);
+      expect(component.users).toHaveSize(0);
       expect(() => component.onRowEditInit({} as UserDto)).not.toThrow();
     });
   });

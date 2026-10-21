@@ -194,6 +194,7 @@ export class PeoplePickSheet implements OnInit {
   /** Its own modal, not the top one: this sheet can sit over another (the провід form). */
   protected close(keys: string[] | null): void {
     const own = this.host.closest('ion-modal');
-    void (own ? own.dismiss(keys) : this.modals.dismiss(keys));
+    if (own) void own.dismiss(keys);
+    else void this.modals.dismiss(keys);
   }
 }

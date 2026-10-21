@@ -67,7 +67,7 @@ export function pwaPathFor(webUrl: string): string {
     [/^\/about$/, () => '/m/tabs/more/about'],
   ];
   for (const [pattern, target] of rules) {
-    const match = path.match(pattern);
+    const match = pattern.exec(path);
     if (match) {
       return target(match);
     }

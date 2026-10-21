@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -16,18 +15,15 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
     private readonly UserManager<AppUser> _userManager;
     private readonly IRefreshTokenStore _refreshTokens;
     private readonly ILoginResponseFactory _loginResponses;
-    private readonly ILogger<EnableMfaCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
 
     public EnableMfaCommandHandler(
         UserManager<AppUser> userManager,
-        ILogger<EnableMfaCommandHandler> logger,
         IActivityLogger activityLogger,
         IRefreshTokenStore refreshTokens,
         ILoginResponseFactory loginResponses)
     {
         _userManager = userManager;
-        _logger = logger;
         _activityLogger = activityLogger;
         _refreshTokens = refreshTokens;
         _loginResponses = loginResponses;

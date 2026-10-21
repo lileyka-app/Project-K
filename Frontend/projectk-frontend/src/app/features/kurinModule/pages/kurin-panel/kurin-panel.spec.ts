@@ -149,7 +149,7 @@ describe('KurinPanelComponent', () => {
   describe('prepareItemActions', () => {
     it('sets Update/Delete actions', () => {
       component.prepareItemActions(mockGroups[0]);
-      expect(component.actions.length).toBe(2);
+      expect(component.actions).toHaveSize(2);
       expect(component.actions[0].label).toBe('Редагувати');
       expect(component.actions[1].label).toBe('Видалити');
     });

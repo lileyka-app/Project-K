@@ -83,12 +83,26 @@ export function isEditableSource(source) {
 
 function titleOf(absolute, fallback) {
 	const text = readFileSync(absolute, 'utf8');
-	const frontmatter = /^---\r?\n[\s\S]*?^title:\s*['"]?(.+?)['"]?\s*$/m.exec(text);
-	if (frontmatter) {
-		return frontmatter[1];
+	const start = /^---\r?\n/m.exec(text);
+	const line = start && /^title:(.*)$/m.exec(text.slice(start.index + start[0].length));
+	const title = line && unquote(line[1].trim());
+	if (title) {
+		return title;
 	}
 	const heading = /^# (.+)$/m.exec(text);
 	return heading ? heading[1].trim() : fallback;
+}
+
+function unquote(value) {
+	const quotes = `'"`;
+	let result = value;
+	if (result.length > 1 && quotes.includes(result[0])) {
+		result = result.slice(1);
+	}
+	if (result.length > 1 && quotes.includes(result.at(-1))) {
+		result = result.slice(0, -1);
+	}
+	return result;
 }
 
 function walk(dir) {

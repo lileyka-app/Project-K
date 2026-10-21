@@ -137,7 +137,7 @@ describe('AdminPanelComponent', () => {
     kurinService.getKurins.and.returnValue(of([]));
     component.refreshData();
     fixture.detectChanges();
-    expect(component.data.length).toBe(0);
+    expect(component.data).toHaveSize(0);
     const empty = fixture.nativeElement.querySelector('app-empty-state');
     expect(empty).toBeTruthy();
     expect(empty.textContent).toContain('Куренів ще немає');
@@ -146,7 +146,7 @@ describe('AdminPanelComponent', () => {
   describe('prepareItemActions', () => {
     it('creates Update/Delete menu items', () => {
       component.prepareItemActions(mockKurins[0]);
-      expect(component.actions.length).toBe(2);
+      expect(component.actions).toHaveSize(2);
       expect(component.actions[0].label).toBe('Редагувати');
       expect(component.actions[1].label).toBe('Видалити');
     });

@@ -16,15 +16,17 @@ export interface LayoutProblem {
  * row, or are cut without an ellipsis. Every screenshot runs it, so each screen the tests visit is
  * checked on iPhone and Android alike.
  */
-export async function layoutProblems(page: Page): Promise<LayoutProblem[]> {
+export function layoutProblems(page: Page): Promise<LayoutProblem[]> {
   return page.evaluate(() => {
     const problems: LayoutProblem[] = [];
     const vw = document.documentElement.clientWidth;
     const TARGETS = 'img, ion-icon, svg, ion-badge, ion-note, ion-toggle, ion-checkbox, ion-radio, ion-chip, ion-avatar';
     const name = (el: Element) => {
       const cls = [...el.classList].filter((c) => !c.startsWith('ion-') && !c.startsWith('sc-') && !c.startsWith('md') && !c.startsWith('ios') && c !== 'hydrated').slice(0, 2);
-      const id = el.getAttribute('data-testid');
-      return `${el.tagName.toLowerCase()}${cls.length ? '.' + cls.join('.') : ''}${id ? `[${id}]` : ''}`;
+      const id = (el as HTMLElement).dataset?.['testid'];
+      const classes = cls.length ? `.${cls.join('.')}` : '';
+      const testId = id ? `[${id}]` : '';
+      return `${el.tagName.toLowerCase()}${classes}${testId}`;
     };
     const where = (el: Element) => {
       const page = el.closest('.ion-page, ion-modal, ion-action-sheet, ion-menu, ion-alert, ion-popover');
@@ -55,7 +57,7 @@ export async function layoutProblems(page: Page): Promise<LayoutProblem[]> {
       if (!texts.length || el.matches(TARGETS)) return el.getBoundingClientRect();
       const range = document.createRange();
       range.setStartBefore(texts[0]);
-      range.setEndAfter(texts[texts.length - 1]);
+      range.setEndAfter(texts.at(-1) ?? texts[0]);
       const ink = range.getBoundingClientRect();
       // A form field's value is not laid out as text: its box stands for it.
       return ink.width > 0 ? clipped(el, ink) : el.getBoundingClientRect();
@@ -76,6 +78,47 @@ export async function layoutProblems(page: Page): Promise<LayoutProblem[]> {
       return new DOMRect(left, ink.top, Math.max(0, right - left), ink.height);
     };
     const textOf = (el: Element) => (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    const outsideBox = (el: Element, r: DOMRect, what: string): LayoutProblem | null => {
+      // A rounded card or inset list: nothing may touch or cross its edge.
+      const card = el.closest('ion-card, ion-list.list-inset, .lk-card');
+      if (card && card !== el) {
+        const c = card.getBoundingClientRect();
+        if (r.left < c.left + 4 || r.right > c.right - 4) {
+          return { kind: 'past-card', what, text: textOf(el), box: box(r), container: `${name(card)} ${box(c)}` };
+        }
+      }
+      const row = el.closest('ion-item');
+      if (row && row !== el) {
+        const c = row.getBoundingClientRect();
+        if (r.left < c.left - 1 || r.right > c.right + 1 || r.bottom > c.bottom + 1) {
+          return { kind: 'past-row', what, text: textOf(el), box: box(r), container: `${name(row)} ${box(c)}` };
+        }
+      }
+      return null;
+    };
+    // Text wider than its box: it spills over or is clipped without an ellipsis.
+    const cutText = (el: Element, r: DOMRect, what: string): LayoutProblem | null => {
+      const style = getComputedStyle(el);
+      const control = el.matches('ion-icon, ion-toggle, ion-checkbox, ion-radio, ion-select, ion-input, ion-textarea');
+      if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0 && style.textOverflow !== 'ellipsis' && !control) {
+        const own = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim());
+        if (own && !scrollsSideways(el) && style.overflowX !== 'auto' && style.overflowX !== 'scroll') {
+          return { kind: 'cut-text', what, text: textOf(el), box: `${box(r)} needs ${el.scrollWidth}px` };
+        }
+      }
+      return null;
+    };
+    const problemOf = (el: Element): LayoutProblem | null => {
+      if (skip(el) || !shown(el)) return null;
+      const tag = el.tagName.toLowerCase();
+      if (tag === 'script' || tag === 'style' || tag === 'title') return null;
+      const r = inkOf(el);
+      const what = `${name(el)} in ${where(el)}`;
+      if ((r.left < -1 || r.right > vw + 1) && !scrollsSideways(el)) {
+        return { kind: 'off-screen', what, text: textOf(el), box: box(r) };
+      }
+      return outsideBox(el, r, what) ?? cutText(el, r, what);
+    };
 
     // What carries text of its own, plus icons, pictures and controls.
     const targets = new Set<Element>(document.querySelectorAll(TARGETS));
@@ -85,41 +128,8 @@ export async function layoutProblems(page: Page): Promise<LayoutProblem[]> {
     }
 
     for (const el of targets) {
-      if (skip(el) || !shown(el)) continue;
-      const tag = el.tagName.toLowerCase();
-      if (tag === 'script' || tag === 'style' || tag === 'title') continue;
-      const r = inkOf(el);
-      const what = `${name(el)} in ${where(el)}`;
-      if ((r.left < -1 || r.right > vw + 1) && !scrollsSideways(el)) {
-        problems.push({ kind: 'off-screen', what, text: textOf(el), box: box(r) });
-        continue;
-      }
-      // A rounded card or inset list: nothing may touch or cross its edge.
-      const card = el.closest('ion-card, ion-list.list-inset, .lk-card');
-      if (card && card !== el) {
-        const c = card.getBoundingClientRect();
-        if (r.left < c.left + 4 || r.right > c.right - 4) {
-          problems.push({ kind: 'past-card', what, text: textOf(el), box: box(r), container: `${name(card)} ${box(c)}` });
-          continue;
-        }
-      }
-      const row = el.closest('ion-item');
-      if (row && row !== el) {
-        const c = row.getBoundingClientRect();
-        if (r.left < c.left - 1 || r.right > c.right + 1 || r.bottom > c.bottom + 1) {
-          problems.push({ kind: 'past-row', what, text: textOf(el), box: box(r), container: `${name(row)} ${box(c)}` });
-          continue;
-        }
-      }
-      // Text wider than its box: it spills over or is clipped without an ellipsis.
-      const style = getComputedStyle(el);
-      const control = el.matches('ion-icon, ion-toggle, ion-checkbox, ion-radio, ion-select, ion-input, ion-textarea');
-      if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0 && style.textOverflow !== 'ellipsis' && !control) {
-        const own = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim());
-        if (own && !scrollsSideways(el) && style.overflowX !== 'auto' && style.overflowX !== 'scroll') {
-          problems.push({ kind: 'cut-text', what, text: textOf(el), box: `${box(r)} needs ${el.scrollWidth}px` });
-        }
-      }
+      const problem = problemOf(el);
+      if (problem) problems.push(problem);
     }
     return problems;
   });

@@ -204,9 +204,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     // real UTC instants and render in the viewer's local time.
     const allDay = item.isAllDay;
     const start = allDay ? item.startUtc!.slice(0, 10) : item.startUtc ?? undefined;
-    const end = allDay
-      ? (item.endUtc ? this.addDays(item.endUtc.slice(0, 10), 1) : undefined)
-      : (item.endUtc ?? undefined);
+    const end = allDay ? this.allDayEnd(item.endUtc) : (item.endUtc ?? undefined);
 
     return {
       id: `${item.agendaItemKey}|${item.startUtc}`,
@@ -389,6 +387,10 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   /** Shift a 'YYYY-MM-DD' string by whole days, staying in the date domain (no timezone drift). */
+  private allDayEnd(endUtc: string | null | undefined): string | undefined {
+    return endUtc ? this.addDays(endUtc.slice(0, 10), 1) : undefined;
+  }
+
   private addDays(dateStr: string, days: number): string {
     const d = new Date(`${dateStr}T00:00:00Z`);
     d.setUTCDate(d.getUTCDate() + days);

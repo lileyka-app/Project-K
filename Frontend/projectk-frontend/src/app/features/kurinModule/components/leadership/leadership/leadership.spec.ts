@@ -215,7 +215,7 @@ describe('LeadershipComponent', () => {
         .map(c => c.getRawValue())
         .filter(v => v.role === LeadershipRole.Kurinnuy);
       
-      expect(rows.length).toBe(2);
+      expect(rows).toHaveSize(2);
       expect(rows[0].member).toBeTruthy(); 
       expect(rows[1].member).toBeNull(); 
     });
@@ -266,25 +266,25 @@ describe('LeadershipComponent', () => {
 
     it('addRoleRow should add a row', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
-      expect(component.leadershipHistories.length).toBe(1);
+      expect(component.leadershipHistories).toHaveSize(1);
     });
 
     it('onRemoveRow should remove row', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
       component.addRoleRow(LeadershipRole.Kurinnuy);
-      expect(component.leadershipHistories.length).toBe(2);
+      expect(component.leadershipHistories).toHaveSize(2);
 
       component.onRemoveRow(0);
-      expect(component.leadershipHistories.length).toBe(1);
+      expect(component.leadershipHistories).toHaveSize(1);
     });
 
     it('onRemoveRow should restore empty row for single-seat roles if last one removed', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
-      expect(component.leadershipHistories.length).toBe(1);
+      expect(component.leadershipHistories).toHaveSize(1);
 
       component.onRemoveRow(0);
       
-      expect(component.leadershipHistories.length).toBe(1);
+      expect(component.leadershipHistories).toHaveSize(1);
       expect(component.leadershipHistories.at(0).get('member')?.value).toBeNull();
     });
   });

@@ -111,7 +111,7 @@ type Mode = 'item' | 'free';
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button [disabled]="saving()" (click)="cancel.emit()">Скасувати</ion-button>
+          <ion-button [disabled]="saving()" (click)="cancelled.emit()">Скасувати</ion-button>
         </ion-buttons>
         <ion-title>{{ title() }}</ion-title>
         <ion-buttons slot="end">
@@ -282,7 +282,7 @@ export class ScoreEntryForm implements OnDestroy {
   readonly save = output<UpsertScoreEntryRequest>();
   readonly remove = output<ScoreEntryDto>();
   readonly edit = output<ScoreEntryDto>();
-  readonly cancel = output<void>();
+  readonly cancelled = output<void>();
 
   protected readonly points = points;
   protected readonly today = dateOnly(new Date());
@@ -390,7 +390,8 @@ export class ScoreEntryForm implements OnDestroy {
 
   private reset(editing: ScoreEntryDto | null): void {
     const event = this.event();
-    this.mode.set(editing ? (editing.scoreItemKey ? 'item' : 'free') : this.items().length ? 'item' : 'free');
+    const itemFirst = editing ? !!editing.scoreItemKey : this.items().length > 0;
+    this.mode.set(itemFirst ? 'item' : 'free');
     this.itemKey.set(editing?.scoreItemKey ?? null);
     this.amount.set(editing && !editing.scoreItemKey ? editing.points : null);
     this.reason.set(editing?.reason ?? '');

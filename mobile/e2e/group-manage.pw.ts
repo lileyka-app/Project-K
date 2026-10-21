@@ -26,22 +26,23 @@ function groupApi(canUpdate: boolean): ExtraApi {
     { groupKey: 'g2', kurinKey: 'k1', name: 'Орли', description: null, silhouetteUrl: null, kurinNumber: 7 },
   ];
   const find = (key: string) => groups.find((g) => g.groupKey === key);
+  const read = (path: string, one: RegExpExecArray | null): Answer | null => {
+    switch (path) {
+      case 'kurin/k1': return ok(kurin);
+      case 'group/groups': return ok(groups);
+      case 'member/kurins/k1/members':
+      case 'member/members/kv/k1':
+      case 'group/groups/k1/mentor-assignments':
+      case 'kurin/k1/dues/groups':
+        return ok([]);
+    }
+    if (/^member\/groups\/g\d\/members$/.test(path)) return ok([]);
+    if (one && !one[2]) return find(one[1]) ? ok(find(one[1])) : refuse(404);
+    return null;
+  };
   return ({ method, path, body }): Answer | null => {
     const one = /^group\/(g\d)(\/silhouette)?$/.exec(path);
-    if (method === 'GET') {
-      switch (path) {
-        case 'kurin/k1': return ok(kurin);
-        case 'group/groups': return ok(groups);
-        case 'member/kurins/k1/members':
-        case 'member/members/kv/k1':
-        case 'group/groups/k1/mentor-assignments':
-        case 'kurin/k1/dues/groups':
-          return ok([]);
-      }
-      if (/^member\/groups\/g\d\/members$/.test(path)) return ok([]);
-      if (one && !one[2]) return find(one[1]) ? ok(find(one[1])) : refuse(404);
-      return null;
-    }
+    if (method === 'GET') return read(path, one);
     if (path === 'auth/check-access') return ok(body?.entityType === 'group' && canUpdate);
     if (path === 'group' && method === 'POST') {
       const created = { groupKey: `g${groups.length + 1}`, kurinKey: body.kurinKey, name: body.name, description: body.description, silhouetteUrl: null, kurinNumber: 7 };

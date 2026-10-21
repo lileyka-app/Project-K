@@ -75,7 +75,7 @@ import {
 
 type Part = 'box' | 'groups' | 'transfers' | 'history';
 
-const PARTS: readonly Part[] = ['box', 'groups', 'transfers', 'history'];
+const PARTS: ReadonlySet<Part> = new Set<Part>(['box', 'groups', 'transfers', 'history']);
 
 /** The API's kurin dues error codes, in the web's words. */
 const DUES_ERRORS: Record<string, string> = {
@@ -553,7 +553,7 @@ const DUES_ERRORS: Record<string, string> = {
             [saving]="saving()"
             [error]="formError()"
             (save)="saveEntry($event)"
-            (cancel)="entryOpen.set(false)"
+            (cancelled)="entryOpen.set(false)"
           />
         </ng-template>
       </ion-modal>
@@ -576,7 +576,7 @@ const DUES_ERRORS: Record<string, string> = {
               [saving]="saving()"
               [error]="formError()"
               (save)="saveRate($event)"
-              (cancel)="rateOpen.set(false)"
+              (cancelled)="rateOpen.set(false)"
             />
           }
         </ng-template>
@@ -703,7 +703,7 @@ export class KurinDuesPage implements OnInit, OnDestroy {
     addIcons({ add, lockClosed });
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const part = params.get('part') as Part | null;
-      if (part && PARTS.includes(part)) this.part.set(part);
+      if (part && PARTS.has(part)) this.part.set(part);
     });
     afterRenderEffect(() => {
       this.part();

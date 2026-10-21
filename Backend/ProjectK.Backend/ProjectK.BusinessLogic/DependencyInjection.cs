@@ -73,7 +73,7 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddDuesModule(this IServiceCollection services)
+    private static void AddDuesModule(this IServiceCollection services)
     {
         services.AddScoped<IDuesAccrual, DuesAccrual>();
         services.AddScoped<DuesLedgerReader>();
@@ -81,27 +81,24 @@ public static class DependencyInjection
         services.AddScoped<GroupDuesAccess>();
         services.AddScoped<KurinDuesAccess>();
         services.AddScoped<DuesEntryWriter>();
-        return services;
     }
 
-    private static IServiceCollection AddScoreModule(this IServiceCollection services)
+    private static void AddScoreModule(this IServiceCollection services)
     {
         services.AddScoped<ScoreAccess>();
         services.AddScoped<ScoreSettingsAccess>();
         services.AddScoped<PrivateScoreAccess>();
         services.AddScoped<ScoreBookReader>();
         services.AddScoped<IScoreFactSource, KurinScoreFacts>();
-        return services;
     }
 
     /// <summary>
     /// The member module registers itself: deleting this call takes the module out and breaks nothing
     /// else at compile time except the contract other modules hold.
     /// </summary>
-    private static IServiceCollection AddMemberModule(this IServiceCollection services)
+    private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
-        return services;
     }
 }

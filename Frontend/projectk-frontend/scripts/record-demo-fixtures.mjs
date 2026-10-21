@@ -82,7 +82,7 @@ async function sidebarLinks(page) {
   await page.locator('.p-panelmenu').first().waitFor();
   const hrefs = await page.locator('.p-panelmenu a[href]').evaluateAll(links => links.map(a => a.getAttribute('href')));
   await page.keyboard.press('Escape');
-  return [...new Set(hrefs.filter(h => h && h.startsWith('/')))];
+  return [...new Set(hrefs.filter(h => h?.startsWith('/')))];
 }
 
 /** Keys of every group and member that any recorded list mentioned. */
@@ -99,18 +99,35 @@ function keysIn(entries, field) {
   return [...keys];
 }
 
-/**
- * The catalogue names its pictures as /badges_images/<file>.svg and the API serves them behind
- * the token. Every one mentioned in this seat's recording is fetched with that token and kept
- * next to the fixtures, so the static demo can hand them back as blobs.
- */
-async function downloadBadgePictures(page, entries) {
+/** File names of every badge picture any recorded answer mentions. */
+function badgeFilesIn(entries) {
   const files = new Set();
   for (const e of entries.values()) {
     for (const match of JSON.stringify(e.b ?? '').matchAll(/badges_images\/([A-Za-z0-9_\-.]+\.(?:svg|png|webp))/g)) {
       files.add(match[1]);
     }
   }
+  return files;
+}
+
+// Exclusive create rather than "check, then write": a picture that appeared meanwhile is kept.
+function saveNew(path, body) {
+  try {
+    writeFileSync(path, body, { flag: 'wx' });
+    return true;
+  } catch (error) {
+    if (error?.code === 'EEXIST') return false;
+    throw error;
+  }
+}
+
+/**
+ * The catalogue names its pictures as /badges_images/<file>.svg and the API serves them behind
+ * the token. Every one mentioned in this seat's recording is fetched with that token and kept
+ * next to the fixtures, so the static demo can hand them back as blobs.
+ */
+async function downloadBadgePictures(page, entries) {
+  const files = badgeFilesIn(entries);
   if (files.size === 0) {
     return;
   }
@@ -118,16 +135,6 @@ async function downloadBadgePictures(page, entries) {
   mkdirSync(dir, { recursive: true });
   const token = await page.evaluate(() => JSON.parse(localStorage.getItem('authState') ?? '{}').accessToken);
   const apiOrigin = (process.env.LILEYKA_DEMO_API ?? 'http://localhost:5255');
-  // Exclusive create rather than "check, then write": a picture that appeared meanwhile is kept.
-  const saveNew = (path, body) => {
-    try {
-      writeFileSync(path, body, { flag: 'wx' });
-      return true;
-    } catch (error) {
-      if (error?.code === 'EEXIST') return false;
-      throw error;
-    }
-  };
   let saved = 0;
   for (const file of files) {
     const target = resolve(dir, file);

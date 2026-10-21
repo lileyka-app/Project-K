@@ -29,7 +29,7 @@ export function looksLikeEmail(value: string): boolean {
   const text = value.trim();
   if (/\s/.test(text)) return false;
   const [local, domain, ...rest] = text.split('@');
-  return rest.length === 0 && !!local && domain !== undefined && domain.slice(1, -1).includes('.');
+  return rest.length === 0 && !!local && domain?.slice(1, -1).includes('.') === true;
 }
 
 // ── Ступені ──────────────────────────────────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ export const DEFAULT_CARD_FIELDS: CardFields = {
 
 type StandardField = keyof CardFields['fields'];
 
-const CARD_FIELD_MODES: readonly string[] = ['required', 'optional', 'hidden'];
+const CARD_FIELD_MODES: ReadonlySet<string> = new Set(['required', 'optional', 'hidden']);
 
 /** `GET kurin/{k}/profile` as far as the card needs it; any part may be missing. */
 export interface KraiProfileCardFields {
@@ -199,7 +199,7 @@ export function cardFieldsOf(profile: KraiProfileCardFields | null | undefined):
   const section = profile?.cardFields;
   const mode = (field: StandardField): CardFieldMode => {
     const value = section?.fields?.[field] ?? '';
-    return CARD_FIELD_MODES.includes(value) ? (value as CardFieldMode) : DEFAULT_CARD_FIELDS.fields[field];
+    return CARD_FIELD_MODES.has(value) ? (value as CardFieldMode) : DEFAULT_CARD_FIELDS.fields[field];
   };
   return {
     fields: { middleName: mode('middleName'), phoneNumber: mode('phoneNumber'), address: mode('address'), school: mode('school'), parents: mode('parents') },

@@ -440,7 +440,7 @@ const SHELVES: { value: Shelf; label: string }[] = [
                   (save)="editor.save($event)"
                   (remove)="editor.remove($event)"
                   (edit)="editor.edit($event)"
-                  (cancel)="editor.close()"
+                  (cancelled)="editor.close()"
                 />
               </ng-template>
             </ion-modal>

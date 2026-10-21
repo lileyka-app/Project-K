@@ -36,6 +36,7 @@ namespace ProjectK.Infrastructure.Seeding;
 public class DemoDataSeeder : IDemoDataSeeder
 {
     private const int KurinNumber = 1;
+    private const string Sokoly = "Соколи";
 
     private static readonly string[] FirstNames =
     {
@@ -149,7 +150,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         var kurin = await EnsureKurinAsync(cancellationToken);
         var kurinKey = kurin.KurinKey;
 
-        var sokoly = await DataSeeder.EnsureGroupAsync(_dbContext, "Соколи", kurinKey, cancellationToken);
+        var sokoly = await DataSeeder.EnsureGroupAsync(_dbContext, Sokoly, kurinKey, cancellationToken);
         var levy = await DataSeeder.EnsureGroupAsync(_dbContext, "Леви", kurinKey, cancellationToken);
         var vedmedi = await DataSeeder.EnsureGroupAsync(_dbContext, "Ведмеді", kurinKey, cancellationToken);
         sokoly.Description = "Старші юнаки, 14–16 років. Сходини щосереди о 17:00 у домівці.";
@@ -214,12 +215,12 @@ public class DemoDataSeeder : IDemoDataSeeder
         SeedWarnings(youth, mentors, zvyazkovyi, kurinKey);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var groups = new Dictionary<string, Group> { ["Соколи"] = sokoly, ["Леви"] = levy, ["Ведмеді"] = vedmedi };
+        var groups = new Dictionary<string, Group> { [Sokoly] = sokoly, ["Леви"] = levy, ["Ведмеді"] = vedmedi };
         var leaderships = new Dictionary<string, Leadership>
         {
             ["KV"] = kvLeadership,
             ["Kurin"] = kurinLeadership,
-            ["Соколи"] = sokolyLeadership,
+            [Sokoly] = sokolyLeadership,
             ["Леви"] = levyLeadership
         };
         SeedAgenda(kurinKey, groups, leaderships, youth, mentors, zvyazkovyi, kurinOfficeHolders);
@@ -464,24 +465,24 @@ public class DemoDataSeeder : IDemoDataSeeder
 
     private void SeedProfileVerification(IEnumerable<Person> youth, Person zvyazkovyi)
     {
-        foreach (var person in youth)
+        foreach (var member in youth.Select(person => person.Member))
         {
             var roll = _random.NextDouble();
             if (roll < 0.6)
             {
-                person.Member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+                member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
             }
             else if (roll < 0.75)
             {
-                person.Member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
+                member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
             }
             else
             {
                 continue;
             }
 
-            person.Member.ProfileVerifiedAtUtc = DaysAgo(_random.Next(10, 300));
-            person.Member.ProfileVerifiedByUserKey = zvyazkovyi.UserKey;
+            member.ProfileVerifiedAtUtc = DaysAgo(_random.Next(10, 300));
+            member.ProfileVerifiedByUserKey = zvyazkovyi.UserKey;
         }
     }
 
@@ -919,7 +920,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         var hronikar = kurinOffices.GetValueOrDefault(LeadershipRole.Hronikar) ?? youth[2];
         var skarbnyk = kurinOffices.GetValueOrDefault(LeadershipRole.Skarbnyk) ?? youth[3];
 
-        var sokoly = groups["Соколи"];
+        var sokoly = groups[Sokoly];
         var levy = groups["Леви"];
         var vedmedi = groups["Ведмеді"];
 
@@ -936,14 +937,14 @@ public class DemoDataSeeder : IDemoDataSeeder
         // Last summer's camp, already happened; everybody answered back then.
         var summerCamp = AllDay(kurinKey, "Літній табір «Соколине гніздо»",
             "Десять днів в Арденнах біля Вільца. Виїзд о 7:00 від домівки.",
-            tabory, zvyazkovyi, new DateTime(year, 7, 10), new DateTime(year, 7, 20),
+            tabory, zvyazkovyi, UtcDay(year, 7, 10), UtcDay(year, 7, 20),
             Target(AgendaTargetType.Kurin, kurinKey));
         Respond(summerCamp, youth, going: 0.85, maybe: 0.0, notGoing: 0.1, daysAgoMin: 80, daysAgoMax: 120);
 
         // The winter camp is ahead; RSVPs are still coming in.
         var winterCamp = AllDay(kurinKey, "Зимовий табір «Сніговий шлях»",
             "Вогези, Жерармер. Лижі й снігоступи — свої або орендовані на місці.",
-            tabory, zvyazkovyi, new DateTime(year + 1, 1, 3), new DateTime(year + 1, 1, 9),
+            tabory, zvyazkovyi, UtcDay(year + 1, 1, 3), UtcDay(year + 1, 1, 9),
             Target(AgendaTargetType.Kurin, kurinKey));
         Respond(winterCamp, youth, going: 0.6, maybe: 0.15, notGoing: 0.1, daysAgoMin: 1, daysAgoMax: 12);
 
@@ -955,13 +956,13 @@ public class DemoDataSeeder : IDemoDataSeeder
             going: 0.7, maybe: 0.1, notGoing: 0.1, daysAgoMin: 0, daysAgoMax: 6);
 
         Timed(kurinKey, "Пластова ватра до Дня Незалежності", "У парку Мерль, з батьками.",
-            zakhody, zvyazkovyi, new DateTime(year, 8, 24), 19, 150, Target(AgendaTargetType.Kurin, kurinKey));
+            zakhody, zvyazkovyi, UtcDay(year, 8, 24), 19, 150, Target(AgendaTargetType.Kurin, kurinKey));
         Timed(kurinKey, "Свято Миколая", "Вистава молодших гуртків для батьків, після — спільний стіл.",
-            sviata, zvyazkovyi, new DateTime(year, 12, 19), 17, 150, Target(AgendaTargetType.Kurin, kurinKey));
+            sviata, zvyazkovyi, UtcDay(year, 12, 19), 17, 150, Target(AgendaTargetType.Kurin, kurinKey));
         Timed(kurinKey, "Вишкіл гурткових", "Планування року, ведення гурткової хроніки, робота з молодшими.",
             vyshkoly, zvyazkovyi, _now.Date.AddDays(14), 11, 300,
             Target(AgendaTargetType.Leadership, leaderships["Kurin"].LeadershipKey),
-            Target(AgendaTargetType.Leadership, leaderships["Соколи"].LeadershipKey),
+            Target(AgendaTargetType.Leadership, leaderships[Sokoly].LeadershipKey),
             Target(AgendaTargetType.Leadership, leaderships["Леви"].LeadershipKey));
         Timed(kurinKey, "Збірка КВ", "Підсумки вересня, табір, вкладка.",
             zakhody, zvyazkovyi, NextWeekday(DayOfWeek.Tuesday), 19, 90,
@@ -1184,17 +1185,17 @@ public class DemoDataSeeder : IDemoDataSeeder
             IsCalculated = true
         };
 
-        winter.Participants.Add(Participant(zvyazkovyi, 2.0, (new DateTime(year, 12, 30), new DateTime(year + 1, 1, 2))));
+        winter.Participants.Add(Participant(zvyazkovyi, 2.0, (UtcDay(year, 12, 30), UtcDay(year + 1, 1, 2))));
         foreach (var mentor in mentors.Values)
         {
-            winter.Participants.Add(Participant(mentor, 1.5, (new DateTime(year + 1, 1, 12), new DateTime(year + 1, 1, 16))));
+            winter.Participants.Add(Participant(mentor, 1.5, (UtcDay(year + 1, 1, 12), UtcDay(year + 1, 1, 16))));
         }
 
         foreach (var person in youth.Take(12))
         {
             var busy = _random.NextDouble() < 0.5
-                ? (new DateTime(year, 12, 31), new DateTime(year + 1, 1, 2))
-                : (new DateTime(year + 1, 1, 13), new DateTime(year + 1, 1, 18));
+                ? (UtcDay(year, 12, 31), UtcDay(year + 1, 1, 2))
+                : (UtcDay(year + 1, 1, 13), UtcDay(year + 1, 1, 18));
             winter.Participants.Add(Participant(person, 1.0, busy));
         }
 
@@ -1213,7 +1214,7 @@ public class DemoDataSeeder : IDemoDataSeeder
 
         foreach (var person in youth.Skip(12).Take(6))
         {
-            alps.Participants.Add(Participant(person, 1.0, (new DateTime(year + 1, 5, 8), new DateTime(year + 1, 5, 11))));
+            alps.Participants.Add(Participant(person, 1.0, (UtcDay(year + 1, 5, 8), UtcDay(year + 1, 5, 11))));
         }
 
         _dbContext.PlanningSessions.Add(alps);
@@ -1265,7 +1266,7 @@ public class DemoDataSeeder : IDemoDataSeeder
 
         var groupShares = new Dictionary<Guid, decimal>
         {
-            [groups["Соколи"].GroupKey] = 30,
+            [groups[Sokoly].GroupKey] = 30,
             [groups["Леви"].GroupKey] = 20,
             [groups["Ведмеді"].GroupKey] = 30
         };
@@ -1380,7 +1381,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         }
 
         // Соколи have already handed this quarter's cash over; the kurin has not counted it yet.
-        var sokoly = groups["Соколи"].GroupKey;
+        var sokoly = groups[Sokoly].GroupKey;
         if (upward.TryGetValue((sokoly, current.Index), out var sokolyNow) && HandOver(sokolyNow.Up, sokolyNow.Card).Cash > 0)
         {
             AddDuesEntry(kurinKey, sokoly, null, DuesEntryKind.TransferToKurin, DuesPaymentMethod.Cash,
@@ -1662,7 +1663,7 @@ public class DemoDataSeeder : IDemoDataSeeder
 
         foreach (var (name, points, reason, daysAgo) in new[]
         {
-            ("Соколи", 8, "Перемога в естафеті на сходинах куреня", 9),
+            (Sokoly, 8, "Перемога в естафеті на сходинах куреня", 9),
             ("Ведмеді", 10, "Найкраща хроніка літнього табору", 30),
             ("Леви", -3, "Залишили домівку неприбраною", 20)
         })
@@ -1689,7 +1690,7 @@ public class DemoDataSeeder : IDemoDataSeeder
             .ToList();
         _dbContext.PrivateScoreCriteria.AddRange(criteria);
 
-        foreach (var person in youth.Where(p => p.GroupKey == groups["Ведмеді"].GroupKey || p.GroupKey == groups["Соколи"].GroupKey).Take(8))
+        foreach (var person in youth.Where(p => p.GroupKey == groups["Ведмеді"].GroupKey || p.GroupKey == groups[Sokoly].GroupKey).Take(8))
         {
             var on = today.AddDays(-_random.Next(5, 60));
             _dbContext.PrivateScoreEntries.Add(new PrivateScoreEntry
@@ -1807,9 +1808,11 @@ public class DemoDataSeeder : IDemoDataSeeder
         return dateOfBirth > today.AddYears(-age) ? age - 1 : age;
     }
 
+    private static DateTime UtcDay(int year, int month, int day) => new(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+
     private DateTime NextDate(int month, int day)
     {
-        var candidate = new DateTime(_now.Year, month, day);
+        var candidate = UtcDay(_now.Year, month, day);
         return candidate.Date < _now.Date ? candidate.AddYears(1) : candidate;
     }
 
@@ -1845,15 +1848,9 @@ public class DemoDataSeeder : IDemoDataSeeder
     {
         foreach (var id in new[] { "Europe/Kyiv", "Europe/Kiev", "FLE Standard Time" })
         {
-            try
+            if (TimeZoneInfo.TryFindSystemTimeZoneById(id, out var zone))
             {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (TimeZoneNotFoundException)
-            {
-            }
-            catch (InvalidTimeZoneException)
-            {
+                return zone;
             }
         }
 

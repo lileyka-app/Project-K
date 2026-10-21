@@ -102,7 +102,7 @@ describe('UserService', () => {
     it('should return array of users', (done) => {
       service.getAllUsers().subscribe(users => {
         expect(users).toEqual(mockUsers);
-        expect(users.length).toBe(3);
+        expect(users).toHaveSize(3);
         done();
       });
 
@@ -113,7 +113,7 @@ describe('UserService', () => {
     it('should return empty array when no users exist', (done) => {
       service.getAllUsers().subscribe(users => {
         expect(users).toEqual([]);
-        expect(users.length).toBe(0);
+        expect(users).toHaveSize(0);
         done();
       });
 
@@ -226,7 +226,7 @@ describe('UserService', () => {
       }];
 
       service.getAllUsers().subscribe(users => {
-        expect(users.length).toBe(1);
+        expect(users).toHaveSize(1);
         expect(users[0].email).toBe('single@example.com');
         done();
       });
@@ -259,7 +259,7 @@ describe('UserService', () => {
       service.getAllUsers().subscribe();
 
       const requests = httpMock.match(`${apiUrl}/user/users`);
-      expect(requests.length).toBe(1);
+      expect(requests).toHaveSize(1);
       requests[0].flush([]);
     });
 
@@ -282,7 +282,7 @@ describe('UserService', () => {
 
       // Should make two separate requests for two subscriptions
       const requests = httpMock.match(`${apiUrl}/user/users`);
-      expect(requests.length).toBe(2);
+      expect(requests).toHaveSize(2);
       requests[0].flush(mockUsers);
       requests[1].flush(mockUsers);
     });

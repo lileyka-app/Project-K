@@ -182,7 +182,7 @@ describe('GroupDuesComponent', () => {
     expect(component.personFilterName()).toBe('Тарас Борг');
 
     component.togglePerson(debtor);
-    expect(component.filteredEntries().length).toBe(3);
+    expect(component.filteredEntries()).toHaveSize(3);
   });
 
   it('фільтр за кварталом дивиться на дату операції', () => {
@@ -192,7 +192,7 @@ describe('GroupDuesComponent', () => {
     expect(component.filteredEntries().map(e => e.duesEntryKey)).toEqual(['e-3']);
 
     component.kindFilter.set(DuesEntryKind.Contribution);
-    expect(component.filteredEntries().length).toBe(0);
+    expect(component.filteredEntries()).toHaveSize(0);
   });
 
   // Перевірену операцію впорядник замкнув — правити й видаляти її не можна, і кнопок немає.

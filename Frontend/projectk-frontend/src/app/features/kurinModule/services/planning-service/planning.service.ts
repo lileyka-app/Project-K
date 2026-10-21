@@ -8,9 +8,9 @@ import { ENTITY_CACHE_TTL_MS, PLANNING_CACHE_PREFIX } from '../client-cache/cach
 
 @Injectable({ providedIn: 'root' })
 export class PlanningService {
-  private http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
   private readonly cache = inject(ClientCacheService);
-  private apiUrl = `${environment.apiUrl}/planning`;
+  private readonly apiUrl = `${environment.apiUrl}/planning`;
 
   getSessions(kurinKey: string) {
     return this.cache.get(

@@ -6,7 +6,6 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -15,13 +14,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.R
 public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, ServiceResult<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
     private readonly IBackendCache _cache;
 
-    public RevokeMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache)
+    public RevokeMentorCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
         _cache = cache;
     }
 

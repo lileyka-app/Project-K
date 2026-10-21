@@ -116,7 +116,7 @@ describe('SkillsReviewPageComponent', () => {
     fixture.detectChanges();
 
     expect(component).toBeTruthy();
-    expect(component.reviewItems.length).toBe(1);
+    expect(component.reviewItems).toHaveSize(1);
     expect(component.reviewItems[0].badgeTitle).toBe('Вузли');
     expect(component.reviewItems[0].memberDisplayName).toBe('Іван Петренко');
   });
@@ -139,7 +139,7 @@ describe('SkillsReviewPageComponent', () => {
       isApproved: true,
       note: null
     });
-    expect(component.reviewItems.length).toBe(0);
+    expect(component.reviewItems).toHaveSize(0);
   });
 
   it('should send note text from dialog when rejecting skill', () => {
@@ -172,7 +172,7 @@ describe('SkillsReviewPageComponent', () => {
 
     expect(component.roleRestricted).toBeTrue();
     expect(memberProgressServiceSpy.getBadgeReviewQueue).not.toHaveBeenCalled();
-    expect(component.reviewItems.length).toBe(0);
+    expect(component.reviewItems).toHaveSize(0);
   });
 
   it('goBackToKurin should navigate to kurin panel', () => {

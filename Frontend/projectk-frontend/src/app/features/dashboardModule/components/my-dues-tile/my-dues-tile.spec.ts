@@ -39,7 +39,7 @@ describe('MyDuesTileComponent', () => {
     expect(fixture.componentInstance.owing()).toBe(1);
 
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelectorAll('.dues-tile__row--debt').length).toBe(1);
-    expect(el.querySelectorAll('.dues-tile__row--ok').length).toBe(1);
+    expect(el.querySelectorAll('.dues-tile__row--debt')).toHaveSize(1);
+    expect(el.querySelectorAll('.dues-tile__row--ok')).toHaveSize(1);
   });
 });

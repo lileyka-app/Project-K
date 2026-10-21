@@ -47,7 +47,7 @@ function Start-LoggedProcess {
         -PassThru
 
     Set-Content -LiteralPath (Join-Path $runRoot "$Name.pid") -Value $process.Id
-    Write-Host "Started $Name (PID $($process.Id))"
+    Write-Output "Started $Name (PID $($process.Id))"
 }
 
 New-Item -ItemType Directory -Force -Path $logRoot | Out-Null

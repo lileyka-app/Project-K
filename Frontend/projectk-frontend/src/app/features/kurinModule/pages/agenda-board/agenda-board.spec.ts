@@ -60,7 +60,7 @@ describe('AgendaBoardComponent', () => {
   it('shows each column with its count under the filter, and offers the targets on the board', () => {
     const todo = component().columns()[0];
     expect(todo.total).toBe(21);
-    expect(todo.items.length).toBe(1);
+    expect(todo.items).toHaveSize(1);
     expect(component().targets()).toEqual([{ label: 'Соколи', value: 'Group:g1' }]);
   });
 

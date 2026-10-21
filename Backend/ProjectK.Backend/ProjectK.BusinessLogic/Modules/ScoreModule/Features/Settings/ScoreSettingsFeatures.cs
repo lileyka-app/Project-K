@@ -307,21 +307,9 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
         }
 
         var r = request.Request;
-        if (r.AgendaCategoryKey is { } categoryKey)
+        if (await MissingTargetAsync(request, cancellationToken) is { } missing)
         {
-            var category = await _unitOfWork.AgendaCategories.GetByKeyAsync(categoryKey, cancellationToken);
-            if (category is null || category.KurinKey != request.KurinKey)
-            {
-                return ScoreAccess.NotFound<object>("There is no such group of events here.");
-            }
-        }
-        else
-        {
-            var item = await _unitOfWork.AgendaItems.GetByKeyAsync(r.AgendaItemKey!.Value, cancellationToken);
-            if (item is null || item.KurinKey != request.KurinKey || item.Kind != AgendaItemKind.Event)
-            {
-                return ScoreAccess.NotFound<object>("There is no such event here.");
-            }
+            return missing;
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -356,6 +344,23 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
 
         await _score.SaveChangesAsync(cancellationToken);
         return new ServiceResult<object>(ResultType.Success);
+    }
+
+    private async Task<ServiceResult<object>?> MissingTargetAsync(SetScoreAttendanceRateCommand request, CancellationToken cancellationToken)
+    {
+        var r = request.Request;
+        if (r.AgendaCategoryKey is { } categoryKey)
+        {
+            var category = await _unitOfWork.AgendaCategories.GetByKeyAsync(categoryKey, cancellationToken);
+            return category is null || category.KurinKey != request.KurinKey
+                ? ScoreAccess.NotFound<object>("There is no such group of events here.")
+                : null;
+        }
+
+        var item = await _unitOfWork.AgendaItems.GetByKeyAsync(r.AgendaItemKey!.Value, cancellationToken);
+        return item is null || item.KurinKey != request.KurinKey || item.Kind != AgendaItemKind.Event
+            ? ScoreAccess.NotFound<object>("There is no such event here.")
+            : null;
     }
 }
 

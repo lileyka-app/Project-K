@@ -32,7 +32,7 @@ resolve_release_url() {
   # asset, and no quota is spent.
   final="$(curl --proto =https --tlsv1.2 -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest" 2>/dev/null || true)"
   tag="${final##*/tag/}"
-  if [ -n "$tag" ] && [ "$tag" != "$final" ]; then
+  if [[ -n "$tag" ]] && [[ "$tag" != "$final" ]]; then
     version="${tag#v}"
     url="https://github.com/$repo/releases/download/$tag/plast-badges-data-$version.zip"
     if curl --proto =https --tlsv1.2 -fsSL -o /dev/null -r 0-0 "$url" 2>/dev/null; then
@@ -43,7 +43,7 @@ resolve_release_url() {
 
   # Fallback for the day the asset is named differently. Rate-limited, so it is not the first try.
   api="https://api.github.com/repos/$repo/releases/latest"
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     body="$(curl --proto =https --tlsv1.2 -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "$api" 2>/dev/null || true)"
   else
     body="$(curl --proto =https --tlsv1.2 -fsSL "$api" 2>/dev/null || true)"
@@ -52,9 +52,9 @@ resolve_release_url() {
     | grep -o '"browser_download_url": *"https[^"]*[.]zip"' | head -1 | grep -o 'https[^"]*' || true
 }
 
-if [ ! -d "$badges" ] || [ -z "$(ls -A "$badges" 2>/dev/null)" ]; then
+if [[ ! -d "$badges" ]] || [[ -z "$(ls -A "$badges" 2>/dev/null)" ]]; then
   release_url="$(resolve_release_url || true)"
-  [ -n "$release_url" ] || { echo "no zip asset on the latest $repo release" >&2; exit 1; }
+  [[ -n "$release_url" ]] || { echo "no zip asset on the latest $repo release" >&2; exit 1; }
   echo "   fetching $release_url"
   tmp="$(mktemp -d)"
   curl --proto =https --tlsv1.2 -fsSL -o "$tmp/badges.zip" "$release_url"
@@ -66,7 +66,7 @@ echo "   $(ls "$badges" | wc -l | tr -d ' ') pictures"
 
 echo "== demo app (Angular, configuration demo)"
 cd "$frontend"
-if [ ! -d node_modules ]; then npm ci --ignore-scripts; fi
+if [[ ! -d node_modules ]]; then npm ci --ignore-scripts; fi
 npm run build -- --configuration demo
 
 echo "== placing the demo under site/public/demo"
@@ -85,7 +85,7 @@ cp -R "$site/public/demo/assets" "$site/public/assets"
 
 echo "== site (Astro)"
 cd "$site"
-if [ ! -d node_modules ]; then npm ci --ignore-scripts; fi
+if [[ ! -d node_modules ]]; then npm ci --ignore-scripts; fi
 npm run build
 
 echo "== done: $site/dist"

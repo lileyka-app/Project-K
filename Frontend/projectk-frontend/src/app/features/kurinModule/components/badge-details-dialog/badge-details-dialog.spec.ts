@@ -58,7 +58,7 @@ describe('BadgeDetailsDialogComponent', () => {
     expect(page.querySelector('.badge-details__title')?.textContent).toContain('Плавець I');
     const chips = Array.from(page.querySelectorAll('.badge-details__chip')).map(chip => chip.textContent?.trim());
     expect(chips).toEqual(['Україна', 'рівень 1', 'УПЮ', 'Водна']);
-    expect(page.querySelectorAll('.badge-details__requirements li').length).toBe(1);
+    expect(page.querySelectorAll('.badge-details__requirements li')).toHaveSize(1);
     expect(page.querySelector('.badge-details__footnote')?.textContent).toContain('Розробив: Ольга. Оновлено 29.04.2020.');
   });
 

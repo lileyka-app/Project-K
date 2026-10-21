@@ -1,7 +1,7 @@
 .member-tile {
     background: var(--p-content-background);
     border: 1px solid var(--p-content-border-color);
-    border-radius: var(--lil-radius-lg) !important;
+    border-radius: var(--lil-radius-lg);
     box-shadow: none;
 }
 
@@ -99,14 +99,14 @@
 .member-empty-state {
     background: transparent;
     border: 1px dashed var(--p-content-border-color);
-    border-radius: var(--lil-radius-lg) !important;
+    border-radius: var(--lil-radius-lg);
     color: var(--lil-faint);
 }
 
 .probe-summary-row {
     background: transparent;
     border: 1px solid var(--p-content-border-color);
-    border-radius: var(--lil-radius) !important;
+    border-radius: var(--lil-radius);
 }
 
 .probe-summary-row--completed {
@@ -152,7 +152,7 @@
 .dialog-skill-row {
     background: transparent;
     border: 1px solid var(--p-content-border-color);
-    border-radius: var(--lil-radius) !important;
+    border-radius: var(--lil-radius);
 }
 
 .dialog-skill-row--pending {
@@ -173,7 +173,7 @@
 .add-skill-row {
     background: transparent;
     border: 1px solid var(--p-content-border-color);
-    border-radius: var(--lil-radius) !important;
+    border-radius: var(--lil-radius);
 }
 
 .add-skill-row:hover {

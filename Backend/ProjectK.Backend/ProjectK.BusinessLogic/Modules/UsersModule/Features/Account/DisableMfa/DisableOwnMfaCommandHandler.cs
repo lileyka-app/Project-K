@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -15,19 +14,16 @@ public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand,
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IRefreshTokenStore _refreshTokens;
-    private readonly ILogger<DisableOwnMfaCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
     private readonly IAccessContextResolver _access;
 
     public DisableOwnMfaCommandHandler(
         UserManager<AppUser> userManager,
-        ILogger<DisableOwnMfaCommandHandler> logger,
         IActivityLogger activityLogger,
         IRefreshTokenStore refreshTokens,
         IAccessContextResolver access)
     {
         _userManager = userManager;
-        _logger = logger;
         _activityLogger = activityLogger;
         _refreshTokens = refreshTokens;
         _access = access;

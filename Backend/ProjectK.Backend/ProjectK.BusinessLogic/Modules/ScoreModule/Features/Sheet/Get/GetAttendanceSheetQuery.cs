@@ -49,13 +49,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
         var item = occurrence.Item;
 
-        // Who may score where, asked once per гурток rather than once per person.
-        var canScoreIn = new Dictionary<Guid, bool>();
-        foreach (var groupKey in book.GroupNames.Keys)
-        {
-            canScoreIn[groupKey] = await _access.MayScoreAsync(request.KurinKey, groupKey, ResourceAction.Create, cancellationToken);
-        }
-
+        var canScoreIn = await CanScoreByGroupAsync(request.KurinKey, book.GroupNames.Keys, cancellationToken);
         var canScoreUnplaced = await _access.MayScoreAsync(request.KurinKey, null, ResourceAction.Create, cancellationToken);
         bool CanScore(Guid? groupKey) => groupKey is { } key ? canScoreIn.GetValueOrDefault(key) : canScoreUnplaced;
 
@@ -111,9 +105,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             })
             .ToList();
 
-        var category = item.AgendaCategoryKey is { } categoryKey
-            ? await _unitOfWork.AgendaCategories.GetByKeyAsync(categoryKey, cancellationToken)
-            : null;
+        var category = await CategoryOfAsync(item.AgendaCategoryKey, cancellationToken);
 
         return new ServiceResult<AttendanceSheetResponse>(ResultType.Success, new AttendanceSheetResponse
         {
@@ -136,4 +128,21 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             CanManage = await _access.MayManageAsync(request.KurinKey, cancellationToken)
         });
     }
+
+    /// <summary>Who may score where, asked once per гурток rather than once per person.</summary>
+    private async Task<Dictionary<Guid, bool>> CanScoreByGroupAsync(Guid kurinKey, IEnumerable<Guid> groupKeys, CancellationToken cancellationToken)
+    {
+        var canScoreIn = new Dictionary<Guid, bool>();
+        foreach (var groupKey in groupKeys)
+        {
+            canScoreIn[groupKey] = await _access.MayScoreAsync(kurinKey, groupKey, ResourceAction.Create, cancellationToken);
+        }
+
+        return canScoreIn;
+    }
+
+    private async Task<AgendaCategory?> CategoryOfAsync(Guid? categoryKey, CancellationToken cancellationToken) =>
+        categoryKey is { } key
+            ? await _unitOfWork.AgendaCategories.GetByKeyAsync(key, cancellationToken)
+            : null;
 }

@@ -22,7 +22,7 @@ public class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipResponse
     public Guid? EntityKey { get; set; }
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
-    public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; } = [];
+    public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; }
 
     /// <summary>
     /// Set only by server-side flows that seat an office with no signed-in assigner — account
@@ -72,24 +72,14 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         if (request.LeadershipKey != null && request.LeadershipKey != Guid.Empty)
         {
-            existing = await _unitOfWork.Leaderships.GetByKeyAsync(request.LeadershipKey!.Value, cancellationToken);
+            existing = await _unitOfWork.Leaderships.GetByKeyAsync(request.LeadershipKey.Value, cancellationToken);
         }
 
         if (existing != null)
         {
             // Update existing Leadership
             existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
-            switch (existing.Type)
-            {
-                case LeadershipType.Kurin or LeadershipType.KV:
-                    existing.KurinKey = request.EntityKey;
-                    existing.GroupKey = null;
-                    break;
-                case LeadershipType.Group:
-                    existing.GroupKey = request.EntityKey;
-                    existing.KurinKey = null;
-                    break;
-            }
+            PlaceOnEntity(existing, request.EntityKey);
             if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
             {
                 return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
@@ -110,17 +100,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             existing.StartDate = today;
             existing.EndDate = null;
             existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
-            switch (existing.Type)
-            {
-                case LeadershipType.Kurin or LeadershipType.KV:
-                    existing.KurinKey = request.EntityKey;
-                    existing.GroupKey = null;
-                    break;
-                case LeadershipType.Group:
-                    existing.GroupKey = request.EntityKey;
-                    existing.KurinKey = null;
-                    break;
-            }
+            PlaceOnEntity(existing, request.EntityKey);
             existing.LeadershipHistories.Clear();
             if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
             {
@@ -147,6 +127,21 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         return isCreated
             ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
             : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
+    }
+
+    private static void PlaceOnEntity(LeadershipEntity leadership, Guid? entityKey)
+    {
+        switch (leadership.Type)
+        {
+            case LeadershipType.Kurin or LeadershipType.KV:
+                leadership.KurinKey = entityKey;
+                leadership.GroupKey = null;
+                break;
+            case LeadershipType.Group:
+                leadership.GroupKey = entityKey;
+                leadership.KurinKey = null;
+                break;
+        }
     }
 
     /// <summary>

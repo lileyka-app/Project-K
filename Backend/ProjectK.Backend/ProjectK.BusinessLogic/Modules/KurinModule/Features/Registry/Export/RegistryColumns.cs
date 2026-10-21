@@ -20,7 +20,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 /// </summary>
 internal static class RegistryColumns
 {
-    private sealed record Column(string Header, Func<MemberResponse, SheetCell> Read);
+    private sealed record Column(string Header, Func<MemberResponse, SheetCell> ReadCell);
 
     private static readonly IReadOnlyDictionary<string, Column> Named =
         new Dictionary<string, Column>(StringComparer.Ordinal)
@@ -52,7 +52,7 @@ internal static class RegistryColumns
     {
         if (Named.TryGetValue(columnId, out var named))
         {
-            return named.Read(member);
+            return named.ReadCell(member);
         }
 
         if (!TryLevel(columnId, out var level))

@@ -41,7 +41,7 @@ const at = (local: string) => new Date(local).toISOString();
 describe('monthGrid', () => {
   it('lays out whole weeks from Monday', () => {
     const weeks = monthGrid(new Date(2026, 9, 1)); // October 2026 starts on a Thursday
-    expect(weeks.length).toBe(5);
+    expect(weeks).toHaveLength(5);
     expect(dayKey(weeks[0][0])).toBe('2026-09-28');
     expect(weeks[0][0].getDay()).toBe(1);
     expect(dayKey(weeks[4][6])).toBe('2026-11-01');
@@ -49,7 +49,7 @@ describe('monthGrid', () => {
   });
 
   it('takes six rows when the month needs them', () => {
-    expect(monthGrid(new Date(2026, 7, 1)).length).toBe(6); // August 2026 starts on a Saturday
+    expect(monthGrid(new Date(2026, 7, 1))).toHaveLength(6); // August 2026 starts on a Saturday
   });
 
   it('asks the API for the whole grid', () => {
@@ -175,7 +175,7 @@ describe('targets', () => {
   it('searches rows, and a matching heading keeps its rows', () => {
     const sections = targetSections(tree);
     expect(filterSections(sections, 'коваль')[0].rows.map((r) => r.label)).toEqual(['Остап Коваль']);
-    expect(filterSections(sections, 'сокол')[0].rows.length).toBe(3);
+    expect(filterSections(sections, 'сокол')[0].rows).toHaveLength(3);
     expect(filterSections(sections, 'нема')).toEqual([]);
   });
 

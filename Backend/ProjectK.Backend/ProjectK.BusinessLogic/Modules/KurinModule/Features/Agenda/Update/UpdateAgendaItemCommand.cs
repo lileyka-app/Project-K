@@ -119,7 +119,25 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         // DbSet Add/Remove so EF gets unambiguous Added/Deleted states (mutating the tracked collection
         // alone made EF mark a new assignment Modified and emit an UPDATE that matched no row). The tracked
         // collection is kept in sync too, so the item stays clean for the notification's own SaveChanges.
-        var desired = request.Targets
+        ReconcileTargets(item, request.Targets, requestedModes);
+
+        // Targets came and went, so what the task adds up to may have changed with them.
+        var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
+        AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), DateTime.UtcNow);
+
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        await PublishChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
+
+        return new ServiceResult<object>(ResultType.Success);
+    }
+
+    private void ReconcileTargets(
+        AgendaItem item,
+        List<AgendaTargetInput> targets,
+        Dictionary<(AgendaTargetType, Guid), AgendaCompletionMode> requestedModes)
+    {
+        var desired = targets
             .Select(t => (t.TargetType, t.TargetKey))
             .ToHashSet();
 
@@ -139,7 +157,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             }
         }
 
-        foreach (var target in request.Targets)
+        foreach (var target in targets)
         {
             if (kept.Add((target.TargetType, target.TargetKey)))
             {
@@ -154,16 +172,6 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
                 item.Assignments.Add(assignment);
             }
         }
-
-        // Targets came and went, so what the task adds up to may have changed with them.
-        var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
-        AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), DateTime.UtcNow);
-
-        await _uow.SaveChangesAsync(cancellationToken);
-
-        await PublishChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
-
-        return new ServiceResult<object>(ResultType.Success);
     }
 
     private async Task PublishChangedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)

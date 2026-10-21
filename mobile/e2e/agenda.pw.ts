@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { member, ok, refuse, shot, signIn, soon, type ExtraApi } from './support/mock-api';
+import { member, ok, refuse, shot, signIn, soon, type Answer, type ExtraApi } from './support/mock-api';
 
 /**
  * The agenda: calendar, event and task details, the board and the forms. Fixtures are shaped like
@@ -106,9 +106,8 @@ function agendaApi(leader = false, busy = false): Fixtures {
     ],
   });
 
-  const extra: ExtraApi = ({ method, path, query, body }) => {
-    if (method === 'GET') reads.push({ path, query });
-    if (method === 'GET' && path === 'agenda/k1') {
+  const read = (path: string, query: URLSearchParams): Answer | null => {
+    if (path === 'agenda/k1') {
       const from = new Date(query.get('fromUtc')!).getTime();
       const to = new Date(query.get('toUtc')!).getTime();
       const schedules = query.get('includeSchedules') === 'true';
@@ -118,7 +117,7 @@ function agendaApi(leader = false, busy = false): Fixtures {
         return start <= to && end >= from && (schedules || i.audience !== 'Schedule');
       }));
     }
-    if (method === 'GET' && path === 'agenda/k1/board') {
+    if (path === 'agenda/k1/board') {
       const search = (query.get('search') ?? '').toLowerCase();
       const mine = query.get('onlyMine') === 'true';
       const pick = (list: any[]) => list.filter((t) => t.title.toLowerCase().includes(search) && (!mine || t.agendaItemKey === 't1'));
@@ -132,20 +131,16 @@ function agendaApi(leader = false, busy = false): Fixtures {
         targets,
       });
     }
-    if (method === 'GET' && path.startsWith('agenda/item/')) {
+    if (path.startsWith('agenda/item/')) {
       const key = path.split('/')[2];
       const found = [series, hike, knots, tent, done, ...archived].find((i) => i.agendaItemKey === key);
       if (!found) return refuse(404, 'AGENDA_NOT_FOUND');
       // The item endpoint gives the series itself, not an occurrence.
       return ok(key === 'e1' ? { ...found, startUtc: found.seriesStartUtc, endUtc: found.seriesEndUtc, isRecurrenceInstance: false } : found);
     }
-    if (method === 'GET' && path === 'agenda/e1/responses') return ok(picture());
-    if (method === 'GET' && path.endsWith('/responses')) return ok({ ...picture(), responses: [], goingConfirmedCount: 0, maybeCount: 0, notGoingCount: 0 });
-    if (method === 'PUT' && path === 'agenda/e1/response') {
-      myStatus = body.status;
-      return ok(picture());
-    }
-    if (method === 'GET' && path === 'agenda/k1/assign-targets') {
+    if (path === 'agenda/e1/responses') return ok(picture());
+    if (path.endsWith('/responses')) return ok({ ...picture(), responses: [], goingConfirmedCount: 0, maybeCount: 0, notGoingCount: 0 });
+    if (path === 'agenda/k1/assign-targets') {
       return ok({
         canTargetKurin: true, kurinKey: 'k1', kurinLabel: 'Курінь 7',
         kurinLeaderships: [{ leadershipKey: 'l0', label: 'Курінний провід', canTarget: true }],
@@ -156,17 +151,29 @@ function agendaApi(leader = false, busy = false): Fixtures {
         ],
       });
     }
-    if (method === 'GET' && path === 'agenda/k1/categories') {
+    if (path === 'agenda/k1/categories') {
       return ok([{ agendaCategoryKey: 'c1', kurinKey: 'k1', name: 'Сходини', colorHex: '#2e7d32', icon: null, capacity: null,
         waitlistEnabled: false, defaultDescription: 'Принеси зошит.', rsvpRequired: true, defaultDurationMinutes: 120,
         reminderLeadMinutes: null, isArchived: false, isKurinSchedule: true }]);
     }
-    if (method === 'GET' && path === 'agenda/k1/archive') {
+    if (path === 'agenda/k1/archive') {
       const search = (query.get('search') ?? '').toLowerCase();
       const found = archived.filter((t) => t.title.toLowerCase().includes(search));
       const skip = Number(query.get('skip') ?? 0);
       const take = Number(query.get('take') ?? 20);
       return ok({ total: found.length, items: found.slice(skip, skip + take), policy: { autoArchiveAfterDays: 14, purgeAfterDays: 90 } });
+    }
+    return null;
+  };
+
+  const extra: ExtraApi = ({ method, path, query, body }) => {
+    if (method === 'GET') {
+      reads.push({ path, query });
+      return read(path, query);
+    }
+    if (method === 'PUT' && path === 'agenda/e1/response') {
+      myStatus = body.status;
+      return ok(picture());
     }
     if (method === 'PUT' && /^agenda\/[^/]+\/archive$/.test(path)) {
       const key = path.split('/')[1];
@@ -520,7 +527,7 @@ test('lets the провід raise an event from the day on screen', async ({ pag
   await calendar.getByRole('button', { name: 'Наступний день' }).click();
   await calendar.getByRole('button', { name: 'Наступний день' }).click();
   await calendar.getByTestId('new-event').click();
-  await expect(page).toHaveURL(new RegExp(`/tabs/calendar/new\\?date=${localDay(soon(2, 9))}`));
+  await expect(page).toHaveURL(new RegExp(String.raw`/tabs/calendar/new\?date=${localDay(soon(2, 9))}`));
   await expect(page.locator('app-event-form ion-title').first()).toHaveText('Нова подія');
 });
 

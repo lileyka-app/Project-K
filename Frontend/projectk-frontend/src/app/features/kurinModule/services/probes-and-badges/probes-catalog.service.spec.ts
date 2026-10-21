@@ -87,7 +87,7 @@ describe('ProbesCatalogService', () => {
   it('getGroupedById should call grouped probe endpoint', () => {
     service.getGroupedById('probe-1').subscribe(response => {
       expect(response.id).toBe('probe-1');
-      expect(response.sections.length).toBe(1);
+      expect(response.sections).toHaveSize(1);
     });
 
     const req = httpMock.expectOne(`${apiUrl}/probe-1/grouped`);

@@ -16,19 +16,19 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
     {
     }
 
-    public override void Create(Kurin kurin, CancellationToken token = default)
+    public override void Create(Kurin kurin, CancellationToken cancellationToken = default)
     {
         Context.Kurins.Add(kurin);
     }
 
-    public override void Delete(Kurin kurin, CancellationToken token = default)
+    public override void Delete(Kurin kurin, CancellationToken cancellationToken = default)
     {
         Context.Kurins.Remove(kurin);
     }
 
-    public override async Task<Kurin?> GetByKeyAsync(Guid entityKey, CancellationToken token = default)
+    public override async Task<Kurin?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        return await Context.Kurins.FirstOrDefaultAsync(k => k.KurinKey == entityKey, token);
+        return await Context.Kurins.FirstOrDefaultAsync(k => k.KurinKey == entityKey, cancellationToken);
     }
 
     public async Task<Kurin?> GetByNumberAsync(string kraiCode, int number, CancellationToken token = default)
@@ -36,9 +36,9 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
         return await Context.Kurins.FirstOrDefaultAsync(k => k.KraiCode == kraiCode && k.Number == number, token);
     }
 
-    public override async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken token = default)
+    public override async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await Context.Kurins.ToListAsync(token);
+        return await Context.Kurins.ToListAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(string kraiCode, int number, CancellationToken token = default)
@@ -56,7 +56,7 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
             .ToListAsync(token);
     }
 
-    public override void Update(Kurin kurin, CancellationToken token = default)
+    public override void Update(Kurin kurin, CancellationToken cancellationToken = default)
     {
         Context.Kurins.Update(kurin);
     }

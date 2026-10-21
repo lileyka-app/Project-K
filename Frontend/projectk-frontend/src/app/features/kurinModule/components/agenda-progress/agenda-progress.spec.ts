@@ -69,7 +69,7 @@ describe('AgendaProgressComponent', () => {
     expect(root.textContent).toContain('1 з 2');
     expect(root.textContent).toContain('Кожному окремо');
     expect(root.textContent).toContain('відмітка: Богдан Гончар');
-    expect(root.querySelectorAll('.agenda-progress__parts li').length).toBe(2);
+    expect(root.querySelectorAll('.agenda-progress__parts li')).toHaveSize(2);
   });
 
   it('gives a youth their own part when no row is theirs to move, through the board endpoint', () => {

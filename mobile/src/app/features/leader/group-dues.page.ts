@@ -454,7 +454,7 @@ interface PersonRow {
             [saving]="saving()"
             [error]="formError()"
             (save)="saveEntry($event)"
-            (cancel)="entryOpen.set(false)"
+            (cancelled)="entryOpen.set(false)"
           />
         </ng-template>
       </ion-modal>
@@ -482,7 +482,7 @@ interface PersonRow {
                 [saving]="saving()"
                 [error]="formError()"
                 (save)="saveQuarterForm(form, $event)"
-                (cancel)="quarterForm.set(null)"
+                (cancelled)="quarterForm.set(null)"
               />
             }
           }
@@ -507,7 +507,7 @@ interface PersonRow {
               [saving]="saving()"
               [error]="formError()"
               (save)="saveKurinRate(d.kurinKey, $event)"
-              (cancel)="kurinRateOpen.set(false)"
+              (cancelled)="kurinRateOpen.set(false)"
             />
           }
         </ng-template>

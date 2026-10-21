@@ -174,6 +174,6 @@ describe('RequestFeedbackInterceptor', () => {
       flush();
     }
 
-    expect(shown.length).toBe(1);
+    expect(shown).toHaveSize(1);
   }));
 });

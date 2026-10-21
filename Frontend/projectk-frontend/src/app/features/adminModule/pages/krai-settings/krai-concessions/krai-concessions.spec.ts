@@ -17,7 +17,7 @@ describe('KraiConcessionsComponent', () => {
     component.add();
 
     const items = component.value()!;
-    expect(items.length).toBe(2);
+    expect(items).toHaveSize(2);
     expect(items[0].key).toMatch(/^p-[a-z0-9]+$/);
     expect(items[0].key).not.toBe(items[1].key);
     expect(items[0]).toEqual(jasmine.objectContaining({ kind: 'percent', value: 10, appliesTo: ['stanytsia'] }));

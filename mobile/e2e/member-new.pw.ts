@@ -18,7 +18,10 @@ const row = (memberKey: string, firstName: string, lastName: string) => ({
 /** Whatever the form sent becomes the new card, so the page that opens shows what was typed. */
 function newMemberApi(opts: { canCreateInGroup: boolean; emailTaken?: boolean }): ExtraApi {
   let created: Record<string, unknown> | null = null;
-  const field = (body: string, name: string) => new RegExp(`name="${name.replace(/[\\[\].]/g, '\\$&')}"\\r\\n\\r\\n([^\\r]*)`).exec(body)?.[1] ?? null;
+  const field = (body: string, name: string) => {
+    const escaped = name.replace(/[\\[\].]/g, String.raw`\$&`);
+    return new RegExp(String.raw`name="${escaped}"\r\n\r\n([^\r]*)`).exec(body)?.[1] ?? null;
+  };
   return ({ method, path, body }): Answer | null => {
     if (method === 'GET') {
       switch (path) {
@@ -103,9 +106,11 @@ test('lets the Звʼязковий add a member to the kurin and opens the new 
   await expect(sheet.locator('ion-title')).toContainText('Новий учасник');
   // A new record: the email is asked for, as the invitation's address; nothing to verify, warn or delete yet.
   await expect(sheet.getByTestId('invite-hint')).toContainText('лист із посиланням для активації акаунта');
-  for (const part of ['profile-verification', 'profile-warnings', 'delete-member', 'pending-account', 'clear-photo']) {
-    await expect(sheet.getByTestId(part)).toHaveCount(0);
-  }
+  await Promise.all(
+    ['profile-verification', 'profile-warnings', 'delete-member', 'pending-account', 'clear-photo'].map((part) =>
+      expect(sheet.getByTestId(part)).toHaveCount(0),
+    ),
+  );
   await expect(sheet.getByTestId('save-profile')).toHaveAttribute('disabled', '');
 
   await fillBasics(sheet);

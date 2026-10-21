@@ -93,55 +93,57 @@ function kurinApi(options: { canUpdate: (memberKey: string) => boolean; duesGrou
     m1: card(ostap, { email: member.email, awards: [award('a1', 'm1', 'First', 'Confirmed')] }),
     m2: card(marta, { middleName: null, awards: [award('a2', 'm2', 'Second', 'Submitted')] }),
   };
+  const readMember = (key: string, rest: string): Answer | null => {
+    switch (rest) {
+      case '': return cards[key] ? ok(cards[key]) : refuse(404);
+      case '/dossier/memberships':
+        return ok([
+          { membershipKey: 'ms1', kurinKey: 'k1', kurinNumber: 7, branch: 'UPYu', kurinNamedAfter: 'Івана Франка', groupKey: 'g1', groupName: 'Соколи', kind: 'Youth', joinedAtUtc: '2020-09-01T00:00:00Z', leftAtUtc: null, isCurrent: true },
+          { membershipKey: 'ms0', kurinKey: 'k9', kurinNumber: 12, branch: 'UPYu', kurinNamedAfter: null, groupKey: null, groupName: null, kind: 'Youth', joinedAtUtc: '2018-09-01T00:00:00Z', leftAtUtc: '2019-06-01T00:00:00Z', isCurrent: false },
+        ]);
+      // A youth reads only their own вкладка.
+      case '/dues':
+        return key !== 'm1' ? refuse(403) : ok({
+          hasAccount: true, kurinKey: 'k1', currentQuarter: { year: 2026, number: 4 }, balance: -150,
+          quarterRate: { stanytsia: 100, krai: 0, kurin: 30, group: 20, total: 150 }, isConcessionNow: false,
+          currentGroupKey: 'g1', currentGroupName: 'Соколи', canOpenGroupDues: false, accounts: [],
+          entries: [{ duesEntryKey: 'de1', kind: 'Contribution', amount: 150, occurredOn: '2026-07-02' }],
+        });
+      case '/badges/progress': return ok(progress(key));
+      case '/probes/probe-1/progress': return ok(probeProgress(key, probe));
+      case '/probes/probe-2/progress':
+        return ok({ probeProgressKey: null, memberKey: key, probeId: 'probe-2', status: 'NotStarted', completedAtUtc: null, verifiedAtUtc: null, pointSignatures: [] });
+    }
+    return null;
+  };
+  const read = (path: string, memberMatch: RegExpExecArray | null): Answer | null => {
+    switch (path) {
+      case 'kurin/k1': return ok(kurin);
+      case 'group/groups': return ok(groups);
+      case 'group/g1': return ok(groups[0]);
+      case 'member/kurins/k1/members': return ok([ostap, marta, olena, ivan, andrii]);
+      case 'member/groups/g1/members': return ok([ostap, marta, ivan]);
+      case 'member/members/kv/k1': return ok([olena, andrii]);
+      case 'group/groups/k1/mentor-assignments':
+        return ok([{ mentorAssignmentKey: 'ma1', mentorUserKey: 'u-m5', groupKey: 'g1', groupName: 'Соколи', assignedAtUtc: '2025-09-01T00:00:00Z', revokedAtUtc: null, member: andrii }]);
+      case 'leadership/type/kurin/k1':
+        return ok({ leadershipKey: 'l1', startDate: '2024-09-01', endDate: null, leadershipHistories: [office('h1', 'Kurinnuy', marta), office('h2', 'Pysar', ivan)] });
+      case 'leadership/type/group/g1':
+        return ok({ leadershipKey: 'l2', startDate: '2024-09-01', endDate: null, leadershipHistories: [office('h-g1', 'Hurtkoviy', marta, 'Group', 'Соколи')] });
+      case 'kurin/k1/dues/groups':
+        return ok((options.duesGroups ?? []).map((groupKey) => ({ groupKey, groupName: 'Соколи' })));
+      case 'catalog/badges': return ok(catalog);
+      case 'kurin/k1/catalog/badges': return ok(catalog);
+      case 'catalog/probes':
+        return ok([{ id: 'probe-1', title: 'Перша проба', pointsCount: 3, sectionsCount: 2 }, { id: 'probe-2', title: 'Друга проба', pointsCount: 4, sectionsCount: 2 }]);
+      case 'catalog/probes/probe-1/grouped': return ok(groupedProbe);
+    }
+    if (memberMatch) return readMember(memberMatch[1], memberMatch[2] ?? '');
+    return null;
+  };
   return ({ method, path, body }): Answer | null => {
     const memberMatch = /^member\/(m\d)(\/.*)?$/.exec(path);
-    if (method === 'GET') {
-      switch (path) {
-        case 'kurin/k1': return ok(kurin);
-        case 'group/groups': return ok(groups);
-        case 'group/g1': return ok(groups[0]);
-        case 'member/kurins/k1/members': return ok([ostap, marta, olena, ivan, andrii]);
-        case 'member/groups/g1/members': return ok([ostap, marta, ivan]);
-        case 'member/members/kv/k1': return ok([olena, andrii]);
-        case 'group/groups/k1/mentor-assignments':
-          return ok([{ mentorAssignmentKey: 'ma1', mentorUserKey: 'u-m5', groupKey: 'g1', groupName: 'Соколи', assignedAtUtc: '2025-09-01T00:00:00Z', revokedAtUtc: null, member: andrii }]);
-        case 'leadership/type/kurin/k1':
-          return ok({ leadershipKey: 'l1', startDate: '2024-09-01', endDate: null, leadershipHistories: [office('h1', 'Kurinnuy', marta), office('h2', 'Pysar', ivan)] });
-        case 'leadership/type/group/g1':
-          return ok({ leadershipKey: 'l2', startDate: '2024-09-01', endDate: null, leadershipHistories: [office('h-g1', 'Hurtkoviy', marta, 'Group', 'Соколи')] });
-        case 'kurin/k1/dues/groups':
-          return ok((options.duesGroups ?? []).map((groupKey) => ({ groupKey, groupName: 'Соколи' })));
-        case 'catalog/badges': return ok(catalog);
-        case 'kurin/k1/catalog/badges': return ok(catalog);
-        case 'catalog/probes':
-          return ok([{ id: 'probe-1', title: 'Перша проба', pointsCount: 3, sectionsCount: 2 }, { id: 'probe-2', title: 'Друга проба', pointsCount: 4, sectionsCount: 2 }]);
-        case 'catalog/probes/probe-1/grouped': return ok(groupedProbe);
-      }
-      if (memberMatch) {
-        const [, key, rest] = memberMatch;
-        switch (rest ?? '') {
-          case '': return cards[key] ? ok(cards[key]) : refuse(404);
-          case '/dossier/memberships':
-            return ok([
-              { membershipKey: 'ms1', kurinKey: 'k1', kurinNumber: 7, branch: 'UPYu', kurinNamedAfter: 'Івана Франка', groupKey: 'g1', groupName: 'Соколи', kind: 'Youth', joinedAtUtc: '2020-09-01T00:00:00Z', leftAtUtc: null, isCurrent: true },
-              { membershipKey: 'ms0', kurinKey: 'k9', kurinNumber: 12, branch: 'UPYu', kurinNamedAfter: null, groupKey: null, groupName: null, kind: 'Youth', joinedAtUtc: '2018-09-01T00:00:00Z', leftAtUtc: '2019-06-01T00:00:00Z', isCurrent: false },
-            ]);
-          // A youth reads only their own вкладка.
-          case '/dues':
-            return key !== 'm1' ? refuse(403) : ok({
-              hasAccount: true, kurinKey: 'k1', currentQuarter: { year: 2026, number: 4 }, balance: -150,
-              quarterRate: { stanytsia: 100, krai: 0, kurin: 30, group: 20, total: 150 }, isConcessionNow: false,
-              currentGroupKey: 'g1', currentGroupName: 'Соколи', canOpenGroupDues: false, accounts: [],
-              entries: [{ duesEntryKey: 'de1', kind: 'Contribution', amount: 150, occurredOn: '2026-07-02' }],
-            });
-          case '/badges/progress': return ok(progress(key));
-          case '/probes/probe-1/progress': return ok(probeProgress(key, probe));
-          case '/probes/probe-2/progress':
-            return ok({ probeProgressKey: null, memberKey: key, probeId: 'probe-2', status: 'NotStarted', completedAtUtc: null, verifiedAtUtc: null, pointSignatures: [] });
-        }
-      }
-      return null;
-    }
+    if (method === 'GET') return read(path, memberMatch);
     if (path === 'auth/check-access') return ok(body?.entityType === 'member' && options.canUpdate(body.entityKey));
     const sign = /^member\/m\d\/probes\/probe-1\/points\/(p\d)\/(sign|unsign)$/.exec(path);
     if (sign) {

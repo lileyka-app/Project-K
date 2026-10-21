@@ -54,8 +54,8 @@
 }
 
 :host ::ng-deep .member-list-table .p-datatable-table {
-    width: 100% !important;
-    min-width: 0 !important;
+    width: 100%;
+    min-width: 0;
 }
 
 @media (max-width: 640px) {
@@ -78,13 +78,13 @@
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row > td,
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.member-row > td {
         align-items: center;
-        border: 0 !important;
+        border: 0;
         display: grid;
         gap: 0.6rem;
         grid-template-columns: 5.25rem minmax(0, 1fr);
         min-width: 0;
         overflow-wrap: anywhere;
-        padding: 0.1rem 0 !important;
+        padding: 0.1rem 0;
     }
 
     :host ::ng-deep .member-list-table .p-datatable-tbody > tr.leadership-row > td::before,
@@ -98,7 +98,7 @@
     .member-list-controls,
     :host ::ng-deep .member-list-table .p-datatable-header .member-list-controls {
         justify-content: flex-start;
-        margin-left: 0 !important;
+        margin-left: 0;
         width: 100%;
     }
 

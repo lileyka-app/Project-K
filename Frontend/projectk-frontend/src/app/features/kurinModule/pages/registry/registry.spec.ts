@@ -214,7 +214,7 @@ describe('RegistryComponent', () => {
     component.confirmTakeBack(person);
     pendingConfirmations[0].accept?.();
 
-    expect(component.former().length).toBe(1);
+    expect(component.former()).toHaveSize(1);
     expect(component.returning()).toBeNull();
   });
 
@@ -224,7 +224,7 @@ describe('RegistryComponent', () => {
       service.former.and.returnValue(throwError(() => new Error('nope'))));
 
     expect(component.former()).toEqual([]);
-    expect(component.youth().length).toBe(1);
+    expect(component.youth()).toHaveSize(1);
   });
 
   it('should search across both tables at once', () => {

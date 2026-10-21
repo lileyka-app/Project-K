@@ -15,6 +15,8 @@ public static partial class PushRoutes
     public const string Base = "/m/";
     public const string Inbox = Base + "tabs/home/notifications";
 
+    private static readonly char[] PathEnd = ['?', '#'];
+
     /// <param name="notification">The saved notification.</param>
     /// <param name="activeKurinKey">
     /// The kurin the recipient's app is in (<c>null</c> when unknown). The review queue opens for the
@@ -22,7 +24,7 @@ public static partial class PushRoutes
     /// </param>
     public static string For(AppNotificationDto notification, Guid? activeKurinKey)
     {
-        var route = (notification.Route ?? string.Empty).Split('?', '#')[0];
+        var route = PathOf(notification);
 
         var member = MemberRoute().Match(route);
         if (member.Success)
@@ -39,25 +41,28 @@ public static partial class PushRoutes
         }
 
         var agenda = AgendaRoute().Match(route);
-        if (agenda.Success)
-        {
-            var isTask = agenda.Groups[1].Value == "tasks";
-            var item = notification.EntityType == "AgendaItem" ? notification.EntityKey : null;
-            // A deleted item has no page left; its list is the nearest place.
-            if (item is null || notification.Type == AppNotificationType.AgendaItemDeleted)
-            {
-                return isTask ? $"{Base}tabs/tasks" : $"{Base}tabs/calendar";
-            }
+        return agenda.Success ? AgendaTarget(agenda, notification) : Inbox;
+    }
 
-            return isTask ? $"{Base}tabs/tasks/task/{item}" : $"{Base}tabs/calendar/event/{item}";
+    private static string AgendaTarget(Match agenda, AppNotificationDto notification)
+    {
+        var isTask = agenda.Groups[1].Value == "tasks";
+        var item = notification.EntityType == "AgendaItem" ? notification.EntityKey : null;
+        // A deleted item has no page left; its list is the nearest place.
+        if (item is null || notification.Type == AppNotificationType.AgendaItemDeleted)
+        {
+            return isTask ? $"{Base}tabs/tasks" : $"{Base}tabs/calendar";
         }
 
-        return Inbox;
+        return isTask ? $"{Base}tabs/tasks/task/{item}" : $"{Base}tabs/calendar/event/{item}";
     }
 
     /// <summary>Whether the route is a review queue: only then does the recipient's kurin matter.</summary>
     public static bool NeedsActiveKurin(AppNotificationDto notification) =>
-        ReviewRoute().IsMatch((notification.Route ?? string.Empty).Split('?', '#')[0]);
+        ReviewRoute().IsMatch(PathOf(notification));
+
+    private static string PathOf(AppNotificationDto notification) =>
+        (notification.Route ?? string.Empty).Split(PathEnd)[0];
 
     [GeneratedRegex("^/member/([^/]+)/?$")]
     private static partial Regex MemberRoute();

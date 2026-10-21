@@ -128,7 +128,7 @@ describe('KurinDuesComponent', () => {
 
     expect(text()).toContain('Каса куреня');
     expect(text()).toContain('Соколи');
-    expect(component.pendingTransfers().length).toBe(2);
+    expect(component.pendingTransfers()).toHaveSize(2);
     expect(component.outstandingTotal()).toBe(155);
     expect(text()).toContain('чекають підтвердження: 2');
   });

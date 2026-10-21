@@ -22,7 +22,6 @@ public class ProvisionMemberAccountCommandHandlerTests
     private readonly Mock<IKurinRepository> _kurinsMock = new();
     private readonly Mock<IAccountProvisioningService> _accountProvisioningMock = new();
     private readonly Mock<IEmailService> _emailServiceMock = new();
-    private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
     private readonly ProvisionMemberAccountCommandHandler _handler;
 
     public ProvisionMemberAccountCommandHandlerTests()
@@ -30,7 +29,6 @@ public class ProvisionMemberAccountCommandHandlerTests
         _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
         _accountProvisioningMock
             .Setup(x => x.CheckAvailabilityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AccountAvailability.Available);
@@ -50,7 +48,6 @@ public class ProvisionMemberAccountCommandHandlerTests
             _accountProvisioningMock.Object,
             new Mock<IDomainEventPublisher>().Object,
             _emailServiceMock.Object,
-            _currentUserContextMock.Object,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<ProvisionMemberAccountCommandHandler>.Instance);
     }
 

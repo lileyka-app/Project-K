@@ -19,7 +19,7 @@ export interface UpsertMemberAwardRequest {
     providedIn: 'root'
 })
 export class MemberAwardService {
-    private apiUrl = `${environment.apiUrl}/member`;
+    private readonly apiUrl = `${environment.apiUrl}/member`;
     private readonly http = inject(HttpClient);
     private readonly cache = inject(ClientCacheService);
 
