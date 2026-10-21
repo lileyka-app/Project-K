@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using ProjectK.Common.Models.Settings;
 using Microsoft.Extensions.Hosting;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
@@ -32,6 +35,10 @@ public class LoginUserCommandHandlerTests
     private readonly ILoginResponseFactory _loginResponseFactory;
     private readonly Mock<IActivityLogger> _activityLoggerMock;
     private readonly Mock<IConfiguration> _configurationMock;
+    private const int ThrottleLimit = 3;
+    private readonly ILoginThrottle _throttle = new LoginThrottle(
+        new MemoryCache(new MemoryCacheOptions()),
+        Options.Create(new LoginThrottleOptions { FailureLimit = ThrottleLimit }));
 
     private readonly LoginUserCommandHandler _handler;
 
@@ -75,7 +82,8 @@ public class LoginUserCommandHandlerTests
             _activityLoggerMock.Object,
             configuration,
             _jwtServiceMock.Object,
-            environment.Object);
+            environment.Object,
+            _throttle);
     }
 
     private static IConfiguration BypassConfiguration() =>
@@ -590,5 +598,61 @@ public class LoginUserCommandHandlerTests
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
             .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
         return user;
+    }
+
+    [Fact]
+    public async Task Handle_ShouldPauseAnAddress_AfterTheFailureLimit_EvenWithTheRightPassword()
+    {
+        var user = TwoFactorUser();
+        _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, "wrong", false))
+            .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
+
+        for (var i = 0; i < ThrottleLimit; i++)
+        {
+            await _handler.Handle(new LoginUserCommand(user.Email!, "wrong"), CancellationToken.None);
+        }
+
+        var result = await _handler.Handle(new LoginUserCommand(user.Email!, "password123"), CancellationToken.None);
+
+        Assert.Equal(ResultType.TooManyRequests, result.Type);
+        Assert.Equal("TooManyAttempts", result.ErrorCode);
+        _signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(user, "password123", false), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldPauseAnUnknownAddress_TheSameWay()
+    {
+        // A pause only for registered addresses would tell a caller which ones exist.
+        const string email = "nobody@example.com";
+        _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((AppUser?)null);
+
+        for (var i = 0; i < ThrottleLimit; i++)
+        {
+            await _handler.Handle(new LoginUserCommand(email, "wrong"), CancellationToken.None);
+        }
+
+        var result = await _handler.Handle(new LoginUserCommand(" NOBODY@example.com ", "wrong"), CancellationToken.None);
+
+        Assert.Equal(ResultType.TooManyRequests, result.Type);
+        Assert.Equal("TooManyAttempts", result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldForgetFailures_AfterASuccessfulPassword()
+    {
+        var user = TwoFactorUser();
+        _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, "wrong", false))
+            .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
+
+        for (var i = 0; i < ThrottleLimit - 1; i++)
+        {
+            await _handler.Handle(new LoginUserCommand(user.Email!, "wrong"), CancellationToken.None);
+        }
+        await _handler.Handle(new LoginUserCommand(user.Email!, "password123"), CancellationToken.None);
+        await _handler.Handle(new LoginUserCommand(user.Email!, "wrong"), CancellationToken.None);
+
+        var result = await _handler.Handle(new LoginUserCommand(user.Email!, "password123"), CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
     }
 }

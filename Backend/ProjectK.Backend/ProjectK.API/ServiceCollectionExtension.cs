@@ -20,6 +20,7 @@ public static class ServiceCollectionExtension
 
         services.Configure<EmailSettings>(configuration.GetSection("Email"));
         services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
+        services.Configure<LoginThrottleOptions>(configuration.GetSection("LoginThrottle"));
         services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
         // Injected wherever the clock decides something — token and invitation expiry, warning
         // windows, the agenda's default range — so those rules can be tested at a fixed instant.

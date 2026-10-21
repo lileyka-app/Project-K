@@ -31,6 +31,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
         services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+        services.AddSingleton<ILoginThrottle, LoginThrottle>();
         services.AddScoped<ISavedSessionList, SavedSessionList>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
