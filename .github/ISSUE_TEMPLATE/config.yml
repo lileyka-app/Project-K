@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Вразливість
-    url: https://github.com/iamavasya/Project-K/security/advisories/new
+    url: https://github.com/lileyka-app/Project-K/security/advisories/new
     about: Проблеми безпеки — приватно, не публічним issue.
   - name: Довідка
-    url: https://github.com/iamavasya/Project-K/tree/main/docs/user
+    url: https://github.com/lileyka-app/Project-K/tree/main/docs/user
     about: Як що працює — для юнака, впорядника, звʼязкового.

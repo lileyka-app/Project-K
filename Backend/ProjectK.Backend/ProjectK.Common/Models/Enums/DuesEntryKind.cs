@@ -30,5 +30,8 @@ public enum DuesEntryKind
     /// Fixes a person's balance without money moving — the way to correct an entry that is already
     /// verified. The only kind whose amount may be negative.
     /// </summary>
-    Correction = 7
+    Correction = 7,
+
+    /// <summary>The kurin box hands the край its статті straight, not through the станиця.</summary>
+    TransferToKrai = 8
 }

@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
-import { OnboardingService, WaitlistEntry, WaitlistEntrySource } from '../../../authModule/services/onboarding-service/onboarding.service';
+import { KraiOption, OnboardingService, WaitlistEntry, WaitlistEntrySource } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -12,6 +12,7 @@ import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { FormsModule } from '@angular/forms';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
+import { SelectModule } from '@openng/optimus-ui/select';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { WaitlistAttentionService } from '../../services/waitlist-attention/waitlist-attention.service';
 import {
@@ -36,6 +37,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     TextareaModule,
     FormsModule,
     SelectButtonModule,
+    SelectModule,
     LocalUtcDatePipe,
     EmptyStateComponent
 ],
@@ -54,6 +56,40 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
         <ng-template pTemplate="footer">
             <p-button label="Скасувати" icon="pi pi-times" text (onClick)="rejectionDialogVisible = false" />
             <p-button label="Відхилити" icon="pi pi-check" severity="danger" (onClick)="confirmReject()" />
+        </ng-template>
+    </p-dialog>
+
+    <p-dialog [(visible)]="approvalDialogVisible" header="Схвалити заявку" [modal]="true" [style]="{ width: 'min(92vw, 450px)' }">
+        <div class="flex flex-col gap-4">
+            <p class="m-0">
+                Схвалити заявку <strong>{{ approvalEntry?.firstName }} {{ approvalEntry?.lastName }}</strong>?
+                На {{ approvalEntry?.email }} піде лист із запрошенням.
+            </p>
+            @if (approvalEntry?.isKurinLeaderCandidate && krais.length) {
+                <div class="flex flex-col gap-2">
+                    <label for="approval-krai">Край куреня</label>
+                    <p-select
+                        inputId="approval-krai"
+                        [options]="krais"
+                        optionLabel="name"
+                        optionValue="code"
+                        [(ngModel)]="approvalKrai"
+                        [filter]="true"
+                        filterBy="name"
+                        appendTo="body"
+                        styleClass="w-full" />
+                    <small class="text-muted-color">
+                        Курінь відкриється в цьому краї, і його число має бути вільним саме тут.
+                        @if (!approvalEntry?.kraiCode && approvalEntry?.regionOrCountry) {
+                            Заявник написав: «{{ approvalEntry?.regionOrCountry }}».
+                        }
+                    </small>
+                </div>
+            }
+        </div>
+        <ng-template pTemplate="footer">
+            <p-button label="Скасувати" icon="pi pi-times" text (onClick)="approvalDialogVisible = false" />
+            <p-button label="Схвалити" icon="pi pi-check" [loading]="approving" (onClick)="confirmApproval()" />
         </ng-template>
     </p-dialog>
 
@@ -87,7 +123,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
             <td>{{ entry.firstName }} {{ entry.lastName }}</td>
             <td>{{ entry.email }}</td>
             <td>{{ entry.stanytsia || '-' }}</td>
-            <td>{{ entry.regionOrCountry || '-' }}</td>
+            <td>{{ kraiName(entry) }}</td>
             <td>
               @if (isDirectAdd(entry)) {
                 <span class="text-gray-400 text-sm italic">Доданий проводом</span>
@@ -178,8 +214,26 @@ export class WaitlistManagementComponent implements OnInit {
   private authService = inject(AuthService);
   private waitlistAttention = inject(WaitlistAttentionService);
 
+  krais: KraiOption[] = [];
+  approvalDialogVisible = false;
+  approvalEntry: WaitlistEntry | null = null;
+  approvalKrai: string | null = null;
+  approving = false;
+
   ngOnInit() {
     this.loadEntries();
+    this.onboardingService.getKrais().subscribe({
+      next: krais => this.krais = krais,
+      // Without the list the column shows what the applicant wrote, and approval keeps their край.
+      error: () => undefined
+    });
+  }
+
+  kraiName(entry: WaitlistEntry): string {
+    return this.krais.find(krai => krai.code === entry.kraiCode)?.name
+      ?? entry.kraiCode
+      ?? entry.regionOrCountry
+      ?? '-';
   }
 
   loadEntries() {
@@ -197,22 +251,28 @@ export class WaitlistManagementComponent implements OnInit {
     });
   }
 
+  /** A leader's approval opens their kurin, so the admin sees its край and may change it first. */
   approve(entry: WaitlistEntry) {
-    this.confirmationService.confirm({
-        message: `Схвалити заявку ${entry.firstName} ${entry.lastName}? На ${entry.email} піде лист із запрошенням.`,
-        header: 'Підтвердити схвалення',
-        icon: 'pi pi-user-plus',
-        accept: () => this.executeApproval(entry)
-    });
+    this.approvalEntry = entry;
+    this.approvalKrai = entry.kraiCode ?? this.krais.find(krai => krai.isDefault)?.code ?? null;
+    this.approvalDialogVisible = true;
   }
 
-  private executeApproval(entry: WaitlistEntry) {
-    this.onboardingService.approveWaitlistEntry(entry.waitlistEntryKey).subscribe({
+  confirmApproval() {
+    const entry = this.approvalEntry;
+    if (!entry) return;
+
+    const kraiCode = entry.isKurinLeaderCandidate ? this.approvalKrai : null;
+    this.approving = true;
+    this.onboardingService.approveWaitlistEntry(entry.waitlistEntryKey, kraiCode).subscribe({
         next: () => {
+          this.approving = false;
+          this.approvalDialogVisible = false;
           this.messageService.add({ severity: 'success', summary: 'Схвалено', detail: 'Запрошення надіслано' });
           this.loadEntries();
-              },
+        },
         error: (err) => {
+          this.approving = false;
           this.messageService.add({ severity: 'error', summary: 'Помилка', detail: err.error?.message || 'Не вдалося схвалити' });
         }
       });

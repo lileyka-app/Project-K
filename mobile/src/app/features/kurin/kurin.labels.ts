@@ -1,5 +1,5 @@
 import { AuthState } from '../../auth/auth.models';
-import { currencySymbol, DEFAULT_CURRENCY } from '../../me/labels';
+import { amountFormat, currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import {
   AwardLevel,
   BadgeCatalogItemDto,
@@ -687,11 +687,9 @@ export function awardGroups(awards: MemberAwardDto[] | null | undefined): AwardG
 
 // ── Dues ─────────────────────────────────────────────────────────────────────────────────────────
 
-const hryvnia = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-
 /** «1 240 ₴», «−300 Kč» with a real minus (web dues-format money). */
-export function duesMoney(amount: number, currency: string = DEFAULT_CURRENCY): string {
-  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ${currencySymbol(currency)}`;
+export function duesMoney(amount: number, currency: string = DEFAULT_CURRENCY, locale: string = DEFAULT_NUMBER_LOCALE): string {
+  return `${amount < 0 ? '−' : ''}${amountFormat(locale).format(Math.abs(amount))} ${currencySymbol(currency)}`;
 }
 
 /** «II кв. 2026» */
@@ -704,6 +702,7 @@ export const DUES_KIND_LABELS: Record<string, string> = {
   Refund: 'Повернення',
   TransferToKurin: 'Передача курінному',
   TransferToStanytsia: 'Передача в станицю',
+  TransferToKrai: 'Передача в край',
   Expense: 'Витрата',
   OtherIncome: 'Інший прихід',
   Exchange: 'Обмін готівка ↔ картка',
@@ -711,10 +710,14 @@ export const DUES_KIND_LABELS: Record<string, string> = {
 };
 
 /** Signed as the history shows it: in is plus, out is minus, an exchange bare. */
-export function duesAmountLabel(entry: { kind: string; amount: number }, currency: string = DEFAULT_CURRENCY): string {
-  if (entry.kind === 'Exchange') return duesMoney(entry.amount, currency);
+export function duesAmountLabel(
+  entry: { kind: string; amount: number },
+  currency: string = DEFAULT_CURRENCY,
+  locale: string = DEFAULT_NUMBER_LOCALE,
+): string {
+  if (entry.kind === 'Exchange') return duesMoney(entry.amount, currency, locale);
   const signed = entry.kind === 'Correction' ? entry.amount : ['Contribution', 'OtherIncome'].includes(entry.kind) ? entry.amount : -entry.amount;
-  return signed > 0 ? `+${duesMoney(signed, currency)}` : duesMoney(signed, currency);
+  return signed > 0 ? `+${duesMoney(signed, currency, locale)}` : duesMoney(signed, currency, locale);
 }
 
 // ── Memberships ──────────────────────────────────────────────────────────────────────────────────

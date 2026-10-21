@@ -20,10 +20,10 @@ function standingOf(balance: number): DuesRow['standing'] {
   return balance < 0 ? 'debt' : 'surplus';
 }
 
-const AMOUNT: Record<DuesRow['standing'], (balance: number, currency: string) => string> = {
+const AMOUNT: Record<DuesRow['standing'], (balance: number, currency: string, locale: string) => string> = {
   ok: () => 'Сплачено',
-  debt: (balance, currency) => money(balance, currency),
-  surplus: (balance, currency) => `+${money(balance, currency)}`
+  debt: (balance, currency, locale) => money(balance, currency, locale),
+  surplus: (balance, currency, locale) => `+${money(balance, currency, locale)}`
 };
 
 const NOTE: Record<DuesRow['standing'], string> = {
@@ -55,7 +55,7 @@ export class MyDuesTileComponent {
       return {
         dues,
         standing,
-        amount: AMOUNT[standing](dues.balance, dues.currency),
+        amount: AMOUNT[standing](dues.balance, dues.currency, dues.numberLocale),
         note: NOTE[standing],
         quarter: quarterLabel({ year: dues.quarterYear, number: dues.quarterNumber })
       };
@@ -69,6 +69,6 @@ export class MyDuesTileComponent {
   }
 
   rate(row: DuesRow): string | null {
-    return row.dues.quarterRate === null ? null : `${money(row.dues.quarterRate, row.dues.currency)} за квартал`;
+    return row.dues.quarterRate === null ? null : `${money(row.dues.quarterRate, row.dues.currency, row.dues.numberLocale)} за квартал`;
   }
 }

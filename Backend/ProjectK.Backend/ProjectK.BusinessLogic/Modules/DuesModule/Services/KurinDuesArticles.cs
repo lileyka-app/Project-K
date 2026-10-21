@@ -7,14 +7,21 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 public static class KurinDuesArticles
 {
     public const string StanytsiaName = "Станиця";
+    public const string KraiName = "Край";
     public const string KurinName = "Курінь";
 
     public const int MaxCount = 20;
     public const int MaxNameLength = 60;
 
-    public static IReadOnlyList<KurinDuesArticle> Standard(decimal stanytsiaFull, decimal stanytsiaReduced, decimal kurinShare) =>
+    /// <summary>
+    /// The two статті a client that knows only three amounts means. In a край the kurins pay straight,
+    /// the part that goes up is the край's, named so.
+    /// </summary>
+    public static IReadOnlyList<KurinDuesArticle> Standard(decimal upFull, decimal upReduced, decimal kurinShare, bool paysKrai = false) =>
     [
-        new() { Name = StanytsiaName, Recipient = DuesRecipient.Stanytsia, Amount = stanytsiaFull, ReducedAmount = stanytsiaReduced },
+        paysKrai
+            ? new() { Name = KraiName, Recipient = DuesRecipient.Krai, Amount = upFull, ReducedAmount = upReduced }
+            : new() { Name = StanytsiaName, Recipient = DuesRecipient.Stanytsia, Amount = upFull, ReducedAmount = upReduced },
         new() { Name = KurinName, Recipient = DuesRecipient.Kurin, Amount = kurinShare, ReducedAmount = kurinShare }
     ];
 
@@ -25,7 +32,7 @@ public static class KurinDuesArticles
     public static bool AreStandard(IReadOnlyList<KurinDuesArticle> articles) =>
         articles.Count == 0
         || (articles.Count == 2
-            && articles[0] is { Name: StanytsiaName, Recipient: DuesRecipient.Stanytsia }
+            && articles[0] is { Name: StanytsiaName, Recipient: DuesRecipient.Stanytsia } or { Name: KraiName, Recipient: DuesRecipient.Krai }
             && articles[1] is { Name: KurinName, Recipient: DuesRecipient.Kurin }
             && articles[1].ReducedAmount == articles[1].Amount);
 }

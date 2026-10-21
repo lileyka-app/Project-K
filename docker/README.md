@@ -14,8 +14,8 @@
   (`PROJECTK_API_URL`), назва середовища в бейджі сайдбару (`PROJECTK_ENVIRONMENT_NAME`) і корінь
   сайту довідки (`PROJECTK_DOCS_URL`): «Довідка»
   на вітальній веде на нього, а в сайдбарі — на його сторінку `/user/start/what-is/`. Дев-контейнери
-  типово дивляться на dev-деплой `docs-dev-projectk.rostyslav-mukha.dev`, реліз і self-host — на
-  production `docs-projectk.rostyslav-mukha.dev`.
+  типово дивляться на dev-деплой `docs-dev.lileyka.app`, реліз і self-host — на
+  production `docs.lileyka.app`.
 - **SQL Server + Azurite — спільна інфраструктура.** Вони запускаються один раз
   (`compose.tools.yml`) у мережі `projectk-dev-net`. Стек кожного середовища підключається до неї і
   працює зі **своєю базою** на тому ж сервері (`projectK_dev`, `projectK_e2e`, …): інструменти
@@ -184,7 +184,7 @@ bash — те саме з `./dev.sh`:
 (див. [NuGet-токен](#nuget-токен-ніколи-не-комітити)), далі `./dev.ps1 up <env> --build`.
 
 **Готовий образ.** Постав `PROJECTK_API_IMAGE` / `PROJECTK_WEB_IMAGE` в env-файлі на конкретний тег
-(наприклад `ghcr.io/iamavasya/projectk-api:1.0`), далі `./dev.ps1 pull <env>` і
+(наприклад `ghcr.io/lileyka-app/projectk-api:1.0`), далі `./dev.ps1 pull <env>` і
 `./dev.ps1 up <env>` — ні збірки, ні токена.
 
 ## Телефонна PWA (`/m/`)

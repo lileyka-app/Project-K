@@ -15,12 +15,16 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
-import { DEFAULT_CURRENCY, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
   DuesEntryKind,
-  KURIN_DUES_KINDS
+  DuesUpstream,
+  KURIN_DUES_KINDS,
+  kurinDuesKinds,
+  paysKrai,
+  paysStanytsia
 } from '../../models/dues.enums';
 import {
   DuesEntryDto,
@@ -60,7 +64,8 @@ export class KurinDuesComponent implements OnInit {
   readonly quarterLabel = quarterLabel;
   readonly quarterShort = quarterShort;
   readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
-  readonly kurinKinds = KURIN_DUES_KINDS;
+  readonly upstream = computed(() => this.data()?.upstream ?? DuesUpstream.Stanytsia);
+  readonly kurinKinds = computed(() => kurinDuesKinds(this.upstream()));
 
   kurinKey = '';
 
@@ -70,9 +75,10 @@ export class KurinDuesComponent implements OnInit {
 
   /** What this kurin counts its вкладка in, from its край's profile. */
   readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
+  readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
   readonly currencySymbol = computed(() => currencySymbol(this.currency()));
-  readonly money = (amount: number): string => money(amount, this.currency());
-  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency());
+  readonly money = (amount: number): string => money(amount, this.currency(), this.numberLocale());
+  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency(), this.numberLocale());
 
   readonly selectedYear = signal<number | null>(null);
   readonly year = computed(() => {
@@ -144,6 +150,17 @@ export class KurinDuesComponent implements OnInit {
       && (quarter === 'all' || quarterKey(this.quarterOfDate(entry.occurredOn)) === quarter));
   });
 
+  /** The край takes money straight, or the kurin still has some of it or sent it before: the край's money shows apart. */
+  readonly hasKrai = computed(() => {
+    const d = this.data();
+    return !!d && (paysKrai(this.upstream()) || d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some(r => r.kraiFull > 0));
+  });
+  /** The same for the станиця: a край paid straight has none, unless old money is still on the way. */
+  readonly hasStanytsia = computed(() => {
+    const d = this.data();
+    return !!d && (paysStanytsia(this.upstream()) || d.toStanytsia !== 0 || d.sentToStanytsia !== 0 || d.rates.some(r => r.stanytsiaFull > 0));
+  });
+  readonly upTo = computed(() => [this.hasStanytsia() ? 'станицю' : '', this.hasKrai() ? 'край' : ''].filter(Boolean).join(' і '));
   readonly outstandingTotal = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
 
   readonly entryDialogVisible = signal(false);
@@ -198,7 +215,7 @@ export class KurinDuesComponent implements OnInit {
   }
 
   amountLabel(entry: DuesEntryDto): string {
-    return duesAmountLabel(entry, this.currency());
+    return duesAmountLabel(entry, this.currency(), this.numberLocale());
   }
 
   isIncoming(entry: DuesEntryDto): boolean | null {

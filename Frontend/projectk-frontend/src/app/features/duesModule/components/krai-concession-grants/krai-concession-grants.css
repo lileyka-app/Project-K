@@ -1,0 +1,80 @@
+.grants {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--lil-line);
+}
+
+.grants__title {
+  margin: 0;
+  font-size: var(--lil-text-body);
+  font-weight: 600;
+}
+
+.grants__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.grants__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--lil-line);
+  border-radius: var(--lil-radius);
+}
+
+.grants__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grants__meta,
+.grants__reason,
+.grants__option small {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.grants__edit,
+.grants__new {
+  width: 100%;
+}
+
+.grants__quarters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.grants__option {
+  display: flex;
+  flex-direction: column;
+}
+
+.grants__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.grants__spacer {
+  flex: 1;
+}
+
+.grants__error {
+  margin: 0;
+  color: var(--lil-dues-debt-fg);
+  font-size: var(--lil-text-caption);
+}

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { LoginResponse } from '../../models/login-response.model';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
@@ -12,7 +12,10 @@ export interface WaitlistRegistration {
   phoneNumber: string;
   dateOfBirth: string;
   stanytsia: string;
-  regionOrCountry: string;
+  /** Free text the form sent before it offered the list of краї; now only when the list would not load. */
+  regionOrCountry?: string | null;
+  /** The край picked from the list; the kurin opens in it once approved. */
+  kraiCode?: string | null;
   isKurinLeaderCandidate: boolean;
   claimedKurinNameOrNumber?: string | null;
   /** The applicant leads a підготовчий курінь, which has no number yet. */
@@ -27,6 +30,16 @@ export interface KurinNumberRange {
   min: number;
   max: number;
 }
+
+/** A край as the join form offers it. */
+export interface KraiOption {
+  code: string;
+  name: string;
+  /** The край a kurin opens in when nobody picks one. */
+  isDefault: boolean;
+}
+
+const kraiNameOrder = new Intl.Collator('uk');
 
 export interface WaitlistEntry extends WaitlistRegistration {
   waitlistEntryKey: string;
@@ -71,12 +84,21 @@ export class OnboardingService {
     return this.http.get<KurinNumberRange>(`${this.apiUrl}/kurin-numbers`);
   }
 
+  /** The default край first, the rest by name in Ukrainian order. */
+  getKrais(): Observable<KraiOption[]> {
+    return this.http.get<KraiOption[]>(`${this.apiUrl}/krais`).pipe(
+      map(krais => [...krais].sort((a, b) =>
+        Number(b.isDefault) - Number(a.isDefault) || kraiNameOrder.compare(a.name, b.name)))
+    );
+  }
+
   getWaitlistEntries(): Observable<WaitlistEntry[]> {
     return this.http.get<WaitlistEntry[]>(`${this.apiUrl}/waitlist`);
   }
 
-  approveWaitlistEntry(key: string): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/waitlist/${key}/approve`, {});
+  /** Without a край the kurin opens in the one the applicant picked, or in the default. */
+  approveWaitlistEntry(key: string, kraiCode?: string | null): Observable<string> {
+    return this.http.post<string>(`${this.apiUrl}/waitlist/${key}/approve`, kraiCode ? { kraiCode } : {});
   }
 
   rejectWaitlistEntry(key: string, note?: string): Observable<string> {

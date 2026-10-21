@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
@@ -64,11 +65,13 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
 {
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
+    private readonly IKraiProfileProvider _profiles;
 
-    public SetKurinDuesRateCommandHandler(IDuesUnitOfWork dues, ICurrentUserContext currentUser)
+    public SetKurinDuesRateCommandHandler(IDuesUnitOfWork dues, ICurrentUserContext currentUser, IKraiProfileProvider profiles)
     {
         _dues = dues;
         _currentUser = currentUser;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<object>> Handle(SetKurinDuesRateCommand request, CancellationToken cancellationToken)
@@ -81,6 +84,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
         var from = new DuesQuarter(request.Request.FromQuarter.Year, request.Request.FromQuarter.Number).Index;
         var rates = await _dues.KurinDuesRates.GetForKurinAsync(request.KurinKey, cancellationToken);
         var existing = rates.FirstOrDefault(r => r.FromQuarter == from);
+        var krai = await _profiles.DuesKraiForKurinAsync(request.KurinKey, cancellationToken);
 
         IReadOnlyList<KurinDuesArticle> articles;
         if (request.Request.Articles is { } sent)
@@ -92,6 +96,13 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
                 Amount = a.Amount,
                 ReducedAmount = a.ReducedAmount ?? a.Amount
             }).ToList();
+
+            // The край decides where its kurins hand money up; a стаття cannot send it elsewhere.
+            if (articles.FirstOrDefault(a => !krai.Takes(a.Recipient)) is { } stray)
+            {
+                return ServiceResult<object>.Failure(ResultType.BadRequest, "DuesRecipientOff",
+                    $"The край does not take вкладка that way: «{stray.Name}».");
+            }
         }
         else
         {
@@ -104,7 +115,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             }
 
             articles = KurinDuesArticles.Standard(
-                request.Request.StanytsiaFull, request.Request.StanytsiaReduced, request.Request.KurinShare);
+                request.Request.StanytsiaFull, request.Request.StanytsiaReduced, request.Request.KurinShare, paysKrai: !krai.Dues.PaysStanytsia);
         }
 
         if (existing is null)

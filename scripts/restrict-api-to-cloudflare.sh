@@ -18,7 +18,7 @@ set -euo pipefail
 subscription="projectk-prod-sub"
 group="rg-projectk-prod-paid"
 app="api-projectk-prod-new"
-host="api-projectk.rostyslav-mukha.dev"
+host="api.lileyka.app"
 
 default_host="$(az webapp show --subscription "$subscription" -g "$group" -n "$app" --query defaultHostName -o tsv)"
 

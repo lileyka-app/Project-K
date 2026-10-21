@@ -14,6 +14,7 @@ import {
   SetKurinDuesRateRequest,
   UpsertDuesEntryRequest
 } from '../../models/group-dues.dto';
+import { GrantDuesConcessionRequest, UpdateDuesConcessionGrantRequest } from '../../models/concession.dto';
 
 @Injectable({ providedIn: 'root' })
 export class DuesService {
@@ -85,6 +86,18 @@ export class DuesService {
 
   setConcession(groupKey: string, membershipKey: string, request: SetDuesConcessionRequest): Observable<unknown> {
     return this.http.put(`${this.apiUrl}/${groupKey}/dues/members/${membershipKey}/concession`, request).pipe(this.invalidate());
+  }
+
+  grantConcession(groupKey: string, membershipKey: string, request: GrantDuesConcessionRequest): Observable<unknown> {
+    return this.http.post(`${this.apiUrl}/${groupKey}/dues/members/${membershipKey}/concessions`, request).pipe(this.invalidate());
+  }
+
+  updateConcessionGrant(groupKey: string, grantKey: string, request: UpdateDuesConcessionGrantRequest): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${groupKey}/dues/concessions/${grantKey}`, request).pipe(this.invalidate());
+  }
+
+  deleteConcessionGrant(groupKey: string, grantKey: string): Observable<unknown> {
+    return this.http.delete(`${this.apiUrl}/${groupKey}/dues/concessions/${grantKey}`).pipe(this.invalidate());
   }
 
   createEntry(groupKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {

@@ -78,4 +78,19 @@ describe('DuesService', () => {
     expect(put.request.body.fromQuarter).toEqual({ year: 2026, number: 3 });
     put.flush({});
   });
+
+  it('пільги краю надаються людині, а змінюються й видаляються за ключем наданої', () => {
+    const request = { concessionKey: 'sibling', fromQuarter: { year: 2026, number: 3 }, toQuarter: null, reason: null };
+    service.grantConcession('g1', 'm1', request).subscribe();
+    const post = http.expectOne(`${baseUrl}/members/m1/concessions`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual(request);
+    post.flush('k1');
+
+    service.updateConcessionGrant('g1', 'k1', { toQuarter: { year: 2026, number: 4 }, reason: 'брат' }).subscribe();
+    expect(http.expectOne(`${baseUrl}/concessions/k1`).request.method).toBe('PUT');
+
+    service.deleteConcessionGrant('g1', 'k1').subscribe();
+    expect(http.expectOne(`${baseUrl}/concessions/k1`).request.method).toBe('DELETE');
+  });
 });

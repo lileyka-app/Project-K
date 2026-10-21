@@ -17,7 +17,11 @@ import { KraiProfileService } from '../../services/krai-profile-service/krai-pro
 import { KraiCardFieldsDocument, KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { KraiCardFieldsComponent, sameCardFields } from './krai-card-fields/krai-card-fields';
-import { currencySymbol, DEFAULT_CURRENCY } from '../../../duesModule/functions/dues-format.function';
+import { KraiConcessionsComponent } from './krai-concessions/krai-concessions';
+import { KraiConcessionReportComponent } from './krai-concession-report/krai-concession-report';
+import { KraiConcessionDocument } from '../../../duesModule/models/concession.dto';
+import { currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../../duesModule/functions/dues-format.function';
+import { DUES_UPSTREAM_LABELS, DuesUpstream } from '../../../duesModule/models/dues.enums';
 
 interface SourceOption {
   code: string;
@@ -40,13 +44,28 @@ function supported(key: 'currency' | 'timeZone'): string[] {
 const CURRENCIES = supported('currency');
 const TIME_ZONES = supported('timeZone');
 
+/** Number formats a край is likely to want; one saved by hand outside this list is kept as an option. */
+const NUMBER_LOCALES = [
+  'uk-UA', 'en-US', 'en-GB', 'en-CA', 'fr-CA', 'en-AU', 'de-DE', 'de-AT', 'de-CH', 'cs-CZ', 'sk-SK', 'pl-PL',
+  'fr-FR', 'it-IT', 'es-ES', 'pt-BR', 'nl-NL', 'ro-RO', 'hu-HU', 'lt-LT', 'lv-LV', 'et-EE', 'sv-SE', 'nb-NO', 'da-DK'
+];
+
+/** «1 234,5» as the locale writes it, so the admin picks by what they see. */
+function sample(locale: string): string {
+  try {
+    return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(1234.5);
+  } catch {
+    return '';
+  }
+}
+
 /**
  * Профіль краю: з яких країв курені бачать вмілості і які з них сховано. Кожне збереження —
  * нова ревізія; історія і є «скасувати», тож відновлення й імпорт теж просто додають ревізію.
  */
 @Component({
   selector: 'app-krai-settings',
-  imports: [FormsModule, ButtonModule, SelectModule, MultiSelectModule, InputTextModule, ToggleSwitchModule, KraiCardFieldsComponent],
+  imports: [FormsModule, ButtonModule, SelectModule, MultiSelectModule, InputTextModule, ToggleSwitchModule, KraiCardFieldsComponent, KraiConcessionsComponent, KraiConcessionReportComponent],
   templateUrl: './krai-settings.html',
   styleUrl: './krai-settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -69,7 +88,13 @@ export class KraiSettingsComponent implements OnInit {
   readonly hidden = signal<ReadonlySet<string>>(new Set());
   readonly currency = signal<string | null>(null);
   readonly timeZone = signal<string | null>(null);
+  readonly numberLocale = signal<string | null>(null);
+  readonly upstream = signal<DuesUpstream>(DuesUpstream.Stanytsia);
+  readonly upstreamOptions = Object.values(DuesUpstream).map(value => ({ value, label: DUES_UPSTREAM_LABELS[value] }));
+  readonly defaultNumberLocale = DEFAULT_NUMBER_LOCALE;
   readonly cardFields = signal<KraiCardFieldsDocument | undefined>(undefined);
+  readonly concessions = signal<KraiConcessionDocument[] | undefined>(undefined);
+  readonly currencyMark = computed(() => currencySymbol(this.currency() ?? DEFAULT_CURRENCY));
   readonly note = signal('');
 
   readonly defaultCurrency = DEFAULT_CURRENCY;
@@ -78,11 +103,23 @@ export class KraiSettingsComponent implements OnInit {
     withValue(CURRENCIES, this.currency()).map(code => ({ code, label: `${code} · ${currencySymbol(code)}` })));
   readonly timeZoneOptions = computed<SourceOption[]>(() =>
     withValue(TIME_ZONES, this.timeZone()).map(code => ({ code, label: code })));
+  readonly numberLocaleOptions = computed<SourceOption[]>(() =>
+    withValue(NUMBER_LOCALES, this.numberLocale()).map(code => ({ code, label: `${code} · ${sample(code)}` })));
   readonly search = signal('');
   readonly shown = signal(PAGE_SIZE);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
+
+  readonly adding = signal(false);
+  readonly newCode = signal('');
+  readonly newName = signal('');
+  readonly newCodeValid = computed(() => /^[a-z]{2,8}$/.test(this.newCode().trim().toLowerCase()));
+  readonly name = signal('');
+  readonly renamed = computed(() => {
+    const name = this.name().trim();
+    return !!name && name !== this.editor()?.kraiName;
+  });
 
   readonly sourceOptions = computed<SourceOption[]>(() => {
     const byCode = new Map<string, SourceOption>();
@@ -141,6 +178,9 @@ export class KraiSettingsComponent implements OnInit {
       || !sameSet(saved?.hiddenBadges ?? [], [...this.hidden()])
       || (locale?.currency ?? null) !== this.currency()
       || (locale?.timeZone ?? null) !== this.timeZone()
+      || (locale?.numberLocale ?? null) !== this.numberLocale()
+      || (editor.document.dues?.upstream ?? DuesUpstream.Stanytsia) !== this.upstream()
+      || JSON.stringify(editor.document.dues?.concessions ?? []) !== JSON.stringify(this.concessions() ?? [])
       || !sameCardFields(editor.document.cardFields, this.cardFields());
   });
 
@@ -151,7 +191,7 @@ export class KraiSettingsComponent implements OnInit {
       badges: this.badgesCatalog.getAll(1000)
     }).subscribe({
       next: ({ krais, badges }) => {
-        this.krais.set(krais);
+        this.krais.set(byName(krais));
         this.badges.set(badges);
         const wanted = this.route.snapshot.queryParamMap.get('code');
         const first = krais.find(krai => krai.code === wanted) ?? krais[0];
@@ -185,6 +225,57 @@ export class KraiSettingsComponent implements OnInit {
       error: () => {
         this.loading.set(false);
         this.fail('Не вдалося завантажити профіль краю.');
+      }
+    });
+  }
+
+  startAdding(): void {
+    this.newCode.set('');
+    this.newName.set('');
+    this.adding.set(true);
+  }
+
+  /** Новий край читає українські вмілості; решту адмін задає тут же, у його профілі. */
+  addKrai(): void {
+    const code = this.newCode().trim().toLowerCase();
+    const name = this.newName().trim();
+    if (!this.newCodeValid() || !name) {
+      return;
+    }
+    this.saving.set(true);
+    this.profiles.create(code, name).subscribe({
+      next: krai => {
+        this.saving.set(false);
+        this.adding.set(false);
+        this.krais.update(krais => byName([...krais, krai]));
+        this.messages.add({ severity: 'success', summary: 'Збережено', detail: `Край «${krai.name}» додано.` });
+        this.select(krai.code);
+      },
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.fail(serverMessage(error) ?? 'Не вдалося додати край.');
+      }
+    });
+  }
+
+  renameKrai(): void {
+    const code = this.kraiCode();
+    const name = this.name().trim();
+    if (!code || !this.renamed()) {
+      return;
+    }
+    this.saving.set(true);
+    this.profiles.rename(code, name).subscribe({
+      next: krai => {
+        this.saving.set(false);
+        this.krais.update(krais => byName(krais.map(item => item.code === krai.code ? krai : item)));
+        this.editor.update(editor => editor ? { ...editor, kraiName: krai.name } : editor);
+        this.name.set(krai.name);
+        this.messages.add({ severity: 'success', summary: 'Збережено', detail: 'Назву краю змінено.' });
+      },
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.fail(serverMessage(error) ?? 'Не вдалося перейменувати край.');
       }
     });
   }
@@ -234,11 +325,28 @@ export class KraiSettingsComponent implements OnInit {
       locale: {
         ...editor.document.locale,
         currency: this.currency() ?? undefined,
-        timeZone: this.timeZone() ?? undefined
+        timeZone: this.timeZone() ?? undefined,
+        numberLocale: this.numberLocale() ?? undefined
       },
+      dues: this.upstream() === DuesUpstream.Stanytsia && !this.concessions()?.length && !editor.document.dues
+        ? undefined
+        : this.duesDocument(editor.document.dues),
       cardFields: this.cardFields()
     };
     this.write(this.profiles.save(editor.kraiCode, editor.revision, document, this.note().trim() || null), 'Профіль збережено.');
+  }
+
+  /** The dues section with only what is set: an unset key stays out rather than going as null. */
+  private duesDocument(saved: KraiProfileDocument['dues']): KraiProfileDocument['dues'] {
+    const dues = { ...saved };
+    delete dues.upstream;
+    delete dues.concessions;
+    const concessions = this.concessions();
+    return {
+      ...dues,
+      ...(this.upstream() === DuesUpstream.Stanytsia ? {} : { upstream: this.upstream() }),
+      ...(concessions?.length ? { concessions } : {})
+    };
   }
 
   restore(revision: KraiProfileRevisionDto): void {
@@ -321,13 +429,21 @@ export class KraiSettingsComponent implements OnInit {
     this.hidden.set(new Set(editor.document.catalog?.hiddenBadges ?? []));
     this.currency.set(editor.document.locale?.currency ?? null);
     this.timeZone.set(editor.document.locale?.timeZone ?? null);
+    this.numberLocale.set(editor.document.locale?.numberLocale ?? null);
+    this.upstream.set(editor.document.dues?.upstream ?? DuesUpstream.Stanytsia);
     this.cardFields.set(editor.document.cardFields);
+    this.concessions.set(editor.document.dues?.concessions?.map(c => ({ ...c, appliesTo: [...c.appliesTo] })));
     this.note.set('');
+    this.name.set(editor.kraiName);
   }
 
   private fail(detail: string): void {
     this.messages.add({ severity: 'error', summary: 'Помилка', detail });
   }
+}
+
+function byName(krais: KraiDto[]): KraiDto[] {
+  return [...krais].sort((a, b) => a.name.localeCompare(b.name, 'uk'));
 }
 
 /** The list with the saved value in it, so a value this browser does not know still shows. */

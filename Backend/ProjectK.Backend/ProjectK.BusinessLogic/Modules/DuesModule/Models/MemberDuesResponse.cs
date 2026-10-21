@@ -12,6 +12,8 @@ public sealed class MemberDuesResponse
     public Guid KurinKey { get; init; }
     /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
     public string Currency { get; init; } = "UAH";
+    /// <summary>How the край writes numbers, such as uk-UA.</summary>
+    public string NumberLocale { get; init; } = "uk-UA";
     public QuarterDto CurrentQuarter { get; init; } = new();
 
     /// <summary>Across every гурток of this kurin: negative is debt, positive a surplus.</summary>
@@ -20,6 +22,9 @@ public sealed class MemberDuesResponse
     /// <summary>What the current quarter costs them in the гурток they stand in now; null when they stand in none.</summary>
     public DuesAmountDto? QuarterRate { get; init; }
     public bool IsConcessionNow { get; init; }
+
+    /// <summary>The край's пільги the person holds this quarter.</summary>
+    public IReadOnlyList<string> ConcessionNamesNow { get; init; } = [];
 
     public Guid? CurrentGroupKey { get; init; }
     public string? CurrentGroupName { get; init; }

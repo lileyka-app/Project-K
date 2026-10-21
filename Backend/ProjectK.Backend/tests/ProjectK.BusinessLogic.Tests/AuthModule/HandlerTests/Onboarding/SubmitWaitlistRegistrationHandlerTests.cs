@@ -106,6 +106,20 @@ public class SubmitWaitlistRegistrationHandlerTests
         _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task Handle_ShouldPersistThePickedKrai_LowerCased()
+    {
+        WaitlistEntry? capturedEntry = null;
+        _waitlistRepository
+            .Setup(x => x.Create(It.IsAny<WaitlistEntry>(), It.IsAny<CancellationToken>()))
+            .Callback<WaitlistEntry, CancellationToken>((entry, _) => capturedEntry = entry);
+
+        await _handler.Handle(CreateCommand(regionOrCountry: null, kraiCode: " PL "), CancellationToken.None);
+
+        capturedEntry!.KraiCode.Should().Be("pl");
+        capturedEntry.RegionOrCountry.Should().BeNull();
+    }
+
     // A rejected applicant comes back with a corrected application; the old entry must not hold
     // the address until its cleanup.
     [Fact]
@@ -168,7 +182,8 @@ public class SubmitWaitlistRegistrationHandlerTests
         string? regionOrCountry = "Ukraine",
         bool isKurinLeaderCandidate = true,
         string? claimedKurinNumber = "97",
-        bool isPreparatoryKurin = false)
+        bool isPreparatoryKurin = false,
+        string? kraiCode = null)
     {
         return new SubmitWaitlistRegistrationCommand(
             "Ihor",
@@ -180,6 +195,7 @@ public class SubmitWaitlistRegistrationHandlerTests
             regionOrCountry,
             isKurinLeaderCandidate,
             claimedKurinNumber,
-            isPreparatoryKurin);
+            isPreparatoryKurin,
+            kraiCode);
     }
 }

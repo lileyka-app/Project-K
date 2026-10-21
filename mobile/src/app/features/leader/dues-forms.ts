@@ -44,6 +44,7 @@ import {
   DuesEntryKind,
   DuesPaymentMethod,
   DuesPersonDto,
+  DuesUpstream,
   KurinDuesRateDto,
   QuarterDto,
   SetKurinDuesRateRequest,
@@ -481,7 +482,7 @@ export class DuesQuarterForm implements OnInit {
         <ion-item-group>
           <ion-item>
             <ion-input
-              [label]="'Станиця, повна, ' + symbol()"
+              [label]="up() + ', повна, ' + symbol()"
               inputmode="decimal"
               placeholder="0"
               [value]="full()"
@@ -491,7 +492,7 @@ export class DuesQuarterForm implements OnInit {
           </ion-item>
           <ion-item>
             <ion-input
-              [label]="'Станиця, пільгова, ' + symbol()"
+              [label]="up() + ', пільгова, ' + symbol()"
               inputmode="decimal"
               placeholder="як повна"
               [value]="reduced()"
@@ -515,7 +516,7 @@ export class DuesQuarterForm implements OnInit {
         <p class="error" role="alert">Пільгова не може бути вищою за повну.</p>
       }
       <p class="hint">
-        Станична й курінна частини квартальної вкладки — однакові для всіх гуртків куреня. Пільга знижує лише станичну.
+        {{ upAdjective() }} й курінна частини квартальної вкладки — однакові для всіх гуртків куреня. Пільга знижує лише {{ upAdjective().toLowerCase() }}.
       </p>
       @if (error(); as message) { <p class="error" role="alert">{{ message }}</p> }
     </ion-content>
@@ -528,6 +529,10 @@ export class DuesKurinRateForm implements OnInit {
   readonly saving = input(false);
   readonly currency = input(DEFAULT_CURRENCY);
   protected readonly symbol = computed(() => currencySymbol(this.currency()));
+  /** In a край paid straight the part that goes up is the край's, and the server names it so. */
+  readonly upstream = input<DuesUpstream>('stanytsia');
+  protected readonly up = computed(() => (this.upstream() === 'krai' ? 'Край' : 'Станиця'));
+  protected readonly upAdjective = computed(() => (this.upstream() === 'krai' ? 'Крайова' : 'Станична'));
   readonly error = input<string | null>(null);
   readonly save = output<SetKurinDuesRateRequest>();
   readonly cancel = output<void>();
@@ -551,8 +556,9 @@ export class DuesKurinRateForm implements OnInit {
     const now = rateAt(this.rates(), current);
     const text = (value: number | undefined) => (value === undefined ? '' : String(value));
     this.from.set(quarterKey(current));
-    this.full.set(text(now?.stanytsiaFull));
-    this.reduced.set(text(now?.stanytsiaReduced ?? now?.stanytsiaFull));
+    const krai = this.upstream() === 'krai';
+    this.full.set(text(krai ? now?.kraiFull : now?.stanytsiaFull));
+    this.reduced.set(text(krai ? (now?.kraiReduced ?? now?.kraiFull) : (now?.stanytsiaReduced ?? now?.stanytsiaFull)));
     this.share.set(text(now?.kurinShare));
   }
 

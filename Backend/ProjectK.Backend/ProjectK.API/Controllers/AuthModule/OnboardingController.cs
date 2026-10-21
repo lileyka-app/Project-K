@@ -17,6 +17,8 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPasswor
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvitationToken;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
+using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
@@ -66,15 +68,38 @@ public class OnboardingController : ControllerBase
         => Ok(new KurinNumberRange(KurinNumberOptions.MinNumber, numbers.Value.MaxNumber));
 
     /// <summary>
+    /// The краї the form offers, by code and name only. Open to anyone, like the form itself.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("krais")]
+    [ProducesResponseType(typeof(IReadOnlyList<KraiNameResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetKraiNames()
+    {
+        var response = await _mediator.Send(new GetKraiNamesQuery());
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
     /// Approves a waitlist entry and emails the applicant an invitation link.
     /// </summary>
+    /// <remarks>
+    /// The body is optional: a край in it overrides the one the applicant picked, and the kurin opens there.
+    /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("waitlist/{key}/approve")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ApproveWaitlistEntry(Guid key)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApproveWaitlistEntry(Guid key, [FromBody] ApproveWaitlistEntryRequest? request)
     {
-        var response = await _mediator.Send(new ApproveWaitlistEntryCommand(key));
+        var response = await _mediator.Send(new ApproveWaitlistEntryCommand(key, request?.KraiCode));
         return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>POST waitlist/{key}/approve</c>.</summary>
+    public sealed class ApproveWaitlistEntryRequest
+    {
+        public string? KraiCode { get; set; }
     }
 
     /// <summary>

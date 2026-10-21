@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { DuesRecipient } from '../../models/dues.enums';
+import { DuesRecipient, DuesUpstream } from '../../models/dues.enums';
 import { KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
 import { KurinRateDialogComponent } from './kurin-rate-dialog';
 
@@ -16,16 +16,19 @@ describe('KurinRateDialogComponent', () => {
     stanytsiaFull: 240,
     stanytsiaReduced: 180,
     kurinShare: 50,
-    kurinReduced: 50
+    kurinReduced: 50,
+    kraiFull: 0,
+    kraiReduced: 0
   };
 
-  function open(rates: KurinDuesRateDto[] = [rate]) {
+  function open(rates: KurinDuesRateDto[] = [rate], upstream = DuesUpstream.Stanytsia) {
     TestBed.configureTestingModule({ imports: [KurinRateDialogComponent], providers: [provideNoopAnimations()] });
     const fixture = TestBed.createComponent(KurinRateDialogComponent);
     fixture.componentRef.setInput('rates', rates);
     fixture.componentRef.setInput('years', years);
     fixture.componentRef.setInput('currentQuarter', q(2026, 4));
     fixture.componentRef.setInput('currency', 'CZK');
+    fixture.componentRef.setInput('upstream', upstream);
     fixture.componentRef.setInput('visible', true);
     fixture.detectChanges();
     return fixture.componentInstance;
@@ -74,6 +77,25 @@ describe('KurinRateDialogComponent', () => {
     dialog.submit();
 
     expect(sent?.articles[1]).toEqual({ name: 'Табірний фонд', recipient: DuesRecipient.Kurin, amount: 70, reducedAmount: 70 });
+  });
+
+  it('in a край paid straight, starts a new kurin with a край стаття and offers no станиця', () => {
+    const dialog = open([], DuesUpstream.Krai);
+
+    expect(dialog.articles().map(a => [a.name, a.recipient])).toEqual([
+      ['Край', DuesRecipient.Krai],
+      ['Курінь', DuesRecipient.Kurin]
+    ]);
+    expect(dialog.recipientOptions().map(o => o.value)).toEqual([DuesRecipient.Krai, DuesRecipient.Kurin]);
+  });
+
+  it('names a стаття that still goes to the станиця after the край stopped taking it', () => {
+    const dialog = open([rate], DuesUpstream.Krai);
+
+    expect(dialog.recipientOptions().map(o => o.value)).toContain(DuesRecipient.Stanytsia);
+    expect(dialog.errors()).toContain('Край не приймає вкладку через станицю: зміни, кому йде «Станиця».');
+    dialog.setArticle(dialog.articles()[0].id, { recipient: DuesRecipient.Krai });
+    expect(dialog.valid()).toBeTrue();
   });
 
   it('will not save two статті of one name or a пільга above the full amount', () => {

@@ -72,7 +72,7 @@ public class DuesEntryHandlerTests
             .ReturnsAsync([_youth, _moved]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(_kurin.KurinKey);
-        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object);
+        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Interfaces.Modules.KraiModule.IKraiProfileProvider>());
     }
 
     private static UpsertDuesEntryRequest Contribution(Guid membershipKey, decimal amount = 300) => new()
@@ -157,6 +157,40 @@ public class DuesEntryHandlerTests
         delete.Type.Should().Be(ResultType.Conflict);
         _entries.Single().Amount.Should().Be(300);
         _entries.Single().IsDeleted.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ATransferTheKurinReceived_CannotBeChangedOrDeletedByTheGroup()
+    {
+        var transfer = new DuesEntry
+        {
+            KurinKey = _kurin.KurinKey,
+            GroupKey = _group.GroupKey,
+            Kind = DuesEntryKind.TransferToKurin,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 200,
+            OccurredOn = new DateOnly(2026, 5, 2),
+            ReceivedAtUtc = _time.GetUtcNow().UtcDateTime
+        };
+        _entries.Add(transfer);
+        var edited = new UpsertDuesEntryRequest
+        {
+            Kind = DuesEntryKind.TransferToKurin,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 400,
+            OccurredOn = new DateOnly(2026, 5, 2)
+        };
+
+        var update = await new UpdateDuesEntryCommandHandler(Access(), Writer(), _dues.Object, _user.Object, _time)
+            .Handle(new UpdateDuesEntryCommand(_group.GroupKey, transfer.DuesEntryKey, edited), CancellationToken.None);
+        var delete = await new DeleteDuesEntryCommandHandler(Access(), _dues.Object, _user.Object, _time)
+            .Handle(new DeleteDuesEntryCommand(_group.GroupKey, transfer.DuesEntryKey), CancellationToken.None);
+
+        update.Type.Should().Be(ResultType.Conflict);
+        update.ErrorCode.Should().Be("TransferReceived");
+        delete.ErrorCode.Should().Be("TransferReceived");
+        transfer.Amount.Should().Be(200);
+        transfer.IsDeleted.Should().BeFalse();
     }
 
     [Fact]

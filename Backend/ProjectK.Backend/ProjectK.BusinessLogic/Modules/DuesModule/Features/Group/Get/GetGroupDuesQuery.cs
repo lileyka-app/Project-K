@@ -66,11 +66,13 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         var concessions = await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken);
         var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
         var entries = await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken);
+        var grants = await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken);
         var names = await DuesNames.LoadAsync(_memberships, _members, kurinKey, cancellationToken);
 
-        var ledger = new DuesLedger(kurinRates, groupRates, concessions, charges, entries);
+        var ledger = new DuesLedger(kurinRates, groupRates, concessions, charges, entries, grants);
         var accounts = ledger.Accounts();
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        var current = krai.QuarterOf(_time.GetUtcNow());
 
         // A membership the kurin no longer has is a removed person, not someone who left: their rows
         // were closed on removal, and older leftovers must not show as a nameless line.
@@ -89,13 +91,19 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
                     FullName = names.OfMembership(a.MembershipKey),
                     Standing = standing,
                     IsConcessionNow = ledger.IsConcession(a.MembershipKey, current),
+                    Grants = grants
+                        .Where(g => g.MembershipKey == a.MembershipKey)
+                        .OrderByDescending(g => g.FromQuarter)
+                        .Select(g => DuesConcessionGrantDto.From(g, current))
+                        .ToList(),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
                         Quarter = Quarter(q.Quarter),
                         Charged = Amount(q.Charged),
                         Paid = Amount(q.Paid),
                         Balance = q.Balance,
-                        IsConcession = q.IsConcession
+                        IsConcession = q.IsConcession,
+                        ConcessionName = q.ConcessionName
                     }).ToList(),
                     Charged = a.Charged,
                     Payments = a.Payments,
@@ -126,7 +134,10 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             GroupKey = group.GroupKey,
             KurinKey = kurinKey,
             GroupName = group.Name,
-            Currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken),
+            Currency = krai.Currency,
+            NumberLocale = krai.NumberLocale,
+            Upstream = krai.Dues.Upstream,
+            KraiConcessions = krai.Dues.Concessions.Select(KraiConcessionDto.From).ToList(),
             CurrentQuarter = Quarter(current),
             Years = Years(charges, current),
             KurinRates = kurinRates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
@@ -179,5 +190,5 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
     private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
 
     private static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
+        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }

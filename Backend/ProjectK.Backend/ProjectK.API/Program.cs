@@ -151,10 +151,12 @@ public static class Program
         {
             options.AddPolicy("EnvCorsPolicy", policy =>
             {
-                var frontendUrl = builder.Configuration["EnvCorsOrigin"];
-                if (!string.IsNullOrEmpty(frontendUrl))
+                // Comma-separated: a domain move keeps the old frontend origin working until it redirects.
+                var origins = (builder.Configuration["EnvCorsOrigin"] ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (origins.Length > 0)
                 {
-                    policy.WithOrigins(frontendUrl)
+                    policy.WithOrigins(origins)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();

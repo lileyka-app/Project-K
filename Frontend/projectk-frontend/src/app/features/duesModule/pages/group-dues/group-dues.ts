@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -16,15 +17,18 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { DEFAULT_CURRENCY, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
+import { KraiConcessionGrantsComponent } from '../../components/krai-concession-grants/krai-concession-grants';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
   DUES_STANDING_LABELS,
   DuesEntryKind,
-  GROUP_DUES_KINDS
+  DuesUpstream,
+  GROUP_DUES_KINDS,
+  paysStanytsia
 } from '../../models/dues.enums';
 import {
   DuesAccountDto,
@@ -54,7 +58,7 @@ interface AccountRow {
   imports: [
     DatePipe, NgTemplateOutlet, FormsModule, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule, DialogModule,
     InputTextModule, ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule,
-    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent
+    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent, KraiConcessionGrantsComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './group-dues.html',
@@ -72,9 +76,13 @@ export class GroupDuesComponent implements OnInit {
 
   /** What this kurin counts its вкладка in, from its край's profile. */
   readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
+  readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
+  readonly upstream = computed(() => this.data()?.upstream ?? DuesUpstream.Stanytsia);
+  /** A край paid straight has no станиця part, unless an old rate still sets one. */
+  readonly showStanytsia = (stanytsiaFull: number): boolean => stanytsiaFull > 0 || paysStanytsia(this.upstream());
   readonly currencySymbol = computed(() => currencySymbol(this.currency()));
-  readonly money = (amount: number): string => money(amount, this.currency());
-  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency());
+  readonly money = (amount: number): string => money(amount, this.currency(), this.numberLocale());
+  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency(), this.numberLocale());
 
   groupKey = '';
 
@@ -152,7 +160,7 @@ export class GroupDuesComponent implements OnInit {
   readonly quarterTotal = computed(() => {
     const kurin = this.kurinRateNow();
     const group = this.groupRateNow() ?? 0;
-    return (kurin?.stanytsiaFull ?? 0) + (kurin?.kurinShare ?? 0) + group;
+    return (kurin?.stanytsiaFull ?? 0) + (kurin?.kraiFull ?? 0) + (kurin?.kurinShare ?? 0) + group;
   });
 
   readonly entryDialogVisible = signal(false);
@@ -174,6 +182,11 @@ export class GroupDuesComponent implements OnInit {
   readonly concessionFromQuarter = signal<string>('');
   readonly concessionOn = signal(true);
   readonly savingConcession = signal(false);
+  /** The person in the пільга dialog as the last read has them, so a saved grant shows at once. */
+  readonly concessionAccount = computed(() => {
+    const target = this.concessionTarget();
+    return this.data()?.accounts.find(a => a.membershipKey === target?.membershipKey) ?? target;
+  });
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -205,6 +218,10 @@ export class GroupDuesComponent implements OnInit {
     this.personFilter.set(this.personFilter() === account.membershipKey ? null : account.membershipKey);
   }
 
+  activeGrantNames(account: DuesAccountDto): string[] {
+    return (account.grants ?? []).filter(g => g.isActiveNow).map(g => g.name);
+  }
+
   standingLabel(account: DuesAccountDto): string | null {
     return DUES_STANDING_LABELS[account.standing];
   }
@@ -214,7 +231,7 @@ export class GroupDuesComponent implements OnInit {
   }
 
   amountLabel(entry: DuesEntryDto): string {
-    return duesAmountLabel(entry, this.currency());
+    return duesAmountLabel(entry, this.currency(), this.numberLocale());
   }
 
   isIncoming(entry: DuesEntryDto): boolean | null {
@@ -227,7 +244,8 @@ export class GroupDuesComponent implements OnInit {
   }
 
   canEdit(entry: DuesEntryDto): boolean {
-    return !!this.data()?.viewer.canKeep && !entry.isVerified;
+    // A transfer the kurin received is the kurin's money now: changing it here would change its box.
+    return !!this.data()?.viewer.canKeep && !entry.isVerified && !entry.receivedAtUtc;
   }
 
   openEntryDialog(entry: DuesEntryDto | null = null): void {
@@ -251,7 +269,7 @@ export class GroupDuesComponent implements OnInit {
       },
       error: (error: unknown) => {
         this.savingEntry.set(false);
-        this.entryError.set(failureDetail(error, 'Не вдалося записати. Спробуй ще раз.'));
+        this.entryError.set(lockedReason(error) ?? failureDetail(error, 'Не вдалося записати. Спробуй ще раз.'));
       }
     });
   }
@@ -329,7 +347,7 @@ export class GroupDuesComponent implements OnInit {
     }
     this.savingConcession.set(true);
     this.dues.setConcession(this.groupKey, target.membershipKey, { fromQuarter: from, isConcession: this.concessionOn() }).subscribe({
-      next: () => { this.savingConcession.set(false); this.concessionDialogVisible.set(false); this.load(); },
+      next: () => { this.savingConcession.set(false); this.load(); },
       error: () => this.savingConcession.set(false)
     });
   }
@@ -350,4 +368,13 @@ export class GroupDuesComponent implements OnInit {
       .filter(r => index(from(r)) <= index(current))
       .sort((a, b) => index(from(b)) - index(from(a)))[0] ?? null;
   }
+}
+
+/** Why the server kept an operation as it was, when someone locked it while the dialog was open. */
+function lockedReason(error: unknown): string | null {
+  const code = error instanceof HttpErrorResponse && error.status === 409 ? (error.error as { error?: unknown } | null)?.error : null;
+  if (code === 'TransferReceived') {
+    return 'Курінний уже прийняв цю передачу. Змінити її можна, лише коли він зніме підтвердження.';
+  }
+  return code === 'EntryVerified' ? 'Операцію вже перевірено, її не змінити.' : null;
 }

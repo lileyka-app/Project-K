@@ -27,6 +27,10 @@ public class KurinDuesRate : Entity
     /// <summary>The kurin part with a пільга. Null on rates set before статті: the пільга did not touch it.</summary>
     public decimal? KurinReduced { get; set; }
 
+    /// <summary>What goes to the край on its own transfer. Zero until a kurin names a край стаття.</summary>
+    public decimal KraiFull { get; set; }
+    public decimal KraiReduced { get; set; }
+
     public Guid? SetByUserKey { get; set; }
 
     /// <summary>Replaces the статті and works the totals out from them.</summary>
@@ -35,8 +39,11 @@ public class KurinDuesRate : Entity
         Articles = articles.ToList();
         var up = Articles.Where(a => a.Recipient == DuesRecipient.Stanytsia).ToList();
         var own = Articles.Where(a => a.Recipient == DuesRecipient.Kurin).ToList();
+        var krai = Articles.Where(a => a.Recipient == DuesRecipient.Krai).ToList();
         StanytsiaFull = up.Sum(a => a.Amount);
         StanytsiaReduced = up.Sum(a => a.ReducedAmount);
+        KraiFull = krai.Sum(a => a.Amount);
+        KraiReduced = krai.Sum(a => a.ReducedAmount);
         KurinShare = own.Sum(a => a.Amount);
         KurinReduced = own.Sum(a => a.ReducedAmount);
     }

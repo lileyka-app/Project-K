@@ -328,6 +328,9 @@
                     @if (d.isConcessionNow) {
                         <p-tag value="пільгова" severity="info" />
                     }
+                    @for (name of d.concessionNamesNow ?? []; track name) {
+                        <p-tag [value]="name" severity="info" />
+                    }
                 </div>
 
                 <div class="dues-tile-balance" [class.dues-tile-balance--ok]="d.balance === 0" [class.dues-tile-balance--debt]="d.balance < 0" [class.dues-tile-balance--surplus]="d.balance > 0">

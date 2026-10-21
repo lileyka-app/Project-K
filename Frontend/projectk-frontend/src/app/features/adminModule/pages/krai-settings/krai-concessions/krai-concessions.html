@@ -1,0 +1,72 @@
+<ul class="concessions" data-testid="krai-concessions">
+  @for (item of items(); track item.key; let index = $index) {
+    <li class="concessions__row">
+      <div class="concessions__field concessions__field--wide">
+        <label [for]="'concession-name-' + index">Назва</label>
+        <input
+          pInputText
+          [id]="'concession-name-' + index"
+          [ngModel]="item.name"
+          (ngModelChange)="update(index, { name: $event })"
+          maxlength="80"
+          placeholder="Брат чи сестра в курені"
+          [disabled]="disabled()" />
+      </div>
+      <div class="concessions__field">
+        <label [for]="'concession-kind-' + index">Як знижує</label>
+        <p-select
+          [inputId]="'concession-kind-' + index"
+          [options]="kindOptions"
+          optionLabel="label"
+          optionValue="kind"
+          [ngModel]="item.kind"
+          (ngModelChange)="setKind(index, $event)"
+          [disabled]="disabled()"
+          appendTo="body" />
+      </div>
+      @if (item.kind !== 'exempt') {
+        <div class="concessions__field concessions__field--value">
+          <label [for]="'concession-value-' + index">{{ item.kind === 'percent' ? 'Відсоток' : 'Сума за квартал' }}, {{ unit(item) }}</label>
+          <input
+            pInputText
+            [id]="'concession-value-' + index"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            [attr.max]="item.kind === 'percent' ? 100 : null"
+            step="0.01"
+            [ngModel]="item.value"
+            (ngModelChange)="setValue(index, $event)"
+            [disabled]="disabled()" />
+        </div>
+      }
+      <fieldset class="concessions__parts">
+        <legend>Що знижує</legend>
+        @for (option of parts; track option.part) {
+          <span class="concessions__part">
+            <p-checkbox
+              [inputId]="'concession-' + index + '-' + option.part"
+              [binary]="true"
+              [ngModel]="covers(item, option.part)"
+              (ngModelChange)="setPart(index, option.part, $event)"
+              [disabled]="disabled()" />
+            <label [for]="'concession-' + index + '-' + option.part">{{ option.label }}</label>
+          </span>
+        }
+      </fieldset>
+      <div class="concessions__actions">
+        <small class="concessions__key">ключ {{ item.key }}</small>
+        <p-button
+          icon="pi pi-trash"
+          severity="secondary"
+          variant="text"
+          [ariaLabel]="'Прибрати пільгу ' + (item.name || item.key)"
+          [disabled]="disabled()"
+          (onClick)="remove(index)" />
+      </div>
+    </li>
+  } @empty {
+    <li class="concessions__empty">Власних пільг у краю немає. Пільга куреня («з пільгою» в статтях) працює й без них.</li>
+  }
+</ul>
+<p-button label="Додати пільгу" icon="pi pi-plus" severity="secondary" variant="text" [disabled]="disabled()" (onClick)="add()" />

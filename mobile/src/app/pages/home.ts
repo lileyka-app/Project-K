@@ -405,7 +405,7 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
                 </ion-card-header>
                 @if (item.quarterRate !== null) {
                   <ion-card-content>
-                    <p>Ставка {{ money(item.quarterRate, item.currency) }} за квартал{{ item.isConcession ? ' (пільга)' : '' }}</p>
+                    <p>Ставка {{ money(item.quarterRate, item.currency, item.numberLocale) }} за квартал{{ item.isConcession ? ' (пільга)' : '' }}</p>
                   </ion-card-content>
                 }
               </ion-card>
@@ -518,8 +518,8 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   protected duesTitle(item: MyDuesDto): string {
-    if (item.balance < 0) return `Борг ${money(-item.balance, item.currency)}`;
-    if (item.balance > 0) return `Сплачено, +${money(item.balance, item.currency)}`;
+    if (item.balance < 0) return `Борг ${money(-item.balance, item.currency, item.numberLocale)}`;
+    if (item.balance > 0) return `Сплачено, +${money(item.balance, item.currency, item.numberLocale)}`;
     return 'Сплачено';
   }
 

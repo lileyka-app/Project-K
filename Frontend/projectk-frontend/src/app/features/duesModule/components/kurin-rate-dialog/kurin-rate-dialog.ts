@@ -4,9 +4,9 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { SelectModule } from '@openng/optimus-ui/select';
-import { DEFAULT_CURRENCY, money, quarterKey } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, money, quarterKey } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
-import { DUES_RECIPIENT_LABELS, DuesRecipient } from '../../models/dues.enums';
+import { DUES_RECIPIENT_LABELS, DuesRecipient, DuesUpstream, duesRecipients } from '../../models/dues.enums';
 import { KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
 
 /** One row of the dialog: a стаття as it is being typed. */
@@ -41,6 +41,10 @@ export class KurinRateDialogComponent {
   readonly saving = input(false);
   /** ISO 4217 code of the край's currency, for the totals. */
   readonly currency = input(DEFAULT_CURRENCY);
+  /** How the край writes numbers, such as uk-UA. */
+  readonly numberLocale = input(DEFAULT_NUMBER_LOCALE);
+  /** Where the край takes the вкладка; a стаття may send its money only there or to the kurin. */
+  readonly upstream = input(DuesUpstream.Stanytsia);
   readonly save = output<SetKurinDuesRateRequest>();
 
   readonly fromQuarter = signal('');
@@ -48,8 +52,14 @@ export class KurinRateDialogComponent {
 
   readonly maxArticles = MAX_DUES_ARTICLES;
   readonly maxNameLength = MAX_DUES_ARTICLE_NAME;
-  readonly recipientOptions = [DuesRecipient.Stanytsia, DuesRecipient.Kurin]
-    .map(value => ({ value, label: DUES_RECIPIENT_LABELS[value] }));
+  readonly allowedRecipients = computed(() => duesRecipients(this.upstream()));
+  /** The край's choices, and a стаття's own recipient even when the край no longer takes it, so it shows. */
+  readonly recipientOptions = computed(() => {
+    const shown = new Set([...this.allowedRecipients(), ...this.articles().map(a => a.recipient)]);
+    return [DuesRecipient.Stanytsia, DuesRecipient.Krai, DuesRecipient.Kurin]
+      .filter(value => shown.has(value))
+      .map(value => ({ value, label: DUES_RECIPIENT_LABELS[value] }));
+  });
 
   readonly fromQuarterOptions = computed(() => fromQuarterOptions(this.years(), this.currentQuarter()));
 
@@ -80,12 +90,17 @@ export class KurinRateDialogComponent {
     if (rows.some(a => a.reducedAmount !== null && Number(a.reducedAmount) > Number(a.amount))) {
       errors.push('Пільгова сума не може бути вищою за повну.');
     }
+    const allowed = this.allowedRecipients();
+    const stray = rows.find(a => !allowed.includes(a.recipient));
+    if (stray) {
+      errors.push(`Край не приймає вкладку ${stray.recipient === DuesRecipient.Krai ? 'напряму' : 'через станицю'}: зміни, кому йде «${stray.name.trim()}».`);
+    }
     return errors;
   });
 
   readonly valid = computed(() => this.errors().length === 0);
 
-  readonly money = (amount: number): string => money(amount, this.currency());
+  readonly money = (amount: number): string => money(amount, this.currency(), this.numberLocale());
 
   private nextId = 0;
 
@@ -143,7 +158,9 @@ export class KurinRateDialogComponent {
     this.articles.set(now
       ? now.articles.map(a => this.row(a.name, a.recipient, a.amount, a.reducedAmount === a.amount ? null : a.reducedAmount))
       : [
-          this.row('Станиця', DuesRecipient.Stanytsia, null, null),
+          this.upstream() === DuesUpstream.Krai
+            ? this.row('Край', DuesRecipient.Krai, null, null)
+            : this.row('Станиця', DuesRecipient.Stanytsia, null, null),
           this.row('Курінь', DuesRecipient.Kurin, null, null)
         ]);
   }

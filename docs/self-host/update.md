@@ -4,7 +4,7 @@
 
 ## Перед оновленням
 
-1. Прочитай нотатки до релізу на [GitHub Releases](https://github.com/iamavasya/Project-K/releases):
+1. Прочитай нотатки до релізу на [GitHub Releases](https://github.com/lileyka-app/Project-K/releases):
    там сказано, чи є нові міграції і нові змінні `.env`.
 2. Зроби [копії бази і файлів](backup-restore.md).
 3. Збережи поточний `.env`.
@@ -45,9 +45,13 @@ API застосовує міграції EF Core на старті. Велик�
 Compose тягне образи за `PROJECTK_VERSION`:
 
 ```text
-ghcr.io/iamavasya/projectk-api:${PROJECTK_VERSION}
-ghcr.io/iamavasya/projectk-web:${PROJECTK_VERSION}
+ghcr.io/lileyka-app/projectk-api:${PROJECTK_VERSION}
+ghcr.io/lileyka-app/projectk-web:${PROJECTK_VERSION}
 ```
+
+До переїзду в організацію `lileyka-app` образи лежали в `ghcr.io/iamavasya/…`. Якщо в твоєму
+`compose.yml` досі стара адреса, заміни `iamavasya` на `lileyka-app`. Нові версії ще якийсь час
+дублюються й за старою адресою, але з часом ця копія зникне.
 
 Для живих інсталяцій — явна версія (наприклад `1.1.9`). Тег `beta` рухається до найновішої бети і
 годиться лише тим, хто свідомо хоче йти за нею.

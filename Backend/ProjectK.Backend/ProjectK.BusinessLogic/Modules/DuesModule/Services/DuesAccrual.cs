@@ -1,6 +1,7 @@
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
@@ -12,19 +13,21 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// <remarks>
 /// Who is charged: a youth membership standing in a гурток, from the quarter it joined — but not
 /// before the kurin's first rate — to the quarter it left, or the current one. Впорядники stand in the
-/// kurin and in no гурток, so they are never charged.
+/// kurin and in no гурток, so they are never charged. Quarters are read on the край's clock.
 /// </remarks>
 public sealed class DuesAccrual : IDuesAccrual
 {
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
-    public DuesAccrual(IDuesUnitOfWork dues, IMembershipDirectory memberships, TimeProvider time)
+    public DuesAccrual(IDuesUnitOfWork dues, IMembershipDirectory memberships, TimeProvider time, IKraiProfileProvider profiles)
     {
         _dues = dues;
         _memberships = memberships;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task AccrueKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
@@ -37,10 +40,11 @@ public sealed class DuesAccrual : IDuesAccrual
 
         var memberships = await _memberships.GetInKurinAsync(kurinKey, cancellationToken);
         var charged = await ChargedAsync(kurinKey, cancellationToken);
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var added = false;
         foreach (var membership in memberships.Where(m => m.Kind == MembershipKind.Youth && m.GroupKey.HasValue))
         {
-            added |= Charge(kurinKey, membership, membership.GroupKey!.Value, firstQuarter.Value, charged);
+            added |= Charge(kurinKey, membership, membership.GroupKey!.Value, firstQuarter.Value, charged, krai);
         }
 
         if (added)
@@ -65,7 +69,8 @@ public sealed class DuesAccrual : IDuesAccrual
         }
 
         var charged = await ChargedAsync(kurinKey, cancellationToken);
-        if (Charge(kurinKey, membership, groupKey, firstQuarter.Value, charged))
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        if (Charge(kurinKey, membership, groupKey, firstQuarter.Value, charged, krai))
         {
             await SaveAsync(cancellationToken);
         }
@@ -93,16 +98,17 @@ public sealed class DuesAccrual : IDuesAccrual
         KurinMembershipRecord membership,
         Guid groupKey,
         DuesQuarter firstQuarter,
-        HashSet<(Guid Membership, int Quarter)> charged)
+        HashSet<(Guid Membership, int Quarter)> charged,
+        DuesKrai krai)
     {
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
-        var from = DuesQuarter.Of(membership.JoinedAtUtc);
+        var current = krai.QuarterOf(_time.GetUtcNow());
+        var from = krai.QuarterOf(membership.JoinedAtUtc);
         if (from < firstQuarter)
         {
             from = firstQuarter;
         }
 
-        var to = membership.LeftAtUtc is { } left && DuesQuarter.Of(left) < current ? DuesQuarter.Of(left) : current;
+        var to = membership.LeftAtUtc is { } left && krai.QuarterOf(left) < current ? krai.QuarterOf(left) : current;
 
         var added = false;
         for (var quarter = from; quarter <= to; quarter = quarter.Next())

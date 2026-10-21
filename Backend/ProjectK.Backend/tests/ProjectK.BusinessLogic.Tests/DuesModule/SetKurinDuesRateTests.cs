@@ -2,12 +2,15 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Models.Records;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
@@ -22,6 +25,7 @@ public class SetKurinDuesRateTests
     private readonly List<KurinDuesRate> _rates = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
     private readonly Mock<ICurrentUserContext> _user = new();
+    private string _upstream = KraiDues.Stanytsia;
 
     public SetKurinDuesRateTests()
     {
@@ -36,7 +40,7 @@ public class SetKurinDuesRateTests
     }
 
     private Task<Common.Models.Records.ServiceResult<object>> Send(SetKurinDuesRateRequest request) =>
-        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object)
+        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream))
             .Handle(new SetKurinDuesRateCommand(Kurin, request), CancellationToken.None);
 
     private static QuarterRequest From(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
@@ -77,6 +81,41 @@ public class SetKurinDuesRateTests
         KurinDuesArticles.AreStandard(rate.Articles).Should().BeTrue();
         rate.StanytsiaReduced.Should().Be(180);
         rate.KurinReduced.Should().Be(15);
+    }
+
+    [Fact]
+    public async Task InAKraiPaidStraight_ThreeAmounts_SendTheUpperPartToTheKrai()
+    {
+        _upstream = KraiDues.Krai;
+
+        await Send(new SetKurinDuesRateRequest { FromQuarter = From(Q1), StanytsiaFull = 600, StanytsiaReduced = 300, KurinShare = 100 });
+
+        var rate = _rates.Single();
+        rate.Articles.Select(a => (a.Name, a.Recipient)).Should().Equal(("Край", DuesRecipient.Krai), ("Курінь", DuesRecipient.Kurin));
+        rate.KraiFull.Should().Be(600);
+        rate.KraiReduced.Should().Be(300);
+        rate.StanytsiaFull.Should().Be(0);
+        KurinDuesArticles.AreStandard(rate.Articles).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(KraiDues.Stanytsia, DuesRecipient.Krai, false)]
+    [InlineData(KraiDues.Krai, DuesRecipient.Stanytsia, false)]
+    [InlineData(KraiDues.Krai, DuesRecipient.Krai, true)]
+    [InlineData(KraiDues.Both, DuesRecipient.Stanytsia, true)]
+    [InlineData(KraiDues.Both, DuesRecipient.Krai, true)]
+    public async Task AnArticle_GoesOnlyWhereTheKraiTakesTheVkladka(string upstream, DuesRecipient recipient, bool taken)
+    {
+        _upstream = upstream;
+
+        var result = await Send(new SetKurinDuesRateRequest
+        {
+            FromQuarter = From(Q1),
+            Articles = [Article("Внесок угору", recipient, 240), Article("Курінь", DuesRecipient.Kurin, 15)]
+        });
+
+        result.Type.Should().Be(taken ? ResultType.Success : ResultType.BadRequest);
+        _rates.Should().HaveCount(taken ? 1 : 0);
     }
 
     [Fact]

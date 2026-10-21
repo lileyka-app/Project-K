@@ -103,6 +103,8 @@ public sealed class MyDuesDto
     public string? GroupName { get; set; }
     /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
     public string Currency { get; set; } = "UAH";
+    /// <summary>How the край writes numbers, such as uk-UA.</summary>
+    public string NumberLocale { get; set; } = "uk-UA";
     public int QuarterYear { get; set; }
     public int QuarterNumber { get; set; }
     /// <summary>Across every гурток of the kurin: negative is debt, positive a surplus.</summary>
@@ -110,6 +112,9 @@ public sealed class MyDuesDto
     /// <summary>What the running quarter costs them; null when they stand in no гурток.</summary>
     public decimal? QuarterRate { get; set; }
     public bool IsConcession { get; set; }
+
+    /// <summary>The край's пільги the person holds this quarter.</summary>
+    public IReadOnlyList<string> ConcessionNames { get; set; } = [];
 }
 
 /// <summary>The person's own points this пластовий рік in one kurin, and where their гурток stands.</summary>

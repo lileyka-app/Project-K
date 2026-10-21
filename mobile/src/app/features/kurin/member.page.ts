@@ -555,7 +555,7 @@ export class MemberPage implements OnInit {
   protected readonly emailHref = emailHref;
   protected readonly phoneHref = phoneHref;
   protected readonly formatPhone = formatPhone;
-  protected readonly money = (amount: number): string => duesMoney(amount, this.dues()?.currency);
+  protected readonly money = (amount: number): string => duesMoney(amount, this.dues()?.currency, this.dues()?.numberLocale);
   protected readonly period = membershipPeriod;
 
   protected readonly key = signal<string | null>(null);
@@ -698,7 +698,7 @@ export class MemberPage implements OnInit {
   }
 
   protected amountLabel(entry: { kind: string; amount: number }): string {
-    return duesAmountLabel(entry, this.dues()?.currency);
+    return duesAmountLabel(entry, this.dues()?.currency, this.dues()?.numberLocale);
   }
 
   protected kurinTitle(m: MembershipDto): string {

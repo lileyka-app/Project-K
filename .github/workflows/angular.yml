@@ -87,14 +87,14 @@ jobs:
 
   build_and_deploy:
     needs: lint_and_test
-    # The push trigger now covers every branch, so deployment is pinned to the long-lived ones.
-    # PR builds still deploy, because that is how SWA preview environments are produced.
+    # The push trigger now covers every branch, so deployment is pinned to dev and releases.
+    # PR builds still deploy, because that is how SWA preview environments are produced. A push to
+    # main is left out: it lands just before the release and would ship a 0.0.0-dev build over it.
     if: >-
       github.event_name == 'release'
       || github.event_name == 'workflow_dispatch'
       || (github.event_name == 'pull_request' && github.event.action != 'closed')
-      || (github.event_name == 'push'
-          && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'))
+      || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     name: Build and Deploy to Azure SWA
     environment:

@@ -2,6 +2,7 @@ import {
   EntryDraft,
   amountLabel,
   articlesAreStandard,
+  kurinKinds,
   balanceLabel,
   duesMoney,
   entryProblems,
@@ -92,12 +93,20 @@ describe('dues format', () => {
       stanytsiaReduced: 50,
       kurinShare: 30,
       kurinReduced: 30,
+      kraiFull: 0,
+      kraiReduced: 0,
     };
     expect(kurinRatesText(rate)).toBe(
       'Станиця 100 ₴ (з пільгою 50 ₴) · Курінь 30 ₴ за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.',
     );
     expect(kurinRatesText(rate, 'CZK')).toContain('Станиця 100 Kč (з пільгою 50 Kč)');
     expect(kurinRatesText(null)).toBe('Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.');
+  });
+
+  it('offers the kurin a transfer only where its край takes money', () => {
+    expect(kurinKinds('stanytsia')).toEqual(['Expense', 'OtherIncome', 'TransferToStanytsia', 'Exchange']);
+    expect(kurinKinds('krai')).toEqual(['Expense', 'OtherIncome', 'TransferToKrai', 'Exchange']);
+    expect(kurinKinds('both')).toEqual(['Expense', 'OtherIncome', 'TransferToStanytsia', 'TransferToKrai', 'Exchange']);
   });
 
   it('lets the phone change only the two standard статті', () => {
@@ -111,6 +120,8 @@ describe('dues format', () => {
       stanytsiaReduced: 50,
       kurinShare: 30,
       kurinReduced: 30,
+      kraiFull: 0,
+      kraiReduced: 0,
     };
     expect(articlesAreStandard(null)).toBe(true);
     expect(articlesAreStandard(standard)).toBe(true);
@@ -118,6 +129,7 @@ describe('dues format', () => {
     expect(articlesAreStandard({ ...standard, articles: [standard.articles[0], { ...standard.articles[1], reducedAmount: 20 }] })).toBe(false);
     expect(articlesAreStandard({ ...standard, articles: [...standard.articles, { name: 'Табір', recipient: 'Kurin', amount: 10, reducedAmount: 10 }] })).toBe(false);
     expect(articlesAreStandard({ ...standard, articles: [standard.articles[0], { ...standard.articles[1], name: 'Табір' }] })).toBe(false);
+    expect(articlesAreStandard({ ...standard, articles: [{ name: 'Край', recipient: 'Krai', amount: 600, reducedAmount: 300 }, standard.articles[1]] })).toBe(true);
   });
 
   it('checks the kurin rates as the web dialog does', () => {

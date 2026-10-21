@@ -1,5 +1,6 @@
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
@@ -17,12 +18,14 @@ public sealed class DuesEntryWriter
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
+    private readonly IKraiProfileProvider _profiles;
 
-    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IMemberDirectory members)
+    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IMemberDirectory members, IKraiProfileProvider profiles)
     {
         _dues = dues;
         _memberships = memberships;
         _members = members;
+        _profiles = profiles;
     }
 
     /// <summary>
@@ -49,9 +52,19 @@ public sealed class DuesEntryWriter
         return await CheckCollectorAsync<T>(group.KurinKey, request, cancellationToken);
     }
 
-    /// <summary>Why the request cannot stand against the kurin's own box, or null.</summary>
-    public Task<ServiceResult<T>?> CheckForKurinAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
-        => CheckCollectorAsync<T>(kurinKey, request, cancellationToken);
+    /// <summary>
+    /// Why the request cannot stand against the kurin's own box, or null. Money goes up only the way
+    /// the край takes it.
+    /// </summary>
+    public async Task<ServiceResult<T>?> CheckForKurinAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
+    {
+        if (!(await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).Takes(request.Kind))
+        {
+            return ServiceResult<T>.Failure(ResultType.BadRequest, "DuesTransferOff", "The край does not take вкладка that way.");
+        }
+
+        return await CheckCollectorAsync<T>(kurinKey, request, cancellationToken);
+    }
 
     private async Task<ServiceResult<T>?> CheckCollectorAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
     {

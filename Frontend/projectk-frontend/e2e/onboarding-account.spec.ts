@@ -13,7 +13,8 @@ test.describe('Public onboarding', () => {
     await page.locator('#lastName').fill('Applicant');
     await page.locator('#email').fill(`e2e.applicant.${Date.now()}@example.com`);
     await page.locator('#stanytsia').fill('E2E Stanytsia');
-    await page.locator('#regionOrCountry').fill('E2E Region');
+    // The край list comes with the default one picked.
+    await expect(page.locator('#krai')).toHaveText('Україна');
     await fillPhone(page.locator('input#phone'), '501112233');
     await fillDatePicker(page.locator('#dob input'), '01.01.2000');
     await expect(submit).toBeDisabled();

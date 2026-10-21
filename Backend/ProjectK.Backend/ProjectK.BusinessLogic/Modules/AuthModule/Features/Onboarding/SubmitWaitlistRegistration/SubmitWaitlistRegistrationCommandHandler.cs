@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -46,7 +47,8 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
     {
         // Input validation lives in SubmitWaitlistRegistrationCommandValidator (runs in the pipeline).
         var stanytsia = request.Stanytsia?.Trim();
-        var regionOrCountry = request.RegionOrCountry?.Trim();
+        var regionOrCountry = string.IsNullOrWhiteSpace(request.RegionOrCountry) ? null : request.RegionOrCountry.Trim();
+        var kraiCode = Krai.NormalizeCode(request.KraiCode);
         var claimedKurinNumber = request.IsPreparatoryKurin ? null : request.ClaimedKurinNameOrNumber?.Trim();
 
         // A rejected entry does not hold the address: the applicant may come back with a corrected
@@ -71,6 +73,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         entry.DateOfBirth = request.DateOfBirth;
         entry.Stanytsia = stanytsia;
         entry.RegionOrCountry = regionOrCountry;
+        entry.KraiCode = kraiCode;
         entry.IsKurinLeaderCandidate = request.IsKurinLeaderCandidate;
         entry.ClaimedKurinNameOrNumber = claimedKurinNumber;
         entry.IsPreparatoryKurin = request.IsPreparatoryKurin;

@@ -19,14 +19,46 @@
         optionValue="code"
         [ngModel]="kraiCode()"
         (ngModelChange)="select($event)"
-        [disabled]="loading() || saving() || dirty()"
+        [filter]="true"
+        [disabled]="loading() || saving() || dirty() || adding()"
         appendTo="body" />
       @if (editor(); as e) {
         <span class="krai-muted">Ревізія {{ e.revision }}</span>
       }
+      @if (!adding()) {
+        <p-button label="Новий край" icon="pi pi-plus" severity="secondary" variant="text" [disabled]="saving() || dirty()" (onClick)="startAdding()" />
+      }
     </div>
     @if (dirty()) {
       <p class="krai-muted">Є незбережені зміни. Збережи або скасуй їх, щоб перейти до іншого краю.</p>
+    }
+
+    @if (adding()) {
+      <form class="krai-new" (ngSubmit)="addKrai()" data-testid="krai-new">
+        <div class="krai-field">
+          <label for="krai-new-name">Назва</label>
+          <input pInputText id="krai-new-name" name="name" type="text" maxlength="120" [ngModel]="newName()" (ngModelChange)="newName.set($event)" placeholder="Словаччина" />
+        </div>
+        <div class="krai-field">
+          <label for="krai-new-code">Код</label>
+          <input pInputText id="krai-new-code" name="code" type="text" maxlength="8" [ngModel]="newCode()" (ngModelChange)="newCode.set($event)" placeholder="sk" />
+          <small class="krai-muted">Дволітерний код країни (ISO 3166), як pl чи sk: за ним телефон пропонує країну. Змінити його потім не можна.</small>
+        </div>
+        <p class="krai-muted">Новий край бере українські вмілості, гривню й київський час. Налаштуй його профіль одразу після додавання.</p>
+        <div class="krai-actions">
+          <p-button label="Скасувати" severity="secondary" variant="text" [disabled]="saving()" (onClick)="adding.set(false)" />
+          <p-button type="submit" label="Додати край" icon="pi pi-check" [disabled]="!newCodeValid() || !newName().trim() || saving()" [loading]="saving()" />
+        </div>
+      </form>
+    } @else if (editor(); as e) {
+      <div class="krai-field krai-rename">
+        <label for="krai-name">Назва краю</label>
+        <div class="krai-actions">
+          <input pInputText id="krai-name" type="text" maxlength="120" [ngModel]="name()" (ngModelChange)="name.set($event)" [disabled]="saving()" />
+          <p-button label="Перейменувати" severity="secondary" [disabled]="!renamed() || saving()" (onClick)="renameKrai()" />
+        </div>
+        <small class="krai-muted">Код «{{ e.kraiCode }}» лишається: на нього посилаються курені й каталог.</small>
+      </div>
     }
   </section>
 
@@ -97,11 +129,22 @@
     <app-krai-card-fields [(value)]="cardFields" [disabled]="saving()" />
   </section>
 
+  <section class="kurin-tile" aria-labelledby="concessions-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="concessions-title">Пільги краю</h2>
+        <p>Пільги й знижки, які гуртки краю «{{ e.kraiName }}» можуть надати людині поверх пільги куреня: з якого й до якого кварталу і з якої підстави. Діє найвигідніша з пільг людини. Зміна правила діє лише на пільги, надані після збереження.</p>
+      </div>
+    </div>
+    <app-krai-concessions [(value)]="concessions" [currencySymbol]="currencyMark()" [disabled]="saving()" />
+    <small class="krai-muted">Зберігається разом з усім профілем кнопкою «Зберегти» нижче.</small>
+  </section>
+
   <section class="kurin-tile" aria-labelledby="locale-title">
     <div class="lil-tile-head">
       <div>
-        <h2 id="locale-title">Валюта й час</h2>
-        <p>Валюта, в якій курені краю рахують вкладку, і часовий пояс, за яким повторюються події в порядку денному.</p>
+        <h2 id="locale-title">Валюта, час і вкладка</h2>
+        <p>Валюта, в якій курені краю рахують вкладку, як записуються суми, часовий пояс, за яким повторюються події й починається новий квартал, і куди курені передають вкладку.</p>
       </div>
     </div>
 
@@ -122,6 +165,23 @@
     </div>
 
     <div class="krai-field">
+      <label for="krai-number-locale">Запис чисел</label>
+      <p-select
+        inputId="krai-number-locale"
+        [options]="numberLocaleOptions()"
+        optionLabel="label"
+        optionValue="code"
+        [filter]="true"
+        [showClear]="true"
+        [ngModel]="numberLocale()"
+        (ngModelChange)="numberLocale.set($event ?? null)"
+        [placeholder]="'Як за замовчуванням (' + defaultNumberLocale + ')'"
+        [disabled]="saving()"
+        appendTo="body" />
+      <small class="krai-muted">Розділювач тисяч і копійок у сумах вкладки.</small>
+    </div>
+
+    <div class="krai-field">
       <label for="krai-time-zone">Часовий пояс</label>
       <p-select
         inputId="krai-time-zone"
@@ -138,6 +198,20 @@
       <small class="krai-muted">Сходини о 18:30 лишаються о 18:30 і після переведення годинника в цьому поясі.</small>
     </div>
 
+    <div class="krai-field">
+      <label for="krai-dues-upstream">Куди курені передають вкладку</label>
+      <p-select
+        inputId="krai-dues-upstream"
+        [options]="upstreamOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="upstream()"
+        (ngModelChange)="upstream.set($event)"
+        [disabled]="saving()"
+        appendTo="body" />
+      <small class="krai-muted">Від цього залежить, кому можуть іти статті вкладки куреня і які передачі є в касі куреня. Задані раніше статті не змінюються.</small>
+    </div>
+
     <div class="krai-save">
       <label for="krai-note" class="krai-hidden">Що змінено</label>
       <input
@@ -151,6 +225,16 @@
       <p-button label="Скасувати" severity="secondary" variant="text" [disabled]="!dirty() || saving()" (onClick)="reset()" />
       <p-button label="Зберегти" icon="pi pi-check" [disabled]="!dirty() || saving()" [loading]="saving()" (onClick)="save()" />
     </div>
+  </section>
+
+  <section class="kurin-tile" aria-labelledby="concession-report-title">
+    <div class="lil-tile-head">
+      <div>
+        <h2 id="concession-report-title">Звіт про пільги</h2>
+        <p>Скільки людей у куренях краю платять менше завдяки кожній його пільзі і на скільки зменшилась кожна частина вкладки за квартал.</p>
+      </div>
+    </div>
+    <app-krai-concession-report [kraiCode]="e.kraiCode" />
   </section>
 
   <section class="kurin-tile" aria-labelledby="history-title">

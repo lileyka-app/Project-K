@@ -1,11 +1,14 @@
 namespace ProjectK.Common.Models.Dues;
 
-/// <summary>A quarter's вкладка, split by where the money goes.</summary>
-public sealed record DuesAmount(decimal Stanytsia, decimal Kurin, decimal Group)
+/// <summary>A quarter's вкладка, split by where the money goes. The край part is last so a kurin without one reads as before.</summary>
+public sealed record DuesAmount(decimal Stanytsia, decimal Kurin, decimal Group, decimal Krai = 0)
 {
     public static DuesAmount Zero { get; } = new(0, 0, 0);
 
-    public decimal Total => Stanytsia + Kurin + Group;
+    public decimal Total => Stanytsia + Krai + Kurin + Group;
+
+    /// <summary>What the гурток hands up to the kurin: everything but its own part.</summary>
+    public decimal Up => Stanytsia + Krai + Kurin;
 }
 
 /// <summary>One quarter of one account: what fell due, what of it is paid, and with what пільга.</summary>
@@ -15,6 +18,9 @@ public sealed record DuesAccountQuarter(
     DuesAmount Paid,
     bool IsConcession)
 {
+    /// <summary>The пільга of the край that set the quarter's amount; null when none of them did.</summary>
+    public string? ConcessionName { get; init; }
+
     /// <summary>Zero when paid up, negative while owed. Never positive: a surplus is the account's.</summary>
     public decimal Balance => Paid.Total - Charged.Total;
 }
@@ -37,7 +43,8 @@ public sealed record DuesAccount(
     public DuesAmount Allocated => new(
         Quarters.Sum(q => q.Paid.Stanytsia),
         Quarters.Sum(q => q.Paid.Kurin),
-        Quarters.Sum(q => q.Paid.Group));
+        Quarters.Sum(q => q.Paid.Group),
+        Quarters.Sum(q => q.Paid.Krai));
 }
 
 /// <summary>What is in a box, and how much of it is the box's own to spend.</summary>
@@ -63,5 +70,8 @@ public sealed record GroupHandover(
     public decimal Outstanding => OwedUp - Transferred;
 }
 
-/// <summary>The kurin's own box and how each гурток stands with it.</summary>
-public sealed record KurinDuesBox(DuesCashBox Box, IReadOnlyList<GroupHandover> Handovers);
+/// <summary>
+/// The kurin's own box and how each гурток stands with it. <see cref="DuesCashBox.ToForward"/> is
+/// <see cref="ToStanytsia"/> and <see cref="ToKrai"/> together.
+/// </summary>
+public sealed record KurinDuesBox(DuesCashBox Box, IReadOnlyList<GroupHandover> Handovers, decimal ToStanytsia = 0, decimal ToKrai = 0);

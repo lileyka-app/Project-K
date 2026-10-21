@@ -38,7 +38,7 @@
             <label [for]="'rate-article-recipient-' + i">Кому</label>
             <p-select
               [inputId]="'rate-article-recipient-' + i"
-              [options]="recipientOptions"
+              [options]="recipientOptions()"
               [ngModel]="article.recipient"
               (ngModelChange)="setArticle(article.id, { recipient: $event })"
               optionLabel="label"

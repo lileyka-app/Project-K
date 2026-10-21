@@ -65,15 +65,17 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         var concessions = await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken);
         var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
         var entries = await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken);
+        var grants = await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken);
         var names = await DuesNames.LoadAsync(_memberships, _members, kurinKey, cancellationToken);
         var groupNames = (await _unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken))
             .ToDictionary(g => g.GroupKey, g => g.Name);
 
-        var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries);
+        var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries, grants);
         // Memberships the kurin no longer has are removed people; see GetGroupDuesQuery.
         var accounts = ledger.Accounts().Where(a => names.Memberships.ContainsKey(a.MembershipKey)).ToList();
         var kurinBox = ledger.KurinBox(accounts);
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        var current = krai.QuarterOf(_time.GetUtcNow());
 
         var transfers = entries
             .Where(e => e.GroupKey.HasValue && e.Kind == DuesEntryKind.TransferToKurin)
@@ -118,12 +120,12 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             .DefaultIfEmpty(current.Index)
             .Min();
 
-        var currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken);
-
         return new ServiceResult<KurinDuesResponse>(ResultType.Success, new KurinDuesResponse
         {
             KurinKey = kurinKey,
-            Currency = currency,
+            Currency = krai.Currency,
+            NumberLocale = krai.NumberLocale,
+            Upstream = krai.Dues.Upstream,
             CurrentQuarter = Quarter(current),
             Years = Years(DuesQuarter.FromIndex(first), current),
             Rates = rates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
@@ -136,7 +138,10 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
                 Own = kurinBox.Box.Own,
                 InTransit = groups.Sum(g => g.InTransit)
             },
-            SentToStanytsia = entries.Where(e => e.GroupKey is null && e.Kind == DuesEntryKind.TransferToStanytsia).Sum(e => e.Amount),
+            ToStanytsia = kurinBox.ToStanytsia,
+            ToKrai = kurinBox.ToKrai,
+            SentToStanytsia = ledger.Sent(DuesEntryKind.TransferToStanytsia),
+            SentToKrai = ledger.Sent(DuesEntryKind.TransferToKrai),
             Groups = groups,
             Quarters = Quarters(accounts, groupNames),
             Transfers = transfers,
@@ -153,7 +158,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
 
     /// <summary>
     /// The гуртки's quarterly tables folded into the kurin's: per quarter, per гурток, how many youth
-    /// were charged, what they owe up and what of it is paid — and the станиця's part on its own.
+    /// were charged, what they owe up and what of it is paid — and the станиця's and край's parts on their own.
     /// </summary>
     private static IReadOnlyList<KurinDuesQuarterDto> Quarters(IReadOnlyList<DuesAccount> accounts, IReadOnlyDictionary<Guid, string> groupNames)
     {
@@ -183,8 +188,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
 
     private static KurinDuesQuarterGroupDto Row(Guid groupKey, string name, IReadOnlyList<DuesAccountQuarter> quarters)
     {
-        var expected = quarters.Sum(q => q.Charged.Stanytsia + q.Charged.Kurin);
-        var collected = quarters.Sum(q => q.Paid.Stanytsia + q.Paid.Kurin);
+        var expected = quarters.Sum(q => q.Charged.Up);
+        var collected = quarters.Sum(q => q.Paid.Up);
         return new KurinDuesQuarterGroupDto
         {
             GroupKey = groupKey,
@@ -194,7 +199,9 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             CollectedUp = collected,
             DebtUp = expected - collected,
             StanytsiaExpected = quarters.Sum(q => q.Charged.Stanytsia),
-            StanytsiaCollected = quarters.Sum(q => q.Paid.Stanytsia)
+            StanytsiaCollected = quarters.Sum(q => q.Paid.Stanytsia),
+            KraiExpected = quarters.Sum(q => q.Charged.Krai),
+            KraiCollected = quarters.Sum(q => q.Paid.Krai)
         };
     }
 

@@ -36,4 +36,13 @@ describe('money in the край\'s currency', () => {
   it('falls back to the code for a currency the browser does not know', () => {
     expect(currencySymbol('XYZW')).toBe('XYZW');
   });
+
+  it("writes the number the край's way", () => {
+    expect(money(1240.5, 'CAD', 'en-CA')).toBe('1,240.5 $');
+    expect(duesAmountLabel({ kind: DuesEntryKind.Expense, amount: 1240.5 }, 'CAD', 'en-CA')).toBe('−1,240.5 $');
+  });
+
+  it('falls back to uk-UA for a locale the browser does not know', () => {
+    expect(money(1240.5, 'UAH', 'not a locale')).toBe(money(1240.5));
+  });
 });
