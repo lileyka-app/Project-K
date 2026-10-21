@@ -100,7 +100,7 @@ flowchart LR
 
 | Сервіс | Де | Адреса | Як деплоїться |
 |---|---|---|---|
-| Фронтенд (Angular) | Azure Static Web Apps | `lileyka.app` | `angular.yml`: пуш у `dev` → staging, реліз → прод |
+| Фронтенд (Angular) | Azure Static Web Apps | `lileyka.app` | `angular.yml`: пуш у `dev` → staging, реліз → прод; PR у `dev` чи `main` → превʼю SWA |
 | API (`ProjectK.API`) | Azure App Service, Linux B1, Poland Central | `api.lileyka.app` | `dotnet.yml`: пуш у `dev` → staging, реліз → прод. Збірка ReadyToRun |
 | База | Azure SQL, Basic (5 DTU) | — | міграції EF на старті API |
 | Файли | Azure Blob Storage | підписані посилання | — |
@@ -112,8 +112,17 @@ flowchart LR
 | Каталог проб і вмілостей | Cloudflare Worker + D1 | `catalog.lileyka.app` | окремий репозиторій |
 | Сторінка статусу і телеметрія | Cloudflare Worker + D1 + Durable Object | `status.lileyka.app` | репозиторій `ProjectK.Status`, пуш у `main` через Workers Builds |
 
+Прод деплоїться лише з опублікованого релізу GitHub (або вручну `workflow_dispatch` з `main`). Пуш у
+`main` не деплоїть нічого: він приходить перед самим релізом і привіз би збірку `0.0.0-dev` поверх
+нього.
+
 Staging має той самий набір в іншій підписці Azure. Пастка з назвами: застосунок
 `api-projectk-prod` — це **staging**, а прод називається `api-projectk-prod-new`.
+
+Залишки старого домену: продовий CORS (`EnvCorsOrigin`, список через кому) ще пускає
+`https://projectk.rostyslav-mukha.dev`, поки той не переадресовує на `lileyka.app`, а відповідь на
+листи прод і staging досі спрямовують на `hello@rostyslav-mukha.dev` (`Email:ReplyTo`). Непродові фронтенди (дев, staging, tailscale)
+посилаються на довідку `docs-dev.lileyka.app`.
 
 ## Що відбувається за розкладом
 

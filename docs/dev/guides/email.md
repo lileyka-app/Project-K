@@ -44,9 +44,9 @@ sidebar:
 Секція `Email` в `appsettings`:
 
 - `Provider` — `Mock` / `Resend`; `ApiKey` — ключ Resend, у секретах середовища, не в репозиторії;
-- `FromName`, `FromEmail` — відправник («Лілейка», адреса на верифікованому піддомені
-  `mail-noreply.…`);
-- `ReplyTo` — адреса для відповідей (`hello@…`), щоб лист із «noreply» не був глухим;
+- `FromName`, `FromEmail` — відправник («Лілейка», `projectk-system@mail.lileyka.app` на
+  верифікованому піддомені `mail.lileyka.app`);
+- `ReplyTo` — адреса для відповідей (`hello@…`), щоб на системний лист можна було відповісти;
 - `RedirectAllTo` — якщо задано, **кожен** лист іде на цю адресу, а справжній одержувач лишається в
   темі й у заголовку `X-Original-To`. На staging стоїть `delivered@resend.dev`: пошта проходить
   через Resend по-справжньому, але нікому не приходить;

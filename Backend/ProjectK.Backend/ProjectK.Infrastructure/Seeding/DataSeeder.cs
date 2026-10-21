@@ -341,6 +341,7 @@ public static class DataSeeder
         dbContext.DuesEntries.RemoveRange(await dbContext.DuesEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
         dbContext.DuesCharges.RemoveRange(await dbContext.DuesCharges.Where(c => c.KurinKey == kurinKey).ToListAsync());
         dbContext.DuesConcessions.RemoveRange(await dbContext.DuesConcessions.Where(c => c.KurinKey == kurinKey).ToListAsync());
+        dbContext.DuesConcessionGrants.RemoveRange(await dbContext.DuesConcessionGrants.Where(g => g.KurinKey == kurinKey).ToListAsync());
         dbContext.GroupDuesRates.RemoveRange(await dbContext.GroupDuesRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
         dbContext.KurinDuesRates.RemoveRange(await dbContext.KurinDuesRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
 

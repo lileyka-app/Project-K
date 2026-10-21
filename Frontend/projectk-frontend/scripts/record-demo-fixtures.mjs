@@ -16,7 +16,8 @@ mkdirSync(out, { recursive: true });
 const seats = ['Zvyazkovyi', 'Vykhovnyk', 'Youth'];
 const seatLabel = { Zvyazkovyi: 'Звʼязковий', Vykhovnyk: 'Впорядник', Youth: 'Юнак' };
 
-const browser = await chromium.launch();
+// LILEYKA_BROWSER_CHANNEL=chrome uses the installed Chrome when Playwright's own build is missing.
+const browser = await chromium.launch(process.env.LILEYKA_BROWSER_CHANNEL ? { channel: process.env.LILEYKA_BROWSER_CHANNEL } : {});
 
 /** Set by the recorder when the API answered 429; `visit` then waits and asks again. */
 let throttled = false;

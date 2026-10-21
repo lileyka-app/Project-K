@@ -36,11 +36,11 @@ sidebar:
   розглянути. `GET /waitlist` — список для адміна;
 - `GET /krais` — коди й назви країв для форми, без входу (лише це: кількість куренів бачить
   адмін у `GET api/krai`). Заявка несе `kraiCode`; без нього обовʼязковий вільний текст
-  `regionOrCountry`, як надсилали старі форми;
+  `regionOrCountry`, як надсилали старі форми. Невідомий край — 400 `KraiNotFound`;
 - `POST /waitlist/{key}/approve` — схвалити: створює курінь і акаунт, надсилає запрошення.
   Необовʼязкове тіло `{ "kraiCode": "pl" }` замінює край із заявки; без жодного курінь
-  відкривається в `Krai:Default`. Зайнятість числа перевіряється в тому краї, де курінь
-  відкриється;
+  відкривається в `Krai:Default`. Невідомий край — 400 `KraiNotFound`. Зайнятість числа
+  перевіряється в тому краї, де курінь відкриється: зайняте — 409 `KurinNumberTaken`;
   `POST /waitlist/{key}/reject` — відхилити; `POST /waitlist/{key}/resend-invitation` — надіслати
   ще раз; `POST /invitation/resend` — те саме для будь-якого неактивованого акаунта;
 - `GET /invitation/{token}/validate` — перевірити токен;
@@ -81,7 +81,9 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 | Маршрут | Хто |
 |---|---|
 | `api/krai/*` — краї (додати, перейменувати), профіль краю, його ревізії й відновлення давнішої (`KraiController`) | `RequireAdmin` на весь контролер |
+| `GET api/krai/{code}/dues/concessions?year=&number=` — скільки кожна пільга краю зняла з вкладки його куренів за квартал (без кварталу — поточний за часом краю) | `RequireAdmin` (той самий контролер) |
 | `PUT api/kurin/{key}/krai` — перевести курінь до іншого краю (число має бути вільне там) | `RequireAdmin` |
+| `POST api/group/{groupKey}/dues/members/{membershipKey}/concessions` — надати людині пільгу краю; `PUT` / `DELETE api/group/{groupKey}/dues/concessions/{grantKey}` — змінити чи прибрати надану | `GroupDues:Update` на цей гурток |
 | `GET` / `PUT api/kurin/{key}/card-fields` — які поля картки курінь приховує | `Kurin:Update` на цей курінь |
 | `GET api/kurin/{key}/profile` — профіль краю, за яким живе курінь, з урахуванням його прихованих полів | `Kurin:Read` на цей курінь |
 | `GET api/kurin/{key}/catalog/badges` — вмілості, які пропонує курінь | `Kurin:Read` на цей курінь |
