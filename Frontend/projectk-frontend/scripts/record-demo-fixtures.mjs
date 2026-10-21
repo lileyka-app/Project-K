@@ -16,7 +16,8 @@ mkdirSync(out, { recursive: true });
 const seats = ['Zvyazkovyi', 'Vykhovnyk', 'Youth'];
 const seatLabel = { Zvyazkovyi: 'Звʼязковий', Vykhovnyk: 'Впорядник', Youth: 'Юнак' };
 
-const browser = await chromium.launch();
+// LILEYKA_BROWSER_CHANNEL=chrome uses the installed Chrome when Playwright's own build is missing.
+const browser = await chromium.launch(process.env.LILEYKA_BROWSER_CHANNEL ? { channel: process.env.LILEYKA_BROWSER_CHANNEL } : {});
 
 /** Set by the recorder when the API answered 429; `visit` then waits and asks again. */
 let throttled = false;
@@ -165,7 +166,8 @@ for (const seat of seats) {
 
   await visit(page, '/login');
   await page.getByRole('button', { name: seatLabel[seat] }).click();
-  await page.waitForURL(/\/(kurin|panel|member)/);
+  // Every seat now lands on the home page, so anything past the login page means signed in.
+  await page.waitForURL(url => !url.pathname.startsWith('/login'));
   await settle(page);
   // A reload records the refresh the app does on every start.
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -188,12 +190,43 @@ for (const seat of seats) {
     }
   }
 
+  // A гурток's вкладка and points are reached from its page, and the sidebar names only the
+  // seat's own гуртки, so every гурток is visited for both.
   for (const groupKey of keysIn(entries, 'groupKey')) {
     await visit(page, `/group/${groupKey}`);
+    await visit(page, `/group/${groupKey}/dues`);
+    await visit(page, `/group/${groupKey}/score`);
   }
 
+  // Attendance sheets open from the entries of a гурток's table; three of them are enough.
+  const sheets = new Set();
+  for (const groupKey of keysIn(entries, 'groupKey')) {
+    const path = `/group/${groupKey}/score`;
+    await visit(page, path);
+    const links = await page.locator('a[href*="/score/events/"]').evaluateAll(as => as.map(a => a.getAttribute('href')));
+    links.filter(Boolean).forEach(href => sheets.add(href));
+    if (sheets.size >= 3) break;
+  }
+  for (const href of [...sheets].slice(0, 3)) {
+    await visit(page, href);
+  }
+
+  for (const path of [`/kurin/${kurinKey}/score/settings`, `/kurin/${kurinKey}/score/private`]) {
+    await visit(page, path);
+  }
+
+  let forms = 0;
   for (const memberKey of keysIn(entries, 'memberKey')) {
     await visit(page, `/member/${memberKey}`);
+    // The member form, for the first few cards the seat may edit.
+    const edit = page.locator('button:has-text("Редагувати"):not([disabled])').first();
+    if (forms < 3 && await edit.count()) {
+      forms++;
+      await edit.click();
+      await page.waitForURL(/\/member\/upsert\//).catch(() => undefined);
+      await settle(page);
+      await visit(page, `/member/${memberKey}`);
+    }
     const details = page.locator('button:has-text("Деталі"):not([disabled])').first();
     if (await details.count()) {
       throttled = false;

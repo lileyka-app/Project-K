@@ -16,5 +16,6 @@ public enum ResultType
     Forbidden,
     Conflict,
     InternalServerError,
-    UnprocessableEntity
+    UnprocessableEntity,
+    TooManyRequests
 }

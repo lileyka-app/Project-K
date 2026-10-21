@@ -541,9 +541,11 @@ public static class Program
     {
         // The strict limits are per address, and on a container stand every browser arrives from
         // the same docker gateway address: five failed sign-ins by anyone on the tailnet locked
-        // everyone out for five minutes. Production sees real addresses (Security:ClientIp), so the
-        // defaults stay tight there; the local tiers raise them in their appsettings.
-        var strictPermit = configuration.GetValue("RateLimiting:StrictAuth:PermitLimit", 5);
+        // everyone out for five minutes. Production sees real addresses (Security:ClientIp), but a
+        // kurin signing in together from one school or home Wi-Fi is one address too, so the default
+        // leaves room for a group; guessing one account's password is stopped per email by
+        // LoginThrottle instead. The local tiers raise the limit further in their appsettings.
+        var strictPermit = configuration.GetValue("RateLimiting:StrictAuth:PermitLimit", 20);
         var strictWindow = TimeSpan.FromMinutes(configuration.GetValue("RateLimiting:StrictAuth:WindowMinutes", 5));
         var accountPermit = configuration.GetValue("RateLimiting:AccountSecurity:PermitLimit", 10);
         var accountWindow = TimeSpan.FromMinutes(configuration.GetValue("RateLimiting:AccountSecurity:WindowMinutes", 5));

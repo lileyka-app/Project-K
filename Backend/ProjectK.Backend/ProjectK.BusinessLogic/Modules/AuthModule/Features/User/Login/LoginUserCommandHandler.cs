@@ -21,6 +21,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
     private readonly IConfiguration _configuration;
     private readonly IJwtService _jwtService;
     private readonly IHostEnvironment _environment;
+    private readonly ILoginThrottle _throttle;
 
     public LoginUserCommandHandler(
         UserManager<AppUser> userManager,
@@ -29,7 +30,8 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         IActivityLogger activityLogger,
         IConfiguration configuration,
         IJwtService jwtService,
-        IHostEnvironment environment)
+        IHostEnvironment environment,
+        ILoginThrottle throttle)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -38,16 +40,28 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         _configuration = configuration;
         _jwtService = jwtService;
         _environment = environment;
+        _throttle = throttle;
     }
 
     public async Task<ServiceResult<LoginUserResponse>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
+        // Checked before the address is looked up, and counted for unknown addresses too: a pause
+        // answers the same whether or not anyone is registered under it.
+        if (_throttle.IsPaused(request.Email))
+        {
+            return ServiceResult<LoginUserResponse>.Failure(
+                ResultType.TooManyRequests,
+                "TooManyAttempts",
+                "Too many failed sign-ins for this email. Try again later or reset the password.");
+        }
+
         // Both failure branches answer identically on purpose: a distinct "no such user" reply
         // would let a caller enumerate which addresses are registered.
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
             _activityLogger.TrackFailedLogin(request.Email);
+            _throttle.RecordFailure(request.Email);
             return ServiceResult<LoginUserResponse>.Failure(
                 ResultType.Unauthorized,
                 "InvalidCredentials",
@@ -61,11 +75,14 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         if (!result.Succeeded || !user.CanSignIn())
         {
             _activityLogger.TrackFailedLogin(request.Email);
+            _throttle.RecordFailure(request.Email);
             return ServiceResult<LoginUserResponse>.Failure(
                 ResultType.Unauthorized,
                 "InvalidCredentials",
                 "Email or password is incorrect.");
         }
+
+        _throttle.Reset(request.Email);
 
         // The e2e switch lets the fixture accounts sign in without a second factor, and only on
         // the test tiers: a deployed environment ignores it outright, exactly as

@@ -30,6 +30,7 @@ public interface IMemberRepository : IBaseEntityRepository<Member>
     Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, MemberSelection selection, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKeysAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>The person a public code names, with how many kurins they currently belong to.</summary>

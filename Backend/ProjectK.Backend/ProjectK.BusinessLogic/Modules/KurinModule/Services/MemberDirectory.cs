@@ -61,6 +61,11 @@ public sealed class MemberDirectory : IMemberDirectory
         CancellationToken cancellationToken = default)
         => _unitOfWork.Members.GetSummariesByKurinKeyAsync(kurinKey, selection, cancellationToken);
 
+    public Task<IReadOnlyCollection<MemberSummary>> GetByKeysAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Members.GetSummariesByKeysAsync(memberKeys, cancellationToken);
+
     public async Task<IReadOnlyCollection<WarningRecord>> GetActiveWarningsInKurinAsync(
         Guid kurinKey,
         DateTime nowUtc,

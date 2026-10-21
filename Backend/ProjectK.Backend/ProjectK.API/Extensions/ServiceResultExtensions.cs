@@ -28,6 +28,7 @@ public static class ServiceResultExtensions
                 ResultType.NotFound => controller.NotFound(errorResponse),
                 ResultType.Conflict => controller.Conflict(errorResponse),
                 ResultType.Forbidden => controller.StatusCode(StatusCodes.Status403Forbidden, errorResponse),
+                ResultType.TooManyRequests => controller.StatusCode(StatusCodes.Status429TooManyRequests, errorResponse),
                 _ => controller.StatusCode(StatusCodes.Status500InternalServerError, errorResponse)
             };
         }
@@ -64,6 +65,7 @@ public static class ServiceResultExtensions
         ResultType.NotFound => ("NotFound", "The requested resource was not found."),
         ResultType.Conflict => ("Conflict", "The resource is in a conflicting state."),
         ResultType.UnprocessableEntity => ("UnprocessableEntity", "The request was understood but could not be processed."),
+        ResultType.TooManyRequests => ("TooManyRequests", "Too many requests. Please try again later."),
         _ => ("InternalServerError", "An unexpected error occurred.")
     };
 

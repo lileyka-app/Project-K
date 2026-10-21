@@ -15,7 +15,8 @@ import { DemoSeat, DemoService } from '../../services/demo-service/demo.service'
 
 const LOGIN_ERROR_TEXT: Record<string, string> = {
   InvalidCredentials: 'Неправильний email або пароль.',
-  Unauthorized: 'Неправильний email або пароль.'
+  Unauthorized: 'Неправильний email або пароль.',
+  TooManyAttempts: 'Забагато невдалих спроб для цієї пошти. Зачекай 15 хвилин або віднови пароль.'
 };
 
 @Component({
