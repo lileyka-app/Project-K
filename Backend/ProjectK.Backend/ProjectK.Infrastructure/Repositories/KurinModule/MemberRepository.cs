@@ -349,6 +349,11 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     public async Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default)
         => await SummariesOf(Context.Members).ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKeysAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+        => memberKeys.Count == 0
+            ? []
+            : await SummariesOf(Context.Members.Where(m => memberKeys.Contains(m.MemberKey))).ToListAsync(cancellationToken);
+
     public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         => Context.Members.AnyAsync(m => m.Email == email, cancellationToken);
 

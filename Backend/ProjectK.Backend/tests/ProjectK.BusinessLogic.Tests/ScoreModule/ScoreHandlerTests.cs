@@ -44,6 +44,8 @@ public class ScoreHandlerTests
     private readonly List<ScoreTrailEvent> _trail = [];
     private readonly List<KurinMembershipRecord> _memberships = [];
     private readonly List<MemberSummary> _people = [];
+    // People who stand in no kurin any more: the directory reads them only by key.
+    private readonly List<MemberSummary> _gone = [];
     private readonly List<AgendaResponse> _responses = [];
     private readonly AgendaItem _event;
     private readonly Mock<IScoreUnitOfWork> _score = new();
@@ -165,6 +167,8 @@ public class ScoreHandlerTests
     {
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
+        members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => _gone.Where(p => keys.Contains(p.MemberKey)).ToList());
         return new ScoreBookReader(_score.Object, _unitOfWork.Object, Memberships(), members.Object, NoFacts(), _time);
     }
 
@@ -319,6 +323,22 @@ public class ScoreHandlerTests
 
         sokoly.YouthPoints.Should().Be(4);
         sokoly.YouthCount.Should().BeGreaterThan(1, "the youth who left counts for the days before leaving");
+    }
+
+    // The kurin's people are only those who stand in it now; someone who left is read by key so
+    // their row in the гурток's table keeps a name.
+    [Fact]
+    public async Task AYouthWhoLeft_IsStillNamed()
+    {
+        var left = Guid.NewGuid();
+        var member = Guid.NewGuid();
+        _memberships.Add(new KurinMembershipRecord(left, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc)));
+        _gone.Add(new MemberSummary(member, null, Guid.Empty, null, "Ярема", "Пластун", "yarema@x", null));
+
+        var book = await Books().OpenAsync(Kurin, CancellationToken.None);
+
+        book.NameOfMembership(left).Should().Be("Ярема Пластун");
+        book.CurrentYouths().Should().NotContain(y => y.Membership.MembershipKey == left);
     }
 
     [Fact]

@@ -97,7 +97,16 @@ public sealed class ScoreBook
         var kurinFacts = await facts.ForKurinAsync(kurinKey, cancellationToken);
 
         var inKurin = (await memberships.GetInKurinAsync(kurinKey, cancellationToken)).ToDictionary(m => m.MembershipKey);
-        var people = await members.GetByKurinAsync(kurinKey, cancellationToken);
+        var current = await members.GetByKurinAsync(kurinKey, cancellationToken);
+
+        // The kurin's people are those who stand in it now, but a youth who left still has a row in
+        // their гурток's table below; read them by key, or that row is named «—».
+        var currentKeys = current.Select(p => p.MemberKey).ToHashSet();
+        var leftKeys = inKurin.Values.Select(m => m.MemberKey).Where(key => !currentKeys.Contains(key)).Distinct().ToList();
+        var left = leftKeys.Count == 0
+            ? []
+            : await members.GetByKeysAsync(leftKeys, cancellationToken) ?? [];
+        var people = current.Concat(left).GroupBy(p => p.MemberKey).Select(g => g.First()).ToList();
         var groupNames = (await unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken)).ToDictionary(g => g.GroupKey, g => g.Name);
 
         // The ledger prices a mark by its event's group, so every marked event's group is read at once.
