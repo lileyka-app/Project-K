@@ -26,6 +26,7 @@ const STORAGE_KEY = 'authState';
 const ERROR_TEXT: Record<string, string> = {
   InvalidCredentials: 'Неправильний email або пароль.',
   Unauthorized: 'Неправильний email або пароль.',
+  TooManyAttempts: 'Забагато невдалих спроб для цієї пошти. Зачекай 15 хвилин або віднови пароль.',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -248,9 +249,10 @@ export class AuthService {
 export function loginErrorText(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
     if (isOffline(error)) return 'Немає зв’язку з сервером. Перевір інтернет.';
-    if (error.status === 429) return 'Забагато спроб. Спробуй за хвилину.';
+    // A pause on the email (429 TooManyAttempts) lasts 15 minutes; only the address limiter is a minute.
     const code = (error.error as { error?: string } | null)?.error;
     if (code && ERROR_TEXT[code]) return ERROR_TEXT[code];
+    if (error.status === 429) return 'Забагато спроб. Спробуй за хвилину.';
   }
   return fallback;
 }

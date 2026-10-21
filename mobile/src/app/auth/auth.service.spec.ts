@@ -1,9 +1,9 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiUrl } from '../runtime-config';
-import { AuthService } from './auth.service';
+import { AuthService, loginErrorText } from './auth.service';
 
 const signedIn = {
   userKey: 'u1',
@@ -100,3 +100,15 @@ describe('AuthService', () => {
 function settle(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve));
 }
+
+describe('loginErrorText', () => {
+  it('tells a paused email to wait 15 minutes, not a minute', () => {
+    const paused = new HttpErrorResponse({ status: 429, error: { error: 'TooManyAttempts' } });
+    expect(loginErrorText(paused, '')).toContain('15 хвилин');
+  });
+
+  it('keeps the short wait for the address limiter', () => {
+    const limited = new HttpErrorResponse({ status: 429, error: null });
+    expect(loginErrorText(limited, '')).toBe('Забагато спроб. Спробуй за хвилину.');
+  });
+});
