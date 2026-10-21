@@ -15,8 +15,10 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService;
@@ -29,6 +31,18 @@ public interface IPhotoReferenceProvider
 
 public class AzureBlobPhotoService : IPhotoService
 {
+    /// <summary>
+    /// Decodes only what <c>ImageUploadRules</c> accepts. The format is told by the bytes, not the
+    /// declared content type, so with the default configuration a TIFF sent as image/png reached the
+    /// TIFF decoder; metadata (EXIF, ICC) is never used here, and its parsers are where the open
+    /// ImageSharp 3.x advisories sit. 4.x fixes them but will not build without a Six Labors licence.
+    /// </summary>
+    private static readonly DecoderOptions PhotoDecoding = new()
+    {
+        Configuration = new Configuration(new PngConfigurationModule(), new JpegConfigurationModule(), new WebpConfigurationModule()),
+        SkipMetadata = true
+    };
+
     private readonly BlobContainerClient _container;
     private readonly BlobStorageOptions _options;
     private volatile bool _containerInitialized;
@@ -155,7 +169,7 @@ public class AzureBlobPhotoService : IPhotoService
     {
         try
         {
-            using var image = await Image.LoadAsync(photoStream, cancellationToken).ConfigureAwait(false);
+            using var image = await Image.LoadAsync(PhotoDecoding, photoStream, cancellationToken).ConfigureAwait(false);
 
             // Resize if too large (max 1920x1920)
             const int MaxDimension = 1920;
@@ -197,7 +211,7 @@ public class AzureBlobPhotoService : IPhotoService
     {
         try
         {
-            using var image = await Image.LoadAsync(photoStream, cancellationToken).ConfigureAwait(false);
+            using var image = await Image.LoadAsync(PhotoDecoding, photoStream, cancellationToken).ConfigureAwait(false);
             using var msPng = new MemoryStream();
             await image.SaveAsync(msPng, new PngEncoder(), cancellationToken).ConfigureAwait(false);
 

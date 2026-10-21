@@ -86,6 +86,19 @@ public class AzureBlobPhotoServiceTests
     }
 
     [Fact]
+    public async Task CompressImageAsync_ShouldRefuse_ATiffSentAsAPhoto()
+    {
+        // Only PNG, JPEG and WebP are decoded: the TIFF decoder is where ImageSharp 3.x advisories sit,
+        // and the declared content type is no guard, since the format is told by the bytes.
+        using var image = new Image<Rgba32>(4, 4);
+        using var tiff = new MemoryStream();
+        await image.SaveAsync(tiff, new SixLabors.ImageSharp.Formats.Tiff.TiffEncoder());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.CompressImageAsync(tiff.ToArray(), "photo.png", CancellationToken.None));
+    }
+
+    [Fact]
     public async Task CompressImageAsync_ShouldMaintainSizeIfAlreadySmall()
     {
         // Arrange
