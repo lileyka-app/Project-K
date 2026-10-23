@@ -36,8 +36,15 @@ function has(state: AuthState | null, prefix: string): boolean {
 export interface KurinAccess {
   /** Звʼязковий or admin. */
   manageWholeKurin: boolean;
-  /** Виховник and the whole-kurin managers: confirm skills, sign probes (with check-access). */
+  /** Runs a гурток or the kurin (web isReviewer): ступені, profile checks. */
+  leadGroups: boolean;
+  /**
+   * Confirms вмілості somewhere (web canReviewSkills): `BadgeProgress:Update` at any scope, which the
+   * kurin's policy gives — the впорядники by default, but not necessarily everyone who leads a гурток.
+   */
   reviewSkills: boolean;
+  /** Reads the kurin's «Журнал дій» (web canReadJournal). */
+  readJournal: boolean;
   /** Keeps some гурток's box, or reads them all. */
   seeGroupDues: boolean;
   /** The kurin's box: the курінний скарбник, the Звʼязковий, an admin. A youth's grant is about their own balance. */
@@ -61,7 +68,9 @@ export function kurinAccess(state: AuthState | null): KurinAccess {
   const manageWholeKurin = isAdmin || has(state, 'Group:Manage:KurinWide');
   return {
     manageWholeKurin,
-    reviewSkills: has(state, 'Group:Update') || manageWholeKurin,
+    leadGroups: has(state, 'Group:Update') || manageWholeKurin,
+    reviewSkills: isAdmin || has(state, 'BadgeProgress:Update'),
+    readJournal: isAdmin || has(state, 'KurinJournal:Read'),
     seeGroupDues: isAdmin || has(state, 'GroupDues:Read:OwnGroups') || has(state, 'GroupDues:Read:KurinWide'),
     seeKurinDues: isAdmin || has(state, 'KurinDues:Read'),
     setupGroupLeadership: isAdmin || has(state, 'Leadership:Manage:KurinWide') || has(state, 'Leadership:Update:OwnGroups'),

@@ -90,7 +90,6 @@ describe('UpsertMemberComponent', () => {
       back: vi.fn()
     } as MockedObject<Location>;
     permissionServiceSpy = {
-      canManageWarnings: vi.fn(),
       isAdmin: vi.fn(),
       canManageWholeKurin: vi.fn(),
       isReviewer: vi.fn()
@@ -116,7 +115,6 @@ describe('UpsertMemberComponent', () => {
       number: 1,
       profileVerificationEnabled: true
     }));
-    permissionServiceSpy.canManageWarnings.mockReturnValue(false);
     permissionServiceSpy.isAdmin.mockReturnValue(false);
     permissionServiceSpy.canManageWholeKurin.mockReturnValue(false);
     permissionServiceSpy.isReviewer.mockReturnValue(false);

@@ -3,8 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { EntityService } from '../../../authModule/services/entity-service/entity.service';
 import { MemberService } from '../../services/member-service/member.service';
+import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
@@ -20,7 +20,6 @@ describe('MemberProbePageComponent', () => {
   let probesCatalogServiceSpy: MockedObject<ProbesCatalogService>;
   let memberProgressServiceSpy: MockedObject<MemberProgressService>;
   let authServiceSpy: MockedObject<AuthService>;
-  let entityServiceSpy: MockedObject<EntityService>;
   let routerSpy: MockedObject<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
@@ -47,11 +46,15 @@ describe('MemberProbePageComponent', () => {
     };
   }
 
+  const signer: MemberAbilitiesDto = { ...NO_ABILITIES, probes: { sign: true, unsign: true } };
+
   beforeEach(async () => {
     memberServiceSpy = {
       getByKey: vi.fn(),
-      getMemberships: vi.fn()
+      getMemberships: vi.fn(),
+      getAbilities: vi.fn()
     } as MockedObject<MemberService>;
+    memberServiceSpy.getAbilities.mockReturnValue(of(signer));
     memberServiceSpy.getMemberships.mockReturnValue(of([]));
     probesCatalogServiceSpy = {
       getGroupedById: vi.fn()
@@ -65,9 +68,6 @@ describe('MemberProbePageComponent', () => {
     authServiceSpy = {
       getAuthStateValue: vi.fn()
     } as MockedObject<AuthService>;
-    entityServiceSpy = {
-      checkEntityAccess: vi.fn()
-    } as MockedObject<EntityService>;
     routerSpy = {
       navigate: vi.fn()
     } as MockedObject<Router>;
@@ -110,7 +110,6 @@ describe('MemberProbePageComponent', () => {
     memberProgressServiceSpy.signProbePoint.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
     memberProgressServiceSpy.unsignProbePoint.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
     memberProgressServiceSpy.updateProbeProgressStatus.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
-    entityServiceSpy.checkEntityAccess.mockReturnValue(of(true));
     authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'user-1',
       memberKey: 'test-member-key',
@@ -124,7 +123,6 @@ describe('MemberProbePageComponent', () => {
       imports: [MemberProbePageComponent],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },
-        { provide: EntityService, useValue: entityServiceSpy },
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },
@@ -199,7 +197,20 @@ describe('MemberProbePageComponent', () => {
     });
   });
 
+  it('signs but does not unsign when the kurin gives only signing', () => {
+    memberServiceSpy.getAbilities.mockReturnValue(of({ ...NO_ABILITIES, probes: { sign: true, unsign: false } }));
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.canSignProbePoints).toBe(true);
+    expect(component.canUnsignProbePoints).toBe(false);
+    const signed = { ...component.probeSections[0].points[0], isSigned: true };
+    component.onUnsignPoint(signed);
+    expect(memberProgressServiceSpy.unsignProbePoint).not.toHaveBeenCalled();
+  });
+
   it('onSignPoint should do nothing for non-reviewer role', () => {
+    memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
     authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'user-1',
       memberKey: 'test-member-key',

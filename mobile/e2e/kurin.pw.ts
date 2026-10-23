@@ -86,8 +86,27 @@ function probeProgress(memberKey: string, state: ProbeState) {
   };
 }
 
-/** The kurin's endpoints. `canUpdate` is the server's check-access answer per member. */
-function kurinApi(options: { canUpdate: (memberKey: string) => boolean; duesGroups?: string[] }): ExtraApi {
+/** What the kurin's defaults give a впорядник over his гурток (`member/{key}/abilities`). */
+const LEADER_ABILITIES = {
+  warnings: { give: [1, 2, 3], cancel: 'OwnIssued' },
+  awards: { confirm: [1, 2, 3, 4], remove: false },
+  probes: { sign: true, unsign: true },
+  badges: { review: true },
+  journal: false,
+};
+const NO_ABILITIES = {
+  warnings: { give: [], cancel: 'None' },
+  awards: { confirm: [], remove: false },
+  probes: { sign: false, unsign: false },
+  badges: { review: false },
+  journal: false,
+};
+
+/**
+ * The kurin's endpoints. `canUpdate` is the server's check-access answer per member, `leads` whether
+ * the kurin's policy gives the viewer a leader's abilities over them.
+ */
+function kurinApi(options: { canUpdate: (memberKey: string) => boolean; leads?: (memberKey: string) => boolean; duesGroups?: string[] }): ExtraApi {
   const probe: ProbeState = { signed: new Set(['p1']), status: 'InProgress' };
   const cards: Record<string, unknown> = {
     m1: card(ostap, { email: member.email, awards: [award('a1', 'm1', 'First', 'Confirmed')] }),
@@ -110,6 +129,7 @@ function kurinApi(options: { canUpdate: (memberKey: string) => boolean; duesGrou
           entries: [{ duesEntryKey: 'de1', kind: 'Contribution', amount: 150, occurredOn: '2026-07-02' }],
         });
       case '/badges/progress': return ok(progress(key));
+      case '/abilities': return ok(options.leads?.(key) ? LEADER_ABILITIES : NO_ABILITIES);
       case '/probes/probe-1/progress': return ok(probeProgress(key, probe));
       case '/probes/probe-2/progress':
         return ok({ probeProgressKey: null, memberKey: key, probeId: 'probe-2', status: 'NotStarted', completedAtUtc: null, verifiedAtUtc: null, pointSignatures: [] });
@@ -318,7 +338,7 @@ test('opens the own card from «Мій профіль» in Меню', async ({ p
 const reviewer = ['Group:Update:OwnGroups', 'GroupDues:Read:OwnGroups', 'BadgeProgress:Update:OwnGroups'];
 
 test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
-  const log = await signIn(page, member, kurinApi({ canUpdate: () => true, duesGroups: ['g1'] }), reviewer);
+  const log = await signIn(page, member, kurinApi({ canUpdate: () => true, leads: () => true, duesGroups: ['g1'] }), reviewer);
   await openKurinTab(page);
   await expect(page.getByText('Вмілості на перевірку')).toBeVisible();
   await page.getByTestId('groups').getByText('Соколи').click();
@@ -352,7 +372,7 @@ test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
 });
 
 test('lets a reviewer sign the probe and close it', async ({ page }, info) => {
-  const log = await signIn(page, member, kurinApi({ canUpdate: () => true }), reviewer);
+  const log = await signIn(page, member, kurinApi({ canUpdate: () => true, leads: () => true }), reviewer);
   await page.goto('./tabs/kurin/member/m2');
   await page.getByTestId('probe').first().click();
   await expect(page).toHaveURL(/\/member\/m2\/probe\?id=probe-1$/);

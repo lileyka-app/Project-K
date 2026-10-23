@@ -1,6 +1,6 @@
 <p-dialog [(visible)]="visible" header="Перестороги" [modal]="true" [dismissableMask]="true"
     [style]="{ width: 'min(92vw, 30rem)' }">
-    <p class="warnings-intro">Перестороги йдуть по черзі: наступну можна дати, лише поки діє попередня. Скасувати може той, хто дав.</p>
+    <p class="warnings-intro">Перестороги йдуть по черзі: наступну можна дати, лише поки діє попередня. Скасувати може той, хто дав, або той, кому курінь це дозволив.</p>
     <ol class="warnings-steps">
         @for (step of steps; track step.level) {
             <li class="warnings-step" [class.warnings-step--active]="active(step.level)"
@@ -15,6 +15,8 @@
                             Діє до {{ expiresAt(step.level) | date:'dd.MM.yyyy' }}
                         } @else if (canGive(step.level)) {
                             Можна дати {{ step.term }}
+                        } @else if (previousStands(step.level)) {
+                            Цю дає хтось інший
                         } @else {
                             Після попередньої
                         }

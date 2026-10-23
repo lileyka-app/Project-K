@@ -29,6 +29,7 @@ import {
 } from './kurin.models';
 import { KraiProfileCardFields, NewMemberPlacement, cardFieldsOf } from './member-edit';
 import { browserTimeZone } from './kurin-profile';
+import { MemberAbilities } from './abilities';
 
 /**
  * The endpoints the web's kurinModule services call (kurin, group, member, leadership,
@@ -115,6 +116,11 @@ export class KurinApi {
   /** A youth may read only their own; for anyone else the server refuses and the card shows none. */
   dues(memberKey: string): Promise<MemberDuesDto> {
     return this.api.get(`member/${memberKey}/dues`);
+  }
+
+  /** What the kurin's policy lets this person do to the member (web MemberService.getAbilities). */
+  abilities(memberKey: string): Promise<MemberAbilities> {
+    return this.api.get(`member/${memberKey}/abilities`);
   }
 
   /** The server's own answer whether this person may change the card (web EntityService). */

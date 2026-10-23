@@ -28,6 +28,7 @@ import { KurinDto } from '../../models/kurin.dto';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
+import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
@@ -46,6 +47,14 @@ describe('MemberCardComponent', () => {
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const memberKey = 'abc123';
+  /** What the kurin's defaults give a впорядник over his own гурток. */
+  const leaderAbilities: MemberAbilitiesDto = {
+    warnings: { give: [1, 2, 3], cancel: 'OwnIssued' },
+    awards: { confirm: [1, 2, 3, 4], remove: false },
+    probes: { sign: true, unsign: true },
+    badges: { review: true },
+    journal: false
+  };
   const member: MemberDto = {
     memberKey,
     groupKey: 'group1',
@@ -65,6 +74,7 @@ describe('MemberCardComponent', () => {
     memberServiceSpy = {
       getByKey: vi.fn(),
       getMemberships: vi.fn(),
+      getAbilities: vi.fn(),
       verifyProfile: vi.fn(),
       resetProfileVerification: vi.fn()
     } as MockedObject<MemberService>;
@@ -109,10 +119,11 @@ describe('MemberCardComponent', () => {
       userKey: 'user-mentor',
       memberKey: 'test-member-key',
       email: 'mentor@example.com',
-      isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
+      isAdmin: false, permissions: ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'], roles: ['KV.Vykhovnyk'],
       kurinKey: member.kurinKey,
       accessToken: 'token'
     });
+    memberServiceSpy.getAbilities.mockReturnValue(of(leaderAbilities));
 
     badgesCatalogServiceSpy.getAll.mockReturnValue(of([]));
     badgesCatalogServiceSpy.getForKurin.mockReturnValue(of([]));
@@ -956,7 +967,6 @@ describe('MemberCardComponent', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(loaded));
       createComponent();
       vi.spyOn(component.permissionService, 'isReviewer').mockReturnValue(true);
-      vi.spyOn(component.permissionService, 'canManageWarnings').mockReturnValue(true);
       fixture.detectChanges();
     }
 
@@ -974,9 +984,36 @@ describe('MemberCardComponent', () => {
 
     it('offers neither to someone who may not edit the member', () => {
       entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
+      memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
       createAsReviewer(member);
       expect(component.canManageProfileVerification).toBe(false);
       expect(component.canManageWarnings).toBe(false);
+    });
+
+    it('offers перестороги by the kurin policy, even without the right to edit the card', () => {
+      entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
+      memberServiceSpy.getAbilities.mockReturnValue(of({ ...NO_ABILITIES, warnings: { give: [1], cancel: 'OwnIssued' } }));
+      createAsReviewer(member);
+
+      expect(component.canEditMember).toBe(false);
+      expect(component.canManageWarnings).toBe(true);
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Перестороги');
+    });
+
+    it('offers the journal filtered to the member when the kurin lets the viewer read it', () => {
+      memberServiceSpy.getAbilities.mockReturnValue(of({ ...leaderAbilities, journal: true }));
+      createAsReviewer(member);
+
+      expect(component.journalKurinKey).toBe(member.kurinKey);
+      component.openJournal();
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/kurin', member.kurinKey, 'journal'], { queryParams: { member: memberKey } });
+    });
+
+    it('hides the journal from whoever may not read it', () => {
+      createAsReviewer(member);
+
+      expect(component.journalKurinKey).toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="member-journal"]')).toBeNull();
     });
 
     it('verifies the profile after asking', () => {

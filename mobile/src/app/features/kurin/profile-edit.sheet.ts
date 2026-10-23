@@ -64,7 +64,9 @@ import {
   toggleWarning,
   warningCalls,
   warningChecked,
+  warningInForce,
 } from './member-edit';
+import { MemberAbilities, NO_ABILITIES, mayCancelWarning, mayGiveWarning } from './abilities';
 
 const SAVE_ERRORS = {
   ContactInfoLinked: 'Телефон цього акаунта змінюється в налаштуваннях акаунта.',
@@ -397,6 +399,8 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   cardFields: CardFields | null = null;
   /** The kurin the member is in or goes to, when neither the card nor the placement says it. */
   kurinKey: string | null = null;
+  /** What the kurin's policy lets this person do to the member: which перестороги to give and lift. */
+  abilities: MemberAbilities = NO_ABILITIES;
 
   /** The profile check is done at once, as on the web; the card reads itself again after. */
   protected changed = false;
@@ -409,7 +413,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   private readonly user = this.auth.user();
   private readonly access = kurinAccess(this.user);
   /** Web isReviewer: Виховник and up. */
-  private readonly reviewer = this.access.reviewSkills;
+  private readonly reviewer = this.access.leadGroups;
 
   protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '', address: '', school: '',
     motherFirstName: '', motherLastName: '', motherPhone: '', fatherFirstName: '', fatherLastName: '', fatherPhone: '' });
@@ -514,7 +518,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     // The провід, and a member on their own card (a change makes a verified profile stale).
     this.canRanks.set(this.reviewer || this.own);
     this.canVerify.set(this.verificationEnabled && !this.own && this.reviewer);
-    this.canWarnings.set(this.reviewer);
+    this.canWarnings.set(this.abilities.warnings.give.length > 0 || this.abilities.warnings.cancel !== 'None');
     this.canDelete.set(this.access.manageWholeKurin);
   }
 
@@ -574,21 +578,34 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     return warningChecked(this.member?.warnings, this.draft(), level);
   }
 
-  /** As the web's checkbox: tick when the level before is ticked, untick only one's own. */
+  /**
+   * As the web's dialog: tick a level the kurin lets this person give once the one before is ticked;
+   * untick one's own while one may still give it, or anyone's with the right to.
+   */
   protected canToggle(level: WarningLevel): boolean {
     const warnings = this.member?.warnings;
-    return this.isChecked(level)
-      ? canClearWarning(warnings, this.draft(), level, this.user?.userKey)
-      : canSelectWarning(warnings, this.draft(), level);
+    if (!this.isChecked(level)) {
+      return mayGiveWarning(this.abilities, level) && canSelectWarning(warnings, this.draft(), level);
+    }
+    if (this.draft().assign.includes(level)) return true;
+    const current = warningInForce(warnings, level);
+    return !!current && mayCancelWarning(this.abilities, level, current.issuedByUserKey, this.user?.userKey)
+      && canClearWarning(warnings, this.draft(), level, this.user?.userKey, Date.now(), this.cancelsAnyone());
   }
 
   protected warningHint(level: WarningLevel): string | null {
     if (this.canToggle(level)) return null;
-    return this.isChecked(level) ? 'Скасувати може лише автор перестороги.' : 'Доступно після попереднього рівня.';
+    if (this.isChecked(level)) return 'Скасувати може автор перестороги або той, кому курінь це дозволив.';
+    return canSelectWarning(this.member?.warnings, this.draft(), level) ? 'Цю дає хтось інший.' : 'Доступно після попереднього рівня.';
   }
 
   protected toggle(level: WarningLevel, on: boolean): void {
-    this.draft.set(toggleWarning(this.member?.warnings, this.draft(), level, on, this.user?.userKey));
+    if (on === this.isChecked(level) || !this.canToggle(level)) return;
+    this.draft.set(toggleWarning(this.member?.warnings, this.draft(), level, on, this.user?.userKey, Date.now(), this.cancelsAnyone()));
+  }
+
+  private cancelsAnyone(): boolean {
+    return this.abilities.warnings.cancel === 'Any';
   }
 
   protected close(result: ProfileEditResult): void {

@@ -26,7 +26,6 @@ import {
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { checkmarkCircle, ellipseOutline } from 'ionicons/icons';
-import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
@@ -34,7 +33,6 @@ import {
   ProbePointView,
   hasYouthProgram,
   isProbeClosed,
-  kurinAccess,
   memberBranch,
   probeSections,
   shortDate,
@@ -43,13 +41,14 @@ import {
 } from './kurin.labels';
 import { GroupedProbeDto, MemberDto, MembershipDto, ProbeProgressDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
+import { MemberAbilities, NO_ABILITIES } from './abilities';
 
 const CONFLICT = { Conflict: 'Стан проби вже змінено. Дані оновлено.' };
 
 /**
  * One probe of a member (web member-probe-page): sections as an accordion with every point and who
- * signed it when. A reviewer who may change the card signs and unsigns points and, once all are
- * signed, closes the probe. A senior's probe is their archive: read-only. The probe comes as
+ * signed it when. Whoever the kurin lets sign does so and, once all are signed, closes the probe;
+ * taking a signature back is a right of its own. A senior's probe is their archive: read-only. The probe comes as
  * `?id=probe-1|probe-2` (the route has no :probeId).
  */
 @Component({
@@ -180,7 +179,7 @@ const CONFLICT = { Conflict: 'Стан проби вже змінено. Дан�
                         <p>{{ signer(point) }} · {{ signedAt(point) }}</p>
                       }
                     </ion-label>
-                    @if (canSign()) {
+                    @if (point.isSigned ? canUnsign() : canSign()) {
                       <ion-button
                         slot="end"
                         fill="clear"
@@ -207,7 +206,6 @@ const CONFLICT = { Conflict: 'Стан проби вже змінено. Дан�
 })
 export class ProbePage implements OnInit {
   private readonly data = inject(KurinApi);
-  private readonly auth = inject(AuthService);
   private readonly sheets = inject(ActionSheetController);
   private readonly toasts = inject(Toasts);
   private readonly route = inject(ActivatedRoute);
@@ -222,7 +220,8 @@ export class ProbePage implements OnInit {
   protected readonly partial = signal(false);
   private readonly member = signal<MemberDto | null>(null);
   private readonly memberships = signal<MembershipDto[]>([]);
-  private readonly canUpdate = signal(false);
+  /** What the kurin's policy lets this person do to the member: sign, and separately unsign. */
+  private readonly abilities = signal<MemberAbilities>(NO_ABILITIES);
   protected readonly busy = signal<string | null>(null);
 
   protected readonly sections = computed(() => probeSections(this.probe(), this.progress()));
@@ -241,7 +240,8 @@ export class ProbePage implements OnInit {
     const m = this.member();
     return !!m && !hasYouthProgram(memberBranch(m, this.memberships()));
   });
-  protected readonly canSign = computed(() => !this.archive() && kurinAccess(this.auth.user()).reviewSkills && this.canUpdate());
+  protected readonly canSign = computed(() => !this.archive() && this.abilities().probes.sign);
+  protected readonly canUnsign = computed(() => !this.archive() && this.abilities().probes.unsign);
   protected readonly closed = computed(() => isProbeClosed(this.progress()));
   protected readonly canClose = computed(
     () =>
@@ -339,12 +339,12 @@ export class ProbePage implements OnInit {
 
   private async load(): Promise<void> {
     const key = this.memberKey;
-    const [member, memberships, probe, progress, canUpdate] = await Promise.all([
+    const [member, memberships, probe, progress, abilities] = await Promise.all([
       this.data.member(key).catch(() => null),
       this.data.memberships(key).catch(() => [] as MembershipDto[]),
       this.data.groupedProbe(this.probeId).catch(() => null),
       this.data.probeProgress(key, this.probeId).catch(() => null),
-      this.data.canUpdateMember(key).catch(() => false),
+      this.data.abilities(key).catch(() => NO_ABILITIES),
     ]);
     this.member.set(member);
     this.memberships.set(memberships);
@@ -352,7 +352,7 @@ export class ProbePage implements OnInit {
     if (probe || !this.probe()) this.probe.set(probe);
     this.progress.set(progress);
     this.partial.set(!!probe && progress === null);
-    this.canUpdate.set(canUpdate);
+    this.abilities.set(abilities);
     if (this.openSections() === null) {
       const next = this.sections().find((s) => s.points.some((p) => !p.isSigned));
       this.openSections.set(next ? [next.sectionId] : []);

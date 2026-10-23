@@ -140,17 +140,22 @@ export function canSelectWarning(warnings: MemberWarningDto[] | null | undefined
   return warningChecked(warnings, draft, level === 'Level2' ? 'Level1' : 'Level2', now);
 }
 
-/** Only who gave a пересторога lifts it; one not saved yet can always be unticked (web canClearWarning). */
+/**
+ * Who gave a пересторога lifts it, and `anyone` (the kurin's «Скасовувати чужі перестороги») lifts
+ * any; one not saved yet can always be unticked (web canCancel).
+ */
 export function canClearWarning(
   warnings: MemberWarningDto[] | null | undefined,
   draft: WarningDraft,
   level: WarningLevel,
   userKey: string | null | undefined,
   now = Date.now(),
+  anyone = false,
 ): boolean {
   if (draft.assign.includes(level)) return true;
   const current = warningInForce(warnings, level, now);
-  return !!current && !!userKey && (current.issuedByUserKey ?? '').toLowerCase() === userKey.toLowerCase();
+  if (!current) return false;
+  return anyone || (!!userKey && (current.issuedByUserKey ?? '').toLowerCase() === userKey.toLowerCase());
 }
 
 /** The draft after ticking or unticking one level; a move the rules refuse leaves it as it was. */
@@ -161,6 +166,7 @@ export function toggleWarning(
   on: boolean,
   userKey: string | null | undefined,
   now = Date.now(),
+  anyone = false,
 ): WarningDraft {
   const current = warningInForce(warnings, level, now);
   if (on) {
@@ -170,7 +176,7 @@ export function toggleWarning(
     }
     return { ...draft, assign: [...draft.assign, level] };
   }
-  if (!canClearWarning(warnings, draft, level, userKey, now)) return draft;
+  if (!canClearWarning(warnings, draft, level, userKey, now, anyone)) return draft;
   if (draft.assign.includes(level)) return { ...draft, assign: draft.assign.filter((l) => l !== level) };
   return current ? { ...draft, cancel: [...draft.cancel, current.memberWarningKey] } : draft;
 }

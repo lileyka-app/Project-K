@@ -155,6 +155,29 @@ describe('PermissionService', () => {
     expect(service.canSetupLeadership('kv')).toBe(false);
   });
 
+  // Who reviews вмілості and reads the journal is the kurin's policy, which the permission list carries.
+  it('reviews skills by BadgeProgress:Update, whoever holds it', () => {
+    setState(vykhovnykPerms);
+    expect(service.canReviewSkills()).toBe(false);
+
+    setState([...providPerms, 'BadgeProgress:Update:OwnGroups']);
+    expect(service.canReviewSkills()).toBe(true);
+
+    setState([], true);
+    expect(service.canReviewSkills()).toBe(true);
+  });
+
+  it('reads the journal by KurinJournal:Read, at any scope', () => {
+    setState([...memberPerms, 'KurinJournal:Read:OwnGroups']);
+    expect(service.canReadJournal()).toBe(true);
+
+    setState(stewardPerms);
+    expect(service.canReadJournal()).toBe(false);
+
+    setState([], true);
+    expect(service.canReadJournal()).toBe(true);
+  });
+
   it('defaults to no access when there is no auth state', () => {
     authService.getAuthStateValue.mockReturnValue(null);
     expect(service.isAdmin()).toBe(false);

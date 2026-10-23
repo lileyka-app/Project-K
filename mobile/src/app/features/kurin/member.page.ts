@@ -79,6 +79,7 @@ import {
   MemberDuesDto,
   MembershipDto,
 } from './kurin.models';
+import { MemberAbilities, NO_ABILITIES, awardRights } from './abilities';
 import { KurinApi, ProtectedImages } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
 import { DEFAULT_CARD_FIELDS, cardExtraRows } from './member-edit';
@@ -398,7 +399,7 @@ const HIDDEN_TEXT = 'Приховано';
                 <ion-list-header><ion-label>Відзначення УПЮ</ion-label></ion-list-header>
                 <ion-item-group>
                   @for (group of awards(); track group.level) {
-                    <ion-item [button]="canEdit()" [detail]="canEdit()" (click)="openAward(group.latest)" data-testid="award">
+                    <ion-item [button]="canOpenAward(group.latest)" [detail]="canOpenAward(group.latest)" (click)="openAward(group.latest)" data-testid="award">
                       @if (awardImage(group.latest); as src) { <img class="thumb" slot="start" [src]="src" alt="" /> }
                       @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
                       <ion-label class="ion-text-wrap">
@@ -571,6 +572,8 @@ export class MemberPage implements OnInit {
   protected readonly probes = signal<Loaded<ProbeRow[]>>({ state: 'loading' });
   protected readonly dues = signal<MemberDuesDto | null>(null);
   protected readonly canUpdate = signal(false);
+  /** What the kurin's policy lets this person do to the member (web member-card abilities). */
+  protected readonly abilities = signal<MemberAbilities>(NO_ABILITIES);
   protected readonly verificationEnabled = signal(false);
   /** What the kurin's край asks on the card; null until read (the edit sheet then reads it itself). */
   private readonly cardFields = signal<CardFields | null>(null);
@@ -583,8 +586,8 @@ export class MemberPage implements OnInit {
   protected readonly canEditProfile = computed(() => this.canUpdate() && !!this.memberValue());
   /** Skills and awards: whoever the server lets change the card (web canEditMember). */
   protected readonly canEdit = computed(() => this.canUpdate());
-  /** Confirming skills and awards: a reviewer who may change this card (web canInlineModerateSkills). */
-  protected readonly canModerate = computed(() => kurinAccess(this.auth.user()).reviewSkills && this.canUpdate());
+  /** Confirming and removing вмілості: the kurin lets this person review the member's (web canInlineModerateSkills). */
+  protected readonly canModerate = computed(() => this.abilities().badges.review);
   /** Probes, skills and awards are the youth's; known once the card and memberships are read. */
   protected readonly youth = computed(() => {
     const m = this.memberValue();
@@ -841,12 +844,23 @@ export class MemberPage implements OnInit {
     if (data) await this.loadSkills(key);
   }
 
+  /** The server's rules for one award: change it, confirm its level, withdraw or remove it. */
+  private awardRightsOf(award: MemberAwardDto) {
+    return awardRights(award, this.abilities(), this.canEdit(), this.auth.user()?.userKey, this.isOwnCard());
+  }
+
+  protected canOpenAward(award: MemberAwardDto): boolean {
+    const rights = this.awardRightsOf(award);
+    return rights.edit || rights.confirm || rights.remove;
+  }
+
   protected async openAward(award: MemberAwardDto | null): Promise<void> {
     const key = this.key();
-    if (!key || !this.canEdit()) return;
+    if (!key || (award ? !this.canOpenAward(award) : !this.canEdit())) return;
+    const rights = award ? this.awardRightsOf(award) : { edit: this.canEdit(), confirm: false, remove: false };
     const modal = await this.modals.create({
       component: AwardSheet,
-      componentProps: { memberKey: key, award, canEdit: this.canEdit(), canReview: this.canModerate() },
+      componentProps: { memberKey: key, award, canEdit: rights.edit, canReview: rights.confirm, canRemove: rights.remove },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -860,7 +874,13 @@ export class MemberPage implements OnInit {
     if (!key || !member) return;
     const modal = await this.modals.create({
       component: ProfileEditSheet,
-      componentProps: { member, own: this.isOwnCard(), verificationEnabled: this.verificationEnabled(), cardFields: this.cardFields() },
+      componentProps: {
+        member,
+        own: this.isOwnCard(),
+        verificationEnabled: this.verificationEnabled(),
+        cardFields: this.cardFields(),
+        abilities: this.abilities(),
+      },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -883,6 +903,10 @@ export class MemberPage implements OnInit {
       this.data.canUpdateMember(key).then(
         (allowed) => this.canUpdate.set(allowed),
         () => this.canUpdate.set(false),
+      ),
+      this.data.abilities(key).then(
+        (abilities) => this.abilities.set(abilities),
+        () => this.abilities.set(NO_ABILITIES),
       ),
       // A youth may read only their own вкладка: for anyone else the server refuses and the tile stays away.
       this.data.dues(key).then(

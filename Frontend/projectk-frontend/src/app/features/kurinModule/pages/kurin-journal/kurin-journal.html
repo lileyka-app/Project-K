@@ -1,0 +1,180 @@
+<section class="lil-page" data-testid="kurin-journal">
+  <header class="lil-page-head">
+    <div>
+      <h1>Журнал дій</h1>
+      <p>Хто що змінив у курені за останній рік</p>
+    </div>
+    <div class="lil-page-head__actions journal-filters-toggle">
+      <p-button
+        [label]="activeFilterCount() ? 'Фільтри · ' + activeFilterCount() : 'Фільтри'"
+        icon="pi pi-filter"
+        severity="secondary"
+        (onClick)="filtersOpen.set(true)"
+        data-testid="journal-filters-open" />
+    </div>
+  </header>
+
+  <section class="kurin-tile journal-filters-bar" aria-label="Фільтри журналу">
+    <ng-container [ngTemplateOutlet]="filters" [ngTemplateOutletContext]="{ $implicit: 'bar' }" />
+  </section>
+
+  <p-drawer
+    [visible]="filtersOpen()"
+    (visibleChange)="filtersOpen.set($event)"
+    position="bottom"
+    header="Фільтри"
+    [style]="{ height: 'auto', maxHeight: '85vh' }"
+    styleClass="journal-drawer">
+    <ng-container [ngTemplateOutlet]="filters" [ngTemplateOutletContext]="{ $implicit: 'drawer' }" />
+  </p-drawer>
+
+  @if (loadFailed()) {
+    <p-message severity="error" icon="pi pi-exclamation-triangle">Не вдалося завантажити журнал. Спробуй оновити сторінку.</p-message>
+  }
+
+  <section class="kurin-tile" aria-live="polite">
+    @if (loading()) {
+      <div class="journal-skeleton">
+        <p-skeleton width="100%" height="3.25rem" />
+        <p-skeleton width="100%" height="3.25rem" />
+        <p-skeleton width="100%" height="3.25rem" />
+      </div>
+    } @else if (days().length === 0) {
+      <app-empty-state
+        art="list"
+        title="Тут поки тихо"
+        [body]="activeFilterCount() ? 'За цими фільтрами записів немає.' : 'Щойно хтось підпише точку чи дасть відзначення, це зʼявиться тут.'" />
+    } @else {
+      @for (day of days(); track day.key) {
+        <h2 class="journal-day">{{ day.label }}</h2>
+        <ol class="journal-list">
+          @for (entry of day.entries; track entry.key) {
+            <li class="journal-entry" data-testid="journal-entry">
+              <div class="journal-entry__head">
+                <span class="journal-entry__actor">{{ entry.actor }}</span>
+                @if (entry.role) {
+                  <p-tag [value]="entry.role" severity="secondary" />
+                }
+                <time class="journal-entry__time">{{ entry.time }}</time>
+              </div>
+              <p class="journal-entry__what">{{ entry.sentence }}</p>
+              <p class="journal-entry__subject">
+                @if (entry.subjectLabel) {
+                  <span>{{ entry.subjectLabel }}</span>
+                }
+                @if (entry.memberName) {
+                  @if (entry.subjectLabel) { <span aria-hidden="true"> · </span> }
+                  @if (entry.memberKey) {
+                    <a [routerLink]="['/member', entry.memberKey]">{{ entry.memberName }}</a>
+                  } @else {
+                    <span>{{ entry.memberName }}</span>
+                  }
+                }
+              </p>
+              @if (entry.changes.length) {
+                <ul class="journal-changes">
+                  @for (change of entry.changes; track $index) {
+                    <li class="journal-change">
+                      <span class="journal-change__field">{{ change.field }}</span>
+                      @if (change.from) {
+                        <span class="journal-change__from">{{ change.from }}</span>
+                      }
+                      @if (change.from && change.to) {
+                        <span class="journal-change__arrow" aria-label="стало">→</span>
+                      }
+                      @if (change.to) {
+                        <span class="journal-change__to">{{ change.to }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+              @if (entry.note) {
+                <p class="journal-entry__note">{{ entry.note }}</p>
+              }
+            </li>
+          }
+        </ol>
+      }
+
+      @if (hasMore()) {
+        <div class="journal-more">
+          <p-button
+            label="Завантажити ще"
+            icon="pi pi-angle-down"
+            severity="secondary"
+            [loading]="loadingMore()"
+            (onClick)="loadMore()"
+            data-testid="journal-more" />
+        </div>
+      }
+    }
+  </section>
+</section>
+
+<ng-template #filters let-place>
+  <div class="journal-filters">
+    <div class="journal-field">
+      <label [for]="place + '-journal-area'">Розділ</label>
+      <p-select
+        [inputId]="place + '-journal-area'"
+        [options]="areaOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="area()"
+        (ngModelChange)="setArea($event)"
+        appendTo="body" />
+    </div>
+    <div class="journal-field">
+      <label [for]="place + '-journal-member'">Людина</label>
+      <p-select
+        [inputId]="place + '-journal-member'"
+        [options]="personOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        [showClear]="true"
+        placeholder="Будь-хто"
+        [ngModel]="memberKey()"
+        (ngModelChange)="setMember($event)"
+        appendTo="body" />
+    </div>
+    <div class="journal-field">
+      <label [for]="place + '-journal-actor'">Хто</label>
+      <p-select
+        [inputId]="place + '-journal-actor'"
+        [options]="actorOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        [showClear]="true"
+        placeholder="Будь-хто"
+        [ngModel]="actorUserKey()"
+        (ngModelChange)="setActor($event)"
+        appendTo="body" />
+    </div>
+    <div class="journal-field">
+      <label [for]="place + '-journal-period'">Період</label>
+      <p-select
+        [inputId]="place + '-journal-period'"
+        [options]="periodOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="period()"
+        (ngModelChange)="setPeriod($event)"
+        appendTo="body" />
+    </div>
+    @if (activeFilterCount()) {
+      <div class="journal-field journal-field--reset">
+        <p-button
+          label="Скинути"
+          icon="pi pi-times"
+          severity="secondary"
+          variant="text"
+          (onClick)="resetFilters()" />
+      </div>
+    }
+  </div>
+</ng-template>

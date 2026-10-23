@@ -114,6 +114,8 @@ export interface MemberAwardDto {
   note?: string | null;
   status: ProgressStatus | number;
   imageUrl?: string | null;
+  /** Who put it forward; they may withdraw it while it waits. */
+  submittedByUserKey?: string | null;
 }
 
 /** `GET member/{memberKey}`: the card. */

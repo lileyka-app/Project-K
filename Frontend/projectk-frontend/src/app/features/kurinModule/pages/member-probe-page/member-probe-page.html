@@ -121,7 +121,7 @@
 
                                 @if (canManageProbePoints) {
                                 <div class="probe-point-actions mt-2 flex flex-wrap gap-2">
-                                    @if (!point.isSigned) {
+                                    @if (!point.isSigned && canSignProbePoints) {
                                     <p-button label="Підписати"
                                         icon="pi pi-check"
                                         size="small"
@@ -129,7 +129,7 @@
                                         [disabled]="isUpdatingProbeStatus"
                                         (onClick)="onSignPoint(point)"
                                      />
-                                    } @else {
+                                    } @else if (point.isSigned && canUnsignProbePoints) {
                                     <p-button label="Скасувати підпис"
                                         icon="pi pi-undo"
                                         size="small"

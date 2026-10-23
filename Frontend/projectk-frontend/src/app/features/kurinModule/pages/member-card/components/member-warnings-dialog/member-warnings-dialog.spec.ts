@@ -6,6 +6,7 @@ import { MemberWarningsDialogComponent, WARNING_STEPS } from './member-warnings-
 import { MemberWarningService } from '../../../../services/member-warning-service/member-warning.service';
 import { MemberWarningLevel } from '../../../../models/enums/member-warning-level.enum';
 import { MemberWarningDto } from '../../../../models/member-warning.dto';
+import { WarningCancelAbility } from '../../../../models/member-abilities.dto';
 
 describe('MemberWarningsDialogComponent', () => {
   let fixture: ComponentFixture<MemberWarningsDialogComponent>;
@@ -44,12 +45,14 @@ describe('MemberWarningsDialogComponent', () => {
     });
   });
 
-  function create(warnings: MemberWarningDto[]) {
+  function create(warnings: MemberWarningDto[], give: number[] = [1, 2, 3], cancel: WarningCancelAbility = 'OwnIssued') {
     fixture = TestBed.createComponent(MemberWarningsDialogComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('memberKey', 'm1');
     fixture.componentRef.setInput('warnings', warnings);
     fixture.componentRef.setInput('currentUserKey', 'ME');
+    fixture.componentRef.setInput('giveLevels', give);
+    fixture.componentRef.setInput('cancelAbility', cancel);
     fixture.detectChanges();
   }
 
@@ -71,6 +74,34 @@ describe('MemberWarningsDialogComponent', () => {
     create([warning(MemberWarningLevel.Level1), warning(MemberWarningLevel.Level2, 'someone-else')]);
     expect(component.canCancel(MemberWarningLevel.Level1)).toBe(true);
     expect(component.canCancel(MemberWarningLevel.Level2)).toBe(false);
+  });
+
+  it('opens only the levels the kurin gives the viewer', () => {
+    create([warning(MemberWarningLevel.Level1)], [1]);
+
+    expect(component.canGive(MemberWarningLevel.Level2)).toBe(false);
+    expect(component.previousStands(MemberWarningLevel.Level2)).toBe(true);
+  });
+
+  it('lets the issuer cancel only a level they may still give', () => {
+    create([warning(MemberWarningLevel.Level1), warning(MemberWarningLevel.Level2)], [1]);
+
+    expect(component.canCancel(MemberWarningLevel.Level1)).toBe(true);
+    expect(component.canCancel(MemberWarningLevel.Level2)).toBe(false);
+  });
+
+  it('lets whoever may cancel anyone’s cancel any that stands', () => {
+    create([warning(MemberWarningLevel.Level1, 'someone-else')], [], 'Any');
+
+    expect(component.canCancel(MemberWarningLevel.Level1)).toBe(true);
+    expect(component.canGive(MemberWarningLevel.Level2)).toBe(false);
+  });
+
+  it('offers nothing to a viewer the kurin gives nothing', () => {
+    create([warning(MemberWarningLevel.Level1)], [], 'None');
+
+    expect(WARNING_STEPS.map(step => component.canGive(step.level))).toEqual([false, false, false]);
+    expect(component.canCancel(MemberWarningLevel.Level1)).toBe(false);
   });
 
   it('gives one after asking and tells the card', () => {

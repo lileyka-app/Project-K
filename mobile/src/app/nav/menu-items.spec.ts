@@ -38,7 +38,14 @@ describe('menuEntries', () => {
   it('adds what a Звʼязковий sees, with the web-only pages opening the web', () => {
     const entries = menuEntries(
       state({
-        permissions: ['Group:Manage:KurinWide', 'Kurin:Update:KurinWide', 'KurinDues:Read', 'GroupDues:Read:KurinWide'],
+        permissions: [
+          'Group:Manage:KurinWide',
+          'Kurin:Update:KurinWide',
+          'KurinDues:Read',
+          'GroupDues:Read:KurinWide',
+          'BadgeProgress:Update:KurinWide',
+          'KurinJournal:Read:KurinWide',
+        ],
       }),
       { youthKurin: true, duesGroups: [{ groupKey: 'g1', groupName: 'Соколи' }] },
     );
@@ -53,6 +60,7 @@ describe('menuEntries', () => {
       'Планування',
       'Точкування',
       'Модерація вмілостей',
+      'Журнал дій',
       'Вкладка гуртка',
       'Вкладка куреня',
       'Налаштування куреня',
@@ -70,6 +78,18 @@ describe('menuEntries', () => {
     expect(byKey['kurin-dues'].link).toBe('/tabs/kurin/dues');
     expect(byKey['kurin-dues'].web).toBeUndefined();
     expect(byKey['review'].link).toBe('/tabs/kurin/review/skills');
+    expect(byKey['journal'].web).toBe('/kurin/k1/journal');
+    expect(byKey['journal'].icon).toBe('time');
+  });
+
+  it('follows the kurin policy for skill review and the journal, not leading a гурток', () => {
+    const leader = labels(state({ permissions: ['Group:Update:OwnGroups'] }));
+    expect(leader).not.toContain('Модерація вмілостей');
+    expect(leader).not.toContain('Журнал дій');
+
+    const instructor = labels(state({ permissions: ['BadgeProgress:Update:OwnGroups', 'KurinJournal:Read:KurinWide'] }));
+    expect(instructor).toContain('Модерація вмілостей');
+    expect(instructor).toContain('Журнал дій');
   });
 
   it('names each гурток when one keeps several boxes, and hides skill review outside УПЮ', () => {

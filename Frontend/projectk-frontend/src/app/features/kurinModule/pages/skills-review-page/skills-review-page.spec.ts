@@ -50,7 +50,7 @@ describe('SkillsReviewPageComponent', () => {
       userKey: 'user-1',
       memberKey: 'test-member-key',
       email: 'mentor@example.com',
-      isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
+      isAdmin: false, permissions: ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'], roles: ['KV.Vykhovnyk'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     });

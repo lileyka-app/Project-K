@@ -9,8 +9,6 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService } from '@openng/optimus-ui/api';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { EntityService } from '../../../authModule/services/entity-service/entity.service';
-import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { MemberService } from '../../services/member-service/member.service';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
@@ -29,6 +27,7 @@ import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.fu
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { parseOfficeRole } from '../../functions/system-role.function';
 import { leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
+import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -49,8 +48,6 @@ export class MemberProbePageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
-  private readonly entityService = inject(EntityService);
-  private readonly permissionService = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly memberService = inject(MemberService);
   private readonly probesCatalogService = inject(ProbesCatalogService);
@@ -73,7 +70,8 @@ export class MemberProbePageComponent implements OnInit {
   isUpdatingProbeStatus = false;
   reviewerActionErrorMessage: string | null = null;
   reviewerActionSuccessMessage: string | null = null;
-  canManageMemberActions = false;
+  /** What the kurin's policy lets the viewer do to this member; signing and unsigning come from it. */
+  abilities: MemberAbilitiesDto = NO_ABILITIES;
 
   /** Скільки точок цієї проби вже підписано. */
   get signedPointsCount(): number {
@@ -97,8 +95,18 @@ export class MemberProbePageComponent implements OnInit {
     return this.member !== null && !hasYouthProgram(memberBranchHere(this.member, this.memberships));
   }
 
+  /** Sign points and close the проба. */
+  get canSignProbePoints(): boolean {
+    return !this.isArchive && this.abilities.probes.sign;
+  }
+
+  /** Take a signature back; a kurin may give it to fewer people than signing. */
+  get canUnsignProbePoints(): boolean {
+    return !this.isArchive && this.abilities.probes.unsign;
+  }
+
   get canManageProbePoints(): boolean {
-    return !this.isArchive && this.permissionService.canReviewSkills() && this.canManageMemberActions;
+    return this.canSignProbePoints || this.canUnsignProbePoints;
   }
 
   ngOnInit(): void {
@@ -183,7 +191,7 @@ export class MemberProbePageComponent implements OnInit {
   }
 
   get canCloseProbe(): boolean {
-    if (!this.canManageProbePoints || !this.memberKey || !this.probeId) {
+    if (!this.canSignProbePoints || !this.memberKey || !this.probeId) {
       return false;
     }
 
@@ -217,7 +225,7 @@ export class MemberProbePageComponent implements OnInit {
   }
 
   onSignPoint(point: MemberProbeDetailPointRowView): void {
-    if (!this.canManageProbePoints || point.isSigned || this.isUpdatingProbeStatus) {
+    if (!this.canSignProbePoints || point.isSigned || this.isUpdatingProbeStatus) {
       return;
     }
 
@@ -225,7 +233,7 @@ export class MemberProbePageComponent implements OnInit {
   }
 
   onUnsignPoint(point: MemberProbeDetailPointRowView): void {
-    if (!this.canManageProbePoints || !point.isSigned || this.isUpdatingProbeStatus) {
+    if (!this.canUnsignProbePoints || !point.isSigned || this.isUpdatingProbeStatus) {
       return;
     }
 
@@ -279,18 +287,14 @@ export class MemberProbePageComponent implements OnInit {
   }
 
   private updateMemberAccess(): void {
+    this.abilities = NO_ABILITIES;
     if (!this.memberKey) {
-      this.canManageMemberActions = false;
       return;
     }
 
-    this.entityService.checkEntityAccess('member', this.memberKey, 'Update').subscribe({
-      next: (canUpdate) => {
-        this.canManageMemberActions = canUpdate;
-      },
-      error: () => {
-        this.canManageMemberActions = false;
-      }
+    this.memberService.getAbilities(this.memberKey).subscribe({
+      next: abilities => this.abilities = abilities,
+      error: () => this.abilities = NO_ABILITIES
     });
   }
 

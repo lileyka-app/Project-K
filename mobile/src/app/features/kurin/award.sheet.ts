@@ -31,8 +31,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 /**
  * Adding or changing one УПЮ відзначення (web member-awards-dialog): its ступінь (fixed once
- * added), the date and a note. A reviewer confirms one that waits; whoever may change the card
- * removes one. Dismisses with `true` after any change.
+ * added), the date and a note. What the viewer may do with it — change, confirm, remove — the card
+ * works out from the kurin's policy (abilities.ts awardRights). Dismisses with `true` after any change.
  */
 @Component({
   selector: 'app-award-sheet',
@@ -168,6 +168,7 @@ export class AwardSheet implements OnInit {
   award: MemberAwardDto | null = null;
   canEdit = false;
   canReview = false;
+  canRemove = false;
 
   protected readonly levels = AWARD_LEVELS;
   protected readonly today = toDateOnly(new Date());
@@ -178,7 +179,7 @@ export class AwardSheet implements OnInit {
   protected readonly valid = computed(() => !!this.level() && /^\d{4}-\d{2}-\d{2}$/.test(this.date()));
   protected readonly statusLabel = computed(() => (this.award ? (STATUS_LABELS[progressStatus(this.award.status)] ?? null) : null));
   protected readonly canApprove = computed(() => this.canReview && !!this.award && progressStatus(this.award.status) === 'Submitted');
-  protected readonly canDelete = computed(() => this.canEdit && !!this.award);
+  protected readonly canDelete = computed(() => this.canRemove && !!this.award);
 
   ngOnInit(): void {
     if (this.award) {

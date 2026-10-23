@@ -53,8 +53,9 @@
 <app-member-awards-dialog [(visible)]="dialogVisible"
     [awardToEdit]="selectedAward"
     [existingAwards]="awards()"
-    [canEdit]="canEdit()"
-    [canReview]="canReview()"
+    [canEdit]="canEditAward(selectedAward)"
+    [canReview]="canConfirm(selectedAward)"
+    [canDelete]="canDeleteAward(selectedAward)"
     (save)="onSave($event)"
     (approve)="approveAward($event)"
     (delete)="confirmDelete($event)" />

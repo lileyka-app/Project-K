@@ -124,14 +124,16 @@
 
                 </div>
 
-                @if (canEditMember) {
+                @if (canEditMember || canManageWarnings || journalKurinKey) {
                 <div class="member-actions md:justify-self-end">
-<p-button (onClick)="onEditMember()"
+                    @if (canEditMember) {
+                    <p-button (onClick)="onEditMember()"
                         label="Редагувати"
                         icon="pi pi-pencil"
                         severity="secondary"
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm !font-semibold"
                      />
+                    }
                     @if (canManageProfileVerification) {
                     <p-button (onClick)="onProfileVerificationAction()"
                         [label]="isProfileVerified ? 'Зняти верифікацію' : 'Верифікувати'"
@@ -149,6 +151,16 @@
                         severity="secondary"
                         variant="text"
                         size="small"
+                     />
+                    }
+                    @if (journalKurinKey) {
+                    <p-button (onClick)="openJournal()"
+                        label="Журнал"
+                        icon="pi pi-history"
+                        severity="secondary"
+                        variant="text"
+                        size="small"
+                        data-testid="member-journal"
                      />
                     }
                 </div>
@@ -280,7 +292,10 @@
             <app-member-awards-tile [awards]="member.awards || []"
                 [kurinStamps]="kurinStamps"
                 [canEdit]="canEditMember"
-                [canReview]="canInlineModerateSkills"
+                [confirmLevels]="abilities.awards.confirm"
+                [canRemove]="abilities.awards.remove"
+                [viewerUserKey]="currentUserKey"
+                [ownCard]="isOwnCard"
                 (saveAward)="onSaveAward($event)"
                 (deleteAward)="onDeleteAward($event)"
                 (reviewAward)="onReviewAward($event)" />
@@ -723,5 +738,7 @@
     [memberKey]="member.memberKey"
     [warnings]="member.warnings ?? []"
     [currentUserKey]="currentUserKey"
+    [giveLevels]="abilities.warnings.give"
+    [cancelAbility]="abilities.warnings.cancel"
     (changed)="onWarningsChanged()" />
 }

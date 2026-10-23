@@ -78,4 +78,32 @@ describe('capabilityGuard', () => {
       });
     });
   }));
+
+  function stateWith(permissions: string[]) {
+    return { userKey: 'user-1', memberKey: null, email: 'kv@example.com', isAdmin: false, permissions, roles: ['KV.Instruktor'], kurinKey: 'kurin-1', accessToken: 'token' } as never;
+  }
+
+  it('lets the journal in whoever the kurin gives KurinJournal:Read', () => new Promise<void>(done => {
+    authService.getAuthState.mockReturnValue(of(stateWith(['KurinJournal:Read:KurinWide'])));
+    authService.getAuthStateValue.mockReturnValue(stateWith(['KurinJournal:Read:KurinWide']));
+
+    TestBed.runInInjectionContext(() => {
+      runGuard(['journal']).subscribe(result => {
+        expect(result).toBe(true);
+        done();
+      });
+    });
+  }));
+
+  it('keeps out of the journal a leader the kurin has not given it to', () => new Promise<void>(done => {
+    authService.getAuthState.mockReturnValue(of(stateWith(['Group:Update:OwnGroups'])));
+    authService.getAuthStateValue.mockReturnValue(stateWith(['Group:Update:OwnGroups']));
+
+    TestBed.runInInjectionContext(() => {
+      runGuard(['journal']).subscribe(result => {
+        expect(result).toBe(forbiddenTree);
+        done();
+      });
+    });
+  }));
 });

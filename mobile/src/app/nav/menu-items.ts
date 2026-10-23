@@ -89,6 +89,10 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
       link: '/tabs/kurin/review/skills',
     });
   }
+  // The journal is a page of the web: the phone opens it there.
+  if (access.readJournal) {
+    items.push({ key: 'journal', label: 'Журнал дій', icon: 'time', tile: '#8e8e93', web: `/kurin/${kurinKey}/journal` });
+  }
   // One гурток: straight to its box; several: an entry each, as the web's fold has them.
   const groups = access.seeGroupDues ? context.duesGroups : [];
   for (const group of groups) {

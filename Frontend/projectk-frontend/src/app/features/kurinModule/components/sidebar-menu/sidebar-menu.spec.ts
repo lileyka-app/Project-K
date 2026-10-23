@@ -60,7 +60,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -83,7 +83,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -105,7 +105,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -172,7 +172,7 @@ describe('SidebarMenuComponent', () => {
       userKey: 'user-1',
       memberKey: 'member-1',
       email: 'manager@projectk.com',
-      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     };
@@ -222,7 +222,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -277,7 +277,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'manager@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -327,7 +327,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-999',
         memberKey: 'test-member-key',
         email: 'mentor@example.com',
-        isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
+        isAdmin: false, permissions: ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'], roles: ['KV.Vykhovnyk'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -397,7 +397,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -478,7 +478,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'mentor@example.com',
-        isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
+        isAdmin: false, permissions: ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'], roles: ['KV.Vykhovnyk'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -492,13 +492,52 @@ describe('SidebarMenuComponent', () => {
       component.items$.subscribe(items => {
         const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
 
-        if (skillsReviewItem?.command) {
-          skillsReviewItem.command({});
-          expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'review', 'skills']);
-        }
+        expect(skillsReviewItem?.command).toBeDefined();
+        skillsReviewItem?.command?.({});
+        expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'review', 'skills']);
         done();
       });
     }));
+
+    function itemsFor(permissions: string[]): Promise<MenuItem[]> {
+      const state: AuthState = {
+        userKey: 'user-321',
+        memberKey: 'member-321',
+        email: 'kv@example.com',
+        isAdmin: false, permissions, roles: ['KV.Instruktor'],
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+      fixture.componentRef.setInput('state$', of(state));
+      mockAuthService.getAuthStateValue.mockReturnValue(state);
+      component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
+      return new Promise(resolve => component.items$.subscribe(items => resolve(items)));
+    }
+
+    it('lists «Журнал дій» right after the skills moderation for whoever may read it', async () => {
+      const items = await itemsFor(['BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide']);
+      const labels = items.map(item => item.label);
+      const journal = items.find(item => item.label === 'Журнал дій');
+
+      expect(labels.indexOf('Журнал дій')).toBe(labels.indexOf('Модерація вмілостей') + 1);
+      expect(journal?.icon).toBe('pi pi-history');
+      journal?.command?.({});
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'journal']);
+    });
+
+    it('hides «Журнал дій» from whoever the kurin does not let read it', async () => {
+      const items = await itemsFor(['Group:Update:OwnGroups']);
+
+      expect(items.find(item => item.label === 'Журнал дій')).toBeUndefined();
+    });
+
+    it('follows the kurin policy for the skills moderation, not leading a гурток', async () => {
+      const leaderWithout = await itemsFor(['Group:Update:OwnGroups']);
+      const providWith = await itemsFor(['BadgeProgress:Update:OwnGroups']);
+
+      expect(leaderWithout.find(item => item.label === 'Модерація вмілостей')).toBeUndefined();
+      expect(providWith.find(item => item.label === 'Модерація вмілостей')).toBeDefined();
+    });
   });
 
   describe('close', () => {
@@ -521,7 +560,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -621,7 +660,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'manager@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
@@ -674,7 +713,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       });
