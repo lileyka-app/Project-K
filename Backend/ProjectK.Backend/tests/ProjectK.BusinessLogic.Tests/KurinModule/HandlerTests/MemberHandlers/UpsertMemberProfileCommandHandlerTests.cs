@@ -14,6 +14,7 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
@@ -39,6 +40,7 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<IKraiProfileProvider> _profilesMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
     private readonly IMapper _mapper;
+    private readonly JournalRecorder _journal;
 
     public UpsertMemberProfileCommandHandlerTests()
     {
@@ -66,6 +68,7 @@ public class UpsertMemberProfileCommandHandlerTests
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _mapper = mapperConfig.CreateMapper();
+        _journal = new JournalRecorder(_currentUserContextMock.Object);
         _handler = Handler(FieldAccess.SeesEverything());
     }
 
@@ -77,7 +80,8 @@ public class UpsertMemberProfileCommandHandlerTests
         _eventsMock.Object,
         _accountsMock.Object,
         _profilesMock.Object,
-        fieldAccess);
+        fieldAccess,
+        _journal.Audit);
 
     private void AccountIs(Guid userKey, OnboardingStatus status) =>
         _accountsMock.Setup(a => a.FindAsync(userKey, It.IsAny<CancellationToken>()))
@@ -155,6 +159,23 @@ public class UpsertMemberProfileCommandHandlerTests
         created!.FirstName.Should().Be("Ivan");
         created.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.Unverified);
         _memberRepoMock.Verify(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // A new person is in no kurin yet: the entry goes to the one they are placed in. Their
+        // contacts and birth date are recorded as given, never with what they are.
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Member);
+        entry.Action.Should().Be(AuditActions.Member.Added);
+        entry.KurinKey.Should().Be(group.KurinKey);
+        entry.SubjectKey.Should().Be(created.MemberKey);
+        entry.SubjectMemberKey.Should().Be(created.MemberKey);
+        entry.SubjectLabel.Should().Be("Ivan Petrenko");
+        entry.Changes.Should().Equal(
+            new AuditChange("firstName", null, "Ivan"),
+            new AuditChange("middleName", null, "I"),
+            new AuditChange("lastName", null, "Petrenko"),
+            new AuditChange("email", null, null, Redacted: true),
+            new AuditChange("phoneNumber", null, null, Redacted: true),
+            new AuditChange("dateOfBirth", null, null, Redacted: true));
     }
 
     [Theory]
@@ -368,6 +389,37 @@ public class UpsertMemberProfileCommandHandlerTests
         existing.ProfileVerifiedByUserKey.Should().NotBeNull();
     }
 
+    /// <summary>The edit is measured against the card as it was before the request was mapped over it.</summary>
+    [Fact]
+    public async Task Handle_Update_RecordsOnlyWhatChanged_PrivateFieldsWithoutTheirValues()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.Address = "Стара 1";
+        existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+        var cmd = ProfileCommandFor(existing, group, firstName: "Changed", phone: "+380509999999");
+        cmd.Address = "Нова 2";
+        _journal.Knows(existing.MemberKey, group.KurinKey, group.GroupKey, "Old", "Name");
+
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        await _handler.Handle(cmd, CancellationToken.None);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Action.Should().Be(AuditActions.Member.Changed);
+        entry.KurinKey.Should().Be(group.KurinKey);
+        entry.SubjectMemberKey.Should().Be(existing.MemberKey);
+        entry.SubjectGroupKey.Should().Be(group.GroupKey);
+        entry.SubjectLabel.Should().Be("Changed Name");
+        entry.Changes.Should().Equal(
+            new AuditChange("firstName", "Old", "Changed"),
+            new AuditChange("phoneNumber", null, null, Redacted: true),
+            new AuditChange("address", null, null, Redacted: true),
+            new AuditChange("profileVerification", "VerifiedCurrent", "VerifiedStale"));
+    }
+
     [Fact]
     public async Task Handle_Update_VerifiedCurrentMember_WhenProfileDoesNotChange_ShouldKeepVerifiedCurrent()
     {
@@ -385,6 +437,7 @@ public class UpsertMemberProfileCommandHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
+        _journal.Entries.Should().BeEmpty();
     }
 
     [Fact]
@@ -535,6 +588,28 @@ public class UpsertMemberProfileCommandHandlerTests
         existing.PlastLevelHistory.Select(entry => entry.PlastLevel).Should().BeEquivalentTo([PlastLevel.Skob]);
         existing.LatestPlastLevel.Should().Be(PlastLevel.Skob);
         existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
+    }
+
+    [Fact]
+    public async Task Handle_Update_RecordsTheLevels_AsTheyWereAndAsTheyAre()
+    {
+        var group = MakeGroup();
+        var ownerUserKey = Guid.NewGuid();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = ownerUserKey;
+        var cmd = ProfileCommandFor(existing, group);
+        cmd.PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2024, 4, 22) }];
+        _journal.Knows(existing.MemberKey, group.KurinKey, group.GroupKey, "Old", "Name");
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        await _handler.Handle(cmd, CancellationToken.None);
+
+        _journal.Entries.Single().Changes.Should().Equal(
+            new AuditChange("plastLevels", null, $"{PlastLevelNames.Of(PlastLevel.Skob)} (2024-04-22)"));
     }
 
     [Fact]

@@ -47,4 +47,64 @@ public static class AuditActions
         public const string Given = "Warning.Given";
         public const string Cancelled = "Warning.Cancelled";
     }
+
+    /// <summary>Події й задачі. Answers to an invitation are not recorded: there are too many of them to read.</summary>
+    public static class Agenda
+    {
+        public const string Created = "Agenda.Created";
+        public const string Changed = "Agenda.Changed";
+        public const string Deleted = "Agenda.Deleted";
+
+        /// <summary>A task, one of its targets or one person's part of it moved to another column.</summary>
+        public const string StatusChanged = "Agenda.StatusChanged";
+
+        public const string Archived = "Agenda.Archived";
+        public const string Restored = "Agenda.Restored";
+    }
+
+    /// <summary>A person's card.</summary>
+    public static class Member
+    {
+        public const string Added = "Member.Added";
+        public const string Changed = "Member.Changed";
+        public const string PhotoChanged = "Member.PhotoChanged";
+        public const string PhotoRemoved = "Member.PhotoRemoved";
+        public const string Deleted = "Member.Deleted";
+        public const string ProfileVerified = "Member.ProfileVerified";
+        public const string VerificationReset = "Member.VerificationReset";
+    }
+
+    /// <summary>Ролі проводу and впорядники of гуртки.</summary>
+    public static class Office
+    {
+        /// <summary>Someone took the role, in place of whoever held it or into an empty one.</summary>
+        public const string Assigned = "Office.Assigned";
+
+        /// <summary>The role was left empty.</summary>
+        public const string Ended = "Office.Ended";
+
+        public const string MentorAssigned = "Office.MentorAssigned";
+        public const string MentorRevoked = "Office.MentorRevoked";
+    }
+
+    /// <summary>Who belongs to the kurin, and in which гурток.</summary>
+    public static class Membership
+    {
+        public const string Joined = "Membership.Joined";
+        public const string Left = "Membership.Left";
+        public const string MovedToGroup = "Membership.MovedToGroup";
+    }
+
+    /// <summary>The kurin's own settings.</summary>
+    public static class Settings
+    {
+        /// <summary>The kurin's details: number, станиця, profile verification and the like.</summary>
+        public const string KurinChanged = "Settings.KurinChanged";
+
+        /// <summary>«Права й видимість»: one change per cell, named <c>Capability/Audience</c>.</summary>
+        public const string AccessPolicyChanged = "Settings.AccessPolicyChanged";
+
+        public const string CardFieldsChanged = "Settings.CardFieldsChanged";
+        public const string ArchivePolicyChanged = "Settings.ArchivePolicyChanged";
+    }
 }

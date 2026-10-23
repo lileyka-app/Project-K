@@ -7,8 +7,10 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
 
@@ -18,13 +20,15 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
     private readonly IMemberDirectory _members;
     private readonly IBackendCache _cache;
     private readonly IAccessChangeSignal _accessChanges;
+    private readonly IKurinAudit _audit;
 
-    public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache, IAccessChangeSignal accessChanges)
+    public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache, IAccessChangeSignal accessChanges, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _cache = cache;
         _accessChanges = accessChanges;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<Guid>> Handle(AssignMentorCommand request, CancellationToken cancellationToken)
@@ -72,6 +76,16 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
         };
 
         _unitOfWork.MentorAssignments.Create(assignment, cancellationToken);
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Office,
+                AuditActions.Office.MentorAssigned,
+                assignment.MentorAssignmentKey,
+                KurinReportTerminology.LeadershipRole(LeadershipRole.Vykhovnyk),
+                mentorMember.MemberKey,
+                AuditChanges.Added(("group", group.Name)),
+                KurinKey: group.KurinKey),
+            cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // The assignment itself is what grants гуртковий access — it is read when access is

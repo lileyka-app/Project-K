@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -43,18 +44,24 @@ public sealed class GetKurinAccessPolicyQueryHandler : IRequestHandler<GetKurinA
 
 public sealed class SetKurinAccessPolicyCommandHandler : IRequestHandler<SetKurinAccessPolicyCommand, ServiceResult<KurinAccessPolicyDto>>
 {
+    /// <summary>What the kurin's journal calls this setting.</summary>
+    public const string Label = "Права й видимість";
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly IKurinAccessPolicyProvider _policies;
     private readonly IAccessChangeSignal _accessChanges;
+    private readonly IKurinAudit _audit;
 
     public SetKurinAccessPolicyCommandHandler(
         IUnitOfWork unitOfWork,
         IKurinAccessPolicyProvider policies,
-        IAccessChangeSignal accessChanges)
+        IAccessChangeSignal accessChanges,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _policies = policies;
         _accessChanges = accessChanges;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<KurinAccessPolicyDto>> Handle(SetKurinAccessPolicyCommand request, CancellationToken cancellationToken)
@@ -74,15 +81,34 @@ public sealed class SetKurinAccessPolicyCommandHandler : IRequestHandler<SetKuri
             return KurinAccessPolicyResult.NotFound();
         }
 
+        var before = KurinAccessPolicy.Read(kurin.AccessPolicy);
         var policy = KurinAccessPolicy.FromMatrix(request.Grants);
         kurin.AccessPolicy = policy.Write();
         _unitOfWork.Kurins.Update(kurin, cancellationToken);
+
+        var changes = ChangedCells(before, policy);
+        if (changes.Count > 0)
+        {
+            await _audit.RecordAsync(
+                new AuditRecord(AuditArea.Settings, AuditActions.Settings.AccessPolicyChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
+                cancellationToken);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _policies.Invalidate();
         _accessChanges.MarkKurin(request.KurinKey);
 
         return KurinAccessPolicyResult.Of(policy);
     }
+
+    /// <summary>Every cell whose reach differs, named <c>Capability/Audience</c>, from the old reach to the new.</summary>
+    private static IReadOnlyList<AuditChange> ChangedCells(KurinAccessPolicy before, KurinAccessPolicy after) =>
+        AuditChanges.Of(KurinCapabilities.All
+            .SelectMany(descriptor => KurinCapabilities.Audiences.Select(audience => (
+                Field: $"{descriptor.Key}/{audience}",
+                From: (object?)before.Reach(descriptor.Key, audience),
+                To: (object?)after.Reach(descriptor.Key, audience))))
+            .ToArray());
 }
 
 internal static class KurinAccessPolicyResult

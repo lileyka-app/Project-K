@@ -4,9 +4,12 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
@@ -25,6 +28,7 @@ public class AssignMentorCommandHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
     private readonly Mock<IAccessChangeSignal> _accessChanges = new();
+    private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     public AssignMentorCommandHandlerTests()
     {
@@ -62,13 +66,23 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(mentorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, Guid.NewGuid(), null, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Once);
         _accessChanges.Verify(s => s.MarkUser(mentorUserKey), Times.Once);
+
+        // Filed under the гурток's kurin, not the one the person joined last.
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Office);
+        entry.Action.Should().Be(AuditActions.Office.MentorAssigned);
+        entry.KurinKey.Should().Be(kurinKey);
+        entry.SubjectKey.Should().Be(result.Data);
+        entry.SubjectMemberKey.Should().Be(member.MemberKey);
+        entry.SubjectLabel.Should().Be("Впорядник");
+        entry.Changes.Should().Equal(new AuditChange("group", null, "G"));
     }
 
     [Fact]
@@ -86,7 +100,7 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.GetByKurinAsync(kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
@@ -109,7 +123,7 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -134,7 +148,7 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Conflict);
@@ -166,7 +180,7 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 

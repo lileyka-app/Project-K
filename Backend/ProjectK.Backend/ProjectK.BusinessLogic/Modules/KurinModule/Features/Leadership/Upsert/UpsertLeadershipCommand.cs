@@ -7,12 +7,14 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
@@ -60,6 +62,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
     private readonly IMemberDirectory _members;
     private readonly IBackendCache _cache;
     private readonly IAccessChangeSignal _accessChanges;
+    private readonly IKurinAudit _audit;
 
     public UpsertLeadershipCommandHandler(
         IUnitOfWork unitOfWork,
@@ -67,7 +70,8 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         ICurrentUserContext currentUserContext,
         IMemberDirectory members,
         IBackendCache cache,
-        IAccessChangeSignal accessChanges)
+        IAccessChangeSignal accessChanges,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -75,13 +79,14 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         _members = members;
         _cache = cache;
         _accessChanges = accessChanges;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<LeadershipResponse>> Handle(UpsertLeadershipCommand request, CancellationToken cancellationToken)
     {
         LeadershipEntity? existing = null;
         bool isCreated = false;
-        IReadOnlyCollection<Guid> touchedHolders;
+        IReadOnlyList<OfficeChange> officeChanges;
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         if (request.LeadershipKey != null && request.LeadershipKey != Guid.Empty)
         {
@@ -98,7 +103,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                 return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
             }
 
-            touchedHolders = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
+            officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
             _unitOfWork.Leaderships.Update(existing, cancellationToken);
         }
         else
@@ -120,10 +125,16 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                 return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
             }
 
-            touchedHolders = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
+            officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
             _unitOfWork.Leaderships.Add(existing, cancellationToken);
             isCreated = true;
         }
+
+        var touchedHolders = officeChanges.SelectMany(change => change.Ended.Concat(change.Seated)).ToHashSet();
+        IReadOnlyCollection<MemberSummary> holders = touchedHolders.Count == 0
+            ? []
+            : await _members.GetByKeysAsync(touchedHolders, cancellationToken);
+        await RecordAsync(existing, officeChanges, holders, cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -138,7 +149,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         if (touchedHolders.Count > 0)
         {
             _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
-            await MarkHoldersAsync(touchedHolders, cancellationToken);
+            MarkHolders(holders);
         }
 
         var response = _mapper.Map<LeadershipResponse>(existing);
@@ -148,14 +159,46 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
     }
 
-    private async Task MarkHoldersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken)
+    private void MarkHolders(IReadOnlyCollection<MemberSummary> holders)
     {
-        var holders = await _members.GetByKeysAsync(memberKeys, cancellationToken);
         foreach (var userKey in holders.Select(holder => holder.UserKey).OfType<Guid>().Distinct())
         {
             _accessChanges.MarkUser(userKey);
         }
     }
+
+    /// <summary>
+    /// One journal entry per role that changed hands: who held it and who holds it now. The entry is
+    /// about the new holder, or about the one who left when nobody took their place.
+    /// </summary>
+    private async Task RecordAsync(
+        LeadershipEntity leadership,
+        IReadOnlyList<OfficeChange> officeChanges,
+        IReadOnlyCollection<MemberSummary> holders,
+        CancellationToken cancellationToken)
+    {
+        var names = holders.GroupBy(holder => holder.MemberKey).ToDictionary(found => found.Key, found => found.First().FullName);
+        foreach (var change in officeChanges)
+        {
+            var seated = change.Seated.Count > 0;
+            var subject = seated ? change.Seated : change.Ended;
+            await _audit.RecordAsync(
+                new AuditRecord(
+                    AuditArea.Office,
+                    seated ? AuditActions.Office.Assigned : AuditActions.Office.Ended,
+                    leadership.LeadershipKey,
+                    KurinReportTerminology.LeadershipRole(change.Role),
+                    subject.Count == 1 ? subject[0] : null,
+                    AuditChanges.Of(("holder", NamesOf(change.Ended, names), NamesOf(change.Seated, names))),
+                    KurinKey: leadership.KurinKey),
+                cancellationToken);
+        }
+    }
+
+    private static string? NamesOf(List<Guid> memberKeys, Dictionary<Guid, string> names) =>
+        memberKeys.Count == 0
+            ? null
+            : string.Join(", ", memberKeys.Select(key => names.GetValueOrDefault(key, string.Empty)).Where(name => name.Length > 0).Order(StringComparer.Ordinal));
 
     private static void PlaceOnEntity(LeadershipEntity leadership, Guid? entityKey)
     {
@@ -224,15 +267,26 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             .ToList();
 
     /// <summary>
-    /// Ends the holders the request no longer names and seats the new ones. Answers the members
-    /// whose offices changed either way.
+    /// Ends the holders the request no longer names and seats the new ones. Answers each role that
+    /// changed hands, with who left it and who took it.
     /// </summary>
-    private static HashSet<Guid> ApplyLeadershipHistoryChanges(
+    private static List<OfficeChange> ApplyLeadershipHistoryChanges(
         LeadershipEntity leadership,
         IEnumerable<LeadershipHistoryMemberDto> requestedHistories,
         DateOnly today)
     {
-        var touched = new HashSet<Guid>();
+        var touched = new Dictionary<LeadershipRole, OfficeChange>();
+        OfficeChange ChangeOf(LeadershipRole role)
+        {
+            if (!touched.TryGetValue(role, out var change))
+            {
+                change = new OfficeChange(role, [], []);
+                touched[role] = change;
+            }
+
+            return change;
+        }
+
         var requestedAssignments = requestedHistories
             .Where(history => history.EndDate == null)
             .Where(history => history.Member?.MemberKey is Guid memberKey && memberKey != Guid.Empty)
@@ -258,7 +312,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             if (!isStillAssigned)
             {
                 activeHistory.EndDate = today;
-                touched.Add(activeHistory.MemberKey);
+                ChangeOf(activeHistory.Role).Ended.Add(activeHistory.MemberKey);
             }
         }
 
@@ -282,9 +336,12 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                 StartDate = today,
                 EndDate = null
             });
-            touched.Add(assignment.MemberKey);
+            ChangeOf(assignment.Role).Seated.Add(assignment.MemberKey);
         }
 
-        return touched;
+        return touched.Values.OrderBy(change => change.Role).ToList();
     }
+
+    /// <summary>A role that changed hands: the people who left it and the people who took it.</summary>
+    private sealed record OfficeChange(LeadershipRole Role, List<Guid> Ended, List<Guid> Seated);
 }

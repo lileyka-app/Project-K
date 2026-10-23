@@ -13,8 +13,10 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Settings;
 using Xunit;
@@ -29,6 +31,7 @@ public class UpsertKurinHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IBackendCache> _cacheMock;
     private readonly UpsertKurinCommandHandler _handler;
+    private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     public UpsertKurinHandlerTests()
     {
@@ -50,7 +53,7 @@ public class UpsertKurinHandlerTests
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
         _unitOfWorkMock.Setup(uow => uow.Krais).Returns(_kraiRepositoryMock.Object);
 
-        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions()));
+        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions()), _journal.Audit);
     }
 
     [Fact]
@@ -230,7 +233,7 @@ public class UpsertKurinHandlerTests
     public async Task Handle_WhenTheRangeIsRaised_ShouldAcceptTheHigherNumber()
     {
         var handler = new UpsertKurinCommandHandler(
-            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }), Options.Create(new KraiOptions()));
+            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }), Options.Create(new KraiOptions()), _journal.Audit);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         var result = await handler.Handle(new UpsertKurinCommand(300), default);
@@ -252,6 +255,28 @@ public class UpsertKurinHandlerTests
         result.Type.Should().Be(ResultType.Success);
         testKurin.Number.Should().Be(0);
         testKurin.Stanytsia.Should().Be("Lviv");
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Settings);
+        entry.Action.Should().Be(AuditActions.Settings.KurinChanged);
+        entry.KurinKey.Should().Be(kurinKey);
+        entry.Changes.Should().Equal(new AuditChange("stanytsia", null, "Lviv"));
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheVerificationFlagAndNumberChange_RecordsBoth_AndNothingWhenResent()
+    {
+        var kurinKey = Guid.NewGuid();
+        var kurin = new Kurin(47) { KurinKey = kurinKey };
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default)).ReturnsAsync(kurin);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        await _handler.Handle(new UpsertKurinCommand(kurinKey, 48, profileVerificationEnabled: true), default);
+        await _handler.Handle(new UpsertKurinCommand(kurinKey, 48, profileVerificationEnabled: true), default);
+
+        _journal.Entries.Should().ContainSingle().Which.Changes.Should().Equal(
+            new AuditChange("number", "47", "48"),
+            new AuditChange("profileVerificationEnabled", "false", "true"));
     }
 
     [Fact]
@@ -308,7 +333,7 @@ public class UpsertKurinHandlerTests
             .Callback<Kurin, CancellationToken>((k, _) => savedKurin = k);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
         var handler = new UpsertKurinCommandHandler(
-            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions { Default = "cz" }));
+            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions { Default = "cz" }), _journal.Audit);
 
         var result = await handler.Handle(new UpsertKurinCommand(12), default);
 

@@ -4,6 +4,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -39,19 +40,22 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
+    private readonly IKurinAudit _audit;
 
     public CreateAgendaItemCommandHandler(
         IUnitOfWork uow,
         IMemberDirectory members,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
-        IDomainEventPublisher events)
+        IDomainEventPublisher events,
+        IKurinAudit audit)
     {
         _uow = uow;
         _members = members;
         _access = access;
         _currentUser = currentUser;
         _events = events;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<Guid>> Handle(CreateAgendaItemCommand request, CancellationToken cancellationToken)
@@ -97,6 +101,19 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         };
 
         _uow.AgendaItems.Create(item, cancellationToken);
+
+        var targets = AgendaAuditFields.TargetsOf(item);
+        var names = await AgendaTargetNames.LoadAsync(_uow, _members, item.KurinKey, targets, cancellationToken);
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Agenda,
+                AuditActions.Agenda.Created,
+                item.AgendaItemKey,
+                item.Title,
+                Changes: AuditChanges.Added([.. AgendaAuditFields.Of(item), (AgendaAuditFields.Targets, names.Describe(targets))]),
+                KurinKey: item.KurinKey),
+            cancellationToken);
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         await PublishAssignedAsync(item, actorUserKey.Value, cancellationToken);

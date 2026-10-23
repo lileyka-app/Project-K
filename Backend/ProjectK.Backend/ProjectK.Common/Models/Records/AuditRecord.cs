@@ -14,6 +14,11 @@ namespace ProjectK.Common.Models.Records;
 /// <param name="SubjectMemberKey">The person it is about, when it is about a person.</param>
 /// <param name="Changes">What changed; see <see cref="AuditChanges"/>.</param>
 /// <param name="Note">A note the actor left with it.</param>
+/// <param name="KurinKey">
+/// The kurin it belongs to, when the handler knows it from the record acted on — its settings, a
+/// membership in it. Without it the entry goes to the kurin the request acts in, and an unscoped
+/// admin's change to a kurin's settings would have nowhere to go.
+/// </param>
 public sealed record AuditRecord(
     AuditArea Area,
     string Action,
@@ -21,4 +26,5 @@ public sealed record AuditRecord(
     string SubjectLabel,
     Guid? SubjectMemberKey = null,
     IReadOnlyList<AuditChange>? Changes = null,
-    string? Note = null);
+    string? Note = null,
+    Guid? KurinKey = null);

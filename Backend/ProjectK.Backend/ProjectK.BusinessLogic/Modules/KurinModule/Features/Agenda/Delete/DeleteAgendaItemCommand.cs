@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -20,19 +21,22 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
+    private readonly IKurinAudit _audit;
 
     public DeleteAgendaItemCommandHandler(
         IUnitOfWork uow,
         IMemberDirectory members,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
-        IDomainEventPublisher events)
+        IDomainEventPublisher events,
+        IKurinAudit audit)
     {
         _uow = uow;
         _members = members;
         _access = access;
         _currentUser = currentUser;
         _events = events;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<object>> Handle(DeleteAgendaItemCommand request, CancellationToken cancellationToken)
@@ -60,6 +64,18 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
         var title = item.Title;
         var kind = item.Kind;
         var kurinKey = item.KurinKey;
+
+        var targets = AgendaAuditFields.TargetsOf(item);
+        var names = await AgendaTargetNames.LoadAsync(_uow, _members, kurinKey, targets, cancellationToken);
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Agenda,
+                AuditActions.Agenda.Deleted,
+                item.AgendaItemKey,
+                title,
+                Changes: AuditChanges.Removed([.. AgendaAuditFields.Of(item), (AgendaAuditFields.Targets, names.Describe(targets))]),
+                KurinKey: kurinKey),
+            cancellationToken);
 
         // Assignments are removed by the cascade delete configured on the relationship.
         _uow.AgendaItems.Delete(item, cancellationToken);

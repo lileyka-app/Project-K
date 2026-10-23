@@ -8,7 +8,9 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -45,18 +47,22 @@ public class UpsertLeadershipHandlerTests
         _membersMock
             .Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => keys
-                .Select(key => new MemberSummary(key, AccountOf(key), Guid.NewGuid(), null, "A", "B", "a@example.com", null))
+                .Select(key => new MemberSummary(key, AccountOf(key), Guid.NewGuid(), null, _firstNames.GetValueOrDefault(key, "A"), "B", "a@example.com", null))
                 .ToList());
+        _journal = new JournalRecorder(_currentUserContextMock.Object);
         _handler = new UpsertLeadershipCommandHandler(
             _unitOfWorkMock.Object,
             _mapperMock.Object,
             _currentUserContextMock.Object,
             _membersMock.Object,
             _cacheMock.Object,
-            _accessChangesMock.Object);
+            _accessChangesMock.Object,
+            _journal.Audit);
     }
 
+    private readonly JournalRecorder _journal;
     private readonly Dictionary<Guid, Guid> _accounts = new();
+    private readonly Dictionary<Guid, string> _firstNames = new();
 
     private Guid AccountOf(Guid memberKey)
     {
@@ -472,6 +478,53 @@ public class UpsertLeadershipHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldRecordTheRoleThatChangedHands_WithWhoHeldItAndWhoHoldsItNow()
+    {
+        var oldMemberKey = Guid.NewGuid();
+        var newMemberKey = Guid.NewGuid();
+        var stayingMemberKey = Guid.NewGuid();
+        _firstNames[oldMemberKey] = "Тарас";
+        _firstNames[newMemberKey] = "Ореста";
+        var existing = LeadershipHeldBy(
+            (LeadershipRole.Kurinnuy, oldMemberKey),
+            (LeadershipRole.Pysar, stayingMemberKey));
+        var command = new UpsertLeadershipCommand(
+            RequestSeating(existing, (LeadershipRole.Kurinnuy, newMemberKey), (LeadershipRole.Pysar, stayingMemberKey)),
+            existing.LeadershipKey);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        var entry = Assert.Single(_journal.Entries);
+        Assert.Equal(AuditArea.Office, entry.Area);
+        Assert.Equal(AuditActions.Office.Assigned, entry.Action);
+        Assert.Equal(existing.KurinKey, entry.KurinKey);
+        Assert.Equal(existing.LeadershipKey, entry.SubjectKey);
+        Assert.Equal("Курінний", entry.SubjectLabel);
+        Assert.Equal(newMemberKey, entry.SubjectMemberKey);
+        Assert.Equal(new[] { new AuditChange("holder", "Тарас B", "Ореста B") }, entry.Changes);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRecordARoleLeftEmpty_AboutTheOneWhoLeftIt()
+    {
+        var memberKey = Guid.NewGuid();
+        var existing = LeadershipHeldBy((LeadershipRole.Pysar, memberKey));
+        var command = new UpsertLeadershipCommand(RequestSeating(existing), existing.LeadershipKey);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        var entry = Assert.Single(_journal.Entries);
+        Assert.Equal(AuditActions.Office.Ended, entry.Action);
+        Assert.Equal("Писар", entry.SubjectLabel);
+        Assert.Equal(memberKey, entry.SubjectMemberKey);
+        Assert.Equal(new[] { new AuditChange("holder", "A B", null) }, entry.Changes);
+    }
+
+    [Fact]
     public async Task Handle_ShouldMarkNobody_WhenTheSameHoldersAreResubmitted()
     {
         var memberKey = Guid.NewGuid();
@@ -486,6 +539,7 @@ public class UpsertLeadershipHandlerTests
 
         _accessChangesMock.Verify(s => s.MarkUser(It.IsAny<Guid>()), Times.Never);
         _cacheMock.Verify(c => c.Invalidate(It.IsAny<CachePolicy>()), Times.Never);
+        Assert.Empty(_journal.Entries);
     }
 
     private Leadership LeadershipHeldBy(params (LeadershipRole Role, Guid MemberKey)[] holders)
