@@ -29,7 +29,22 @@ describe('DemoApiInterceptor', () => {
         seat: 'Youth', recordedAt: '', entries: [
           { m: 'POST', p: '/api/demo/login', s: 200, b: { userKey: 'u1', email: 'y@example', roles: ['Member'], kurinKey: 'k1', tokens: { accessToken: 't' } } },
           { m: 'GET', p: '/api/kurin/k1', s: 200, b: { name: '1 курінь' } },
-          { m: 'GET', p: '/api/agenda/k1/calendar?from=a&to=b', s: 200, b: [{ title: 'Сходини' }] }
+          { m: 'GET', p: '/api/agenda/k1/calendar?from=a&to=b', s: 200, b: [{ title: 'Сходини' }] },
+          {
+            m: 'GET', p: '/api/kurin/k1/journal?skip=0&take=2', s: 200, b: {
+              items: [
+                { key: 'j3', occurredAtUtc: '2026-10-20T10:00:00Z', area: 'Award', actorUserKey: 'a1', subjectMemberKey: 'm1' },
+                { key: 'j2', occurredAtUtc: '2026-10-10T10:00:00Z', area: 'Probe', actorUserKey: 'a2', subjectMemberKey: 'm2' }
+              ],
+              hasMore: true
+            }
+          },
+          {
+            m: 'GET', p: '/api/kurin/k1/journal?skip=2&take=2', s: 200, b: {
+              items: [{ key: 'j1', occurredAtUtc: '2026-09-01T10:00:00Z', area: 'Probe', actorUserKey: 'a1', subjectMemberKey: 'm1' }],
+              hasMore: false
+            }
+          }
         ]
       }
     }) as typeof fetch;
@@ -74,6 +89,23 @@ describe('DemoApiInterceptor', () => {
     expect(events[0].title).toBe('Сходини');
 
     await expect(firstValueFrom(http.get('https://demo.invalid/api/member/nobody'))).rejects.toEqual(expect.objectContaining({ status: 404, statusText: 'У демо цієї сторінки немає.' }));
+  });
+
+  it('answers any filter and page of the journal from the recorded pages', async () => {
+    await firstValueFrom(http.post('https://demo.invalid/api/demo/login', { seat: 'Youth' }));
+    type Page = { items: { key: string }[]; hasMore: boolean };
+    const page = (query: string) => firstValueFrom(http.get<Page>(`https://demo.invalid/api/kurin/k1/journal?${query}`));
+
+    const probes = await page('area=Probe&skip=0&take=20');
+    expect(probes.items.map(i => i.key)).toEqual(['j2', 'j1']);
+    expect(probes.hasMore).toBe(false);
+
+    const byPerson = await page('memberKey=m1&actorUserKey=a1&skip=0&take=1');
+    expect(byPerson.items.map(i => i.key)).toEqual(['j3']);
+    expect(byPerson.hasMore).toBe(true);
+
+    const october = await page('fromUtc=2026-10-01T00:00:00Z&toUtc=2026-10-15T00:00:00Z');
+    expect(october.items.map(i => i.key)).toEqual(['j2']);
   });
 
   it('acknowledges a write it cannot keep and tells the visitor once', async () => {

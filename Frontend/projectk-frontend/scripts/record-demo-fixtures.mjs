@@ -186,6 +186,17 @@ for (const seat of seats) {
     await visit(page, href);
   }
 
+  // The whole journal, page by page: the demo filters and pages these entries itself, the way the
+  // API does, so one full pass covers every filter a visitor can pick.
+  if (links.some(href => href.endsWith('/journal'))) {
+    await visit(page, `/kurin/${kurinKey}/journal`);
+    const more = page.getByRole('button', { name: /Завантажити ще/ });
+    for (let pages = 0; pages < 50 && await more.count(); pages++) {
+      await more.click();
+      await settle(page);
+    }
+  }
+
   // The calendar a month either side, so paging in the demo does not fall off the recording.
   await visit(page, `/calendar/${kurinKey}`);
   for (const name of ['Назад', 'Далі']) {
