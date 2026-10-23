@@ -321,7 +321,7 @@ test('shows the box read-only to whoever the server lets read but not keep', asy
 test('opens the transfers from «Справи» on Home', async ({ page }) => {
   const box = kurinDuesApi();
   const duty = { kind: 'TransfersToConfirm', kurin, count: 1, groupKey: null, groupName: null, agendaItemKey: null, occurrenceStartUtc: null, title: null };
-  await signIn(page, undefined, (request) => (request.method === 'GET' && request.path === 'me/duties' ? ok([duty]) : box(request)), TREASURER);
+  await signIn(page, undefined, (request) => (request.method === 'GET' && request.path === 'me/duties/board' ? ok([duty]) : box(request)), TREASURER);
   await page.getByTestId('duty').filter({ hasText: 'Передачі від гуртків підтвердити' }).click();
   await expect(page).toHaveURL(/\/tabs\/kurin\/dues\?part=transfers$/);
   await expect(page.getByTestId('transfer')).toHaveCount(3);

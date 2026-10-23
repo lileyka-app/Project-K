@@ -157,13 +157,13 @@ describe('DashboardComponent', () => {
 
     component.restoreDuties();
     http.expectOne(r => r.url.endsWith('/me/duties/dismissed') && r.method === 'DELETE').flush({});
-    http.match(r => r.url.endsWith('/me/duties')).forEach(r => r.flush({ items: [badges], hiddenCount: 0 }));
+    http.match(r => r.url.endsWith('/me/duties/board')).forEach(r => r.flush({ items: [badges], hiddenCount: 0 }));
     expect(component.duties()).toEqual([badges]);
     expect(component.dutiesHidden()).toBe(0);
   });
 
   it('reads the bare list an older server or the static demo sends as nothing hidden', () => {
-    TestBed.inject(HttpTestingController).match(r => r.url.endsWith('/me/duties')).forEach(r => r.flush([
+    TestBed.inject(HttpTestingController).match(r => r.url.endsWith('/me/duties/board')).forEach(r => r.flush([
       { kind: 'BadgesToReview', kurin: { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true }, count: 2, groupKey: null, groupName: null, agendaItemKey: null, occurrenceStartUtc: null, title: null }
     ]));
 

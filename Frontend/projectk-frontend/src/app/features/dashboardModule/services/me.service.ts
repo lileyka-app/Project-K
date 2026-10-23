@@ -44,7 +44,7 @@ export class MeService {
   }
 
   getDuties(): Observable<MyDutiesDto> {
-    return this.http.get<MyDutiesDto | LegacyDuty[]>(`${this.apiUrl}/duties`).pipe(map(dutiesOf));
+    return this.http.get<MyDutiesDto | LegacyDuty[]>(`${this.apiUrl}/duties/board`).pipe(map(dutiesOf));
   }
 
   /** Hides one duty from the person's own «Справи» until it grows. */

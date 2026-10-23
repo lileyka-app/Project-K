@@ -85,10 +85,22 @@ public class MeController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    /// <summary>What waits on the person as провід, per kurin where they hold an office, less what they hid; empty for anyone else.</summary>
+    /// <summary>
+    /// What waits on the person as провід, as a bare list, less what they hid. Kept in this shape for
+    /// web tabs and phone bundles from before 1.2.3; current clients read <see cref="GetDutiesBoard"/>.
+    /// </summary>
     [HttpGet("duties")]
-    [ProducesResponseType(typeof(MyDutiesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<MyDutyDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDuties()
+    {
+        var result = await _mediator.Send(new GetMyDutiesQuery());
+        return result.Type == ResultType.Success ? Ok(result.Data!.Items) : result.ToActionResult(this);
+    }
+
+    /// <summary>What waits on the person as провід, per kurin where they hold an office, less what they hid, and how many they hid.</summary>
+    [HttpGet("duties/board")]
+    [ProducesResponseType(typeof(MyDutiesResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDutiesBoard()
     {
         var result = await _mediator.Send(new GetMyDutiesQuery());
         return result.ToActionResult(this);

@@ -191,6 +191,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetDues), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetDuties), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetDutiesBoard), "RequireUser");
         yield return Row<Action<MeController, DismissDutyRequest>>(nameof(MeController.DismissDuty), "RequireUser");
         yield return Row<Action<MeController, string?>>(nameof(MeController.RestoreDuties), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");

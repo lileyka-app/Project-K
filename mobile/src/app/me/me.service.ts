@@ -40,7 +40,7 @@ export class MeService {
 
   /** What waits on the person as провід, less what they hid; empty for a youth. */
   async duties(): Promise<MyDutiesDto> {
-    return dutiesOf(await this.get<MyDutiesDto | LegacyDuty[]>('me/duties'));
+    return dutiesOf(await this.get<MyDutiesDto | LegacyDuty[]>('me/duties/board'));
   }
 
   /** Hides one duty from the person's own «Справи» until it grows. */

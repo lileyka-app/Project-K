@@ -96,7 +96,7 @@ function leaderApi(options: { viewer?: typeof KEEPER } = {}): ExtraApi {
   const inbox = notifications();
   const get = (path: string, query: URLSearchParams): Answer | null => {
     switch (path) {
-      case 'me/duties': return ok(duties);
+      case 'me/duties/board': return ok(duties);
       case 'notifications/unread-count': return ok(inbox.filter((n) => !n.isRead).length);
       case 'notifications': return ok(inbox.slice(0, Number(query.get('take') ?? 50)));
       case 'kurin/k1/badges/review': return ok(queue);

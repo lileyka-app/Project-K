@@ -84,7 +84,7 @@ export interface MyScoreDto {
 
 export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance';
 
-/** One thing that waits on a провід (api/me/duties; the web's MyDutyDto). */
+/** One thing that waits on a провід (api/me/duties/board; the web’s MyDutyDto). */
 export interface MyDutyDto {
   kind: MyDutyKind;
   kurin: MyKurinRefDto;
