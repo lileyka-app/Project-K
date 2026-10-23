@@ -42,6 +42,13 @@ public class Kurin(int? number) : Entity
     /// drop (see <c>KraiCardFieldsSettings.Hideable</c>). A kurin can narrow its край's card, never widen it.
     /// </summary>
     public string? HiddenCardFields { get; set; }
+
+    /// <summary>
+    /// The kurin's «Права й видимість»: only the cells that differ from the defaults in code, as
+    /// <c>{"v":1,"grants":{…}}</c>. Null is the defaults. Read it only through
+    /// <c>KurinAccessPolicy.Read</c>, which skips what it does not understand.
+    /// </summary>
+    public string? AccessPolicy { get; set; }
     public ICollection<Group> Groups { get; set; } = new List<Group>();
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
     public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();

@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Models.Authorization;
@@ -22,6 +23,9 @@ namespace ProjectK.Common.Models.Authorization;
 /// within their reach too; the Виховник and the Зв'язковий also keep the КВ's private score.</item>
 /// <item>the bare <b>Member</b> — read within the kurin plus own profile/progress.</item>
 /// </list>
+/// The pairs listed in <see cref="KurinCapabilities"/> are not granted here: each kurin sets them in
+/// its <see cref="KurinAccessPolicy"/>, and <see cref="Resolve(IEnumerable{string}, KurinAccessPolicy)"/>
+/// adds them on top. Only the self-service <c>Own</c> grants of those pairs stay static.
 /// </summary>
 public static class RolePermissionMap
 {
@@ -95,16 +99,37 @@ public static class RolePermissionMap
     // Admin: everything, kurin-wide. The scope check still pins a stepped-in admin to their kurin.
     private static readonly IReadOnlyList<Permission> AdminGrants = BuildAdminGrants();
 
-    /// <summary>Expands a set of role names into the union of their permissions.</summary>
-    public static IReadOnlyCollection<Permission> Resolve(IEnumerable<string> roles)
+    /// <summary>
+    /// Expands a set of role names into the union of their permissions under the default kurin
+    /// policy. Where the kurin is known, resolve against its own policy instead.
+    /// </summary>
+    public static IReadOnlyCollection<Permission> Resolve(IEnumerable<string> roles) =>
+        Resolve(roles, KurinAccessPolicy.Default);
+
+    /// <summary>
+    /// Expands a set of role names into the union of their permissions in a kurin with
+    /// <paramref name="policy"/>: the static grants, plus what the policy gives their audiences.
+    /// </summary>
+    public static IReadOnlyCollection<Permission> Resolve(IEnumerable<string> roles, KurinAccessPolicy policy)
+    {
+        var held = roles as IReadOnlyCollection<string> ?? roles.ToList();
+        var permissions = CollectStaticGrants(held);
+        permissions.UnionWith(policy.Grants(PolicyAudiences.For(held)));
+        return permissions;
+    }
+
+    /// <summary>
+    /// The grants that do not depend on any kurin's policy. Holds no configurable pair except the
+    /// self-service <c>Own</c> ones — and, for the admin, everything.
+    /// </summary>
+    public static IReadOnlySet<Permission> StaticGrants(IEnumerable<string> roles) => CollectStaticGrants(roles);
+
+    private static HashSet<Permission> CollectStaticGrants(IEnumerable<string> roles)
     {
         var permissions = new HashSet<Permission>();
         foreach (var role in roles)
         {
-            foreach (var permission in GrantsFor(role))
-            {
-                permissions.Add(permission);
-            }
+            permissions.UnionWith(GrantsFor(role));
         }
 
         return permissions;
@@ -297,7 +322,8 @@ public static class RolePermissionMap
     private static List<Permission> BuildMemberGrants()
     {
         var grants = new List<Permission>();
-        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources))
+        var policyRead = AllResources.Where(resource => KurinCapabilities.IsConfigurable(resource, ResourceAction.Read));
+        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources).Except(policyRead))
         {
             grants.Add(new Permission(resource, ResourceAction.Read, AccessScope.KurinWide));
         }
@@ -360,7 +386,7 @@ public static class RolePermissionMap
         // He scores his гурток, and with the other впорядники keeps the КВ's own score.
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.GroupScore, action, AccessScope.OwnGroups)));
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.KurinScorePrivate, action, AccessScope.KurinWide)));
-        return grants;
+        return WithoutPolicyPairs(grants);
     }
 
     private static List<Permission> BuildZvyazkovyiGrants()
@@ -392,8 +418,14 @@ public static class RolePermissionMap
         // Kurin settings, but not the irreversible Delete/Manage (Admin-only).
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Create, AccessScope.KurinWide));
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Update, AccessScope.KurinWide));
-        return grants;
+        return WithoutPolicyPairs(grants);
     }
+
+    // The kurin's policy decides these; granting them here too would make its "no" mean nothing.
+    private static List<Permission> WithoutPolicyPairs(IEnumerable<Permission> grants) =>
+        grants
+            .Where(grant => grant.Scope == AccessScope.Own || !KurinCapabilities.IsConfigurable(grant.Resource, grant.Action))
+            .ToList();
 
     private static List<Permission> BuildAdminGrants()
     {

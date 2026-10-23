@@ -6,9 +6,9 @@ using ProjectK.Common.Models.Authorization;
 namespace ProjectK.API.Tests.Security;
 
 /// <summary>
-/// Freezes what <see cref="RolePermissionMap.Resolve"/> grants each role, so a refactor of the map
-/// cannot move a right without someone saying so. The frozen output lives in
-/// <c>RolePermissionMap.golden.json</c> next to this file; a deliberate change is declared in
+/// Freezes what <see cref="RolePermissionMap.Resolve(IEnumerable{string})"/> grants each role under the
+/// default kurin policy, so a refactor of the map cannot move a right without someone saying so.
+/// The frozen output lives in <c>RolePermissionMap.golden.json</c> next to this file; a deliberate change is declared in
 /// <see cref="IntendedChanges"/> with its reason instead of rewriting the fixture.
 /// Regenerate the fixture on purpose (and empty <see cref="IntendedChanges"/>) with
 /// <c>PROJECTK_REGENERATE_PERMISSION_GOLDEN=1 dotnet test --filter RolePermissionMapGoldenTests</c>.
@@ -29,8 +29,48 @@ public class RolePermissionMapGoldenTests
         new(ChangeKind.Removed, "MemberAward:Update:Own",
             "Dead grant: reviewing one's own award was only stopped by RequireGroupLeadership."),
         new(ChangeKind.Removed, "BadgeProgress:Update:Own",
-            "Dead grant: reviewing one's own badge was only stopped by RequireGroupLeadership.")
+            "Dead grant: reviewing one's own badge was only stopped by RequireGroupLeadership."),
+
+        new(ChangeKind.Added, "MemberContacts:Read:KurinWide",
+            "Contacts became their own resource; by default everyone still sees them kurin-wide."),
+        new(ChangeKind.Added, "MemberBirthDate:Read:KurinWide",
+            "The birth date became its own resource; by default everyone still sees it kurin-wide."),
+        new(ChangeKind.Added, "MemberBirthday:Read:KurinWide",
+            "The birthday became its own resource; by default everyone still sees it kurin-wide."),
+        .. PrivateDataReads("MemberAddress"),
+        .. PrivateDataReads("MemberParents"),
+        .. PrivateDataReads("MemberExtras"),
+        new(ChangeKind.Added, "KurinJournal:Read:KurinWide",
+            "New Журнал дій; the whole КВ reads it by default.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin]),
+        new(ChangeKind.Added, "ProbeProgress:Delete:OwnGroups",
+            "Unsigning a probe became its own right (UnsignProbe); the впорядник keeps it for his гурток.",
+            [Vykhovnyk, Instruktor]),
+        .. AdminCoversTheNewResources()
     ];
+
+    private const string Zvyazkovyi = "KV.Zvyazkovyi";
+    private const string Vykhovnyk = "KV.Vykhovnyk";
+    private const string Instruktor = "KV.Instruktor";
+
+    // Address, parents and the край's extra fields were scrubbed in the card for anyone but the
+    // Звʼязковий and the гурток's впорядник; now that is a permission, at the same reach.
+    private static IEnumerable<IntendedChange> PrivateDataReads(string resource) =>
+    [
+        new(ChangeKind.Added, $"{resource}:Read:KurinWide",
+            "Private card data became its own resource; the Звʼязковий still sees it kurin-wide.",
+            [Zvyazkovyi, SystemRole.Admin]),
+        new(ChangeKind.Added, $"{resource}:Read:OwnGroups",
+            "Private card data became its own resource; the впорядник still sees it for his гурток.",
+            [Vykhovnyk, Instruktor])
+    ];
+
+    private static IEnumerable<IntendedChange> AdminCoversTheNewResources() =>
+        new[] { "MemberContacts", "MemberBirthDate", "MemberBirthday", "MemberAddress", "MemberParents", "MemberExtras", "KurinJournal" }
+            .SelectMany(resource => new[] { "Create", "Update", "Delete", "Manage" }
+                .Select(action => new IntendedChange(ChangeKind.Added, $"{resource}:{action}:KurinWide",
+                    "The admin holds every action on every resource, the new ones included.",
+                    [SystemRole.Admin])));
 
     [Fact]
     public void Resolve_MatchesTheFrozenMap_PlusIntendedChanges()

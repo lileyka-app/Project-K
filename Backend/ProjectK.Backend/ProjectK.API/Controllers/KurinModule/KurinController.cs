@@ -9,6 +9,7 @@ using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
@@ -24,6 +25,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
@@ -265,6 +267,44 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> SetCardFields(Guid kurinKey, [FromBody] SetKurinCardFieldsRequest body)
     {
         var response = await _mediator.Send(new SetKurinCardFieldsCommand(kurinKey, body.Hidden ?? []));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// The kurin's «Права й видимість»: for every capability and audience, what the kurin has now,
+    /// what the default is, and whether the cell is locked.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey:guid}/access-policy")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinAccessPolicyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAccessPolicy(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new GetKurinAccessPolicyQuery(kurinKey), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Saves the kurin's policy from the whole effective matrix. Only what differs from the defaults
+    /// is kept; an unknown name or a change to a locked cell is refused with <c>AccessPolicyInvalid</c>.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpPut("{kurinKey:guid}/access-policy")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinAccessPolicyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetAccessPolicy(
+        Guid kurinKey,
+        [FromBody] SetKurinAccessPolicyRequest body,
+        CancellationToken cancellationToken)
+    {
+        var grants = (body.Grants ?? []).ToDictionary(
+            row => row.Key,
+            row => (IReadOnlyDictionary<string, string?>)(row.Value ?? []));
+
+        var response = await _mediator.Send(new SetKurinAccessPolicyCommand(kurinKey, grants), cancellationToken);
         return response.ToActionResult(this);
     }
 

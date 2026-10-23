@@ -17,7 +17,7 @@ namespace ProjectK.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -1743,6 +1743,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid>("KurinKey")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccessPolicy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Branch")
                         .HasColumnType("int");
