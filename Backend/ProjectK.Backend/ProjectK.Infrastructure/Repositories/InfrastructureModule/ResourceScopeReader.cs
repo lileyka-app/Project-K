@@ -33,10 +33,7 @@ public class ResourceScopeReader : IResourceScopeReader
                 or ResourceType.MemberAddress or ResourceType.MemberParents or ResourceType.MemberExtras
                 => await MembershipScopeAsync(resourceKey, inKurinKey, cancellationToken),
 
-            ResourceType.KurinJournal => await _context.Kurins
-                .Where(k => k.KurinKey == resourceKey)
-                .Select(k => new ResourceScope(k.KurinKey, null, null))
-                .FirstOrDefaultAsync(cancellationToken),
+            ResourceType.KurinJournal => await GetJournalScopeAsync(resourceKey, cancellationToken),
 
             ResourceType.Group => await _context.Groups
                 .Where(g => g.GroupKey == resourceKey)
@@ -189,6 +186,26 @@ public class ResourceScopeReader : IResourceScopeReader
             .ToListAsync(cancellationToken);
 
         return new ResourceScope(item.KurinKey, null, item.CreatedByUserKey, groupKeys);
+    }
+
+    /// <summary>
+    /// The journal is the kurin's, and it reaches every гурток in it: an own-group reader who leads
+    /// any of them may open it, and the read itself narrows the entries to his гуртки. A scope of
+    /// the kurin alone would refuse every own-group reader at the door.
+    /// </summary>
+    private async Task<ResourceScope?> GetJournalScopeAsync(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        if (!await _context.Kurins.AnyAsync(k => k.KurinKey == kurinKey, cancellationToken))
+        {
+            return null;
+        }
+
+        var groupKeys = await _context.Groups
+            .Where(g => g.KurinKey == kurinKey)
+            .Select(g => g.GroupKey)
+            .ToListAsync(cancellationToken);
+
+        return new ResourceScope(kurinKey, null, null, groupKeys);
     }
 
     private async Task<ResourceScope?> GetLeadershipScopeAsync(Guid leadershipKey, CancellationToken cancellationToken)

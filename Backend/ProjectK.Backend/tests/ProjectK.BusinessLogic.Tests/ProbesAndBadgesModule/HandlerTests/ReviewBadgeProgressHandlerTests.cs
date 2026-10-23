@@ -1,5 +1,8 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
@@ -7,6 +10,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -23,6 +27,8 @@ public class ReviewBadgeProgressHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly ReviewBadgeProgressCommandHandler _handler;
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly JournalRecorder _journal;
 
     public ReviewBadgeProgressHandlerTests()
     {
@@ -39,12 +45,45 @@ public class ReviewBadgeProgressHandlerTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => string.Equals(role, "mentor", StringComparison.OrdinalIgnoreCase));
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "mentor" });
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(_kurinKey);
+
+        _journal = new JournalRecorder(
+            _currentUserContextMock.Object,
+            new AuditActorResolver(_currentUserContextMock.Object, _memberDirectoryMock.Object));
 
         _handler = new ReviewBadgeProgressCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
-            _eventsMock.Object);
+            _eventsMock.Object,
+            _journal.Actors,
+            _journal.Audit,
+            Mock.Of<IBadgesCatalogService>());
+    }
+
+    [Theory]
+    [InlineData(BadgeProgressStatus.Submitted, true, AuditActions.Badge.Confirmed, "Confirmed")]
+    [InlineData(BadgeProgressStatus.Submitted, false, AuditActions.Badge.Rejected, "Rejected")]
+    [InlineData(BadgeProgressStatus.Confirmed, false, AuditActions.Badge.ConfirmationRemoved, "Rejected")]
+    public async Task Handle_ShouldRecordTheDecisionInTheJournal(BadgeProgressStatus from, bool approved, string action, string to)
+    {
+        var memberKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        _journal.Knows(memberKey, _kurinKey, groupKey, "Олесь", "Юнак");
+        var progress = CreateProgress(memberKey, "badge-1", from);
+        _badgeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, "badge-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+
+        await _handler.Handle(new ReviewBadgeProgressCommand(memberKey, "badge-1", approved, "так"), CancellationToken.None);
+
+        var entry = Assert.Single(_journal.Entries);
+        Assert.Equal(action, entry.Action);
+        Assert.Equal(progress.BadgeProgressKey, entry.SubjectKey);
+        Assert.Equal("badge-1", entry.SubjectLabel);
+        Assert.Equal(groupKey, entry.SubjectGroupKey);
+        Assert.Equal("так", entry.Note);
+        Assert.Equal(new AuditChange("status", from.ToString(), to), Assert.Single(entry.Changes));
     }
 
     /// <summary>

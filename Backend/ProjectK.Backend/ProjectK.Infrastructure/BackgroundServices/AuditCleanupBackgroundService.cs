@@ -24,6 +24,15 @@ public class AuditCleanupBackgroundService : BackgroundService
     private const int EndedSessionRetentionDays = 30;
     private const int RevokedCalendarFeedRetentionDays = 90;
 
+    /// <summary>How long the kurin's journal keeps an entry: a year, the owner's decision.</summary>
+    internal const int JournalRetentionDays = 365;
+
+    /// <summary>
+    /// Entries removed per statement. The first sweep after a release may face a year of entries at
+    /// once, and one statement over all of them would hold its locks for as long as it takes.
+    /// </summary>
+    internal const int JournalDeleteBatchSize = 5000;
+
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AuditCleanupBackgroundService> _logger;
     private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24);
@@ -138,6 +147,35 @@ public class AuditCleanupBackgroundService : BackgroundService
 
         if (deletedCalendarFeeds > 0)
             _logger.LogInformation("Cleaned up {Count} revoked CalendarFeeds.", deletedCalendarFeeds);
+
+        // 9. Cleanup the kurin's journal (> 365 days), a batch at a time.
+        var deletedJournalEntries = await DeleteExpiredJournalAsync(
+            dbContext, now.AddDays(-JournalRetentionDays), JournalDeleteBatchSize, cancellationToken);
+
+        if (deletedJournalEntries > 0)
+            _logger.LogInformation("Cleaned up {Count} old KurinAuditEvents.", deletedJournalEntries);
+    }
+
+    /// <summary>Deletes journal entries older than <paramref name="cutoffUtc"/>, <paramref name="batchSize"/> per statement.</summary>
+    internal static async Task<int> DeleteExpiredJournalAsync(
+        AppDbContext dbContext,
+        DateTime cutoffUtc,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        var total = 0;
+        int deleted;
+        do
+        {
+            deleted = await dbContext.KurinAuditEvents
+                .Where(entry => entry.OccurredAtUtc < cutoffUtc)
+                .Take(batchSize)
+                .ExecuteDeleteAsync(cancellationToken);
+            total += deleted;
+        }
+        while (deleted == batchSize);
+
+        return total;
     }
 
     /// <summary>

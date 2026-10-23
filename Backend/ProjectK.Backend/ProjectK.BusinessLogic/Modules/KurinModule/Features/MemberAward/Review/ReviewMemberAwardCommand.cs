@@ -6,12 +6,14 @@ using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 
@@ -34,6 +36,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
     private readonly IResourceAccessService _access;
+    private readonly IKurinAudit _audit;
 
     public ReviewMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -41,11 +44,13 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IMapper mapper,
-        IResourceAccessService access)
+        IResourceAccessService access,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _access = access;
+        _audit = audit;
         _currentUserContext = currentUserContext;
         _events = events;
         _mapper = mapper;
@@ -88,6 +93,17 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         award.UpdatedDate = DateTime.UtcNow;
 
         _unitOfWork.MemberAwards.Update(award, cancellationToken);
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Award,
+                approved ? AuditActions.Award.Confirmed : AuditActions.Award.Rejected,
+                award.MemberAwardKey,
+                KurinReportTerminology.AwardLevel(award.Level),
+                award.MemberKey,
+                AuditChanges.Of(("status", fromStatus, award.Status))),
+            cancellationToken);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await NotifyMemberOwnerAsync(award, approved, cancellationToken);

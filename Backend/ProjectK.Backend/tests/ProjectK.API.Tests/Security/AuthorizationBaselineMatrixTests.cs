@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Authorization;
+using ProjectK.API.Controllers.AuditModule;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.DemoModule;
 using ProjectK.API.Controllers.DevModule;
@@ -295,6 +296,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.UploadScreenshot), AuthorizationPolicies.RequireUser);
         yield return Endpoint<PhoneAppController>(nameof(PhoneAppController.GetInstallCode), AuthorizationPolicies.RequireUser);
         yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinJournalController>(nameof(KurinJournalController.Get), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);

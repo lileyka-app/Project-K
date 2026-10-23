@@ -3,11 +3,13 @@ using ProjectK.Common.Interfaces.Modules.KraiModule;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Interfaces;
@@ -54,6 +56,9 @@ public static class DependencyInjection
 
         // Domain events. The in-process delivery is the only thing a broker would replace.
         services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
+
+        services.AddScoped<AuditActorResolver>();
+        services.AddScoped<IKurinAudit, KurinAudit>();
 
         services.AddMemberModule();
         services.AddDuesModule();

@@ -123,4 +123,30 @@ public class ResourceScopeReaderMembershipTests
 
         Assert.Empty(ledElsewhere);
     }
+
+    /// <summary>
+    /// The journal reaches every гурток of its kurin, so an own-group reader passes the door and the
+    /// read narrows the entries; a kurin-only scope would refuse him outright.
+    /// </summary>
+    [Fact]
+    public async Task Journal_ShouldReachEveryGroupOfItsKurin()
+    {
+        await using var context = NewContext();
+        var kurin = new Kurin(44);
+        var first = new Group("Орли", kurin.KurinKey);
+        var second = new Group("Сови", kurin.KurinKey);
+        context.Kurins.Add(kurin);
+        context.Groups.AddRange(first, second, new Group("Чужі", Guid.NewGuid()));
+        await context.SaveChangesAsync();
+
+        var reader = new ResourceScopeReader(context);
+        var scope = await reader.GetScopeAsync(ResourceType.KurinJournal, kurin.KurinKey, kurin.KurinKey);
+        var missing = await reader.GetScopeAsync(ResourceType.KurinJournal, Guid.NewGuid(), kurin.KurinKey);
+
+        Assert.NotNull(scope);
+        Assert.Equal(kurin.KurinKey, scope!.KurinKey);
+        Assert.Null(scope.GroupKey);
+        Assert.Equal(new[] { first.GroupKey, second.GroupKey }.OrderBy(k => k), scope.GroupKeys!.OrderBy(k => k));
+        Assert.Null(missing);
+    }
 }

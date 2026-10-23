@@ -163,8 +163,9 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                     currentUser,
                     Mock.Of<IDomainEventPublisher>(),
                     mapper.Object,
-                    access);
-                var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser, members.Object, access);
+                    access,
+                    Mock.Of<IKurinAudit>());
+                var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser, members.Object, access, Mock.Of<IKurinAudit>());
 
                 var mediator = new Mock<IMediator>();
                 mediator

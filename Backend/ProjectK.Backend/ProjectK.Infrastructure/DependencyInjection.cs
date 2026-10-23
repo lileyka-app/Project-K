@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
@@ -12,6 +13,7 @@ using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Logging;
 using ProjectK.Infrastructure.Reports;
 using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
@@ -49,6 +51,9 @@ public static class DependencyInjection
         services.AddScoped<IDuesUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IScoreUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
+        // The journal writes on the request context and is saved by whoever saves the request.
+        services.AddScoped<IKurinAuditWriter, KurinAuditWriter>();
+        services.AddScoped<IKurinJournalReader, KurinJournalReader>();
 
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();

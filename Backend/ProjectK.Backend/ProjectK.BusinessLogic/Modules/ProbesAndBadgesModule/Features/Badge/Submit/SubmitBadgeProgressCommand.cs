@@ -1,11 +1,12 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -35,19 +36,28 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IKurinCatalog _kurinCatalog;
+    private readonly AuditActorResolver _actors;
+    private readonly IKurinAudit _audit;
+    private readonly IBadgesCatalogService _badges;
 
     public SubmitBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IKurinCatalog kurinCatalog)
+        IKurinCatalog kurinCatalog,
+        AuditActorResolver actors,
+        IKurinAudit audit,
+        IBadgesCatalogService badges)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
         _events = events;
         _kurinCatalog = kurinCatalog;
+        _actors = actors;
+        _audit = audit;
+        _badges = badges;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(SubmitBadgeProgressCommand request, CancellationToken cancellationToken)
@@ -84,7 +94,8 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         }
 
         var now = DateTime.UtcNow;
-        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var actor = await _actors.ResolveAsync(cancellationToken);
+        var previousStatus = progress?.Status;
 
         if (progress is null)
         {
@@ -114,8 +125,6 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         }
         else
         {
-            var previousStatus = progress.Status;
-
             progress.Status = BadgeProgressStatus.Submitted;
             progress.SubmittedAtUtc = now;
             progress.ReviewedAtUtc = null;
@@ -137,6 +146,17 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
             });
 
         }
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Badge,
+                previousStatus is null ? AuditActions.Badge.Submitted : AuditActions.Badge.Resubmitted,
+                progress.BadgeProgressKey,
+                ProgressAuditLabels.Badge(_badges, progress.BadgeId),
+                request.MemberKey,
+                AuditChanges.Of(("status", previousStatus, progress.Status)),
+                request.Note),
+            cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)

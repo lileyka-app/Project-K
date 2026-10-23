@@ -1,11 +1,12 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -32,20 +33,23 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly ICurrentUserContext _currentUserContext;
+    private readonly AuditActorResolver _actors;
+    private readonly IKurinAudit _audit;
     private readonly IProbesCatalogService _probesCatalogService;
     private readonly IResourceAccessService _access;
 
     public UpdateProbeProgressStatusCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        ICurrentUserContext currentUserContext,
+        AuditActorResolver actors,
+        IKurinAudit audit,
         IProbesCatalogService probesCatalogService,
         IResourceAccessService access)
     {
         _unitOfWork = unitOfWork;
         _members = members;
-        _currentUserContext = currentUserContext;
+        _actors = actors;
+        _audit = audit;
         _probesCatalogService = probesCatalogService;
         _access = access;
     }
@@ -117,7 +121,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         }
 
         var now = DateTime.UtcNow;
-        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var actor = await _actors.ResolveAsync(cancellationToken);
         var actorName = actor.Name;
         var auditAction = ResolveAuditAction(currentStatus, request.Status);
 
@@ -136,6 +140,17 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
             OccurredAtUtc = now,
             Note = request.Note
         });
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Probe,
+                JournalAction(currentStatus, request.Status),
+                progress.ProbeProgressKey,
+                ProgressAuditLabels.Probe(_probesCatalogService, progress.ProbeId),
+                request.MemberKey,
+                AuditChanges.Of(("status", currentStatus, request.Status)),
+                request.Note),
+            cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -221,6 +236,14 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 
         return targetStatus.ToString();
     }
+
+    private static string JournalAction(ProbeProgressStatus currentStatus, ProbeProgressStatus targetStatus) => targetStatus switch
+    {
+        ProbeProgressStatus.Completed when currentStatus == ProbeProgressStatus.Verified => AuditActions.Probe.Unverified,
+        ProbeProgressStatus.Completed => AuditActions.Probe.Completed,
+        ProbeProgressStatus.Verified => AuditActions.Probe.Verified,
+        _ => AuditActions.Probe.Started
+    };
 
     private static void ApplyStatusSideEffects(
         ProbeProgress progress,

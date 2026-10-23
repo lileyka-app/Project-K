@@ -8,12 +8,14 @@ using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign;
 
@@ -44,19 +46,22 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
     private readonly IResourceAccessService _access;
+    private readonly IKurinAudit _audit;
 
     public AssignMemberWarningCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IMapper mapper,
-        IResourceAccessService access)
+        IResourceAccessService access,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
         _mapper = mapper;
         _access = access;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<MemberWarningDto>> Handle(AssignMemberWarningCommand request, CancellationToken cancellationToken)
@@ -114,6 +119,18 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
         };
 
         _unitOfWork.MemberWarnings.Create(warningEntity, cancellationToken);
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Warning,
+                AuditActions.Warning.Given,
+                warningEntity.MemberWarningKey,
+                KurinReportTerminology.WarningLevel(warningEntity.Level),
+                warningEntity.MemberKey,
+                AuditChanges.Added(
+                    ("level", warningEntity.Level),
+                    ("expiresAtUtc", warningEntity.ExpiresAtUtc))),
+            cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)

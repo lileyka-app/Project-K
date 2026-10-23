@@ -2,6 +2,8 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
@@ -9,6 +11,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -25,6 +28,8 @@ public class UpdateProbeProgressStatusHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IResourceAccessService> _access = new();
     private readonly UpdateProbeProgressStatusCommandHandler _handler;
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly JournalRecorder _journal;
 
     public UpdateProbeProgressStatusHandlerTests()
     {
@@ -53,10 +58,16 @@ public class UpdateProbeProgressStatusHandlerTests
         _currentUserContextMock.Setup(x => x.IsInRole("User")).Returns(false);
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "Mentor" });
 
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(_kurinKey);
+        _journal = new JournalRecorder(
+            _currentUserContextMock.Object,
+            new AuditActorResolver(_currentUserContextMock.Object, _memberDirectoryMock.Object));
+
         _handler = new UpdateProbeProgressStatusCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
-            _currentUserContextMock.Object,
+            _journal.Actors,
+            _journal.Audit,
             _probesCatalogServiceMock.Object,
             _access.Object);
     }
@@ -158,6 +169,15 @@ public class UpdateProbeProgressStatusHandlerTests
         var lastAudit = progress.AuditEvents.Last();
         Assert.Equal("Ivan Shevchenko", lastAudit.ActorName);
         Assert.Equal("Mentor", lastAudit.ActorRole);
+
+        // The journal names the same actor the signature does, from the one resolution.
+        var entry = Assert.Single(_journal.Entries);
+        Assert.Equal(AuditActions.Probe.Completed, entry.Action);
+        Assert.Equal("Ivan Shevchenko", entry.ActorName);
+        Assert.Equal(actorUserKey, entry.ActorUserKey);
+        Assert.Equal(progress.ProbeProgressKey, entry.SubjectKey);
+        Assert.Equal(new AuditChange("status", "InProgress", "Completed"), Assert.Single(entry.Changes));
+        _memberDirectoryMock.Verify(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -246,5 +266,8 @@ public class UpdateProbeProgressStatusHandlerTests
 
         Assert.Equal(expected, result.Type);
         Assert.Equal(after, progress.Status);
+        Assert.Equal(
+            mayUnsign ? new[] { AuditActions.Probe.Unverified } : Array.Empty<string>(),
+            _journal.Entries.Select(entry => entry.Action).ToArray());
     }
 }

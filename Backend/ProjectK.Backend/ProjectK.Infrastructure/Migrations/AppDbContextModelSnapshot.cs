@@ -125,6 +125,80 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.AuditModule.KurinAuditEvent", b =>
+                {
+                    b.Property<Guid>("KurinAuditEventKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ActorName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<Guid?>("ActorUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Area")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("SubjectGroupKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SubjectKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SubjectLabel")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("SubjectMemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SubjectMemberName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("KurinAuditEventKey");
+
+                    b.HasIndex("ActorUserKey");
+
+                    b.HasIndex("OccurredAtUtc");
+
+                    b.HasIndex("SubjectKey");
+
+                    b.HasIndex("KurinKey", "OccurredAtUtc")
+                        .IsDescending(false, true);
+
+                    b.HasIndex("SubjectMemberKey", "OccurredAtUtc");
+
+                    b.ToTable("KurinAuditEvents");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.AppRole", b =>
                 {
                     b.Property<Guid>("Id")

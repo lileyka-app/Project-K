@@ -5,9 +5,11 @@ using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
 
@@ -29,17 +31,20 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
     private readonly ICurrentUserContext _currentUser;
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _access;
+    private readonly IKurinAudit _audit;
 
     public DeleteMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUser,
         IMemberDirectory members,
-        IResourceAccessService access)
+        IResourceAccessService access,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _members = members;
         _access = access;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<Unit>> Handle(DeleteMemberAwardCommand request, CancellationToken cancellationToken)
@@ -66,6 +71,22 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
         }
 
         _unitOfWork.MemberAwards.Delete(award, cancellationToken);
+
+        // What was removed goes into the entry whole: after the save there is nothing left to look at.
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Award,
+                AuditActions.Award.Deleted,
+                award.MemberAwardKey,
+                KurinReportTerminology.AwardLevel(award.Level),
+                award.MemberKey,
+                AuditChanges.Removed(
+                    ("level", award.Level),
+                    ("dateAcquired", award.DateAcquired),
+                    ("note", award.Note),
+                    ("status", award.Status))),
+            cancellationToken);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
