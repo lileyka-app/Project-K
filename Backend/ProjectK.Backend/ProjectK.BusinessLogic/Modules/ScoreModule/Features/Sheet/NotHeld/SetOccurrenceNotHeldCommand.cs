@@ -75,9 +75,7 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
 
         if (request.NotHeld)
         {
-            var marked = (await _score.ScoreAttendances.GetForKurinAsync(request.KurinKey, cancellationToken))
-                .Any(a => a.AgendaItemKey == request.AgendaItemKey && a.OccurrenceStartUtc == occurrence.StartUtc);
-            if (marked)
+            if (await _score.ScoreAttendances.AnyAtOccurrenceAsync(request.AgendaItemKey, occurrence.StartUtc, cancellationToken))
             {
                 return ServiceResult<object>.Failure(ResultType.Conflict, "OccurrenceHasAttendance", "Someone is marked present at this occurrence, so it took place.");
             }

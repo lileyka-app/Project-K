@@ -73,6 +73,8 @@ public class ScoreHandlerTests
         marks.Setup(r => r.GetStandingAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid m, Guid e, DateTime o, CancellationToken _) =>
                 _marks.FirstOrDefault(x => x.MembershipKey == m && x.AgendaItemKey == e && x.OccurrenceStartUtc == o && !x.IsRemoved));
+        marks.Setup(r => r.AnyAtOccurrenceAsync(It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid e, DateTime o, CancellationToken _) => _marks.Any(x => x.AgendaItemKey == e && x.OccurrenceStartUtc == o && !x.IsRemoved));
         marks.Setup(r => r.Create(It.IsAny<ScoreAttendance>(), It.IsAny<CancellationToken>())).Callback<ScoreAttendance, CancellationToken>((m, _) => _marks.Add(m));
 
         var entries = new Mock<IScoreEntryRepository>();

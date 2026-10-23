@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.Get;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Interfaces.Modules.AuditModule;
@@ -22,6 +24,8 @@ public class GetKurinJournalQueryTests
     private readonly PolicyAccess _access = new();
     private readonly Mock<IKurinJournalReader> _reader = new();
     private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<IProbesCatalogService> _probes = new();
+    private readonly Mock<IBadgesCatalogService> _badges = new();
     private readonly Guid _ownMemberKey = Guid.NewGuid();
     private KurinJournalFilter? _filter;
     private (int Skip, int Take) _page;
@@ -47,7 +51,7 @@ public class GetKurinJournalQueryTests
         scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _access.LedGroups.ToArray());
 
-        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), scopes.Object, _members.Object, _reader.Object);
+        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), scopes.Object, _members.Object, _reader.Object, _probes.Object, _badges.Object);
         return handler.Handle(query ?? Query(), CancellationToken.None);
     }
 
@@ -140,5 +144,23 @@ public class GetKurinJournalQueryTests
         first.Data.HasMore.Should().BeTrue();
         last.Data!.Items.Should().HaveCount(1);
         last.Data.HasMore.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task FoldedProbeHistory_ReadsAsTheCatalogueTitle_WhileOtherLabelsStay()
+    {
+        _probes.Setup(x => x.GetGroupedProbeById("probe-1"))
+            .Returns(new GroupedProbeResponse("probe-1", "Перша проба", 0, 0, []));
+        _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActions.Probe.Verified, SubjectLabel = "probe-1" },
+                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActions.Probe.Verified, SubjectLabel = "Друга проба" },
+                new KurinAuditEvent { Area = AuditArea.Award, Action = AuditActions.Award.Added, SubjectLabel = "probe-1" }
+            ]);
+
+        var result = await ReadAsync(_access.Actor(PolicyAccess.Zvyazkovyi));
+
+        result.Data!.Items.Select(item => item.SubjectLabel).Should().Equal("Перша проба", "Друга проба", "probe-1");
     }
 }

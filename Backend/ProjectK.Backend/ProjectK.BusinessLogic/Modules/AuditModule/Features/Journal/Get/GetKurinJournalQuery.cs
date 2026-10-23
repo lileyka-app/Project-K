@@ -1,5 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.AuditModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -35,19 +37,25 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
     private readonly IResourceScopeReader _scopeReader;
     private readonly IMemberDirectory _members;
     private readonly IKurinJournalReader _journal;
+    private readonly IProbesCatalogService _probes;
+    private readonly IBadgesCatalogService _badges;
 
     public GetKurinJournalQueryHandler(
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
         IResourceScopeReader scopeReader,
         IMemberDirectory members,
-        IKurinJournalReader journal)
+        IKurinJournalReader journal,
+        IProbesCatalogService probes,
+        IBadgesCatalogService badges)
     {
         _currentUser = currentUser;
         _permissions = permissions;
         _scopeReader = scopeReader;
         _members = members;
         _journal = journal;
+        _probes = probes;
+        _badges = badges;
     }
 
     public async Task<ServiceResult<KurinJournalPageResponse>> Handle(GetKurinJournalQuery request, CancellationToken cancellationToken)
@@ -99,7 +107,15 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
         return new ServiceResult<KurinJournalPageResponse>(
             ResultType.Success,
             new KurinJournalPageResponse(
-                entries.Take(take).Select(KurinJournalEntryResponse.FromEntity).ToList(),
+                entries.Take(take).Select(entry => KurinJournalEntryResponse.FromEntity(entry) with { SubjectLabel = Label(entry) }).ToList(),
                 entries.Count > take));
     }
+
+    // History folded in from the old probe and badge trails carries the catalogue id, not the title.
+    private string Label(KurinAuditEvent entry) => entry.Area switch
+    {
+        AuditArea.Probe => ProgressAuditLabels.Probe(_probes, entry.SubjectLabel),
+        AuditArea.Badge => ProgressAuditLabels.Badge(_badges, entry.SubjectLabel),
+        _ => entry.SubjectLabel
+    };
 }

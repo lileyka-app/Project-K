@@ -26,6 +26,13 @@ public class ScoreAttendanceRepository : BaseEntityRepository<ScoreAttendance>, 
                 && e.RemovedAtUtc == null,
             cancellationToken);
 
+    public Task<bool> AnyAtOccurrenceAsync(Guid agendaItemKey, DateTime occurrenceStartUtc, CancellationToken cancellationToken = default)
+        => Set.AnyAsync(
+            e => e.AgendaItemKey == agendaItemKey
+                && e.OccurrenceStartUtc == occurrenceStartUtc
+                && e.RemovedAtUtc == null,
+            cancellationToken);
+
     /// <summary>A mark is taken off, never removed: the trail needs the row.</summary>
     public override void Delete(ScoreAttendance entity, CancellationToken cancellationToken = default)
         => throw new InvalidOperationException("Attendance is marked removed, never deleted.");

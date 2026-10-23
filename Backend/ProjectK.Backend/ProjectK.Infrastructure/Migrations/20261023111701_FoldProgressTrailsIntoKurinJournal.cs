@@ -26,6 +26,12 @@ namespace ProjectK.Infrastructure.Migrations
                 migrationBuilder.Sql(statement);
             }
 
+            if (migrationBuilder.ActiveProvider != SqliteProvider)
+            {
+                migrationBuilder.Sql(LostRowsGuard("ProbeProgressAuditEvents", "ProbeProgressAuditEventKey", "ProbeProgressKey"));
+                migrationBuilder.Sql(LostRowsGuard("BadgeProgressAuditEvents", "BadgeProgressAuditEventKey", "BadgeProgressKey"));
+            }
+
             migrationBuilder.DropTable(
                 name: "BadgeProgressAuditEvents");
 
@@ -191,6 +197,20 @@ namespace ProjectK.Infrastructure.Migrations
                       AND k.[OccurredAtUtc] <= {{dialect.AddSeconds("e.[OccurredAtUtc]", 60)}});
                 """;
         }
+
+        // Stops the migration, tables intact, when a trail row has no journal entry: neither its key
+        // nor the same subject within the minute the fold treats as already written.
+        private static string LostRowsGuard(string table, string key, string progressKey) => $"""
+            IF EXISTS (
+                SELECT 1 FROM [{table}] e
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM [KurinAuditEvents] k
+                    WHERE k.[KurinAuditEventKey] = e.[{key}]
+                       OR (k.[SubjectKey] = e.[{progressKey}]
+                           AND k.[OccurredAtUtc] >= DATEADD(second, -60, e.[OccurredAtUtc])
+                           AND k.[OccurredAtUtc] <= DATEADD(second, 60, e.[OccurredAtUtc]))))
+                THROW 51000, 'FoldProgressTrailsIntoKurinJournal: a row of {table} did not reach KurinAuditEvents; the table is kept.', 1;
+            """;
 
         private static string StatusName(Trail trail, string column, Dialect dialect)
         {
