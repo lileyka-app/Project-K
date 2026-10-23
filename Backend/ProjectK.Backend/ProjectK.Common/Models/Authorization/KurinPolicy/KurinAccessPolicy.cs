@@ -96,7 +96,8 @@ public sealed class KurinAccessPolicy
     /// <summary>
     /// Reads a stored document. Never throws: an empty column, broken JSON or a version this build
     /// does not know gives the defaults (reported through <paramref name="warn"/>); a capability,
-    /// audience or reach it does not know, a locked cell and a cell equal to its default are skipped.
+    /// audience or reach it does not know, a reach the row does not offer, a locked cell and a cell
+    /// equal to its default are skipped.
     /// </summary>
     public static KurinAccessPolicy Read(string? json, Action<string>? warn = null)
     {
@@ -138,6 +139,7 @@ public sealed class KurinAccessPolicy
                     if (TryName<PolicyAudience>(cell.Name, out var audience)
                         && cell.Value.ValueKind == JsonValueKind.String
                         && TryName<CapabilityReach>(cell.Value.GetString(), out var reach)
+                        && descriptor.Offers(reach)
                         && !descriptor.IsLocked(audience)
                         && reach != descriptor.Defaults[audience])
                     {
@@ -177,8 +179,8 @@ public sealed class KurinAccessPolicy
     /// <summary>
     /// What is wrong with a matrix sent to be saved, empty when nothing is. A matrix is
     /// capability → audience → reach by name; a cell left out keeps its default. Rejected: a name
-    /// this build does not know, a missing reach, and any change to a locked cell — the
-    /// Звʼязковий's column, and the Youth column of an action row.
+    /// this build does not know, a missing reach, a reach the row does not offer, and any change to a
+    /// locked cell — the Звʼязковий's column, and the Youth column of an action row.
     /// </summary>
     public static IReadOnlyList<string> Validate(IReadOnlyDictionary<string, IReadOnlyDictionary<string, string?>> matrix)
     {
@@ -201,6 +203,10 @@ public sealed class KurinAccessPolicy
                 else if (!TryName<CapabilityReach>(reachName, out var reach))
                 {
                     errors.Add($"Unknown reach '{reachName}' for {capability}/{audience}.");
+                }
+                else if (!descriptor.Offers(reach))
+                {
+                    errors.Add($"{capability} cannot reach {reach}.");
                 }
                 else if (descriptor.IsLocked(audience) && reach != descriptor.Defaults[audience])
                 {

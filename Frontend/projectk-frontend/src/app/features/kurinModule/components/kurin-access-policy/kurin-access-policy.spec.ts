@@ -6,6 +6,7 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AccessPolicyCellDto, KurinAccessPolicyDto } from '../../models/kurin-access-policy.dto';
 import { CapabilityReach, PolicyAudience } from '../../models/access-policy-labels.model';
 
+const ANY_REACH: CapabilityReach[] = ['None', 'OwnGroup', 'Kurin'];
 const AUDIENCES: PolicyAudience[] = ['Zvyazkovyi', 'Vykhovnyk', 'Instruktor', 'Kurinnyy', 'KurinProvid', 'Hurtkovyy', 'GroupProvid', 'Youth'];
 
 function cells(defaults: CapabilityReach[], youthLocked: boolean, effective: Partial<Record<PolicyAudience, CapabilityReach>> = {}): AccessPolicyCellDto[] {
@@ -21,9 +22,10 @@ function policy(contactsYouth: CapabilityReach = 'Kurin'): KurinAccessPolicyDto 
   return {
     audiences: AUDIENCES,
     capabilities: [
-      { key: 'SeeContacts', group: 'MemberData', youthConfigurable: true, cells: cells(['Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin'], false, { Youth: contactsYouth }) },
-      { key: 'GiveWarning1', group: 'WarningsAwards', youthConfigurable: false, cells: cells(['Kurin', 'OwnGroup', 'OwnGroup', 'None', 'None', 'None', 'None', 'None'], true) },
-      { key: 'ReadJournal', group: 'Journal', youthConfigurable: false, cells: cells(['Kurin', 'Kurin', 'Kurin', 'None', 'None', 'None', 'None', 'None'], true) }
+      { key: 'SeeContacts', group: 'MemberData', youthConfigurable: true, reaches: ANY_REACH, cells: cells(['Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin', 'Kurin'], false, { Youth: contactsYouth }) },
+      { key: 'GiveWarning1', group: 'WarningsAwards', youthConfigurable: false, reaches: ANY_REACH, cells: cells(['Kurin', 'OwnGroup', 'OwnGroup', 'None', 'None', 'None', 'None', 'None'], true) },
+      { key: 'AssignKurin', group: 'Agenda', youthConfigurable: false, reaches: ['None', 'Kurin'], cells: cells(['Kurin', 'None', 'None', 'Kurin', 'Kurin', 'None', 'None', 'None'], true) },
+      { key: 'ReadJournal', group: 'Journal', youthConfigurable: false, reaches: ANY_REACH, cells: cells(['Kurin', 'Kurin', 'Kurin', 'None', 'None', 'None', 'None', 'None'], true) }
     ]
   };
 }
@@ -88,6 +90,17 @@ describe('KurinAccessPolicyComponent', () => {
     expect(cell('SeeContacts', 'Youth')?.textContent).toContain('змінено');
   });
 
+  it('offers a row only the reaches it may hold: the whole kurin is all or nobody', () => {
+    create();
+
+    const agenda = component.groups().find(group => group.group === 'Agenda');
+    expect(agenda?.label).toBe('Події й задачі');
+    expect(agenda?.rows[0]).toEqual(expect.objectContaining({ label: 'Призначати всьому куреню' }));
+    expect(agenda?.rows[0].options.map(option => option.value)).toEqual(['None', 'Kurin']);
+    expect(component.groups()[0].rows[0].options.map(option => option.value)).toEqual(['None', 'OwnGroup', 'Kurin']);
+  });
+
+
   it('sends the whole matrix once something changed', () => {
     create();
     component.set('SeeContacts', 'Youth', 'OwnGroup');
@@ -99,7 +112,7 @@ describe('KurinAccessPolicyComponent', () => {
     const [kurinKey, request] = kurins.setAccessPolicy.mock.calls[0];
     expect(kurinKey).toBe('k1');
     expect(request.grants.SeeContacts).toEqual(expect.objectContaining({ Youth: 'OwnGroup', Zvyazkovyi: 'Kurin' }));
-    expect(Object.keys(request.grants)).toEqual(['SeeContacts', 'GiveWarning1', 'ReadJournal']);
+    expect(Object.keys(request.grants)).toEqual(['SeeContacts', 'GiveWarning1', 'AssignKurin', 'ReadJournal']);
     expect(component.dirty()).toBe(false);
   });
 
@@ -126,7 +139,7 @@ describe('KurinAccessPolicyComponent', () => {
   it('gives a phone a card per section and leaves out the fixed youth cell of an action', () => {
     create(policy(), true);
 
-    expect(el().querySelectorAll('.access-card').length).toBe(3);
+    expect(el().querySelectorAll('.access-card').length).toBe(4);
     expect(el().querySelector('p-table')).toBeNull();
     expect(cell('SeeContacts', 'Youth')).not.toBeNull();
     expect(cell('GiveWarning1', 'Youth')).toBeNull();

@@ -15,6 +15,9 @@ public enum CapabilityGroup
     /// <summary>Проби й вмілості.</summary>
     ProbesBadges,
 
+    /// <summary>Події й задачі: whom events and tasks may be assigned to.</summary>
+    Agenda,
+
     /// <summary>Журнал дій.</summary>
     Journal
 }

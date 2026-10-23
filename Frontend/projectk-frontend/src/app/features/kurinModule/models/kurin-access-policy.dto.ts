@@ -14,6 +14,8 @@ export interface KurinCapabilityDto {
   group: CapabilityGroup;
   /** Whether the «Юнаки» column may change on this row: only for the data rows. */
   youthConfigurable: boolean;
+  /** The reaches a cell of this row may hold, narrowest first: «увесь курінь» has no «свій гурток». */
+  reaches: CapabilityReach[];
   /** One cell per audience, in column order. */
   cells: AccessPolicyCellDto[];
 }

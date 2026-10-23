@@ -120,6 +120,7 @@ internal static class KurinAccessPolicyResult
                 descriptor.Key,
                 descriptor.Group,
                 descriptor.YouthConfigurable,
+                descriptor.Reaches,
                 KurinCapabilities.Audiences
                     .Select(audience => new AccessPolicyCellDto(
                         audience,

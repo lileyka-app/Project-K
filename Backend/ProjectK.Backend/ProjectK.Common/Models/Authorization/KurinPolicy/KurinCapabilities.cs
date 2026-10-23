@@ -13,6 +13,10 @@ public static class KurinCapabilities
     private const CapabilityReach G = CapabilityReach.OwnGroup;
     private const CapabilityReach N = CapabilityReach.None;
 
+    // Declared before All: static fields initialise in textual order.
+    private static readonly IReadOnlyList<CapabilityReach> AnyReach = [N, G, K];
+    private static readonly IReadOnlyList<CapabilityReach> NobodyOrKurin = [N, K];
+
     /// <summary>Every audience, in the order the settings page shows them.</summary>
     public static readonly IReadOnlyList<PolicyAudience> Audiences = Enum.GetValues<PolicyAudience>();
 
@@ -39,6 +43,14 @@ public static class KurinCapabilities
         Act(KurinCapability.SignProbe, CapabilityGroup.ProbesBadges, ResourceType.ProbeProgress, ResourceAction.Update, K, G, G, N, N, N, N),
         Act(KurinCapability.UnsignProbe, CapabilityGroup.ProbesBadges, ResourceType.ProbeProgress, ResourceAction.Delete, K, G, G, N, N, N, N),
         Act(KurinCapability.ReviewBadge, CapabilityGroup.ProbesBadges, ResourceType.BadgeProgress, ResourceAction.Update, K, G, G, N, N, N, N),
+
+        // One pair for the four: the client's AgendaItem:Create says only whether the person may
+        // author at all; whom they may address is asked per target kind.
+        Act(KurinCapability.AssignKurin, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, N, N, K, K, N, N)
+            with { Reaches = NobodyOrKurin },
+        Act(KurinCapability.AssignGroups, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, G, G, K, K, G, G),
+        Act(KurinCapability.AssignMembers, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, G, G, K, K, G, G),
+        Act(KurinCapability.AssignProvid, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, G, G, K, K, G, G),
 
         Act(KurinCapability.ReadJournal, CapabilityGroup.Journal, ResourceType.KurinJournal, ResourceAction.Read, K, K, K, N, N, N, N)
     ];
@@ -82,7 +94,7 @@ public static class KurinCapabilities
         KurinCapability key,
         ResourceType resource,
         params CapabilityReach[] reaches) =>
-        new(key, CapabilityGroup.MemberData, resource, ResourceAction.Read, Defaults(reaches), YouthConfigurable: true);
+        new(key, CapabilityGroup.MemberData, resource, ResourceAction.Read, Defaults(reaches), YouthConfigurable: true, AnyReach);
 
     // Actions never reach the youth baseline, so their Youth cell is not written out.
     private static CapabilityDescriptor Act(
@@ -91,7 +103,7 @@ public static class KurinCapabilities
         ResourceType resource,
         ResourceAction action,
         params CapabilityReach[] reaches) =>
-        new(key, group, resource, action, Defaults([.. reaches, N]), YouthConfigurable: false);
+        new(key, group, resource, action, Defaults([.. reaches, N]), YouthConfigurable: false, AnyReach);
 
     private static Dictionary<PolicyAudience, CapabilityReach> Defaults(CapabilityReach[] reaches)
     {

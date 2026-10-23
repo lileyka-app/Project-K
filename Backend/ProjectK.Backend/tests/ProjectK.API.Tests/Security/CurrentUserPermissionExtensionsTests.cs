@@ -41,7 +41,7 @@ public class CurrentUserPermissionExtensionsTests
     [Fact]
     public void HasPermission_ShouldAnswer_ForAStaticPair()
     {
-        Assert.True(Zvyazkovyi().HasPermission(ResourceType.AgendaItem, ResourceAction.Create));
+        Assert.True(Zvyazkovyi().HasPermission(ResourceType.PlanningSession, ResourceAction.Create));
         Assert.False(Zvyazkovyi().HasPermission(ResourceType.Kurin, ResourceAction.Delete));
     }
 

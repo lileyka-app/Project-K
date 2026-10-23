@@ -265,8 +265,9 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MemberProgressController, Guid, string>>(nameof(MemberProgressController.GetProbeProgress), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), "RequireUser");
 
-        // Agenda reads are open to the kurin; raising an item is a провід capability, while editing or
-        // dropping one is settled per item by ResourceAuthorize (author, or the Виховник it targets).
+        // Agenda reads are open to the kurin; whom an item may be assigned to is the kurin's policy, asked
+        // per target by the handler, while editing or dropping one is settled per item by
+        // ResourceAuthorize (author, or the Виховник it targets).
         yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?, bool>>(nameof(AgendaController.GetCalendar), "RequireUser");
         yield return Row<Action<AgendaController, Guid, string?, AgendaTargetType?, Guid?, bool, AgendaBoardSort, AgendaItemStatus?, int, int>>(nameof(AgendaController.GetBoard), "RequireUser");
         yield return Row<Action<AgendaController, Guid, string?, int, int>>(nameof(AgendaController.GetArchive), "RequireUser");
@@ -274,8 +275,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, Guid, AgendaArchivePolicyDto>>(nameof(AgendaController.SetArchivePolicy), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetItem), "RequireUser");
         yield return Row<Action<AgendaController, Guid, SetAgendaArchivedRequest>>(nameof(AgendaController.SetArchived), "RequireUser");
-        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetAssignTargets), "RequireAgendaAuthor");
-        yield return Row<Action<AgendaController, CreateAgendaItemCommand>>(nameof(AgendaController.Create), "RequireAgendaAuthor");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetAssignTargets), "RequireUser");
+        yield return Row<Action<AgendaController, CreateAgendaItemCommand>>(nameof(AgendaController.Create), "RequireUser");
         yield return Row<Action<AgendaController, Guid, UpdateAgendaItemCommand>>(nameof(AgendaController.Update), "RequireUser");
         yield return Row<Action<AgendaController, Guid, ChangeAgendaStatusRequest>>(nameof(AgendaController.ChangeStatus), "RequireUser");
         yield return Row<Action<AgendaController, Guid, Guid, ChangeAgendaTargetStatusRequest>>(nameof(AgendaController.ChangeTargetStatus), "RequireUser");

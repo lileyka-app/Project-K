@@ -32,11 +32,19 @@ export interface AccessCellView {
   defaultHint: string;
 }
 
+/** One choice of a cell's select. */
+export interface ReachOption {
+  value: CapabilityReach;
+  label: string;
+}
+
 export interface AccessRowView {
   key: KurinCapability;
   label: string;
   /** The «Юнаки» cell is fixed at «—» on action rows; the phone leaves it out. */
   youthConfigurable: boolean;
+  /** The choices a cell of this row offers; «Призначати всьому куреню» has no «Свій гурток». */
+  options: ReachOption[];
   cells: AccessCellView[];
 }
 
@@ -49,7 +57,8 @@ export interface AccessGroupView {
 /** Where the matrix stops fitting and each section becomes a card (BRANDBOOK: tables turn on phones). */
 const PHONE_QUERY = '(max-width: 767px)';
 
-const REACHES: CapabilityReach[] = ['None', 'OwnGroup', 'Kurin'];
+const reachOptions = (reaches: CapabilityReach[]): ReachOption[] =>
+  reaches.map(value => ({ value, label: REACH_LABELS[value] }));
 
 const cellKey = (capability: string, audience: string) => `${capability}/${audience}`;
 
@@ -71,8 +80,6 @@ export class KurinAccessPolicyComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly kurinKey = input.required<string>();
-
-  protected readonly reachOptions = REACHES.map(value => ({ value, label: REACH_LABELS[value] }));
 
   readonly loaded = signal(false);
   readonly failed = signal(false);
@@ -102,6 +109,7 @@ export class KurinAccessPolicyComponent implements OnInit {
         key: capability.key,
         label: labelOf(CAPABILITY_LABELS, capability.key),
         youthConfigurable: capability.youthConfigurable,
+        options: reachOptions(capability.reaches),
         cells: capability.cells.map(cell => {
           const value = values[cellKey(capability.key, cell.audience)] ?? cell.effective;
           return {

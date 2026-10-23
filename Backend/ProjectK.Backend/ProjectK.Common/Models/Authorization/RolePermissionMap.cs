@@ -48,7 +48,7 @@ public static class RolePermissionMap
     // submit own badge progress.
     private static readonly IReadOnlyList<Permission> MemberGrants = BuildMemberGrants();
 
-    // Курінний провід: plan and raise agenda for the kurin, then own what they raised.
+    // Курінний провід: plan for the kurin, and own the agenda items they raised.
     private static readonly IReadOnlyList<Permission> KurinProvidGrants =
         BuildProvidGrants(AccessScope.KurinWide);
 
@@ -188,14 +188,7 @@ public static class RolePermissionMap
     public static bool GrantsGroupLeadership(IEnumerable<string> roles) =>
         WidestScope(Resolve(roles), ResourceType.Group, ResourceAction.Update) is not null;
 
-    /// <summary>
-    /// Whether the roles may raise agenda items. Creation has no existing resource to scope against,
-    /// so it is gated as a capability here and the target kurin is checked separately.
-    /// </summary>
-    public static bool GrantsAgendaAuthoring(IEnumerable<string> roles) =>
-        WidestScope(Resolve(roles), ResourceType.AgendaItem, ResourceAction.Create) is not null;
-
-    /// <summary>Whether the roles may open a planning session. Gated as a capability, like agenda creation.</summary>
+    /// <summary>Whether the roles may open a planning session. Creation has no existing resource to scope against.</summary>
     public static bool GrantsPlanningAuthoring(IEnumerable<string> roles) =>
         WidestScope(Resolve(roles), ResourceType.PlanningSession, ResourceAction.Create) is not null;
 
@@ -338,9 +331,9 @@ public static class RolePermissionMap
     }
 
     /// <summary>
-    /// What every провід member gets: plan and raise agenda items, then edit or drop the ones they
-    /// authored. Agenda creation is always kurin-wide — who sees an item is decided by its assignment,
-    /// not by the author's scope.
+    /// What every провід member gets: plan, then edit or drop the agenda items they authored. Whom
+    /// they may assign items to is the kurin's policy (<see cref="KurinCapability.AssignGroups"/> and
+    /// its row-mates), not a grant here.
     /// </summary>
     private static List<Permission> BuildProvidGrants(AccessScope planningScope)
     {
@@ -349,7 +342,6 @@ public static class RolePermissionMap
             new(ResourceType.PlanningSession, ResourceAction.Create, planningScope),
             new(ResourceType.PlanningSession, ResourceAction.Update, AccessScope.Own),
             new(ResourceType.PlanningSession, ResourceAction.Delete, AccessScope.Own),
-            new(ResourceType.AgendaItem, ResourceAction.Create, AccessScope.KurinWide),
             new(ResourceType.AgendaItem, ResourceAction.Update, AccessScope.Own),
             new(ResourceType.AgendaItem, ResourceAction.Delete, AccessScope.Own)
         };

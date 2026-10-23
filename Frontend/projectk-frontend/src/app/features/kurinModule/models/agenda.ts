@@ -242,6 +242,8 @@ export interface UpdateAgendaItemRequest extends CreateAgendaItemRequest {
 export interface AgendaMemberTarget {
   memberKey: string;
   fullName: string;
+  /** False when the person is listed only beside a гурток or провід the viewer may pick. */
+  canTarget: boolean;
 }
 
 export interface AgendaLeadershipTarget {

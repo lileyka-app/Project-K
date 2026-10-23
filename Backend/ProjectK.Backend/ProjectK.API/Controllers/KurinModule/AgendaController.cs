@@ -142,12 +142,14 @@ public class AgendaController : ControllerBase
     }
 
     /// <summary>
-    /// Lists what an item can be assigned to — the kurin, its groups, its offices and its members.
+    /// Lists what an item can be assigned to — the kurin, its groups, its offices and its members —
+    /// flagged by what the kurin's policy lets the caller assign; 403 when it lets them assign nothing.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireAgendaAuthor)]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/assign-targets")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(AgendaAssignTargetsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAssignTargets(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetAssignTargetsQuery(kurinKey));
@@ -157,7 +159,7 @@ public class AgendaController : ControllerBase
     /// <summary>
     /// Creates an agenda item together with its assignments.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireAgendaAuthor)]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "arg:request.KurinKey")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]

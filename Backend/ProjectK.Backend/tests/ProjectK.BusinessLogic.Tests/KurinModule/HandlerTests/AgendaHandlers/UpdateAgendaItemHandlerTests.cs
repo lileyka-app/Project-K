@@ -44,7 +44,7 @@ public class UpdateAgendaItemHandlerTests
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), true, true));
-        _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
+        _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
         var groups = new Mock<IGroupRepository>();
         groups.Setup(g => g.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_groups);
@@ -256,5 +256,46 @@ public class UpdateAgendaItemHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         target.CompletionMode.Should().Be(AgendaCompletionMode.PerMember);
+    }
+
+    // Assigning is adding a target. One the item already has stays even when the kurin has since
+    // narrowed the editor's reach, so a fix to the title still saves; a new one is still checked.
+    [Fact]
+    public async Task Handle_ChecksOnlyTheTargetsItAdds()
+    {
+        var kept = new AgendaTargetInput { TargetType = AgendaTargetType.Kurin, TargetKey = _kurinKey };
+        var added = new AgendaTargetInput { TargetType = AgendaTargetType.Member, TargetKey = Guid.NewGuid() };
+        var item = new AgendaItem
+        {
+            AgendaItemKey = Guid.NewGuid(),
+            KurinKey = _kurinKey,
+            Kind = AgendaItemKind.Event,
+            Title = "Свічкова",
+            Assignments = new List<AgendaAssignment> { new() { TargetType = AgendaTargetType.Kurin, TargetKey = _kurinKey } }
+        };
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("The kurin's policy does not give AssignKurin."));
+
+        var retitled = await _handler.Handle(new UpdateAgendaItemCommand
+        {
+            AgendaItemKey = item.AgendaItemKey,
+            Kind = AgendaItemKind.Event,
+            Title = "Свічкова зустріч",
+            Targets = [kept]
+        }, default);
+        var widened = await _handler.Handle(new UpdateAgendaItemCommand
+        {
+            AgendaItemKey = item.AgendaItemKey,
+            Kind = AgendaItemKind.Event,
+            Title = "Свічкова зустріч",
+            Targets = [kept, added]
+        }, default);
+
+        retitled.Type.Should().Be(ResultType.Success);
+        widened.Type.Should().Be(ResultType.Forbidden);
+        widened.ErrorCode.Should().Be("AGENDA_TARGET_FORBIDDEN");
+        _access.Verify(a => a.AuthorizeTargetAsync(kept, It.IsAny<CancellationToken>()), Times.Never);
+        _access.Verify(a => a.AuthorizeTargetAsync(added, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -21,7 +21,7 @@
                       }
                     </span>
                     <p-selectbutton
-                      [options]="reachOptions"
+                      [options]="row.options"
                       optionLabel="label"
                       optionValue="value"
                       [allowEmpty]="false"
@@ -62,7 +62,7 @@
               @for (cell of row.cells; track cell.audience) {
                 <td class="access-matrix__cell" [attr.data-testid]="'access-cell-' + row.key + '-' + cell.audience">
                   <p-select
-                    [options]="reachOptions"
+                    [options]="row.options"
                     optionLabel="label"
                     optionValue="value"
                     size="small"

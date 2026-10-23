@@ -87,7 +87,6 @@ public class PolicyMatchesPermissionMapTests
         {
             AuthorizationPolicies.RequireKurinManagement => RolePermissionMap.GrantsWholeKurinManagement,
             AuthorizationPolicies.RequireGroupLeadership => RolePermissionMap.GrantsGroupLeadership,
-            AuthorizationPolicies.RequireAgendaAuthor => RolePermissionMap.GrantsAgendaAuthoring,
             AuthorizationPolicies.RequirePlanningAuthor => RolePermissionMap.GrantsPlanningAuthoring,
             AuthorizationPolicies.RequireUser => _ => true,
             _ => _ => false

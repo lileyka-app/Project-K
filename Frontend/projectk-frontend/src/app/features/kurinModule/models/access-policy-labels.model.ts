@@ -18,10 +18,14 @@ export type KurinCapability =
   | 'SignProbe'
   | 'UnsignProbe'
   | 'ReviewBadge'
+  | 'AssignKurin'
+  | 'AssignGroups'
+  | 'AssignMembers'
+  | 'AssignProvid'
   | 'ReadJournal';
 
 /** The section of the settings page a capability sits in. */
-export type CapabilityGroup = 'MemberData' | 'WarningsAwards' | 'ProbesBadges' | 'Journal';
+export type CapabilityGroup = 'MemberData' | 'WarningsAwards' | 'ProbesBadges' | 'Agenda' | 'Journal';
 
 /** A column of the policy: who a capability is given to. */
 export type PolicyAudience =
@@ -56,6 +60,10 @@ export const CAPABILITY_LABELS: Record<KurinCapability, string> = {
   SignProbe: 'Підписувати точки й закривати пробу',
   UnsignProbe: 'Знімати підписи',
   ReviewBadge: 'Підтверджувати вмілості',
+  AssignKurin: 'Призначати всьому куреню',
+  AssignGroups: 'Призначати гурткам',
+  AssignMembers: 'Призначати окремим людям',
+  AssignProvid: 'Призначати проводу й КВ',
   ReadJournal: 'Бачити журнал дій'
 };
 
@@ -63,6 +71,7 @@ export const CAPABILITY_GROUP_LABELS: Record<CapabilityGroup, string> = {
   MemberData: 'Дані юнаків',
   WarningsAwards: 'Перестороги й відзначення',
   ProbesBadges: 'Проби й вмілості',
+  Agenda: 'Події й задачі',
   Journal: 'Журнал дій'
 };
 

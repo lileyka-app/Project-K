@@ -91,8 +91,8 @@ export class PermissionService {
     return this.isAdmin() || this.has('PlanningSession:Create');
   }
 
-  // The whole провід raises agenda items; the backend decides who may edit one afterwards
-  // (its author, or the Виховник of a гурток it targets).
+  // AgendaItem:Create comes from the kurin's «Події й задачі» rows: whoever may assign anything raises
+  // agenda items. Whom to, and who may edit one afterwards, the backend decides.
   canManageAgenda(): boolean {
     return this.isAdmin() || this.has('AgendaItem:Create');
   }

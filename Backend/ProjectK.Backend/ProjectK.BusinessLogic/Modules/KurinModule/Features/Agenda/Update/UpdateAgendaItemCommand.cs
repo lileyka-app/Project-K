@@ -77,9 +77,12 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_EDIT_FORBIDDEN", "Only the creator or leadership may edit this item.");
         }
 
-        foreach (var target in request.Targets)
+        // Only a newly added target is an act of assigning: one the item already has stays when the
+        // kurin narrows the editor's reach, so a title can still be fixed on an item aimed further.
+        var existingTargets = item.Assignments.Select(a => (a.TargetType, a.TargetKey)).ToHashSet();
+        foreach (var target in request.Targets.Where(t => !existingTargets.Contains((t.TargetType, t.TargetKey))))
         {
-            var decision = await _access.AuthorizeTargetAsync(target, ResourceAction.Create, cancellationToken);
+            var decision = await _access.AuthorizeTargetAsync(target, cancellationToken);
             if (!decision.IsAllowed)
             {
                 return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_TARGET_FORBIDDEN", decision.Reason);

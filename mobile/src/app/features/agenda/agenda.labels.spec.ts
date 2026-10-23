@@ -161,8 +161,9 @@ describe('targets', () => {
     kurinLeaderships: [{ leadershipKey: 'l0', label: 'Курінний провід', canTarget: false }],
     groups: [
       { groupKey: 'g1', name: 'Соколи', canTargetGroup: true, leadership: { leadershipKey: 'l1', label: 'Провід Соколів', canTarget: true },
-        members: [{ memberKey: 'm1', fullName: 'Остап Коваль' }] },
-      { groupKey: 'g2', name: 'Орли', canTargetGroup: false, leadership: null, members: [] },
+        members: [{ memberKey: 'm1', fullName: 'Остап Коваль', canTarget: true }] },
+      { groupKey: 'g2', name: 'Орли', canTargetGroup: false, leadership: null,
+        members: [{ memberKey: 'm2', fullName: 'Іра Бондар', canTarget: false }] },
     ],
   };
 

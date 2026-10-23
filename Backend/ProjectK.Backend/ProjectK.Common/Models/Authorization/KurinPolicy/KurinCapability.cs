@@ -64,6 +64,18 @@ public enum KurinCapability
     /// <summary>Confirm or return a вмілість.</summary>
     ReviewBadge,
 
+    /// <summary>Assign an event or a task to the whole kurin. Reaches the kurin or nobody.</summary>
+    AssignKurin,
+
+    /// <summary>Assign an event or a task to a гурток.</summary>
+    AssignGroups,
+
+    /// <summary>Assign an event or a task to one person.</summary>
+    AssignMembers,
+
+    /// <summary>Assign an event or a task to a провід: a гурток's, the курінний провід or the КВ.</summary>
+    AssignProvid,
+
     /// <summary>Read the kurin's Журнал дій.</summary>
     ReadJournal
 }

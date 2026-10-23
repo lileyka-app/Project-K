@@ -13,11 +13,13 @@ public sealed record KurinAccessPolicyDto(
 /// <param name="Key">The capability.</param>
 /// <param name="Group">The section it sits in.</param>
 /// <param name="YouthConfigurable">Whether the Youth column may be changed on this row.</param>
+/// <param name="Reaches">The reaches a cell of this row may hold, narrowest first.</param>
 /// <param name="Cells">One cell per audience, in column order.</param>
 public sealed record KurinCapabilityDto(
     KurinCapability Key,
     CapabilityGroup Group,
     bool YouthConfigurable,
+    IReadOnlyList<CapabilityReach> Reaches,
     IReadOnlyList<AccessPolicyCellDto> Cells);
 
 /// <summary>What one audience gets for one capability.</summary>

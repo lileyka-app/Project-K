@@ -58,6 +58,12 @@ public class RolePermissionMapGoldenTests
         new(ChangeKind.Added, "ProbeProgress:Delete:OwnGroups",
             "Unsigning a probe became its own right (UnsignProbe); the впорядник keeps it for his гурток.",
             [Vykhovnyk, Instruktor]),
+        new(ChangeKind.Removed, "AgendaItem:Create:KurinWide",
+            "Whom an item is assigned to became the kurin's policy (Assign*); a впорядник and a гурток's провід reach their own гурток by default.",
+            [Vykhovnyk, Instruktor, .. GroupOffices]),
+        new(ChangeKind.Added, "AgendaItem:Create:OwnGroups",
+            "Whom an item is assigned to became the kurin's policy (Assign*); a впорядник and a гурток's провід reach their own гурток by default.",
+            [Vykhovnyk, Instruktor, .. GroupOffices]),
         .. AdminCoversTheNewResources()
     ];
 

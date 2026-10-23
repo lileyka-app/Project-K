@@ -83,13 +83,12 @@ public class KurinAccessPolicyTests
 
     [Theory]
     [InlineData(ResourceType.Group)]
-    [InlineData(ResourceType.AgendaItem)]
     [InlineData(ResourceType.PlanningSession)]
     public void ConfigurableCapabilities_NeverTouchCoarsePolicyResources(ResourceType coarse)
     {
-        // The coarse request policies (RequireKurinManagement, RequireGroupLeadership, agenda and
-        // planning authoring) are decided from roles alone, without a kurin. A capability on these
-        // resources would make them disagree with the resource check.
+        // The coarse request policies (RequireKurinManagement, RequireGroupLeadership, planning
+        // authoring) are decided from roles alone, without a kurin. A capability on these resources
+        // would make them disagree with the resource check.
         Assert.DoesNotContain(KurinCapabilities.All, descriptor => descriptor.Resource == coarse);
 
         foreach (var role in EveryRole())
@@ -373,5 +372,59 @@ public class KurinAccessPolicyTests
         };
 
         Assert.Single(KurinAccessPolicy.Validate(matrix));
+    }
+
+    [Fact]
+    public void EveryDefault_IsAReachItsRowOffers()
+    {
+        Assert.All(KurinCapabilities.All, descriptor =>
+            Assert.All(descriptor.Defaults.Values, reach => Assert.True(descriptor.Offers(reach), $"{descriptor.Key}: {reach}")));
+    }
+
+    // The whole kurin has no гурток to bound it: «свій гурток» there would mean nobody, so it is not offered.
+    [Fact]
+    public void AssigningToTheWholeKurin_IsKurinOrNobody()
+    {
+        Assert.Equal(new[] { CapabilityReach.None, CapabilityReach.Kurin }, KurinCapabilities.Get(KurinCapability.AssignKurin).Reaches);
+        Assert.Single(KurinAccessPolicy.Validate(Matrix((KurinCapability.AssignKurin, PolicyAudience.Hurtkovyy, CapabilityReach.OwnGroup))));
+        Assert.Empty(KurinAccessPolicy.Validate(Matrix((KurinCapability.AssignKurin, PolicyAudience.Hurtkovyy, CapabilityReach.Kurin))));
+        Assert.Empty(KurinAccessPolicy.Validate(Matrix((KurinCapability.AssignGroups, PolicyAudience.Kurinnyy, CapabilityReach.OwnGroup))));
+
+        var read = KurinAccessPolicy.Read("""{"v":1,"grants":{"AssignKurin":{"Hurtkovyy":"OwnGroup"}}}""");
+        Assert.True(read.IsDefault);
+    }
+
+    // Kurin · Vykhovnyk · Instruktor · Kurinnyy · KurinProvid · Hurtkovyy · GroupProvid · Youth.
+    [Theory]
+    [InlineData(KurinCapability.AssignKurin, "KNNKKNNN")]
+    [InlineData(KurinCapability.AssignGroups, "KGGKKGGN")]
+    [InlineData(KurinCapability.AssignMembers, "KGGKKGGN")]
+    [InlineData(KurinCapability.AssignProvid, "KGGKKGGN")]
+    public void TheAssigningRows_DefaultToWhatEachOfficeCoversItself(KurinCapability capability, string expected)
+    {
+        var descriptor = KurinCapabilities.Get(capability);
+
+        Assert.Equal(CapabilityGroup.Agenda, descriptor.Group);
+        Assert.Equal((ResourceType.AgendaItem, ResourceAction.Create), (descriptor.Resource, descriptor.Action));
+        Assert.Equal(expected, string.Concat(KurinCapabilities.Audiences.Select(audience => descriptor.Defaults[audience] switch
+        {
+            CapabilityReach.Kurin => 'K',
+            CapabilityReach.OwnGroup => 'G',
+            _ => 'N'
+        })));
+    }
+
+    // AgendaItem:Create now says only whether someone may author at all; a kurin can take it away.
+    [Fact]
+    public void AgendaAuthoring_ComesFromThePolicy()
+    {
+        var closed = Set(
+            (KurinCapability.AssignGroups, PolicyAudience.Hurtkovyy, CapabilityReach.None),
+            (KurinCapability.AssignMembers, PolicyAudience.Hurtkovyy, CapabilityReach.None),
+            (KurinCapability.AssignProvid, PolicyAudience.Hurtkovyy, CapabilityReach.None));
+
+        Assert.Equal(AccessScope.OwnGroups, RolePermissionMap.WidestScope(RolePermissionMap.Resolve([Hurtkovyy]), ResourceType.AgendaItem, ResourceAction.Create));
+        Assert.Null(RolePermissionMap.WidestScope(RolePermissionMap.Resolve([Hurtkovyy], closed), ResourceType.AgendaItem, ResourceAction.Create));
+        Assert.Null(RolePermissionMap.WidestScope(RolePermissionMap.Resolve([SystemRole.Member]), ResourceType.AgendaItem, ResourceAction.Create));
     }
 }

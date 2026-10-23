@@ -19,9 +19,12 @@ describe('AgendaAssignSelectComponent', () => {
       {
         groupKey: 'g1', name: 'Соколи', canTargetGroup: true,
         leadership: { leadershipKey: 'l-g1', label: 'Провід гуртка', canTarget: true },
-        members: [{ memberKey: 'm1', fullName: 'Марта Коваль' }]
+        members: [{ memberKey: 'm1', fullName: 'Марта Коваль', canTarget: true }]
       },
-      { groupKey: 'g2', name: 'Ведмеді', canTargetGroup: false, leadership: null, members: [] }
+      {
+        groupKey: 'g2', name: 'Ведмеді', canTargetGroup: false, leadership: null,
+        members: [{ memberKey: 'm2', fullName: 'Ігор Бондар', canTarget: false }]
+      }
     ]
   };
 
@@ -49,5 +52,14 @@ describe('AgendaAssignSelectComponent', () => {
     expect(nodes.map(node => node.key)).toEqual(['group:g1']);
     expect(nodes[0].selectable).toBe(true);
     expect((nodes[0].children ?? []).map(child => (child as { key?: string }).key)).toEqual(['leadership:l-g1', 'member:m1']);
+  });
+
+  // A person is picked only when the kurin lets this user assign to them; one who is not is left
+  // out together with a гурток that then holds nothing pickable.
+  it('offers a person only when the backend says so', () => {
+    const nodes = (fixture.componentInstance as unknown as { nodes: () => { key?: string; children?: { key?: string; selectable?: boolean }[] }[] }).nodes();
+
+    expect(nodes.find(node => node.key === 'group:g2')).toBeUndefined();
+    expect(nodes[0].children?.find(child => child.key === 'member:m1')?.selectable).toBe(true);
   });
 });

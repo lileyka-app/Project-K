@@ -11,8 +11,8 @@ interface TargetNodeData {
 }
 
 /**
- * «Призначити для»: дерево Курінь → Гуртки → Учасники з пошуком (`filter`). Бекенд уже віддає лише ті
- * цілі, які поточний користувач має право призначати, тож тут немає власної перевірки прав. Вузол,
+ * «Призначити для»: дерево Курінь → Гуртки → Учасники з пошуком (`filter`). Бекенд позначає кожну ціль
+ * тим, чи дає її поточному користувачу політика куреня, тож тут немає власної перевірки прав. Вузол,
  * який не можна обрати і під яким нема чого обрати, не малюється зовсім: Гуртковому нема чого
  * дивитись на «весь курінь», якого він не може вибрати.
  */
@@ -102,7 +102,7 @@ export class AgendaAssignSelectComponent implements OnInit {
           key: `member:${member.memberKey}`,
           label: member.fullName,
           icon: 'pi pi-user',
-          selectable: true,
+          selectable: member.canTarget,
           data: { targetType: 'Member' as AgendaTargetType, targetKey: member.memberKey }
         });
       }

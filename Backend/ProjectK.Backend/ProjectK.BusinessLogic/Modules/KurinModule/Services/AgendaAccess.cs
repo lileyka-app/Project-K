@@ -1,9 +1,11 @@
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -34,42 +36,102 @@ public sealed record AgendaViewerContext(
         new(KurinKey, ViewerUserKey, ViewerMemberKey, VisibilityGroupKeys, ViewerLeadershipKeys, CanSeeWholeKurin);
 }
 
+/// <summary>
+/// How far the current user may assign agenda items in one kurin, as the kurin's policy says: one
+/// reach per kind of target, and the гуртки an own-group reach covers. Answers the same question as
+/// <see cref="IAgendaAccess.AuthorizeTargetAsync"/> for many targets at once, without a read per target.
+/// </summary>
+/// <param name="Kurin">The reach of <see cref="KurinCapability.AssignKurin"/>.</param>
+/// <param name="Groups">The reach of <see cref="KurinCapability.AssignGroups"/>.</param>
+/// <param name="Members">The reach of <see cref="KurinCapability.AssignMembers"/>.</param>
+/// <param name="Provid">The reach of <see cref="KurinCapability.AssignProvid"/>.</param>
+/// <param name="LedGroupKeys">The гуртки the user leads, their own member гурток included; empty unless some reach is own-group.</param>
+/// <param name="UserKey">The user's account, which an own-group reach always covers.</param>
+public sealed record AgendaAssignReach(
+    CapabilityReach Kurin,
+    CapabilityReach Groups,
+    CapabilityReach Members,
+    CapabilityReach Provid,
+    IReadOnlySet<Guid> LedGroupKeys,
+    Guid? UserKey)
+{
+    /// <summary>Whether the user may author an item at all: some kind of target is within reach.</summary>
+    public bool CanAuthor => Kurin > CapabilityReach.None || Groups > CapabilityReach.None
+        || Members > CapabilityReach.None || Provid > CapabilityReach.None;
+
+    /// <summary>Whether the whole kurin may be a target.</summary>
+    public bool ReachesKurin => Kurin == CapabilityReach.Kurin;
+
+    /// <summary>Whether <paramref name="groupKey"/> may be a target.</summary>
+    public bool ReachesGroup(Guid groupKey) => Covers(Groups, groupKey, null);
+
+    /// <summary>Whether a person seated in <paramref name="groupKey"/> with <paramref name="memberUserKey"/> may be a target.</summary>
+    public bool ReachesMember(Guid? groupKey, Guid? memberUserKey) => Covers(Members, groupKey, memberUserKey);
+
+    /// <summary>Whether the провід of <paramref name="groupKey"/> may be a target; null for the КВ and the курінний провід.</summary>
+    public bool ReachesProvid(Guid? groupKey) => Covers(Provid, groupKey, null);
+
+    // The same rule ResourceAccessService applies to an own-group grant: one's own record, or a
+    // resource in a гурток one leads.
+    private bool Covers(CapabilityReach reach, Guid? groupKey, Guid? memberUserKey) => reach switch
+    {
+        CapabilityReach.Kurin => true,
+        CapabilityReach.OwnGroup => (memberUserKey.HasValue && memberUserKey == UserKey)
+            || (groupKey.HasValue && LedGroupKeys.Contains(groupKey.Value)),
+        _ => false
+    };
+}
+
 public interface IAgendaAccess
 {
     /// <summary>Resolves the current user's agenda context inside <paramref name="kurinKey"/>.</summary>
     Task<AgendaViewerContext> BuildViewerAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Whether the current user may aim an item at <paramref name="target"/>. Reuses the tested resource
-    /// guard, so a mentor/group leader is bounded to assigned groups and their members while a
-    /// manager/admin reaches the whole kurin.
+    /// Whether the current user may assign an item to <paramref name="target"/>: the kurin's policy
+    /// row for that kind of target (<see cref="KurinCapability.AssignKurin"/>, <c>AssignGroups</c>,
+    /// <c>AssignMembers</c>, <c>AssignProvid</c>), checked against the target's scope by the resource
+    /// guard — which also refuses a target outside the user's kurin.
     /// </summary>
     Task<ResourceAccessDecision> AuthorizeTargetAsync(
         AgendaTargetInput target,
-        ResourceAction action,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Whether the current user may author agenda items at all: some kind of target is within reach.</summary>
+    Task<bool> CanAuthorAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>The current user's assigning reach inside <paramref name="kurinKey"/>, for deciding many targets at once.</summary>
+    Task<AgendaAssignReach> GetAssignReachAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 }
 
 public sealed class AgendaAccess : IAgendaAccess
 {
+    private static readonly KurinCapability[] AssignCapabilities =
+    [
+        KurinCapability.AssignKurin, KurinCapability.AssignGroups, KurinCapability.AssignMembers, KurinCapability.AssignProvid
+    ];
+
     private readonly ICurrentUserContext _currentUser;
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
+    private readonly ICurrentPermissions _permissions;
 
     public AgendaAccess(
         ICurrentUserContext currentUser,
         IUnitOfWork uow,
         IMemberDirectory members,
         IResourceScopeReader scopeReader,
-        IResourceAccessService resourceAccess)
+        IResourceAccessService resourceAccess,
+        ICurrentPermissions permissions)
     {
         _currentUser = currentUser;
         _uow = uow;
         _members = members;
         _scopeReader = scopeReader;
         _resourceAccess = resourceAccess;
+        _permissions = permissions;
     }
 
     public async Task<AgendaViewerContext> BuildViewerAsync(Guid kurinKey, CancellationToken cancellationToken = default)
@@ -129,108 +191,54 @@ public sealed class AgendaAccess : IAgendaAccess
             LedGroupKeysOrNull: ledGroups);
     }
 
-    public async Task<ResourceAccessDecision> AuthorizeTargetAsync(
+    public Task<ResourceAccessDecision> AuthorizeTargetAsync(
         AgendaTargetInput target,
-        ResourceAction action,
         CancellationToken cancellationToken = default)
     {
-        // Aiming at a провід is authorized like aiming at its scope: a гуртковий провід as its group,
-        // a курінний провід / КВ as the whole kurin. This reuses the tested resource guard.
-        if (target.TargetType == AgendaTargetType.Leadership)
+        (KurinCapability Capability, ResourceType Scope)? right = target.TargetType switch
         {
-            var leadership = await _uow.Leaderships.GetByKeyAsync(target.TargetKey, cancellationToken);
-            if (leadership is null)
-            {
-                return ResourceAccessDecision.Deny("Leadership target was not found.");
-            }
-
-            return leadership.Type == LeadershipType.Group && leadership.GroupKey.HasValue
-                ? await _resourceAccess.CheckAccessAsync(ResourceType.Group, action, leadership.GroupKey.Value, cancellationToken)
-                : await _resourceAccess.CheckAccessAsync(ResourceType.Kurin, action, leadership.KurinKey ?? Guid.Empty, cancellationToken);
-        }
-
-        var resourceType = target.TargetType switch
-        {
-            AgendaTargetType.Kurin => ResourceType.Kurin,
-            AgendaTargetType.Group => ResourceType.Group,
-            AgendaTargetType.Member => ResourceType.Member,
-            _ => ResourceType.Kurin
+            AgendaTargetType.Kurin => (KurinCapability.AssignKurin, ResourceType.Kurin),
+            AgendaTargetType.Group => (KurinCapability.AssignGroups, ResourceType.Group),
+            AgendaTargetType.Member => (KurinCapability.AssignMembers, ResourceType.Member),
+            AgendaTargetType.Leadership => (KurinCapability.AssignProvid, ResourceType.Leadership),
+            _ => null
         };
 
-        return await AuthorizeScopeAsync(resourceType, target.TargetKey, action, cancellationToken);
+        // A провід's scope is its гурток's, or the kurin alone for the КВ and the курінний провід —
+        // so an own-group reach covers the провід of a гурток one leads and never a kurin-level one.
+        return right is { } known
+            ? _resourceAccess.CheckCapabilityAsync(known.Capability, known.Scope, target.TargetKey, cancellationToken)
+            : Task.FromResult(ResourceAccessDecision.Deny($"Unknown target type {target.TargetType}."));
     }
 
-    /// <summary>
-    /// The resource guard first: whoever runs a group or the kurin may aim at it. When that says no
-    /// and the action is Create, the провід rule follows: a member of a провід may address what the
-    /// office covers — the whole kurin for the курінний провід and КВ, the own гурток for a гуртковий
-    /// провід — without holding the far wider right to create groups or members there. Which of the
-    /// two the person is comes from their planning reach, the one permission the map already scopes
-    /// that way.
-    /// </summary>
-    private async Task<ResourceAccessDecision> AuthorizeScopeAsync(
-        ResourceType resourceType,
-        Guid key,
-        ResourceAction action,
-        CancellationToken cancellationToken)
+    public async Task<bool> CanAuthorAsync(CancellationToken cancellationToken = default)
     {
-        var decision = await _resourceAccess.CheckAccessAsync(resourceType, action, key, cancellationToken);
-        if (decision.IsAllowed || action != ResourceAction.Create)
+        foreach (var capability in AssignCapabilities)
         {
-            return decision;
+            if (await _permissions.ReachAsync(capability, cancellationToken) > CapabilityReach.None)
+            {
+                return true;
+            }
         }
 
-        if (!_currentUser.UserId.HasValue || !_currentUser.HasPermission(ResourceType.AgendaItem, ResourceAction.Create))
-        {
-            return decision;
-        }
-
-        var author = await _members.FindByAccountAsync(_currentUser.UserId.Value, cancellationToken);
-        if (author is null)
-        {
-            return decision;
-        }
-
-        var (kurinKey, groupKey) = await LocateAsync(resourceType, key, author.KurinKey, cancellationToken);
-        if (kurinKey != author.KurinKey)
-        {
-            return decision;
-        }
-
-        var reach = RolePermissionMap.WidestScope(_currentUser.StaticPermissions(), ResourceType.PlanningSession, ResourceAction.Create);
-        if (reach == AccessScope.KurinWide)
-        {
-            return ResourceAccessDecision.Allow("Курінний провід addresses the whole kurin.");
-        }
-
-        if (reach == AccessScope.OwnGroups && groupKey.HasValue && groupKey == author.GroupKey)
-        {
-            return ResourceAccessDecision.Allow("Гуртковий провід addresses its own гурток.");
-        }
-
-        return decision;
+        return false;
     }
 
-    /// <summary>Where a target lives: its kurin, and its гурток when it has one.</summary>
-    private async Task<(Guid? KurinKey, Guid? GroupKey)> LocateAsync(
-        ResourceType resourceType,
-        Guid key,
-        Guid authorKurinKey,
-        CancellationToken cancellationToken)
+    public async Task<AgendaAssignReach> GetAssignReachAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
-        switch (resourceType)
+        var kurin = await _permissions.ReachAsync(KurinCapability.AssignKurin, cancellationToken);
+        var groups = await _permissions.ReachAsync(KurinCapability.AssignGroups, cancellationToken);
+        var members = await _permissions.ReachAsync(KurinCapability.AssignMembers, cancellationToken);
+        var provid = await _permissions.ReachAsync(KurinCapability.AssignProvid, cancellationToken);
+
+        var userKey = _currentUser.UserId;
+        IReadOnlySet<Guid> ledGroups = new HashSet<Guid>();
+        if (userKey.HasValue && new[] { kurin, groups, members, provid }.Contains(CapabilityReach.OwnGroup))
         {
-            case ResourceType.Kurin:
-                return (key, null);
-            case ResourceType.Group:
-                var groups = await _uow.Groups.GetAllAsync(authorKurinKey, cancellationToken);
-                return groups.Any(group => group.GroupKey == key) ? (authorKurinKey, key) : (null, null);
-            case ResourceType.Member:
-                var member = await _members.FindAsync(key, cancellationToken);
-                return member is null ? (null, null) : (member.KurinKey, member.GroupKey);
-            default:
-                return (null, null);
+            ledGroups = (await _scopeReader.GetLedGroupKeysAsync(userKey.Value, kurinKey, cancellationToken)).ToHashSet();
         }
+
+        return new AgendaAssignReach(kurin, groups, members, provid, ledGroups, userKey);
     }
 }
 
