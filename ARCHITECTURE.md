@@ -60,9 +60,11 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | `KurinModule` | курінь, гуртки, члени, провід, календар, планування, відзнаки, перестороги |
 | `ProbesAndBadgesModule` | каталоги проб і вмілостей; які проби склав і які вмілості здобув конкретний член |
 | `InfrastructureModule` | сповіщення |
-| `DuesModule` | вкладка: ставки, нарахування, операції гурткової й курінної каси, баланс людини |
+| `DuesModule` | вкладка: ставки, нарахування, операції гурткової й курінної каси, баланс людини; статті для краю й передачі просто краю; годинник кварталів і формат чисел краю (`DuesKrai`); пільги краю, надані людям, і звіт, скільки вони зняли (`GetKraiConcessionReportQuery`, віддає `KraiController`) |
 | `ScoreModule` | точкування: присутність на подіях, бали вручну й автоматично, таблиця гуртків |
+| `KraiModule` | краї й профілі країв: які вмілості бачать курені, валюта, часовий пояс, формат чисел, поля картки, куди курені передають вкладку і які пільги дає край; ревізії профілю й відновлення давнішої; які поля прибирає зі своєї картки курінь. Додати й перейменувати край (`KraiCommands`), публічний список для форми заявки (`GetKraiNamesQuery`); 28 країв засіває міграція |
 | `MeModule` | `api/me` для головної: людина з усіх поточних куренів — події, задачі, проба й вмілості, вкладка, бали, справи проводу. Тільки читає інші модулі через їхні контракти; права в кожному курені рахує з ролей у ньому, а не з токена |
+| `AuditModule` | журнал дій куреня: хто, що й коли змінив (`KurinAuditEvent`). Інші модулі пишуть у нього через `IKurinAudit` перед своїм `SaveChanges`, читають — через `IKurinJournalReader`; таблицю бачить лише цей модуль |
 
 **Член ≠ користувач.** Член — це людина; користувач — спосіб увійти. Одне може існувати без
 іншого: людину заводять до того, як вона отримає акаунт, і не кожна його отримує.
@@ -85,6 +87,8 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | `IOfficeDirectory` | курінь | які діловодства акаунт тримає в цьому курені |
 | `IMemberProgressDirectory` | проби й вмілості | як далеко людина зайшла, підписані точки проби; що в курені підтверджено й підписано (для точкування) |
 | `IDuesDirectory` | вкладка | які квартали закриті без боргу (для точкування) |
+| `IKraiProfileProvider` | край | профіль краю чи куреня з усіма значеннями: вмілості, валюта, пояс, формат чисел, поля картки, вкладка (куди передають, пільги) |
+| `IKurinJournalReader` | журнал | записи журналу дій за предметами (історія на картці проби й вмілості) і сторінка журналу з фільтрами |
 
 Межі тримає не домовленість, а `ProjectK.Architecture.Tests`: правила читають IL, тож звернення до
 чужого репозиторію чи чужої сутності валить тест навіть тоді, коли воно сховане всередині методу й
@@ -110,12 +114,16 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 
 ```
 HTTP
-  ↓  Serilog request logging, forwarded headers, rate limiting
+  ↓  RequestTimingMiddleware          час запиту для /health (першим, щоб охопити весь конвеєр)
+  ↓  forwarded headers → ClientIpMiddleware   справжня адреса відвідувача
+  ↓  TelemetryCountingMiddleware      запити й 5xx для щоденного пінгу (зовні обробника винятків)
+  ↓  Serilog request logging, обробник винятків, CORS
   ↓  автентифікація JWT (access у заголовку, refresh у httpOnly-cookie)
   ↓     сесія = рядок у UserRefreshTokens; акаунт може бути в кількох місцях одночасно
   ↓     другий фактор: пароль → короткий mfaToken (5 хв, окрема audience) → код + mfaToken;
   ↓     код без mfaToken відхиляється — другий фактор ніколи не буває єдиним
-  ↓     гейт MFA для проводу читає клейм amr з токена, не акаунт (PrivilegedMfaEnforcementMiddleware)
+  ↓  гео-блок (SecurityHardeningMiddleware), rate limiting, журнал зміни IP (SecurityActivityMiddleware)
+  ↓  гейт MFA для проводу читає клейм amr з токена, не акаунт (PrivilegedMfaEnforcementMiddleware)
   ↓  політика авторизації   AuthorizationPolicies.*   — «якого рівня має бути викликач»
   ↓  ResourceAuthorize      IResourceAccessService    — «чи саме цей об'єкт йому доступний»
   ↓  контролер: жодних рішень, лише _mediator.Send(...)
@@ -148,12 +156,25 @@ HTTP
 LeadershipRole + LeadershipType      діловодство, яке людина тримає
         ↓ SystemRole.ForOffice()
 SystemRole                           роль доступу, дзеркало діловодства
-        ↓ RolePermissionMap
-Permission                           напр. Group:Manage:KurinWide
+        ↓ RolePermissionMap + політика куреня (KurinCapabilities, Kurin.AccessPolicy)
+Permission                           напр. Group:Manage:KurinWide, MemberContacts:Read:OwnGroups
 ```
 
-Діловодства — джерело; ролі доступу **виводяться з них на кожен вхід**, а не зберігаються на акаунті.
-Другого списку «хто керує куренем» немає: усе виводиться з `RolePermissionMap`.
+Діловодства — джерело; ролі доступу **виводяться з них на кожен вхід і рефреш**, а не зберігаються
+на акаунті. Другого списку «хто керує куренем» немає: усе виводиться з `RolePermissionMap`.
+
+Частина прав — **налаштування куреня**: хто бачить особисті дані, хто дає перестороги й
+відзначення якого рівня, хто підписує й знімає підписи проб, хто підтверджує вмілості й читає
+журнал. Кожна така можливість — рядок `KurinCapabilities` з парою дозволу й значенням за
+замовчуванням для кожної аудиторії (Звʼязковий, впорядники, інструктори, курінний, провід куреня,
+гуртковий, провід гуртка, юнаки). Курінь зберігає лише відхилення, а `IPermissionResolver` складає
+статичну мапу з політикою на кожен запит, тож збережена політика діє одразу. Звʼязковий закріплений
+на повний доступ, щоб курінь не лишився без того, хто поверне права. Особисті дані проходять одну
+маску (`MemberFieldMask`) — і на читання, і на запис.
+
+Зміна діловодства чи політики доходить до людини без перезаходу: сервер позначає її токен
+застарілим (`IAccessChangeSignal` → заголовок `X-Access-Stale`), клієнт робить рефреш, а рефреш
+віддає нові права разом із токенами.
 
 Ключове тут — слово «активний». Ролі рахуються для одного куреня за раз (`IAccessContextResolver`),
 бо та сама людина може бути виховником в одному курені й звичайним членом у другому. Доки ролі
@@ -177,20 +198,28 @@ Permission                           напр. Group:Manage:KurinWide
 | Що | Чим | Де код |
 |---|---|---|
 | База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
-| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі | `Infrastructure/Repositories/AuthModule` |
+| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі. Зміна безпеки (`RefreshTokenInvalidation`) вимикає й посилання на календар (`ICalendarFeedStore`, лише хеш токена) і кладе сповіщення в дзвіночок | `Infrastructure/Repositories/AuthModule` |
+| Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsWriter`), повтори розгорнуті на сервері (`AgendaRecurrence`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/BlobStorageService` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
 | PDF | QuestPDF; звіт куреня збирається з `IKurinReportSource` | `Infrastructure`, `BusinessLogic` |
 | Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів (події безпеки й помилки; читабельний HTML, однотипні за 5 хв — одним зведенням, черга замість відкидання) | `API/Program.cs`, `Infrastructure/Logging/TelegramDevAlerts` |
 | Зворотний звʼязок | «Повідомити про проблему» → GitHub issue токеном сервера (`Feedback:GitHub`), без токена — в лог; скриншоти в `feedback-screenshots` того ж контейнера | `Infrastructure/Services/Feedback`, `API/Controllers/InfrastructureModule/FeedbackController` |
+| Каталог | вмілості, проби й відзначення з сервісу каталогу (`GET /v1/catalog`, секція `Catalog`); тримаються в памʼяті, остання вдала відповідь — на диску, без мережі — копія, вбудована в збірку | `Infrastructure/Services/Catalog` |
+| Телеметрія | раз на добу анонімний пінг сервісу статусу (`Telemetry:Endpoint`): id інсталяції, версія, коди країв, кількості, запити й 5xx; у відповідь — останній реліз. Увімкнена в `Production` і `SelfHost` (`Telemetry:Enabled`) | `Infrastructure/Services/Telemetry`, `API/Middleware/TelemetryCountingMiddleware` |
 
 Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог
 (`MemberWarningExpiryBackgroundService`), прибирання осиротілих фото
 (`OrphanPhotoCleanupService`), архів задач — зроблені в архів і давні архівні геть, за строками
-кожного куреня (`AgendaArchiveBackgroundService`), прогрів після старту — AutoMapper, MediatR і
+кожного куреня (`AgendaArchiveBackgroundService`), оновлення каталогу щогодини
+(`CatalogSyncBackgroundService`, `Catalog:RefreshMinutes`), щоденний пінг телеметрії
+(`TelemetryBackgroundService`; без `Telemetry:Enabled` не реєструється), черга сповіщень на телефон
+(`WebPushBackgroundService`, лише з ключами VAPID), нічне повернення демо-бази до сіду
+(`DemoResetBackgroundService`, лише `Demo`), прогрів після старту — AutoMapper, MediatR і
 запити дашборда «Я» з порожнім ключем, щоб першу людину після деплою не чекали JIT і компіляція
-запитів EF (`StartupWarmUpService`, `Startup:WarmUp`; локально й під тестами вимкнений).
+запитів EF (`StartupWarmUpService` в `API/Hosting`, `Startup:WarmUp`; локально й під тестами
+вимкнений).
 
 ---
 
@@ -199,7 +228,7 @@ Permission                           напр. Group:Manage:KurinWide
 ```
 src/app/features/
   authModule/           вхід, онбординг, скидання пароля, guard-и
-  adminModule/          адміністрування, користувачі, заявки
+  adminModule/          адміністрування, користувачі, заявки, краї (профіль і його ревізії)
   dashboardModule/      головна `/`: плитки з `api/me`
   kurinModule/          курінь, гуртки, члени, календар, проби та вмілості
   duesModule/           вкладка: каса гуртка, каса куреня
@@ -226,6 +255,7 @@ Angular 22, standalone-компоненти, signals (декораторів н�
 | `Development` | локальна розробка; Swagger увімкнено; сідер заводить демо-курінь і `admin@projectk.com` |
 | `E2E` | стек під Playwright; лише тут у застосунку існує `E2ETestController` з фікстурами — в інших середовищах його прибирає з моделі `E2EOnlyControllerFeatureProvider` |
 | `SelfHost` | самостійне розгортання; сідер не заводить нікого |
+| `Demo` | живий демо-стек: сідер заводить той самий демо-курінь, що й у `Development`, вхід без пароля в одне з трьох місць (`api/demo/login`, контролер існує лише тут), MFA обійдено, база щоночі о 03:00 UTC повертається до сіду (`DemoResetBackgroundService`) |
 | `Staging` | перевірка релізу; Swagger увімкнено; демо-даних немає, дані переживають перезапуск |
 | `Tailscale` | закритий доступ через tailnet — стенд для людей, не демо: сідер його не чіпає, дані переживають перезапуск |
 | `Production` | прод; Swagger вимкнено, `LoadTestLoginKey` порожній; **демо-акаунтів немає** |
@@ -237,8 +267,11 @@ Angular 22, standalone-компоненти, signals (декораторів н�
 
 Підняти будь-яке: `./scripts/dev.sh up <env>`. Деталі — у [docker/README.md](docker/README.md).
 
-Демо-курінь і демо-акаунти сідер заводить (і стирає при кожному старті) **лише** в `Development` і
-`E2E`. Раніше це стосувалося й `Staging` та `Tailscale`, і стенд, який показували людям, губив усе
+Демо-курінь і демо-акаунти сідер заводить (і стирає при кожному старті) **лише** в `Development`,
+`E2E` і `Demo`. Демо-курінь — це люди з по батькові, адресами й школами, ступені, проби, вмілості,
+відзначення, перестороги, календар зі сходинами й таборами, дошка завдань, планування, рік вкладки
+(статті, пільга, оплати, борги, передачі куреню й станиці) і точкування (правила, присутність, позиції,
+етапи, книжка КВ). Раніше це стосувалося й `Staging` та `Tailscale`, і стенд, який показували людям, губив усе
 введене при наступному запуску.
 
 **Дев-інструменти.** На `Development`, `E2E` і `Tailscale` в застосунку є `DevToolsController`
@@ -277,6 +310,14 @@ Cloudflare Pages. Довідка не пишеться на сайті: «Для
 `X-Forwarded-For` приймається. Без `Header` адреса — те, що лишив `X-Forwarded-For`, а він
 приймається від будь-кого, поки список довірених проксі порожній. Запуск відмовляється від
 `Jwt:Key`, коротшого за 32 символи або з шаблонним словом із прикладів (`JwtKeyRules`).
+
+**Вхід: ліміт на адресу й на пошту.** `RateLimiting:StrictAuth` рахує запити на адресу (типово 20 за
+5 хвилин): курінь, що входить разом з одного шкільного Wi-Fi, — одна адреса, тож ліміт лишає місце для
+гуртка. Підбір пароля до одного акаунта зупиняє `LoginThrottle`: після `LoginThrottle:FailureLimit`
+(10) неправильних паролів на одну пошту вхід на неї стоїть до кінця `LoginThrottle:Window` (15 хв) від
+першої помилки, з будь-яких адрес, і відповідає 429 `TooManyAttempts`. Пошту без акаунта рахує так
+само, щоб пауза не видавала, хто зареєстрований; лічильник у памʼяті процесу, перезапуск його скидає;
+вдалий вхід обнуляє.
 
 ---
 

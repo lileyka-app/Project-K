@@ -1,16 +1,25 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.DuesModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Seeding;
@@ -31,6 +40,7 @@ namespace ProjectK.Infrastructure.Seeding;
 public class DemoDataSeeder : IDemoDataSeeder
 {
     private const int KurinNumber = 1;
+    private const string Sokoly = "Соколи";
 
     private static readonly string[] FirstNames =
     {
@@ -99,6 +109,8 @@ public class DemoDataSeeder : IDemoDataSeeder
             .Where(role => role != LeadershipRole.OtherGroup)
             .ToArray();
 
+    private static readonly string[] PrivateCriteria = { "Лідерство", "Ініціатива", "Відповідальність" };
+
     private static readonly LeadershipRole[] KurinOffices =
         LeadershipOffices.Grouping[LeadershipType.Kurin]
             .Where(role => role != LeadershipRole.OtherKurin)
@@ -142,7 +154,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         var kurin = await EnsureKurinAsync(cancellationToken);
         var kurinKey = kurin.KurinKey;
 
-        var sokoly = await DataSeeder.EnsureGroupAsync(_dbContext, "Соколи", kurinKey, cancellationToken);
+        var sokoly = await DataSeeder.EnsureGroupAsync(_dbContext, Sokoly, kurinKey, cancellationToken);
         var levy = await DataSeeder.EnsureGroupAsync(_dbContext, "Леви", kurinKey, cancellationToken);
         var vedmedi = await DataSeeder.EnsureGroupAsync(_dbContext, "Ведмеді", kurinKey, cancellationToken);
         sokoly.Description = "Старші юнаки, 14–16 років. Сходини щосереди о 17:00 у домівці.";
@@ -205,24 +217,32 @@ public class DemoDataSeeder : IDemoDataSeeder
         SeedProgress(youth, mentors, zvyazkovyi, kurinKey);
         SeedAwards(youth, mentors, zvyazkovyi, kurinKey);
         SeedWarnings(youth, mentors, zvyazkovyi, kurinKey);
+        SeedAccessPolicy(kurin, zvyazkovyi);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var groups = new Dictionary<string, Group> { ["Соколи"] = sokoly, ["Леви"] = levy, ["Ведмеді"] = vedmedi };
+        var groups = new Dictionary<string, Group> { [Sokoly] = sokoly, ["Леви"] = levy, ["Ведмеді"] = vedmedi };
         var leaderships = new Dictionary<string, Leadership>
         {
             ["KV"] = kvLeadership,
             ["Kurin"] = kurinLeadership,
-            ["Соколи"] = sokolyLeadership,
+            [Sokoly] = sokolyLeadership,
             ["Леви"] = levyLeadership
         };
         SeedAgenda(kurinKey, groups, leaderships, youth, mentors, zvyazkovyi, kurinOfficeHolders);
         SeedPlanning(kurinKey, youth, mentors, zvyazkovyi);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var memberships = await _dbContext.Memberships
+            .Where(ms => ms.KurinKey == kurinKey)
+            .ToDictionaryAsync(ms => ms.MemberKey, ms => ms.MembershipKey, cancellationToken);
+        SeedDues(kurinKey, groups, youth, mentors, zvyazkovyi, memberships);
+        SeedScore(kurinKey, groups, youth, mentors, zvyazkovyi, memberships);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<Kurin> EnsureKurinAsync(CancellationToken cancellationToken)
     {
-        var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == KurinNumber, cancellationToken);
+        var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Number == KurinNumber, cancellationToken);
         if (kurin == null)
         {
             kurin = new Kurin(KurinNumber);
@@ -450,24 +470,24 @@ public class DemoDataSeeder : IDemoDataSeeder
 
     private void SeedProfileVerification(IEnumerable<Person> youth, Person zvyazkovyi)
     {
-        foreach (var person in youth)
+        foreach (var member in youth.Select(person => person.Member))
         {
             var roll = _random.NextDouble();
             if (roll < 0.6)
             {
-                person.Member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+                member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
             }
             else if (roll < 0.75)
             {
-                person.Member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
+                member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
             }
             else
             {
                 continue;
             }
 
-            person.Member.ProfileVerifiedAtUtc = DaysAgo(_random.Next(10, 300));
-            person.Member.ProfileVerifiedByUserKey = zvyazkovyi.UserKey;
+            member.ProfileVerifiedAtUtc = DaysAgo(_random.Next(10, 300));
+            member.ProfileVerifiedByUserKey = zvyazkovyi.UserKey;
         }
     }
 
@@ -606,17 +626,9 @@ public class DemoDataSeeder : IDemoDataSeeder
             progress.CompletedByUserKey = mentor.UserKey;
             progress.CompletedByName = mentor.FullName;
             progress.CompletedByRole = mentorRole;
-            progress.AuditEvents.Add(new ProbeProgressAuditEvent
-            {
-                FromStatus = ProbeProgressStatus.InProgress,
-                ToStatus = ProbeProgressStatus.Completed,
-                Action = nameof(ProbeProgressStatus.Completed),
-                ActorUserKey = mentor.UserKey,
-                ActorName = mentor.FullName,
-                ActorRole = mentorRole,
-                OccurredAtUtc = completedAt,
-                Note = "Усі точки підписані"
-            });
+            AddJournalEntry(
+                person, kurinKey, AuditArea.Probe, AuditActions.Probe.Completed, progress.ProbeProgressKey, probe.Title,
+                ProbeProgressStatus.InProgress, ProbeProgressStatus.Completed, mentor, mentorRole, completedAt, "Усі точки підписані");
         }
 
         if (status == ProbeProgressStatus.Verified && verifier is not null)
@@ -627,17 +639,9 @@ public class DemoDataSeeder : IDemoDataSeeder
             progress.VerifiedByUserKey = verifier.UserKey;
             progress.VerifiedByName = verifier.FullName;
             progress.VerifiedByRole = verifierRole;
-            progress.AuditEvents.Add(new ProbeProgressAuditEvent
-            {
-                FromStatus = ProbeProgressStatus.Completed,
-                ToStatus = ProbeProgressStatus.Verified,
-                Action = nameof(ProbeProgressStatus.Verified),
-                ActorUserKey = verifier.UserKey,
-                ActorName = verifier.FullName,
-                ActorRole = verifierRole,
-                OccurredAtUtc = verifiedAt,
-                Note = "Перевірено на сходинах куреня"
-            });
+            AddJournalEntry(
+                person, kurinKey, AuditArea.Probe, AuditActions.Probe.Verified, progress.ProbeProgressKey, probe.Title,
+                ProbeProgressStatus.Completed, ProbeProgressStatus.Verified, verifier, verifierRole, verifiedAt, "Перевірено на сходинах куреня");
         }
 
         _dbContext.ProbeProgresses.Add(progress);
@@ -686,18 +690,10 @@ public class DemoDataSeeder : IDemoDataSeeder
                 ReviewedByRole = mentorRole,
                 ReviewNote = note
             };
-            AddSubmittedEvent(progress, person, submittedAt);
-            progress.AuditEvents.Add(new BadgeProgressAuditEvent
-            {
-                FromStatus = BadgeProgressStatus.Submitted,
-                ToStatus = BadgeProgressStatus.Confirmed,
-                Action = "Confirmed",
-                ActorUserKey = mentor.UserKey,
-                ActorName = mentor.FullName,
-                ActorRole = mentorRole,
-                OccurredAtUtc = reviewedAt,
-                Note = note
-            });
+            AddSubmittedEntry(progress, person, submittedAt);
+            AddJournalEntry(
+                person, kurinKey, AuditArea.Badge, AuditActions.Badge.Confirmed, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
+                BadgeProgressStatus.Submitted, BadgeProgressStatus.Confirmed, mentor, mentorRole, reviewedAt, note);
             _dbContext.BadgeProgresses.Add(progress);
         }
 
@@ -716,7 +712,7 @@ public class DemoDataSeeder : IDemoDataSeeder
                     SubmittedAtUtc = submittedAt,
                     ReviewNote = "Здав на останніх сходинах, прошу підтвердити"
                 };
-                AddSubmittedEvent(progress, person, submittedAt, progress.ReviewNote);
+                AddSubmittedEntry(progress, person, submittedAt, progress.ReviewNote);
                 _dbContext.BadgeProgresses.Add(progress);
             }
         }
@@ -742,37 +738,159 @@ public class DemoDataSeeder : IDemoDataSeeder
                     ReviewedByRole = mentorRole,
                     ReviewNote = note
                 };
-                AddSubmittedEvent(progress, person, submittedAt);
-                progress.AuditEvents.Add(new BadgeProgressAuditEvent
-                {
-                    FromStatus = BadgeProgressStatus.Submitted,
-                    ToStatus = BadgeProgressStatus.Rejected,
-                    Action = "Rejected",
-                    ActorUserKey = mentor.UserKey,
-                    ActorName = mentor.FullName,
-                    ActorRole = mentorRole,
-                    OccurredAtUtc = reviewedAt,
-                    Note = note
-                });
+                AddSubmittedEntry(progress, person, submittedAt);
+                AddJournalEntry(
+                    person, kurinKey, AuditArea.Badge, AuditActions.Badge.Rejected, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
+                    BadgeProgressStatus.Submitted, BadgeProgressStatus.Rejected, mentor, mentorRole, reviewedAt, note);
                 _dbContext.BadgeProgresses.Add(progress);
             }
         }
     }
 
-    private static void AddSubmittedEvent(BadgeProgress progress, Person person, DateTime submittedAt, string? note = null)
+    private void AddSubmittedEntry(BadgeProgress progress, Person person, DateTime submittedAt, string? note = null) =>
+        AddJournalEntry(
+            person, progress.KurinKey, AuditArea.Badge, AuditActions.Badge.Submitted, progress.BadgeProgressKey, _catalog.GetBadgeTitle(progress.BadgeId),
+            null, BadgeProgressStatus.Submitted, person, SystemRole.Member, submittedAt, note);
+
+    /// <summary>
+    /// The journal entry the status handlers write for one step of a проба or a вмілість, so the
+    /// demo's history reads as if the people in it had done it through the app.
+    /// </summary>
+    private void AddJournalEntry(
+        Person subject,
+        Guid kurinKey,
+        AuditArea area,
+        string action,
+        Guid subjectKey,
+        string label,
+        Enum? fromStatus,
+        Enum toStatus,
+        Person actor,
+        string actorRole,
+        DateTime occurredAtUtc,
+        string? note) =>
+        AddJournalEntry(
+            subject, kurinKey, area, action, subjectKey, label,
+            AuditChanges.Of(("status", fromStatus, toStatus)), actor, actorRole, occurredAtUtc, note);
+
+    /// <summary>The journal entry a handler writes for one change of a member's record.</summary>
+    private void AddJournalEntry(
+        Person subject,
+        Guid kurinKey,
+        AuditArea area,
+        string action,
+        Guid subjectKey,
+        string label,
+        IReadOnlyList<AuditChange> changes,
+        Person actor,
+        string actorRole,
+        DateTime occurredAtUtc,
+        string? note = null)
     {
-        progress.AuditEvents.Add(new BadgeProgressAuditEvent
+        _dbContext.KurinAuditEvents.Add(new KurinAuditEvent
         {
-            FromStatus = null,
-            ToStatus = BadgeProgressStatus.Submitted,
-            Action = "Submitted",
-            ActorUserKey = person.UserKey,
-            ActorName = person.FullName,
-            ActorRole = SystemRole.Member,
-            OccurredAtUtc = submittedAt,
+            KurinKey = kurinKey,
+            OccurredAtUtc = occurredAtUtc,
+            ActorUserKey = actor.UserKey,
+            ActorName = actor.FullName,
+            ActorRole = actorRole,
+            Area = area,
+            Action = action,
+            SubjectMemberKey = subject.Key,
+            SubjectMemberName = subject.FullName,
+            SubjectGroupKey = subject.GroupKey,
+            SubjectKey = subjectKey,
+            SubjectLabel = label,
+            Changes = changes.ToList(),
             Note = note
         });
     }
+
+    private void AddAwardEntries(MemberAward award, Person subject, Person submitter, string submitterRole, Person? reviewer)
+    {
+        var label = KurinReportTerminology.AwardLevel(award.Level);
+        AddJournalEntry(
+            subject, award.KurinKey, AuditArea.Award, AuditActions.Award.Added, award.MemberAwardKey, label,
+            AuditChanges.Added(
+                ("level", award.Level),
+                ("dateAcquired", award.DateAcquired),
+                ("note", award.Note),
+                ("status", BadgeProgressStatus.Submitted)),
+            submitter, submitterRole, award.SubmittedAtUtc!.Value);
+
+        if (reviewer is not null && award.ReviewedAtUtc is { } reviewedAt)
+        {
+            AddJournalEntry(
+                subject, award.KurinKey, AuditArea.Award, AuditActions.Award.Confirmed, award.MemberAwardKey, label,
+                AuditChanges.Of(("status", BadgeProgressStatus.Submitted, award.Status)),
+                reviewer, ZvyazkovyiRole, reviewedAt);
+        }
+    }
+
+    private void AddWarningEntries(MemberWarning warning, Person subject, Person issuer, string issuerRole, Person? revoker)
+    {
+        var label = KurinReportTerminology.WarningLevel(warning.Level);
+        AddJournalEntry(
+            subject, warning.KurinKey, AuditArea.Warning, AuditActions.Warning.Given, warning.MemberWarningKey, label,
+            AuditChanges.Added(("level", warning.Level), ("expiresAtUtc", warning.ExpiresAtUtc)),
+            issuer, issuerRole, warning.IssuedAtUtc);
+
+        if (revoker is not null && warning.RevokedAtUtc is { } revokedAt)
+        {
+            AddJournalEntry(
+                subject, warning.KurinKey, AuditArea.Warning, AuditActions.Warning.Cancelled, warning.MemberWarningKey, label,
+                AuditChanges.Removed(
+                    ("level", warning.Level),
+                    ("issuedAtUtc", warning.IssuedAtUtc),
+                    ("expiresAtUtc", warning.ExpiresAtUtc)),
+                revoker, ZvyazkovyiRole, revokedAt);
+        }
+    }
+
+    /// <summary>
+    /// The demo kurin follows the правильник on the senior levels: only the Зв'язковий gives the third
+    /// пересторога and confirms the third and fourth відзначення. The settings page shows these cells
+    /// as changed, and the journal has the change that made them so.
+    /// </summary>
+    private void SeedAccessPolicy(Kurin kurin, Person zvyazkovyi)
+    {
+        (KurinCapability Capability, PolicyAudience Audience)[] narrowed =
+        [
+            (KurinCapability.GiveWarning3, PolicyAudience.Vykhovnyk),
+            (KurinCapability.GiveWarning3, PolicyAudience.Instruktor),
+            (KurinCapability.ConfirmAward3, PolicyAudience.Vykhovnyk),
+            (KurinCapability.ConfirmAward3, PolicyAudience.Instruktor),
+            (KurinCapability.ConfirmAward4, PolicyAudience.Vykhovnyk),
+            (KurinCapability.ConfirmAward4, PolicyAudience.Instruktor)
+        ];
+
+        var grants = narrowed
+            .GroupBy(cell => cell.Capability)
+            .ToDictionary(
+                row => row.Key.ToString(),
+                row => row.ToDictionary(cell => cell.Audience.ToString(), _ => CapabilityReach.None.ToString()));
+        kurin.AccessPolicy = JsonSerializer.Serialize(new { v = 1, grants });
+
+        _dbContext.KurinAuditEvents.Add(new KurinAuditEvent
+        {
+            KurinKey = kurin.KurinKey,
+            OccurredAtUtc = DaysAgo(40),
+            ActorUserKey = zvyazkovyi.UserKey,
+            ActorName = zvyazkovyi.FullName,
+            ActorRole = ZvyazkovyiRole,
+            Area = AuditArea.Settings,
+            Action = AuditActions.Settings.AccessPolicyChanged,
+            SubjectKey = kurin.KurinKey,
+            SubjectLabel = "Права й видимість",
+            Changes = narrowed
+                .Select(cell => new AuditChange($"{cell.Capability}/{cell.Audience}", CapabilityReach.OwnGroup.ToString(), CapabilityReach.None.ToString()))
+                .ToList(),
+            Note = "Старші рівні — за рішенням ради куреня"
+        });
+    }
+
+    private static readonly string ZvyazkovyiRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string VykhovnykRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
 
     // ── Відзначення і перестороги ─────────────────────────────────────────────────────────────────
 
@@ -788,7 +906,8 @@ public class DemoDataSeeder : IDemoDataSeeder
 
         for (var i = 0; i < Math.Min(3, senior.Count); i++)
         {
-            _dbContext.MemberAwards.Add(new MemberAward
+            var mentor = mentors[senior[i].GroupKey!.Value];
+            var award = new MemberAward
             {
                 MemberKey = senior[i].Key,
                 KurinKey = kurinKey,
@@ -797,15 +916,17 @@ public class DemoDataSeeder : IDemoDataSeeder
                 Note = "За участь у таборі «Соколине гніздо»",
                 Status = BadgeProgressStatus.Confirmed,
                 SubmittedAtUtc = lastSummer.AddDays(3),
-                SubmittedByUserKey = mentors[senior[i].GroupKey!.Value].UserKey,
+                SubmittedByUserKey = mentor.UserKey,
                 ReviewedAtUtc = lastSummer.AddDays(5),
                 ReviewedByUserKey = zvyazkovyi.UserKey
-            });
+            };
+            _dbContext.MemberAwards.Add(award);
+            AddAwardEntries(award, senior[i], mentor, VykhovnykRole, zvyazkovyi);
         }
 
         if (senior.Count > 3)
         {
-            _dbContext.MemberAwards.Add(new MemberAward
+            var award = new MemberAward
             {
                 MemberKey = senior[3].Key,
                 KurinKey = kurinKey,
@@ -817,12 +938,15 @@ public class DemoDataSeeder : IDemoDataSeeder
                 SubmittedByUserKey = zvyazkovyi.UserKey,
                 ReviewedAtUtc = DaysAgo(197),
                 ReviewedByUserKey = zvyazkovyi.UserKey
-            });
+            };
+            _dbContext.MemberAwards.Add(award);
+            AddAwardEntries(award, senior[3], zvyazkovyi, ZvyazkovyiRole, zvyazkovyi);
         }
 
         // One still on the Зв'язковий's desk.
         var pending = senior[^1];
-        _dbContext.MemberAwards.Add(new MemberAward
+        var pendingMentor = mentors[pending.GroupKey!.Value];
+        var pendingAward = new MemberAward
         {
             MemberKey = pending.Key,
             KurinKey = kurinKey,
@@ -831,8 +955,10 @@ public class DemoDataSeeder : IDemoDataSeeder
             Note = "За організацію прибирання домівки",
             Status = BadgeProgressStatus.Submitted,
             SubmittedAtUtc = DaysAgo(4),
-            SubmittedByUserKey = mentors[pending.GroupKey!.Value].UserKey
-        });
+            SubmittedByUserKey = pendingMentor.UserKey
+        };
+        _dbContext.MemberAwards.Add(pendingAward);
+        AddAwardEntries(pendingAward, pending, pendingMentor, VykhovnykRole, reviewer: null);
     }
 
     private void SeedWarnings(IReadOnlyList<Person> youth, IReadOnlyDictionary<Guid, Person> mentors, Person zvyazkovyi, Guid kurinKey)
@@ -843,18 +969,21 @@ public class DemoDataSeeder : IDemoDataSeeder
         }
 
         var active1 = youth[1];
-        _dbContext.MemberWarnings.Add(new MemberWarning
+        var active1Mentor = mentors[active1.GroupKey!.Value];
+        var first = new MemberWarning
         {
             MemberKey = active1.Key,
             KurinKey = kurinKey,
             Level = MemberWarningLevel.Level1,
             IssuedAtUtc = DaysAgo(20),
             ExpiresAtUtc = DaysAgo(20).AddMonths(3),
-            IssuedByUserKey = mentors[active1.GroupKey!.Value].UserKey
-        });
+            IssuedByUserKey = active1Mentor.UserKey
+        };
+        _dbContext.MemberWarnings.Add(first);
+        AddWarningEntries(first, active1, active1Mentor, VykhovnykRole, revoker: null);
 
         var active2 = youth[4];
-        _dbContext.MemberWarnings.Add(new MemberWarning
+        var second = new MemberWarning
         {
             MemberKey = active2.Key,
             KurinKey = kurinKey,
@@ -862,20 +991,25 @@ public class DemoDataSeeder : IDemoDataSeeder
             IssuedAtUtc = DaysAgo(33),
             ExpiresAtUtc = DaysAgo(33).AddMonths(6),
             IssuedByUserKey = zvyazkovyi.UserKey
-        });
+        };
+        _dbContext.MemberWarnings.Add(second);
+        AddWarningEntries(second, active2, zvyazkovyi, ZvyazkovyiRole, revoker: null);
 
         var revoked = youth[5];
-        _dbContext.MemberWarnings.Add(new MemberWarning
+        var revokedMentor = mentors[revoked.GroupKey!.Value];
+        var cancelled = new MemberWarning
         {
             MemberKey = revoked.Key,
             KurinKey = kurinKey,
             Level = MemberWarningLevel.Level1,
             IssuedAtUtc = DaysAgo(150),
             ExpiresAtUtc = DaysAgo(150).AddMonths(3),
-            IssuedByUserKey = mentors[revoked.GroupKey!.Value].UserKey,
+            IssuedByUserKey = revokedMentor.UserKey,
             RevokedAtUtc = DaysAgo(70),
             RevokedByUserKey = zvyazkovyi.UserKey
-        });
+        };
+        _dbContext.MemberWarnings.Add(cancelled);
+        AddWarningEntries(cancelled, revoked, revokedMentor, VykhovnykRole, zvyazkovyi);
     }
 
     // ── Календар і задачі ────────────────────────────────────────────────────────────────────────
@@ -905,7 +1039,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         var hronikar = kurinOffices.GetValueOrDefault(LeadershipRole.Hronikar) ?? youth[2];
         var skarbnyk = kurinOffices.GetValueOrDefault(LeadershipRole.Skarbnyk) ?? youth[3];
 
-        var sokoly = groups["Соколи"];
+        var sokoly = groups[Sokoly];
         var levy = groups["Леви"];
         var vedmedi = groups["Ведмеді"];
 
@@ -922,14 +1056,14 @@ public class DemoDataSeeder : IDemoDataSeeder
         // Last summer's camp, already happened; everybody answered back then.
         var summerCamp = AllDay(kurinKey, "Літній табір «Соколине гніздо»",
             "Десять днів в Арденнах біля Вільца. Виїзд о 7:00 від домівки.",
-            tabory, zvyazkovyi, new DateTime(year, 7, 10), new DateTime(year, 7, 20),
+            tabory, zvyazkovyi, UtcDay(year, 7, 10), UtcDay(year, 7, 20),
             Target(AgendaTargetType.Kurin, kurinKey));
         Respond(summerCamp, youth, going: 0.85, maybe: 0.0, notGoing: 0.1, daysAgoMin: 80, daysAgoMax: 120);
 
         // The winter camp is ahead; RSVPs are still coming in.
         var winterCamp = AllDay(kurinKey, "Зимовий табір «Сніговий шлях»",
             "Вогези, Жерармер. Лижі й снігоступи — свої або орендовані на місці.",
-            tabory, zvyazkovyi, new DateTime(year + 1, 1, 3), new DateTime(year + 1, 1, 9),
+            tabory, zvyazkovyi, UtcDay(year + 1, 1, 3), UtcDay(year + 1, 1, 9),
             Target(AgendaTargetType.Kurin, kurinKey));
         Respond(winterCamp, youth, going: 0.6, maybe: 0.15, notGoing: 0.1, daysAgoMin: 1, daysAgoMax: 12);
 
@@ -941,13 +1075,13 @@ public class DemoDataSeeder : IDemoDataSeeder
             going: 0.7, maybe: 0.1, notGoing: 0.1, daysAgoMin: 0, daysAgoMax: 6);
 
         Timed(kurinKey, "Пластова ватра до Дня Незалежності", "У парку Мерль, з батьками.",
-            zakhody, zvyazkovyi, new DateTime(year, 8, 24), 19, 150, Target(AgendaTargetType.Kurin, kurinKey));
+            zakhody, zvyazkovyi, UtcDay(year, 8, 24), 19, 150, Target(AgendaTargetType.Kurin, kurinKey));
         Timed(kurinKey, "Свято Миколая", "Вистава молодших гуртків для батьків, після — спільний стіл.",
-            sviata, zvyazkovyi, new DateTime(year, 12, 19), 17, 150, Target(AgendaTargetType.Kurin, kurinKey));
+            sviata, zvyazkovyi, UtcDay(year, 12, 19), 17, 150, Target(AgendaTargetType.Kurin, kurinKey));
         Timed(kurinKey, "Вишкіл гурткових", "Планування року, ведення гурткової хроніки, робота з молодшими.",
             vyshkoly, zvyazkovyi, _now.Date.AddDays(14), 11, 300,
             Target(AgendaTargetType.Leadership, leaderships["Kurin"].LeadershipKey),
-            Target(AgendaTargetType.Leadership, leaderships["Соколи"].LeadershipKey),
+            Target(AgendaTargetType.Leadership, leaderships[Sokoly].LeadershipKey),
             Target(AgendaTargetType.Leadership, leaderships["Леви"].LeadershipKey));
         Timed(kurinKey, "Збірка КВ", "Підсумки вересня, табір, вкладка.",
             zakhody, zvyazkovyi, NextWeekday(DayOfWeek.Tuesday), 19, 90,
@@ -1170,17 +1304,17 @@ public class DemoDataSeeder : IDemoDataSeeder
             IsCalculated = true
         };
 
-        winter.Participants.Add(Participant(zvyazkovyi, 2.0, (new DateTime(year, 12, 30), new DateTime(year + 1, 1, 2))));
+        winter.Participants.Add(Participant(zvyazkovyi, 2.0, (UtcDay(year, 12, 30), UtcDay(year + 1, 1, 2))));
         foreach (var mentor in mentors.Values)
         {
-            winter.Participants.Add(Participant(mentor, 1.5, (new DateTime(year + 1, 1, 12), new DateTime(year + 1, 1, 16))));
+            winter.Participants.Add(Participant(mentor, 1.5, (UtcDay(year + 1, 1, 12), UtcDay(year + 1, 1, 16))));
         }
 
         foreach (var person in youth.Take(12))
         {
             var busy = _random.NextDouble() < 0.5
-                ? (new DateTime(year, 12, 31), new DateTime(year + 1, 1, 2))
-                : (new DateTime(year + 1, 1, 13), new DateTime(year + 1, 1, 18));
+                ? (UtcDay(year, 12, 31), UtcDay(year + 1, 1, 2))
+                : (UtcDay(year + 1, 1, 13), UtcDay(year + 1, 1, 18));
             winter.Participants.Add(Participant(person, 1.0, busy));
         }
 
@@ -1199,7 +1333,7 @@ public class DemoDataSeeder : IDemoDataSeeder
 
         foreach (var person in youth.Skip(12).Take(6))
         {
-            alps.Participants.Add(Participant(person, 1.0, (new DateTime(year + 1, 5, 8), new DateTime(year + 1, 5, 11))));
+            alps.Participants.Add(Participant(person, 1.0, (UtcDay(year + 1, 5, 8), UtcDay(year + 1, 5, 11))));
         }
 
         _dbContext.PlanningSessions.Add(alps);
@@ -1219,6 +1353,477 @@ public class DemoDataSeeder : IDemoDataSeeder
             End = DateTime.SpecifyKind(busy.End, DateTimeKind.Utc)
         });
         return participant;
+    }
+
+    // ── Вкладка ──────────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A year of вкладка: статті from three quarters back, a пільга, payments that leave most
+    /// accounts clear and a few in debt, гуртки handing their boxes up and the kurin paying the
+    /// станиця. Charges are not written: the app accrues them on the first read.
+    /// </summary>
+    private void SeedDues(
+        Guid kurinKey,
+        IReadOnlyDictionary<string, Group> groups,
+        IReadOnlyList<Person> youth,
+        IReadOnlyDictionary<Guid, Person> mentors,
+        Person zvyazkovyi,
+        IReadOnlyDictionary<Guid, Guid> memberships)
+    {
+        var today = DateOnly.FromDateTime(_now);
+        var current = DuesQuarter.Of(today);
+        var first = DuesQuarter.FromIndex(current.Index - 3);
+
+        var rate = new KurinDuesRate { KurinKey = kurinKey, FromQuarter = first.Index, SetByUserKey = zvyazkovyi.UserKey };
+        rate.SetArticles(new[]
+        {
+            new KurinDuesArticle { Name = "Членський внесок станиці", Recipient = DuesRecipient.Stanytsia, Amount = 120, ReducedAmount = 60 },
+            new KurinDuesArticle { Name = "Крайовий збір", Recipient = DuesRecipient.Stanytsia, Amount = 30, ReducedAmount = 15 },
+            new KurinDuesArticle { Name = "Курінна каса", Recipient = DuesRecipient.Kurin, Amount = 50, ReducedAmount = 25 }
+        });
+        _dbContext.KurinDuesRates.Add(rate);
+
+        var groupShares = new Dictionary<Guid, decimal>
+        {
+            [groups[Sokoly].GroupKey] = 30,
+            [groups["Леви"].GroupKey] = 20,
+            [groups["Ведмеді"].GroupKey] = 30
+        };
+        foreach (var (groupKey, share) in groupShares)
+        {
+            _dbContext.GroupDuesRates.Add(new GroupDuesRate
+            {
+                KurinKey = kurinKey,
+                GroupKey = groupKey,
+                FromQuarter = first.Index,
+                GroupShare = share,
+                SetByUserKey = mentors[groupKey].UserKey
+            });
+        }
+
+        var reduced = youth.Where(p => p.GroupKey == groups["Леви"].GroupKey).Skip(2).First();
+        _dbContext.DuesConcessions.Add(new DuesConcession
+        {
+            KurinKey = kurinKey,
+            MembershipKey = memberships[reduced.Key],
+            FromQuarter = first.Index,
+            IsConcession = true,
+            SetByUserKey = zvyazkovyi.UserKey
+        });
+
+        // What each гурток collected per quarter, in cash and by card, and how much of it is the
+        // станиця's and the kurin's: the handovers below pass exactly that up, in the same money it
+        // came in, so no box ever shows more sent than it held.
+        var upward = new Dictionary<(Guid Group, int Quarter), Collected>();
+
+        foreach (var person in youth)
+        {
+            var groupKey = person.GroupKey!.Value;
+            var collector = mentors[groupKey];
+            var isReduced = person == reduced;
+            var stanytsia = isReduced ? rate.StanytsiaReduced : rate.StanytsiaFull;
+            var own = isReduced ? rate.KurinReduced ?? rate.KurinShare : rate.KurinShare;
+            var perQuarter = stanytsia + own + groupShares[groupKey];
+
+            var quartersPaid = QuartersPaid(_random.NextDouble());
+            for (var i = 0; i < quartersPaid; i++)
+            {
+                var quarter = DuesQuarter.FromIndex(first.Index + i);
+                var byCard = _random.NextDouble() >= 0.7;
+                AddDuesEntry(kurinKey, groupKey, memberships[person.Key], DuesEntryKind.Contribution,
+                    byCard ? DuesPaymentMethod.Card : DuesPaymentMethod.Cash,
+                    perQuarter, PaymentDay(quarter, today), collector, note: null, today, zvyazkovyi);
+
+                var key = (groupKey, quarter.Index);
+                var sum = upward.GetValueOrDefault(key) ?? new Collected();
+                sum.Stanytsia += stanytsia;
+                sum.Up += stanytsia + own;
+                sum.Card += byCard ? perQuarter : 0;
+                upward[key] = sum;
+            }
+
+            // Some of those a quarter behind have paid part of it.
+            if (quartersPaid == 3 && _random.NextDouble() < 0.4)
+            {
+                AddDuesEntry(kurinKey, groupKey, memberships[person.Key], DuesEntryKind.Contribution, DuesPaymentMethod.Cash,
+                    100, PaymentDay(current, today), collector, note: "Решту — на наступних сходинах", today, zvyazkovyi);
+            }
+        }
+
+        decimal kurinCash = 0, kurinCard = 0;
+        for (var index = first.Index; index < current.Index; index++)
+        {
+            var quarter = DuesQuarter.FromIndex(index);
+            foreach (var groupKey in groupShares.Keys)
+            {
+                if (upward.TryGetValue((groupKey, index), out var sum))
+                {
+                    var (cash, card) = HandOver(sum.Up, sum.Card);
+                    var sentOn = quarter.FirstDay.AddDays(50);
+                    if (card > 0)
+                    {
+                        AddDuesEntry(kurinKey, groupKey, null, DuesEntryKind.TransferToKurin, DuesPaymentMethod.Card,
+                            card, sentOn, mentors[groupKey], note: null, today, zvyazkovyi, received: true);
+                    }
+
+                    if (cash > 0)
+                    {
+                        AddDuesEntry(kurinKey, groupKey, null, DuesEntryKind.TransferToKurin, DuesPaymentMethod.Cash,
+                            cash, sentOn, mentors[groupKey], note: null, today, zvyazkovyi, received: true);
+                    }
+
+                    kurinCash += cash;
+                    kurinCard += card;
+                }
+            }
+
+            // The станиця has been paid for every quarter but the last closed one.
+            var due = upward.Where(u => u.Key.Quarter == index).Sum(u => u.Value.Stanytsia);
+            if (index < current.Index - 1 && due > 0)
+            {
+                var byCard = Math.Min(due, kurinCard);
+                kurinCard -= byCard;
+                kurinCash -= due - byCard;
+                var note = $"Станиці за {quarter.Number} квартал {quarter.Year}";
+                if (byCard > 0)
+                {
+                    AddDuesEntry(kurinKey, null, null, DuesEntryKind.TransferToStanytsia, DuesPaymentMethod.Card,
+                        byCard, quarter.FirstDay.AddDays(70), zvyazkovyi, note, today, zvyazkovyi);
+                }
+
+                if (due - byCard > 0)
+                {
+                    AddDuesEntry(kurinKey, null, null, DuesEntryKind.TransferToStanytsia, DuesPaymentMethod.Cash,
+                        due - byCard, quarter.FirstDay.AddDays(70), zvyazkovyi, note, today, zvyazkovyi);
+                }
+            }
+        }
+
+        // Соколи have already handed this quarter's cash over; the kurin has not counted it yet.
+        var sokoly = groups[Sokoly].GroupKey;
+        if (upward.TryGetValue((sokoly, current.Index), out var sokolyNow) && HandOver(sokolyNow.Up, sokolyNow.Card).Cash > 0)
+        {
+            AddDuesEntry(kurinKey, sokoly, null, DuesEntryKind.TransferToKurin, DuesPaymentMethod.Cash,
+                HandOver(sokolyNow.Up, sokolyNow.Card).Cash, today.AddDays(-2), mentors[sokoly],
+                note: "Передав на сходинах куреня", today, zvyazkovyi);
+        }
+    }
+
+    /// <summary>What a гурток collected in a quarter, as far as its handover is concerned.</summary>
+    private sealed class Collected
+    {
+        public decimal Stanytsia { get; set; }
+
+        /// <summary>The станиця's and the kurin's parts together: what goes up.</summary>
+        public decimal Up { get; set; }
+
+        /// <summary>Everything that came in by card, the гурток's own part included.</summary>
+        public decimal Card { get; set; }
+    }
+
+    /// <summary>The card money goes up first, the rest in cash: the гурток keeps its own part.</summary>
+    private static (decimal Cash, decimal Card) HandOver(decimal up, decimal collectedByCard)
+    {
+        var card = Math.Min(up, collectedByCard);
+        return (up - card, card);
+    }
+
+    /// <summary>Of the four quarters charged so far: most paid all, some are one or more behind.</summary>
+    private static int QuartersPaid(double habit)
+    {
+        if (habit < 0.55)
+        {
+            return 4;
+        }
+
+        if (habit < 0.8)
+        {
+            return 3;
+        }
+
+        return habit < 0.93 ? 2 : 1;
+    }
+
+    /// <summary>A day early in the quarter, never later than today.</summary>
+    private DateOnly PaymentDay(DuesQuarter quarter, DateOnly today)
+    {
+        var day = quarter.FirstDay.AddDays(_random.Next(2, 40));
+        return day > today ? today.AddDays(-_random.Next(0, Math.Max(1, today.DayNumber - quarter.FirstDay.DayNumber))) : day;
+    }
+
+    /// <summary>
+    /// Writes one operation with the trail the app leaves for it: created by whoever collected it,
+    /// verified by the Звʼязковий once it is a fortnight old, a handover received a few days after.
+    /// </summary>
+    private void AddDuesEntry(
+        Guid kurinKey,
+        Guid? groupKey,
+        Guid? membershipKey,
+        DuesEntryKind kind,
+        DuesPaymentMethod method,
+        decimal amount,
+        DateOnly occurredOn,
+        Person author,
+        string? note,
+        DateOnly today,
+        Person verifier,
+        bool received = false)
+    {
+        var createdAt = ToUtc(occurredOn.ToDateTime(TimeOnly.MinValue), 19);
+        var entry = new DuesEntry
+        {
+            KurinKey = kurinKey,
+            GroupKey = groupKey,
+            MembershipKey = membershipKey,
+            Kind = kind,
+            Method = method,
+            Amount = amount,
+            OccurredOn = occurredOn,
+            CollectedByMemberKey = kind == DuesEntryKind.Contribution ? author.Key : null,
+            Note = note,
+            CreatedByUserKey = author.UserKey,
+            CreatedDate = createdAt
+        };
+        RecordDues(entry, "Created", author.UserKey, createdAt);
+
+        if (received)
+        {
+            entry.ReceivedAtUtc = createdAt.AddDays(3);
+            entry.ReceivedByUserKey = verifier.UserKey;
+            RecordDues(entry, "Received", verifier.UserKey, entry.ReceivedAtUtc.Value);
+        }
+
+        if (today.DayNumber - occurredOn.DayNumber > 14)
+        {
+            entry.VerifiedAtUtc = createdAt.AddDays(_random.Next(4, 10));
+            entry.VerifiedByUserKey = verifier.UserKey;
+            RecordDues(entry, "Verified", verifier.UserKey, entry.VerifiedAtUtc.Value);
+        }
+
+        _dbContext.DuesEntries.Add(entry);
+    }
+
+    /// <summary>The same event <c>DuesEntryTrail</c> writes, which this layer cannot reach.</summary>
+    private static void RecordDues(DuesEntry entry, string action, Guid? actorUserKey, DateTime atUtc)
+    {
+        entry.UpdatedDate = atUtc;
+        entry.Events.Add(new DuesEntryEvent
+        {
+            DuesEntryKey = entry.DuesEntryKey,
+            Action = action,
+            ActorUserKey = actorUserKey,
+            OccurredAtUtc = atUtc,
+            CreatedDate = atUtc,
+            UpdatedDate = atUtc,
+            Snapshot = JsonSerializer.Serialize(new
+            {
+                entry.Kind,
+                entry.Method,
+                entry.CounterMethod,
+                entry.Amount,
+                entry.OccurredOn,
+                entry.MembershipKey,
+                entry.CollectedByMemberKey,
+                entry.Note,
+                entry.VerifiedAtUtc,
+                entry.VerifiedByUserKey,
+                entry.ReceivedAtUtc,
+                entry.ReceivedByUserKey,
+                entry.DeletedAtUtc,
+                entry.DeletedByUserKey
+            })
+        });
+    }
+
+    // ── Точкування ───────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The score of a year: what each source is worth, marks of attendance on every сходини since
+    /// the last year opened and at the summer camp, positions given at сходини, a few free entries
+    /// for persons and гуртки, two stages, and the КВ's own book.
+    /// </summary>
+    private void SeedScore(
+        Guid kurinKey,
+        IReadOnlyDictionary<string, Group> groups,
+        IReadOnlyList<Person> youth,
+        IReadOnlyDictionary<Guid, Person> mentors,
+        Person zvyazkovyi,
+        IReadOnlyDictionary<Guid, Guid> memberships)
+    {
+        var today = DateOnly.FromDateTime(_now);
+        var since = PlastYear.FirstDay(PlastYear.Of(today) - 1);
+        var judge = zvyazkovyi.UserKey;
+
+        _dbContext.KurinScoreSettings.Add(new KurinScoreSettings { KurinKey = kurinKey, Algorithm = ScoreAlgorithm.Average, SetByUserKey = judge });
+
+        foreach (var (source, variant, points) in new[]
+        {
+            (ScoreSource.Skill, 0, 5), (ScoreSource.ProbePoint, 0, 1), (ScoreSource.Probe, 0, 10), (ScoreSource.Dues, 0, 3),
+            (ScoreSource.Warning, 1, -3), (ScoreSource.Warning, 2, -6), (ScoreSource.Warning, 3, -10)
+        })
+        {
+            _dbContext.ScoreRules.Add(new ScoreRule
+            {
+                KurinKey = kurinKey,
+                Source = source,
+                Variant = variant,
+                FromDate = since,
+                Points = points,
+                SetByUserKey = judge
+            });
+        }
+
+        var skhodyny = _dbContext.AgendaCategories.Local.Single(c => c.KurinKey == kurinKey && c.Name == "Сходини");
+        _dbContext.ScoreAttendanceRates.Add(new ScoreAttendanceRate { KurinKey = kurinKey, AgendaCategoryKey = skhodyny.AgendaCategoryKey, Points = 2, SetByUserKey = judge });
+
+        var positions = new[] { ("Однострій", 1), ("Нотатник", 1), ("Запізнення", -1), ("Без однострою", -2) }
+            .Select(p => new ScoreItem { KurinKey = kurinKey, Name = p.Item1, Points = p.Item2 })
+            .ToList();
+        _dbContext.ScoreItems.AddRange(positions);
+
+        var reliability = youth.ToDictionary(p => p.Key, _ => Fraction(0.55, 0.95));
+
+        var weekly = _dbContext.AgendaItems.Local
+            .Where(i => i.KurinKey == kurinKey && i.RecurrenceFrequency == RecurrenceFrequency.Weekly && i.StartUtc.HasValue)
+            .ToList();
+        foreach (var item in weekly)
+        {
+            var target = item.Assignments.First();
+            var isGroup = target.TargetType == AgendaTargetType.Group;
+            var people = isGroup ? youth.Where(p => p.GroupKey == target.TargetKey).ToList() : youth.ToList();
+            var marker = isGroup ? mentors[target.TargetKey].UserKey : judge;
+            var local = TimeZoneInfo.ConvertTimeFromUtc(item.StartUtc!.Value, Kyiv);
+
+            for (var day = local.Date; ToUtc(day, local.Hour) <= _now; day = day.AddDays(7))
+            {
+                var start = ToUtc(day, local.Hour);
+                if (DateOnly.FromDateTime(day) < since)
+                {
+                    continue;
+                }
+
+                foreach (var membershipKey in people.Where(p => _random.NextDouble() < reliability[p.Key]).Select(p => memberships[p.Key]))
+                {
+                    _dbContext.ScoreAttendances.Add(new ScoreAttendance
+                    {
+                        KurinKey = kurinKey,
+                        MembershipKey = membershipKey,
+                        AgendaItemKey = item.AgendaItemKey,
+                        OccurrenceStartUtc = start,
+                        MarkedByUserKey = marker,
+                        MarkedAtUtc = start.AddHours(2)
+                    });
+
+                    // A position now and then, given at the гурток's own сходини: once per person there.
+                    if (isGroup && _random.NextDouble() < 0.25)
+                    {
+                        var position = _random.NextDouble() < 0.7 ? positions[_random.Next(0, 2)] : positions[_random.Next(2, 4)];
+                        _dbContext.ScoreEntries.Add(new ScoreEntry
+                        {
+                            KurinKey = kurinKey,
+                            MembershipKey = membershipKey,
+                            ScoreItemKey = position.ScoreItemKey,
+                            Points = position.Points,
+                            AgendaItemKey = item.AgendaItemKey,
+                            OccurrenceStartUtc = start,
+                            OccurredOn = DateOnly.FromDateTime(day),
+                            CreatedByUserKey = marker,
+                            CreatedDate = start.AddHours(2)
+                        });
+                    }
+                }
+            }
+        }
+
+        // The summer camp is worth more than a сходини, and those who said they were going went.
+        var camp = _dbContext.AgendaItems.Local.Single(i => i.KurinKey == kurinKey && i.Title.StartsWith("Літній табір", StringComparison.Ordinal));
+        if (DateOnly.FromDateTime(camp.StartUtc!.Value) >= since && camp.StartUtc < _now)
+        {
+            _dbContext.ScoreAttendanceRates.Add(new ScoreAttendanceRate { KurinKey = kurinKey, AgendaItemKey = camp.AgendaItemKey, Points = 15, SetByUserKey = judge });
+            var going = camp.Responses.Where(r => r.Status == AgendaRsvpStatus.Going).Select(r => r.UserKey).ToHashSet();
+            foreach (var memberKey in youth.Where(p => going.Contains(p.UserKey)).Select(p => p.Key))
+            {
+                _dbContext.ScoreAttendances.Add(new ScoreAttendance
+                {
+                    KurinKey = kurinKey,
+                    MembershipKey = memberships[memberKey],
+                    AgendaItemKey = camp.AgendaItemKey,
+                    OccurrenceStartUtc = camp.StartUtc.Value,
+                    MarkedByUserKey = judge,
+                    MarkedAtUtc = camp.EndUtc ?? camp.StartUtc.Value
+                });
+            }
+        }
+
+        var reasons = new[]
+        {
+            ("Допоміг молодшим на вишколі", 4), ("Підготував гру для гуртка", 5), ("Чергування на таборі", 3),
+            ("Хроніка сходин", 2), ("Не прибрав за собою в домівці", -2)
+        };
+        foreach (var groupKey in groups.Values.Select(g => g.GroupKey))
+        {
+            var mentor = mentors[groupKey];
+            foreach (var person in youth.Where(p => p.GroupKey == groupKey).Take(4))
+            {
+                var (reason, points) = reasons[_random.Next(reasons.Length)];
+                var on = today.AddDays(-_random.Next(3, 45));
+                _dbContext.ScoreEntries.Add(new ScoreEntry
+                {
+                    KurinKey = kurinKey,
+                    MembershipKey = memberships[person.Key],
+                    Points = points,
+                    Reason = reason,
+                    OccurredOn = on,
+                    CreatedByUserKey = mentor.UserKey,
+                    CreatedDate = ToUtc(on.ToDateTime(TimeOnly.MinValue), 20)
+                });
+            }
+        }
+
+        foreach (var (name, points, reason, daysAgo) in new[]
+        {
+            (Sokoly, 8, "Перемога в естафеті на сходинах куреня", 9),
+            ("Ведмеді", 10, "Найкраща хроніка літнього табору", 30),
+            ("Леви", -3, "Залишили домівку неприбраною", 20)
+        })
+        {
+            var on = today.AddDays(-daysAgo);
+            _dbContext.ScoreEntries.Add(new ScoreEntry
+            {
+                KurinKey = kurinKey,
+                GroupKey = groups[name].GroupKey,
+                Points = points,
+                Reason = reason,
+                OccurredOn = on,
+                CreatedByUserKey = judge,
+                CreatedDate = ToUtc(on.ToDateTime(TimeOnly.MinValue), 20)
+            });
+        }
+
+        var year = _now.Year;
+        _dbContext.ScoreStages.Add(new ScoreStage { KurinKey = kurinKey, Name = "Літо й табір", FromDate = new DateOnly(year, 6, 1), ToDate = new DateOnly(year, 8, 31) });
+        _dbContext.ScoreStages.Add(new ScoreStage { KurinKey = kurinKey, Name = "Осінь", FromDate = new DateOnly(year, 9, 1), ToDate = new DateOnly(year, 11, 30) });
+
+        var criteria = PrivateCriteria
+            .Select(name => new PrivateScoreCriterion { KurinKey = kurinKey, Name = name })
+            .ToList();
+        _dbContext.PrivateScoreCriteria.AddRange(criteria);
+
+        foreach (var person in youth.Where(p => p.GroupKey == groups["Ведмеді"].GroupKey || p.GroupKey == groups[Sokoly].GroupKey).Take(8))
+        {
+            var on = today.AddDays(-_random.Next(5, 60));
+            _dbContext.PrivateScoreEntries.Add(new PrivateScoreEntry
+            {
+                KurinKey = kurinKey,
+                MembershipKey = memberships[person.Key],
+                PrivateScoreCriterionKey = criteria[_random.Next(criteria.Count)].PrivateScoreCriterionKey,
+                Points = _random.Next(1, 4),
+                Note = _random.NextDouble() < 0.5 ? "Сам зголосився провести гру" : null,
+                OccurredOn = on,
+                CreatedByUserKey = mentors[person.GroupKey!.Value].UserKey,
+                CreatedDate = ToUtc(on.ToDateTime(TimeOnly.MinValue), 21)
+            });
+        }
     }
 
     // ── Провід ───────────────────────────────────────────────────────────────────────────────────
@@ -1322,9 +1927,11 @@ public class DemoDataSeeder : IDemoDataSeeder
         return dateOfBirth > today.AddYears(-age) ? age - 1 : age;
     }
 
+    private static DateTime UtcDay(int year, int month, int day) => new(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+
     private DateTime NextDate(int month, int day)
     {
-        var candidate = new DateTime(_now.Year, month, day);
+        var candidate = UtcDay(_now.Year, month, day);
         return candidate.Date < _now.Date ? candidate.AddYears(1) : candidate;
     }
 
@@ -1360,15 +1967,9 @@ public class DemoDataSeeder : IDemoDataSeeder
     {
         foreach (var id in new[] { "Europe/Kyiv", "Europe/Kiev", "FLE Standard Time" })
         {
-            try
+            if (TimeZoneInfo.TryFindSystemTimeZoneById(id, out var zone))
             {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (TimeZoneNotFoundException)
-            {
-            }
-            catch (InvalidTimeZoneException)
-            {
+                return zone;
             }
         }
 

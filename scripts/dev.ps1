@@ -123,7 +123,7 @@ function Cmd-Up {
     ''        { Invoke-AppCompose -env $env -ComposeArgs @('up', '-d') }
     default   { Die "Unknown option '$option' (--build|--pull)." }
   }
-  Write-Host "Environment '$env' is up. Web: check PROJECTK_WEB_PORT in docker/env/$env.env"
+  Write-Output "Environment '$env' is up. Web: check PROJECTK_WEB_PORT in docker/env/$env.env"
 }
 
 function Cmd-Watch {

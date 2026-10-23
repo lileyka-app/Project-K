@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { NavController } from '@ionic/angular';
 import {
   IonBackButton,
   IonButton,
@@ -17,6 +16,7 @@ import {
   IonSpinner,
   IonTitle,
   IonToolbar,
+  NavController,
 } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { addIcons } from 'ionicons';

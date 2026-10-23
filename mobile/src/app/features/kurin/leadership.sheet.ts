@@ -233,6 +233,7 @@ export class LeadershipSheet implements OnInit {
 
   protected close(saved: boolean): void {
     const own = this.host.closest('ion-modal');
-    void (own ? own.dismiss(saved) : this.modals.dismiss(saved));
+    if (own) void own.dismiss(saved);
+    else void this.modals.dismiss(saved);
   }
 }

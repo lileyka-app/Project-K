@@ -5,10 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -30,14 +28,12 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
-    private readonly UserManager<AppUser> _userManager;
     private readonly IBackendCache _cache;
 
-    public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IMapper mapper, UserManager<AppUser> userManager, IBackendCache cache)
+    public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
-        _userManager = userManager;
         _cache = cache;
     }
 

@@ -56,6 +56,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private ISystemSettingRepository _systemSettings;
     private IAppUserRepository _users;
     private IUserTileLayoutRepository _userTileLayouts;
+    private IDismissedDutyRepository _dismissedDuties;
     private IKurinDuesRateRepository _kurinDuesRates;
     private IGroupDuesRateRepository _groupDuesRates;
     private IDuesConcessionRepository _duesConcessions;
@@ -68,6 +69,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IScoreItemRepository _scoreItems;
     private IScoreStageRepository _scoreStages;
     private IScoreAttendanceRepository _scoreAttendances;
+    private IScoreNotHeldOccurrenceRepository _scoreNotHeldOccurrences;
     private IScoreEntryRepository _scoreEntries;
     private IScoreGroupMoveRepository _scoreGroupMoves;
     private IScoreTrailEventRepository _scoreTrailEvents;
@@ -99,6 +101,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IWebPushSubscriptionRepository WebPushSubscriptions => _webPushSubscriptions ??= new WebPushSubscriptionRepository(_context);
     public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
     public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);
+    public IDismissedDutyRepository DismissedDuties => _dismissedDuties ??= new DismissedDutyRepository(_context);
     public IKurinDuesRateRepository KurinDuesRates => _kurinDuesRates ??= new KurinDuesRateRepository(_context);
     public IGroupDuesRateRepository GroupDuesRates => _groupDuesRates ??= new GroupDuesRateRepository(_context);
     public IDuesConcessionRepository DuesConcessions => _duesConcessions ??= new DuesConcessionRepository(_context);
@@ -111,6 +114,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IScoreItemRepository ScoreItems => _scoreItems ??= new ScoreItemRepository(_context);
     public IScoreStageRepository ScoreStages => _scoreStages ??= new ScoreStageRepository(_context);
     public IScoreAttendanceRepository ScoreAttendances => _scoreAttendances ??= new ScoreAttendanceRepository(_context);
+    public IScoreNotHeldOccurrenceRepository ScoreNotHeldOccurrences => _scoreNotHeldOccurrences ??= new ScoreNotHeldOccurrenceRepository(_context);
     public IScoreEntryRepository ScoreEntries => _scoreEntries ??= new ScoreEntryRepository(_context);
     public IScoreGroupMoveRepository ScoreGroupMoves => _scoreGroupMoves ??= new ScoreGroupMoveRepository(_context);
     public IScoreTrailEventRepository ScoreTrailEvents => _scoreTrailEvents ??= new ScoreTrailEventRepository(_context);

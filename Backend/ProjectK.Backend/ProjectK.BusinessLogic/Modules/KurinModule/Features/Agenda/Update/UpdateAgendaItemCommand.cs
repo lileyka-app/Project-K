@@ -4,6 +4,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -39,19 +40,22 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
+    private readonly IKurinAudit _audit;
 
     public UpdateAgendaItemCommandHandler(
         IUnitOfWork uow,
         IMemberDirectory members,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
-        IDomainEventPublisher events)
+        IDomainEventPublisher events,
+        IKurinAudit audit)
     {
         _uow = uow;
         _members = members;
         _access = access;
         _currentUser = currentUser;
         _events = events;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<object>> Handle(UpdateAgendaItemCommand request, CancellationToken cancellationToken)
@@ -73,9 +77,12 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_EDIT_FORBIDDEN", "Only the creator or leadership may edit this item.");
         }
 
-        foreach (var target in request.Targets)
+        // Only a newly added target is an act of assigning: one the item already has stays when the
+        // kurin narrows the editor's reach, so a title can still be fixed on an item aimed further.
+        var existingTargets = item.Assignments.Select(a => (a.TargetType, a.TargetKey)).ToHashSet();
+        foreach (var target in request.Targets.Where(t => !existingTargets.Contains((t.TargetType, t.TargetKey))))
         {
-            var decision = await _access.AuthorizeTargetAsync(target, ResourceAction.Create, cancellationToken);
+            var decision = await _access.AuthorizeTargetAsync(target, cancellationToken);
             if (!decision.IsAllowed)
             {
                 return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_TARGET_FORBIDDEN", decision.Reason);
@@ -100,6 +107,10 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
                 "The way this target is done cannot change once someone has moved it; create a new task instead.");
         }
 
+        var before = AgendaAuditFields.Of(item);
+        var targetsBefore = AgendaAuditFields.TargetsOf(item);
+        var statusBefore = item.Status;
+
         item.Kind = request.Kind;
         item.Title = request.Title.Trim();
         item.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
@@ -119,7 +130,54 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         // DbSet Add/Remove so EF gets unambiguous Added/Deleted states (mutating the tracked collection
         // alone made EF mark a new assignment Modified and emit an UPDATE that matched no row). The tracked
         // collection is kept in sync too, so the item stays clean for the notification's own SaveChanges.
-        var desired = request.Targets
+        ReconcileTargets(item, request.Targets, requestedModes);
+
+        // Targets came and went, so what the task adds up to may have changed with them.
+        var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
+        AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), DateTime.UtcNow);
+
+        await RecordChangesAsync(item, before, targetsBefore, statusBefore, cancellationToken);
+
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        await PublishChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
+
+        return new ServiceResult<object>(ResultType.Success);
+    }
+
+    /// <summary>Records what the edit changed, targets and the status they moved included; an edit that changed nothing is not recorded.</summary>
+    private async Task RecordChangesAsync(
+        AgendaItem item,
+        (string Field, object? Value)[] before,
+        List<(AgendaTargetType Type, Guid Key)> targetsBefore,
+        AgendaItemStatus statusBefore,
+        CancellationToken cancellationToken)
+    {
+        var targetsAfter = AgendaAuditFields.TargetsOf(item);
+        var changes = AgendaAuditFields.Between(before, AgendaAuditFields.Of(item)).ToList();
+        if (!targetsBefore.ToHashSet().SetEquals(targetsAfter))
+        {
+            var names = await AgendaTargetNames.LoadAsync(_uow, _members, item.KurinKey, targetsBefore.Concat(targetsAfter), cancellationToken);
+            changes.AddRange(AuditChanges.Of((AgendaAuditFields.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
+        }
+
+        changes.AddRange(AuditChanges.Of(("status", statusBefore, item.Status)));
+        if (changes.Count == 0)
+        {
+            return;
+        }
+
+        await _audit.RecordAsync(
+            new AuditRecord(AuditArea.Agenda, AuditActions.Agenda.Changed, item.AgendaItemKey, item.Title, Changes: changes, KurinKey: item.KurinKey),
+            cancellationToken);
+    }
+
+    private void ReconcileTargets(
+        AgendaItem item,
+        List<AgendaTargetInput> targets,
+        Dictionary<(AgendaTargetType, Guid), AgendaCompletionMode> requestedModes)
+    {
+        var desired = targets
             .Select(t => (t.TargetType, t.TargetKey))
             .ToHashSet();
 
@@ -139,7 +197,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             }
         }
 
-        foreach (var target in request.Targets)
+        foreach (var target in targets)
         {
             if (kept.Add((target.TargetType, target.TargetKey)))
             {
@@ -154,16 +212,6 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
                 item.Assignments.Add(assignment);
             }
         }
-
-        // Targets came and went, so what the task adds up to may have changed with them.
-        var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
-        AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), DateTime.UtcNow);
-
-        await _uow.SaveChangesAsync(cancellationToken);
-
-        await PublishChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
-
-        return new ServiceResult<object>(ResultType.Success);
     }
 
     private async Task PublishChangedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)

@@ -159,6 +159,18 @@ public sealed class MyDutyDto
     public Guid? AgendaItemKey { get; set; }
     public DateTime? OccurrenceStartUtc { get; set; }
     public string? Title { get; set; }
+    /// <summary>Which duty this is, the same on every read: what hiding it names.</summary>
+    public string Key { get; set; } = string.Empty;
+    /// <summary>How big it is now; hidden, it comes back when this grows.</summary>
+    public string Fingerprint { get; set; } = string.Empty;
+}
+
+/// <summary>«Справи»: what waits on the person, less what they hid, and how many they hid.</summary>
+public sealed class MyDutiesResponse
+{
+    public IReadOnlyList<MyDutyDto> Items { get; set; } = [];
+    /// <summary>Duties that wait but the person hid, unchanged since.</summary>
+    public int HiddenCount { get; set; }
 }
 
 /// <summary>A гурток the person belongs to as a youth, or leads, in one of their kurins.</summary>

@@ -11,6 +11,8 @@ function duty(overrides: Partial<MyDutyDto>): MyDutyDto {
     agendaItemKey: null,
     occurrenceStartUtc: null,
     title: null,
+    key: 'BadgesToReview:k1:-:-:-',
+    fingerprint: '1',
     ...overrides,
   };
 }
@@ -56,5 +58,30 @@ describe('dutyRows', () => {
 
   it('names no kurin when every duty is in the current one', () => {
     expect(dutiesSpanKurins([duty({}), duty({ kind: 'EntriesToVerify' })])).toBe(false);
+  });
+
+  it('lets «Сходин не було» be said only of an event in the current kurin', () => {
+    const start = new Date(2026, 9, 5, 17, 0).toISOString();
+    const rows = dutyRows(
+      [
+        duty({ kind: 'BadgesToReview', count: 3 }),
+        duty({ kind: 'EventWithoutAttendance', agendaItemKey: 'e1', occurrenceStartUtc: start }),
+        duty({
+          kind: 'EventWithoutAttendance',
+          agendaItemKey: 'e2',
+          occurrenceStartUtc: start,
+          kurin: { kurinKey: 'k2', kurinNumber: 7, namedAfter: null, isCurrent: false },
+        }),
+      ],
+      new Date(2026, 9, 5, 9, 0),
+      true,
+    );
+
+    expect(rows.map((r) => r.canSayNotHeld)).toEqual([false, true, false]);
+  });
+
+  it('lets a duty be hidden only when the server named it', () => {
+    const rows = dutyRows([duty({}), duty({ key: '' })], new Date(), false);
+    expect(rows.map((r) => r.canHide)).toEqual([true, false]);
   });
 });

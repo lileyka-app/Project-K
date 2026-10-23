@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { kurin, ok, refuse, shot, signIn, soon, type ExtraApi } from './support/mock-api';
+import { kurin, ok, refuse, shot, signIn, soon, type Answer, type ExtraApi } from './support/mock-api';
 
 /**
  * The home screen's bell and «Справи», and the leader tools they lead to: the inbox, the skills
@@ -92,12 +92,21 @@ function groupDues(viewer = KEEPER) {
 }
 
 /** The leader endpoints; `inbox` keeps the read flags across calls. */
-function leaderApi(options: { viewer?: Parameters<typeof groupDues>[0] } = {}): ExtraApi {
+function leaderApi(options: { viewer?: typeof KEEPER } = {}): ExtraApi {
   const inbox = notifications();
+  const get = (path: string, query: URLSearchParams): Answer | null => {
+    switch (path) {
+      case 'me/duties/board': return ok(duties);
+      case 'notifications/unread-count': return ok(inbox.filter((n) => !n.isRead).length);
+      case 'notifications': return ok(inbox.slice(0, Number(query.get('take') ?? 50)));
+      case 'kurin/k1/badges/review': return ok(queue);
+      case 'catalog/badges': return ok(catalog);
+      case 'group/g1/dues': return ok(groupDues(options.viewer));
+    }
+    return null;
+  };
   return ({ method, path, query }) => {
-    if (method === 'GET' && path === 'me/duties') return ok(duties);
-    if (method === 'GET' && path === 'notifications/unread-count') return ok(inbox.filter((n) => !n.isRead).length);
-    if (method === 'GET' && path === 'notifications') return ok(inbox.slice(0, Number(query.get('take') ?? 50)));
+    if (method === 'GET') return get(path, query);
     if (method === 'PUT' && path === 'notifications/read-all') {
       inbox.forEach((n) => Object.assign(n, { isRead: true, readAtUtc: ago(0) }));
       return ok(inbox.length);
@@ -109,9 +118,6 @@ function leaderApi(options: { viewer?: Parameters<typeof groupDues>[0] } = {}): 
       Object.assign(item, { isRead: true, readAtUtc: ago(0) });
       return ok(item);
     }
-    if (method === 'GET' && path === 'kurin/k1/badges/review') return ok(queue);
-    if (method === 'GET' && path === 'catalog/badges') return ok(catalog);
-    if (method === 'GET' && path === 'group/g1/dues') return ok(groupDues(options.viewer));
     return null;
   };
 }

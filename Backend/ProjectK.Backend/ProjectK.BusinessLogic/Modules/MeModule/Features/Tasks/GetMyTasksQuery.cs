@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -59,16 +60,7 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
                     continue;
                 }
 
-                rows.Add(new MyTaskDto
-                {
-                    AgendaItemKey = item.AgendaItemKey,
-                    Kurin = kurin,
-                    Title = item.Title,
-                    Status = status,
-                    StartUtc = item.StartUtc is { } start ? DateTime.SpecifyKind(start, DateTimeKind.Utc) : null,
-                    EndUtc = item.EndUtc is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null,
-                    CanChangeStatus = kurin.IsCurrent && AgendaPermissions.CanChangeStatus(item, viewer)
-                });
+                rows.Add(ToRow(item, kurin, status, viewer));
             }
         }
 
@@ -77,4 +69,15 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
             .ThenBy(r => r.Title)
             .ToList());
     }
+
+    private static MyTaskDto ToRow(AgendaItem item, MyKurinRefDto kurin, AgendaItemStatus status, AgendaViewerContext viewer) => new()
+    {
+        AgendaItemKey = item.AgendaItemKey,
+        Kurin = kurin,
+        Title = item.Title,
+        Status = status,
+        StartUtc = item.StartUtc is { } start ? DateTime.SpecifyKind(start, DateTimeKind.Utc) : null,
+        EndUtc = item.EndUtc is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null,
+        CanChangeStatus = kurin.IsCurrent && AgendaPermissions.CanChangeStatus(item, viewer)
+    };
 }

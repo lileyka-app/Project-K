@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.API.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Extensions;
@@ -392,7 +393,7 @@ public class ResourceAccessServiceTests
             .ReturnsAsync(new[] { groupKey });
 
         var cache = new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), NullLogger<MemoryBackendCache>.Instance);
-        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, cache);
+        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, cache, new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
         return (service, scopeReader, cache);
     }
 
@@ -433,7 +434,7 @@ public class ResourceAccessServiceTests
             .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>());
 
-        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, new PassThroughBackendCache());
+        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, new PassThroughBackendCache(), new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
         return new ResourceAccessFixture(service, scopeReader);
     }
 

@@ -8,6 +8,7 @@ import {
   AgendaRsvpStatus,
   MemberDto,
   MyDuesDto,
+  MyDutiesDto,
   MyDutyDto,
   MyEventDto,
   MyGrowthDto,
@@ -37,9 +38,19 @@ export class MeService {
     return this.get('me/dues');
   }
 
-  /** What waits on the person as провід; empty for a youth. */
-  duties(): Promise<MyDutyDto[]> {
-    return this.get('me/duties');
+  /** What waits on the person as провід, less what they hid; empty for a youth. */
+  async duties(): Promise<MyDutiesDto> {
+    return dutiesOf(await this.get<MyDutiesDto | LegacyDuty[]>('me/duties/board'));
+  }
+
+  /** Hides one duty from the person's own «Справи» until it grows. */
+  dismissDuty(duty: MyDutyDto): Promise<unknown> {
+    return firstValueFrom(this.http.post(`${this.api}/me/duties/dismissed`, { key: duty.key, fingerprint: duty.fingerprint }));
+  }
+
+  /** Brings every hidden duty back. */
+  restoreDuties(): Promise<unknown> {
+    return firstValueFrom(this.http.delete(`${this.api}/me/duties/dismissed`));
   }
 
   score(): Promise<MyScoreDto[]> {
@@ -71,4 +82,15 @@ export class MeService {
   private get<T>(path: string): Promise<T> {
     return firstValueFrom(this.http.get<T>(`${this.api}/${path}`));
   }
+}
+
+/** A duty as a server that cannot hide one sends it. */
+type LegacyDuty = Omit<MyDutyDto, 'key' | 'fingerprint'> & Partial<Pick<MyDutyDto, 'key' | 'fingerprint'>>;
+
+/** A server a deploy has not reached yet answers with the bare list: nothing hidden, nothing to hide. */
+export function dutiesOf(reply: MyDutiesDto | LegacyDuty[]): MyDutiesDto {
+  if (Array.isArray(reply)) {
+    return { items: reply.map((duty) => ({ ...duty, key: duty.key ?? '', fingerprint: duty.fingerprint ?? '' })), hiddenCount: 0 };
+  }
+  return reply;
 }

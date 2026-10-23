@@ -16,9 +16,6 @@ public sealed record AccessContext(
 {
     public bool IsAdmin => Roles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The permissions these roles add up to.</summary>
-    public IReadOnlyCollection<Permission> Permissions => RolePermissionMap.Resolve(Roles);
-
     /// <summary>An account with no kurin and nothing but the baseline. Used where there is no user.</summary>
     public static AccessContext None(Guid userKey) => new(userKey, null, [SystemRole.Member]);
 }

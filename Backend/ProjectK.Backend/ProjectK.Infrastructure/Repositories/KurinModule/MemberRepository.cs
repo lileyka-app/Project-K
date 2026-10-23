@@ -61,8 +61,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         return await Context.Members.AsSplitQuery()
                                      .Include(m => m.PlastLevelHistory)
                                      .Include(m => m.LeadershipHistories)
-                                        .ThenInclude(h => h.Leadership)
-                                            .ThenInclude(l => l.Group)
+                                        .ThenInclude(h => h.Leadership.Group)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
                                      .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
@@ -80,8 +79,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         return await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
                                      .Include(m => m.PlastLevelHistory)
                                      .Include(m => m.LeadershipHistories)
-                                        .ThenInclude(h => h.Leadership)
-                                            .ThenInclude(l => l.Group)
+                                        .ThenInclude(h => h.Leadership.Group)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
                                      .AsSplitQuery()
@@ -89,28 +87,23 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                                      .ToListAsync(cancellationToken);
     }
 
-    public Task<IEnumerable<MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
-        => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey), visibility, cancellationToken);
+    public Task<IEnumerable<MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey), cancellationToken);
 
-    public Task<IEnumerable<MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, MemberFieldVisibility visibility, CancellationToken cancellationToken = default)
-        => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.GroupKey == groupKey), visibility, cancellationToken);
+    public Task<IEnumerable<MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, CancellationToken cancellationToken = default)
+        => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.GroupKey == groupKey), cancellationToken);
 
     // Single projection shared by the kurin- and group-scoped list reads. It reads a list of
     // memberships and pulls the person behind each: the same member seen from two kurins is two
     // entries, each placed by its own membership. Still one SQL — the join replaces the old
     // WHERE on the member's own kurin, and nothing else about the shape changed. No Include
     // graph: scalars come from the root query, UserRole is a correlated subquery over
-    // Identity (replacing the old per-list GroupJoin), Address/School are masked in SQL
-    // from the caller's visibility, and only active leadership/warnings are pulled.
+    // Identity (replacing the old per-list GroupJoin), and only active leadership/warnings are
+    // pulled. Every field is read as stored: what the caller may see is GetMembersQuery's to mask.
     private async Task<IEnumerable<MemberListItemDto>> ProjectListItemsAsync(
         IQueryable<Membership> memberships,
-        MemberFieldVisibility visibility,
         CancellationToken cancellationToken)
     {
-        var canSeeAll = visibility.CanSeeAllPrivate;
-        var currentUserId = visibility.CurrentUserId;
-        var visibleGroupKeys = visibility.VisibleGroupKeys as IReadOnlyCollection<Guid> ?? visibility.VisibleGroupKeys.ToList();
-
         var source = from ms in memberships
                      join person in Context.Members on ms.MemberKey equals person.MemberKey
                      select new { Placement = ms, Person = person };
@@ -171,14 +164,8 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                     Email = x.Person.Email,
                     PhoneNumber = x.Person.PhoneNumber,
                     DateOfBirth = x.Person.DateOfBirth,
-                    Address = (canSeeAll
-                    || (x.Person.UserKey != null && x.Person.UserKey == currentUserId)
-                    || (x.Placement.GroupKey != null && visibleGroupKeys.Contains(x.Placement.GroupKey.Value)))
-                    ? x.Person.Address : null,
-                    School = (canSeeAll
-                    || (x.Person.UserKey != null && x.Person.UserKey == currentUserId)
-                    || (x.Placement.GroupKey != null && visibleGroupKeys.Contains(x.Placement.GroupKey.Value)))
-                    ? x.Person.School : null,
+                    Address = x.Person.Address,
+                    School = x.Person.School,
                     // Mirror the Member -> MemberResponse mapping: newest history level, else the stored one.
                     LatestPlastLevel = x.Person.PlastLevelHistory
                     .OrderByDescending(history => history.DateAchieved)
@@ -348,6 +335,11 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
 
     public async Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default)
         => await SummariesOf(Context.Members).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKeysAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+        => memberKeys.Count == 0
+            ? []
+            : await SummariesOf(Context.Members.Where(m => memberKeys.Contains(m.MemberKey))).ToListAsync(cancellationToken);
 
     public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         => Context.Members.AnyAsync(m => m.Email == email, cancellationToken);

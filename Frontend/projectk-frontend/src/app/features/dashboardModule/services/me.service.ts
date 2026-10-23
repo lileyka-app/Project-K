@@ -1,9 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AgendaRsvpStatus } from '../../kurinModule/models/agenda';
-import { MyDuesDto, MyDutyDto, MyEventDto, MyGroupDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../models/me.dto';
+import { MyDuesDto, MyDutiesDto, MyDutyDto, MyEventDto, MyGroupDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../models/me.dto';
 
 /**
  * What the dashboard reads about the person behind the token, across every kurin. Not cached: a
@@ -43,7 +43,32 @@ export class MeService {
     return this.http.get<MyScoreDto[]>(`${this.apiUrl}/score`);
   }
 
-  getDuties(): Observable<MyDutyDto[]> {
-    return this.http.get<MyDutyDto[]>(`${this.apiUrl}/duties`);
+  getDuties(): Observable<MyDutiesDto> {
+    return this.http.get<MyDutiesDto | LegacyDuty[]>(`${this.apiUrl}/duties/board`).pipe(map(dutiesOf));
   }
+
+  /** Hides one duty from the person's own «Справи» until it grows. */
+  dismissDuty(duty: MyDutyDto): Observable<unknown> {
+    return this.http.post(`${this.apiUrl}/duties/dismissed`, { key: duty.key, fingerprint: duty.fingerprint });
+  }
+
+  /** Brings hidden duties back: one by its key, or all of them. */
+  restoreDuties(key?: string): Observable<unknown> {
+    const params = key ? new HttpParams().set('key', key) : undefined;
+    return this.http.delete(`${this.apiUrl}/duties/dismissed`, { params });
+  }
+}
+
+/** A duty as a server that cannot hide one sends it. */
+type LegacyDuty = Omit<MyDutyDto, 'key' | 'fingerprint'> & Partial<Pick<MyDutyDto, 'key' | 'fingerprint'>>;
+
+/**
+ * The static demo's recordings, made before duties could be hidden, answer with the bare list; so
+ * would a server a deploy has not reached yet. Either reads as nothing hidden and nothing to hide.
+ */
+function dutiesOf(reply: MyDutiesDto | LegacyDuty[]): MyDutiesDto {
+  if (Array.isArray(reply)) {
+    return { items: reply.map(duty => ({ ...duty, key: duty.key ?? '', fingerprint: duty.fingerprint ?? '' })), hiddenCount: 0 };
+  }
+  return reply;
 }

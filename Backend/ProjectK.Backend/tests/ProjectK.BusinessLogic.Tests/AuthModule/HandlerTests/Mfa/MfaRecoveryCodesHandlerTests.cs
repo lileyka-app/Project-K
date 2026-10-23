@@ -177,7 +177,6 @@ public class MfaRecoveryCodesHandlerTests
 
         var handler = new GenerateMfaRecoveryCodesCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<GenerateMfaRecoveryCodesCommandHandler>>().Object,
             new Mock<IActivityLogger>().Object);
 
         // Act
@@ -210,7 +209,6 @@ public class MfaRecoveryCodesHandlerTests
 
         var handler = new GenerateMfaRecoveryCodesCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<GenerateMfaRecoveryCodesCommandHandler>>().Object,
             new Mock<IActivityLogger>().Object);
 
         // Act

@@ -83,13 +83,13 @@ public class ScoreGrantsTests
         }
     }
 
-    // A суддя keeps everything the bare провід office had.
+    // A суддя keeps everything the bare провід office had, the default assigning reach of his провід included.
     [Theory]
     [InlineData("Group.Suddya", AccessScope.OwnGroups)]
     [InlineData("Kurin.Suddya", AccessScope.KurinWide)]
     public void TheSuddya_KeepsHisProvidsGrants(string role, AccessScope planningScope)
     {
         Assert.Equal(planningScope, Widest(role, ResourceType.PlanningSession, ResourceAction.Create));
-        Assert.Equal(AccessScope.KurinWide, Widest(role, ResourceType.AgendaItem, ResourceAction.Create));
+        Assert.Equal(planningScope, Widest(role, ResourceType.AgendaItem, ResourceAction.Create));
     }
 }

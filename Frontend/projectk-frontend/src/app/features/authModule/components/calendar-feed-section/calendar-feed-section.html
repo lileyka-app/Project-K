@@ -1,0 +1,72 @@
+<p-confirmDialog />
+
+@if (status(); as current) {
+  <div class="feed-panel">
+    @if (revokedBySecurity() && !feedUrl()) {
+      <p-message severity="warn" styleClass="w-full">
+        Посилання вимкнено {{ current.revokedUtc | localUtcDate:'dd.MM.yy' }}: {{ revokedText() }}. Календар, підписаний на нього,
+        більше не оновлюється. Створи нове посилання й додай його в календар знову, а стару підписку видали.
+      </p-message>
+    }
+
+    <div class="feed-status">
+      <span>Статус</span>
+      @if (isActive()) {
+        <p-tag severity="success" value="Підключено" />
+      } @else {
+        <p-tag severity="secondary" value="Вимкнено" />
+      }
+      @if (isActive() && current.createdUtc) {
+        <small>
+          Створено {{ current.createdUtc | localUtcDate:'dd.MM.yy' }}@if (current.lastFetchedUtc) {, календар оновлювався {{ current.lastFetchedUtc | localUtcDate:'dd.MM.yy, HH:mm' }}}
+        </small>
+      }
+    </div>
+
+    <div class="feed-options">
+      <div class="feed-option">
+        <p-toggleswitch [(ngModel)]="options.includeSchedules" (onChange)="saveOptions()" inputId="feed-schedules" />
+        <span>
+          <label for="feed-schedules">Графіки гуртків</label>
+          <small>Сходини всіх гуртків, не лише твого.</small>
+        </span>
+      </div>
+      <div class="feed-option">
+        <p-toggleswitch [(ngModel)]="options.includeTasks" (onChange)="saveOptions()" inputId="feed-tasks" />
+        <span>
+          <label for="feed-tasks">Задачі з датою</label>
+          <small>Як подія на весь день у день терміну.</small>
+        </span>
+      </div>
+    </div>
+
+    @if (feedUrl(); as url) {
+      <div class="feed-link">
+        <p-message severity="info" styleClass="w-full">
+          Посилання показується лише зараз. Додай його в календар одразу, а якщо загубиш — створи нове.
+        </p-message>
+        <div class="feed-link__row">
+          <input pInputText type="text" [value]="url" readonly aria-label="Посилання на календар" (focus)="$any($event.target).select()" />
+          <p-button label="Копіювати" icon="pi pi-copy" severity="secondary" (onClick)="copy()" />
+        </div>
+        <div class="feed-link__apps">
+          <p-button label="Додати в Google Calendar" icon="pi pi-google" (onClick)="openGoogle()" />
+          <p-button label="Відкрити в Apple / Outlook" icon="pi pi-calendar-plus" severity="secondary" [outlined]="true" (onClick)="openWebcal()" />
+        </div>
+        <small class="feed-hint">
+          Google оновлює підписки раз на кілька годин, Apple і Outlook — частіше. Notion Calendar показує календарі з
+          підключеного акаунта Google, тож підписуйся в Google.
+        </small>
+      </div>
+    }
+
+    <div class="feed-actions">
+      @if (isActive()) {
+        <p-button label="Створити нове посилання" icon="pi pi-refresh" severity="secondary" [loading]="busy()" (onClick)="issue()" />
+        <p-button label="Вимкнути" icon="pi pi-ban" severity="danger" [outlined]="true" [disabled]="busy()" (onClick)="disable()" />
+      } @else {
+        <p-button label="Створити посилання" icon="pi pi-calendar-plus" [loading]="busy()" (onClick)="issue()" />
+      }
+    </div>
+  </div>
+}

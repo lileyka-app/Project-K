@@ -161,7 +161,7 @@ export class AgendaItemDialogComponent {
   /** «Графік куреня · Кельти» — whose schedule this is, for an event the viewer sees only through it. */
   protected readonly scheduleOf = computed(() => {
     const current = this.item();
-    if (!current || current.audience !== 'Schedule') {
+    if (current?.audience !== 'Schedule') {
       return null;
     }
     return current.assignments.map(a => a.label).filter(Boolean).join(', ') || null;
@@ -234,7 +234,7 @@ export class AgendaItemDialogComponent {
     const current = this.item();
     this.rsvp.set(null);
     // An event seen only through the kurin's schedule has nobody to answer to: the server refuses it.
-    if (!current || current.kind !== 'Event' || current.audience === 'Schedule') {
+    if (current?.kind !== 'Event' || current.audience === 'Schedule') {
       return;
     }
     this.agendaService.getResponses(current.agendaItemKey, this.occurrenceOf(current)).subscribe({

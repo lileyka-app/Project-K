@@ -109,7 +109,7 @@ describe('the strip', () => {
   const axis = stripAxis(session());
 
   it('has a column for every day of the window, both ends in', () => {
-    expect(axis.days.length).toBe(30 + 31 + 31);
+    expect(axis.days).toHaveLength(30 + 31 + 31);
     expect(axis.days[0].getDate()).toBe(1);
     expect(axis.days[axis.days.length - 1].getDate()).toBe(31);
   });

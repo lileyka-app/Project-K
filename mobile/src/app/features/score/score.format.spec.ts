@@ -1,6 +1,7 @@
 import {
   dateOnly,
   filterSheet,
+  notHeldLine,
   parseDay,
   periodApiQuery,
   periodOptions,
@@ -94,5 +95,11 @@ describe('score format', () => {
     expect(parseDay('2026-10-05').getDate()).toBe(5);
     expect(shortDate('2026-10-05')).toBe('05.10');
     expect(shortDate('2026-10-05', true)).toBe('05.10.2026');
+  });
+
+  it('says who called the meeting off, and when, in the phone’s own time', () => {
+    const at = new Date(2026, 9, 6, 19, 5);
+    expect(notHeldLine({ markedByName: 'Гуртковий', markedAtUtc: at.toISOString() })).toBe('Гуртковий, 6 жовтня 2026, 19:05');
+    expect(notHeldLine({ markedByName: null, markedAtUtc: at.toISOString() })).toMatch(/^хтось із проводу, /);
   });
 });

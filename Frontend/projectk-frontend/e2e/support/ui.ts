@@ -119,9 +119,3 @@ export async function openWarningPanel(page: Page): Promise<void> {
   await page.locator('.member-actions').getByRole('button', { name: 'Перестороги' }).click();
   await expect(page.getByRole('dialog', { name: 'Перестороги' })).toBeVisible();
 }
-
-export async function acceptBrowserConfirm(page: Page): Promise<void> {
-  page.once('dialog', async confirmDialog => {
-    await confirmDialog.accept();
-  });
-}

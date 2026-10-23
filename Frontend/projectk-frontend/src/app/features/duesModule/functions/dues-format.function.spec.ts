@@ -12,8 +12,8 @@ describe('dues entry sign', () => {
 
   it('takes a correction as entered, either way', () => {
     expect(duesAmountLabel({ kind: DuesEntryKind.Correction, amount: -60 })).toBe('−60 ₴');
-    expect(isIncomingDues({ kind: DuesEntryKind.Correction, amount: -60 })).toBeFalse();
-    expect(isIncomingDues({ kind: DuesEntryKind.Correction, amount: 60 })).toBeTrue();
+    expect(isIncomingDues({ kind: DuesEntryKind.Correction, amount: -60 })).toBe(false);
+    expect(isIncomingDues({ kind: DuesEntryKind.Correction, amount: 60 })).toBe(true);
   });
 
   it('leaves an exchange between cash and card unsigned', () => {

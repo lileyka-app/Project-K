@@ -73,8 +73,8 @@ export interface PasswordResetPayload {
   providedIn: 'root'
 })
 export class OnboardingService {
-  private apiUrl = `${environment.apiUrl}/auth/onboarding`;
-  private http = inject(HttpClient);
+  private readonly apiUrl = `${environment.apiUrl}/auth/onboarding`;
+  private readonly http = inject(HttpClient);
 
   submitWaitlist(registration: WaitlistRegistration): Observable<string> {
     return this.http.post<string>(`${this.apiUrl}/waitlist`, registration);

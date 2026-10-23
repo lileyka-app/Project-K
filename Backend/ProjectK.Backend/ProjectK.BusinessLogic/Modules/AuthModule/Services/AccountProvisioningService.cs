@@ -15,20 +15,20 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly RefreshTokenInvalidation _sessions;
 
     public AccountProvisioningService(
         UserManager<AppUser> userManager,
         IUnitOfWork unitOfWork,
         TimeProvider timeProvider,
         ICurrentUserContext currentUserContext,
-        IRefreshTokenStore refreshTokens)
+        RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _timeProvider = timeProvider;
         _currentUserContext = currentUserContext;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
     }
 
     public async Task<AccountAvailability> CheckAvailabilityAsync(
@@ -208,7 +208,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
 
         // The address is what a password reset goes to, so a session opened under the old one
         // must not outlive the change.
-        await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
+        await _sessions.RevokeRefreshTokenAsync(user, cancellationToken);
         return new ServiceResult<Guid>(ResultType.Success, user.Id);
     }
 

@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Models.Authorization;
@@ -22,6 +23,9 @@ namespace ProjectK.Common.Models.Authorization;
 /// within their reach too; the Виховник and the Зв'язковий also keep the КВ's private score.</item>
 /// <item>the bare <b>Member</b> — read within the kurin plus own profile/progress.</item>
 /// </list>
+/// The pairs listed in <see cref="KurinCapabilities"/> are not granted here: each kurin sets them in
+/// its <see cref="KurinAccessPolicy"/>, and <see cref="Resolve(IEnumerable{string}, KurinAccessPolicy)"/>
+/// adds them on top. Only the self-service <c>Own</c> grants of those pairs stay static.
 /// </summary>
 public static class RolePermissionMap
 {
@@ -44,7 +48,7 @@ public static class RolePermissionMap
     // submit own badge progress.
     private static readonly IReadOnlyList<Permission> MemberGrants = BuildMemberGrants();
 
-    // Курінний провід: plan and raise agenda for the kurin, then own what they raised.
+    // Курінний провід: plan for the kurin, and own the agenda items they raised.
     private static readonly IReadOnlyList<Permission> KurinProvidGrants =
         BuildProvidGrants(AccessScope.KurinWide);
 
@@ -95,16 +99,37 @@ public static class RolePermissionMap
     // Admin: everything, kurin-wide. The scope check still pins a stepped-in admin to their kurin.
     private static readonly IReadOnlyList<Permission> AdminGrants = BuildAdminGrants();
 
-    /// <summary>Expands a set of role names into the union of their permissions.</summary>
-    public static IReadOnlyCollection<Permission> Resolve(IEnumerable<string> roles)
+    /// <summary>
+    /// Expands a set of role names into the union of their permissions under the default kurin
+    /// policy. Where the kurin is known, resolve against its own policy instead.
+    /// </summary>
+    public static IReadOnlyCollection<Permission> Resolve(IEnumerable<string> roles) =>
+        Resolve(roles, KurinAccessPolicy.Default);
+
+    /// <summary>
+    /// Expands a set of role names into the union of their permissions in a kurin with
+    /// <paramref name="policy"/>: the static grants, plus what the policy gives their audiences.
+    /// </summary>
+    public static IReadOnlyCollection<Permission> Resolve(IEnumerable<string> roles, KurinAccessPolicy policy)
+    {
+        var held = roles as IReadOnlyCollection<string> ?? roles.ToList();
+        var permissions = CollectStaticGrants(held);
+        permissions.UnionWith(policy.Grants(PolicyAudiences.For(held)));
+        return permissions;
+    }
+
+    /// <summary>
+    /// The grants that do not depend on any kurin's policy. Holds no configurable pair except the
+    /// self-service <c>Own</c> ones — and, for the admin, everything.
+    /// </summary>
+    public static IReadOnlySet<Permission> StaticGrants(IEnumerable<string> roles) => CollectStaticGrants(roles);
+
+    private static HashSet<Permission> CollectStaticGrants(IEnumerable<string> roles)
     {
         var permissions = new HashSet<Permission>();
         foreach (var role in roles)
         {
-            foreach (var permission in GrantsFor(role))
-            {
-                permissions.Add(permission);
-            }
+            permissions.UnionWith(GrantsFor(role));
         }
 
         return permissions;
@@ -163,14 +188,7 @@ public static class RolePermissionMap
     public static bool GrantsGroupLeadership(IEnumerable<string> roles) =>
         WidestScope(Resolve(roles), ResourceType.Group, ResourceAction.Update) is not null;
 
-    /// <summary>
-    /// Whether the roles may raise agenda items. Creation has no existing resource to scope against,
-    /// so it is gated as a capability here and the target kurin is checked separately.
-    /// </summary>
-    public static bool GrantsAgendaAuthoring(IEnumerable<string> roles) =>
-        WidestScope(Resolve(roles), ResourceType.AgendaItem, ResourceAction.Create) is not null;
-
-    /// <summary>Whether the roles may open a planning session. Gated as a capability, like agenda creation.</summary>
+    /// <summary>Whether the roles may open a planning session. Creation has no existing resource to scope against.</summary>
     public static bool GrantsPlanningAuthoring(IEnumerable<string> roles) =>
         WidestScope(Resolve(roles), ResourceType.PlanningSession, ResourceAction.Create) is not null;
 
@@ -297,7 +315,8 @@ public static class RolePermissionMap
     private static List<Permission> BuildMemberGrants()
     {
         var grants = new List<Permission>();
-        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources))
+        var policyRead = AllResources.Where(resource => KurinCapabilities.IsConfigurable(resource, ResourceAction.Read));
+        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources).Except(policyRead))
         {
             grants.Add(new Permission(resource, ResourceAction.Read, AccessScope.KurinWide));
         }
@@ -306,17 +325,15 @@ public static class RolePermissionMap
         grants.Add(new Permission(ResourceType.GroupScore, ResourceAction.Read, AccessScope.Own));
         grants.Add(new Permission(ResourceType.Member, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Create, AccessScope.Own));
-        grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Create, AccessScope.Own));
-        grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Delete, AccessScope.Own));
         return grants;
     }
 
     /// <summary>
-    /// What every провід member gets: plan and raise agenda items, then edit or drop the ones they
-    /// authored. Agenda creation is always kurin-wide — who sees an item is decided by its assignment,
-    /// not by the author's scope.
+    /// What every провід member gets: plan, then edit or drop the agenda items they authored. Whom
+    /// they may assign items to is the kurin's policy (<see cref="KurinCapability.AssignGroups"/> and
+    /// its row-mates), not a grant here.
     /// </summary>
     private static List<Permission> BuildProvidGrants(AccessScope planningScope)
     {
@@ -325,7 +342,6 @@ public static class RolePermissionMap
             new(ResourceType.PlanningSession, ResourceAction.Create, planningScope),
             new(ResourceType.PlanningSession, ResourceAction.Update, AccessScope.Own),
             new(ResourceType.PlanningSession, ResourceAction.Delete, AccessScope.Own),
-            new(ResourceType.AgendaItem, ResourceAction.Create, AccessScope.KurinWide),
             new(ResourceType.AgendaItem, ResourceAction.Update, AccessScope.Own),
             new(ResourceType.AgendaItem, ResourceAction.Delete, AccessScope.Own)
         };
@@ -362,7 +378,7 @@ public static class RolePermissionMap
         // He scores his гурток, and with the other впорядники keeps the КВ's own score.
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.GroupScore, action, AccessScope.OwnGroups)));
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.KurinScorePrivate, action, AccessScope.KurinWide)));
-        return grants;
+        return WithoutPolicyPairs(grants);
     }
 
     private static List<Permission> BuildZvyazkovyiGrants()
@@ -394,8 +410,14 @@ public static class RolePermissionMap
         // Kurin settings, but not the irreversible Delete/Manage (Admin-only).
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Create, AccessScope.KurinWide));
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Update, AccessScope.KurinWide));
-        return grants;
+        return WithoutPolicyPairs(grants);
     }
+
+    // The kurin's policy decides these; granting them here too would make its "no" mean nothing.
+    private static List<Permission> WithoutPolicyPairs(IEnumerable<Permission> grants) =>
+        grants
+            .Where(grant => grant.Scope == AccessScope.Own || !KurinCapabilities.IsConfigurable(grant.Resource, grant.Action))
+            .ToList();
 
     private static List<Permission> BuildAdminGrants()
     {

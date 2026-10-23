@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -14,22 +13,19 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa
 public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand, ServiceResult<bool>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IRefreshTokenStore _refreshTokens;
-    private readonly ILogger<DisableOwnMfaCommandHandler> _logger;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IActivityLogger _activityLogger;
     private readonly IAccessContextResolver _access;
 
     public DisableOwnMfaCommandHandler(
         UserManager<AppUser> userManager,
-        ILogger<DisableOwnMfaCommandHandler> logger,
         IActivityLogger activityLogger,
-        IRefreshTokenStore refreshTokens,
+        RefreshTokenInvalidation sessions,
         IAccessContextResolver access)
     {
         _userManager = userManager;
-        _logger = logger;
         _activityLogger = activityLogger;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
         _access = access;
     }
 
@@ -69,7 +65,7 @@ public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand,
         {
             // Only once the change is stored. RevokeAllAsync commits on its own, so ending
             // the sessions first signed every device out even when this update failed.
-            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
+            await _sessions.RevokeRefreshTokenAsync(user, cancellationToken);
 
             _activityLogger.LogAudit(
                 action: "Account.MfaDisabled",

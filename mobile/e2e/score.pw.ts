@@ -86,22 +86,24 @@ interface Asked {
 
 /** The score endpoints; `scorer` gives the гурток's canScore, `youth` refuses its page. */
 function scoreApi(asked: Asked, options: { scorer?: boolean; youth?: boolean } = {}): ExtraApi {
-  return ({ method, path, query, body }): Answer | null => {
-    const decoded = decodeURIComponent(path);
-    if (method === 'GET' && path === 'kurin/k1/score') {
+  const read = (path: string, decoded: string, query: URLSearchParams): Answer | null => {
+    if (path === 'kurin/k1/score') {
       asked.kurinYears.push(query.get('year'));
       return ok(kurinScore(Number(query.get('year') ?? 2026)));
     }
-    if (method === 'GET' && path === 'kurin/k1/score/groups/g1') return options.youth ? refuse(403, 'Forbidden') : ok(groupScore(options.scorer ?? true));
-    if (method === 'GET' && path === 'agenda/item/e1') return ok({ agendaItemKey: 'e1', startUtc: START });
-    if (decoded === `kurin/k1/score/events/e1/${START}`) {
-      return method === 'GET' ? ok(sheet()) : null;
-    }
-    if (method === 'POST' && decoded === `kurin/k1/score/events/e1/${START}/attendance`) {
-      const keys: string[] = body.membershipKeys ?? [];
-      if (keys.includes('ms5')) return refuse(500);
-      return ok(keys.map((k) => ({ membershipKey: k, outcome: k === 'ms2' ? 'AlreadyMarked' : 'Marked', markedByName: k === 'ms2' ? 'Марта Гнатів' : null })));
-    }
+    if (path === 'kurin/k1/score/groups/g1') return options.youth ? refuse(403, 'Forbidden') : ok(groupScore(options.scorer ?? true));
+    if (path === 'agenda/item/e1') return ok({ agendaItemKey: 'e1', startUtc: START });
+    if (decoded === `kurin/k1/score/events/e1/${START}`) return ok(sheet());
+    return null;
+  };
+  const mark = (keys: string[]): Answer => {
+    if (keys.includes('ms5')) return refuse(500);
+    return ok(keys.map((k) => ({ membershipKey: k, outcome: k === 'ms2' ? 'AlreadyMarked' : 'Marked', markedByName: k === 'ms2' ? 'Марта Гнатів' : null })));
+  };
+  return ({ method, path, query, body }): Answer | null => {
+    const decoded = decodeURIComponent(path);
+    if (method === 'GET') return read(path, decoded, query);
+    if (method === 'POST' && decoded === `kurin/k1/score/events/e1/${START}/attendance`) return mark(body.membershipKeys ?? []);
     if (method === 'DELETE' && decoded.startsWith(`kurin/k1/score/events/e1/${START}/attendance/`)) return { status: 200, empty: true };
     if (method === 'POST' && path === 'kurin/k1/score/entries') return { status: 201, json: 'new-entry' };
     if (method === 'PUT' && path.startsWith('kurin/k1/score/entries/')) return { status: 200, empty: true };

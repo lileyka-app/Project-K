@@ -90,3 +90,20 @@
   color: var(--p-text-muted-color);
   font-size: var(--lil-text-caption);
 }
+
+.duties-tile__item {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.duties-tile__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.duties-tile__hidden {
+  display: flex;
+  justify-content: center;
+}

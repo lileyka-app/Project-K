@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -9,7 +10,7 @@ import { LoginResponse } from '../../../authModule/models/login-response.model';
 describe('DevToolsService', () => {
   let service: DevToolsService;
   let http: HttpTestingController;
-  let auth: jasmine.SpyObj<AuthService>;
+  let auth: MockedObject<AuthService>;
 
   const login: LoginResponse = {
     userKey: 'zv-1', memberKey: 'm-1', email: 'zv@example.com', isAdmin: false,
@@ -18,8 +19,11 @@ describe('DevToolsService', () => {
   } as LoginResponse;
 
   beforeEach(() => {
-    auth = jasmine.createSpyObj<AuthService>('AuthService', ['applyLoginResponse', 'getAuthStateValue']);
-    auth.getAuthStateValue.and.returnValue(null);
+    auth = {
+      applyLoginResponse: vi.fn(),
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    auth.getAuthStateValue.mockReturnValue(null);
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthService, useValue: auth }]
     });
@@ -38,11 +42,11 @@ describe('DevToolsService', () => {
 
     const req = http.expectOne(`${environment.apiUrl}/dev/impersonate`);
     expect(req.request.body).toEqual({ role: 'Zvyazkovyi' });
-    expect(req.request.withCredentials).toBeTrue();
+    expect(req.request.withCredentials).toBe(true);
     req.flush({ login, returnTicket: 'ticket-1', role: 'Zvyazkovyi', kurinKey: 'k-1' });
 
     expect(auth.applyLoginResponse).toHaveBeenCalledWith(login);
-    expect(service.hasReturnTicket()).toBeTrue();
+    expect(service.hasReturnTicket()).toBe(true);
     expect(service.borrowedRole()).toBe('Zvyazkovyi');
   });
 
@@ -83,7 +87,7 @@ describe('DevToolsService', () => {
 
   it('does not spend the ticket when the administrator is already themselves', () => {
     localStorage.setItem('lileyka-dev-return-ticket', 'ticket-leftover');
-    auth.getAuthStateValue.and.returnValue({ isAdmin: true } as ReturnType<AuthService['getAuthStateValue']>);
+    auth.getAuthStateValue.mockReturnValue({ isAdmin: true } as ReturnType<AuthService['getAuthStateValue']>);
 
     service.impersonate('Member').subscribe();
 
@@ -116,7 +120,7 @@ describe('DevToolsService', () => {
     req.flush({ ...login, userKey: 'admin-1', isAdmin: true });
 
     expect(auth.applyLoginResponse).toHaveBeenCalled();
-    expect(service.hasReturnTicket()).toBeFalse();
+    expect(service.hasReturnTicket()).toBe(false);
     expect(service.borrowedRole()).toBeNull();
   });
 
@@ -126,6 +130,6 @@ describe('DevToolsService', () => {
     service.returnToAdmin().subscribe({ error: () => undefined });
     http.expectOne(`${environment.apiUrl}/dev/return`).flush('down', { status: 503, statusText: 'Unavailable' });
 
-    expect(service.hasReturnTicket()).toBeTrue();
+    expect(service.hasReturnTicket()).toBe(true);
   });
 });

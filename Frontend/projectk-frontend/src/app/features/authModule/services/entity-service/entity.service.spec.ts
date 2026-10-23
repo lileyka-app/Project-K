@@ -38,7 +38,7 @@ describe('EntityService', () => {
     service = TestBed.inject(EntityService);
     httpMock = TestBed.inject(HttpTestingController);
     cache = TestBed.inject(ClientCacheService);
-    spyOn(console, 'debug');
+    vi.spyOn(console, 'debug').mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -63,23 +63,26 @@ describe('EntityService', () => {
     service.checkEntityAccess('group', 'g-1', 'Update').subscribe();
     service.checkEntityAccess('group', 'g-1', 'Create').subscribe();
 
-    expect(httpMock.match(url).length).toBe(2);
+    expect(httpMock.match(url)).toHaveLength(2);
   });
 
   it('asks again from another kurin, and after the kurin scope is dropped', () => {
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    const answers: boolean[] = [];
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answers.push(a));
     httpMock.expectOne(url).flush(true);
 
     state = signedIn('kurin-2');
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answers.push(a));
     httpMock.expectOne(url).flush(false);
 
     // What the auth service does on a scope switch.
     for (const prefix of KURIN_SCOPED_CACHE_PREFIXES) {
       cache.invalidateByPrefix(prefix);
     }
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answers.push(a));
     httpMock.expectOne(url).flush(true);
+
+    expect(answers).toEqual([true, false, true]);
   });
 
   it('keeps one person\'s answer from another person', () => {
@@ -91,15 +94,20 @@ describe('EntityService', () => {
     service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answer = a);
     httpMock.expectOne(url).flush(false);
 
-    expect(answer).toBeFalse();
+    expect(answer).toBe(false);
   });
 
   it('does not keep a refused answer', () => {
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe({ error: () => undefined });
+    let failed = false;
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe({ error: () => failed = true });
     httpMock.expectOne(url).flush('nope', { status: 500, statusText: 'Server Error' });
 
-    service.checkEntityAccess('member', 'm-1', 'Update').subscribe();
+    let answer: boolean | undefined;
+    service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answer = a);
     httpMock.expectOne(url).flush(true);
+
+    expect(failed).toBe(true);
+    expect(answer).toBe(true);
   });
 
   it('is scoped to the kurin, so a scope switch forgets it', () => {

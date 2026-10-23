@@ -8,10 +8,13 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberWarningHandlers;
 
@@ -23,10 +26,13 @@ public class MemberWarningHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<AutoMapper.IMapper> _mapperMock;
+    private readonly Mock<IResourceAccessService> _access = new();
 
     private readonly AssignMemberWarningCommandHandler _assignHandler;
     private readonly FixedTimeProvider _clock;
     private readonly CancelMemberWarningCommandHandler _cancelHandler;
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly JournalRecorder _journal;
 
     public MemberWarningHandlerTests()
     {
@@ -42,14 +48,24 @@ public class MemberWarningHandlerTests
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(_kurinKey);
+        _journal = new JournalRecorder(_currentUserContextMock.Object);
+
+        // A впорядник by default: every level is his to give, someone else's is not his to cancel.
+        _access.Setup(x => x.CheckCapabilityAsync(It.IsAny<KurinCapability>(), It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
+        _access.Setup(x => x.CheckCapabilityAsync(KurinCapability.CancelWarning, It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("Not his to cancel."));
 
         _assignHandler = new AssignMemberWarningCommandHandler(
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _access.Object,
+            _journal.Audit);
         _clock = new FixedTimeProvider(new DateTimeOffset(2026, 8, 26, 9, 0, 0, TimeSpan.Zero));
-        _cancelHandler = new CancelMemberWarningCommandHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object, _clock);
+        _cancelHandler = new CancelMemberWarningCommandHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object, _clock, _access.Object, _journal.Audit);
     }
 
     [Fact]
@@ -84,6 +100,17 @@ public class MemberWarningHandlerTests
         created.ExpiresAtUtc.Should().BeOnOrAfter(before.AddMonths(3)).And.BeOnOrBefore(after.AddMonths(3));
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Warning);
+        entry.Action.Should().Be(AuditActions.Warning.Given);
+        entry.ActorUserKey.Should().Be(userKey);
+        entry.SubjectKey.Should().Be(created.MemberWarningKey);
+        entry.SubjectMemberKey.Should().Be(memberKey);
+        entry.SubjectLabel.Should().Be("1-а пересторога");
+        entry.Changes.Should().Equal(
+            new AuditChange("level", null, "Level1"),
+            new AuditChange("expiresAtUtc", null, AuditChanges.Format(created.ExpiresAtUtc)));
     }
 
     [Fact]
@@ -234,6 +261,7 @@ public class MemberWarningHandlerTests
 
         result.Type.Should().Be(ResultType.Forbidden);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _journal.Entries.Should().BeEmpty();
     }
 
     [Fact]
@@ -263,5 +291,11 @@ public class MemberWarningHandlerTests
         warning.RevokedAtUtc.Should().NotBeNull();
         warning.RevokedByUserKey.Should().Be(userKey);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Action.Should().Be(AuditActions.Warning.Cancelled);
+        entry.SubjectKey.Should().Be(warningKey);
+        entry.Changes.Select(change => change.Field).Should().Equal("level", "issuedAtUtc", "expiresAtUtc");
+        entry.Changes.Should().OnlyContain(change => change.To == null);
     }
 }

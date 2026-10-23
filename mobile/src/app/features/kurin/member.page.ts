@@ -31,7 +31,7 @@ import { formatPhone } from '../../core/phone';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
-import { dateLabel } from '../../me/labels';
+import { dateLabel, dayMonthLabel } from '../../me/labels';
 import { AwardSheet } from './award.sheet';
 import {
   AwardGroup,
@@ -44,6 +44,7 @@ import {
   awardGroups,
   awardTitle,
   awardWeight,
+  bornOn,
   currentOffices,
   dateOnly,
   duesAmountLabel,
@@ -73,10 +74,12 @@ import {
   CardFields,
   GroupDto,
   MemberAwardDto,
+  MemberDataGroup,
   MemberDto,
   MemberDuesDto,
   MembershipDto,
 } from './kurin.models';
+import { MemberAbilities, NO_ABILITIES, awardRights } from './abilities';
 import { KurinApi, ProtectedImages } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
 import { DEFAULT_CARD_FIELDS, cardExtraRows } from './member-edit';
@@ -93,6 +96,8 @@ interface Skills {
 }
 
 const STANDING: Record<string, string | null> = { Current: null, Moved: 'переведений', Left: 'вибув' };
+
+/** What a field the kurin hides from this viewer says instead of its value. */
 
 /**
  * A member card (web member-card): profile and contacts, skills, probes and awards (youth only),
@@ -292,15 +297,19 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
 
             <ion-list [inset]="true" data-testid="contacts">
               <ion-item-group>
-                <ion-item [href]="emailHref(m.email)" [detail]="false">
-                  <ion-label><h3>Email</h3><p>{{ m.email || 'Не вказано' }}</p></ion-label>
-                </ion-item>
-                <ion-item [href]="phoneHref(m.phoneNumber)" [detail]="false">
-                  <ion-label><h3>Телефон</h3><p>{{ formatPhone(m.phoneNumber) || 'Не вказано' }}</p></ion-label>
-                </ion-item>
-                <ion-item>
-                  <ion-label><h3>Дата народження</h3><p>{{ birthDate() }}</p></ion-label>
-                </ion-item>
+                @if (!hides('contacts')) {
+                  <ion-item [href]="emailHref(m.email)" [detail]="false">
+                    <ion-label><h3>Email</h3><p>{{ m.email || 'Не вказано' }}</p></ion-label>
+                  </ion-item>
+                  <ion-item [href]="phoneHref(m.phoneNumber)" [detail]="false">
+                    <ion-label><h3>Телефон</h3><p>{{ formatPhone(m.phoneNumber) || 'Не вказано' }}</p></ion-label>
+                  </ion-item>
+                }
+                @if (birthDate(); as born) {
+                  <ion-item>
+                    <ion-label><h3>Дата народження</h3><p>{{ born }}</p></ion-label>
+                  </ion-item>
+                }
                 @for (row of privateRows(); track row.key) {
                   <ion-item [attr.data-testid]="'card-' + row.key">
                     <ion-label class="ion-text-wrap"><h3>{{ row.label }}</h3><p>{{ row.value }}</p></ion-label>
@@ -393,7 +402,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                 <ion-list-header><ion-label>Відзначення УПЮ</ion-label></ion-list-header>
                 <ion-item-group>
                   @for (group of awards(); track group.level) {
-                    <ion-item [button]="canEdit()" [detail]="canEdit()" (click)="openAward(group.latest)" data-testid="award">
+                    <ion-item [button]="canOpenAward(group.latest)" [detail]="canOpenAward(group.latest)" (click)="openAward(group.latest)" data-testid="award">
                       @if (awardImage(group.latest); as src) { <img class="thumb" slot="start" [src]="src" alt="" /> }
                       @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
                       <ion-label class="ion-text-wrap">
@@ -566,6 +575,8 @@ export class MemberPage implements OnInit {
   protected readonly probes = signal<Loaded<ProbeRow[]>>({ state: 'loading' });
   protected readonly dues = signal<MemberDuesDto | null>(null);
   protected readonly canUpdate = signal(false);
+  /** What the kurin's policy lets this person do to the member (web member-card abilities). */
+  protected readonly abilities = signal<MemberAbilities>(NO_ABILITIES);
   protected readonly verificationEnabled = signal(false);
   /** What the kurin's край asks on the card; null until read (the edit sheet then reads it itself). */
   private readonly cardFields = signal<CardFields | null>(null);
@@ -578,8 +589,8 @@ export class MemberPage implements OnInit {
   protected readonly canEditProfile = computed(() => this.canUpdate() && !!this.memberValue());
   /** Skills and awards: whoever the server lets change the card (web canEditMember). */
   protected readonly canEdit = computed(() => this.canUpdate());
-  /** Confirming skills and awards: a reviewer who may change this card (web canInlineModerateSkills). */
-  protected readonly canModerate = computed(() => kurinAccess(this.auth.user()).reviewSkills && this.canUpdate());
+  /** Confirming and removing вмілості: the kurin lets this person review the member's (web canInlineModerateSkills). */
+  protected readonly canModerate = computed(() => this.abilities().badges.review);
   /** Probes, skills and awards are the youth's; known once the card and memberships are read. */
   protected readonly youth = computed(() => {
     const m = this.memberValue();
@@ -590,7 +601,12 @@ export class MemberPage implements OnInit {
     return (m && plastLevelLabel(m)) || 'Ступінь не вказано';
   });
   protected readonly warning = computed(() => activeWarning(this.memberValue()?.warnings));
-  /** Address and school when known and the край keeps them on the card. */
+  /** Whether the server hid this group of the person's data from whoever is looking. */
+  protected hides(group: MemberDataGroup): boolean {
+    return this.memberValue()?.hiddenData?.includes(group) ?? false;
+  }
+
+  /** Address, school and parents when known and the край keeps them on the card; hidden ones never come. */
   protected readonly privateRows = computed(() => {
     const card = this.cardFields() ?? DEFAULT_CARD_FIELDS;
     const m = this.memberValue();
@@ -608,9 +624,14 @@ export class MemberPage implements OnInit {
   });
   /** The край's own fields that have a value on this card. */
   protected readonly extraRows = computed(() => cardExtraRows(this.cardFields() ?? DEFAULT_CARD_FIELDS, this.memberValue()?.cardExtras));
+  /** The full date; without the year when only the birthday is shown; nothing when the kurin hides both. */
   protected readonly birthDate = computed(() => {
-    const born = dateOnly(this.memberValue()?.dateOfBirth);
-    return born ? dateLabel(born) : 'Не вказано';
+    const m = this.memberValue();
+    const born = dateOnly(m?.dateOfBirth);
+    if (born) return dateLabel(born);
+    const day = m?.birthday ? bornOn(m) : null;
+    if (day) return dayMonthLabel(new Date(2000, day.month, day.day));
+    return this.hides('birthDate') ? null : 'Не вказано';
   });
   private readonly skillViews = computed(() => {
     const s = valueOf(this.skills());
@@ -819,12 +840,23 @@ export class MemberPage implements OnInit {
     if (data) await this.loadSkills(key);
   }
 
+  /** The server's rules for one award: change it, confirm its level, withdraw or remove it. */
+  private awardRightsOf(award: MemberAwardDto) {
+    return awardRights(award, this.abilities(), this.canEdit(), this.auth.user()?.userKey, this.isOwnCard());
+  }
+
+  protected canOpenAward(award: MemberAwardDto): boolean {
+    const rights = this.awardRightsOf(award);
+    return rights.edit || rights.confirm || rights.remove;
+  }
+
   protected async openAward(award: MemberAwardDto | null): Promise<void> {
     const key = this.key();
-    if (!key || !this.canEdit()) return;
+    if (!key || (award ? !this.canOpenAward(award) : !this.canEdit())) return;
+    const rights = award ? this.awardRightsOf(award) : { edit: this.canEdit(), confirm: false, remove: false };
     const modal = await this.modals.create({
       component: AwardSheet,
-      componentProps: { memberKey: key, award, canEdit: this.canEdit(), canReview: this.canModerate() },
+      componentProps: { memberKey: key, award, canEdit: rights.edit, canReview: rights.confirm, canRemove: rights.remove },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -838,7 +870,13 @@ export class MemberPage implements OnInit {
     if (!key || !member) return;
     const modal = await this.modals.create({
       component: ProfileEditSheet,
-      componentProps: { member, own: this.isOwnCard(), verificationEnabled: this.verificationEnabled(), cardFields: this.cardFields() },
+      componentProps: {
+        member,
+        own: this.isOwnCard(),
+        verificationEnabled: this.verificationEnabled(),
+        cardFields: this.cardFields(),
+        abilities: this.abilities(),
+      },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -861,6 +899,10 @@ export class MemberPage implements OnInit {
       this.data.canUpdateMember(key).then(
         (allowed) => this.canUpdate.set(allowed),
         () => this.canUpdate.set(false),
+      ),
+      this.data.abilities(key).then(
+        (abilities) => this.abilities.set(abilities),
+        () => this.abilities.set(NO_ABILITIES),
       ),
       // A youth may read only their own вкладка: for anyone else the server refuses and the tile stays away.
       this.data.dues(key).then(

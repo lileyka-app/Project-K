@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { NavigationError } from '@angular/router';
 
 import {
@@ -11,12 +12,12 @@ function navigationError(error: unknown, url = '/kurin/registry'): NavigationErr
 }
 
 describe('staleAppShell', () => {
-  let goTo: jasmine.Spy<(url: string) => void>;
+  let goTo: Mock;
 
   beforeEach(() => {
     sessionStorage.clear();
     // Куди йти — параметр саме заради цього: справжній перехід забрав би з собою сторінку карми.
-    goTo = jasmine.createSpy('goTo');
+    goTo = vi.fn().mockName('goTo');
   });
 
   afterEach(() => sessionStorage.clear());
@@ -33,14 +34,14 @@ describe('staleAppShell', () => {
     'Failed to load module script: MIME type text/html'
   ].forEach(message => {
     it(`should recognise "${message.slice(0, 40)}…" as a stale shell`, () => {
-      expect(isStaleAppShellError(new Error(message))).toBeTrue();
+      expect(isStaleAppShellError(new Error(message))).toBe(true);
     });
   });
 
   it('should leave ordinary navigation failures alone', () => {
-    expect(isStaleAppShellError(new Error('Cannot match any routes. URL Segment: nope'))).toBeFalse();
-    expect(isStaleAppShellError(null)).toBeFalse();
-    expect(isStaleAppShellError(undefined)).toBeFalse();
+    expect(isStaleAppShellError(new Error('Cannot match any routes. URL Segment: nope'))).toBe(false);
+    expect(isStaleAppShellError(null)).toBe(false);
+    expect(isStaleAppShellError(undefined)).toBe(false);
   });
 
   it('should reload at the url the person was going to', () => {
@@ -49,8 +50,9 @@ describe('staleAppShell', () => {
       goTo
     );
 
-    expect(recovered).toBeTrue();
-    expect(goTo).toHaveBeenCalledOnceWith('/member/42/probe/probe-1');
+    expect(recovered).toBe(true);
+    expect(goTo).toHaveBeenCalledTimes(1);
+    expect(goTo).toHaveBeenCalledWith('/member/42/probe/probe-1');
   });
 
   /**
@@ -60,22 +62,22 @@ describe('staleAppShell', () => {
   it('should try once and then let the error show', () => {
     const error = navigationError(new Error('Failed to fetch dynamically imported module'));
 
-    expect(recoverFromStaleAppShell(error, goTo)).toBeTrue();
-    expect(recoverFromStaleAppShell(error, goTo)).toBeFalse();
+    expect(recoverFromStaleAppShell(error, goTo)).toBe(true);
+    expect(recoverFromStaleAppShell(error, goTo)).toBe(false);
     expect(goTo).toHaveBeenCalledTimes(1);
   });
 
   it('should allow a fresh attempt once the app has navigated successfully again', () => {
     const error = navigationError(new Error('Failed to fetch dynamically imported module'));
 
-    expect(recoverFromStaleAppShell(error, goTo)).toBeTrue();
+    expect(recoverFromStaleAppShell(error, goTo)).toBe(true);
     clearStaleAppShellMarker();
-    expect(recoverFromStaleAppShell(error, goTo)).toBeTrue();
+    expect(recoverFromStaleAppShell(error, goTo)).toBe(true);
     expect(goTo).toHaveBeenCalledTimes(2);
   });
 
   it('should not touch a navigation that failed for any other reason', () => {
-    expect(recoverFromStaleAppShell(navigationError(new Error('Forbidden')), goTo)).toBeFalse();
+    expect(recoverFromStaleAppShell(navigationError(new Error('Forbidden')), goTo)).toBe(false);
     expect(goTo).not.toHaveBeenCalled();
   });
 });

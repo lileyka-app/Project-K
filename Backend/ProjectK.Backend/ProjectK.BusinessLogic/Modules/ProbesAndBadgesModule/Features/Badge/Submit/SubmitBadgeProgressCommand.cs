@@ -1,11 +1,12 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -35,19 +36,28 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IKurinCatalog _kurinCatalog;
+    private readonly IKurinAudit _audit;
+    private readonly IKurinJournalReader _journal;
+    private readonly IBadgesCatalogService _badges;
 
     public SubmitBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IKurinCatalog kurinCatalog)
+        IKurinCatalog kurinCatalog,
+        IKurinAudit audit,
+        IKurinJournalReader journal,
+        IBadgesCatalogService badges)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
         _events = events;
         _kurinCatalog = kurinCatalog;
+        _audit = audit;
+        _journal = journal;
+        _badges = badges;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(SubmitBadgeProgressCommand request, CancellationToken cancellationToken)
@@ -73,7 +83,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
 
         if (progress?.Status == BadgeProgressStatus.Submitted)
         {
-            return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
+            return await RespondAsync(progress, cancellationToken);
         }
 
         // Only a new start is held to the kurin's catalogue: a вмілість already in work stays the
@@ -84,7 +94,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         }
 
         var now = DateTime.UtcNow;
-        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var previousStatus = progress?.Status;
 
         if (progress is null)
         {
@@ -98,24 +108,10 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
                 ReviewNote = request.Note
             };
 
-            progress.AuditEvents.Add(new BadgeProgressAuditEvent
-            {
-                FromStatus = null,
-                ToStatus = BadgeProgressStatus.Submitted,
-                Action = "Submitted",
-                ActorUserKey = actor.UserKey,
-                ActorName = actor.Name,
-                ActorRole = actor.Role,
-                OccurredAtUtc = now,
-                Note = request.Note
-            });
-
             _unitOfWork.BadgeProgresses.Create(progress, cancellationToken);
         }
         else
         {
-            var previousStatus = progress.Status;
-
             progress.Status = BadgeProgressStatus.Submitted;
             progress.SubmittedAtUtc = now;
             progress.ReviewedAtUtc = null;
@@ -123,20 +119,18 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
             progress.ReviewedByName = null;
             progress.ReviewedByRole = null;
             progress.ReviewNote = request.Note;
-
-            progress.AuditEvents.Add(new BadgeProgressAuditEvent
-            {
-                FromStatus = previousStatus,
-                ToStatus = BadgeProgressStatus.Submitted,
-                Action = "Resubmitted",
-                ActorUserKey = actor.UserKey,
-                ActorName = actor.Name,
-                ActorRole = actor.Role,
-                OccurredAtUtc = now,
-                Note = request.Note
-            });
-
         }
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Badge,
+                previousStatus is null ? AuditActions.Badge.Submitted : AuditActions.Badge.Resubmitted,
+                progress.BadgeProgressKey,
+                ProgressAuditLabels.Badge(_badges, progress.BadgeId),
+                request.MemberKey,
+                AuditChanges.Of(("status", previousStatus, progress.Status)),
+                request.Note),
+            cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
@@ -146,7 +140,13 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
 
         await PublishSubmittedAsync(member, progress, cancellationToken);
 
-        return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
+        return await RespondAsync(progress, cancellationToken);
+    }
+
+    private async Task<ServiceResult<BadgeProgressResponse>> RespondAsync(BadgeProgress progress, CancellationToken cancellationToken)
+    {
+        var journal = await _journal.GetForSubjectsAsync([progress.BadgeProgressKey], cancellationToken);
+        return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress, journal));
     }
 
     private async Task<bool> IsOfferedAsync(Guid kurinKey, string badgeId, CancellationToken cancellationToken)

@@ -54,5 +54,5 @@ export function base64UrlBytes(text: string): Uint8Array {
   let base64 = text.replaceAll('-', '+').replaceAll('_', '/');
   while (base64.endsWith('=')) base64 = base64.slice(0, -1);
   const binary = atob(base64 + '='.repeat((4 - (base64.length % 4)) % 4));
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return Uint8Array.from(binary, (char) => char.codePointAt(0) ?? 0);
 }

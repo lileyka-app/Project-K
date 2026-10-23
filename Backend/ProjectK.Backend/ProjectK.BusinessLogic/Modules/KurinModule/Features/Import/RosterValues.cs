@@ -86,7 +86,7 @@ internal static class RosterValues
             && serial > 0
             && serial < 2958466)
         {
-            return DateOnly.FromDateTime(new DateTime(1899, 12, 30).AddDays(serial));
+            return DateOnly.FromDateTime(new DateTime(1899, 12, 30, 0, 0, 0, DateTimeKind.Utc).AddDays(serial));
         }
 
         return null;

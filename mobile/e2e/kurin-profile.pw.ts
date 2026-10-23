@@ -115,9 +115,12 @@ test('shares the kurin’s PDF report from a phone that shares files', async ({ 
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: (data: ShareData) => !!data.files?.length });
     Object.defineProperty(navigator, 'share', {
       configurable: true,
-      value: async (data: ShareData) => {
-        if (navigator.userActivation && !navigator.userActivation.isActive) throw new DOMException('No tap', 'NotAllowedError');
+      value: (data: ShareData): Promise<void> => {
+        if (navigator.userActivation && !navigator.userActivation.isActive) {
+          return Promise.reject(new DOMException('No tap', 'NotAllowedError'));
+        }
         for (const file of data.files ?? []) shared.push({ name: file.name, type: file.type, size: file.size });
+        return Promise.resolve();
       },
     });
   });

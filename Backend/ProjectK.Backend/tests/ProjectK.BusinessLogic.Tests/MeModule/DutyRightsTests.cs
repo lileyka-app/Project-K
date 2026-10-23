@@ -1,6 +1,8 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using Xunit;
 
@@ -13,7 +15,7 @@ public class DutyRightsTests
     private static readonly Guid Other = Guid.NewGuid();
 
     private static DutyRights Of(LeadershipType type, LeadershipRole role, params Guid[] led) =>
-        new([SystemRole.ForOffice(type, role)], led.ToHashSet());
+        new(RolePermissionMap.Resolve([SystemRole.ForOffice(type, role)]), led.ToHashSet());
 
     [Fact]
     public void TheZvyazkovyi_SeesEverything_InTheKurin()
@@ -61,5 +63,16 @@ public class DutyRightsTests
         rights.ForAnyGroup(ResourceType.BadgeProgress, ResourceAction.Update).Should().BeFalse();
         rights.ForAnyGroup(ResourceType.GroupDues, ResourceAction.Update).Should().BeFalse();
         rights.ForAnyGroup(ResourceType.GroupScore, ResourceAction.Create).Should().BeFalse();
+    }
+
+    // The duty follows the kurin's policy: a kurin that keeps вмілості from впорядники keeps the queue from them too.
+    [Fact]
+    public void ABadgeDuty_FollowsTheKurinsPolicy()
+    {
+        var policy = PolicyAccess.With((KurinCapability.ReviewBadge, PolicyAudience.Vykhovnyk, CapabilityReach.None));
+        var rights = new DutyRights(RolePermissionMap.Resolve([PolicyAccess.Vykhovnyk], policy), new HashSet<Guid> { Led });
+
+        rights.ForAnyGroup(ResourceType.BadgeProgress, ResourceAction.Update).Should().BeFalse();
+        Of(LeadershipType.KV, LeadershipRole.Vykhovnyk, Led).ForGroup(ResourceType.BadgeProgress, ResourceAction.Update, Led).Should().BeTrue();
     }
 }

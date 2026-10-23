@@ -173,7 +173,8 @@ export class SkillsSheet implements OnInit {
    */
   protected close(): void {
     const own = this.host.closest('ion-modal');
-    void (own ? own.dismiss(this.changed) : this.modals.dismiss(this.changed));
+    if (own) void own.dismiss(this.changed);
+    else void this.modals.dismiss(this.changed);
   }
 
   protected approve(skill: SkillView): Promise<void> {

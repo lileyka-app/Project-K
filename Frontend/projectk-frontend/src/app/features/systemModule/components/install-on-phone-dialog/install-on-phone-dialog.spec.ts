@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { MessageService } from '@openng/optimus-ui/api';
 import { of, throwError } from 'rxjs';
@@ -6,7 +7,7 @@ import { InstallOnPhoneDialogComponent } from './install-on-phone-dialog';
 
 describe('InstallOnPhoneDialogComponent', () => {
   const installCode: PhoneAppInstallCode = { url: 'https://lileyka.example/m/install', qrCode: 'data:image/png;base64,AAAA' };
-  let messages: jasmine.SpyObj<MessageService>;
+  let messages: MockedObject<MessageService>;
   let phoneApp: { installCode$: unknown };
 
   function setup(): void {
@@ -20,7 +21,9 @@ describe('InstallOnPhoneDialogComponent', () => {
   }
 
   beforeEach(() => {
-    messages = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
+    messages = {
+      add: vi.fn()
+    } as MockedObject<MessageService>;
     phoneApp = { installCode$: of(installCode) };
   });
 
@@ -43,16 +46,17 @@ describe('InstallOnPhoneDialogComponent', () => {
     fixture.componentRef.setInput('visible', true);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.failed()).toBeTrue();
+    expect(fixture.componentInstance.failed()).toBe(true);
   });
 
   it('shows the address itself when the clipboard refuses', async () => {
     setup();
-    spyOn(navigator.clipboard, 'writeText').and.rejectWith(new Error('denied'));
+    // jsdom has no clipboard at all.
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } });
     const component = TestBed.createComponent(InstallOnPhoneDialogComponent).componentInstance;
 
     await component.copyLink(installCode.url);
 
-    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'warn', detail: installCode.url }));
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'warn', detail: installCode.url }));
   });
 });

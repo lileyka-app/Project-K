@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
@@ -21,12 +20,10 @@ public record GetKurinKvMembersQuery(Guid kurinKey) : IRequest<ServiceResult<IEn
 public class GetKurinKvMembersQueryHandler : IRequestHandler<GetKurinKvMembersQuery, ServiceResult<IEnumerable<MemberLookupDto>>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMapper _mapper;
     private readonly IBlobReadLinks _links;
-    public GetKurinKvMembersQueryHandler(IUnitOfWork uow, IMapper mapper, IBlobReadLinks links)
+    public GetKurinKvMembersQueryHandler(IUnitOfWork uow, IBlobReadLinks links)
     {
         _uow = uow;
-        _mapper = mapper;
         _links = links;
     }
 

@@ -5,7 +5,7 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { MemberService } from '../../services/member-service/member.service';
 import { ButtonModule } from '@openng/optimus-ui/button';
-import { MemberDto } from '../../models/member.dto';
+import { MemberDataGroup, MemberDto } from '../../models/member.dto';
 import { UpsertMemberDto } from '../../models/requests/member/upsert-member.dto';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
@@ -258,7 +258,30 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
     { of: 'тата', firstName: 'fatherFirstName', lastName: 'fatherLastName', phone: 'fatherPhone' },
   ] as const;
 
+  /**
+   * Whether the kurin hides this group of the person's data from whoever edits. Its fields are not
+   * shown and not sent: the server keeps what it has, and blanks would not wipe it anyway.
+   */
+  hides(group: MemberDataGroup): boolean {
+    return !this.isCreate && (this.member.hiddenData?.includes(group) ?? false);
+  }
+
+  /** Whether the form shows the email: the editor may change it and may see the person's contacts. */
+  editsEmail(): boolean {
+    return this.canEditEmail() && !this.hides('contacts');
+  }
+
+  /** Whether the form shows this card field: the kurin keeps it and the editor may see it. */
+  shows(field: StandardCardField): boolean {
+    const group = CARD_FIELD_GROUP[field];
+    return this.fieldMode(field) !== 'hidden' && !(group && this.hides(group));
+  }
+
   private privateFieldValue(field: PrivateField): string | undefined {
+    if (this.hides(PARENT_FIELDS.includes(field) ? 'parents' : 'address')) {
+      return undefined;
+    }
+
     const changed = this.isCreate || !!this.form()?.controls[field]?.dirty;
     const mode = this.fieldMode(PARENT_FIELDS.includes(field) ? 'parents' : field as 'address' | 'school');
     return changed && mode !== 'hidden' ? (this.member[field] ?? '').trim() : undefined;
@@ -461,16 +484,16 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
       firstName: this.member.firstName,
       middleName: this.member.middleName,
       lastName: this.member.lastName,
-      email: this.member.email,
-      phoneNumber: this.member.phoneNumber,
-      dateOfBirth: toDateOnlyString(this.member.dateOfBirth)!,
+      email: this.hides('contacts') ? undefined : this.member.email,
+      phoneNumber: this.hides('contacts') ? undefined : this.member.phoneNumber,
+      dateOfBirth: this.hides('birthDate') ? undefined : toDateOnlyString(this.member.dateOfBirth)!,
       plastLevelHistories: this.buildPlastLevelsPayload(),
       // Private: someone who could not see them gets them blank, so they go only when touched here.
       // Left out, the server keeps what it has; sent empty, it clears them.
       address: this.privateFieldValue('address'),
       school: this.privateFieldValue('school'),
       ...Object.fromEntries(PARENT_FIELDS.map(field => [field, this.privateFieldValue(field)])),
-      cardExtras: this.cardExtrasPayload(),
+      cardExtras: this.hides('extras') ? undefined : this.cardExtrasPayload(),
     };
 
     // Куди людину поставити — сказано лише при заведенні. Редагування профілю нікого не переносить:
@@ -649,6 +672,15 @@ type ParentField = 'motherFirstName' | 'motherLastName' | 'motherPhone' | 'fathe
 type PrivateField = 'address' | 'school' | ParentField;
 
 const PARENT_FIELDS: PrivateField[] = ['motherFirstName', 'motherLastName', 'motherPhone', 'fatherFirstName', 'fatherLastName', 'fatherPhone'];
+
+/** Which group of a person's data each card field belongs to; the middle name is in none. */
+const CARD_FIELD_GROUP: Record<StandardCardField, MemberDataGroup | null> = {
+  middleName: null,
+  phoneNumber: 'contacts',
+  address: 'address',
+  school: 'address',
+  parents: 'parents'
+};
 
 interface LevelGroup {
   key: LevelGroupKey;

@@ -7,12 +7,15 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
@@ -33,19 +36,25 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
     private readonly IMembershipRepository _memberships;
+    private readonly IResourceAccessService _access;
+    private readonly IKurinAudit _audit;
 
     public UpsertMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IMapper mapper,
-        IUnitOfWork kurinData)
+        IUnitOfWork kurinData,
+        IResourceAccessService access,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
         _mapper = mapper;
         _memberships = kurinData.Memberships;
+        _access = access;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<MemberAwardDto>> Handle(UpsertMemberAwardCommand request, CancellationToken cancellationToken)
@@ -70,6 +79,19 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
 
         if (existingAward != null && existingAward.MemberKey == request.MemberKey)
         {
+            // An edit sends the award back for review, so editing a confirmed one un-confirms it:
+            // the same bar as removing it.
+            if (existingAward.Status == BadgeProgressStatus.Confirmed
+                && !(await _access.CheckCapabilityAsync(KurinCapability.RemoveAward, ResourceType.Member, request.MemberKey, cancellationToken)).IsAllowed)
+            {
+                return ServiceResult<MemberAwardDto>.Failure(
+                    ResultType.Forbidden,
+                    "ConfirmedAwardEditNotAllowed",
+                    "Only those the kurin lets remove awards may change a confirmed award.");
+            }
+
+            var before = (existingAward.Level, existingAward.DateAcquired, existingAward.Note, existingAward.Status);
+
             existingAward.Level = request.Level;
             existingAward.KurinKey = actingKurinKey;
             existingAward.DateAcquired = request.DateAcquired;
@@ -82,6 +104,16 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             existingAward.UpdatedDate = DateTime.UtcNow;
 
             _unitOfWork.MemberAwards.Update(existingAward, cancellationToken);
+
+            var changes = AuditChanges.Of(
+                ("level", before.Level, existingAward.Level),
+                ("dateAcquired", before.DateAcquired, existingAward.DateAcquired),
+                ("note", before.Note, existingAward.Note),
+                ("status", before.Status, existingAward.Status));
+            if (changes.Count > 0)
+            {
+                await RecordAsync(AuditActions.Award.Changed, existingAward, changes, cancellationToken);
+            }
         }
         else
         {
@@ -100,6 +132,16 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
 
             _unitOfWork.MemberAwards.Create(newAward, cancellationToken);
             existingAward = newAward;
+
+            await RecordAsync(
+                AuditActions.Award.Added,
+                newAward,
+                AuditChanges.Added(
+                    ("level", newAward.Level),
+                    ("dateAcquired", newAward.DateAcquired),
+                    ("note", newAward.Note),
+                    ("status", newAward.Status)),
+                cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -109,6 +151,21 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         var response = _mapper.Map<MemberAwardDto>(existingAward);
         return new ServiceResult<MemberAwardDto>(ResultType.Success, response);
     }
+
+    private Task RecordAsync(
+        string action,
+        ProjectK.Common.Entities.KurinModule.MemberAward award,
+        IReadOnlyList<AuditChange> changes,
+        CancellationToken cancellationToken) =>
+        _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Award,
+                action,
+                award.MemberAwardKey,
+                KurinReportTerminology.AwardLevel(award.Level),
+                award.MemberKey,
+                changes),
+            cancellationToken);
 
     private async Task PublishAwardSubmittedAsync(
         MemberEntity member,

@@ -1,3 +1,4 @@
+using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -38,6 +39,11 @@ public sealed class ScoreBookReader
     {
         var rates = await _score.ScoreAttendanceRates.GetForKurinAsync(kurinKey, cancellationToken);
         var attendances = await _score.ScoreAttendances.GetForKurinAsync(kurinKey, cancellationToken);
-        return new ScoreAttendanceBook(rates, attendances);
+        var notHeld = await _score.ScoreNotHeldOccurrences.GetForKurinAsync(kurinKey, cancellationToken);
+        return new ScoreAttendanceBook(rates, attendances, notHeld);
     }
+
+    /// <summary>Whether one occurrence was said not to have taken place, and by whom; null when it was not.</summary>
+    public Task<ScoreNotHeldOccurrence?> NotHeldAsync(Guid agendaItemKey, DateTime occurrenceStartUtc, CancellationToken cancellationToken) =>
+        _score.ScoreNotHeldOccurrences.FindAsync(agendaItemKey, occurrenceStartUtc, cancellationToken);
 }

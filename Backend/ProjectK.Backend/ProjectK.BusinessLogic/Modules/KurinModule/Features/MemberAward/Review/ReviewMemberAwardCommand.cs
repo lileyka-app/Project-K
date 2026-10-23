@@ -6,16 +6,22 @@ using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 
 public sealed class ReviewMemberAwardCommand : IRequest<ServiceResult<MemberAwardDto>>
 {
+    /// <summary>The member from the route — the one the resource check let the caller act on.</summary>
+    public Guid MemberKey { get; set; }
+
     public Guid MemberAwardKey { get; set; }
 
     /// <summary>Null means the caller did not say; the validator refuses it. See the request DTO.</summary>
@@ -29,16 +35,22 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
+    private readonly IResourceAccessService _access;
+    private readonly IKurinAudit _audit;
 
     public ReviewMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMapper mapper)
+        IMapper mapper,
+        IResourceAccessService access,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
+        _access = access;
+        _audit = audit;
         _currentUserContext = currentUserContext;
         _events = events;
         _mapper = mapper;
@@ -47,7 +59,9 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
     public async Task<ServiceResult<MemberAwardDto>> Handle(ReviewMemberAwardCommand request, CancellationToken cancellationToken)
     {
         var award = await _unitOfWork.MemberAwards.GetByKeyAsync(request.MemberAwardKey, cancellationToken);
-        if (award is null)
+        // The resource check authorized the route's member, not the award's: anyone else's award
+        // answers as missing.
+        if (award is null || award.MemberKey != request.MemberKey)
         {
             return new ServiceResult<MemberAwardDto>(ResultType.NotFound);
         }
@@ -56,6 +70,18 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         if (fromStatus != BadgeProgressStatus.Submitted)
         {
             return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
+        }
+
+        // The permission at the endpoint is shared by every level; which levels this person may
+        // confirm is the kurin's policy.
+        var level = await _access.CheckCapabilityAsync(
+            KurinCapabilities.ConfirmAward(award.Level), ResourceType.Member, award.MemberKey, cancellationToken);
+        if (!level.IsAllowed)
+        {
+            return ServiceResult<MemberAwardDto>.Failure(
+                ResultType.Forbidden,
+                "AwardLevelNotAllowed",
+                "The kurin's policy does not let you confirm an award of this level.");
         }
 
         // Said, because the validator refused the request otherwise.
@@ -67,6 +93,17 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         award.UpdatedDate = DateTime.UtcNow;
 
         _unitOfWork.MemberAwards.Update(award, cancellationToken);
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Award,
+                approved ? AuditActions.Award.Confirmed : AuditActions.Award.Rejected,
+                award.MemberAwardKey,
+                KurinReportTerminology.AwardLevel(award.Level),
+                award.MemberKey,
+                AuditChanges.Of(("status", fromStatus, award.Status))),
+            cancellationToken);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await NotifyMemberOwnerAsync(award, approved, cancellationToken);

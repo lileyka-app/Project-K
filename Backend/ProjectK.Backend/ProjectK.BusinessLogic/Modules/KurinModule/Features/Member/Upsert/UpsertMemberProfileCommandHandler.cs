@@ -10,6 +10,8 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
@@ -33,6 +35,11 @@ public class UpsertMemberProfileCommandHandler
     private readonly IDomainEventPublisher _events;
     private readonly IAccountProvisioningService _accounts;
     private readonly IKraiProfileProvider _profiles;
+    private readonly IMemberFieldAccess _fieldAccess;
+    private readonly IKurinAudit _audit;
+
+    /// <summary>The error a write without an email is refused with.</summary>
+    public const string EmailRequired = "EmailRequired";
 
     public UpsertMemberProfileCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -41,8 +48,12 @@ public class UpsertMemberProfileCommandHandler
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IAccountProvisioningService accounts,
-        IKraiProfileProvider profiles)
+        IKraiProfileProvider profiles,
+        IMemberFieldAccess fieldAccess,
+        IKurinAudit audit)
     {
+        _fieldAccess = fieldAccess;
+        _audit = audit;
         _accounts = accounts;
         _profiles = profiles;
         _unitOfWork = unitOfWork;
@@ -58,6 +69,7 @@ public class UpsertMemberProfileCommandHandler
         CancellationToken cancellationToken)
     {
         var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
+        var before = existing is null ? null : MemberAuditFields.Of(existing);
 
         // Where they already stand. The record does not say any more, so it is read from the
         // membership — and it is what the request is measured against.
@@ -74,6 +86,19 @@ public class UpsertMemberProfileCommandHandler
         {
             request.GroupKey = current.GroupKey;
             request.KurinKey = current.KurinKey;
+        }
+
+        var hiddenFromWriter = existing is null
+            ? new HashSet<MemberDataGroup>()
+            : (await _fieldAccess.ForViewerAsync(cancellationToken)).HiddenFrom(existing.UserKey, current?.GroupKey);
+        if (existing is not null)
+        {
+            HiddenDataOnWrite.KeepStored(hiddenFromWriter, request, existing);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, EmailRequired, "An email is required.");
         }
 
         GroupEntity? group = null;
@@ -94,7 +119,7 @@ public class UpsertMemberProfileCommandHandler
         var cardExtras = existing?.CardExtras;
         if (request.ApplyCardFields && await _profiles.GetForKurinAsync(kurinKey, cancellationToken) is { } profile)
         {
-            var card = MemberCardFields.Apply(profile.CardFields, request, existing);
+            var card = MemberCardFields.Apply(profile.CardFields, request, existing, hiddenFromWriter);
             if (card.Error is not null)
             {
                 return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberCardFields.ErrorCode, card.Error);
@@ -234,6 +259,8 @@ public class UpsertMemberProfileCommandHandler
             _unitOfWork.Members.Update(existing, cancellationToken);
         }
 
+        await RecordAsync(existing, before, kurinKey, cancellationToken);
+
         // Where the person stands is the kurin's to record, and it is the only place it is
         // written. The member module says who was put where; the kurin opens or moves the
         // membership in response, inside this same unit of work.
@@ -254,7 +281,40 @@ public class UpsertMemberProfileCommandHandler
                 isCreated,
                 wasProfileVerifiedCurrent,
                 previousPhotoBlobName,
-                accountEmailToFollow));
+                accountEmailToFollow,
+                groupKey));
+    }
+
+    /// <summary>
+    /// Records a new card with what it was made with, or an edit with what it changed; an edit that
+    /// changed nothing is not recorded. A new person is not in any kurin yet, so the entry is filed
+    /// under the one they are being placed in; an edit goes to the kurin the request acts in, or to
+    /// where the person stands when it acts in none.
+    /// </summary>
+    private async Task RecordAsync(
+        MemberEntity member,
+        (string Field, object? Value)[]? before,
+        Guid kurinKey,
+        CancellationToken cancellationToken)
+    {
+        var changes = before is null
+            ? MemberAuditFields.Added(member)
+            : MemberAuditFields.Between(before, MemberAuditFields.Of(member));
+        if (changes.Count == 0)
+        {
+            return;
+        }
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Member,
+                before is null ? AuditActions.Member.Added : AuditActions.Member.Changed,
+                member.MemberKey,
+                MemberAuditFields.LabelOf(member),
+                member.MemberKey,
+                changes,
+                KurinKey: before is null ? kurinKey : _currentUserContext.KurinKey ?? kurinKey),
+            cancellationToken);
     }
 
     private bool CanEditRestrictedFields() => _currentUserContext.IsLeadership();

@@ -67,8 +67,8 @@ export class AppearanceService {
   private paintBars(choice: ThemeChoice, dark: boolean): void {
     for (const meta of Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'))) {
       // Each meta answers one system scheme; a chosen theme answers both the same way.
-      const forDark = meta.media.includes('dark');
-      meta.content = choice === 'system' ? BAR_COLOR[forDark ? 'dark' : 'light'] : BAR_COLOR[dark ? 'dark' : 'light'];
+      const darkBar = choice === 'system' ? meta.media.includes('dark') : dark;
+      meta.content = BAR_COLOR[darkBar ? 'dark' : 'light'];
     }
     if (Capacitor.isNativePlatform()) {
       // Style.Dark is light text, for a dark page.

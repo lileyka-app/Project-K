@@ -59,11 +59,11 @@ public static class E2eFixtureSeeder
             dbContext, userManager, "mentor1@projectk.com", "Group", "Mentor", kurin.KurinKey, null, "+380500000102", SeededDateOfBirth, cancellationToken);
         DataSeeder.AddOffice(kvLeadership, mentor.MemberKey, LeadershipRole.Vykhovnyk);
 
-        var member = await DataSeeder.EnsureMemberAsync(
+        await DataSeeder.EnsureMemberAsync(
             dbContext, userManager, "g1member1@projectk.com", "Group1", "MemberOne", kurin.KurinKey, assignedGroup.GroupKey, "+380500000103", SeededDateOfBirth, cancellationToken);
 
         // The suite needs a second body in Gurtok 1 to assert a member cannot edit somebody else.
-        var otherMember = await DataSeeder.EnsureMemberAsync(
+        await DataSeeder.EnsureMemberAsync(
             dbContext, userManager, "g1member2@projectk.com", "Group1", "MemberTwo", kurin.KurinKey, assignedGroup.GroupKey, "+380500000104", SeededDateOfBirth, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);

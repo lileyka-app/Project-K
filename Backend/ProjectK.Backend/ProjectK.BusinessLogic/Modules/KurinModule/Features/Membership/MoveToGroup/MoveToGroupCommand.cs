@@ -1,5 +1,8 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
@@ -16,12 +19,23 @@ public sealed record MoveToGroupCommand(Guid MemberKey, Guid KurinKey, Guid? Gro
 public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupCommand, ServiceResult<object>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAccessChangeSignal _accessChanges;
     private readonly IDomainEventPublisher _events;
+    private readonly IMemberDirectory _members;
+    private readonly IKurinAudit _audit;
 
-    public MoveToGroupCommandHandler(IUnitOfWork unitOfWork, IDomainEventPublisher events)
+    public MoveToGroupCommandHandler(
+        IUnitOfWork unitOfWork,
+        IDomainEventPublisher events,
+        IAccessChangeSignal accessChanges,
+        IMemberDirectory members,
+        IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
+        _accessChanges = accessChanges;
         _events = events;
+        _members = members;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<object>> Handle(MoveToGroupCommand request, CancellationToken cancellationToken)
@@ -43,6 +57,7 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
                 ResultType.NotFound, "NotAMember", "They do not currently belong to this kurin.");
         }
 
+        string? toGroup = null;
         if (request.GroupKey.HasValue)
         {
             var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey.Value, cancellationToken);
@@ -51,6 +66,26 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
                 return ServiceResult<object>.Failure(
                     ResultType.BadRequest, "GroupNotInKurin", "That гурток does not belong to this kurin.");
             }
+
+            toGroup = group.Name;
+        }
+
+        if (membership.GroupKey != request.GroupKey)
+        {
+            var fromGroup = membership.GroupKey is { } fromKey
+                ? (await _unitOfWork.Groups.GetByKeyAsync(fromKey, cancellationToken))?.Name
+                : null;
+            var person = await _members.FindAsync(request.MemberKey, cancellationToken);
+            await _audit.RecordAsync(
+                new AuditRecord(
+                    AuditArea.Membership,
+                    AuditActions.Membership.MovedToGroup,
+                    membership.MembershipKey,
+                    person?.FullName ?? string.Empty,
+                    request.MemberKey,
+                    AuditChanges.Of(("group", fromGroup, toGroup)),
+                    KurinKey: request.KurinKey),
+                cancellationToken);
         }
 
         // Announced before the гурток is overwritten: whoever counts time spent in a гурток (the dues
@@ -61,6 +96,12 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
 
         membership.GroupKey = request.GroupKey;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // What "own гурток" reaches moves with them.
+        if (membership.UserKey is { } userKey)
+        {
+            _accessChanges.MarkUser(userKey);
+        }
 
         return new ServiceResult<object>(ResultType.Success);
     }

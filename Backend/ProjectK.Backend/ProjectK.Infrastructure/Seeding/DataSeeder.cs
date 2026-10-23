@@ -139,7 +139,13 @@ public static class DataSeeder
 
     private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
     {
-        var kurin1 = await dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Number == 1);
+        // The seeder's kurin is number 1 of Україна. One moved to another край by hand on a dev
+        // database still holds the seeded accounts, and left alone it made the next run reuse them
+        // on top of the old rows; with no Ukrainian kurin 1, that one is the seeder's.
+        var kurin1 = await dbContext.Kurins
+            .Where(k => k.Number == 1)
+            .OrderBy(k => k.KraiCode == Krai.Ukraine ? 0 : 1)
+            .FirstOrDefaultAsync();
         if (kurin1 == null)
         {
             return;
@@ -190,77 +196,9 @@ public static class DataSeeder
         dbContext.WaitlistEntries.RemoveRange(
             await dbContext.WaitlistEntries.Where(entry => deletedEmails.Contains(entry.Email)).ToListAsync());
 
-        var planningSessionKeys = await dbContext.PlanningSessions
-            .Where(s => s.KurinKey == kurinKey)
-            .Select(s => s.PlanningSessionKey)
-            .ToListAsync();
+        await RemovePlanningAsync(dbContext, kurinKey);
 
-        var planningParticipantKeys = await dbContext.PlanningParticipants
-            .Where(p => planningSessionKeys.Contains(p.PlanningSessionKey))
-            .Select(p => p.PlanningParticipantKey)
-            .ToListAsync();
-
-        if (planningParticipantKeys.Count > 0)
-        {
-            var busyRanges = await dbContext.ParticipantBusyRanges
-                .Where(r => planningParticipantKeys.Contains(r.PlanningParticipantKey))
-                .ToListAsync();
-            dbContext.ParticipantBusyRanges.RemoveRange(busyRanges);
-        }
-
-        if (planningSessionKeys.Count > 0)
-        {
-            var planningParticipants = await dbContext.PlanningParticipants
-                .Where(p => planningSessionKeys.Contains(p.PlanningSessionKey))
-                .ToListAsync();
-            dbContext.PlanningParticipants.RemoveRange(planningParticipants);
-
-            var planningSessions = await dbContext.PlanningSessions
-                .Where(s => s.KurinKey == kurinKey)
-                .ToListAsync();
-            dbContext.PlanningSessions.RemoveRange(planningSessions);
-        }
-
-        var badgeProgressKeys = await dbContext.BadgeProgresses
-            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
-            .Select(p => p.BadgeProgressKey)
-            .ToListAsync();
-
-        if (badgeProgressKeys.Count > 0)
-        {
-            var badgeAuditEvents = await dbContext.BadgeProgressAuditEvents
-                .Where(e => badgeProgressKeys.Contains(e.BadgeProgressKey))
-                .ToListAsync();
-            dbContext.BadgeProgressAuditEvents.RemoveRange(badgeAuditEvents);
-        }
-
-        var badgeProgresses = await dbContext.BadgeProgresses
-            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
-            .ToListAsync();
-        dbContext.BadgeProgresses.RemoveRange(badgeProgresses);
-
-        var probeProgressKeys = await dbContext.ProbeProgresses
-            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
-            .Select(p => p.ProbeProgressKey)
-            .ToListAsync();
-
-        if (probeProgressKeys.Count > 0)
-        {
-            var probeAuditEvents = await dbContext.ProbeProgressAuditEvents
-                .Where(e => probeProgressKeys.Contains(e.ProbeProgressKey))
-                .ToListAsync();
-            dbContext.ProbeProgressAuditEvents.RemoveRange(probeAuditEvents);
-        }
-
-        var probePointProgresses = await dbContext.ProbePointProgresses
-            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
-            .ToListAsync();
-        dbContext.ProbePointProgresses.RemoveRange(probePointProgresses);
-
-        var probeProgresses = await dbContext.ProbeProgresses
-            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
-            .ToListAsync();
-        dbContext.ProbeProgresses.RemoveRange(probeProgresses);
+        await RemoveProgressAsync(dbContext, kurinKey, memberKeys);
 
         var plastLevelHistories = await dbContext.PlastLevelHistories
             .Where(p => memberKeys.Contains(p.MemberKey))
@@ -302,6 +240,134 @@ public static class DataSeeder
 
         // The agenda is seeded too, and unlike people it is not keyed on anything that would
         // stop a second run from adding the same сходини again — so it is wiped with the rest.
+        await RemoveAgendaAsync(dbContext, kurinKey);
+
+        // Dues and score hold the kurin by key with no foreign key, so removing the kurin leaves
+        // them behind; the next run would add a second year of вкладка and points on top.
+        dbContext.DuesEntries.RemoveRange(await dbContext.DuesEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.DuesCharges.RemoveRange(await dbContext.DuesCharges.Where(c => c.KurinKey == kurinKey).ToListAsync());
+        dbContext.DuesConcessions.RemoveRange(await dbContext.DuesConcessions.Where(c => c.KurinKey == kurinKey).ToListAsync());
+        dbContext.DuesConcessionGrants.RemoveRange(await dbContext.DuesConcessionGrants.Where(g => g.KurinKey == kurinKey).ToListAsync());
+        dbContext.GroupDuesRates.RemoveRange(await dbContext.GroupDuesRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
+        dbContext.KurinDuesRates.RemoveRange(await dbContext.KurinDuesRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
+
+        dbContext.KurinScoreSettings.RemoveRange(await dbContext.KurinScoreSettings.Where(s => s.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreRules.RemoveRange(await dbContext.ScoreRules.Where(r => r.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreAttendanceRates.RemoveRange(await dbContext.ScoreAttendanceRates.Where(r => r.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreItems.RemoveRange(await dbContext.ScoreItems.Where(i => i.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreStages.RemoveRange(await dbContext.ScoreStages.Where(s => s.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreAttendances.RemoveRange(await dbContext.ScoreAttendances.Where(a => a.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreNotHeldOccurrences.RemoveRange(await dbContext.ScoreNotHeldOccurrences.Where(n => n.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreEntries.RemoveRange(await dbContext.ScoreEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreGroupMoves.RemoveRange(await dbContext.ScoreGroupMoves.Where(m => m.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreTrailEvents.RemoveRange(await dbContext.ScoreTrailEvents.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.KurinAuditEvents.RemoveRange(await dbContext.KurinAuditEvents.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.PrivateScoreEntries.RemoveRange(await dbContext.PrivateScoreEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
+        dbContext.PrivateScoreCriteria.RemoveRange(await dbContext.PrivateScoreCriteria.Where(c => c.KurinKey == kurinKey).ToListAsync());
+
+        // The seeder wipes its own demo kurin outright, people included — the reset exists to
+        // give every run the same starting point, and these are not real people.
+        var memberships = await dbContext.Memberships
+            .Where(ms => ms.KurinKey == kurinKey)
+            .ToListAsync();
+        dbContext.Memberships.RemoveRange(memberships);
+
+        var members = await dbContext.Members
+            .Where(m => memberKeys.Contains(m.MemberKey))
+            .ToListAsync();
+        dbContext.Members.RemoveRange(members);
+
+        var groups = await dbContext.Groups
+            .Where(g => g.KurinKey == kurinKey)
+            .ToListAsync();
+        dbContext.Groups.RemoveRange(groups);
+
+        dbContext.Kurins.Remove(kurin1);
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task RemovePlanningAsync(AppDbContext dbContext, Guid kurinKey)
+    {
+        var planningSessionKeys = await dbContext.PlanningSessions
+            .Where(s => s.KurinKey == kurinKey)
+            .Select(s => s.PlanningSessionKey)
+            .ToListAsync();
+
+        var planningParticipantKeys = await dbContext.PlanningParticipants
+            .Where(p => planningSessionKeys.Contains(p.PlanningSessionKey))
+            .Select(p => p.PlanningParticipantKey)
+            .ToListAsync();
+
+        if (planningParticipantKeys.Count > 0)
+        {
+            var busyRanges = await dbContext.ParticipantBusyRanges
+                .Where(r => planningParticipantKeys.Contains(r.PlanningParticipantKey))
+                .ToListAsync();
+            dbContext.ParticipantBusyRanges.RemoveRange(busyRanges);
+        }
+
+        if (planningSessionKeys.Count > 0)
+        {
+            var planningParticipants = await dbContext.PlanningParticipants
+                .Where(p => planningSessionKeys.Contains(p.PlanningSessionKey))
+                .ToListAsync();
+            dbContext.PlanningParticipants.RemoveRange(planningParticipants);
+
+            var planningSessions = await dbContext.PlanningSessions
+                .Where(s => s.KurinKey == kurinKey)
+                .ToListAsync();
+            dbContext.PlanningSessions.RemoveRange(planningSessions);
+        }
+    }
+
+    private static async Task RemoveProgressAsync(AppDbContext dbContext, Guid kurinKey, List<Guid> memberKeys)
+    {
+        var badgeProgressKeys = await dbContext.BadgeProgresses
+            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
+            .Select(p => p.BadgeProgressKey)
+            .ToListAsync();
+
+        await RemoveJournalOfAsync(dbContext, badgeProgressKeys);
+
+        var badgeProgresses = await dbContext.BadgeProgresses
+            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
+            .ToListAsync();
+        dbContext.BadgeProgresses.RemoveRange(badgeProgresses);
+
+        var probeProgressKeys = await dbContext.ProbeProgresses
+            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
+            .Select(p => p.ProbeProgressKey)
+            .ToListAsync();
+
+        await RemoveJournalOfAsync(dbContext, probeProgressKeys);
+
+        var probePointProgresses = await dbContext.ProbePointProgresses
+            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
+            .ToListAsync();
+        dbContext.ProbePointProgresses.RemoveRange(probePointProgresses);
+
+        var probeProgresses = await dbContext.ProbeProgresses
+            .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
+            .ToListAsync();
+        dbContext.ProbeProgresses.RemoveRange(probeProgresses);
+    }
+
+    private static async Task RemoveJournalOfAsync(AppDbContext dbContext, List<Guid> subjectKeys)
+    {
+        if (subjectKeys.Count == 0)
+        {
+            return;
+        }
+
+        var entries = await dbContext.KurinAuditEvents
+            .Where(e => subjectKeys.Contains(e.SubjectKey))
+            .ToListAsync();
+        dbContext.KurinAuditEvents.RemoveRange(entries);
+    }
+
+    private static async Task RemoveAgendaAsync(AppDbContext dbContext, Guid kurinKey)
+    {
         var agendaItemKeys = await dbContext.AgendaItems
             .Where(a => a.KurinKey == kurinKey)
             .Select(a => a.AgendaItemKey)
@@ -329,27 +395,6 @@ public static class DataSeeder
             .Where(c => c.KurinKey == kurinKey)
             .ToListAsync();
         dbContext.AgendaCategories.RemoveRange(agendaCategories);
-
-        // The seeder wipes its own demo kurin outright, people included — the reset exists to
-        // give every run the same starting point, and these are not real people.
-        var memberships = await dbContext.Memberships
-            .Where(ms => ms.KurinKey == kurinKey)
-            .ToListAsync();
-        dbContext.Memberships.RemoveRange(memberships);
-
-        var members = await dbContext.Members
-            .Where(m => memberKeys.Contains(m.MemberKey))
-            .ToListAsync();
-        dbContext.Members.RemoveRange(members);
-
-        var groups = await dbContext.Groups
-            .Where(g => g.KurinKey == kurinKey)
-            .ToListAsync();
-        dbContext.Groups.RemoveRange(groups);
-
-        dbContext.Kurins.Remove(kurin1);
-
-        await dbContext.SaveChangesAsync();
     }
 
     private static async Task<AppUser?> EnsurePasswordlessUser(UserManager<AppUser> userManager, string email, string firstName, string lastName, UserRole role)
@@ -405,6 +450,25 @@ public static class DataSeeder
     }
 
     /// <summary>
+    /// Everything a seeder says about one person. The optional part is what tells a юнак from the
+    /// виховник who runs their гурток: the kind of membership, when it began, and the details a
+    /// картка shows that fixtures never needed.
+    /// </summary>
+    internal sealed record SeededPerson(
+        string Email,
+        string FirstName,
+        string? MiddleName,
+        string LastName,
+        Guid KurinKey,
+        Guid? GroupKey,
+        string PhoneNumber,
+        DateOnly DateOfBirth,
+        MembershipKind Kind = MembershipKind.Youth,
+        DateTime? JoinedAtUtc = null,
+        string? Address = null,
+        string? School = null);
+
+    /// <summary>
     /// Finds the member by email, creating the member row and its linked account when missing.
     /// Keyed on email so re-running a seeder does not give one account a second member row.
     /// </summary>
@@ -426,25 +490,6 @@ public static class DataSeeder
             new SeededPerson(email, firstName, null, lastName, kurinKey, groupKey, phoneNumber, dateOfBirth),
             cancellationToken);
     }
-
-    /// <summary>
-    /// Everything a seeder says about one person. The optional part is what tells a юнак from the
-    /// виховник who runs their гурток: the kind of membership, when it began, and the details a
-    /// картка shows that fixtures never needed.
-    /// </summary>
-    internal sealed record SeededPerson(
-        string Email,
-        string FirstName,
-        string? MiddleName,
-        string LastName,
-        Guid KurinKey,
-        Guid? GroupKey,
-        string PhoneNumber,
-        DateOnly DateOfBirth,
-        MembershipKind Kind = MembershipKind.Youth,
-        DateTime? JoinedAtUtc = null,
-        string? Address = null,
-        string? School = null);
 
     internal static async Task<Member> EnsureMemberAsync(
         AppDbContext dbContext,

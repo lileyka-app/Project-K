@@ -23,6 +23,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
     private readonly TimeProvider _time;
+    private readonly IKurinAudit _audit;
 
     public ChangeAgendaItemStatusCommandHandler(
         IUnitOfWork uow,
@@ -30,7 +31,8 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         IAgendaAccess access,
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
-        TimeProvider time)
+        TimeProvider time,
+        IKurinAudit audit)
     {
         _uow = uow;
         _members = members;
@@ -38,6 +40,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         _currentUser = currentUser;
         _events = events;
         _time = time;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<object>> Handle(ChangeAgendaItemStatusCommand request, CancellationToken cancellationToken)
@@ -68,6 +71,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
 
             AgendaCompletion.SetItemStatus(item, request.Status, now);
             item.UpdatedDate = now;
+            await AgendaStatusWriter.RecordAsync(_audit, item, item.Title, null, null, request.Status, before, cancellationToken);
         }
         else
         {
@@ -77,11 +81,15 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
                 return Forbidden();
             }
 
+            var movedFrom = AgendaCompletion.StatusOf(moves[0]);
             var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
             foreach (var stake in moves)
             {
                 AgendaStatusWriter.Apply(_uow, item, stake, request.Status, actor, roster, now);
             }
+
+            var whosePart = moves.Count == 1 ? moves[0].MemberKey : null;
+            await AgendaStatusWriter.RecordAsync(_audit, item, item.Title, whosePart, movedFrom, request.Status, before, cancellationToken);
         }
 
         // The item is tracked (loaded with assignments), so the change is persisted without an explicit

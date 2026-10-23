@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { MessageService } from '@openng/optimus-ui/api';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarMenuComponent } from './sidebar-menu';
@@ -12,8 +13,8 @@ import { MenuItem } from '@openng/optimus-ui/api';
 describe('SidebarMenuComponent', () => {
   let component: SidebarMenuComponent;
   let fixture: ComponentFixture<SidebarMenuComponent>;
-  let mockRouter: jasmine.SpyObj<Router>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
+  let mockRouter: MockedObject<Router>;
+  let mockAuthService: MockedObject<AuthService>;
   let authStateSubject: BehaviorSubject<AuthState | null>;
   let routerEvents: Subject<Event>;
 
@@ -23,12 +24,16 @@ describe('SidebarMenuComponent', () => {
 
     // The menu recomputes the current item on NavigationEnd, so the double needs a
     // usable events stream and url alongside navigate().
-    mockRouter = jasmine.createSpyObj<Router>('Router', ['navigate'], {
+    mockRouter = {
+      navigate: vi.fn(),
       events: routerEvents.asObservable(),
       url: '/kurin'
-    });
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getAuthState', 'getAuthStateValue']);
-    mockAuthService.getAuthState.and.returnValue(authStateSubject.asObservable());
+    } as MockedObject<Router>;
+    mockAuthService = {
+      getAuthState: vi.fn(),
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    mockAuthService.getAuthState.mockReturnValue(authStateSubject.asObservable());
 
     await TestBed.configureTestingModule({
       imports: [SidebarMenuComponent],
@@ -50,41 +55,41 @@ describe('SidebarMenuComponent', () => {
   });
 
   describe('ngOnChanges', () => {
-    it('should update items$ when state$ changes', (done) => {
+    it('should update items$ when state$ changes', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
 
       component.items$.subscribe(items => {
         expect(items.length).toBeGreaterThan(0);
-        expect(items.some(item => item.label === 'Курінь')).toBeTrue();
+        expect(items.some(item => item.label === 'Курінь')).toBe(true);
         done();
       });
-    });
+    }));
 
-    it('should update email$ when state$ changes', (done) => {
+    it('should update email$ when state$ changes', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -93,20 +98,20 @@ describe('SidebarMenuComponent', () => {
         expect(email).toBe('test@example.com');
         done();
       });
-    });
+    }));
 
-    it('should name the office rather than the tier it grants', (done) => {
+    it('should name the office rather than the tier it grants', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -116,11 +121,41 @@ describe('SidebarMenuComponent', () => {
         expect(roleTag.severity).toBe('danger');
         done();
       });
+    }));
+
+    it('rebuilds the menu when a refresh changes the permissions', async () => {
+      const youth: AuthState = {
+        userKey: 'user-1',
+        memberKey: 'member-1',
+        email: 'youth@example.com',
+        isAdmin: false, permissions: [], roles: ['Member'],
+        kurinKey: 'kurin-1',
+        accessToken: 'token-1'
+      };
+      authStateSubject.next(youth);
+      mockAuthService.getAuthStateValue.mockImplementation(() => authStateSubject.value);
+      fixture.componentRef.setInput('state$', authStateSubject.asObservable());
+      component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
+
+      const builds: MenuItem[][] = [];
+      const settingsShown = new Promise<void>(resolve => {
+        component.items$.subscribe(items => {
+          builds.push(items);
+          if (builds.length === 1) {
+            authStateSubject.next({ ...youth, permissions: ['Kurin:Update:KurinWide'], roles: ['KV.Zvyazkovyi'] });
+          } else if (items.some(item => item.label === 'Налаштування куреня')) {
+            resolve();
+          }
+        });
+      });
+
+      await settingsShown;
+      expect(builds[0].some(item => item.label === 'Налаштування куреня')).toBe(false);
     });
 
-    it('should set email$ to null when state is null', (done) => {
+    it('should set email$ to null when state is null', () => new Promise<void>(done => {
       fixture.componentRef.setInput('state$', of(null));
-      mockAuthService.getAuthStateValue.and.returnValue(null);
+      mockAuthService.getAuthStateValue.mockReturnValue(null);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -129,7 +164,7 @@ describe('SidebarMenuComponent', () => {
         expect(email).toBeNull();
         done();
       });
-    });
+    }));
   });
 
   describe('current route highlight', () => {
@@ -137,7 +172,7 @@ describe('SidebarMenuComponent', () => {
       userKey: 'user-1',
       memberKey: 'member-1',
       email: 'manager@projectk.com',
-      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+      isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     };
@@ -146,7 +181,7 @@ describe('SidebarMenuComponent', () => {
       Object.defineProperty(mockRouter, 'url', { value: url, configurable: true });
 
       fixture.componentRef.setInput('state$', of(managerState));
-      mockAuthService.getAuthStateValue.and.returnValue(managerState);
+      mockAuthService.getAuthStateValue.mockReturnValue(managerState);
       component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
 
       return new Promise(resolve => component.items$.subscribe(resolve));
@@ -163,7 +198,7 @@ describe('SidebarMenuComponent', () => {
       const items = await itemsAt('/kurin/kurin-1/settings');
 
       const marked = items.filter(item => item.styleClass === 'lil-menu-item--current');
-      expect(marked.length).toBe(1);
+      expect(marked).toHaveLength(1);
       expect(marked[0].label).toBe('Налаштування куреня');
     });
 
@@ -177,23 +212,23 @@ describe('SidebarMenuComponent', () => {
     it('marks nothing when the url belongs to no menu item', async () => {
       const items = await itemsAt('/some/unrelated/page');
 
-      expect(items.every(item => item.styleClass === undefined)).toBeTrue();
+      expect(items.every(item => item.styleClass === undefined)).toBe(true);
     });
   });
 
   describe('buildItems', () => {
-    it('should build menu items with kurinKey (Manager view)', (done) => {
+    it('should build menu items with kurinKey (Manager view)', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -205,16 +240,16 @@ describe('SidebarMenuComponent', () => {
         const usersItem = items.find(item => item.label === 'Користувачі');
 
         expect(kurinItem).toBeDefined();
-        expect(kurinItem?.disabled).toBeFalse();
+        expect(kurinItem?.disabled).toBe(false);
         expect(skillsReviewItem).toBeDefined();
         
         expect(panelItem).toBeUndefined();
         expect(usersItem).toBeUndefined();
         done();
       });
-    });
+    }));
 
-    it('should hide skills moderation item for non-reviewer role', (done) => {
+    it('should hide skills moderation item for non-reviewer role', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-999',
         memberKey: 'test-member-key',
@@ -225,7 +260,7 @@ describe('SidebarMenuComponent', () => {
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -235,20 +270,20 @@ describe('SidebarMenuComponent', () => {
         expect(skillsReviewItem).toBeUndefined();
         done();
       });
-    });
+    }));
 
-    it('should show kurin settings item for manager role', (done) => {
+    it('should show kurin settings item for manager role', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'manager@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -259,9 +294,9 @@ describe('SidebarMenuComponent', () => {
         expect(settingsItem?.routerLink).toEqual(['/kurin', 'kurin-456', 'settings']);
         done();
       });
-    });
+    }));
 
-    it('should show kurin settings item for admin role with selected kurin', (done) => {
+    it('should show kurin settings item for admin role with selected kurin', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
@@ -272,7 +307,7 @@ describe('SidebarMenuComponent', () => {
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -285,20 +320,20 @@ describe('SidebarMenuComponent', () => {
         expect(settingsLinkItem?.routerLink).toEqual(['/kurin', 'kurin-456', 'settings']);
         done();
       });
-    });
+    }));
 
-    it('should hide kurin settings item for non-manager role', (done) => {
+    it('should hide kurin settings item for non-manager role', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-999',
         memberKey: 'test-member-key',
         email: 'mentor@example.com',
-        isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
+        isAdmin: false, permissions: ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'], roles: ['KV.Vykhovnyk'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -308,9 +343,9 @@ describe('SidebarMenuComponent', () => {
         expect(settingsItem).toBeUndefined();
         done();
       });
-    });
+    }));
 
-    it('should build menu items without kurinKey (Admin view)', (done) => {
+    it('should build menu items without kurinKey (Admin view)', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
@@ -321,7 +356,7 @@ describe('SidebarMenuComponent', () => {
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -340,11 +375,11 @@ describe('SidebarMenuComponent', () => {
         expect(globalSettingsItem?.routerLink).toEqual(['/system-settings']);
         done();
       });
-    });
+    }));
 
-    it('should disable kurin-related items when kurinKey is null and NOT show them if they rely on kurinKey', (done) => {
+    it('should disable kurin-related items when kurinKey is null and NOT show them if they rely on kurinKey', () => new Promise<void>(done => {
       fixture.componentRef.setInput('state$', of(null));
-      mockAuthService.getAuthStateValue.and.returnValue(null);
+      mockAuthService.getAuthStateValue.mockReturnValue(null);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -355,20 +390,20 @@ describe('SidebarMenuComponent', () => {
         expect(kurinItem).toBeUndefined();
         done();
       });
-    });
+    }));
 
-    it('should navigate to /kurin when Kurin menu item is clicked', (done) => {
+    it('should navigate to /kurin when Kurin menu item is clicked', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -382,9 +417,9 @@ describe('SidebarMenuComponent', () => {
         }
         done();
       });
-    });
+    }));
 
-    it('should navigate to /panel when Panel menu item is clicked', (done) => {
+    it('should navigate to /panel when Panel menu item is clicked', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
@@ -395,7 +430,7 @@ describe('SidebarMenuComponent', () => {
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -409,9 +444,9 @@ describe('SidebarMenuComponent', () => {
         }
         done();
       });
-    });
+    }));
 
-    it('should navigate to /users when Users menu item is clicked', (done) => {
+    it('should navigate to /users when Users menu item is clicked', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
@@ -422,7 +457,7 @@ describe('SidebarMenuComponent', () => {
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -436,20 +471,20 @@ describe('SidebarMenuComponent', () => {
         }
         done();
       });
-    });
+    }));
 
-    it('should navigate to skills review route when moderation item is clicked', (done) => {
+    it('should navigate to skills review route when moderation item is clicked', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'mentor@example.com',
-        isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
+        isAdmin: false, permissions: ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'], roles: ['KV.Vykhovnyk'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -457,12 +492,51 @@ describe('SidebarMenuComponent', () => {
       component.items$.subscribe(items => {
         const skillsReviewItem = items.find(item => item.label === 'Модерація вмілостей');
 
-        if (skillsReviewItem?.command) {
-          skillsReviewItem.command({});
-          expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'review', 'skills']);
-        }
+        expect(skillsReviewItem?.command).toBeDefined();
+        skillsReviewItem?.command?.({});
+        expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'review', 'skills']);
         done();
       });
+    }));
+
+    function itemsFor(permissions: string[]): Promise<MenuItem[]> {
+      const state: AuthState = {
+        userKey: 'user-321',
+        memberKey: 'member-321',
+        email: 'kv@example.com',
+        isAdmin: false, permissions, roles: ['KV.Instruktor'],
+        kurinKey: 'kurin-456',
+        accessToken: 'token-789'
+      };
+      fixture.componentRef.setInput('state$', of(state));
+      mockAuthService.getAuthStateValue.mockReturnValue(state);
+      component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
+      return new Promise(resolve => component.items$.subscribe(items => resolve(items)));
+    }
+
+    it('lists «Журнал дій» right after the skills moderation for whoever may read it', async () => {
+      const items = await itemsFor(['BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide']);
+      const labels = items.map(item => item.label);
+      const journal = items.find(item => item.label === 'Журнал дій');
+
+      expect(labels.indexOf('Журнал дій')).toBe(labels.indexOf('Модерація вмілостей') + 1);
+      expect(journal?.icon).toBe('pi pi-history');
+      journal?.command?.({});
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'journal']);
+    });
+
+    it('hides «Журнал дій» from whoever the kurin does not let read it', async () => {
+      const items = await itemsFor(['Group:Update:OwnGroups']);
+
+      expect(items.find(item => item.label === 'Журнал дій')).toBeUndefined();
+    });
+
+    it('follows the kurin policy for the skills moderation, not leading a гурток', async () => {
+      const leaderWithout = await itemsFor(['Group:Update:OwnGroups']);
+      const providWith = await itemsFor(['BadgeProgress:Update:OwnGroups']);
+
+      expect(leaderWithout.find(item => item.label === 'Модерація вмілостей')).toBeUndefined();
+      expect(providWith.find(item => item.label === 'Модерація вмілостей')).toBeDefined();
     });
   });
 
@@ -470,7 +544,7 @@ describe('SidebarMenuComponent', () => {
     it('should set visible to false', () => {
       fixture.componentRef.setInput('visible', true);
       component.close();
-      expect(component.visible()).toBeFalse();
+      expect(component.visible()).toBe(false);
     });
 
     it('should emit visibleChange event', () => {
@@ -478,22 +552,22 @@ describe('SidebarMenuComponent', () => {
       component.visible.subscribe(v => emittedClose = v);
       fixture.componentRef.setInput('visible', true);
       component.close();
-      expect(emittedClose).toBeFalse();
+      expect(emittedClose).toBe(false);
     });
 
-    it('should close sidebar when menu item is clicked', (done) => {
+    it('should close sidebar when menu item is clicked', () => new Promise<void>(done => {
       const mockState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
-      spyOn(component, 'close');
+      vi.spyOn(component, 'close').mockReturnValue(undefined);
       fixture.componentRef.setInput('state$', of(mockState));
-      mockAuthService.getAuthStateValue.and.returnValue(mockState);
+      mockAuthService.getAuthStateValue.mockReturnValue(mockState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -507,7 +581,7 @@ describe('SidebarMenuComponent', () => {
         }
         done();
       });
-    });
+    }));
   });
 
   describe('the footer tag', () => {
@@ -518,7 +592,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'u', memberKey: 'm', email: 'e', isAdmin: false, permissions: [], roles: [],
         kurinKey: 'k', accessToken: 't', ...state
       } as AuthState;
-      mockAuthService.getAuthStateValue.and.returnValue(full);
+      mockAuthService.getAuthStateValue.mockReturnValue(full);
       fixture.componentRef.setInput('state$', of(full));
       component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
 
@@ -556,10 +630,10 @@ describe('SidebarMenuComponent', () => {
   describe('Input/Output bindings', () => {
     it('should have visible input property', () => {
       fixture.componentRef.setInput('visible', true);
-      expect(component.visible()).toBeTrue();
+      expect(component.visible()).toBe(true);
       
       fixture.componentRef.setInput('visible', false);
-      expect(component.visible()).toBeFalse();
+      expect(component.visible()).toBe(false);
     });
 
     it('should have state$ input property', () => {
@@ -576,23 +650,23 @@ describe('SidebarMenuComponent', () => {
 
       fixture.componentRef.setInput('visible', true);
       component.close();
-      expect(emittedValue).toBeFalse();
+      expect(emittedValue).toBe(false);
     });
   });
 
   describe('Integration scenarios', () => {
-    it('should update menu items when switching from Manager to Admin', (done) => {
+    it('should update menu items when switching from Manager to Admin', () => new Promise<void>(done => {
       const managerState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'manager@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       };
 
       fixture.componentRef.setInput('state$', of(managerState));
-      mockAuthService.getAuthStateValue.and.returnValue(managerState);
+      mockAuthService.getAuthStateValue.mockReturnValue(managerState);
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
       });
@@ -608,7 +682,7 @@ describe('SidebarMenuComponent', () => {
         };
 
         fixture.componentRef.setInput('state$', of(adminState));
-      mockAuthService.getAuthStateValue.and.returnValue(adminState);
+      mockAuthService.getAuthStateValue.mockReturnValue(adminState);
         component.ngOnChanges({
           state$: new SimpleChange(of(managerState), component.state$(), false)
         });
@@ -619,9 +693,9 @@ describe('SidebarMenuComponent', () => {
           done();
         });
       });
-    });
+    }));
 
-    it('should show correct menu items based on auth state changes', (done) => {
+    it('should show correct menu items based on auth state changes', () => new Promise<void>(done => {
       fixture.componentRef.setInput('state$', authStateSubject.asObservable());
       component.ngOnChanges({
         state$: new SimpleChange(null, component.state$(), true)
@@ -639,7 +713,7 @@ describe('SidebarMenuComponent', () => {
         userKey: 'user-123',
         memberKey: 'test-member-key',
         email: 'test@example.com',
-        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'],
+        isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide', 'BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide'], roles: ['KV.Zvyazkovyi'],
         kurinKey: 'kurin-456',
         accessToken: 'token-789'
       });
@@ -648,6 +722,6 @@ describe('SidebarMenuComponent', () => {
         subscription.unsubscribe();
         done();
       }, 0);
-    });
+    }));
   });
 });

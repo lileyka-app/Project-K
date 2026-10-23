@@ -15,6 +15,7 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AgendaCategoryManagerComponent } from '../../components/agenda-category-manager/agenda-category-manager';
 import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-policy/agenda-archive-policy';
 import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
+import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
 
 @Component({
   selector: 'app-kurin-settings',
@@ -27,7 +28,8 @@ import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kur
     InputNumberModule,
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent,
-    KurinCardFieldsComponent
+    KurinCardFieldsComponent,
+    KurinAccessPolicyComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -42,6 +44,7 @@ export class KurinSettingsComponent implements OnInit {
   /** The archive terms are part of the page and go out with its one «Зберегти». */
   private readonly archivePolicy = viewChild<AgendaArchivePolicyComponent>('archivePolicy');
   private readonly cardFields = viewChild<KurinCardFieldsComponent>('cardFields');
+  private readonly accessPolicy = viewChild<KurinAccessPolicyComponent>('accessPolicy');
 
   kurinKey = '';
   kurin: KurinDto | null = null;
@@ -125,10 +128,12 @@ export class KurinSettingsComponent implements OnInit {
     this.errorMessage = null;
 
     const cardFields = this.cardFields();
+    const accessPolicy = this.accessPolicy();
     forkJoin([
       this.kurinService.updateKurin(request),
       archive ? archive.save() : of(undefined),
-      cardFields ? cardFields.save() : of(undefined)
+      cardFields ? cardFields.save() : of(undefined),
+      accessPolicy ? accessPolicy.save() : of(undefined)
     ]).subscribe({
       next: ([updated]) => {
         this.kurin = updated;
@@ -152,6 +157,8 @@ export class KurinSettingsComponent implements OnInit {
         return `Курінь з числом ${this.number} уже є в Лілейці. Перевірте число.`;
       case 'KurinNumberOutOfRange':
         return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
+      case 'AccessPolicyInvalid':
+        return 'Права й видимість не збережено: сервер не прийняв цю таблицю. Онови сторінку й спробуй ще раз.';
       default:
         return 'Не вдалося зберегти налаштування куреня.';
     }

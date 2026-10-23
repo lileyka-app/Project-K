@@ -41,10 +41,20 @@ public sealed class DuesNames
     {
         var inKurin = (await memberships.GetInKurinAsync(kurinKey, cancellationToken)).ToDictionary(m => m.MembershipKey);
         var people = await members.GetByKurinAsync(kurinKey, cancellationToken);
+
+        // The kurin's people are those who stand in it now, but its dues still hold everyone who left
+        // or moved on with a debt; read those by key, or their rows in «вибулі з боргом» say «—».
+        var current = people.Select(p => p.MemberKey).ToHashSet();
+        var leftKeys = inKurin.Values.Select(m => m.MemberKey).Where(key => !current.Contains(key)).Distinct().ToList();
+        var left = leftKeys.Count == 0
+            ? []
+            : await members.GetByKeysAsync(leftKeys, cancellationToken) ?? [];
+        var named = people.Concat(left).ToList();
+
         return new DuesNames(
             inKurin,
-            people.ToDictionary(p => p.MemberKey, p => p.FullName),
-            people.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
+            named.GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().FullName),
+            named.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
             people.OrderBy(p => p.FullName).Select(p => new DuesPersonDto { MemberKey = p.MemberKey, FullName = p.FullName }).ToList());
     }
 

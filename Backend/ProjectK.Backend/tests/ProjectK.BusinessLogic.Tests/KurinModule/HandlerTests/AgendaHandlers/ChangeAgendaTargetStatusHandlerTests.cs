@@ -2,7 +2,10 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Status;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -22,6 +25,7 @@ public class ChangeAgendaTargetStatusHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
     private readonly ChangeAgendaTargetStatusCommandHandler _handler;
+    private readonly JournalRecorder _journal;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _groupKey = Guid.NewGuid();
@@ -39,6 +43,7 @@ public class ChangeAgendaTargetStatusHandlerTests
             AgendaItemKey = Guid.NewGuid(),
             KurinKey = _kurinKey,
             Kind = AgendaItemKind.Task,
+            Title = "Здати вкладку",
             CreatedByUserKey = _hurtkovyiUser,
             Assignments = [_target]
         };
@@ -59,8 +64,45 @@ public class ChangeAgendaTargetStatusHandlerTests
         _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, _hurtkovyiUser, _hurtkovyi, _groupKey, [_groupKey], [], false, true, [_groupKey]));
 
+        var groups = new Mock<IGroupRepository>();
+        groups.Setup(g => g.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Group("Соколи", _kurinKey) { GroupKey = _groupKey }]);
+        _uow.Setup(u => u.Groups).Returns(groups.Object);
+
+        _journal = new JournalRecorder(_currentUser.Object).Knows(_youth, _kurinKey, _groupKey, "Марта", "Мельник");
         _handler = new ChangeAgendaTargetStatusCommandHandler(
-            _uow.Object, _members.Object, _access.Object, _currentUser.Object, Mock.Of<IDomainEventPublisher>(), TimeProvider.System);
+            _uow.Object, _members.Object, _access.Object, _currentUser.Object, Mock.Of<IDomainEventPublisher>(), TimeProvider.System, _journal.Audit);
+    }
+
+    [Fact]
+    public async Task APersonsPart_IsRecordedAboutThePerson()
+    {
+        await _handler.Handle(new ChangeAgendaTargetStatusCommand(_item.AgendaItemKey, _target.AgendaAssignmentKey, AgendaItemStatus.Done, _youth), default);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Action.Should().Be(AuditActions.Agenda.StatusChanged);
+        entry.SubjectLabel.Should().Be("Здати вкладку");
+        entry.SubjectMemberKey.Should().Be(_youth);
+        entry.SubjectMemberName.Should().Be("Марта Мельник");
+        entry.SubjectGroupKey.Should().Be(_groupKey);
+        entry.Changes.Should().Equal(
+            new AuditChange("status", "Todo", "Done"),
+            new AuditChange("taskStatus", "Todo", "InProgress"));
+    }
+
+    [Fact]
+    public async Task ASharedTarget_IsNamedInTheLabel()
+    {
+        _target.CompletionMode = AgendaCompletionMode.Shared;
+
+        await _handler.Handle(new ChangeAgendaTargetStatusCommand(_item.AgendaItemKey, _target.AgendaAssignmentKey, AgendaItemStatus.Done, null), default);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.SubjectLabel.Should().Be("Здати вкладку — Соколи");
+        entry.SubjectMemberKey.Should().BeNull();
+        entry.Changes.Should().Equal(
+            new AuditChange("status", "Todo", "Done"),
+            new AuditChange("taskStatus", "Todo", "Done"));
     }
 
     [Fact]

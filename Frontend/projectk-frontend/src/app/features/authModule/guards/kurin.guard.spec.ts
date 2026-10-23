@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AuthState } from '../models/auth-state.model';
@@ -6,16 +7,20 @@ import { PermissionService } from '../services/permission-service/permission.ser
 import { kurinAccessGuard } from './kurin.guard';
 
 describe('kurinAccessGuard', () => {
-  let authService: jasmine.SpyObj<AuthService>;
-  let permissionService: jasmine.SpyObj<PermissionService>;
-  let router: jasmine.SpyObj<Router>;
+  let authService: MockedObject<AuthService>;
+  let permissionService: MockedObject<PermissionService>;
+  let router: MockedObject<Router>;
 
   beforeEach(() => {
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
-    permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', [
-      'isAdmin'
-    ]);
-    router = jasmine.createSpyObj<Router>('Router', ['createUrlTree']);
+    authService = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    permissionService = {
+      isAdmin: vi.fn()
+    } as MockedObject<PermissionService>;
+    router = {
+      createUrlTree: vi.fn()
+    } as MockedObject<Router>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -28,9 +33,9 @@ describe('kurinAccessGuard', () => {
 
   it('redirects panel route to active kurin even for admin', () => {
     const tree = { target: '/kurin' };
-    authService.getAuthStateValue.and.returnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: 'kurin-123' }));
-    permissionService.isAdmin.and.returnValue(true);
-    router.createUrlTree.and.returnValue(tree as never);
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: 'kurin-123' }));
+    permissionService.isAdmin.mockReturnValue(true);
+    router.createUrlTree.mockReturnValue(tree as never);
 
     const result = runGuard('panel');
 
@@ -39,20 +44,20 @@ describe('kurinAccessGuard', () => {
   });
 
   it('allows panel route when admin has no active kurin', () => {
-    authService.getAuthStateValue.and.returnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null }));
-    permissionService.isAdmin.and.returnValue(true);
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null }));
+    permissionService.isAdmin.mockReturnValue(true);
 
     const result = runGuard('panel');
 
-    expect(result).toBeTrue();
+    expect(result).toBe(true);
     expect(router.createUrlTree).not.toHaveBeenCalled();
   });
 
   it('redirects kurin route to panel for admin without active kurin', () => {
     const tree = { target: '/panel' };
-    authService.getAuthStateValue.and.returnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null }));
-    permissionService.isAdmin.and.returnValue(true);
-    router.createUrlTree.and.returnValue(tree as never);
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], kurinKey: null }));
+    permissionService.isAdmin.mockReturnValue(true);
+    router.createUrlTree.mockReturnValue(tree as never);
 
     const result = runGuard('kurin');
 

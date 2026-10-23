@@ -59,7 +59,7 @@ describe('LeadershipService', () => {
   });
 
   it('update should invalidate leadership and member caches', () => {
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.update('leadership-1', leadership).subscribe();
 

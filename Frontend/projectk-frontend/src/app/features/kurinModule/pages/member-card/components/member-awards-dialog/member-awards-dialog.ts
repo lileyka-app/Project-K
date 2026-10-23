@@ -31,8 +31,11 @@ export class MemberAwardsDialogComponent implements OnChanges {
   readonly visible = model(false);
   readonly awardToEdit = input<MemberAwardDto | null>(null);
   readonly existingAwards = input<MemberAwardDto[]>([]);
+  /** Change the level, date and note and save; a confirmed award only for whoever may remove one. */
   readonly canEdit = input(false);
+  /** Confirm this award: the kurin lets the viewer confirm its level. */
   readonly canReview = input(false);
+  readonly canDelete = input(false);
 
   readonly save = output<UpsertMemberAwardRequest>();
   readonly approve = output<string>();
@@ -59,6 +62,11 @@ export class MemberAwardsDialogComponent implements OnChanges {
 
   ngOnChanges(): void {
     if (this.visible()) {
+      if (this.canEdit()) {
+        this.form.enable();
+      } else {
+        this.form.disable();
+      }
       const awardToEdit = this.awardToEdit();
       if (awardToEdit) {
         this.form.patchValue({
@@ -69,7 +77,9 @@ export class MemberAwardsDialogComponent implements OnChanges {
         this.form.get('level')?.disable();
       } else {
         this.form.reset();
-        this.form.get('level')?.enable();
+        if (this.canEdit()) {
+          this.form.get('level')?.enable();
+        }
       }
     }
   }
@@ -79,7 +89,7 @@ export class MemberAwardsDialogComponent implements OnChanges {
   }
 
   onSave(): void {
-    if (this.form.valid) {
+    if (this.canEdit() && this.form.valid) {
       const formValue = this.form.getRawValue();
       const request: UpsertMemberAwardRequest = {
         memberAwardKey: this.awardToEdit()?.memberAwardKey,
@@ -124,7 +134,7 @@ export class MemberAwardsDialogComponent implements OnChanges {
   }
 
   get canDeleteAward(): boolean {
-    return this.canEdit() && !!this.awardToEdit();
+    return this.canDelete() && !!this.awardToEdit();
   }
 
   get statusLabel(): string | null {

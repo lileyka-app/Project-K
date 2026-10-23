@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import { KraiConcessionReportComponent } from './krai-concession-report';
@@ -7,7 +8,7 @@ import { KraiConcessionReportDto } from '../../../../duesModule/models/concessio
 describe('KraiConcessionReportComponent', () => {
   let fixture: ComponentFixture<KraiConcessionReportComponent>;
   let component: KraiConcessionReportComponent;
-  let profiles: jasmine.SpyObj<KraiProfileService>;
+  let profiles: MockedObject<KraiProfileService>;
 
   const report: KraiConcessionReportDto = {
     kraiCode: 'cz',
@@ -26,8 +27,10 @@ describe('KraiConcessionReportComponent', () => {
   };
 
   beforeEach(async () => {
-    profiles = jasmine.createSpyObj<KraiProfileService>('KraiProfileService', ['concessionReport']);
-    profiles.concessionReport.and.returnValue(of(report));
+    profiles = {
+      concessionReport: vi.fn()
+    } as MockedObject<KraiProfileService>;
+    profiles.concessionReport.mockReturnValue(of(report));
 
     await TestBed.configureTestingModule({
       imports: [KraiConcessionReportComponent],
@@ -43,7 +46,9 @@ describe('KraiConcessionReportComponent', () => {
   it('first asks for the quarter running by the край\'s clock and picks the one the server names', () => {
     fixture.detectChanges();
 
-    expect(profiles.concessionReport).toHaveBeenCalledOnceWith('cz', null);
+    expect(profiles.concessionReport).toHaveBeenCalledTimes(1);
+
+    expect(profiles.concessionReport).toHaveBeenCalledWith('cz', null);
     expect(component.quarter()).toBe('2026-4');
     expect(component.quarterOptions()[0].value).toBe('2026-4');
     const text = fixture.nativeElement.textContent;
@@ -65,7 +70,7 @@ describe('KraiConcessionReportComponent', () => {
     const older = new Subject<KraiConcessionReportDto>();
     const newer = new Subject<KraiConcessionReportDto>();
     fixture.detectChanges();
-    profiles.concessionReport.and.returnValues(older, newer);
+    profiles.concessionReport.mockReturnValueOnce(older).mockReturnValueOnce(newer);
 
     component.quarter.set('2026-3');
     fixture.detectChanges();

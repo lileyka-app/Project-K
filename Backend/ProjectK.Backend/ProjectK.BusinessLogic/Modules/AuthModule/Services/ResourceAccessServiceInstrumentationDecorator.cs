@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -50,4 +51,27 @@ public class ResourceAccessServiceInstrumentationDecorator : IResourceAccessServ
 
         return decision;
     }
+
+    public async Task<ResourceAccessDecision> CheckCapabilityAsync(
+        KurinCapability capability,
+        ResourceType scopeResourceType,
+        Guid scopeResourceKey,
+        CancellationToken cancellationToken = default)
+    {
+        var sw = Stopwatch.StartNew();
+        var decision = await _inner.CheckCapabilityAsync(capability, scopeResourceType, scopeResourceKey, cancellationToken);
+        sw.Stop();
+
+        _logger.LogInformation(
+            "Capability check for {Capability} scoped by {ScopeResourceType} {ResourceKey} took {ElapsedMs}ms. Decision: {IsAllowed}. Reason: {Reason}",
+            capability, scopeResourceType, scopeResourceKey, sw.ElapsedMilliseconds, decision.IsAllowed, decision.Reason);
+
+        return decision;
+    }
+
+    public Task<IReadOnlySet<KurinCapability>> ReachableCapabilitiesAsync(
+        ResourceType scopeResourceType,
+        Guid scopeResourceKey,
+        CancellationToken cancellationToken = default)
+        => _inner.ReachableCapabilitiesAsync(scopeResourceType, scopeResourceKey, cancellationToken);
 }

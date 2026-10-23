@@ -84,11 +84,14 @@ function iosSteps(guide: Extract<InstallGuide, { kind: 'ios' }>): ManualInstall 
   }
   const where = guide.device === 'iPad' ? 'на iPad' : 'на iPhone';
   if (guide.browser === 'safari') {
-    const first: InstallStep = guide.safari26
-      ? { text: 'Натисни «⋯» праворуч від адреси внизу, а тоді «Поділитися».', art: 'ios-more' }
-      : guide.device === 'iPad'
-        ? { text: 'Натисни «Поділитися» вгорі праворуч, поруч з адресою.', art: 'ios-share' }
-        : { text: 'Натисни «Поділитися» в нижній панелі Safari.', art: 'ios-share' };
+    let first: InstallStep;
+    if (guide.safari26) {
+      first = { text: 'Натисни «⋯» праворуч від адреси внизу, а тоді «Поділитися».', art: 'ios-more' };
+    } else if (guide.device === 'iPad') {
+      first = { text: 'Натисни «Поділитися» вгорі праворуч, поруч з адресою.', art: 'ios-share' };
+    } else {
+      first = { text: 'Натисни «Поділитися» в нижній панелі Safari.', art: 'ios-share' };
+    }
     const other = guide.safari26
       ? 'На старших iOS кнопка «Поділитися» стоїть просто в панелі Safari.'
       : 'На iOS 26 кнопка «Поділитися» ховається за «⋯» праворуч від адреси.';

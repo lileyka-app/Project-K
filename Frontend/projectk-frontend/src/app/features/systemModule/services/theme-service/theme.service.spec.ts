@@ -20,13 +20,13 @@ describe('ThemeService', () => {
 
     const service = create();
 
-    expect(service.isDark()).toBeTrue();
+    expect(service.isDark()).toBe(true);
     expect(document.documentElement.dataset['theme']).toBe('dark');
   });
 
   it('falls back to the system preference when nothing is stored', () => {
     localStorage.removeItem(STORAGE_KEY);
-    spyOn(globalThis, 'matchMedia').and.returnValue({ matches: true } as MediaQueryList);
+    vi.spyOn(globalThis, 'matchMedia').mockReturnValue({ matches: true } as MediaQueryList);
 
     const service = create();
 
@@ -53,7 +53,9 @@ describe('ThemeService', () => {
   });
 
   it('keeps working when storage throws', () => {
-    spyOn(Storage.prototype, 'setItem').and.throwError('quota');
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
     const service = create();
 
     expect(() => service.set('dark')).not.toThrow();

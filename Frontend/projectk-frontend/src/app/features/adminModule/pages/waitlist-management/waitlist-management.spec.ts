@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { registerLocaleData } from '@angular/common';
 import localeUk from '@angular/common/locales/uk';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -29,21 +30,25 @@ function entry(overrides: Partial<WaitlistEntry>): WaitlistEntry {
 describe('WaitlistManagementComponent', () => {
   let fixture: ComponentFixture<WaitlistManagementComponent>;
   let component: WaitlistManagementComponent;
-  let onboarding: jasmine.SpyObj<OnboardingService>;
+  let onboarding: MockedObject<OnboardingService>;
 
   beforeEach(async () => {
     // The table's date pipe formats in uk-UA, which main.ts registers for the app but not for the specs.
     registerLocaleData(localeUk, 'uk-UA');
-    onboarding =jasmine.createSpyObj<OnboardingService>('OnboardingService', ['getWaitlistEntries', 'getKrais', 'approveWaitlistEntry']);
-    onboarding.getWaitlistEntries.and.returnValue(of([
+    onboarding = {
+      getWaitlistEntries: vi.fn(),
+      getKrais: vi.fn(),
+      approveWaitlistEntry: vi.fn()
+    } as MockedObject<OnboardingService>;
+    onboarding.getWaitlistEntries.mockReturnValue(of([
       entry({ kraiCode: 'pl' }),
       entry({ waitlistEntryKey: 'key-2', email: 'old@example.com', kraiCode: null, regionOrCountry: 'Польща, Варшава' })
     ]));
-    onboarding.getKrais.and.returnValue(of([
+    onboarding.getKrais.mockReturnValue(of([
       { code: 'ua', name: 'Україна', isDefault: true },
       { code: 'pl', name: 'Польща', isDefault: false }
     ]));
-    onboarding.approveWaitlistEntry.and.returnValue(of('invitation-key'));
+    onboarding.approveWaitlistEntry.mockReturnValue(of('invitation-key'));
 
     await TestBed.configureTestingModule({
       imports: [WaitlistManagementComponent],
@@ -73,7 +78,7 @@ describe('WaitlistManagementComponent', () => {
     component.confirmApproval();
 
     expect(onboarding.approveWaitlistEntry).toHaveBeenCalledWith('key-1', 'ua');
-    expect(component.approvalDialogVisible).toBeFalse();
+    expect(component.approvalDialogVisible).toBe(false);
   });
 
   it('starts from the default край when the application named none', () => {

@@ -24,9 +24,18 @@
         (respond)="respond($event)" />
     </ng-template>
 
-    @if (duties().length) {
+    @if (duties().length || dutiesHidden()) {
       <ng-template [appTileDef]="{ key: 'my-duties', span: 'half', label: 'Справи' }">
-        <app-my-duties-tile [duties]="duties()" [loading]="dutiesLoading()" [failed]="dutiesFailed()" [namesKurin]="namesKurin()" />
+        <app-my-duties-tile
+          [duties]="duties()"
+          [loading]="dutiesLoading()"
+          [failed]="dutiesFailed()"
+          [namesKurin]="namesKurin()"
+          [savingKey]="dutySaving()"
+          [hiddenCount]="dutiesHidden()"
+          (notHeld)="markNotHeld($event)"
+          (hide)="hideDuty($event)"
+          (restoreHidden)="restoreDuties()" />
       </ng-template>
     }
 

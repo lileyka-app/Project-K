@@ -76,7 +76,7 @@ public sealed class SubscribeToPushCommandHandler
         var now = DateTime.UtcNow;
         var userAgent = string.IsNullOrWhiteSpace(request.UserAgent)
             ? null
-            : request.UserAgent.Length <= MaxUserAgentLength ? request.UserAgent : request.UserAgent[..MaxUserAgentLength];
+            : request.UserAgent[..Math.Min(request.UserAgent.Length, MaxUserAgentLength)];
 
         var device = await _unitOfWork.WebPushSubscriptions.GetByEndpointAsync(request.Endpoint, cancellationToken);
         if (device is null)

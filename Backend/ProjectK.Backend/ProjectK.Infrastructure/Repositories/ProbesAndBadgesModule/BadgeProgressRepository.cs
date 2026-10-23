@@ -16,7 +16,6 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
     {
         return await Context.BadgeProgresses
             .AsTracking()
-            .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(x => x.BadgeProgressKey == entityKey, cancellationToken);
     }
 
@@ -24,7 +23,6 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
     {
         return await Context.BadgeProgresses
             .AsTracking()
-            .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(
                 x => x.MemberKey == memberKey && x.BadgeId == badgeId,
                 cancellationToken);
@@ -45,7 +43,6 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
     {
         return await Context.BadgeProgresses
             .Where(x => x.MemberKey == memberKey)
-            .Include(x => x.AuditEvents)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
@@ -60,7 +57,6 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
 
         return await Context.BadgeProgresses
             .Where(x => keys.Contains(x.MemberKey))
-            .Include(x => x.AuditEvents)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }

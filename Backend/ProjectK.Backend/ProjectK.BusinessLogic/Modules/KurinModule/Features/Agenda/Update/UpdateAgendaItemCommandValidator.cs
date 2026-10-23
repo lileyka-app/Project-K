@@ -19,7 +19,7 @@ public sealed class UpdateAgendaItemCommandValidator : AbstractValidator<UpdateA
             .Must(c => !(c.EndUtc.HasValue && c.StartUtc is null))
             .WithMessage("EndUtc requires StartUtc.");
         RuleFor(command => command)
-            .Must(c => !(c.StartUtc.HasValue && c.EndUtc.HasValue) || c.EndUtc!.Value >= c.StartUtc!.Value)
+            .Must(c => !(c.StartUtc.HasValue && c.EndUtc.HasValue) || c.EndUtc.Value >= c.StartUtc.Value)
             .WithMessage("EndUtc must not be before StartUtc.");
 
         RuleFor(c => c.RecurrenceInterval).GreaterThanOrEqualTo(1);
@@ -28,7 +28,7 @@ public sealed class UpdateAgendaItemCommandValidator : AbstractValidator<UpdateA
             .Must(c => c.RecurrenceFrequency == RecurrenceFrequency.None || c.StartUtc.HasValue)
             .WithMessage("A recurring item needs a start date.");
         RuleFor(c => c)
-            .Must(c => !(c.RecurrenceEndUtc.HasValue && c.StartUtc.HasValue) || c.RecurrenceEndUtc!.Value >= c.StartUtc!.Value)
+            .Must(c => !(c.RecurrenceEndUtc.HasValue && c.StartUtc.HasValue) || c.RecurrenceEndUtc.Value >= c.StartUtc.Value)
             .WithMessage("RecurrenceEndUtc must not be before StartUtc.");
     }
 }

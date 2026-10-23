@@ -421,8 +421,8 @@
           <app-krai-concession-grants
             [groupKey]="groupKey"
             [membershipKey]="target.membershipKey"
-            [grants]="target.grants ?? []"
-            [concessions]="d.kraiConcessions ?? []"
+            [grants]="target.grants"
+            [concessions]="d.kraiConcessions"
             [fromOptions]="fromQuarterOptions()"
             [currentQuarter]="d.currentQuarter"
             [money]="money"

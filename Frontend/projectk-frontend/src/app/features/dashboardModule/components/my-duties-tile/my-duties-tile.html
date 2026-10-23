@@ -14,11 +14,11 @@
   } @else if (failed()) {
     <p class="duties-tile__note">Справи не вдалося прочитати. Спробуй за хвилину.</p>
   } @else if (!rows().length) {
-    <app-empty-state art="list" title="Усе зроблено" body="Нічого не чекає — ні вмілостей, ні каси, ні сходин без відмітки." />
+    <app-empty-state art="list" title="Усе зроблено" [body]="hiddenCount() ? 'Решту приховано — вона повернеться, щойно в ній щось додасться.' : 'Нічого не чекає — ні вмілостей, ні каси, ні сходин без відмітки.'" />
   } @else {
     <ul class="duties-tile__list">
       @for (row of rows(); track rowKey(row)) {
-        <li>
+        <li class="duties-tile__item">
           @if (row.link; as link) {
             <a class="duties-tile__row duties-tile__row--link" [routerLink]="link">
               <ng-container *ngTemplateOutlet="body; context: { row }" />
@@ -29,9 +29,51 @@
               <ng-container *ngTemplateOutlet="body; context: { row }" />
             </span>
           }
+          @if (row.canSayNotHeld || row.canHide) {
+            <div class="duties-tile__actions">
+              @if (row.canSayNotHeld) {
+                <p-button
+                  label="Сходин не було"
+                  icon="pi pi-calendar-times"
+                  severity="secondary"
+                  variant="text"
+                  size="small"
+                  [ariaLabel]="'Сходин не було: ' + (row.duty.title ?? '')"
+                  [loading]="savingKey() === rowKey(row)"
+                  [disabled]="!!savingKey()"
+                  (onClick)="notHeld.emit(row.duty)" />
+              }
+              @if (row.canHide) {
+                <p-button
+                  label="Приховати"
+                  icon="pi pi-eye-slash"
+                  severity="secondary"
+                  variant="text"
+                  size="small"
+                  [ariaLabel]="'Приховати: ' + row.label"
+                  [loading]="savingKey() === 'hide:' + rowKey(row)"
+                  [disabled]="!!savingKey()"
+                  (onClick)="hide.emit(row.duty)" />
+              }
+            </div>
+          }
         </li>
       }
     </ul>
+  }
+
+  @if (hiddenCount() && !loading() && !failed()) {
+    <div class="duties-tile__hidden">
+      <p-button
+        [label]="'Показати приховані (' + hiddenCount() + ')'"
+        icon="pi pi-eye"
+        severity="secondary"
+        variant="text"
+        size="small"
+        [loading]="savingKey() === 'restore'"
+        [disabled]="!!savingKey()"
+        (onClick)="restoreHidden.emit()" />
+    </div>
   }
 </section>
 

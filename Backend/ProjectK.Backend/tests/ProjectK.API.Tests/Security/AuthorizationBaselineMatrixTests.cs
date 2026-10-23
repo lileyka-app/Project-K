@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Authorization;
+using ProjectK.API.Controllers.AuditModule;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.DemoModule;
 using ProjectK.API.Controllers.DevModule;
@@ -25,6 +26,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.Common.Models.Dtos.MeModule.Requests;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
@@ -160,6 +162,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.GetSheet), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid, string, MarkAttendanceRequest>>(nameof(KurinScoreController.MarkAttendance), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid, string, Guid>>(nameof(KurinScoreController.UnmarkAttendance), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.SetNotHeld), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.ClearNotHeld), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.CreateEntry), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.UpdateEntry), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid>>(nameof(KurinScoreController.DeleteEntry), "RequireUser");
@@ -187,7 +191,14 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetDues), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetDuties), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetDutiesBoard), "RequireUser");
+        yield return Row<Action<MeController, DismissDutyRequest>>(nameof(MeController.DismissDuty), "RequireUser");
+        yield return Row<Action<MeController, string?>>(nameof(MeController.RestoreDuties), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetCalendarFeed), "RequireUser");
+        yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.IssueCalendarFeed), "RequireUser");
+        yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.UpdateCalendarFeed), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.DisableCalendarFeed), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
@@ -214,6 +225,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinKraiRequest>>(nameof(KurinController.SetKrai), "RequireAdmin");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetCardFields), "RequireUser");
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
+        yield return Endpoint<KurinController>(nameof(KurinController.GetAccessPolicy), "RequireUser");
+        yield return Endpoint<KurinController>(nameof(KurinController.SetAccessPolicy), "RequireUser");
 
         yield return Row<Action<KraiController>>(nameof(KraiController.GetAll), "RequireAdmin");
         yield return Row<Action<KraiController, CreateKraiRequest>>(nameof(KraiController.Create), "RequireAdmin");
@@ -248,12 +261,13 @@ public class AuthorizationBaselineMatrixTests
 
         yield return Row<Action<MemberProgressController, Guid>>(nameof(MemberProgressController.GetBadgeProgresses), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, SubmitBadgeProgressRequest>>(nameof(MemberProgressController.SubmitBadgeProgress), "RequireUser");
-        yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), AuthorizationPolicies.RequireUser);
         yield return Row<Action<MemberProgressController, Guid, string>>(nameof(MemberProgressController.GetProbeProgress), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), "RequireUser");
 
-        // Agenda reads are open to the kurin; raising an item is a провід capability, while editing or
-        // dropping one is settled per item by ResourceAuthorize (author, or the Виховник it targets).
+        // Agenda reads are open to the kurin; whom an item may be assigned to is the kurin's policy, asked
+        // per target by the handler, while editing or dropping one is settled per item by
+        // ResourceAuthorize (author, or the Виховник it targets).
         yield return Row<Action<AgendaController, Guid, DateTime?, DateTime?, bool>>(nameof(AgendaController.GetCalendar), "RequireUser");
         yield return Row<Action<AgendaController, Guid, string?, AgendaTargetType?, Guid?, bool, AgendaBoardSort, AgendaItemStatus?, int, int>>(nameof(AgendaController.GetBoard), "RequireUser");
         yield return Row<Action<AgendaController, Guid, string?, int, int>>(nameof(AgendaController.GetArchive), "RequireUser");
@@ -261,8 +275,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<AgendaController, Guid, AgendaArchivePolicyDto>>(nameof(AgendaController.SetArchivePolicy), "RequireUser");
         yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetItem), "RequireUser");
         yield return Row<Action<AgendaController, Guid, SetAgendaArchivedRequest>>(nameof(AgendaController.SetArchived), "RequireUser");
-        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetAssignTargets), "RequireAgendaAuthor");
-        yield return Row<Action<AgendaController, CreateAgendaItemCommand>>(nameof(AgendaController.Create), "RequireAgendaAuthor");
+        yield return Row<Action<AgendaController, Guid>>(nameof(AgendaController.GetAssignTargets), "RequireUser");
+        yield return Row<Action<AgendaController, CreateAgendaItemCommand>>(nameof(AgendaController.Create), "RequireUser");
         yield return Row<Action<AgendaController, Guid, UpdateAgendaItemCommand>>(nameof(AgendaController.Update), "RequireUser");
         yield return Row<Action<AgendaController, Guid, ChangeAgendaStatusRequest>>(nameof(AgendaController.ChangeStatus), "RequireUser");
         yield return Row<Action<AgendaController, Guid, Guid, ChangeAgendaTargetStatusRequest>>(nameof(AgendaController.ChangeTargetStatus), "RequireUser");
@@ -288,11 +302,13 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.ReportProblem), AuthorizationPolicies.RequireUser);
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.UploadScreenshot), AuthorizationPolicies.RequireUser);
         yield return Endpoint<PhoneAppController>(nameof(PhoneAppController.GetInstallCode), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinJournalController>(nameof(KurinJournalController.Get), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberController>(nameof(MemberController.CreateByKurin), "RequireUser");
+        yield return Endpoint<MemberController>(nameof(MemberController.GetAbilities), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberController>(nameof(MemberController.GetKurinMentorCandidates), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<MemberController>(nameof(MemberController.ResendInvitation), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberController>(nameof(MemberController.ResetProfileVerification), AuthorizationPolicies.RequireGroupLeadership);
@@ -335,6 +351,7 @@ public class AuthorizationBaselineMatrixTests
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.GetLatestInvitationByEmail));
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.Reset));
         yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));
+        yield return AnonymousEndpoint<CalendarFeedController>(nameof(CalendarFeedController.GetFeed));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ActivateAccount));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.RequestPasswordReset));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResendInvitationByEmail));

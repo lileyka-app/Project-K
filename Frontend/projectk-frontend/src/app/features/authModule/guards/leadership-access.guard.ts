@@ -4,7 +4,7 @@ import { LeadershipScope, PermissionService } from '../services/permission-servi
 
 // The КВ has no провід form: its people are seated from the КВ tile, where a гурток decides
 // впорядник or інструктор.
-const scopes: readonly LeadershipScope[] = ['kurin', 'group'];
+const scopes: ReadonlySet<LeadershipScope> = new Set<LeadershipScope>(['kurin', 'group']);
 
 /** The провід form: the `:type` in the address decides whose body it is, and the gate follows it. */
 export const leadershipAccessGuard: CanActivateFn = (route) => {
@@ -12,7 +12,7 @@ export const leadershipAccessGuard: CanActivateFn = (route) => {
   const router = inject(Router);
 
   const type = route.paramMap.get('type') as LeadershipScope | null;
-  if (type && scopes.includes(type) && permissionService.canSetupLeadership(type)) {
+  if (type && scopes.has(type) && permissionService.canSetupLeadership(type)) {
     return true;
   }
 

@@ -1,0 +1,82 @@
+/* Global on purpose (listed in angular.json after FullCalendar's classic theme): FullCalendar 7 portals
+   the «+ще» popover and the drag mirror into <body>, out of reach of the component's :host styles. */
+
+/* The classic theme's palette mapped onto the brandbook (no new colours). Its own palette.css is not
+   loaded: these follow the app's data-theme switch instead of FullCalendar's data-color-scheme. */
+:root {
+  --fc-classic-primary: var(--p-primary-color);
+  --fc-classic-primary-foreground: var(--p-primary-contrast-color);
+  --fc-classic-event: var(--lil-agenda-event-bg);
+  --fc-classic-event-contrast: var(--lil-agenda-event-fg);
+  --fc-classic-highlight: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  --fc-classic-today: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  --fc-classic-now: var(--p-primary-color);
+  --fc-classic-small-dot-width: 8px;
+  --fc-classic-large-dot-width: 10px;
+  --fc-classic-background: var(--p-content-background);
+  --fc-classic-faint: var(--p-content-hover-background);
+  --fc-classic-muted: var(--p-content-hover-background);
+  --fc-classic-strong: var(--p-content-hover-background);
+  --fc-classic-foreground: var(--p-text-color);
+  --fc-classic-faint-foreground: var(--p-text-muted-color);
+  --fc-classic-muted-foreground: var(--p-text-muted-color);
+  --fc-classic-border: var(--p-content-border-color);
+  --fc-classic-strong-border: var(--p-content-border-color);
+}
+
+full-calendar { display: block; font-family: inherit; }
+/* v6 metrics the classic theme shrank: 16px bold weekday heads, 16px day numbers and time axis (also
+   on narrow phones), days outside the month at 30%, and a month day never lower than number + two
+   chip rows. */
+.agenda-cal__day-head { font-size: 1rem; font-weight: 700; line-height: 1.5; min-width: 0; white-space: normal; }
+.agenda-cal__axis { font-size: 1rem; line-height: 1.5; margin-block: 0; }
+/* v6's month day: number, then max(2em, chips), then 1em. FullCalendar sizes the chips box with an
+   inline min-height, so the 2em comes from an in-flow strut rather than a min-height of ours; a
+   min-height on the row instead clamps rows with more chips and sets off a ResizeObserver loop. */
+.agenda-cal__day-events::before { content: ''; display: block; flex: none; height: 2rem; }
+.agenda-cal__day-foot { min-height: 1rem; }
+.agenda-cal__day-num { font-size: 1rem; line-height: 1.5; }
+.agenda-cal__day-num--other { color: var(--p-text-color); opacity: 0.3; }
+
+/* Event kinds when no category colour is set: events in the calendar blue, tasks in the same
+   grey → terracotta → green as the status tags on the board (tokens in lileyka-theme.css). */
+.agenda-ev { border-radius: var(--p-border-radius-sm, 6px); cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+.agenda-ev--plain.agenda-ev--event { background: var(--lil-agenda-event-bg); border-color: var(--lil-agenda-event-line); color: var(--lil-agenda-event-fg); }
+.agenda-ev--plain.agenda-ev--task { background: var(--lil-agenda-todo-bg); border-color: var(--lil-agenda-todo-line); color: var(--lil-agenda-todo-fg); }
+.agenda-ev--plain.agenda-ev--inprogress { background: var(--lil-agenda-progress-bg); border-color: var(--lil-agenda-progress-line); color: var(--lil-agenda-progress-fg); }
+.agenda-ev--plain.agenda-ev--done { background: var(--lil-agenda-done-bg); border-color: var(--lil-agenda-done-line); color: var(--lil-agenda-done-fg); }
+
+/* A category colours the plate through `--agenda-cat` (set on the element by eventDidMount), never
+   as a solid fill: the theme says how much of it goes into the paper (`--lil-agenda-cat-*-mix`),
+   so the light theme gets a tint under ink text and the dark one keeps its bars. */
+.agenda-ev--category {
+  background: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-bg-mix), var(--p-content-background));
+  border-color: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-line-mix), var(--p-content-background));
+  color: var(--p-text-color);
+}
+
+/* Inside the chip: dot · text · faint glyph (rendered by eventContent in the component). */
+.agenda-ev .agenda-ev__main { align-items: center; color: inherit; display: flex; flex-direction: row; font-size: inherit; gap: 0.35rem; line-height: 1.5; min-width: 0; padding: 1px 1.5rem 1px 0.35rem; position: relative; }
+.agenda-ev--narrow-start { margin-inline-start: 2px; }
+.agenda-ev--narrow-end { margin-inline-end: 2px; }
+.agenda-ev__dot { background: var(--lil-agenda-todo-dot); border-radius: 50%; flex: none; height: 0.5rem; width: 0.5rem; }
+.agenda-ev--inprogress .agenda-ev__dot { background: var(--lil-agenda-progress-dot); }
+.agenda-ev--done .agenda-ev__dot { background: var(--lil-agenda-done-dot); }
+.agenda-ev--event .agenda-ev__dot { background: var(--lil-agenda-event-dot); }
+.agenda-ev--category .agenda-ev__dot { background: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-dot-mix), var(--p-text-color)); }
+.agenda-ev__title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-ev__icon { color: var(--lil-agenda-glyph); font-size: 0.9rem; pointer-events: none; position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); }
+/* Time views stack the title under the time; let the text wrap there instead of clipping. */
+.agenda-ev--column .agenda-ev__title { white-space: normal; }
+/* Recurring occurrences read as slightly lighter and carry a repeat glyph. */
+.agenda-ev--series { opacity: 0.92; }
+/* On the calendar only through the kurin's schedule: the group's colour as a frame around a paler
+   plate, so what is the viewer's reads first and the other гуртки's сходини do not get lost. */
+.agenda-ev--schedule.agenda-ev--category {
+  background: color-mix(in srgb, var(--agenda-cat) calc(var(--lil-agenda-cat-bg-mix) / 3), var(--p-content-background));
+  border-color: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-line-mix), var(--p-content-background));
+  color: var(--p-text-muted-color);
+}
+/* The viewer raised it for someone else: dashed, and paler than what is theirs to attend. */
+.agenda-ev--foreign { --fc-classic-border-style: dashed; border-style: dashed; opacity: 0.75; }
+.agenda-ev--series .agenda-ev__title::before { content: '\21bb '; }

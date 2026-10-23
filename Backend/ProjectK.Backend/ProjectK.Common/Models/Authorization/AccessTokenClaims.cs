@@ -24,6 +24,12 @@ public static class AccessTokenClaims
     /// </summary>
     public const string AuthenticationMethodsMapped = "http://schemas.microsoft.com/claims/authnmethodsreferences";
 
+    /// <summary>
+    /// When the token was minted, in whole Unix seconds. The access-change signal compares it with
+    /// the moment an office, membership or policy last changed, to tell a client its token is stale.
+    /// </summary>
+    public const string IssuedAt = "iat";
+
     public const string Mfa = "mfa";
     public const string Password = "pwd";
 }

@@ -11,6 +11,7 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.Get;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.Mark;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.NotHeld;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -97,6 +98,34 @@ public class KurinScoreController : ControllerBase
         }
 
         var result = await _mediator.Send(new UnmarkAttendanceCommand(kurinKey, agendaItemKey, startUtc, membershipKey));
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Says the occurrence did not take place: it leaves the провід's «Справи». Refused while anyone is marked present.</summary>
+    [HttpPut("events/{agendaItemKey:guid}/{occurrence}/not-held")]
+    [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public Task<IActionResult> SetNotHeld(Guid kurinKey, Guid agendaItemKey, string occurrence) =>
+        SendNotHeldAsync(kurinKey, agendaItemKey, occurrence, notHeld: true);
+
+    /// <summary>Takes «did not take place» back; the first mark at the occurrence does it too.</summary>
+    [HttpDelete("events/{agendaItemKey:guid}/{occurrence}/not-held")]
+    [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IActionResult> ClearNotHeld(Guid kurinKey, Guid agendaItemKey, string occurrence) =>
+        SendNotHeldAsync(kurinKey, agendaItemKey, occurrence, notHeld: false);
+
+    private async Task<IActionResult> SendNotHeldAsync(Guid kurinKey, Guid agendaItemKey, string occurrence, bool notHeld)
+    {
+        if (!TryParseOccurrence(occurrence, out var startUtc))
+        {
+            return BadRequest(new { code = "BadOccurrence", message = "The occurrence is its start, as an ISO 8601 UTC instant." });
+        }
+
+        var result = await _mediator.Send(new SetOccurrenceNotHeldCommand(kurinKey, agendaItemKey, startUtc, notHeld));
         return result.ToActionResult(this);
     }
 

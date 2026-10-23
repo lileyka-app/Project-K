@@ -23,6 +23,20 @@ export interface LoginResponse {
   tokens: { accessToken: string } | null;
 }
 
+/** What the account may do now, as a refresh reports it (web access-snapshot.model.ts). */
+export interface AccessSnapshot {
+  isAdmin: boolean;
+  roles: string[];
+  permissions: string[];
+  kurinKey: string | null;
+}
+
+/** The refresh answer; `access` is absent from servers older than 1.2.3. */
+export interface RefreshResponse {
+  accessToken: string;
+  access?: AccessSnapshot | null;
+}
+
 /**
  * Another account this browser is signed in to, from `auth/accounts` (web saved-account.model.ts,
  * the API's SavedAccountDto).

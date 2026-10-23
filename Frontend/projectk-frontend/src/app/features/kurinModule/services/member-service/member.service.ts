@@ -5,10 +5,12 @@ import { map, Observable, tap, throwError } from 'rxjs';
 import { MemberDto } from '../../models/member.dto';
 import { MembershipDto } from '../../models/membership.dto';
 import { UpsertMemberDto } from '../../models/requests/member/upsert-member.dto';
+import { PlastLevelHistoryDto } from '../../models/plast-level-history.dto';
 import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto';
 import { mapMemberForView } from '../../functions/member-view-mapper.function';
 import { ClientCacheService } from '../client-cache/client-cache.service';
-import { ENTITY_CACHE_TTL_MS, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
+import { ACCESS_CACHE_PREFIX, ENTITY_CACHE_TTL_MS, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
+import { MemberAbilitiesDto } from '../../models/member-abilities.dto';
 import { toDateOnlyString } from '../../functions/to-date-only-string.function';
 import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
@@ -27,6 +29,18 @@ export class MemberService {
       () => this.http.get<MemberDto>(`${this.apiUrl}/${id}`).pipe(
         map(member => mapMemberForView(member))
       )
+    );
+  }
+
+  /**
+   * What the viewer may do to this member under the kurin's policy. Cached with the check-access
+   * answers, so a change of rights that clears those clears this too.
+   */
+  getAbilities(memberKey: string): Observable<MemberAbilitiesDto> {
+    return this.cache.get(
+      `${ACCESS_CACHE_PREFIX}abilities:${memberKey}`,
+      ENTITY_CACHE_TTL_MS,
+      () => this.http.get<MemberAbilitiesDto>(`${this.apiUrl}/${memberKey}/abilities`)
     );
   }
 
@@ -146,7 +160,7 @@ export class MemberService {
           }
 
         if (key === 'plastLevelHistories' && Array.isArray(value)) {
-            value.forEach((historyItem, index) => {
+            (value as PlastLevelHistoryDto[]).forEach((historyItem, index) => {
                 Object.entries(historyItem).forEach(([itemKey, itemValue]) => {
                     if (itemValue !== null && itemValue !== undefined) {
                         const formattedKey = `${key}[${index}].${itemKey}`;

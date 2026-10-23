@@ -199,7 +199,7 @@ public class AuthControllerTests
         // Arrange
         _controller.Request.Headers.Cookie = "refreshToken=invalid-token";
         _mediatorMock.Setup(m => m.Send(It.IsAny<RefreshTokenCommand>(), default))
-            .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
+            .ReturnsAsync(new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized));
 
         // Act
         var result = await _controller.Refresh();
@@ -217,7 +217,7 @@ public class AuthControllerTests
     {
         // Arrange
         _controller.Request.Headers.Cookie = "refreshToken=stale-token; refreshToken=valid-token";
-        var refreshedJwt = new JwtResponse
+        var refreshedJwt = new RefreshTokenResponse
         {
             AccessToken = "new-access-token",
             RefreshToken = new RefreshToken
@@ -231,11 +231,11 @@ public class AuthControllerTests
         _mediatorMock.Setup(m => m.Send(
                 It.Is<RefreshTokenCommand>(c => c.RefreshToken == "stale-token"),
                 default))
-            .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Unauthorized));
+            .ReturnsAsync(new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized));
         _mediatorMock.Setup(m => m.Send(
                 It.Is<RefreshTokenCommand>(c => c.RefreshToken == "valid-token"),
                 default))
-            .ReturnsAsync(new ServiceResult<JwtResponse>(ResultType.Success, refreshedJwt));
+            .ReturnsAsync(new ServiceResult<RefreshTokenResponse>(ResultType.Success, refreshedJwt));
 
         // Act
         var result = await _controller.Refresh();

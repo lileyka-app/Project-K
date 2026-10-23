@@ -10,31 +10,34 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 
-public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, ServiceResult<JwtResponse>>
+public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, ServiceResult<RefreshTokenResponse>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenStore _refreshTokens;
     private readonly IAccessContextResolver _access;
+    private readonly IAccessSnapshotFactory _snapshots;
 
     public RefreshTokenCommandHandler(
         UserManager<AppUser> userManager,
         IJwtService jwtService,
         IRefreshTokenStore refreshTokens,
-        IAccessContextResolver access)
+        IAccessContextResolver access,
+        IAccessSnapshotFactory snapshots)
     {
         _userManager = userManager;
         _jwtService = jwtService;
         _refreshTokens = refreshTokens;
         _access = access;
+        _snapshots = snapshots;
     }
 
-    public async Task<ServiceResult<JwtResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         var session = await _refreshTokens.FindActiveAsync(request.RefreshToken, cancellationToken);
         if (session is null)
         {
-            return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
+            return new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized);
         }
 
         // Suspension ends every session when it is applied; this is the backstop for a token
@@ -42,7 +45,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
         var user = await _userManager.FindByIdAsync(session.UserId.ToString());
         if (user is null || !user.CanSignIn())
         {
-            return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
+            return new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized);
         }
 
         // Spend the token first, and only continue if this call is the one that spent it. Two
@@ -51,14 +54,14 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
         // alive, unreachable and beyond the reach of logout.
         if (!await _refreshTokens.RevokeAsync(session.Token, cancellationToken))
         {
-            return new ServiceResult<JwtResponse>(ResultType.Unauthorized);
+            return new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized);
         }
 
         // A refresh is where a change of office reaches the token, so the roles are worked out
         // again rather than carried over — and worked out for the kurin the account is in now.
         var access = await _access.ResolveAsync(user, cancellationToken);
 
-        var jwt = new JwtResponse
+        var jwt = new RefreshTokenResponse
         {
             AccessToken = _jwtService.GenerateAccessToken(
                 user.Id.ToString(),
@@ -66,11 +69,14 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
                 access.Roles,
                 access.KurinKey?.ToString(),
                 user.TwoFactorEnabled),
-            RefreshToken = _jwtService.GenerateRefreshToken()
+            RefreshToken = _jwtService.GenerateRefreshToken(),
+            // In the body as well as the token, so an open session learns of the change without
+            // signing in again.
+            Access = await _snapshots.CreateAsync(access, cancellationToken)
         };
 
         await _refreshTokens.IssueAsync(user.Id, jwt.RefreshToken.Token, jwt.RefreshToken.Expires, cancellationToken);
 
-        return new ServiceResult<JwtResponse>(ResultType.Success, jwt);
+        return new ServiceResult<RefreshTokenResponse>(ResultType.Success, jwt);
     }
 }

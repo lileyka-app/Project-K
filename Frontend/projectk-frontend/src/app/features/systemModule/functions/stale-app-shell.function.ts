@@ -25,7 +25,8 @@ function messageOf(error: unknown): string {
   }
 
   if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message: unknown }).message ?? '');
+    const { message } = error as { message: unknown };
+    return typeof message === 'string' ? message : '';
   }
 
   return '';

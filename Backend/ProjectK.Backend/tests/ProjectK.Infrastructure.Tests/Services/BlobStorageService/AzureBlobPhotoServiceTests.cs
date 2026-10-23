@@ -32,7 +32,7 @@ public class AzureBlobPhotoServiceTests
             ContainerName = "test-photos"
         };
 
-        _service = new AzureBlobPhotoService(options, null, Mock.Of<IBlobReadLinks>(), _loggerMock.Object);
+        _service = new AzureBlobPhotoService(options, Mock.Of<IBlobReadLinks>(), _loggerMock.Object);
     }
 
     [Fact]
@@ -83,6 +83,19 @@ public class AzureBlobPhotoServiceTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _service.CompressImageAsync(invalidImageBytes, fileName, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CompressImageAsync_ShouldRefuse_ATiffSentAsAPhoto()
+    {
+        // Only PNG, JPEG and WebP are decoded: the TIFF decoder is where ImageSharp 3.x advisories sit,
+        // and the declared content type is no guard, since the format is told by the bytes.
+        using var image = new Image<Rgba32>(4, 4);
+        using var tiff = new MemoryStream();
+        await image.SaveAsync(tiff, new SixLabors.ImageSharp.Formats.Tiff.TiffEncoder());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.CompressImageAsync(tiff.ToArray(), "photo.png", CancellationToken.None));
     }
 
     [Fact]
@@ -163,8 +176,8 @@ public class AzureBlobPhotoServiceTests
         var utcNow = new DateTime(2026, 5, 27, 10, 30, 0, DateTimeKind.Utc);
 
         // Act
-        var memberBlobName = _service.BuildBlobName(BlobUploadContext.MemberPhoto, ".jpg", utcNow);
-        var silhouetteBlobName = _service.BuildBlobName(BlobUploadContext.GroupSilhouette, ".png", utcNow);
+        var memberBlobName = AzureBlobPhotoService.BuildBlobName(BlobUploadContext.MemberPhoto, ".jpg", utcNow);
+        var silhouetteBlobName = AzureBlobPhotoService.BuildBlobName(BlobUploadContext.GroupSilhouette, ".png", utcNow);
 
         // Assert
         Assert.Matches(@"^member-photos/2026/05/27/[a-f0-9]{32}\.jpg$", memberBlobName);

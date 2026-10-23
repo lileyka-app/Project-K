@@ -13,6 +13,8 @@ const INSTAGRAM_IOS =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 337.0.3.23.54 (iPhone14,5; iOS 17_5; uk_UA; uk; scale=3.00; 1170x2532; 614410279)';
 const TELEGRAM_ANDROID =
   'Mozilla/5.0 (Linux; Android 14; Pixel 7 Build/AP2A.240705.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/126.0.6478.71 Mobile Safari/537.36 Telegram-Android/11.2.3 (Google Pixel 7; Android 14; SDK 34; HIGH)';
+/** The messenger each phone project opens the page in. */
+const MESSENGER_UA: Record<string, string> = { iphone: INSTAGRAM_IOS, android: TELEGRAM_ANDROID };
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -135,14 +137,7 @@ test('falls back to the menu when the person says no in Chrome’s dialog', asyn
 
 test.describe('inside a messenger’s own browser', () => {
   test.use({
-    userAgent: async ({ userAgent }, use, info) =>
-      use(
-        info.project.name === 'iphone'
-          ? INSTAGRAM_IOS
-          : info.project.name === 'android'
-            ? TELEGRAM_ANDROID
-            : userAgent,
-      ),
+    userAgent: ({ userAgent }, use, info) => use(MESSENGER_UA[info.project.name] ?? userAgent),
   });
 
   test('asks to open the page in Safari or Chrome and offers the link', async ({ page }, info) => {

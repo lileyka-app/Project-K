@@ -16,9 +16,8 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
 public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, ServiceResult<bool>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly ILogger<ResetUserMfaCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
     private readonly IAccessContextResolver _access;
     private readonly IMembershipDirectory _memberships;
@@ -26,17 +25,15 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
     public ResetUserMfaCommandHandler(
         UserManager<AppUser> userManager,
         ICurrentUserContext currentUserContext,
-        ILogger<ResetUserMfaCommandHandler> logger,
         IActivityLogger activityLogger,
-        IRefreshTokenStore refreshTokens,
+        RefreshTokenInvalidation sessions,
         IAccessContextResolver access,
         IMembershipDirectory memberships)
     {
         _userManager = userManager;
         _currentUserContext = currentUserContext;
-        _logger = logger;
         _activityLogger = activityLogger;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
         _access = access;
         _memberships = memberships;
     }
@@ -96,7 +93,7 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
         {
             // Only once the change is stored. RevokeAllAsync commits on its own, so ending
             // the sessions first signed every device out even when this update failed.
-            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, targetUser, cancellationToken);
+            await _sessions.RevokeRefreshTokenAsync(targetUser, cancellationToken);
 
             _activityLogger.LogAudit(
                 action: "Admin.UserMfaReset",

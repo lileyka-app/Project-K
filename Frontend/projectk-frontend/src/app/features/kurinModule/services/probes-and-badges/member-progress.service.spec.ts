@@ -111,8 +111,8 @@ describe('MemberProgressService', () => {
   });
 
   it('submitBadgeProgress should invalidate member progress caches', () => {
-    spyOn(cache, 'invalidate').and.callThrough();
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidate');
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.submitBadgeProgress(memberKey, 'badge-1', { note: 'please review' }).subscribe();
 
@@ -174,8 +174,8 @@ describe('MemberProgressService', () => {
   });
 
   it('updateProbeProgressStatus should invalidate targeted probe progress cache', () => {
-    spyOn(cache, 'invalidate').and.callThrough();
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidate');
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.updateProbeProgressStatus(memberKey, 'probe-1', { status: ProbeProgressStatus.Completed, note: 'done' }).subscribe();
 

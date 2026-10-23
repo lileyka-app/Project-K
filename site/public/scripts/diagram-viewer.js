@@ -66,7 +66,7 @@
 		// collapses to nothing, so the clone gets its natural size from the viewBox instead.
 		const svg = canvas.querySelector('svg');
 		const box = svg.viewBox.baseVal;
-		const natural = box && box.width ? { w: box.width, h: box.height } : source.getBoundingClientRect();
+		const natural = box?.width ? { w: box.width, h: box.height } : source.getBoundingClientRect();
 		svg.removeAttribute('width');
 		svg.removeAttribute('height');
 		svg.style.maxWidth = 'none';

@@ -282,7 +282,8 @@ export async function createMemberViaApi(
   multipart.append('middleName', member.middleName);
   multipart.append('lastName', member.lastName);
   multipart.append('email', member.email);
-  multipart.append('phoneNumber', '123-456-7890');
+  // The API takes phone numbers in international form only (+, country code, digits).
+  multipart.append('phoneNumber', '+380501234567');
   multipart.append('dateOfBirth', '2000-01-01');
   multipart.append('createUserAccount', String(member.createUserAccount ?? false));
 

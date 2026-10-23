@@ -16,7 +16,8 @@ mkdirSync(out, { recursive: true });
 const seats = ['Zvyazkovyi', 'Vykhovnyk', 'Youth'];
 const seatLabel = { Zvyazkovyi: 'Звʼязковий', Vykhovnyk: 'Впорядник', Youth: 'Юнак' };
 
-const browser = await chromium.launch();
+// LILEYKA_BROWSER_CHANNEL=chrome uses the installed Chrome when Playwright's own build is missing.
+const browser = await chromium.launch(process.env.LILEYKA_BROWSER_CHANNEL ? { channel: process.env.LILEYKA_BROWSER_CHANNEL } : {});
 
 /** Set by the recorder when the API answered 429; `visit` then waits and asks again. */
 let throttled = false;
@@ -81,7 +82,7 @@ async function sidebarLinks(page) {
   await page.locator('.p-panelmenu').first().waitFor();
   const hrefs = await page.locator('.p-panelmenu a[href]').evaluateAll(links => links.map(a => a.getAttribute('href')));
   await page.keyboard.press('Escape');
-  return [...new Set(hrefs.filter(h => h && h.startsWith('/')))];
+  return [...new Set(hrefs.filter(h => h?.startsWith('/')))];
 }
 
 /** Keys of every group and member that any recorded list mentioned. */
@@ -98,18 +99,35 @@ function keysIn(entries, field) {
   return [...keys];
 }
 
-/**
- * The catalogue names its pictures as /badges_images/<file>.svg and the API serves them behind
- * the token. Every one mentioned in this seat's recording is fetched with that token and kept
- * next to the fixtures, so the static demo can hand them back as blobs.
- */
-async function downloadBadgePictures(page, entries) {
+/** File names of every badge picture any recorded answer mentions. */
+function badgeFilesIn(entries) {
   const files = new Set();
   for (const e of entries.values()) {
     for (const match of JSON.stringify(e.b ?? '').matchAll(/badges_images\/([A-Za-z0-9_\-.]+\.(?:svg|png|webp))/g)) {
       files.add(match[1]);
     }
   }
+  return files;
+}
+
+// Exclusive create rather than "check, then write": a picture that appeared meanwhile is kept.
+function saveNew(path, body) {
+  try {
+    writeFileSync(path, body, { flag: 'wx' });
+    return true;
+  } catch (error) {
+    if (error?.code === 'EEXIST') return false;
+    throw error;
+  }
+}
+
+/**
+ * The catalogue names its pictures as /badges_images/<file>.svg and the API serves them behind
+ * the token. Every one mentioned in this seat's recording is fetched with that token and kept
+ * next to the fixtures, so the static demo can hand them back as blobs.
+ */
+async function downloadBadgePictures(page, entries) {
+  const files = badgeFilesIn(entries);
   if (files.size === 0) {
     return;
   }
@@ -117,16 +135,6 @@ async function downloadBadgePictures(page, entries) {
   mkdirSync(dir, { recursive: true });
   const token = await page.evaluate(() => JSON.parse(localStorage.getItem('authState') ?? '{}').accessToken);
   const apiOrigin = (process.env.LILEYKA_DEMO_API ?? 'http://localhost:5255');
-  // Exclusive create rather than "check, then write": a picture that appeared meanwhile is kept.
-  const saveNew = (path, body) => {
-    try {
-      writeFileSync(path, body, { flag: 'wx' });
-      return true;
-    } catch (error) {
-      if (error?.code === 'EEXIST') return false;
-      throw error;
-    }
-  };
   let saved = 0;
   for (const file of files) {
     const target = resolve(dir, file);
@@ -165,7 +173,8 @@ for (const seat of seats) {
 
   await visit(page, '/login');
   await page.getByRole('button', { name: seatLabel[seat] }).click();
-  await page.waitForURL(/\/(kurin|panel|member)/);
+  // Every seat now lands on the home page, so anything past the login page means signed in.
+  await page.waitForURL(url => !url.pathname.startsWith('/login'));
   await settle(page);
   // A reload records the refresh the app does on every start.
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -177,10 +186,21 @@ for (const seat of seats) {
     await visit(page, href);
   }
 
+  // The whole journal, page by page: the demo filters and pages these entries itself, the way the
+  // API does, so one full pass covers every filter a visitor can pick.
+  if (links.some(href => href.endsWith('/journal'))) {
+    await visit(page, `/kurin/${kurinKey}/journal`);
+    const more = page.getByRole('button', { name: /Завантажити ще/ });
+    for (let pages = 0; pages < 50 && await more.count(); pages++) {
+      await more.click();
+      await settle(page);
+    }
+  }
+
   // The calendar a month either side, so paging in the demo does not fall off the recording.
   await visit(page, `/calendar/${kurinKey}`);
-  for (const dir of ['prev', 'next']) {
-    const button = page.locator(`.fc-${dir}-button`).first();
+  for (const name of ['Назад', 'Далі']) {
+    const button = page.locator('app-agenda-calendar').getByRole('button', { name, exact: true });
     if (await button.count()) {
       await button.click();
       await settle(page);
@@ -188,12 +208,43 @@ for (const seat of seats) {
     }
   }
 
+  // A гурток's вкладка and points are reached from its page, and the sidebar names only the
+  // seat's own гуртки, so every гурток is visited for both.
   for (const groupKey of keysIn(entries, 'groupKey')) {
     await visit(page, `/group/${groupKey}`);
+    await visit(page, `/group/${groupKey}/dues`);
+    await visit(page, `/group/${groupKey}/score`);
   }
 
+  // Attendance sheets open from the entries of a гурток's table; three of them are enough.
+  const sheets = new Set();
+  for (const groupKey of keysIn(entries, 'groupKey')) {
+    const path = `/group/${groupKey}/score`;
+    await visit(page, path);
+    const links = await page.locator('a[href*="/score/events/"]').evaluateAll(as => as.map(a => a.getAttribute('href')));
+    links.filter(Boolean).forEach(href => sheets.add(href));
+    if (sheets.size >= 3) break;
+  }
+  for (const href of [...sheets].slice(0, 3)) {
+    await visit(page, href);
+  }
+
+  for (const path of [`/kurin/${kurinKey}/score/settings`, `/kurin/${kurinKey}/score/private`]) {
+    await visit(page, path);
+  }
+
+  let forms = 0;
   for (const memberKey of keysIn(entries, 'memberKey')) {
     await visit(page, `/member/${memberKey}`);
+    // The member form, for the first few cards the seat may edit.
+    const edit = page.locator('button:has-text("Редагувати"):not([disabled])').first();
+    if (forms < 3 && await edit.count()) {
+      forms++;
+      await edit.click();
+      await page.waitForURL(/\/member\/upsert\//).catch(() => undefined);
+      await settle(page);
+      await visit(page, `/member/${memberKey}`);
+    }
     const details = page.locator('button:has-text("Деталі"):not([disabled])').first();
     if (await details.count()) {
       throttled = false;

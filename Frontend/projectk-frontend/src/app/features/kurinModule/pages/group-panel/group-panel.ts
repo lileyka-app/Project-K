@@ -189,10 +189,13 @@ export class GroupPanelComponent implements OnInit {
   get mentorOptions(): { label: string; value: string; }[] {
     return this.mentorCandidates
       .filter(candidate => !!candidate.userKey)
-      .map(candidate => ({
-        label: `${candidate.lastName} ${candidate.firstName}${candidate.middleName ? ` ${candidate.middleName}` : ''}`,
-        value: candidate.userKey as string
-      }));
+      .map(candidate => {
+        const middleName = candidate.middleName ? ` ${candidate.middleName}` : '';
+        return {
+          label: `${candidate.lastName} ${candidate.firstName}${middleName}`,
+          value: candidate.userKey as string
+        };
+      });
   }
 
   refreshData(): void {
@@ -498,7 +501,7 @@ export class GroupPanelComponent implements OnInit {
     this.profileForm.markAsPristine();
   }
 
-  private normalizeText(value: unknown): string | null {
+  private normalizeText(value: string | null | undefined): string | null {
     const text = String(value ?? '').trim();
     return text.length > 0 ? text : null;
   }

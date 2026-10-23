@@ -99,7 +99,7 @@ const FORM_STYLES = `
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button [disabled]="saving()" (click)="cancel.emit()">Скасувати</ion-button>
+          <ion-button [disabled]="saving()" (click)="cancelled.emit()">Скасувати</ion-button>
         </ion-buttons>
         <ion-title>{{ entry() ? 'Операція' : 'Нова операція' }}</ion-title>
         <ion-buttons slot="end">
@@ -234,7 +234,7 @@ export class DuesEntryForm implements OnInit, OnDestroy {
   protected readonly symbol = computed(() => currencySymbol(this.currency()));
   readonly error = input<string | null>(null);
   readonly save = output<UpsertDuesEntryRequest>();
-  readonly cancel = output<void>();
+  readonly cancelled = output<void>();
 
   private readonly glass = new GlassEffects(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement);
 
@@ -332,7 +332,7 @@ export class DuesEntryForm implements OnInit, OnDestroy {
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button [disabled]="saving()" (click)="cancel.emit()">Скасувати</ion-button>
+          <ion-button [disabled]="saving()" (click)="cancelled.emit()">Скасувати</ion-button>
         </ion-buttons>
         <ion-title>{{ mode() === 'rate' ? 'Ставка гуртка' : 'Пільгова вкладка' }}</ion-title>
         <ion-buttons slot="end">
@@ -396,7 +396,7 @@ export class DuesQuarterForm implements OnInit {
   protected readonly symbol = computed(() => currencySymbol(this.currency()));
   readonly error = input<string | null>(null);
   readonly save = output<{ fromQuarter: QuarterDto; share: number; on: boolean }>();
-  readonly cancel = output<void>();
+  readonly cancelled = output<void>();
 
   protected readonly from = signal('');
   protected readonly share = signal('');
@@ -450,7 +450,7 @@ export class DuesQuarterForm implements OnInit {
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button [disabled]="saving()" (click)="cancel.emit()">Скасувати</ion-button>
+          <ion-button [disabled]="saving()" (click)="cancelled.emit()">Скасувати</ion-button>
         </ion-buttons>
         <ion-title>Ставки куреня</ion-title>
         <ion-buttons slot="end">
@@ -535,7 +535,7 @@ export class DuesKurinRateForm implements OnInit {
   protected readonly upAdjective = computed(() => (this.upstream() === 'krai' ? 'Крайова' : 'Станична'));
   readonly error = input<string | null>(null);
   readonly save = output<SetKurinDuesRateRequest>();
-  readonly cancel = output<void>();
+  readonly cancelled = output<void>();
 
   protected readonly from = signal('');
   protected readonly full = signal('');

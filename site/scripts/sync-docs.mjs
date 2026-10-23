@@ -32,7 +32,7 @@ function copyTree(from, to) {
 }
 
 function escapeYaml(text) {
-	return `'${text.replace(/'/g, "''")}'`;
+	return `'${text.replaceAll("'", "''")}'`;
 }
 
 function rewriteLinks(markdown) {
@@ -50,7 +50,7 @@ function importRootDoc({ from, to, order, description }) {
 		return 0;
 	}
 
-	let markdown = readFileSync(source, 'utf8').replace(/^﻿/, '').replace(/\r\n/g, '\n');
+	let markdown = readFileSync(source, 'utf8').replace(/^﻿/, '').replaceAll('\r\n', '\n');
 	let title = to.split('/').pop().replace(/\.md$/, '');
 	const heading = markdown.match(/^# (.+)$/m);
 	if (heading) {

@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -8,7 +9,7 @@ import { AgendaProgressComponent } from './agenda-progress';
 
 describe('AgendaProgressComponent', () => {
   let fixture: ComponentFixture<AgendaProgressComponent>;
-  let agenda: jasmine.SpyObj<AgendaService>;
+  let agenda: MockedObject<AgendaService>;
 
   const target = (over: Partial<AgendaAssignmentDto>): AgendaAssignmentDto => ({
     agendaAssignmentKey: crypto.randomUUID(),
@@ -37,15 +38,20 @@ describe('AgendaProgressComponent', () => {
   };
 
   beforeEach(() => {
-    agenda = jasmine.createSpyObj<AgendaService>('AgendaService', ['changeStatus', 'changeTargetStatus']);
-    agenda.changeStatus.and.returnValue(of({}));
-    agenda.changeTargetStatus.and.returnValue(of({}));
+    agenda = {
+      changeStatus: vi.fn(),
+      changeTargetStatus: vi.fn()
+    } as MockedObject<AgendaService>;
+    agenda.changeStatus.mockReturnValue(of({}));
+    agenda.changeTargetStatus.mockReturnValue(of({}));
     TestBed.configureTestingModule({
       imports: [AgendaProgressComponent],
       providers: [
         provideNoopAnimations(),
         { provide: AgendaService, useValue: agenda },
-        { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) }
+        { provide: MessageService, useValue: {
+            add: vi.fn()
+          } }
       ]
     });
     fixture = TestBed.createComponent(AgendaProgressComponent);
@@ -69,7 +75,7 @@ describe('AgendaProgressComponent', () => {
     expect(root.textContent).toContain('1 з 2');
     expect(root.textContent).toContain('Кожному окремо');
     expect(root.textContent).toContain('відмітка: Богдан Гончар');
-    expect(root.querySelectorAll('.agenda-progress__parts li').length).toBe(2);
+    expect(root.querySelectorAll('.agenda-progress__parts li')).toHaveLength(2);
   });
 
   it('gives a youth their own part when no row is theirs to move, through the board endpoint', () => {

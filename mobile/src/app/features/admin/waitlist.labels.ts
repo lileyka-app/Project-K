@@ -15,8 +15,8 @@ export interface WaitlistEntry {
   regionOrCountry?: string | null;
   isKurinLeaderCandidate: boolean;
   claimedKurinNameOrNumber?: string | null;
-  /** A name, or the enum's number from an older API (web normalizeWaitlistStatus). */
-  verificationStatus: WaitlistStatus | number | string;
+  /** A `WaitlistStatus` name, or the enum's number from an older API (web normalizeWaitlistStatus). */
+  verificationStatus: number | string;
   requestedAtUtc: string;
   approvedAtUtc?: string | null;
   invitationSentAtUtc?: string | null;

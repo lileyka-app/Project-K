@@ -512,7 +512,7 @@ export class PlanningFormPage implements OnInit {
   /** A new range starts after the last one (or at the window's start) and runs a week. */
   protected addRange(memberKey: string): void {
     this.updateParticipant(memberKey, (p) => {
-      const last = p.ranges[p.ranges.length - 1];
+      const last = p.ranges.at(-1);
       const first = last ? addDays(fromDayKey(last.to), 1) : fromDayKey(this.from());
       return {
         ...p,

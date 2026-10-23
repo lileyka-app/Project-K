@@ -51,7 +51,7 @@ public static class WebPushPayload
     private sealed record Shown(
         [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("body")] string Body,
-        [property: JsonPropertyName("icon")] string Icon,
+        [property: JsonPropertyName("icon")] string IconUrl,
         [property: JsonPropertyName("tag")] string Tag,
         [property: JsonPropertyName("data")] Data Data);
 

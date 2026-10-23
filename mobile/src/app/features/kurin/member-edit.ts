@@ -1,7 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { dateLabel } from '../../me/labels';
 import { dateOnly, utcDate } from './kurin.labels';
-import { CardExtraField, CardFieldMode, CardFields, MemberDto, MemberWarningDto, PlastLevelHistoryDto, WarningLevel } from './kurin.models';
+import {
+  CardExtraField,
+  CardFieldMode,
+  CardFields,
+  MemberDataGroup,
+  MemberDto,
+  MemberWarningDto,
+  PlastLevelHistoryDto,
+  WarningLevel,
+} from './kurin.models';
 
 /*
  * The rules of the web's member edit (pages/upsert-member) the phone sheet follows: who changes the
@@ -29,7 +38,7 @@ export function looksLikeEmail(value: string): boolean {
   const text = value.trim();
   if (/\s/.test(text)) return false;
   const [local, domain, ...rest] = text.split('@');
-  return rest.length === 0 && !!local && domain !== undefined && domain.slice(1, -1).includes('.');
+  return rest.length === 0 && !!local && domain?.slice(1, -1).includes('.') === true;
 }
 
 // ── Ступені ──────────────────────────────────────────────────────────────────────────────────────
@@ -131,17 +140,22 @@ export function canSelectWarning(warnings: MemberWarningDto[] | null | undefined
   return warningChecked(warnings, draft, level === 'Level2' ? 'Level1' : 'Level2', now);
 }
 
-/** Only who gave a пересторога lifts it; one not saved yet can always be unticked (web canClearWarning). */
+/**
+ * Who gave a пересторога lifts it, and `anyone` (the kurin's «Скасовувати чужі перестороги») lifts
+ * any; one not saved yet can always be unticked (web canCancel).
+ */
 export function canClearWarning(
   warnings: MemberWarningDto[] | null | undefined,
   draft: WarningDraft,
   level: WarningLevel,
   userKey: string | null | undefined,
   now = Date.now(),
+  anyone = false,
 ): boolean {
   if (draft.assign.includes(level)) return true;
   const current = warningInForce(warnings, level, now);
-  return !!current && !!userKey && (current.issuedByUserKey ?? '').toLowerCase() === userKey.toLowerCase();
+  if (!current) return false;
+  return anyone || (!!userKey && (current.issuedByUserKey ?? '').toLowerCase() === userKey.toLowerCase());
 }
 
 /** The draft after ticking or unticking one level; a move the rules refuse leaves it as it was. */
@@ -152,6 +166,7 @@ export function toggleWarning(
   on: boolean,
   userKey: string | null | undefined,
   now = Date.now(),
+  anyone = false,
 ): WarningDraft {
   const current = warningInForce(warnings, level, now);
   if (on) {
@@ -161,7 +176,7 @@ export function toggleWarning(
     }
     return { ...draft, assign: [...draft.assign, level] };
   }
-  if (!canClearWarning(warnings, draft, level, userKey, now)) return draft;
+  if (!canClearWarning(warnings, draft, level, userKey, now, anyone)) return draft;
   if (draft.assign.includes(level)) return { ...draft, assign: draft.assign.filter((l) => l !== level) };
   return current ? { ...draft, cancel: [...draft.cancel, current.memberWarningKey] } : draft;
 }
@@ -184,7 +199,7 @@ export const DEFAULT_CARD_FIELDS: CardFields = {
 
 type StandardField = keyof CardFields['fields'];
 
-const CARD_FIELD_MODES: readonly string[] = ['required', 'optional', 'hidden'];
+const CARD_FIELD_MODES: ReadonlySet<string> = new Set(['required', 'optional', 'hidden']);
 
 /** `GET kurin/{k}/profile` as far as the card needs it; any part may be missing. */
 export interface KraiProfileCardFields {
@@ -199,7 +214,7 @@ export function cardFieldsOf(profile: KraiProfileCardFields | null | undefined):
   const section = profile?.cardFields;
   const mode = (field: StandardField): CardFieldMode => {
     const value = section?.fields?.[field] ?? '';
-    return CARD_FIELD_MODES.includes(value) ? (value as CardFieldMode) : DEFAULT_CARD_FIELDS.fields[field];
+    return CARD_FIELD_MODES.has(value) ? (value as CardFieldMode) : DEFAULT_CARD_FIELDS.fields[field];
   };
   return {
     fields: { middleName: mode('middleName'), phoneNumber: mode('phoneNumber'), address: mode('address'), school: mode('school'), parents: mode('parents') },
@@ -304,6 +319,24 @@ export interface PhotoChange {
  * The address, school and parents' contacts go only when changed: they are private, so someone who could not see them
  * read them blank, and one left out keeps what the server has. Emptied, they go as '' to clear.
  */
+/** The fields of the form each group of hidden data covers (the server's MemberDataFields). */
+const HIDDEN_FIELDS: Record<Exclude<MemberDataGroup, 'birthday' | 'extras'>, readonly (keyof MemberForm)[]> = {
+  contacts: ['email', 'phoneNumber'],
+  birthDate: ['dateOfBirth'],
+  address: ['address', 'school'],
+  parents: PARENT_FIELDS,
+};
+
+/** The group of data a field of the form belongs to; null for one the kurin never hides. */
+export function hiddenGroupOf(key: string): MemberDataGroup | null {
+  const entry = Object.entries(HIDDEN_FIELDS).find(([, keys]) => (keys as readonly string[]).includes(key));
+  return entry ? (entry[0] as MemberDataGroup) : null;
+}
+
+/**
+ * The multipart body of `PUT member/{key}`. A group of data the kurin hides from the writer is left
+ * out: the form does not show it, and the server keeps what it has.
+ */
 export function memberFormData(
   member: MemberDto,
   form: MemberForm,
@@ -311,10 +344,14 @@ export function memberFormData(
   photo: PhotoChange,
   extras: CardExtras = {},
 ): FormData {
+  const hidden = member.hiddenData ?? [];
   const body = new FormData();
-  appendProfile(body, form, histories, extras);
+  appendProfile(body, form, histories, hidden.includes('extras') ? {} : extras);
   for (const key of ['address', 'school', ...PARENT_FIELDS] as const) {
     if (form[key].trim() !== (member[key] ?? '').trim()) body.append(key, form[key].trim());
+  }
+  for (const group of hidden) {
+    if (group in HIDDEN_FIELDS) HIDDEN_FIELDS[group as keyof typeof HIDDEN_FIELDS].forEach((key) => body.delete(key));
   }
   body.append('removeProfilePhoto', String(photo.remove && !photo.blob));
   if (photo.blob) body.append('blob', photo.blob, photo.name);

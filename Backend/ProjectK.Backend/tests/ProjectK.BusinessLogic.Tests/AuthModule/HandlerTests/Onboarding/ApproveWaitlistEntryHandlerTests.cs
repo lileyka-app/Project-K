@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
@@ -41,16 +40,11 @@ public class ApproveWaitlistEntryHandlerTests
             .ReturnsAsync(new ServiceResult<AccountProvisioningResult>(
                 ResultType.Success, new AccountProvisioningResult(Guid.NewGuid(), Guid.NewGuid(), "token")));
 
-        var userManager = new Mock<UserManager<AppUser>>(
-            new Mock<IUserStore<AppUser>>().Object, null, null, null, null, null, null, null, null);
-
         _handler = new ApproveWaitlistEntryCommandHandler(
             _unitOfWork.Object,
-            userManager.Object,
             _provisioning.Object,
             new Mock<IEmailService>().Object,
             new Mock<ICurrentUserContext>().Object,
-            new Mock<IMembershipDirectory>().Object,
             Options.Create(new KurinNumberOptions()),
             Options.Create(new KraiOptions()));
     }

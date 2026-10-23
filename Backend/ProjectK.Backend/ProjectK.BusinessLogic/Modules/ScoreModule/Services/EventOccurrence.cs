@@ -1,3 +1,4 @@
+using System.Globalization;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
@@ -7,8 +8,13 @@ using ProjectK.Common.Models.Enums;
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
 /// <summary>One occurrence of an event of the kurin, checked to be a day the series really falls on.</summary>
-public sealed record EventOccurrence(AgendaItem Item, DateTime StartUtc, DateTime? EndUtc)
+/// <param name="Zone">The kurin's zone, which the occurrence's day is named in.</param>
+public sealed record EventOccurrence(AgendaItem Item, DateTime StartUtc, DateTime? EndUtc, TimeZoneInfo Zone)
 {
+    /// <summary>The event and the day it met on, in the kurin's zone: «Сходини · 06.10.2026».</summary>
+    public string Label =>
+        $"{Item.Title} · {TimeZoneInfo.ConvertTimeFromUtc(StartUtc, Zone).ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)}";
+
     /// <summary>
     /// Null when there is no such event here, it is a task, or the series has no occurrence starting
     /// at <paramref name="occurrenceStartUtc"/>: a mark on a day nobody met would be a mark on nothing.
@@ -38,6 +44,6 @@ public sealed record EventOccurrence(AgendaItem Item, DateTime StartUtc, DateTim
         }
 
         DateTime? endUtc = occurrence.EndUtc is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null;
-        return new EventOccurrence(item, wanted, endUtc);
+        return new EventOccurrence(item, wanted, endUtc, zone);
     }
 }

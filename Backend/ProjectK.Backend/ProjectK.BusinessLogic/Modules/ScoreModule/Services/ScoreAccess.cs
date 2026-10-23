@@ -32,6 +32,28 @@ public sealed class ScoreAccess
         return decision.IsAllowed;
     }
 
+    /// <summary>
+    /// Whether the caller may mark anyone at all here — the kurin's unplaced youths or one of
+    /// <paramref name="groupKeys"/>. The same gate the sheet opens on.
+    /// </summary>
+    public async Task<bool> MayMarkAnyoneAsync(Guid kurinKey, IEnumerable<Guid> groupKeys, CancellationToken cancellationToken)
+    {
+        if (await MayScoreAsync(kurinKey, null, ResourceAction.Create, cancellationToken))
+        {
+            return true;
+        }
+
+        foreach (var groupKey in groupKeys)
+        {
+            if (await MayScoreAsync(kurinKey, groupKey, ResourceAction.Create, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public async Task<bool> MayManageAsync(Guid kurinKey, CancellationToken cancellationToken) =>
         (await _resourceAccess.CheckAccessAsync(ResourceType.KurinScore, ResourceAction.Manage, kurinKey, cancellationToken)).IsAllowed;
 

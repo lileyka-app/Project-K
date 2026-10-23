@@ -1,10 +1,12 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -32,16 +34,25 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly ICurrentUserContext _currentUserContext;
+    private readonly AuditActorResolver _actors;
+    private readonly IKurinAudit _audit;
+    private readonly IKurinJournalReader _journal;
+    private readonly IProbesCatalogService _probes;
 
     public UpdateProbePointSignatureCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        ICurrentUserContext currentUserContext)
+        AuditActorResolver actors,
+        IKurinAudit audit,
+        IKurinJournalReader journal,
+        IProbesCatalogService probes)
     {
         _unitOfWork = unitOfWork;
         _members = members;
-        _currentUserContext = currentUserContext;
+        _actors = actors;
+        _audit = audit;
+        _journal = journal;
+        _probes = probes;
     }
 
     public async Task<ServiceResult<ProbeProgressResponse>> Handle(UpdateProbePointSignatureCommand request, CancellationToken cancellationToken)
@@ -66,7 +77,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         var probeProgress = await _unitOfWork.ProbeProgresses
             .GetByMemberAndProbeIdAsync(request.MemberKey, normalizedProbeId, cancellationToken);
 
-        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var actor = await _actors.ResolveAsync(cancellationToken);
         var actorName = actor.Name;
         var now = DateTime.UtcNow;
         var pointUpdateContext = new PointSignatureUpdateContext(
@@ -85,6 +96,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
             pointProgress,
             pointUpdateContext);
 
+        var statusBefore = probeProgress?.Status;
         var probeUpdate = ApplyProbeProgressUpdate(
             probeProgress,
             request.IsSigned,
@@ -99,6 +111,15 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
 
         if (hasChanges)
         {
+            await RecordAsync(
+                request,
+                pointUpdate.PointProgress,
+                probeProgress,
+                statusBefore,
+                pointUpdate.HasChanges,
+                pointUpdate.PointWasActuallyUnsigned,
+                cancellationToken);
+
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)
             {
@@ -118,9 +139,60 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
             return new ServiceResult<ProbeProgressResponse>(ResultType.Success, notStarted);
         }
 
+        var journal = await _journal.GetForSubjectsAsync([probeProgress.ProbeProgressKey], cancellationToken);
         return new ServiceResult<ProbeProgressResponse>(
             ResultType.Success,
-            ProbeProgressResponse.FromEntity(probeProgress, latestPointSignatures));
+            ProbeProgressResponse.FromEntity(probeProgress, journal, latestPointSignatures));
+    }
+
+    /// <summary>
+    /// The journal entries of one signature change: the point signed or unsigned, and — when the
+    /// unsigned point belonged to a проба already signed off — the проба going back to work, which
+    /// the unsign does on its own and nothing else records.
+    /// </summary>
+    private async Task RecordAsync(
+        UpdateProbePointSignatureCommand request,
+        ProbePointProgress? pointProgress,
+        ProbeProgress? probeProgress,
+        ProbeProgressStatus? statusBefore,
+        bool pointChanged,
+        bool pointWasUnsigned,
+        CancellationToken cancellationToken)
+    {
+        var probeId = request.ProbeId.Trim();
+        var pointId = request.PointId.Trim();
+        var subjectKey = probeProgress?.ProbeProgressKey ?? pointProgress?.ProbePointProgressKey ?? Guid.Empty;
+        var probeLabel = ProgressAuditLabels.Probe(_probes, probeId);
+
+        if (pointChanged)
+        {
+            var pointLabel = ProgressAuditLabels.ProbePoint(_probes, probeId, pointId);
+            await _audit.RecordAsync(
+                new AuditRecord(
+                    AuditArea.Probe,
+                    request.IsSigned ? AuditActions.Probe.PointSigned : AuditActions.Probe.PointUnsigned,
+                    subjectKey,
+                    probeLabel,
+                    request.MemberKey,
+                    request.IsSigned
+                        ? AuditChanges.Added(("point", pointLabel))
+                        : AuditChanges.Removed(("point", pointLabel)),
+                    request.Note),
+                cancellationToken);
+        }
+
+        if (pointWasUnsigned && statusBefore is { } before && IsCompletedOrVerified(before) && probeProgress is not null)
+        {
+            await _audit.RecordAsync(
+                new AuditRecord(
+                    AuditArea.Probe,
+                    AuditActions.Probe.Reopened,
+                    subjectKey,
+                    probeLabel,
+                    request.MemberKey,
+                    AuditChanges.Of(("status", before, probeProgress.Status))),
+                cancellationToken);
+        }
     }
 
     private (ProbePointProgress? PointProgress, bool HasChanges, bool PointWasActuallyUnsigned) ApplyPointSignatureUpdate(

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -24,10 +25,12 @@ public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, S
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    public DeleteMemberCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
+    private readonly IKurinAudit _audit;
+    public DeleteMemberCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<object>> Handle(DeleteMemberCommand request, CancellationToken cancellationToken)
@@ -47,6 +50,18 @@ public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, S
                 "MemberNotFound",
                 $"Member with key {request.MemberKey} not found.");
         }
+        // Recorded while the person can still be named and placed; their card goes with them.
+        var person = await _members.FindAsync(request.MemberKey, cancellationToken);
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Member,
+                AuditActions.Member.Deleted,
+                request.MemberKey,
+                person?.FullName ?? string.Empty,
+                request.MemberKey,
+                AuditChanges.Removed(("firstName", person?.FirstName), ("lastName", person?.LastName))),
+            cancellationToken);
+
         await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync([request.MemberKey], cancellationToken);
         await _members.RemoveAsync(request.MemberKey, cancellationToken);
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);

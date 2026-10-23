@@ -3,7 +3,7 @@ import { PASSWORD_RULES, passwordMeetsRules, passwordRulesValidator } from './pa
 
 describe('password rules', () => {
   it('accepts what the API accepts', () => {
-    expect(passwordMeetsRules('Plast#2026')).toBeTrue();
+    expect(passwordMeetsRules('Plast#2026')).toBe(true);
   });
 
   it('names the rule a password misses', () => {
@@ -16,8 +16,8 @@ describe('password rules', () => {
   });
 
   it('counts a Cyrillic letter as a symbol and not as a capital, as Identity does', () => {
-    expect(passwordMeetsRules('пласт2026Ж')).toBeFalse();
-    expect(passwordMeetsRules('Plast2026ж')).toBeTrue();
+    expect(passwordMeetsRules('пласт2026Ж')).toBe(false);
+    expect(passwordMeetsRules('Plast2026ж')).toBe(true);
   });
 
   it('leaves an empty field to the required validator', () => {

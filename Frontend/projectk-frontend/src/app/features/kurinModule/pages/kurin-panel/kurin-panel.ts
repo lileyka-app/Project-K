@@ -338,7 +338,7 @@ export class KurinPanelComponent implements OnInit {
     this.profileForm.markAsPristine();
   }
 
-  private normalizeText(value: unknown): string | null {
+  private normalizeText(value: string | null | undefined): string | null {
     const text = String(value ?? '').trim();
     return text.length > 0 ? text : null;
   }

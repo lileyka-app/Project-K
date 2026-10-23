@@ -194,7 +194,8 @@ export interface AgendaGroupTarget {
   name: string;
   canTargetGroup: boolean;
   leadership: AgendaLeadershipTarget | null;
-  members: { memberKey: string; fullName: string }[];
+  /** `canTarget` is false for a person listed only beside a гурток or провід the user may pick. */
+  members: { memberKey: string; fullName: string; canTarget: boolean }[];
 }
 
 export interface AgendaAssignTargets {

@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { UserActionService } from './user-action.service';
 
 describe('UserActionService', () => {
@@ -7,6 +7,7 @@ describe('UserActionService', () => {
   let clicks: number;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     TestBed.configureTestingModule({});
     service = TestBed.inject(UserActionService);
     service.start();
@@ -19,13 +20,16 @@ describe('UserActionService', () => {
     document.body.appendChild(button);
   });
 
-  afterEach(() => button.remove());
+  afterEach(() => {
+    button.remove();
+    vi.useRealTimers();
+  });
 
   it('knows nothing about a request that no gesture started', () => {
     expect(service.claim()).toBeNull();
   });
 
-  it('spins the clicked button until the request is released', fakeAsync(() => {
+  it('spins the clicked button until the request is released', () => {
     button.click();
     const claim = service.claim();
 
@@ -37,10 +41,10 @@ describe('UserActionService', () => {
     claim!.release();
     expect(button.classList).not.toContain('lil-busy');
     expect(button.querySelector('.lil-busy-icon')).toBeNull();
-    tick();
-  }));
+    vi.advanceTimersByTime(0);
+  });
 
-  it('swallows a second press while the first is still in flight', fakeAsync(() => {
+  it('swallows a second press while the first is still in flight', () => {
     button.click();
     const claim = service.claim();
     button.click();
@@ -51,10 +55,10 @@ describe('UserActionService', () => {
     claim!.release();
     button.click();
     expect(clicks).toBe(2);
-    tick();
-  }));
+    vi.advanceTimersByTime(0);
+  });
 
-  it('keeps spinning while any request of the action is still out', fakeAsync(() => {
+  it('keeps spinning while any request of the action is still out', () => {
     button.click();
     const first = service.claim()!;
     const second = service.claim()!;
@@ -63,23 +67,23 @@ describe('UserActionService', () => {
     expect(button.classList).toContain('lil-busy');
     second.release();
     expect(button.classList).not.toContain('lil-busy');
-    tick();
-  }));
+    vi.advanceTimersByTime(0);
+  });
 
-  it('forgets the gesture once the task that carried it is over', fakeAsync(() => {
+  it('forgets the gesture once the task that carried it is over', () => {
     button.click();
-    tick();
+    vi.advanceTimersByTime(0);
 
     expect(service.claim()).toBeNull();
-  }));
+  });
 
-  it('hands the action on to the request a response starts', fakeAsync(() => {
+  it('hands the action on to the request a response starts', () => {
     button.click();
     const claim = service.claim()!;
-    tick();
+    vi.advanceTimersByTime(0);
 
     service.resume(claim.action);
     expect(service.claim()?.action).toBe(claim.action);
-    tick();
-  }));
+    vi.advanceTimersByTime(0);
+  });
 });

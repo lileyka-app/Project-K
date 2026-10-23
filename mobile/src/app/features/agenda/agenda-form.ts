@@ -86,7 +86,9 @@ export function targetSections(tree: AgendaAssignTargets): TargetSection[] {
     const rows: TargetRow[] = [];
     if (group.canTargetGroup) rows.push(row('Group', group.groupKey, 'Увесь гурток'));
     if (group.leadership?.canTarget) rows.push(row('Leadership', group.leadership.leadershipKey, group.leadership.label));
-    for (const member of group.members) rows.push(row('Member', member.memberKey, member.fullName));
+    for (const member of group.members) {
+      if (member.canTarget) rows.push(row('Member', member.memberKey, member.fullName));
+    }
     if (rows.length) sections.push({ title: group.name, rows });
   }
   return sections;
@@ -131,6 +133,7 @@ let formCount = 0;
 const ERRORS: Record<string, string> = {
   AGENDA_MODE_LOCKED: 'Хтось уже почав — спосіб виконання не змінити.',
   AGENDA_TARGET_FORBIDDEN: 'Цю ціль тобі не можна призначати.',
+  AGENDA_AUTHOR_FORBIDDEN: 'Курінь не дає тобі призначати події й задачі.',
   AGENDA_EDIT_FORBIDDEN: 'Це може змінити лише автор або провід.',
 };
 

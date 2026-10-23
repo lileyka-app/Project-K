@@ -140,6 +140,12 @@ export interface AttendanceMarkDto {
   markedAtUtc: string;
 }
 
+/** Who said an occurrence did not take place, and when (the web's OccurrenceNotHeldDto). */
+export interface OccurrenceNotHeldDto {
+  markedByName: string | null;
+  markedAtUtc: string;
+}
+
 export interface SheetPersonDto {
   membershipKey: string;
   memberKey: string;
@@ -178,6 +184,8 @@ export interface AttendanceSheetDto {
   groups: SheetGroupDto[];
   items: ScoreItemDto[];
   canManage: boolean;
+  /** Set when someone said the occurrence did not take place; nobody can be marked then. */
+  notHeld: OccurrenceNotHeldDto | null;
 }
 
 export interface MarkAttendanceResultDto {
@@ -228,4 +236,5 @@ export const SCORE_ERRORS: Record<string, string> = {
   ItemAlreadyGiven: 'Цю позицію тут уже дав хтось інший.',
   EntryTargetFixed: 'Бал лишається за тим, кому його дали. Запиши новий.',
   BadOccurrence: 'Ця подія того дня не збирається.',
+  OccurrenceHasAttendance: 'Хтось уже відмічений на цих сходинах — отже, вони відбулися.',
 };

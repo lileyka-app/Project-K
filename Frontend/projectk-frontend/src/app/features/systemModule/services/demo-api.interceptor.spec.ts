@@ -1,8 +1,14 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { MessageService } from '@openng/optimus-ui/api';
 import { firstValueFrom } from 'rxjs';
 import { DemoApiInterceptor, DemoFixtureFile } from './demo-api.interceptor';
+
+interface JournalPage {
+  items: { key: string }[];
+  hasMore: boolean;
+}
 
 /** The fixture files the interceptor would fetch, served from memory. */
 function fakeFetch(files: Record<string, DemoFixtureFile>) {
@@ -17,7 +23,7 @@ function fakeFetch(files: Record<string, DemoFixtureFile>) {
 
 describe('DemoApiInterceptor', () => {
   let http: HttpClient;
-  let messages: jasmine.SpyObj<MessageService>;
+  let messages: MockedObject<MessageService>;
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
@@ -28,11 +34,28 @@ describe('DemoApiInterceptor', () => {
         seat: 'Youth', recordedAt: '', entries: [
           { m: 'POST', p: '/api/demo/login', s: 200, b: { userKey: 'u1', email: 'y@example', roles: ['Member'], kurinKey: 'k1', tokens: { accessToken: 't' } } },
           { m: 'GET', p: '/api/kurin/k1', s: 200, b: { name: '1 курінь' } },
-          { m: 'GET', p: '/api/agenda/k1/calendar?from=a&to=b', s: 200, b: [{ title: 'Сходини' }] }
+          { m: 'GET', p: '/api/agenda/k1/calendar?from=a&to=b', s: 200, b: [{ title: 'Сходини' }] },
+          {
+            m: 'GET', p: '/api/kurin/k1/journal?skip=0&take=2', s: 200, b: {
+              items: [
+                { key: 'j3', occurredAtUtc: '2026-10-20T10:00:00Z', area: 'Award', actorUserKey: 'a1', subjectMemberKey: 'm1' },
+                { key: 'j2', occurredAtUtc: '2026-10-10T10:00:00Z', area: 'Probe', actorUserKey: 'a2', subjectMemberKey: 'm2' }
+              ],
+              hasMore: true
+            }
+          },
+          {
+            m: 'GET', p: '/api/kurin/k1/journal?skip=2&take=2', s: 200, b: {
+              items: [{ key: 'j1', occurredAtUtc: '2026-09-01T10:00:00Z', area: 'Probe', actorUserKey: 'a1', subjectMemberKey: 'm1' }],
+              hasMore: false
+            }
+          }
         ]
       }
     }) as typeof fetch;
-    messages = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
+    messages = {
+      add: vi.fn()
+    } as MockedObject<MessageService>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -51,7 +74,7 @@ describe('DemoApiInterceptor', () => {
     expect(health).toContain('"status":"ready"');
 
     const setup = await firstValueFrom(http.get<{ isInitialized: boolean }>('https://demo.invalid/api/auth/setup/status'));
-    expect(setup.isInitialized).toBeTrue();
+    expect(setup.isInitialized).toBe(true);
   });
 
   it('remembers the seat from the demo login and serves that seat’s recording', async () => {
@@ -70,8 +93,23 @@ describe('DemoApiInterceptor', () => {
     const events = await firstValueFrom(http.get<{ title: string }[]>('https://demo.invalid/api/agenda/k1/calendar?from=a&to=b'));
     expect(events[0].title).toBe('Сходини');
 
-    await expectAsync(firstValueFrom(http.get('https://demo.invalid/api/member/nobody')))
-      .toBeRejectedWith(jasmine.objectContaining({ status: 404, statusText: 'У демо цієї сторінки немає.' }));
+    await expect(firstValueFrom(http.get('https://demo.invalid/api/member/nobody'))).rejects.toEqual(expect.objectContaining({ status: 404, statusText: 'У демо цієї сторінки немає.' }));
+  });
+
+  it('answers any filter and page of the journal from the recorded pages', async () => {
+    await firstValueFrom(http.post('https://demo.invalid/api/demo/login', { seat: 'Youth' }));
+    const page = (query: string) => firstValueFrom(http.get<JournalPage>(`https://demo.invalid/api/kurin/k1/journal?${query}`));
+
+    const probes = await page('area=Probe&skip=0&take=20');
+    expect(probes.items.map(i => i.key)).toEqual(['j2', 'j1']);
+    expect(probes.hasMore).toBe(false);
+
+    const byPerson = await page('memberKey=m1&actorUserKey=a1&skip=0&take=1');
+    expect(byPerson.items.map(i => i.key)).toEqual(['j3']);
+    expect(byPerson.hasMore).toBe(true);
+
+    const october = await page('fromUtc=2026-10-01T00:00:00Z&toUtc=2026-10-15T00:00:00Z');
+    expect(october.items.map(i => i.key)).toEqual(['j2']);
   });
 
   it('acknowledges a write it cannot keep and tells the visitor once', async () => {
@@ -81,6 +119,6 @@ describe('DemoApiInterceptor', () => {
     await firstValueFrom(http.delete('https://demo.invalid/api/agenda/k1/items/i1'));
 
     expect(messages.add).toHaveBeenCalledTimes(1);
-    expect(messages.add.calls.mostRecent().args[0].summary).toBe('Це демо');
+    expect(vi.mocked(messages.add).mock.lastCall![0].summary).toBe('Це демо');
   });
 });

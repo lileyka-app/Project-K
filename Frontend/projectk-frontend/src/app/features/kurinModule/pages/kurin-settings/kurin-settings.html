@@ -102,6 +102,17 @@
       </div>
       <app-kurin-card-fields #cardFields [kurinKey]="kurinKey" />
     </section>
+
+    <section class="kurin-tile" aria-labelledby="access-policy-title">
+      <div class="setting-copy">
+        <h2 id="access-policy-title">Права й видимість</h2>
+        <p>
+          Хто що бачить у картках юнаків і хто що може робити з пересторогами, відзначеннями, пробами
+          й вмілостями. «Свій гурток» — гурток, у якому людина є або який веде; «Увесь курінь» — усі.
+        </p>
+      </div>
+      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" />
+    </section>
   }
 
   <footer class="settings-actions">

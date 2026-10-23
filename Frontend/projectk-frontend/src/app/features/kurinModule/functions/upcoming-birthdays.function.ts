@@ -11,23 +11,30 @@ function toStartOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function resolveNextBirthdayDate(dateOfBirth: string | Date | null | undefined, today: Date): Date | null {
-  if (!dateOfBirth) {
+/** Місяць (0–11) і день народження: з `birthday` («MM-DD»), а без нього — з повної дати. */
+function resolveMonthAndDay(member: MemberLookupDto): { month: number; day: number } | null {
+  const birthday = /^(\d{2})-(\d{2})$/.exec(member.birthday ?? '');
+  if (birthday) {
+    return { month: Number(birthday[1]) - 1, day: Number(birthday[2]) };
+  }
+
+  const parsedDate = parseDateOnlyString(member.dateOfBirth);
+  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
     return null;
   }
 
-  const parsedDate = parseDateOnlyString(dateOfBirth);
-  if (!parsedDate) {
+  return { month: parsedDate.getMonth(), day: parsedDate.getDate() };
+}
+
+function resolveNextBirthdayDate(member: MemberLookupDto, today: Date): Date | null {
+  const born = resolveMonthAndDay(member);
+  if (!born) {
     return null;
   }
 
-  if (Number.isNaN(parsedDate.getTime())) {
-    return null;
-  }
-
-  let nextBirthdayDate = new Date(today.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+  let nextBirthdayDate = new Date(today.getFullYear(), born.month, born.day);
   if (nextBirthdayDate < today) {
-    nextBirthdayDate = new Date(today.getFullYear() + 1, parsedDate.getMonth(), parsedDate.getDate());
+    nextBirthdayDate = new Date(today.getFullYear() + 1, born.month, born.day);
   }
 
   return nextBirthdayDate;
@@ -47,7 +54,7 @@ export function buildUpcomingBirthdays(
 
   return members
     .map(member => {
-      const nextBirthdayDate = resolveNextBirthdayDate(member.dateOfBirth, today);
+      const nextBirthdayDate = resolveNextBirthdayDate(member, today);
       if (!nextBirthdayDate) {
         return null;
       }

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ManagePanelComponent, ManagePanelConfig, ManagePanelField } from './manage-panel';
 import { SimpleChange } from '@angular/core';
@@ -66,10 +67,10 @@ describe('ManagePanelComponent', () => {
 
   describe('Component initialization', () => {
     it('should initialize with default values', () => {
-      expect(component.visible()).toBeFalse();
+      expect(component.visible()).toBe(false);
       expect(component.parameter()).toBe('undef');
       expect(component.entity()).toBeNull();
-      expect(component.ready).toBeFalse();
+      expect(component.ready).toBe(false);
     });
 
     it('should build form when config is provided', () => {
@@ -79,8 +80,8 @@ describe('ManagePanelComponent', () => {
       });
 
       expect(component.form).toBeDefined();
-      expect(component.ready).toBeTrue();
-      expect(Object.keys(component.form.controls).length).toBe(4);
+      expect(component.ready).toBe(true);
+      expect(Object.keys(component.form.controls)).toHaveLength(4);
     });
   });
 
@@ -101,7 +102,7 @@ describe('ManagePanelComponent', () => {
       });
 
       expect(component.form).toBeDefined();
-      expect(component.ready).toBeTrue();
+      expect(component.ready).toBe(true);
     });
 
     it('should patch entity when entity changes', () => {
@@ -121,7 +122,7 @@ describe('ManagePanelComponent', () => {
         parameter: new SimpleChange('undef', 'create', false)
       });
 
-      expect(component.form.get('id')?.disabled).toBeFalse();
+      expect(component.form.get('id')?.disabled).toBe(false);
     });
 
     it('should reset form when creating new entity', () => {
@@ -133,8 +134,8 @@ describe('ManagePanelComponent', () => {
         parameter: new SimpleChange('undef', 'create', false)
       });
 
-      expect(component.form.get('name')?.pristine).toBeTrue();
-      expect(component.form.get('name')?.untouched).toBeTrue();
+      expect(component.form.get('name')?.pristine).toBe(true);
+      expect(component.form.get('name')?.untouched).toBe(true);
     });
 
     it('should patch entity when visible for update', () => {
@@ -172,8 +173,8 @@ describe('ManagePanelComponent', () => {
       const nameControl = component.form.get('name');
       const descriptionControl = component.form.get('description');
 
-      expect(nameControl?.hasValidator(Validators.required)).toBeTrue();
-      expect(descriptionControl?.hasValidator(Validators.required)).toBeFalse();
+      expect(nameControl?.hasValidator(Validators.required)).toBe(true);
+      expect(descriptionControl?.hasValidator(Validators.required)).toBe(false);
     });
 
     it('should use createFactory when no entity provided', () => {
@@ -213,10 +214,10 @@ describe('ManagePanelComponent', () => {
         parameter: new SimpleChange('undef', 'delete', false)
       });
 
-      expect(component.form.get('id')?.disabled).toBeTrue();
-      expect(component.form.get('name')?.disabled).toBeTrue();
-      expect(component.form.get('description')?.disabled).toBeTrue();
-      expect(component.form.get('value')?.disabled).toBeTrue();
+      expect(component.form.get('id')?.disabled).toBe(true);
+      expect(component.form.get('name')?.disabled).toBe(true);
+      expect(component.form.get('description')?.disabled).toBe(true);
+      expect(component.form.get('value')?.disabled).toBe(true);
     });
 
     it('should disable fields based on disabledOn configuration for update', () => {
@@ -225,8 +226,8 @@ describe('ManagePanelComponent', () => {
         parameter: new SimpleChange('undef', 'update', false)
       });
 
-      expect(component.form.get('id')?.disabled).toBeTrue();
-      expect(component.form.get('name')?.disabled).toBeFalse();
+      expect(component.form.get('id')?.disabled).toBe(true);
+      expect(component.form.get('name')?.disabled).toBe(false);
     });
 
     it('should enable all non-restricted fields for create', () => {
@@ -235,10 +236,10 @@ describe('ManagePanelComponent', () => {
         parameter: new SimpleChange('undef', 'create', false)
       });
 
-      expect(component.form.get('id')?.disabled).toBeFalse();
-      expect(component.form.get('name')?.disabled).toBeFalse();
-      expect(component.form.get('description')?.disabled).toBeFalse();
-      expect(component.form.get('value')?.disabled).toBeFalse();
+      expect(component.form.get('id')?.disabled).toBe(false);
+      expect(component.form.get('name')?.disabled).toBe(false);
+      expect(component.form.get('description')?.disabled).toBe(false);
+      expect(component.form.get('value')?.disabled).toBe(false);
     });
 
     it('should disable hidden fields', () => {
@@ -247,7 +248,7 @@ describe('ManagePanelComponent', () => {
         parameter: new SimpleChange('undef', 'delete', false)
       });
 
-      expect(component.form.get('description')?.disabled).toBeTrue();
+      expect(component.form.get('description')?.disabled).toBe(true);
     });
   });
 
@@ -262,14 +263,14 @@ describe('ManagePanelComponent', () => {
 
     it('should set visible to false', () => {
       component.hide();
-      expect(component.visible()).toBeFalse();
+      expect(component.visible()).toBe(false);
     });
 
     it('should emit visibleChange event', () => {
       let emitted: boolean | undefined;
       component.visible.subscribe(v => emitted = v);
       component.hide();
-      expect(emitted).toBeFalse();
+      expect(emitted).toBe(false);
     });
 
     it('should reset form', () => {
@@ -286,8 +287,8 @@ describe('ManagePanelComponent', () => {
 
       component.hide();
 
-      expect(nameControl?.pristine).toBeTrue();
-      expect(nameControl?.untouched).toBeTrue();
+      expect(nameControl?.pristine).toBe(true);
+      expect(nameControl?.untouched).toBe(true);
     });
   });
 
@@ -301,14 +302,14 @@ describe('ManagePanelComponent', () => {
     });
 
     it('should not submit when parameter is undef', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       fixture.componentRef.setInput('parameter', 'undef');
       component.submit();
       expect(component.actionPerformed.emit).not.toHaveBeenCalled();
     });
 
     it('should emit actionPerformed for create action', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       fixture.componentRef.setInput('parameter', 'create');
       component.form.patchValue({ name: 'New Item', value: 50 });
 
@@ -316,7 +317,7 @@ describe('ManagePanelComponent', () => {
 
       expect(component.actionPerformed.emit).toHaveBeenCalledWith({
         action: 'create',
-        entity: jasmine.objectContaining({
+        entity: expect.objectContaining({
           name: 'New Item',
           value: 50,
           mapped: true
@@ -326,7 +327,7 @@ describe('ManagePanelComponent', () => {
     });
 
     it('should emit actionPerformed for update action', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       fixture.componentRef.setInput('parameter', 'update');
       fixture.componentRef.setInput('entity', mockEntity);
       component.ngOnChanges({
@@ -338,7 +339,7 @@ describe('ManagePanelComponent', () => {
 
       expect(component.actionPerformed.emit).toHaveBeenCalledWith({
         action: 'update',
-        entity: jasmine.objectContaining({
+        entity: expect.objectContaining({
           id: 1,
           name: 'Updated Item',
           mapped: true
@@ -348,7 +349,7 @@ describe('ManagePanelComponent', () => {
     });
 
     it('should emit actionPerformed for delete action', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       fixture.componentRef.setInput('parameter', 'delete');
       fixture.componentRef.setInput('entity', mockEntity);
       component.ngOnChanges({
@@ -359,7 +360,7 @@ describe('ManagePanelComponent', () => {
 
       expect(component.actionPerformed.emit).toHaveBeenCalledWith({
         action: 'delete',
-        entity: jasmine.objectContaining({
+        entity: expect.objectContaining({
           id: 1,
           mapped: true
         }),
@@ -368,25 +369,25 @@ describe('ManagePanelComponent', () => {
     });
 
     it('should apply mapOut function when provided', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       fixture.componentRef.setInput('parameter', 'create');
       component.form.patchValue({ name: 'Test', value: 10 });
 
       component.submit();
 
-      const emittedEntity = (component.actionPerformed.emit as jasmine.Spy).calls.mostRecent().args[0].entity;
-      expect(emittedEntity.mapped).toBeTrue();
+      const emittedEntity = vi.mocked((component.actionPerformed.emit as Mock)).mock.lastCall![0].entity;
+      expect(emittedEntity.mapped).toBe(true);
     });
 
     it('should hide panel after submit', () => {
-      spyOn(component, 'hide');
+      vi.spyOn(component, 'hide').mockReturnValue(undefined);
       fixture.componentRef.setInput('parameter', 'create');
       component.submit();
       expect(component.hide).toHaveBeenCalled();
     });
 
     it('should merge entity with form values', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       fixture.componentRef.setInput('parameter', 'update');
       fixture.componentRef.setInput('entity', { id: 1, name: 'Old', value: 100, extra: 'data' });
       component.ngOnChanges({
@@ -396,7 +397,7 @@ describe('ManagePanelComponent', () => {
 
       component.submit();
 
-      const emittedEntity = (component.actionPerformed.emit as jasmine.Spy).calls.mostRecent().args[0].entity;
+      const emittedEntity = vi.mocked((component.actionPerformed.emit as Mock)).mock.lastCall![0].entity;
       expect(emittedEntity.id).toBe(1);
       expect(emittedEntity.name).toBe('New');
       expect(emittedEntity.extra).toBe('data');
@@ -413,12 +414,12 @@ describe('ManagePanelComponent', () => {
 
     it('should return true when field is hidden for current action', () => {
       fixture.componentRef.setInput('parameter', 'delete');
-      expect(component.isHidden(testField)).toBeTrue();
+      expect(component.isHidden(testField)).toBe(true);
     });
 
     it('should return false when field is not hidden for current action', () => {
       fixture.componentRef.setInput('parameter', 'create');
-      expect(component.isHidden(testField)).toBeFalse();
+      expect(component.isHidden(testField)).toBe(false);
     });
 
     it('should return false when field has no hiddenOn config', () => {
@@ -428,7 +429,7 @@ describe('ManagePanelComponent', () => {
         type: 'text'
       };
       fixture.componentRef.setInput('parameter', 'delete');
-      expect(component.isHidden(fieldWithoutHidden)).toBeFalse();
+      expect(component.isHidden(fieldWithoutHidden)).toBe(false);
     });
   });
 
@@ -475,18 +476,18 @@ describe('ManagePanelComponent', () => {
   describe('isDeleteMode', () => {
     it('should return true when parameter is delete', () => {
       fixture.componentRef.setInput('parameter', 'delete');
-      expect(component.isDeleteMode()).toBeTrue();
+      expect(component.isDeleteMode()).toBe(true);
     });
 
     it('should return false when parameter is not delete', () => {
       fixture.componentRef.setInput('parameter', 'create');
-      expect(component.isDeleteMode()).toBeFalse();
+      expect(component.isDeleteMode()).toBe(false);
 
       fixture.componentRef.setInput('parameter', 'update');
-      expect(component.isDeleteMode()).toBeFalse();
+      expect(component.isDeleteMode()).toBe(false);
 
       fixture.componentRef.setInput('parameter', 'undef');
-      expect(component.isDeleteMode()).toBeFalse();
+      expect(component.isDeleteMode()).toBe(false);
     });
   });
 
@@ -498,19 +499,19 @@ describe('ManagePanelComponent', () => {
     it('should return all fields when no fields are hidden', () => {
       fixture.componentRef.setInput('parameter', 'create');
       const visible = component.visibleFields();
-      expect(visible.length).toBe(4);
+      expect(visible).toHaveLength(4);
     });
 
     it('should filter out hidden fields', () => {
       fixture.componentRef.setInput('parameter', 'delete');
       const visible = component.visibleFields();
-      expect(visible.length).toBe(3);
+      expect(visible).toHaveLength(3);
       expect(visible.find(f => f.name === 'description')).toBeUndefined();
     });
 
     it('should return empty array when config is not set', () => {
       fixture.componentRef.setInput('config', undefined as unknown as ManagePanelConfig);
-      expect(component.visibleFields().length).toBe(0);
+      expect(component.visibleFields()).toHaveLength(0);
     });
   });
 
@@ -524,7 +525,9 @@ describe('ManagePanelComponent', () => {
 
     it('should not focus input in delete mode', () => {
       fixture.componentRef.setInput('parameter', 'delete');
-      spyOn(component as unknown as { focusFirstInput: () => void }, 'focusFirstInput');
+      vi.spyOn(component as unknown as {
+        focusFirstInput: () => void;
+      }, 'focusFirstInput').mockReturnValue(undefined);
       
       component.onDialogShow();
       
@@ -533,7 +536,9 @@ describe('ManagePanelComponent', () => {
 
     it('should focus first input in non-delete modes', () => {
       fixture.componentRef.setInput('parameter', 'create');
-      spyOn(component as unknown as { focusFirstInput: () => void }, 'focusFirstInput');
+      vi.spyOn(component as unknown as {
+        focusFirstInput: () => void;
+      }, 'focusFirstInput').mockReturnValue(undefined);
       
       component.onDialogShow();
       
@@ -550,7 +555,7 @@ describe('ManagePanelComponent', () => {
     });
 
     it('should handle complete create flow', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       
       fixture.componentRef.setInput('parameter', 'create');
       fixture.componentRef.setInput('visible', true);
@@ -569,18 +574,18 @@ describe('ManagePanelComponent', () => {
 
       expect(component.actionPerformed.emit).toHaveBeenCalledWith({
         action: 'create',
-        entity: jasmine.objectContaining({
+        entity: expect.objectContaining({
           name: 'New Entity',
           description: 'Description',
           value: 200
         }),
         entityType: 'TestEntity'
       });
-      expect(component.visible()).toBeFalse();
+      expect(component.visible()).toBe(false);
     });
 
     it('should handle complete update flow', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       
       fixture.componentRef.setInput('parameter', 'update');
       fixture.componentRef.setInput('entity', mockEntity);
@@ -597,7 +602,7 @@ describe('ManagePanelComponent', () => {
 
       expect(component.actionPerformed.emit).toHaveBeenCalledWith({
         action: 'update',
-        entity: jasmine.objectContaining({
+        entity: expect.objectContaining({
           id: 1,
           name: 'Updated Name'
         }),
@@ -606,7 +611,7 @@ describe('ManagePanelComponent', () => {
     });
 
     it('should handle complete delete flow', () => {
-      spyOn(component.actionPerformed, 'emit');
+      vi.spyOn(component.actionPerformed, 'emit').mockReturnValue(undefined);
       
       fixture.componentRef.setInput('parameter', 'delete');
       fixture.componentRef.setInput('entity', mockEntity);
@@ -622,7 +627,7 @@ describe('ManagePanelComponent', () => {
 
       expect(component.actionPerformed.emit).toHaveBeenCalledWith({
         action: 'delete',
-        entity: jasmine.objectContaining({ id: 1 }),
+        entity: expect.objectContaining({ id: 1 }),
         entityType: 'TestEntity'
       });
     });
@@ -643,9 +648,9 @@ describe('ManagePanelComponent', () => {
       });
 
       // Don't fill required fields
-      expect(component.form.valid).toBeFalse();
-      expect(component.form.get('name')?.errors?.['required']).toBeTrue();
-      expect(component.form.get('value')?.errors?.['required']).toBeTrue();
+      expect(component.form.valid).toBe(false);
+      expect(component.form.get('name')?.errors?.['required']).toBe(true);
+      expect(component.form.get('value')?.errors?.['required']).toBe(true);
     });
   });
 });

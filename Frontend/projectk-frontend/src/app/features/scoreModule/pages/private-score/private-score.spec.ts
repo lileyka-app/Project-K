@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -10,7 +11,7 @@ import { PrivateScoreComponent } from './private-score';
 describe('PrivateScoreComponent', () => {
   let fixture: ComponentFixture<PrivateScoreComponent>;
   let component: PrivateScoreComponent;
-  let scores: jasmine.SpyObj<ScoreService>;
+  let scores: MockedObject<ScoreService>;
 
   const data: PrivateScoreDto = {
     kurinKey: 'k1',
@@ -31,9 +32,16 @@ describe('PrivateScoreComponent', () => {
   };
 
   beforeEach(() => {
-    scores = jasmine.createSpyObj<ScoreService>('ScoreService', ['getPrivateScore', 'createPrivateEntry', 'updatePrivateEntry', 'deletePrivateEntry', 'createPrivateCriterion', 'updatePrivateCriterion']);
-    scores.getPrivateScore.and.returnValue(of(data));
-    scores.createPrivateEntry.and.returnValue(of({}));
+    scores = {
+      getPrivateScore: vi.fn(),
+      createPrivateEntry: vi.fn(),
+      updatePrivateEntry: vi.fn(),
+      deletePrivateEntry: vi.fn(),
+      createPrivateCriterion: vi.fn(),
+      updatePrivateCriterion: vi.fn()
+    } as MockedObject<ScoreService>;
+    scores.getPrivateScore.mockReturnValue(of(data));
+    scores.createPrivateEntry.mockReturnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [PrivateScoreComponent],
@@ -41,7 +49,9 @@ describe('PrivateScoreComponent', () => {
         provideNoopAnimations(),
         provideRouter([]),
         { provide: ScoreService, useValue: scores },
-        { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) },
+        { provide: MessageService, useValue: {
+            add: vi.fn()
+          } },
         { provide: ActivatedRoute, useValue: { paramMap: new BehaviorSubject(convertToParamMap({ kurinKey: 'k1' })), queryParamMap: new BehaviorSubject(convertToParamMap({})) } }
       ]
     });
@@ -54,7 +64,7 @@ describe('PrivateScoreComponent', () => {
 
   it('показує лише чинні критерії колонками, публічні бали поруч', () => {
     expect(component.activeCriteria().map(c => c.name)).toEqual(['Лідерство']);
-    expect(component.hasUncategorised()).toBeTrue();
+    expect(component.hasUncategorised()).toBe(true);
     expect(text()).toContain('Лідерство');
     expect(text()).not.toContain('Старе');
     expect(text()).toContain('записано про 1 з 2');
@@ -64,12 +74,12 @@ describe('PrivateScoreComponent', () => {
   it('запис без критерію потребує нотатки', () => {
     component.openEntryDialog(data.people[1]);
     component.entryPoints.set(2);
-    expect(component.entryValid()).toBeFalse();
+    expect(component.entryValid()).toBe(false);
 
     component.entryNote.set('взяв на себе ватру');
-    expect(component.entryValid()).toBeTrue();
+    expect(component.entryValid()).toBe(true);
 
     component.saveEntry();
-    expect(scores.createPrivateEntry).toHaveBeenCalledWith('k1', jasmine.objectContaining({ membershipKey: 'taras', privateScoreCriterionKey: null, points: 2, note: 'взяв на себе ватру' }));
+    expect(scores.createPrivateEntry).toHaveBeenCalledWith('k1', expect.objectContaining({ membershipKey: 'taras', privateScoreCriterionKey: null, points: 2, note: 'взяв на себе ватру' }));
   });
 });

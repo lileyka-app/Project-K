@@ -2,9 +2,12 @@ using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
@@ -30,17 +33,23 @@ public sealed class GetMemberDossierQueryHandler
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberProgressDirectory _progress;
     private readonly IMapper _mapper;
+    private readonly IMemberFieldAccess _fieldAccess;
+    private readonly ICurrentUserContext _currentUser;
 
     public GetMemberDossierQueryHandler(
         IMemberUnitOfWork unitOfWork,
         IMembershipDirectory memberships,
         IMemberProgressDirectory progress,
-        IMapper mapper)
+        IMapper mapper,
+        IMemberFieldAccess fieldAccess,
+        ICurrentUserContext currentUser)
     {
         _unitOfWork = unitOfWork;
         _memberships = memberships;
         _progress = progress;
         _mapper = mapper;
+        _fieldAccess = fieldAccess;
+        _currentUser = currentUser;
     }
 
     public async Task<ServiceResult<MemberDossierResponse>> Handle(
@@ -83,6 +92,12 @@ public sealed class GetMemberDossierQueryHandler
             ? await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken)
             : null;
 
+        var mask = await _fieldAccess.ForViewerAsync(cancellationToken);
+        var isSelf = mask.IsSelf(person.UserKey);
+        // Where they stand is read only when it can change the answer.
+        var showsBirthDate = mask.Shows(MemberDataGroup.BirthDate, person.UserKey, null)
+            || mask.Shows(MemberDataGroup.BirthDate, person.UserKey, await GroupHereAsync(person.MemberKey, memberships, cancellationToken));
+
         var progress = wants.Contains(MemberDossierFolders.Progress)
             ? await _progress.GetForMemberAsync(request.MemberKey, cancellationToken)
             : null;
@@ -100,12 +115,12 @@ public sealed class GetMemberDossierQueryHandler
             {
                 Profile = new MemberDossierProfile(
                     person.MemberKey,
-                    person.PublicId,
+                    isSelf ? person.PublicId : null,
                     person.UserKey,
                     person.FirstName,
                     person.MiddleName,
                     person.LastName,
-                    person.DateOfBirth,
+                    showsBirthDate ? person.DateOfBirth : null,
                     mapped.ProfilePhotoUrl,
                     mapped.LatestPlastLevel,
                     person.ProfileVerificationStatus,
@@ -134,5 +149,15 @@ public sealed class GetMemberDossierQueryHandler
                     : null,
                 Progress = progress
             });
+    }
+
+    /// <summary>The гурток the person is placed in within the caller's kurin, which the mask is measured against.</summary>
+    private async Task<Guid?> GroupHereAsync(
+        Guid memberKey,
+        IReadOnlyCollection<MembershipRecord>? memberships,
+        CancellationToken cancellationToken)
+    {
+        memberships ??= await _memberships.GetForMemberAsync(memberKey, cancellationToken);
+        return memberships.FirstOrDefault(m => m.IsCurrent && m.KurinKey == _currentUser.KurinKey)?.GroupKey;
     }
 }

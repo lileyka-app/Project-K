@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
@@ -14,28 +15,30 @@ import { LeadershipDto } from '../../models/requests/leadership/leadership.dto';
 describe('KvPanelComponent', () => {
   let component: KvPanelComponent;
   let fixture: ComponentFixture<KvPanelComponent>;
-  let router: jasmine.SpyObj<Router>;
-  let groupService: jasmine.SpyObj<GroupService>;
-  let memberService: jasmine.SpyObj<MemberService>;
-  let leadershipService: jasmine.SpyObj<LeadershipService>;
+  let router: MockedObject<Router>;
+  let groupService: MockedObject<GroupService>;
+  let memberService: MockedObject<MemberService>;
+  let leadershipService: MockedObject<LeadershipService>;
 
   beforeEach(async () => {
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
-    groupService = jasmine.createSpyObj<GroupService>('GroupService', [
-      'getAllByKurinKey',
-      'getMentorAssignments',
-      'assignMentor',
-      'revokeMentor'
-    ]);
-    memberService = jasmine.createSpyObj<MemberService>('MemberService', [
-      'getKVMembers',
-      'getMentorCandidates'
-    ]);
-    leadershipService = jasmine.createSpyObj<LeadershipService>('LeadershipService', [
-      'getLeadershipByTypeAndKey',
-      'update',
-      'create'
-    ]);
+    router = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
+    groupService = {
+      getAllByKurinKey: vi.fn(),
+      getMentorAssignments: vi.fn(),
+      assignMentor: vi.fn(),
+      revokeMentor: vi.fn()
+    } as MockedObject<GroupService>;
+    memberService = {
+      getKVMembers: vi.fn(),
+      getMentorCandidates: vi.fn()
+    } as MockedObject<MemberService>;
+    leadershipService = {
+      getLeadershipByTypeAndKey: vi.fn(),
+      update: vi.fn(),
+      create: vi.fn()
+    } as MockedObject<LeadershipService>;
 
     await TestBed.configureTestingModule({
       imports: [KvPanelComponent],
@@ -54,13 +57,15 @@ describe('KvPanelComponent', () => {
           provide: AuthService,
           useValue: {
             getAuthStateValue: () => null,
-            updatePermissions: jasmine.createSpy('updatePermissions'),
+            updatePermissions: vi.fn().mockName('updatePermissions'),
             refreshToken: () => of(null)
           }
         },
         {
           provide: UserService,
-          useValue: jasmine.createSpyObj<UserService>('UserService', ['changeUserRole'])
+          useValue: {
+            changeUserRole: vi.fn()
+          }
         },
         { provide: Router, useValue: router }
       ]
@@ -91,7 +96,7 @@ describe('KvPanelComponent', () => {
 
     expect(component.kvRows.map(row => row.mentor.memberKey))
       .toEqual(['manager-member', 'mentor-member']);
-    expect(component.kvRows[0].isManager).toBeTrue();
+    expect(component.kvRows[0].isManager).toBe(true);
   });
 
   it('shows the Звʼязковий once, with the гуртки they are actually assigned to', () => {
@@ -127,13 +132,13 @@ describe('KvPanelComponent', () => {
   });
 
   it('gives an Інструктор a row of their own', () => {
-    groupService.getAllByKurinKey.and.returnValue(of([]));
-    groupService.getMentorAssignments.and.returnValue(of([]));
-    memberService.getKVMembers.and.returnValue(of([
+    groupService.getAllByKurinKey.mockReturnValue(of([]));
+    groupService.getMentorAssignments.mockReturnValue(of([]));
+    memberService.getKVMembers.mockReturnValue(of([
       { memberKey: 'manager-member', userKey: 'manager-user', firstName: 'Manager', lastName: 'Member', middleName: null, userRole: 'KV.Zvyazkovyi' },
       { memberKey: 'instructor-member', userKey: 'instructor-user', firstName: 'Ira', lastName: 'Instructor', middleName: null, userRole: 'KV.Instruktor' }
     ]));
-    memberService.getMentorCandidates.and.returnValue(of([]));
+    memberService.getMentorCandidates.mockReturnValue(of([]));
     fixture.componentRef.setInput('kurinKey', 'kurin-1');
 
     component.loadData();
@@ -175,13 +180,13 @@ describe('KvPanelComponent', () => {
     }
 
     function save(leadership: LeadershipDto, groupKeys: string[]): void {
-      leadershipService.getLeadershipByTypeAndKey.and.returnValue(of(leadership));
-      leadershipService.update.and.returnValue(of(leadership));
-      groupService.assignMentor.and.returnValue(of(void 0) as never);
-      groupService.getAllByKurinKey.and.returnValue(of([]));
-      groupService.getMentorAssignments.and.returnValue(of([]));
-      memberService.getKVMembers.and.returnValue(of([]));
-      memberService.getMentorCandidates.and.returnValue(of([]));
+      leadershipService.getLeadershipByTypeAndKey.mockReturnValue(of(leadership));
+      leadershipService.update.mockReturnValue(of(leadership));
+      groupService.assignMentor.mockReturnValue(of(void 0) as never);
+      groupService.getAllByKurinKey.mockReturnValue(of([]));
+      groupService.getMentorAssignments.mockReturnValue(of([]));
+      memberService.getKVMembers.mockReturnValue(of([]));
+      memberService.getMentorCandidates.mockReturnValue(of([]));
       fixture.componentRef.setInput('kurinKey', 'kurin-1');
       component.mentorCandidates = [person];
       component.selectedMentorUserKey = 'new-user';
@@ -190,16 +195,16 @@ describe('KvPanelComponent', () => {
       component.saveAssignments();
     }
 
-    const sentSeats = () => leadershipService.update.calls.mostRecent().args[1].leadershipHistories
+    const sentSeats = () => vi.mocked(leadershipService.update).mock.lastCall![1].leadershipHistories
       .map(history => [history.role, history.member.memberKey]);
 
     it('seats someone saved without a гурток as інструктор', () => {
       save(kvWith(['Zvyazkovyi', 'manager-member']), []);
 
-      expect(leadershipService.update.calls.mostRecent().args[0]).toBe('kv-1');
+      expect(vi.mocked(leadershipService.update).mock.lastCall![0]).toBe('kv-1');
       expect(sentSeats()).toEqual([['Zvyazkovyi', 'manager-member'], ['Instruktor', 'new-member']]);
       // The API binds the keys as Guid?: an empty string is a 400, a new seat goes with null.
-      const seat = leadershipService.update.calls.mostRecent().args[1].leadershipHistories[1];
+      const seat = vi.mocked(leadershipService.update).mock.lastCall![1].leadershipHistories[1];
       expect(seat.leadershipHistoryKey).toBeNull();
       expect(seat.leadershipKey).toBe('kv-1');
     });
@@ -225,4 +230,3 @@ describe('KvPanelComponent', () => {
     });
   });
 });
-

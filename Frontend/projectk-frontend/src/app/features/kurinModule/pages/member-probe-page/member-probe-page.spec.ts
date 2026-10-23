@@ -1,9 +1,10 @@
-﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
+﻿import type { MockedObject } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { EntityService } from '../../../authModule/services/entity-service/entity.service';
 import { MemberService } from '../../services/member-service/member.service';
+import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
@@ -15,12 +16,11 @@ describe('MemberProbePageComponent', () => {
   let fixture: ComponentFixture<MemberProbePageComponent>;
   let component: MemberProbePageComponent;
 
-  let memberServiceSpy: jasmine.SpyObj<MemberService>;
-  let probesCatalogServiceSpy: jasmine.SpyObj<ProbesCatalogService>;
-  let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let entityServiceSpy: jasmine.SpyObj<EntityService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let memberServiceSpy: MockedObject<MemberService>;
+  let probesCatalogServiceSpy: MockedObject<ProbesCatalogService>;
+  let memberProgressServiceSpy: MockedObject<MemberProgressService>;
+  let authServiceSpy: MockedObject<AuthService>;
+  let routerSpy: MockedObject<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const memberKey = 'member-1';
@@ -46,22 +46,34 @@ describe('MemberProbePageComponent', () => {
     };
   }
 
+  const signer: MemberAbilitiesDto = { ...NO_ABILITIES, probes: { sign: true, unsign: true } };
+
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
-    memberServiceSpy.getMemberships.and.returnValue(of([]));
-    probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getGroupedById']);
-    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', [
-      'getProbeProgress',
-      'updateProbeProgressStatus',
-      'signProbePoint',
-      'unsignProbePoint'
-    ]);
-    authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
-    entityServiceSpy = jasmine.createSpyObj<EntityService>('EntityService', ['checkEntityAccess']);
-    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    memberServiceSpy = {
+      getByKey: vi.fn(),
+      getMemberships: vi.fn(),
+      getAbilities: vi.fn()
+    } as MockedObject<MemberService>;
+    memberServiceSpy.getAbilities.mockReturnValue(of(signer));
+    memberServiceSpy.getMemberships.mockReturnValue(of([]));
+    probesCatalogServiceSpy = {
+      getGroupedById: vi.fn()
+    } as MockedObject<ProbesCatalogService>;
+    memberProgressServiceSpy = {
+      getProbeProgress: vi.fn(),
+      updateProbeProgressStatus: vi.fn(),
+      signProbePoint: vi.fn(),
+      unsignProbePoint: vi.fn()
+    } as MockedObject<MemberProgressService>;
+    authServiceSpy = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    routerSpy = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey, probeId }));
 
-    memberServiceSpy.getByKey.and.returnValue(of({
+    memberServiceSpy.getByKey.mockReturnValue(of({
       memberKey,
       groupKey: 'group-1',
       kurinKey: 'kurin-1',
@@ -76,7 +88,7 @@ describe('MemberProbePageComponent', () => {
       leadershipHistories: []
     }));
 
-    probesCatalogServiceSpy.getGroupedById.and.returnValue(of({
+    probesCatalogServiceSpy.getGroupedById.mockReturnValue(of({
       id: probeId,
       title: 'Перша проба',
       pointsCount: 2,
@@ -94,12 +106,11 @@ describe('MemberProbePageComponent', () => {
       ]
     }));
 
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
-    memberProgressServiceSpy.signProbePoint.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
-    memberProgressServiceSpy.unsignProbePoint.and.returnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
-    memberProgressServiceSpy.updateProbeProgressStatus.and.returnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
-    entityServiceSpy.checkEntityAccess.and.returnValue(of(true));
-    authServiceSpy.getAuthStateValue.and.returnValue({
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
+    memberProgressServiceSpy.signProbePoint.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
+    memberProgressServiceSpy.unsignProbePoint.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.InProgress)));
+    memberProgressServiceSpy.updateProbeProgressStatus.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
+    authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'user-1',
       memberKey: 'test-member-key',
       email: 'mentor@example.com',
@@ -112,7 +123,6 @@ describe('MemberProbePageComponent', () => {
       imports: [MemberProbePageComponent],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },
-        { provide: EntityService, useValue: entityServiceSpy },
         { provide: MemberService, useValue: memberServiceSpy },
         { provide: ProbesCatalogService, useValue: probesCatalogServiceSpy },
         { provide: MemberProgressService, useValue: memberProgressServiceSpy },
@@ -132,20 +142,20 @@ describe('MemberProbePageComponent', () => {
     fixture.detectChanges();
 
     expect(component).toBeTruthy();
-    expect(component.probeSections.length).toBe(1);
-    expect(component.probeSections[0].points.length).toBe(2);
-    expect(component.probeSections[0].points[0].isSigned).toBeFalse();
+    expect(component.probeSections).toHaveLength(1);
+    expect(component.probeSections[0].points).toHaveLength(2);
+    expect(component.probeSections[0].points[0].isSigned).toBe(false);
   });
 
   it('should detect reviewer role access', () => {
     createComponent();
     fixture.detectChanges();
 
-    expect(component.canManageProbePoints).toBeTrue();
+    expect(component.canManageProbePoints).toBe(true);
   });
 
   it('у старшого пластуна проба — архів: видно, але не підписати', () => {
-    memberServiceSpy.getByKey.and.returnValue(of({
+    memberServiceSpy.getByKey.mockReturnValue(of({
       memberKey,
       groupKey: 'group-1',
       kurinKey: 'kurin-1',
@@ -163,9 +173,9 @@ describe('MemberProbePageComponent', () => {
     createComponent();
     fixture.detectChanges();
 
-    expect(component.isArchive).toBeTrue();
-    expect(component.canManageProbePoints).toBeFalse();
-    expect(component.probeSections[0].points.length).toBe(2);
+    expect(component.isArchive).toBe(true);
+    expect(component.canManageProbePoints).toBe(false);
+    expect(component.probeSections[0].points).toHaveLength(2);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Архів юнацтва');
 
     component.onSignPoint(component.probeSections[0].points[0]);
@@ -176,7 +186,7 @@ describe('MemberProbePageComponent', () => {
     createComponent();
     fixture.detectChanges();
     const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
-    const confirmSpy = spyOn(confirmationService, 'confirm');
+    const confirmSpy = vi.spyOn(confirmationService, 'confirm').mockReturnThis();
 
     const point = component.probeSections[0].points[0];
     component.onSignPoint(point);
@@ -187,8 +197,21 @@ describe('MemberProbePageComponent', () => {
     });
   });
 
+  it('signs but does not unsign when the kurin gives only signing', () => {
+    memberServiceSpy.getAbilities.mockReturnValue(of({ ...NO_ABILITIES, probes: { sign: true, unsign: false } }));
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.canSignProbePoints).toBe(true);
+    expect(component.canUnsignProbePoints).toBe(false);
+    const signed = { ...component.probeSections[0].points[0], isSigned: true };
+    component.onUnsignPoint(signed);
+    expect(memberProgressServiceSpy.unsignProbePoint).not.toHaveBeenCalled();
+  });
+
   it('onSignPoint should do nothing for non-reviewer role', () => {
-    authServiceSpy.getAuthStateValue.and.returnValue({
+    memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
+    authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'user-1',
       memberKey: 'test-member-key',
       email: 'member@example.com',
@@ -199,19 +222,19 @@ describe('MemberProbePageComponent', () => {
     createComponent();
     fixture.detectChanges();
     const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
-    const confirmSpy = spyOn(confirmationService, 'confirm');
+    const confirmSpy = vi.spyOn(confirmationService, 'confirm').mockReturnThis();
 
     const point = component.probeSections[0].points[0];
     component.onSignPoint(point);
 
-    expect(component.canManageProbePoints).toBeFalse();
+    expect(component.canManageProbePoints).toBe(false);
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(memberProgressServiceSpy.signProbePoint).not.toHaveBeenCalled();
   });
 
   it('onUnsignPoint should confirm and unsign point for reviewer', () => {
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of(createProbeProgress(ProbeProgressStatus.Completed)));
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of({
       ...createProbeProgress(ProbeProgressStatus.InProgress),
       pointSignatures: [
         {
@@ -228,7 +251,7 @@ describe('MemberProbePageComponent', () => {
     createComponent();
     fixture.detectChanges();
     const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
-    const confirmSpy = spyOn(confirmationService, 'confirm').and.callFake((options) => {
+    const confirmSpy = vi.spyOn(confirmationService, 'confirm').mockImplementation((options) => {
       options.accept?.();
       return confirmationService;
     });
@@ -267,7 +290,7 @@ describe('MemberProbePageComponent', () => {
   });
 
   it('onUnsignPoint should show conflict message when API returns 409', () => {
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of({
       ...createProbeProgress(ProbeProgressStatus.InProgress),
       pointSignatures: [
         {
@@ -281,14 +304,14 @@ describe('MemberProbePageComponent', () => {
         }
       ]
     }));
-    memberProgressServiceSpy.unsignProbePoint.and.returnValue(throwError(() => ({
+    memberProgressServiceSpy.unsignProbePoint.mockReturnValue(throwError(() => ({
       status: 409,
       error: ['conflict', createProbeProgress(ProbeProgressStatus.InProgress)]
     })));
     createComponent();
     fixture.detectChanges();
     const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
-    spyOn(confirmationService, 'confirm').and.callFake((options) => {
+    vi.spyOn(confirmationService, 'confirm').mockImplementation((options) => {
       options.accept?.();
       return confirmationService;
     });
@@ -300,7 +323,7 @@ describe('MemberProbePageComponent', () => {
   });
 
   it('should allow closing probe when all points are signed', () => {
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of({
       ...createProbeProgress(ProbeProgressStatus.InProgress),
       pointSignatures: [
         {
@@ -327,11 +350,11 @@ describe('MemberProbePageComponent', () => {
     createComponent();
     fixture.detectChanges();
 
-    expect(component.canCloseProbe).toBeTrue();
+    expect(component.canCloseProbe).toBe(true);
   });
 
   it('keeps points signed under earlier requirements as signed earlier', () => {
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of({
       ...createProbeProgress(ProbeProgressStatus.InProgress),
       pointSignatures: [
         {
@@ -360,12 +383,12 @@ describe('MemberProbePageComponent', () => {
 
     expect(component.signedEarlierPoints.map(point => point.pointId)).toEqual(['old-point']);
     expect(component.getSignedEarlierLabel(component.signedEarlierPoints[0])).toContain('Точка old-point · Впорядник');
-    expect(component.canCloseProbe).toBeFalse();
+    expect(component.canCloseProbe).toBe(false);
     expect(fixture.nativeElement.textContent).toContain('Підписано раніше');
   });
 
   it('onCloseProbe should call updateProbeProgressStatus with Completed', () => {
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of({
       ...createProbeProgress(ProbeProgressStatus.InProgress),
       pointSignatures: [
         {
@@ -391,7 +414,7 @@ describe('MemberProbePageComponent', () => {
     createComponent();
     fixture.detectChanges();
     const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
-    const confirmSpy = spyOn(confirmationService, 'confirm').and.callFake((options) => {
+    const confirmSpy = vi.spyOn(confirmationService, 'confirm').mockImplementation((options) => {
       options.accept?.();
       return confirmationService;
     });
@@ -414,4 +437,3 @@ describe('MemberProbePageComponent', () => {
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey]);
   });
 });
-

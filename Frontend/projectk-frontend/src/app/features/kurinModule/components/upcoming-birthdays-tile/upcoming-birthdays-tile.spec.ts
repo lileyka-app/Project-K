@@ -31,7 +31,7 @@ describe('UpcomingBirthdaysTileComponent', () => {
 
     const result = component.buildUpcomingBirthdays(referenceDate);
 
-    expect(result.length).toBe(3);
+    expect(result).toHaveLength(3);
     expect(result.map(item => item.member.memberKey)).toEqual(['a', 'b', 'c']);
     expect(result.map(item => item.daysUntilBirthday)).toEqual([0, 14, 30]);
   });
@@ -45,6 +45,19 @@ describe('UpcomingBirthdaysTileComponent', () => {
 
     const result = component.buildUpcomingBirthdays(referenceDate);
 
-    expect(result.length).toBe(0);
+    expect(result).toHaveLength(0);
+  });
+
+  it('should read the day and month from birthday when the year is hidden', () => {
+    const referenceDate = new Date('2026-04-06T00:00:00');
+    fixture.componentRef.setInput('members', [
+      { memberKey: 'a', firstName: 'Hidden', lastName: 'Year', middleName: '', dateOfBirth: null, birthday: '04-10' } as MemberLookupDto,
+      { memberKey: 'b', firstName: 'Full', lastName: 'Date', middleName: '', dateOfBirth: '2000-04-08', birthday: '04-08' } as MemberLookupDto
+    ]);
+
+    const result = component.buildUpcomingBirthdays(referenceDate);
+
+    expect(result.map(item => item.member.memberKey)).toEqual(['b', 'a']);
+    expect(result.map(item => item.daysUntilBirthday)).toEqual([2, 4]);
   });
 });

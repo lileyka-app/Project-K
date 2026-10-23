@@ -1,4 +1,5 @@
-﻿import { ComponentFixture, TestBed } from '@angular/core/testing';
+﻿import type { MockedObject } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -18,12 +19,12 @@ describe('KurinPanelComponent', () => {
   let fixture: ComponentFixture<KurinPanelComponent>;
   let component: KurinPanelComponent;
 
-  let groupService: jasmine.SpyObj<GroupService>;
-  let kurinService: jasmine.SpyObj<KurinService>;
-  let memberService: jasmine.SpyObj<MemberService>;
-  let userService: jasmine.SpyObj<UserService>;
-  let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
+  let groupService: MockedObject<GroupService>;
+  let kurinService: MockedObject<KurinService>;
+  let memberService: MockedObject<MemberService>;
+  let userService: MockedObject<UserService>;
+  let authService: MockedObject<AuthService>;
+  let router: MockedObject<Router>;
   let authState$: BehaviorSubject<AuthState | null>;
 
   const mockAuthState: AuthState = {
@@ -43,31 +44,43 @@ describe('KurinPanelComponent', () => {
   beforeEach(async () => {
     authState$ = new BehaviorSubject<AuthState | null>(mockAuthState);
 
-    groupService = jasmine.createSpyObj<GroupService>('GroupService', [
-      'getAllByKurinKey', 'getMentorAssignments', 'assignMentor', 'revokeMentor', 'create', 'update', 'delete'
-    ]);
-    kurinService = jasmine.createSpyObj<KurinService>('KurinService', [
-      'getByKey', 'downloadReportPdf'
-    ]);
-    memberService = jasmine.createSpyObj<MemberService>('MemberService', [
-      'getAll', 'getKVMembers', 'getMentorCandidates'
-    ]);
-    userService = jasmine.createSpyObj<UserService>('UserService', [
-      'changeUserRole'
-    ]);
-    authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'getAuthState', 'getAuthStateValue'
-    ]);
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    groupService = {
+      getAllByKurinKey: vi.fn(),
+      getMentorAssignments: vi.fn(),
+      assignMentor: vi.fn(),
+      revokeMentor: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn()
+    } as MockedObject<GroupService>;
+    kurinService = {
+      getByKey: vi.fn(),
+      downloadReportPdf: vi.fn()
+    } as MockedObject<KurinService>;
+    memberService = {
+      getAll: vi.fn(),
+      getKVMembers: vi.fn(),
+      getMentorCandidates: vi.fn()
+    } as MockedObject<MemberService>;
+    userService = {
+      changeUserRole: vi.fn()
+    } as MockedObject<UserService>;
+    authService = {
+      getAuthState: vi.fn(),
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    router = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
 
-    groupService.getAllByKurinKey.and.returnValue(of(mockGroups));
-    groupService.getMentorAssignments.and.returnValue(of([]));
-    memberService.getKVMembers.and.returnValue(of([]));
-    memberService.getMentorCandidates.and.returnValue(of([]));
-    memberService.getAll.and.returnValue(of([]));
-    kurinService.getByKey.and.returnValue(of({ kurinKey: 'k1', number: 10 }));
-    authService.getAuthState.and.returnValue(authState$.asObservable());
-    authService.getAuthStateValue.and.returnValue(mockAuthState);
+    groupService.getAllByKurinKey.mockReturnValue(of(mockGroups));
+    groupService.getMentorAssignments.mockReturnValue(of([]));
+    memberService.getKVMembers.mockReturnValue(of([]));
+    memberService.getMentorCandidates.mockReturnValue(of([]));
+    memberService.getAll.mockReturnValue(of([]));
+    kurinService.getByKey.mockReturnValue(of({ kurinKey: 'k1', number: 10 }));
+    authService.getAuthState.mockReturnValue(authState$.asObservable());
+    authService.getAuthStateValue.mockReturnValue(mockAuthState);
 
     await TestBed.configureTestingModule({
       imports: [KurinPanelComponent],
@@ -100,7 +113,7 @@ describe('KurinPanelComponent', () => {
   it('initial state before ngOnInit', () => {
     expect(component.kurinKey).toBe('');
     expect(component.groups).toEqual([]);
-    expect(component.groupPanelVisible).toBeFalse();
+    expect(component.groupPanelVisible).toBe(false);
     expect(component.groupPanelParameter).toBe('undef');
   });
 
@@ -115,7 +128,7 @@ describe('KurinPanelComponent', () => {
 
   it('authState emission updates kurinKey', () => {
     fixture.detectChanges();
-    groupService.getAllByKurinKey.calls.reset();
+    groupService.getAllByKurinKey.mockClear();
     const newAuthState: AuthState = {
       ...mockAuthState,
       kurinKey: 'k2'
@@ -129,18 +142,18 @@ describe('KurinPanelComponent', () => {
       ...mockAuthState,
       isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy']
     };
-    authService.getAuthStateValue.and.returnValue(mentorState);
+    authService.getAuthStateValue.mockReturnValue(mentorState);
     authState$.next(mentorState);
     fixture.detectChanges();
 
-    expect(component.canManageMembers).toBeFalse();
+    expect(component.canManageMembers).toBe(false);
   });
 
   it('manual refresh uses current kurinKey from component', () => {
     fixture.detectChanges();
     component.kurinKey = 'k2';
-    groupService.getAllByKurinKey.calls.reset();
-    kurinService.getByKey.calls.reset();
+    groupService.getAllByKurinKey.mockClear();
+    kurinService.getByKey.mockClear();
     component.refreshData();
     expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('k2');
     expect(kurinService.getByKey).toHaveBeenCalledWith('k2');
@@ -149,7 +162,7 @@ describe('KurinPanelComponent', () => {
   describe('prepareItemActions', () => {
     it('sets Update/Delete actions', () => {
       component.prepareItemActions(mockGroups[0]);
-      expect(component.actions.length).toBe(2);
+      expect(component.actions).toHaveLength(2);
       expect(component.actions[0].label).toBe('Редагувати');
       expect(component.actions[1].label).toBe('Видалити');
     });
@@ -200,23 +213,23 @@ describe('KurinPanelComponent', () => {
       component.onGroupActionClick(null, 'create');
       expect(component.selectedGroup).toBeNull();
       expect(component.groupPanelParameter).toBe('create');
-      expect(component.groupPanelVisible).toBeTrue();
+      expect(component.groupPanelVisible).toBe(true);
     });
 
     it('update: sets selectedGroup', () => {
       component.onGroupActionClick(mockGroups[0], 'update');
       expect(component.selectedGroup).toBe(mockGroups[0]);
       expect(component.groupPanelParameter).toBe('update');
-      expect(component.groupPanelVisible).toBeTrue();
+      expect(component.groupPanelVisible).toBe(true);
     });
   });
 
   describe('onGroupManage', () => {
     beforeEach(() => {
       component.kurinKey = 'k1';
-      groupService.create.and.returnValue(of(mockGroups[0]));
-      groupService.update.and.returnValue(of(mockGroups[0]));
-      groupService.delete.and.returnValue(of(void 0));
+      groupService.create.mockReturnValue(of(mockGroups[0]));
+      groupService.update.mockReturnValue(of(mockGroups[0]));
+      groupService.delete.mockReturnValue(of(void 0));
     });
 
     it('create calls service.create with full entity', () => {
@@ -253,7 +266,7 @@ describe('KurinPanelComponent', () => {
     });
     it('name visible on create', () => {
       const f = component.groupPanelConfig.fields.find(x => x.name === 'name')!;
-      expect((f.hiddenOn || []).includes('create')).toBeFalse();
+      expect((f.hiddenOn || []).includes('create')).toBe(false);
     });
   });
 });

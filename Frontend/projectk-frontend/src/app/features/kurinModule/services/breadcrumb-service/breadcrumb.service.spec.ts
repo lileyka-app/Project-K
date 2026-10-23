@@ -1,6 +1,7 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { BreadcrumbService, routePathRegExp } from './breadcrumb.service';
-import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Route, Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, ParamMap, Route, Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { MenuItem } from '@openng/optimus-ui/api';
 import { AuthState } from '../../../authModule/models/auth-state.model';
@@ -16,13 +17,13 @@ import { MemberService } from '../member-service/member.service';
 describe('BreadcrumbService', () => {
   let service: BreadcrumbService;
   let routerEventsSubject: Subject<NavigationEnd>;
-  let mockRouter: jasmine.SpyObj<Router>;
-  let mockActivatedRoute: jasmine.SpyObj<ActivatedRoute>;
-  let permissionService: jasmine.SpyObj<PermissionService>;
-  let authService: jasmine.SpyObj<AuthService>;
-  let kurinService: jasmine.SpyObj<KurinService>;
-  let groupService: jasmine.SpyObj<GroupService>;
-  let memberService: jasmine.SpyObj<MemberService>;
+  let mockRouter: MockedObject<Router>;
+  let mockActivatedRoute: MockedObject<ActivatedRoute>;
+  let permissionService: MockedObject<PermissionService>;
+  let authService: MockedObject<AuthService>;
+  let kurinService: MockedObject<KurinService>;
+  let groupService: MockedObject<GroupService>;
+  let memberService: MockedObject<MemberService>;
 
   const createAuthState = (overrides: Partial<AuthState> = {}): AuthState => ({
     userKey: 'user-1',
@@ -38,8 +39,14 @@ describe('BreadcrumbService', () => {
     return {
       data,
       params,
-      paramMap: jasmine.createSpyObj('ParamMap', ['get', 'has']),
-      queryParamMap: jasmine.createSpyObj('ParamMap', ['get', 'has']),
+      paramMap: {
+        get: vi.fn(),
+        has: vi.fn()
+      } as unknown as ParamMap,
+      queryParamMap: {
+        get: vi.fn(),
+        has: vi.fn()
+      } as unknown as ParamMap,
       queryParams: {},
       url: [],
       outlet: 'primary',
@@ -55,12 +62,13 @@ describe('BreadcrumbService', () => {
     };
   };
 
-  const createMockRouter = (url: string, config: Route[]): jasmine.SpyObj<Router> => {
+  const createMockRouter = (url: string, config: Route[]): MockedObject<Router> => {
     routerEventsSubject = new Subject<NavigationEnd>();
-    const router = jasmine.createSpyObj<Router>('Router', ['navigate'], {
+    const router = {
+      navigate: vi.fn(),
       events: routerEventsSubject.asObservable(),
       config: config
-    });
+    } as MockedObject<Router>;
     Object.defineProperty(router, 'url', {
       get: () => url,
       configurable: true
@@ -68,12 +76,12 @@ describe('BreadcrumbService', () => {
     return router;
   };
 
-  const createMockActivatedRoute = (snapshot: ActivatedRouteSnapshot, firstChild: ActivatedRoute | null = null): jasmine.SpyObj<ActivatedRoute> => {
-    const route = jasmine.createSpyObj<ActivatedRoute>('ActivatedRoute', [], {
+  const createMockActivatedRoute = (snapshot: ActivatedRouteSnapshot, firstChild: ActivatedRoute | null = null): MockedObject<ActivatedRoute> => {
+    const route = {
       snapshot,
       firstChild,
       children: []
-    });
+    } as unknown as MockedObject<ActivatedRoute>;
     return route;
   };
 
@@ -84,17 +92,29 @@ describe('BreadcrumbService', () => {
   });
 
   beforeEach(() => {
-    permissionService = jasmine.createSpyObj<PermissionService>('PermissionService', ['isAdmin', 'canManageWholeKurin', 'canLeadGroups']);
-    permissionService.isAdmin.and.returnValue(true);
-    permissionService.isAdmin.and.returnValue(false);
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
-    authService.getAuthStateValue.and.returnValue(null);
-    kurinService = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
-    kurinService.getByKey.and.returnValue(of({ number: 12 } as unknown as KurinDto));
-    groupService = jasmine.createSpyObj<GroupService>('GroupService', ['getByKey']);
-    groupService.getByKey.and.returnValue(of({ name: 'Соколи' } as unknown as GroupDto));
-    memberService = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
-    memberService.getByKey.and.returnValue(of({ lastName: 'Шевченко', firstName: 'Тарас' } as unknown as MemberDto));
+    permissionService = {
+      isAdmin: vi.fn(),
+      canManageWholeKurin: vi.fn(),
+      canLeadGroups: vi.fn()
+    } as MockedObject<PermissionService>;
+    permissionService.isAdmin.mockReturnValue(true);
+    permissionService.isAdmin.mockReturnValue(false);
+    authService = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    authService.getAuthStateValue.mockReturnValue(null);
+    kurinService = {
+      getByKey: vi.fn()
+    } as MockedObject<KurinService>;
+    kurinService.getByKey.mockReturnValue(of({ number: 12 } as unknown as KurinDto));
+    groupService = {
+      getByKey: vi.fn()
+    } as MockedObject<GroupService>;
+    groupService.getByKey.mockReturnValue(of({ name: 'Соколи' } as unknown as GroupDto));
+    memberService = {
+      getByKey: vi.fn()
+    } as MockedObject<MemberService>;
+    memberService.getByKey.mockReturnValue(of({ lastName: 'Шевченко', firstName: 'Тарас' } as unknown as MemberDto));
     TestBed.configureTestingModule({
       providers: [
         { provide: PermissionService, useValue: permissionService },
@@ -123,7 +143,7 @@ describe('BreadcrumbService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should emit empty breadcrumbs for route without breadcrumb data', (done) => {
+  it('should emit empty breadcrumbs for route without breadcrumb data', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/home', [
       { path: 'home' }
     ]);
@@ -144,15 +164,15 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(0);
+        expect(breadcrumbs).toHaveLength(0);
         done();
       }
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/home', '/home'));
-  });
+  }));
 
-  it('should create single breadcrumb from route with breadcrumb data', (done) => {
+  it('should create single breadcrumb from route with breadcrumb data', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/dashboard', [
       { path: 'dashboard', data: { breadcrumb: 'Dashboard' } }
     ]);
@@ -173,7 +193,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveLength(1);
         expect(breadcrumbs[0].label).toBe('Dashboard');
         expect(breadcrumbs[0].routerLink).toBe('/dashboard');
         done();
@@ -181,9 +201,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/dashboard', '/dashboard'));
-  });
+  }));
 
-  it('should create breadcrumb with resolved route parameters', (done) => {
+  it('should create breadcrumb with resolved route parameters', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/users/123', [
       { path: 'users/:userId', data: { breadcrumb: 'User Profile' } }
     ]);
@@ -204,7 +224,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveLength(1);
         expect(breadcrumbs[0].label).toBe('User Profile');
         expect(breadcrumbs[0].routerLink).toBe('/users/123');
         done();
@@ -212,9 +232,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/users/123', '/users/123'));
-  });
+  }));
 
-  it('should create breadcrumb hierarchy with parent route', (done) => {
+  it('should create breadcrumb hierarchy with parent route', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/settings/profile', [
       { path: 'settings', data: { breadcrumb: 'Settings' } },
       { path: 'settings/profile', data: { breadcrumb: 'Profile', parent: 'settings' } }
@@ -236,7 +256,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs).toHaveLength(2);
         expect(breadcrumbs[0].label).toBe('Settings');
         expect(breadcrumbs[0].routerLink).toBe('settings');
         expect(breadcrumbs[1].label).toBe('Profile');
@@ -246,9 +266,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/settings/profile', '/settings/profile'));
-  });
+  }));
 
-  it('should resolve parameters in parent path', (done) => {
+  it('should resolve parameters in parent path', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/projects/42/tasks/99', [
       { path: 'projects/:projectId', data: { breadcrumb: 'Project Details' } },
       { path: 'projects/:projectId/tasks/:taskId', data: { breadcrumb: 'Task Details', parent: 'projects/:projectId' } }
@@ -273,7 +293,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs).toHaveLength(2);
         expect(breadcrumbs[0].label).toBe('Project Details');
         expect(breadcrumbs[0].routerLink).toBe('projects/42');
         expect(breadcrumbs[1].label).toBe('Task Details');
@@ -283,9 +303,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/projects/42/tasks/99', '/projects/42/tasks/99'));
-  });
+  }));
 
-  it('should handle multiple route parameters', (done) => {
+  it('should handle multiple route parameters', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/org/10/team/20/member/30', [
       { path: 'org/:orgId/team/:teamId/member/:memberId', data: { breadcrumb: 'Member Details' } }
     ]);
@@ -309,7 +329,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveLength(1);
         expect(breadcrumbs[0].label).toBe('Member Details');
         expect(breadcrumbs[0].routerLink).toBe('/org/10/team/20/member/30');
         done();
@@ -317,9 +337,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/org/10/team/20/member/30', '/org/10/team/20/member/30'));
-  });
+  }));
 
-  it('should create multi-level breadcrumb hierarchy', (done) => {
+  it('should create multi-level breadcrumb hierarchy', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/level1/level2/level3', [
       { path: 'level1', data: { breadcrumb: 'Level 1' } },
       { path: 'level1/level2', data: { breadcrumb: 'Level 2', parent: 'level1' } },
@@ -345,7 +365,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(3);
+        expect(breadcrumbs).toHaveLength(3);
         expect(breadcrumbs[0].label).toBe('Level 1');
         expect(breadcrumbs[0].routerLink).toBe('level1');
         expect(breadcrumbs[1].label).toBe('Level 2');
@@ -357,10 +377,10 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/level1/level2/level3', '/level1/level2/level3'));
-  });
+  }));
 
-  it('should omit an admin-only breadcrumb parent for a manager', (done) => {
-    permissionService.canManageWholeKurin.and.returnValue(true);
+  it('should omit an admin-only breadcrumb parent for a manager', () => new Promise<void>(done => {
+    permissionService.canManageWholeKurin.mockReturnValue(true);
     mockRouter = createMockRouter('/group/group-42', [
       { path: 'panel', data: { breadcrumb: 'Panel' } },
       { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] } },
@@ -393,9 +413,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/group/group-42', '/group/group-42'));
-  });
+  }));
 
-  it('should handle child routes in activated route tree', (done) => {
+  it('should handle child routes in activated route tree', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/parent/child/555', [
       { path: 'parent/child/:childId', data: { breadcrumb: 'Child Page' } }
     ]);
@@ -419,7 +439,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(1);
+        expect(breadcrumbs).toHaveLength(1);
         expect(breadcrumbs[0].label).toBe('Child Page');
         expect(breadcrumbs[0].routerLink).toBe('/parent/child/555');
         done();
@@ -427,9 +447,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/parent/child/555', '/parent/child/555'));
-  });
+  }));
 
-  it('should cache and reuse parameters across navigation', (done) => {
+  it('should cache and reuse parameters across navigation', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/category/electronics/product/laptop', [
       { path: 'category/:categoryId', data: { breadcrumb: 'Category' } },
       { path: 'category/:categoryId/product/:productId', data: { breadcrumb: 'Product', parent: 'category/:categoryId' } }
@@ -454,7 +474,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(2);
+        expect(breadcrumbs).toHaveLength(2);
         expect(breadcrumbs[0].label).toBe('Category');
         expect(breadcrumbs[0].routerLink).toBe('category/electronics');
         expect(breadcrumbs[1].label).toBe('Product');
@@ -464,9 +484,9 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/category/electronics/product/laptop', '/category/electronics/product/laptop'));
-  });
+  }));
 
-  it('should resolve parameters dynamically injected via setParam', (done) => {
+  it('should resolve parameters dynamically injected via setParam', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/member/789', [
       { path: 'group/:groupKey', data: { breadcrumb: 'Group Details' } },
       { path: 'member/:memberKey', data: { breadcrumb: 'Member Profile', parent: '/group/:groupKey' } }
@@ -501,10 +521,10 @@ describe('BreadcrumbService', () => {
     expect(latest.map(item => item.label)).toEqual(['Group Details', 'Member Profile']);
     expect(latest.map(item => item.routerLink)).toEqual(['/group/group-42', '/member/789']);
     done();
-  });
+  }));
 
-  it('should fall back to kurin for a member without groupKey', (done) => {
-    permissionService.canManageWholeKurin.and.returnValue(true);
+  it('should fall back to kurin for a member without groupKey', () => new Promise<void>(done => {
+    permissionService.canManageWholeKurin.mockReturnValue(true);
     mockRouter = createMockRouter('/member/mentor-1', [
       { path: 'kurin', data: { breadcrumb: 'Kurin' } },
       { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
@@ -548,10 +568,10 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/member/mentor-1', '/member/mentor-1'));
-  });
+  }));
 
   it('should not reuse a previous member groupKey for a groupless mentor', () => {
-    permissionService.canManageWholeKurin.and.returnValue(true);
+    permissionService.canManageWholeKurin.mockReturnValue(true);
     mockRouter = createMockRouter('/member/mentor-1', [
       { path: 'kurin', data: { breadcrumb: 'Kurin' } },
       { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
@@ -592,8 +612,8 @@ describe('BreadcrumbService', () => {
     expect(latest.map(item => item.routerLink)).toEqual(['/kurin', '/member/mentor-1']);
   });
 
-  it('should point home at the kurin and drop the crumbs above it in kurin scope', (done) => {
-    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+  it('should point home at the kurin and drop the crumbs above it in kurin scope', () => new Promise<void>(done => {
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ kurinKey: 'kurin-1' }));
     mockRouter = createMockRouter('/group/group-42', [
       { path: 'panel', data: { breadcrumb: 'Panel' } },
       { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] } },
@@ -630,11 +650,11 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/group/group-42', '/group/group-42'));
-  });
+  }));
 
-  it('should point home at the admin panel outside kurin scope', (done) => {
-    permissionService.isAdmin.and.returnValue(true);
-    authService.getAuthStateValue.and.returnValue(createAuthState());
+  it('should point home at the admin panel outside kurin scope', () => new Promise<void>(done => {
+    permissionService.isAdmin.mockReturnValue(true);
+    authService.getAuthStateValue.mockReturnValue(createAuthState());
     mockRouter = createMockRouter('/users', [
       { path: 'panel', data: { breadcrumb: 'Panel' } },
       { path: 'users', data: { breadcrumb: 'Users', parent: '/panel' } }
@@ -667,10 +687,10 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/users', '/users'));
-  });
+  }));
 
-  it('should emit an empty trail on the home page itself', (done) => {
-    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+  it('should emit an empty trail on the home page itself', () => new Promise<void>(done => {
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ kurinKey: 'kurin-1' }));
     mockRouter = createMockRouter('/kurin', [
       { path: 'panel', data: { breadcrumb: 'Panel' } },
       { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel' } }
@@ -692,17 +712,17 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(0);
+        expect(breadcrumbs).toHaveLength(0);
         done();
       }
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/kurin', '/kurin'));
-  });
+  }));
 
-  it('should omit an admin-only parent of the page the user is standing on', (done) => {
-    permissionService.canManageWholeKurin.and.returnValue(true);
-    authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'member-7' }));
+  it('should omit an admin-only parent of the page the user is standing on', () => new Promise<void>(done => {
+    permissionService.canManageWholeKurin.mockReturnValue(true);
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ memberKey: 'member-7' }));
     mockRouter = createMockRouter('/kurin', [
       { path: 'panel', data: { breadcrumb: 'Panel' } },
       { path: 'kurin', data: { breadcrumb: 'Kurin', parent: '/panel', parentRoles: ['Admin'] } }
@@ -733,10 +753,10 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/kurin', '/kurin'));
-  });
+  }));
 
   it('should label entity crumbs with the same names the page title shows', () => {
-    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ kurinKey: 'kurin-1' }));
     mockRouter = createMockRouter('/member/member-1', [
       { path: 'kurin', data: { breadcrumb: 'Kurin', breadcrumbEntity: 'kurin' } },
       { path: 'group/:groupKey', data: { breadcrumb: 'Гурток', parent: '/kurin', breadcrumbEntity: 'group' } },
@@ -781,8 +801,8 @@ describe('BreadcrumbService', () => {
   });
 
   it('should keep the static label when the entity lookup fails', () => {
-    memberService.getByKey.and.returnValue(throwError(() => new Error('404')));
-    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    memberService.getByKey.mockReturnValue(throwError(() => new Error('404')));
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ kurinKey: 'kurin-1' }));
     mockRouter = createMockRouter('/member/member-1', [
       { path: 'member/:memberKey', data: { breadcrumb: 'Картка учасника', breadcrumbEntity: 'member' } }
     ]);
@@ -810,8 +830,8 @@ describe('BreadcrumbService', () => {
   });
 
   it('should label a kurin crumb from the route parameter', () => {
-    permissionService.canManageWholeKurin.and.returnValue(true);
-    authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'member-7' }));
+    permissionService.canManageWholeKurin.mockReturnValue(true);
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ memberKey: 'member-7' }));
     mockRouter = createMockRouter('/kurin/kurin-1/settings', [
       { path: 'kurin', data: { breadcrumb: 'Курінь', breadcrumbEntity: 'kurin' } },
       { path: 'kurin/:kurinKey/settings', data: { breadcrumb: 'Налаштування куреня', parent: '/kurin' } }
@@ -840,7 +860,7 @@ describe('BreadcrumbService', () => {
   });
 
   it('should label the group crumb once its key arrives through setParam', () => {
-    authService.getAuthStateValue.and.returnValue(createAuthState({ kurinKey: 'kurin-1' }));
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ kurinKey: 'kurin-1' }));
     mockRouter = createMockRouter('/member/member-1', [
       { path: 'group/:groupKey', data: { breadcrumb: 'Гурток', breadcrumbEntity: 'group' } },
       { path: 'member/:memberKey', data: { breadcrumb: 'Картка учасника', parent: '/group/:groupKey' } }
@@ -873,8 +893,8 @@ describe('BreadcrumbService', () => {
   });
 
   it('should ignore an empty guid pushed through setParam', () => {
-    permissionService.canLeadGroups.and.returnValue(true);
-    authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'mentor-1' }));
+    permissionService.canLeadGroups.mockReturnValue(true);
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ memberKey: 'mentor-1' }));
     mockRouter = createMockRouter('/member/member-1', [
       { path: 'kurin', data: { breadcrumb: 'Kurin' } },
       { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
@@ -909,8 +929,8 @@ describe('BreadcrumbService', () => {
   });
 
   it('should not build a parent crumb from an empty guid in the url', () => {
-    permissionService.canLeadGroups.and.returnValue(true);
-    authService.getAuthStateValue.and.returnValue(createAuthState({ memberKey: 'mentor-1' }));
+    permissionService.canLeadGroups.mockReturnValue(true);
+    authService.getAuthStateValue.mockReturnValue(createAuthState({ memberKey: 'mentor-1' }));
     const url = '/group/00000000-0000-0000-0000-000000000000/member/upsert';
     mockRouter = createMockRouter(url, [
       { path: 'group/:groupKey', data: { breadcrumb: 'Group' } },
@@ -939,7 +959,7 @@ describe('BreadcrumbService', () => {
     expect(latest.map(item => item.label)).toEqual(['New Member']);
   });
 
-  it('should handle complex nested route structure with multiple children', (done) => {
+  it('should handle complex nested route structure with multiple children', () => new Promise<void>(done => {
     mockRouter = createMockRouter('/admin/users/123/edit', [
       { path: 'admin', data: { breadcrumb: 'Admin' } },
       { path: 'admin/users/:userId', data: { breadcrumb: 'User Details', parent: 'admin' } },
@@ -965,7 +985,7 @@ describe('BreadcrumbService', () => {
     service.breadcrumbs$.subscribe((breadcrumbs: MenuItem[]) => {
       emissionCount++;
       if (emissionCount === 2) {
-        expect(breadcrumbs.length).toBe(3);
+        expect(breadcrumbs).toHaveLength(3);
         expect(breadcrumbs[0].label).toBe('Admin');
         expect(breadcrumbs[1].label).toBe('User Details');
         expect(breadcrumbs[1].routerLink).toBe('admin/users/123');
@@ -975,18 +995,18 @@ describe('BreadcrumbService', () => {
     });
 
     routerEventsSubject.next(new NavigationEnd(1, '/admin/users/123/edit', '/admin/users/123/edit'));
-  });
+  }));
 });
 
 describe('routePathRegExp', () => {
   it('lets a :param stand for one segment and nothing more', () => {
-    expect(routePathRegExp('member/:memberKey').test('member/42')).toBeTrue();
-    expect(routePathRegExp('member/:memberKey').test('member/42/edit')).toBeFalse();
+    expect(routePathRegExp('member/:memberKey').test('member/42')).toBe(true);
+    expect(routePathRegExp('member/:memberKey').test('member/42/edit')).toBe(false);
   });
 
   it('matches every other character only as itself', () => {
-    expect(routePathRegExp('docs/v1.0').test('docs/v1.0')).toBeTrue();
-    expect(routePathRegExp('docs/v1.0').test('docs/v1x0')).toBeFalse();
-    expect(routePathRegExp('a+b').test('aab')).toBeFalse();
+    expect(routePathRegExp('docs/v1.0').test('docs/v1.0')).toBe(true);
+    expect(routePathRegExp('docs/v1.0').test('docs/v1x0')).toBe(false);
+    expect(routePathRegExp('a+b').test('aab')).toBe(false);
   });
 });

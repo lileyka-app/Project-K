@@ -62,6 +62,12 @@ export class ScoreService {
       .pipe(this.invalidate());
   }
 
+  /** «Сходин не було», or taking it back; the server refuses the first (409) while anyone is marked. */
+  setNotHeld(kurinKey: string, agendaItemKey: string, occurrence: string, notHeld: boolean): Observable<unknown> {
+    const url = `${this.url(kurinKey)}/events/${agendaItemKey}/${encodeURIComponent(occurrence)}/not-held`;
+    return notHeld ? this.http.put(url, {}) : this.http.delete(url);
+  }
+
   createEntry(kurinKey: string, request: UpsertScoreEntryRequest): Observable<unknown> {
     return this.http.post(`${this.url(kurinKey)}/entries`, request).pipe(this.invalidate());
   }

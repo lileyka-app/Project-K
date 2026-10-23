@@ -39,7 +39,7 @@ describe('pushState', () => {
 describe('sameKey', () => {
   it('compares a subscription key with the server key', () => {
     const bytes = base64UrlBytes(KEY);
-    expect(bytes.length).toBe(65);
+    expect(bytes).toHaveLength(65);
     expect(sameKey(bytes.slice().buffer, KEY)).toBe(true);
     const other = bytes.slice();
     other[10] ^= 1;

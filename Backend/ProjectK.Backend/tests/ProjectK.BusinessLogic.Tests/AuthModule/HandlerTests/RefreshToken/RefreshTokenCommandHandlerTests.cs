@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken;
@@ -23,9 +27,61 @@ public class RefreshTokenCommandHandlerTests
             userStoreMock.Object, null, null, null, null, null, null, null, null);
         _jwtServiceMock = new Mock<IJwtService>();
         _refreshTokensMock = new Mock<IRefreshTokenStore>();
-        _handler = new RefreshTokenCommandHandler(
-            _userManagerMock.Object, _jwtServiceMock.Object, _refreshTokensMock.Object,
-            FakeAccessContext.With());
+        _handler = HandlerFor(FakeAccessContext.With());
+    }
+
+    private RefreshTokenCommandHandler HandlerFor(IAccessContextResolver access) => new(
+        _userManagerMock.Object, _jwtServiceMock.Object, _refreshTokensMock.Object,
+        access, new AccessSnapshotFactory(new PermissionResolver(new FixedKurinAccessPolicyProvider())));
+
+    [Fact]
+    public async Task Handle_ShouldCarryTheAccess_OfAnOfficeAssignedSinceTheLastToken()
+    {
+        var kurinKey = Guid.NewGuid();
+        var user = CreateUser(kurinKey);
+        var vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+        var roles = new List<string> { SystemRole.Member };
+        var access = new Mock<IAccessContextResolver>();
+        access.Setup(r => r.ResolveAsync(user, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new AccessContext(user.Id, kurinKey, roles.ToArray()));
+        var handler = HandlerFor(access.Object);
+        GivenActiveSession("before", user);
+        GivenIssuedTokens(user, "access", "rotated");
+        var before = await handler.Handle(new RefreshTokenCommand("before"), CancellationToken.None);
+
+        roles.Add(vykhovnyk);
+        GivenActiveSession("after", user);
+        var after = await handler.Handle(new RefreshTokenCommand("after"), CancellationToken.None);
+
+        Assert.DoesNotContain(vykhovnyk, before.Data!.Access.Roles);
+        Assert.Contains(vykhovnyk, after.Data!.Access.Roles);
+        Assert.False(after.Data.Access.IsAdmin);
+        Assert.Equal(kurinKey.ToString(), after.Data.Access.KurinKey);
+        var expected = RolePermissionMap.Resolve(roles, KurinAccessPolicy.Default).Select(p => p.ToClaimValue());
+        Assert.Equal(expected.Order(), after.Data.Access.Permissions.Order());
+        Assert.NotEqual(before.Data.Access.Permissions.Order(), after.Data.Access.Permissions.Order());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldAnswerTheSameAccess_AsSigningIn()
+    {
+        var kurinKey = Guid.NewGuid();
+        var user = CreateUser(kurinKey);
+        var access = FakeAccessContext.With(SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy));
+        var snapshots = new AccessSnapshotFactory(new PermissionResolver(new FixedKurinAccessPolicyProvider()));
+        var members = new Mock<IMemberDirectory>();
+        var login = new LoginResponseFactory(access, _jwtServiceMock.Object, members.Object, _refreshTokensMock.Object, snapshots);
+        GivenActiveSession("session", user);
+        GivenIssuedTokens(user, "access", "rotated");
+
+        var signedIn = await login.CreateAsync(user, CancellationToken.None);
+        var refreshed = await HandlerFor(access).Handle(new RefreshTokenCommand("session"), CancellationToken.None);
+
+        var snapshot = refreshed.Data!.Access;
+        Assert.Equal(signedIn.Permissions, snapshot.Permissions);
+        Assert.Equal(signedIn.Roles, snapshot.Roles);
+        Assert.Equal(signedIn.IsAdmin, snapshot.IsAdmin);
+        Assert.Equal(signedIn.KurinKey, snapshot.KurinKey);
     }
 
     /// <summary>SEC-4.3: a token issued before the suspension must not keep the session alive.</summary>

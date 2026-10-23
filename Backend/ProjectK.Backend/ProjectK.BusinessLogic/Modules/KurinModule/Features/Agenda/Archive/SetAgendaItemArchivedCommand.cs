@@ -7,6 +7,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -24,13 +25,15 @@ public sealed class SetAgendaItemArchivedCommandHandler : IRequestHandler<SetAge
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKurinAudit _audit;
 
-    public SetAgendaItemArchivedCommandHandler(IUnitOfWork uow, IAgendaAccess access, ICurrentUserContext currentUser, TimeProvider time)
+    public SetAgendaItemArchivedCommandHandler(IUnitOfWork uow, IAgendaAccess access, ICurrentUserContext currentUser, TimeProvider time, IKurinAudit audit)
     {
         _uow = uow;
         _access = access;
         _currentUser = currentUser;
         _time = time;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<object>> Handle(SetAgendaItemArchivedCommand request, CancellationToken cancellationToken)
@@ -72,6 +75,14 @@ public sealed class SetAgendaItemArchivedCommandHandler : IRequestHandler<SetAge
         }
 
         item.UpdatedDate = now;
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Agenda,
+                request.Archived ? AuditActions.Agenda.Archived : AuditActions.Agenda.Restored,
+                item.AgendaItemKey,
+                item.Title,
+                KurinKey: item.KurinKey),
+            cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
         return new ServiceResult<object>(ResultType.Success);
     }

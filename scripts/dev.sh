@@ -48,11 +48,11 @@ resolve_env_file() {
   case " $valid_envs " in *" $env "*) ;; *) die "Unknown env '$env'. Valid: $valid_envs" ;; esac
 
   local file="$env_dir/$env.env"
-  if [ -f "$file" ]; then
+  if [[ -f "$file" ]]; then
     echo "$file"; return
   fi
   # staging/prod ship as .example — dev copies to <env>.env with real secrets.
-  if [ -f "$env_dir/$env.env.example" ]; then
+  if [[ -f "$env_dir/$env.env.example" ]]; then
     die "docker/env/$env.env not found. Copy docker/env/$env.env.example to docker/env/$env.env and set secrets."
   fi
   die "docker/env/$env.env not found."
@@ -66,7 +66,7 @@ app_compose() {
   env_file="$(resolve_env_file "$env")"
 
   local files=(-f "$app_file")
-  if [ "$with_override" = "with-override" ]; then
+  if [[ "$with_override" = "with-override" ]]; then
     files+=(-f "$override_file")
   fi
 
@@ -93,7 +93,7 @@ cmd_tools() {
 }
 
 cmd_up() {
-  local env="${1:-}"; [ -n "$env" ] || die "Usage: dev.sh up <env> [--build|--pull]"
+  local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh up <env> [--build|--pull]"
   local extra="${2:-}"
   ensure_network
   cmd_tools up >/dev/null
@@ -107,7 +107,7 @@ cmd_up() {
 }
 
 cmd_watch() {
-  local env="${1:-}"; [ -n "$env" ] || die "Usage: dev.sh watch <env>"
+  local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh watch <env>"
   ensure_network
   cmd_tools up >/dev/null
   # Hot-reload uses base SDK/Node images driven by command — never build here.
@@ -115,27 +115,31 @@ cmd_watch() {
 }
 
 cmd_build() {
-  local env="${1:-}"; [ -n "$env" ] || die "Usage: dev.sh build <env>"
+  local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh build <env>"
   app_compose "$env" no-override build
 }
 
 cmd_pull() {
-  local env="${1:-}"; [ -n "$env" ] || die "Usage: dev.sh pull <env>"
+  local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh pull <env>"
   app_compose "$env" no-override pull
 }
 
 cmd_down() {
-  local env="${1:-}"; [ -n "$env" ] || die "Usage: dev.sh down <env> [-v]"
+  local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh down <env> [-v]"
   app_compose "$env" no-override down "${@:2}"
 }
 
 cmd_logs() {
-  local env="${1:-}"; [ -n "$env" ] || die "Usage: dev.sh logs <env> [service]"
-  app_compose "$env" no-override logs -f "${@:2}"
+  local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh logs <env> [service]"
+  # Follow only at a terminal: in CI there is no one to press Ctrl+C, and a followed log never
+  # ends — the e2e job sat on it until GitHub killed it six hours later.
+  local follow=()
+  [[ -t 1 ]] && follow=(-f)
+  app_compose "$env" no-override logs ${follow[@]+"${follow[@]}"} "${@:2}"
 }
 
 cmd_ps() {
-  local env="${1:-}"; [ -n "$env" ] || die "Usage: dev.sh ps <env>"
+  local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh ps <env>"
   app_compose "$env" no-override ps
 }
 

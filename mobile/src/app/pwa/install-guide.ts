@@ -53,6 +53,35 @@ const IN_APP: [RegExp, string][] = [
   [/\bGSA\//, 'Google'],
 ];
 
+/** Browsers matched in order; the first pattern the user agent has wins. */
+const IOS_BROWSERS: [RegExp, IosBrowser][] = [
+  [/CriOS\//, 'chrome'],
+  [/EdgiOS\//, 'edge'],
+  [/FxiOS\//, 'firefox'],
+  [/OPiOS|OPT\/|YaBrowser|DuckDuckGo|Brave/, 'other'],
+];
+
+const ANDROID_BROWSERS: [RegExp, AndroidBrowser][] = [
+  [/SamsungBrowser\//, 'samsung'],
+  [/EdgA\//, 'edge'],
+  [/Firefox\//, 'firefox'],
+  [/OPR\/|Opera/, 'opera'],
+  // These say «Chrome/» too but are not.
+  [/YaBrowser|MiuiBrowser|HuaweiBrowser|UCBrowser/, 'other'],
+  [/Chrome\//, 'chrome'],
+];
+
+const DESKTOP_BROWSERS: [RegExp, DesktopBrowser][] = [
+  [/Edg\//, 'edge'],
+  [/Firefox\//, 'firefox'],
+  [/Chrome\//, 'chrome'],
+  [/Safari\//, 'safari'],
+];
+
+function firstMatch<T>(ua: string, table: [RegExp, T][], fallback: T): T {
+  return table.find(([pattern]) => pattern.test(ua))?.[1] ?? fallback;
+}
+
 export function installGuide(facts: InstallFacts): InstallGuide {
   const ua = facts.userAgent;
   if (facts.standalone) return { kind: 'installed' };
@@ -62,60 +91,30 @@ export function installGuide(facts: InstallFacts): InstallGuide {
   const android = /Android/.test(ua);
 
   if (ios || android) {
-    const app = IN_APP.find(([pattern]) => pattern.test(ua))?.[1] ?? null;
+    const app = firstMatch<string | null>(ua, IN_APP, null);
     // Android's WebView marks itself «; wv)»; iOS's WKWebView leaves out the «Safari/» token that
     // Safari and every real browser on iOS send.
     const webview = android ? /; wv\)/.test(ua) : !/Safari\//.test(ua);
     if (app || webview) return { kind: 'in-app', os: ios ? 'ios' : 'android', app };
   }
 
-  if (ios) {
-    const browser: IosBrowser = /CriOS\//.test(ua)
-      ? 'chrome'
-      : /EdgiOS\//.test(ua)
-        ? 'edge'
-        : /FxiOS\//.test(ua)
-          ? 'firefox'
-          : /OPiOS|OPT\/|YaBrowser|DuckDuckGo|Brave/.test(ua)
-            ? 'other'
-            : 'safari';
-    // Safari 26 freezes the iOS number in the user agent (at 18_6), so the Safari version tells.
-    const safariVersion = Number(/Version\/(\d+)/.exec(ua)?.[1] ?? 0);
-    return {
-      kind: 'ios',
-      device: iPad ? 'iPad' : 'iPhone',
-      browser,
-      safari26: browser === 'safari' && safariVersion >= 26,
-      // Before 16.4 only Safari could add to the home screen.
-      tooOld: browser !== 'safari' && iosBefore(ua, 16, 4),
-    };
-  }
+  if (ios) return iosGuide(ua, iPad);
+  if (android) return { kind: 'android', browser: firstMatch(ua, ANDROID_BROWSERS, 'other') };
+  return { kind: 'desktop', browser: firstMatch(ua, DESKTOP_BROWSERS, 'other'), mac: /Macintosh/.test(ua) };
+}
 
-  if (android) {
-    const browser: AndroidBrowser = /SamsungBrowser\//.test(ua)
-      ? 'samsung'
-      : /EdgA\//.test(ua)
-        ? 'edge'
-        : /Firefox\//.test(ua)
-          ? 'firefox'
-          : /OPR\/|Opera/.test(ua)
-            ? 'opera'
-            : /Chrome\//.test(ua) && !/YaBrowser|MiuiBrowser|HuaweiBrowser|UCBrowser/.test(ua)
-              ? 'chrome'
-              : 'other';
-    return { kind: 'android', browser };
-  }
-
-  const browser: DesktopBrowser = /Edg\//.test(ua)
-    ? 'edge'
-    : /Firefox\//.test(ua)
-      ? 'firefox'
-      : /Chrome\//.test(ua)
-        ? 'chrome'
-        : /Safari\//.test(ua)
-          ? 'safari'
-          : 'other';
-  return { kind: 'desktop', browser, mac: /Macintosh/.test(ua) };
+function iosGuide(ua: string, iPad: boolean): InstallGuide {
+  const browser = firstMatch(ua, IOS_BROWSERS, 'safari');
+  // Safari 26 freezes the iOS number in the user agent (at 18_6), so the Safari version tells.
+  const safariVersion = Number(/Version\/(\d+)/.exec(ua)?.[1] ?? 0);
+  return {
+    kind: 'ios',
+    device: iPad ? 'iPad' : 'iPhone',
+    browser,
+    safari26: browser === 'safari' && safariVersion >= 26,
+    // Before 16.4 only Safari could add to the home screen.
+    tooOld: browser !== 'safari' && iosBefore(ua, 16, 4),
+  };
 }
 
 /** Where the browser's own install dialog can come (beforeinstallprompt): Chromium, not iOS. */
@@ -149,8 +148,20 @@ export function currentInstallFacts(): InstallFacts {
  * step reads «Натисни **«Поділитися»**» without HTML in the strings.
  */
 export function emphasize(text: string): { text: string; strong: boolean }[] {
-  return text
-    .split(/(«[^»]*»)/)
+  // Cut by hand rather than split on /(«[^»]*»)/: that pattern rescans to the end from every
+  // unclosed «, quadratic on a long string.
+  const parts: string[] = [];
+  let from = 0;
+  let open = text.indexOf('«');
+  let close = open < 0 ? -1 : text.indexOf('»', open);
+  while (close >= 0) {
+    parts.push(text.slice(from, open), text.slice(open, close + 1));
+    from = close + 1;
+    open = text.indexOf('«', from);
+    close = open < 0 ? -1 : text.indexOf('»', open);
+  }
+  parts.push(text.slice(from));
+  return parts
     .filter((part) => part.length > 0)
     .map((part) => ({ text: part, strong: part.startsWith('«') }));
 }

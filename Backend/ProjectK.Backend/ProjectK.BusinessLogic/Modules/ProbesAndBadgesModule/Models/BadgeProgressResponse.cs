@@ -1,3 +1,5 @@
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -23,27 +25,17 @@ public sealed class BadgeProgressResponse
     public string? MemberLastName { get; init; }
     public string? MemberPhotoUrl { get; init; }
 
-    public static BadgeProgressResponse FromEntity(BadgeProgress entity)
+    /// <summary>The вмілість as the clients read it, its status history taken from the journal.</summary>
+    /// <param name="entity">The вмілість.</param>
+    /// <param name="journal">Its entries in the kurin's journal; entries about other records are skipped.</param>
+    /// <param name="member">The person, for the review queue.</param>
+    /// <param name="memberPhotoUrl">Their photo, for the review queue.</param>
+    public static BadgeProgressResponse FromEntity(
+        BadgeProgress entity,
+        IEnumerable<KurinAuditEvent> journal,
+        MemberSummary? member = null,
+        string? memberPhotoUrl = null)
     {
-        return FromEntity(entity, null, null);
-    }
-
-    public static BadgeProgressResponse FromEntity(BadgeProgress entity, MemberSummary? member, string? memberPhotoUrl)
-    {
-        var auditTrail = entity.AuditEvents
-            .OrderBy(x => x.OccurredAtUtc)
-            .Select(x => new BadgeProgressAuditEventResponse(
-                x.BadgeProgressAuditEventKey,
-                x.FromStatus,
-                x.ToStatus,
-                x.Action,
-                x.ActorUserKey,
-                x.ActorName,
-                x.ActorRole,
-                x.OccurredAtUtc,
-                x.Note))
-            .ToList();
-
         return new BadgeProgressResponse
         {
             BadgeProgressKey = entity.BadgeProgressKey,
@@ -57,7 +49,7 @@ public sealed class BadgeProgressResponse
             ReviewedByName = entity.ReviewedByName,
             ReviewedByRole = entity.ReviewedByRole,
             ReviewNote = entity.ReviewNote,
-            AuditTrail = auditTrail,
+            AuditTrail = ProgressTrail.ForBadge(entity.BadgeProgressKey, journal),
             MemberFirstName = member?.FirstName,
             MemberLastName = member?.LastName,
             MemberPhotoUrl = memberPhotoUrl

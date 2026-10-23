@@ -9,7 +9,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 
-public class RefreshTokenCommand : IRequest<ServiceResult<JwtResponse>>
+public class RefreshTokenCommand : IRequest<ServiceResult<RefreshTokenResponse>>
 {
     public string RefreshToken { get; set; }
 

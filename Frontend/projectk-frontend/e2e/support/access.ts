@@ -17,5 +17,5 @@ export async function expectAllowedRoute(page: Page, path: string): Promise<void
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }

@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -13,20 +12,17 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePass
 public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<bool>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IRefreshTokenStore _refreshTokens;
-    private readonly ILogger<ChangeOwnPasswordCommandHandler> _logger;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IActivityLogger _activityLogger;
 
     public ChangeOwnPasswordCommandHandler(
         UserManager<AppUser> userManager,
-        ILogger<ChangeOwnPasswordCommandHandler> logger,
         IActivityLogger activityLogger,
-        IRefreshTokenStore refreshTokens)
+        RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
-        _logger = logger;
         _activityLogger = activityLogger;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
     }
 
     public async Task<ServiceResult<bool>> Handle(ChangeOwnPasswordCommand request, CancellationToken cancellationToken)
@@ -48,7 +44,7 @@ public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPassword
         {
             // Only once the change is stored. RevokeAllAsync commits on its own, so ending
             // the sessions first signed every device out even when this update failed.
-            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
+            await _sessions.RevokeRefreshTokenAsync(user, cancellationToken);
 
             _activityLogger.LogAudit(
                 action: "Account.PasswordChanged",

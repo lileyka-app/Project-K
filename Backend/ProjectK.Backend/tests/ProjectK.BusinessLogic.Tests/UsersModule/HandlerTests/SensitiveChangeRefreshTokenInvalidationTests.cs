@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
@@ -57,9 +56,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var user = CreateSignedInUser();
         var handler = new ChangeOwnPasswordCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object);
+            Revocations.Of(_refreshTokensMock.Object));
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "old-password", "new-password"))
@@ -83,9 +81,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var user = CreateSignedInUser();
         var handler = new ChangeOwnPasswordCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<ChangeOwnPasswordCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object);
+            Revocations.Of(_refreshTokensMock.Object));
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "wrong-password", "new-password"))
@@ -108,9 +105,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var user = CreateSignedInUser();
         var handler = new ResetOwnMfaCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object);
+            Revocations.Of(_refreshTokensMock.Object));
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "current-password"))
@@ -138,9 +134,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var user = CreateSignedInUser();
         var handler = new ResetOwnMfaCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<ResetOwnMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object);
+            Revocations.Of(_refreshTokensMock.Object));
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.CheckPasswordAsync(user, "wrong-password"))
@@ -165,9 +160,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var user = CreateSignedInUser();
         var handler = new EnableMfaCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<EnableMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             _loginResponsesMock.Object);
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
@@ -203,9 +197,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var user = CreateSignedInUser();
         var handler = new EnableMfaCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<EnableMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             _loginResponsesMock.Object);
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
@@ -233,9 +226,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         user.TwoFactorEnabled = true;
         var handler = new DisableOwnMfaCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             FakeAccessContext.With("Member"));
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -268,9 +260,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         user.TwoFactorEnabled = true;
         var handler = new DisableOwnMfaCommandHandler(
             _userManagerMock.Object,
-            new Mock<ILogger<DisableOwnMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             FakeAccessContext.With(role));
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
@@ -304,9 +295,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var handler = new ResetUserMfaCommandHandler(
             _userManagerMock.Object,
             currentUserContextMock.Object,
-            new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             FakeAccessContext.With("Member"),
             StandingIn(targetUser.Id, kurinKey));
 
@@ -343,9 +333,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var handler = new ResetUserMfaCommandHandler(
             _userManagerMock.Object,
             currentUserContextMock.Object,
-            new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             FakeAccessContext.With("KV.Zvyazkovyi"),
             StandingIn(targetUser.Id, kurinKey));
 
@@ -382,9 +371,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var handler = new ResetUserMfaCommandHandler(
             _userManagerMock.Object,
             currentUserContextMock.Object,
-            new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             FakeAccessContext.With("Member"),
             StandingIn(targetUser.Id, newKurinKey));
 
@@ -416,9 +404,8 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         var handler = new ResetUserMfaCommandHandler(
             _userManagerMock.Object,
             currentUserContextMock.Object,
-            new Mock<ILogger<ResetUserMfaCommandHandler>>().Object,
             _activityLoggerMock.Object,
-            _refreshTokensMock.Object,
+            Revocations.Of(_refreshTokensMock.Object),
             FakeAccessContext.With("Member"),
             StandingIn(targetUser.Id, kurinKey));
 

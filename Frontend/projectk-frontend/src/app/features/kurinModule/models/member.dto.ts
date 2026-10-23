@@ -5,6 +5,9 @@ import { MemberAwardDto } from "./member-award.dto";
 import { MemberProfileVerificationStatus } from "./enums/member-profile-verification-status.enum";
 import { AccountStatus } from "./enums/account-status.enum";
 
+/** Група даних людини, яку курінь показує або приховує цілком. Назви — як у `hiddenData` з сервера. */
+export type MemberDataGroup = 'contacts' | 'birthDate' | 'birthday' | 'address' | 'parents' | 'extras';
+
 export interface MemberDto {
     memberKey: string;
     /** Код, який людина віддає проводу іншого куреня, щоб та прийняла її. Свій — бачить лише вона. */
@@ -37,6 +40,13 @@ export interface MemberDto {
     email: string;
     phoneNumber: string;
     dateOfBirth: Date | null;
+    /** День і місяць народження як `MM-DD`, без року. Приходить, коли курінь показує день народження. */
+    birthday?: string | null;
+    /**
+     * Групи даних, які сервер приховав від того, хто дивиться: `contacts`, `birthDate`, `birthday`,
+     * `address`, `parents`, `extras`. Поля такої групи картка й форма не показують узагалі.
+     */
+    hiddenData?: MemberDataGroup[];
     address?: string | null;
     school?: string | null;
     motherFirstName?: string | null;

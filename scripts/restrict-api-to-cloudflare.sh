@@ -22,7 +22,7 @@ host="api.lileyka.app"
 
 default_host="$(az webapp show --subscription "$subscription" -g "$group" -n "$app" --query defaultHostName -o tsv)"
 
-if [ "${1:-}" = "undo" ]; then
+if [[ "${1:-}" = "undo" ]]; then
   echo "== removing the Cloudflare rules"
   for rule in $(az webapp config access-restriction show --subscription "$subscription" -g "$group" -n "$app" \
       --query "ipSecurityRestrictions[?starts_with(name, 'cloudflare-')].name" -o tsv); do
@@ -40,7 +40,7 @@ echo "== checks before touching anything"
 # nowhere to land, so refuse rather than discover that during a release.
 scm_uses_main="$(az webapp config access-restriction show --subscription "$subscription" -g "$group" -n "$app" \
   --query scmIpSecurityRestrictionsUseMain -o tsv)"
-if [ "$scm_uses_main" = "true" ]; then
+if [[ "$scm_uses_main" = "true" ]]; then
   echo "   SCM inherits the main rules: closing the perimeter would lock deployments out" >&2
   exit 1
 fi
@@ -58,7 +58,7 @@ echo "   $host is served through Cloudflare"
 
 ranges="$(curl -fsS https://www.cloudflare.com/ips-v4; echo; curl -fsS https://www.cloudflare.com/ips-v6)"
 count="$(printf '%s\n' "$ranges" | grep -c '/')"
-if [ "$count" -lt 15 ]; then
+if [[ "$count" -lt 15 ]]; then
   echo "   only $count ranges came back from cloudflare.com, expected about 22 — stopping" >&2
   exit 1
 fi
@@ -87,11 +87,11 @@ direct="$(curl -s -o /dev/null -w '%{http_code}' "https://$default_host/health")
 echo "   through Cloudflare: $through_edge (want 200)"
 echo "   straight at the App Service: $direct (want 403)"
 
-if [ "$through_edge" != "200" ]; then
+if [[ "$through_edge" != "200" ]]; then
   echo "   the app stopped answering through Cloudflare; undo with: bash $0 undo" >&2
   exit 1
 fi
-if [ "$direct" != "403" ]; then
+if [[ "$direct" != "403" ]]; then
   echo "   the App Service still answers directly; check the rules in the portal" >&2
   exit 1
 fi

@@ -1,13 +1,13 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -15,115 +15,205 @@ using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
 
+/// <summary>
+/// Whom an agenda item may be assigned to, through the real decision: roles folded into the kurin's
+/// policy columns, the Assign* rows, and the resource guard's scope check. Only the reads are faked —
+/// one kurin with two гуртки, a person in each, each гурток's провід and the КВ; the user leads the first.
+/// </summary>
 public class AgendaAccessAuthorizeTargetTests
 {
-    private readonly Mock<ICurrentUserContext> _currentUser = new();
-    private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<IMemberDirectory> _memberDirectory = new();
-    private readonly Mock<IResourceScopeReader> _scopeReader = new();
-    private readonly Mock<IResourceAccessService> _resourceAccess = new();
-    private readonly Mock<ILeadershipRepository> _leaderships = new();
-    private readonly Mock<IGroupRepository> _groups = new();
-    private readonly AgendaAccess _access;
-
     private readonly Guid _kurinKey = Guid.NewGuid();
-    private readonly Guid _groupKey = Guid.NewGuid();
-    private readonly Guid _otherGroupKey = Guid.NewGuid();
+    private readonly Guid _ledGroup = Guid.NewGuid();
+    private readonly Guid _otherGroup = Guid.NewGuid();
+    private readonly Guid _inLedGroup = Guid.NewGuid();
+    private readonly Guid _inOtherGroup = Guid.NewGuid();
+    private readonly Guid _self = Guid.NewGuid();
+    private readonly Guid _ledGroupProvid = Guid.NewGuid();
+    private readonly Guid _otherGroupProvid = Guid.NewGuid();
+    private readonly Guid _kv = Guid.NewGuid();
+    private readonly Guid _elsewhereGroup = Guid.NewGuid();
     private readonly Guid _userKey = Guid.NewGuid();
+    private readonly Guid _otherUserKey = Guid.NewGuid();
+
+    private readonly FixedKurinAccessPolicyProvider _policies = new();
+    private readonly Mock<IResourceScopeReader> _scopes = new();
 
     public AgendaAccessAuthorizeTargetTests()
     {
-        _uow.Setup(u => u.Leaderships).Returns(_leaderships.Object);
-        _uow.Setup(u => u.Groups).Returns(_groups.Object);
-        _groups.Setup(r => r.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Group> { new("Соколи", _kurinKey) { GroupKey = _groupKey }, new("Ведмеді", _kurinKey) { GroupKey = _otherGroupKey } });
-        _resourceAccess.Setup(a => a.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ResourceAccessDecision.Deny("No permission for Create on Group."));
-        _access = new AgendaAccess(_currentUser.Object, _uow.Object, _memberDirectory.Object, _scopeReader.Object, _resourceAccess.Object);
+        Scope(ResourceType.Kurin, _kurinKey, new ResourceScope(_kurinKey, null, null));
+        Scope(ResourceType.Group, _ledGroup, new ResourceScope(_kurinKey, _ledGroup, null));
+        Scope(ResourceType.Group, _otherGroup, new ResourceScope(_kurinKey, _otherGroup, null));
+        Scope(ResourceType.Group, _elsewhereGroup, new ResourceScope(Guid.NewGuid(), _elsewhereGroup, null));
+        Scope(ResourceType.Member, _inLedGroup, new ResourceScope(_kurinKey, _ledGroup, _otherUserKey));
+        Scope(ResourceType.Member, _inOtherGroup, new ResourceScope(_kurinKey, _otherGroup, Guid.NewGuid()));
+        Scope(ResourceType.Member, _self, new ResourceScope(_kurinKey, _otherGroup, _userKey));
+        Scope(ResourceType.Leadership, _ledGroupProvid, new ResourceScope(_kurinKey, _ledGroup, null));
+        Scope(ResourceType.Leadership, _otherGroupProvid, new ResourceScope(_kurinKey, _otherGroup, null));
+        Scope(ResourceType.Leadership, _kv, new ResourceScope(_kurinKey, null, null));
+        _scopes.Setup(x => x.GetLedGroupKeysAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { _ledGroup });
     }
 
-    private AgendaTargetInput LeadershipTarget(Guid key) => new() { TargetType = AgendaTargetType.Leadership, TargetKey = key };
+    private void Scope(ResourceType type, Guid key, ResourceScope scope) =>
+        _scopes.Setup(x => x.GetScopeAsync(type, key, It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(scope);
+
+    private AgendaAccess AccessFor(string role)
+    {
+        var roles = role == SystemRole.Member ? new[] { SystemRole.Member } : new[] { role, SystemRole.Member };
+        var user = new Mock<ICurrentUserContext>();
+        user.SetupGet(x => x.IsAuthenticated).Returns(true);
+        user.SetupGet(x => x.UserId).Returns(_userKey);
+        user.SetupGet(x => x.KurinKey).Returns(_kurinKey);
+        user.SetupGet(x => x.Roles).Returns(roles);
+        user.Setup(x => x.IsInRole(It.IsAny<string>())).Returns((string r) => roles.Contains(r, StringComparer.OrdinalIgnoreCase));
+
+        var permissions = new CurrentPermissions(user.Object, _policies);
+        var resourceAccess = new ResourceAccessService(_scopes.Object, user.Object, new PassThroughBackendCache(), permissions);
+        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), Mock.Of<IMemberDirectory>(), _scopes.Object, resourceAccess, permissions);
+    }
+
     private static AgendaTargetInput Target(AgendaTargetType type, Guid key) => new() { TargetType = type, TargetKey = key };
 
-    /// <summary>A signed-in провід member of this kurin, seated in <paramref name="ownGroupKey"/>, holding <paramref name="role"/>.</summary>
-    private void SignInAs(string role, Guid? ownGroupKey)
+    /// <summary>The probes, in the order the expectation strings below spell them.</summary>
+    private IReadOnlyList<(AgendaTargetInput Target, Guid? GroupKey, Guid? UserKey)> Probes() =>
+    [
+        (Target(AgendaTargetType.Kurin, _kurinKey), null, null),
+        (Target(AgendaTargetType.Group, _ledGroup), _ledGroup, null),
+        (Target(AgendaTargetType.Group, _otherGroup), _otherGroup, null),
+        (Target(AgendaTargetType.Member, _inLedGroup), _ledGroup, _otherUserKey),
+        (Target(AgendaTargetType.Member, _inOtherGroup), _otherGroup, null),
+        (Target(AgendaTargetType.Leadership, _ledGroupProvid), _ledGroup, null),
+        (Target(AgendaTargetType.Leadership, _otherGroupProvid), _otherGroup, null),
+        (Target(AgendaTargetType.Leadership, _kv), null, null)
+    ];
+
+    private static readonly string Zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string Vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string Hurtkovyy = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
+
+    // Kurin · led гурток · other гурток · person in led · person in other · led провід · other провід · КВ.
+    [Theory]
+    [InlineData("KV.Zvyazkovyi", "YYYYYYYY")]
+    [InlineData("Admin", "YYYYYYYY")]
+    [InlineData("KV.Vykhovnyk", "-Y-Y-Y--")]
+    [InlineData("KV.Instruktor", "-Y-Y-Y--")]
+    [InlineData("Kurin.Kurinnuy", "YYYYYYYY")]
+    [InlineData("Kurin.Pysar", "YYYYYYYY")]
+    [InlineData("Kurin.Skarbnyk", "YYYYYYYY")]
+    [InlineData("Group.Hurtkoviy", "-Y-Y-Y--")]
+    [InlineData("Group.Pysar", "-Y-Y-Y--")]
+    [InlineData("Member", "--------")]
+    public async Task Defaults_DecideEveryKindOfTarget(string role, string expected)
     {
-        _currentUser.Setup(u => u.UserId).Returns(_userKey);
-        _currentUser.Setup(u => u.Roles).Returns(new[] { role });
-        _memberDirectory.Setup(d => d.FindByAccountAsync(_userKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), _userKey, _kurinKey, ownGroupKey, "Марта", "Коваль", "marta@example.com", null));
+        var access = AccessFor(role);
+
+        var actual = new List<char>();
+        foreach (var probe in Probes())
+        {
+            actual.Add((await access.AuthorizeTargetAsync(probe.Target)).IsAllowed ? 'Y' : '-');
+        }
+
+        new string(actual.ToArray()).Should().Be(expected, $"{role} under the default policy");
     }
 
-    // The resource guard says no to a Гуртковий (he does not run the group), yet his office covers
-    // it: the гурток and its people are his to address, the neighbouring гурток is not.
-    [Fact]
-    public async Task Authorize_GroupProvid_MayAimAtOwnGroup_NotAtAnother()
+    // The picker decides the same many targets from one reach; it must never disagree with the save.
+    [Theory]
+    [InlineData("KV.Zvyazkovyi")]
+    [InlineData("KV.Vykhovnyk")]
+    [InlineData("Kurin.Kurinnuy")]
+    [InlineData("Group.Hurtkoviy")]
+    [InlineData("Member")]
+    public async Task TheReach_AgreesWithTheCheck_OnEveryTarget(string role)
     {
-        SignInAs(SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy), _groupKey);
-        _memberDirectory.Setup(d => d.FindAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), null, _kurinKey, _otherGroupKey, "Ігор", "Бондар", "ihor@example.com", null));
+        _policies.Policy = PolicyAccess.With(
+            (KurinCapability.AssignMembers, PolicyAudience.Kurinnyy, CapabilityReach.OwnGroup),
+            (KurinCapability.AssignProvid, PolicyAudience.Hurtkovyy, CapabilityReach.None));
+        var access = AccessFor(role);
+        var reach = await access.GetAssignReachAsync(_kurinKey);
 
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Group, _groupKey), ResourceAction.Create)).IsAllowed.Should().BeTrue();
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Group, _otherGroupKey), ResourceAction.Create)).IsAllowed.Should().BeFalse();
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Member, Guid.NewGuid()), ResourceAction.Create)).IsAllowed.Should().BeFalse();
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Kurin, _kurinKey), ResourceAction.Create)).IsAllowed.Should().BeFalse();
+        foreach (var (target, groupKey, userKey) in Probes())
+        {
+            var byReach = target.TargetType switch
+            {
+                AgendaTargetType.Kurin => reach.ReachesKurin,
+                AgendaTargetType.Group => reach.ReachesGroup(groupKey!.Value),
+                AgendaTargetType.Member => reach.ReachesMember(groupKey, userKey),
+                _ => reach.ReachesProvid(groupKey)
+            };
+
+            byReach.Should().Be((await access.AuthorizeTargetAsync(target)).IsAllowed, $"{role} → {target.TargetType} {target.TargetKey}");
+        }
+    }
+
+    // The bug this replaced: the курінний was offered the проводи and refused them on save.
+    [Fact]
+    public async Task TheKurinny_MayAssignToEveryProvid_AndTheKv()
+    {
+        var access = AccessFor(SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy));
+
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Leadership, _kv))).IsAllowed.Should().BeTrue();
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Leadership, _otherGroupProvid))).IsAllowed.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Authorize_KurinProvid_MayAimAtTheWholeKurin()
+    public async Task AKurin_TakingPeopleAwayFromTheVykhovnyk_IsObeyed()
     {
-        SignInAs(SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy), null);
+        _policies.Policy = PolicyAccess.With((KurinCapability.AssignMembers, PolicyAudience.Vykhovnyk, CapabilityReach.None));
+        var access = AccessFor(Vykhovnyk);
 
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Kurin, _kurinKey), ResourceAction.Create)).IsAllowed.Should().BeTrue();
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Group, _otherGroupKey), ResourceAction.Create)).IsAllowed.Should().BeTrue();
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Kurin, Guid.NewGuid()), ResourceAction.Create)).IsAllowed.Should().BeFalse();
-    }
-
-    // The провід rule is about addressing, not editing: an Update on the target still needs the real right.
-    [Fact]
-    public async Task Authorize_ProvidRule_DoesNotCoverUpdate()
-    {
-        SignInAs(SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy), _groupKey);
-
-        (await _access.AuthorizeTargetAsync(Target(AgendaTargetType.Group, _groupKey), ResourceAction.Update)).IsAllowed.Should().BeFalse();
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Member, _inLedGroup))).IsAllowed.Should().BeFalse();
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Group, _ledGroup))).IsAllowed.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Authorize_GroupOffice_ChecksAccessOnItsGroup()
+    public async Task AKurin_OpeningTheWholeKurinToTheHurtkovyy_IsObeyed()
     {
-        var leadership = new Leadership { Type = LeadershipType.Group, GroupKey = _groupKey, KurinKey = _kurinKey };
-        _leaderships.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(leadership);
-        _resourceAccess.Setup(a => a.CheckAccessAsync(ResourceType.Group, ResourceAction.Create, _groupKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ResourceAccessDecision.Allow("ok"));
+        _policies.Policy = PolicyAccess.With((KurinCapability.AssignKurin, PolicyAudience.Hurtkovyy, CapabilityReach.Kurin));
+        var access = AccessFor(Hurtkovyy);
 
-        var result = await _access.AuthorizeTargetAsync(LeadershipTarget(Guid.NewGuid()), ResourceAction.Create);
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Kurin, _kurinKey))).IsAllowed.Should().BeTrue();
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Group, _otherGroup))).IsAllowed.Should().BeFalse();
+    }
 
-        result.IsAllowed.Should().BeTrue();
-        _resourceAccess.Verify(a => a.CheckAccessAsync(ResourceType.Group, ResourceAction.Create, _groupKey, It.IsAny<CancellationToken>()), Times.Once);
+    // An own-group grant always covers one's own record, as everywhere else.
+    [Fact]
+    public async Task AnOwnGroupReach_CoversTheUserHimself()
+    {
+        var access = AccessFor(Hurtkovyy);
+
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Member, _self))).IsAllowed.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Authorize_KurinOrKvOffice_ChecksAccessOnTheKurin()
+    public async Task ATargetOutsideTheKurin_OrUnknown_IsRefused_EvenKurinWide()
     {
-        var leadership = new Leadership { Type = LeadershipType.KV, GroupKey = null, KurinKey = _kurinKey };
-        _leaderships.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(leadership);
-        _resourceAccess.Setup(a => a.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Create, _kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ResourceAccessDecision.Allow("ok"));
+        var access = AccessFor(Zvyazkovyi);
 
-        var result = await _access.AuthorizeTargetAsync(LeadershipTarget(Guid.NewGuid()), ResourceAction.Create);
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Group, _elsewhereGroup))).IsAllowed.Should().BeFalse();
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Kurin, Guid.NewGuid()))).IsAllowed.Should().BeFalse();
+        (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Leadership, Guid.NewGuid()))).IsAllowed.Should().BeFalse();
+    }
 
-        result.IsAllowed.Should().BeTrue();
-        _resourceAccess.Verify(a => a.CheckAccessAsync(ResourceType.Kurin, ResourceAction.Create, _kurinKey, It.IsAny<CancellationToken>()), Times.Once);
+    [Theory]
+    [InlineData("Member", false)]
+    [InlineData("Group.Pysar", true)]
+    [InlineData("KV.Instruktor", true)]
+    [InlineData("Kurin.Kurinnuy", true)]
+    public async Task CanAuthor_FollowsTheDefaults(string role, bool expected)
+    {
+        (await AccessFor(role).CanAuthorAsync()).Should().Be(expected);
     }
 
     [Fact]
-    public async Task Authorize_MissingLeadership_Denies()
+    public async Task CanAuthor_IsGone_OnceTheKurinTakesEveryRowAway()
     {
-        _leaderships.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Leadership?)null);
+        _policies.Policy = PolicyAccess.With(
+            (KurinCapability.AssignGroups, PolicyAudience.Hurtkovyy, CapabilityReach.None),
+            (KurinCapability.AssignMembers, PolicyAudience.Hurtkovyy, CapabilityReach.None),
+            (KurinCapability.AssignProvid, PolicyAudience.Hurtkovyy, CapabilityReach.None));
+        var access = AccessFor(Hurtkovyy);
 
-        var result = await _access.AuthorizeTargetAsync(LeadershipTarget(Guid.NewGuid()), ResourceAction.Create);
-
-        result.IsAllowed.Should().BeFalse();
-        _resourceAccess.Verify(a => a.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        (await access.CanAuthorAsync()).Should().BeFalse();
+        (await access.GetAssignReachAsync(_kurinKey)).CanAuthor.Should().BeFalse();
     }
 }

@@ -20,5 +20,4 @@ public class ProbeProgress : Entity
     public Guid? VerifiedByUserKey { get; set; }
     public string? VerifiedByName { get; set; }
     public string? VerifiedByRole { get; set; }
-    public ICollection<ProbeProgressAuditEvent> AuditEvents { get; set; } = new List<ProbeProgressAuditEvent>();
 }

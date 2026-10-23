@@ -42,7 +42,7 @@ import { dateLabel, timeLabel } from '../../me/labels';
 import { GlassEffects } from '../../ui/glass';
 import { EntryEditor } from './score-entry.editor';
 import { ScoreEntryForm } from './score-entry.form';
-import { SheetGroupFilter, Shelf, filterSheet, points, rsvpLabel, shelfOf } from './score.format';
+import { SheetGroupFilter, Shelf, filterSheet, notHeldLine, points, rsvpLabel, shelfOf } from './score.format';
 import {
   AttendanceMarkDto,
   AttendanceSheetDto,
@@ -228,6 +228,17 @@ const SHELVES: { value: Shelf; label: string }[] = [
     .pad {
       height: 32px;
     }
+    .not-held p {
+      margin: 0 0 4px;
+      color: var(--lk-muted);
+    }
+    .not-held strong {
+      color: var(--lk-ink);
+    }
+    .not-held ion-button {
+      margin: 4px 0 0;
+      --padding-start: 0;
+    }
   `,
   template: `
     <ion-header [translucent]="true">
@@ -277,6 +288,16 @@ const SHELVES: { value: Shelf; label: string }[] = [
               </p>
             </div>
 
+            @if (d.notHeld; as notHeld) {
+              <ion-card class="not-held" data-testid="sheet-not-held">
+                <ion-card-content>
+                  <p><strong>Сходин не було</strong> · {{ notHeldLine(notHeld) }}</p>
+                  <p>Відмітити присутність можна, коли це повернуть.</p>
+                  <ion-button fill="clear" size="small" [disabled]="savingNotHeld()" (click)="saveNotHeld(false)">Повернути</ion-button>
+                </ion-card-content>
+              </ion-card>
+            }
+
             <ion-list [inset]="true">
               <ion-item-group>
                 <ion-item [button]="d.canManage" [detail]="false" (click)="d.canManage && editRate()" data-testid="sheet-rate">
@@ -286,6 +307,11 @@ const SHELVES: { value: Shelf; label: string }[] = [
                     @if (d.canManage) { · {{ d.hasOwnRate ? 'своя ставка' : 'змінити' }} }
                   </ion-note>
                 </ion-item>
+                @if (!d.notHeld && !markedCount()) {
+                  <ion-item [button]="true" [detail]="false" [disabled]="savingNotHeld()" (click)="confirmNotHeld()" data-testid="sheet-say-not-held">
+                    <ion-label color="primary">Сходин не було</ion-label>
+                  </ion-item>
+                }
               </ion-item-group>
             </ion-list>
 
@@ -335,7 +361,7 @@ const SHELVES: { value: Shelf; label: string }[] = [
               }
             </ion-segment>
 
-            @if (shelf() === 'answered' && answeredUnmarked().length) {
+            @if (shelf() === 'answered' && answeredUnmarked().length && !d.notHeld) {
               <ion-button class="bulk" expand="block" data-testid="mark-answered" (click)="markAnswered()">
                 Усі, хто відповів, були ({{ answeredUnmarked().length }})
               </ion-button>
@@ -350,7 +376,7 @@ const SHELVES: { value: Shelf; label: string }[] = [
                       data-testid="sheet-person"
                       [attr.data-marked]="person.attendance ? 'yes' : 'no'"
                       [class.readonly]="!person.canScore"
-                      [button]="person.canScore"
+                      [button]="person.canScore && !d.notHeld"
                       [detail]="false"
                       (click)="toggle(person)"
                     >
@@ -440,7 +466,7 @@ const SHELVES: { value: Shelf; label: string }[] = [
                   (save)="editor.save($event)"
                   (remove)="editor.remove($event)"
                   (edit)="editor.edit($event)"
-                  (cancel)="editor.close()"
+                  (cancelled)="editor.close()"
                 />
               </ng-template>
             </ion-modal>
@@ -472,6 +498,8 @@ export class AttendancePage implements OnInit, OnDestroy {
     const view = this.view();
     return view.state === 'ready' ? view.value : null;
   });
+  protected readonly savingNotHeld = signal(false);
+  protected readonly notHeldLine = notHeldLine;
   protected readonly search = signal('');
   protected readonly group = signal<SheetGroupFilter>('mine');
   protected readonly shelf = signal<Shelf>('answered');
@@ -583,7 +611,7 @@ export class AttendancePage implements OnInit, OnDestroy {
   }
 
   protected toggle(person: SheetPersonDto): void {
-    if (!person.canScore || this.isBusy(person)) return;
+    if (!person.canScore || this.isBusy(person) || this.value()?.notHeld) return;
     if (person.attendance) void this.unmark(person);
     else void this.mark([person]);
   }
@@ -605,6 +633,37 @@ export class AttendancePage implements OnInit, OnDestroy {
       target: { membershipKey: null, groupKey: group.groupKey, name: `Гурток ${group.groupName} цілим` },
       existing: group.entries,
     });
+  }
+
+  /** Cancelled сходини (the web's «Сходин не було»): off «Справи», and nobody to mark until taken back. */
+  protected async confirmNotHeld(): Promise<void> {
+    const d = this.value();
+    if (!d) return;
+    const alert = await this.alerts.create({
+      header: 'Сходин не було?',
+      message: `«${d.title}» цього дня не відбулися: відмічати нікого не треба, і зі «Справ» вони зникнуть. Це можна повернути.`,
+      buttons: [
+        { text: 'Скасувати', role: 'cancel' },
+        { text: 'Сходин не було', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onWillDismiss();
+    if (role === 'confirm') await this.saveNotHeld(true);
+  }
+
+  protected async saveNotHeld(notHeld: boolean): Promise<void> {
+    const occurrence = this.occurrence;
+    if (!occurrence || this.savingNotHeld()) return;
+    this.savingNotHeld.set(true);
+    try {
+      await this.scores.setNotHeld(this.kurinKey, this.itemKey, occurrence, notHeld);
+      await this.load();
+    } catch (error) {
+      await this.toasts.show(apiErrorText(error, 'Не вдалося зберегти. Спробуй ще раз.', SCORE_ERRORS), 'danger');
+    } finally {
+      this.savingNotHeld.set(false);
+    }
   }
 
   /** The event's own rate (the web's «змінити» / «своя ставка»); «Як у групи» drops it. */

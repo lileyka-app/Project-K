@@ -22,6 +22,19 @@ public class AuditCleanupBackgroundService : BackgroundService
     /// account leaves a spent row behind several times a day.
     /// </summary>
     private const int EndedSessionRetentionDays = 30;
+    private const int RevokedCalendarFeedRetentionDays = 90;
+
+    /// <summary>How long a duty someone hid from their «Справи» stays hidden at most; then it shows again if it still waits.</summary>
+    internal const int DismissedDutyRetentionDays = 30;
+
+    /// <summary>How long the kurin's journal keeps an entry: a year, the owner's decision.</summary>
+    internal const int JournalRetentionDays = 365;
+
+    /// <summary>
+    /// Entries removed per statement. The first sweep after a release may face a year of entries at
+    /// once, and one statement over all of them would hold its locks for as long as it takes.
+    /// </summary>
+    internal const int JournalDeleteBatchSize = 5000;
 
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AuditCleanupBackgroundService> _logger;
@@ -60,37 +73,20 @@ public class AuditCleanupBackgroundService : BackgroundService
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var now = DateTime.UtcNow;
-        var progressRetentionDate = now.AddDays(-180);
         var onboardingRetentionDate = now.AddDays(-30);
         var readNotificationRetentionDate = now.AddDays(-ReadNotificationRetentionDays);
         var unreadNotificationRetentionDate = now.AddDays(-UnreadNotificationRetentionDays);
 
         _logger.LogInformation("Starting database cleanup for records older than retention policies.");
 
-        // 1. Cleanup Badge Progress Audit Events (> 180 days)
-        var deletedBadgeAuditEvents = await dbContext.BadgeProgressAuditEvents
-            .Where(e => e.OccurredAtUtc < progressRetentionDate)
-            .ExecuteDeleteAsync(cancellationToken);
-
-        if (deletedBadgeAuditEvents > 0)
-            _logger.LogInformation("Cleaned up {Count} old BadgeProgressAuditEvents.", deletedBadgeAuditEvents);
-
-        // 2. Cleanup Probe Progress Audit Events (> 180 days)
-        var deletedProbeAuditEvents = await dbContext.ProbeProgressAuditEvents
-            .Where(e => e.OccurredAtUtc < progressRetentionDate)
-            .ExecuteDeleteAsync(cancellationToken);
-
-        if (deletedProbeAuditEvents > 0)
-            _logger.LogInformation("Cleaned up {Count} old ProbeProgressAuditEvents.", deletedProbeAuditEvents);
-
-        // 3. Cleanup Waitlist Entries (finished with, and > 30 days)
+        // 1. Cleanup Waitlist Entries (finished with, and > 30 days)
         var deletedWaitlistEntries = await SpentWaitlistEntries(dbContext, onboardingRetentionDate)
             .ExecuteDeleteAsync(cancellationToken);
 
         if (deletedWaitlistEntries > 0)
             _logger.LogInformation("Cleaned up {Count} old WaitlistEntries.", deletedWaitlistEntries);
 
-        // 4. Cleanup expired/used Invitations (> 30 days)
+        // 2. Cleanup expired/used Invitations (> 30 days)
         var deletedInvitations = await dbContext.Invitations
             .Where(i =>
                 (i.UsedAtUtc.HasValue && i.UsedAtUtc < onboardingRetentionDate) ||
@@ -100,7 +96,7 @@ public class AuditCleanupBackgroundService : BackgroundService
         if (deletedInvitations > 0)
             _logger.LogInformation("Cleaned up {Count} old Invitations.", deletedInvitations);
 
-        // 5. Cleanup read notifications (> 7 days after read)
+        // 3. Cleanup read notifications (> 7 days after read)
         var deletedReadNotifications = await dbContext.AppNotifications
             .Where(n => n.ReadAtUtc.HasValue && n.ReadAtUtc < readNotificationRetentionDate)
             .ExecuteDeleteAsync(cancellationToken);
@@ -108,7 +104,7 @@ public class AuditCleanupBackgroundService : BackgroundService
         if (deletedReadNotifications > 0)
             _logger.LogInformation("Cleaned up {Count} old read AppNotifications.", deletedReadNotifications);
 
-        // 6. Cleanup unread notifications (> 30 days after creation)
+        // 4. Cleanup unread notifications (> 30 days after creation)
         var deletedUnreadNotifications = await dbContext.AppNotifications
             .Where(n => !n.ReadAtUtc.HasValue && n.CreatedAtUtc < unreadNotificationRetentionDate)
             .ExecuteDeleteAsync(cancellationToken);
@@ -116,7 +112,7 @@ public class AuditCleanupBackgroundService : BackgroundService
         if (deletedUnreadNotifications > 0)
             _logger.LogInformation("Cleaned up {Count} old unread AppNotifications.", deletedUnreadNotifications);
 
-        // 7. Cleanup ended sessions: revoked a while ago, or expired on their own. A live session
+        // 5. Cleanup ended sessions: revoked a while ago, or expired on their own. A live session
         // is never touched — only rows that can no longer authenticate anyone.
         var sessionRetentionDate = now.AddDays(-EndedSessionRetentionDays);
         var deletedSessions = await dbContext.UserRefreshTokens
@@ -127,6 +123,53 @@ public class AuditCleanupBackgroundService : BackgroundService
 
         if (deletedSessions > 0)
             _logger.LogInformation("Cleaned up {Count} ended UserRefreshTokens.", deletedSessions);
+
+        // 6. Cleanup revoked calendar links. Until then an old link answers with a notice that it is
+        // off; after it, with 404, and a calendar app that still polls it gives up on its own.
+        var calendarFeedRetentionDate = now.AddDays(-RevokedCalendarFeedRetentionDays);
+        var deletedCalendarFeeds = await dbContext.CalendarFeeds
+            .Where(feed => feed.RevokedAtUtc.HasValue && feed.RevokedAtUtc < calendarFeedRetentionDate)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (deletedCalendarFeeds > 0)
+            _logger.LogInformation("Cleaned up {Count} revoked CalendarFeeds.", deletedCalendarFeeds);
+
+        // 7. Cleanup the kurin's journal (> 365 days), a batch at a time.
+        var deletedJournalEntries = await DeleteExpiredJournalAsync(
+            dbContext, now.AddDays(-JournalRetentionDays), JournalDeleteBatchSize, cancellationToken);
+
+        if (deletedJournalEntries > 0)
+            _logger.LogInformation("Cleaned up {Count} old KurinAuditEvents.", deletedJournalEntries);
+
+        // 8. Cleanup duties people hid from their «Справи» (> 30 days)
+        var deletedDismissals = await dbContext.DismissedDuties
+            .Where(d => d.DismissedAtUtc < now.AddDays(-DismissedDutyRetentionDays))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (deletedDismissals > 0)
+            _logger.LogInformation("Cleaned up {Count} old DismissedDuties.", deletedDismissals);
+    }
+
+    /// <summary>Deletes journal entries older than <paramref name="cutoffUtc"/>, <paramref name="batchSize"/> per statement.</summary>
+    internal static async Task<int> DeleteExpiredJournalAsync(
+        AppDbContext dbContext,
+        DateTime cutoffUtc,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        var total = 0;
+        int deleted;
+        do
+        {
+            deleted = await dbContext.KurinAuditEvents
+                .Where(entry => entry.OccurredAtUtc < cutoffUtc)
+                .Take(batchSize)
+                .ExecuteDeleteAsync(cancellationToken);
+            total += deleted;
+        }
+        while (deleted == batchSize);
+
+        return total;
     }
 
     /// <summary>

@@ -55,6 +55,15 @@ public interface IMemberDirectory
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// These people, in one read, whether or not they still stand in any kurin. For naming someone a
+    /// kurin's records still hold after they left it: <see cref="GetByKurinAsync(Guid, CancellationToken)"/>
+    /// reads only those who stand in it now.
+    /// </summary>
+    Task<IReadOnlyCollection<MemberSummary>> GetByKeysAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The перестороги a kurin issued that still stand at <paramref name="nowUtc"/> — not revoked,
     /// not expired. What точкування takes points for.
     /// </summary>

@@ -60,8 +60,8 @@ describe('MemberWarningService', () => {
   });
 
   it('assignWarning should invalidate warning and member caches', () => {
-    spyOn(cache, 'invalidate').and.callThrough();
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidate');
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.assignWarning(memberKey, { level: MemberWarningLevel.Level1 }).subscribe();
 
@@ -72,8 +72,8 @@ describe('MemberWarningService', () => {
   });
 
   it('cancelWarning should invalidate warning and member caches', () => {
-    spyOn(cache, 'invalidate').and.callThrough();
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidate');
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.cancelWarning(memberKey, warning.memberWarningKey).subscribe();
 

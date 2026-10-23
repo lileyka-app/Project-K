@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { getFirstSeededGroupMemberKey, getPlanningSessions, getSeededKurinKey } from './support/api-client';
 import { describeRole } from './support/role-test';
-import { acceptBrowserConfirm, closeLastPrimeDialog } from './support/ui';
+import { closeLastPrimeDialog } from './support/ui';
 
 describeRole('manager', 'Planning and member detail workflows', ({ user }) => {
   test('manager can create inspect and delete a planning session', async ({ page, request }) => {
@@ -22,8 +22,8 @@ describeRole('manager', 'Planning and member detail workflows', ({ user }) => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByRole('dialog').getByRole('button').last().click();
 
-    await acceptBrowserConfirm(page);
-    await row.getByRole('button').last().click();
+    await row.getByRole('button', { name: 'Видалити планування' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Видалити', exact: true }).click();
     await expect(row).toBeHidden();
 
     const sessions = await getPlanningSessions(request, user, kurinKey);

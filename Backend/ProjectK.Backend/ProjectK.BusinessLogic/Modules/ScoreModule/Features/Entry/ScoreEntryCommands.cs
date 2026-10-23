@@ -48,23 +48,9 @@ public static class ScoreEntryWriter
         Guid? editingKey,
         CancellationToken cancellationToken)
     {
-        Guid? groupKey;
-        if (request.MembershipKey is { } membershipKey)
+        if (ResolveGroup<T>(book, request, out var groupKey) is { } unknownTarget)
         {
-            if (!book.Memberships.TryGetValue(membershipKey, out var membership) || membership.Kind != MembershipKind.Youth)
-            {
-                return ScoreAccess.NotFound<T>("That person is not a youth of this kurin.");
-            }
-
-            groupKey = membership.LeftAtUtc is null ? membership.GroupKey : null;
-        }
-        else
-        {
-            groupKey = request.GroupKey;
-            if (!book.GroupNames.ContainsKey(groupKey!.Value))
-            {
-                return ScoreAccess.NotFound<T>("There is no such гурток here.");
-            }
+            return unknownTarget;
         }
 
         if (!await access.MayScoreAsync(book.KurinKey, groupKey, ResourceAction.Create, cancellationToken))
@@ -87,19 +73,50 @@ public static class ScoreEntryWriter
 
             if (request.ScoreItemKey is { } positionKey)
             {
-                var already = book.Entries.FirstOrDefault(e =>
-                    e.ScoreEntryKey != editingKey
-                    && e.ScoreItemKey == positionKey
-                    && e.AgendaItemKey == eventKey
-                    && e.OccurrenceStartUtc == occurrence.StartUtc
-                    && e.MembershipKey == request.MembershipKey
-                    && e.GroupKey == request.GroupKey);
-                if (already is not null)
-                {
-                    return ServiceResult<T>.Failure(ResultType.Conflict, "ItemAlreadyGiven",
-                        $"Уже дав {book.NameOfAccount(already.CreatedByUserKey) ?? "хтось"}.");
-                }
+                return AlreadyGiven<T>(book, request, editingKey, positionKey, eventKey, occurrence.StartUtc);
             }
+        }
+
+        return null;
+    }
+
+    private static ServiceResult<T>? ResolveGroup<T>(ScoreBook book, UpsertScoreEntryRequest request, out Guid? groupKey)
+    {
+        groupKey = null;
+        if (request.MembershipKey is { } membershipKey)
+        {
+            if (!book.Memberships.TryGetValue(membershipKey, out var membership) || membership.Kind != MembershipKind.Youth)
+            {
+                return ScoreAccess.NotFound<T>("That person is not a youth of this kurin.");
+            }
+
+            groupKey = membership.LeftAtUtc is null ? membership.GroupKey : null;
+        }
+        else
+        {
+            groupKey = request.GroupKey;
+            if (!book.GroupNames.ContainsKey(groupKey!.Value))
+            {
+                return ScoreAccess.NotFound<T>("There is no such гурток here.");
+            }
+        }
+
+        return null;
+    }
+
+    private static ServiceResult<T>? AlreadyGiven<T>(ScoreBook book, UpsertScoreEntryRequest request, Guid? editingKey, Guid positionKey, Guid eventKey, DateTime occurrenceStartUtc)
+    {
+        var already = book.Entries.FirstOrDefault(e =>
+            e.ScoreEntryKey != editingKey
+            && e.ScoreItemKey == positionKey
+            && e.AgendaItemKey == eventKey
+            && e.OccurrenceStartUtc == occurrenceStartUtc
+            && e.MembershipKey == request.MembershipKey
+            && e.GroupKey == request.GroupKey);
+        if (already is not null)
+        {
+            return ServiceResult<T>.Failure(ResultType.Conflict, "ItemAlreadyGiven",
+                $"Уже дав {book.NameOfAccount(already.CreatedByUserKey) ?? "хтось"}.");
         }
 
         return null;

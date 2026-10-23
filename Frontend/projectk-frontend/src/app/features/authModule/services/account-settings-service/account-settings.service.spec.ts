@@ -27,7 +27,7 @@ describe('AccountSettingsService', () => {
     cache.clear();
   });
 
-  it('should get account settings', (done) => {
+  it('should get account settings', () => new Promise<void>(done => {
     const settings = createSettings();
 
     service.getSettings().subscribe(response => {
@@ -37,12 +37,12 @@ describe('AccountSettingsService', () => {
 
     const req = httpMock.expectOne(`${apiUrl}/user/me`);
     expect(req.request.method).toBe('GET');
-    expect(req.request.withCredentials).toBeTrue();
+    expect(req.request.withCredentials).toBe(true);
     req.flush(settings);
-  });
+  }));
 
-  it('should update account profile', (done) => {
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+  it('should update account profile', () => new Promise<void>(done => {
+    vi.spyOn(cache, 'invalidateByPrefix');
     const request = {
       email: 'new@example.com',
       phoneNumber: '123456789',
@@ -59,12 +59,12 @@ describe('AccountSettingsService', () => {
     const req = httpMock.expectOne(`${apiUrl}/user/me`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(request);
-    expect(req.request.withCredentials).toBeTrue();
+    expect(req.request.withCredentials).toBe(true);
     req.flush(settings);
-  });
+  }));
 
-  it('should confirm email change', (done) => {
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+  it('should confirm email change', () => new Promise<void>(done => {
+    vi.spyOn(cache, 'invalidateByPrefix');
     const request = { email: 'confirmed@example.com', token: 'token' };
     const settings = createSettings({ email: request.email });
 
@@ -77,57 +77,57 @@ describe('AccountSettingsService', () => {
     const req = httpMock.expectOne(`${apiUrl}/user/me/email/confirm`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
-    expect(req.request.withCredentials).toBeTrue();
+    expect(req.request.withCredentials).toBe(true);
     req.flush(settings);
-  });
+  }));
 
-  it('should change password', (done) => {
+  it('should change password', () => new Promise<void>(done => {
     const request = {
       currentPassword: 'current-password',
       newPassword: 'new-password'
     };
 
     service.changePassword(request).subscribe(response => {
-      expect(response).toBeTrue();
+      expect(response).toBe(true);
       done();
     });
 
     const req = httpMock.expectOne(`${apiUrl}/user/me/password`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
-    expect(req.request.withCredentials).toBeTrue();
+    expect(req.request.withCredentials).toBe(true);
     req.flush(true);
-  });
+  }));
 
-  it('should reset mfa', (done) => {
+  it('should reset mfa', () => new Promise<void>(done => {
     const request = { currentPassword: 'current-password' };
 
     service.resetMfa(request).subscribe(response => {
-      expect(response).toBeTrue();
+      expect(response).toBe(true);
       done();
     });
 
     const req = httpMock.expectOne(`${apiUrl}/user/me/mfa/reset`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
-    expect(req.request.withCredentials).toBeTrue();
+    expect(req.request.withCredentials).toBe(true);
     req.flush(true);
-  });
+  }));
 
-  it('should disable mfa', (done) => {
+  it('should disable mfa', () => new Promise<void>(done => {
     const request = { currentPassword: 'current-password' };
 
     service.disableMfa(request).subscribe(response => {
-      expect(response).toBeTrue();
+      expect(response).toBe(true);
       done();
     });
 
     const req = httpMock.expectOne(`${apiUrl}/user/me/mfa/disable`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
-    expect(req.request.withCredentials).toBeTrue();
+    expect(req.request.withCredentials).toBe(true);
     req.flush(true);
-  });
+  }));
 
   function createSettings(overrides: Partial<AccountSettings> = {}): AccountSettings {
     return {

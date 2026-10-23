@@ -15,8 +15,10 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService;
@@ -29,11 +31,22 @@ public interface IPhotoReferenceProvider
 
 public class AzureBlobPhotoService : IPhotoService
 {
+    /// <summary>
+    /// Decodes only what <c>ImageUploadRules</c> accepts. The format is told by the bytes, not the
+    /// declared content type, so with the default configuration a TIFF sent as image/png reached the
+    /// TIFF decoder; metadata (EXIF, ICC) is never used here, and its parsers are where the open
+    /// ImageSharp 3.x advisories sit. 4.x fixes them but will not build without a Six Labors licence.
+    /// </summary>
+    private static readonly DecoderOptions PhotoDecoding = new()
+    {
+        Configuration = new Configuration(new PngConfigurationModule(), new JpegConfigurationModule(), new WebpConfigurationModule()),
+        SkipMetadata = true
+    };
+
     private readonly BlobContainerClient _container;
     private readonly BlobStorageOptions _options;
     private volatile bool _containerInitialized;
     private readonly SemaphoreSlim _containerInitLock = new(1, 1);
-    private readonly IPhotoReferenceProvider? _referenceProvider;
     private readonly IBlobReadLinks _links;
     private readonly ILogger<AzureBlobPhotoService>? _logger;
 
@@ -41,7 +54,6 @@ public class AzureBlobPhotoService : IPhotoService
 
     public AzureBlobPhotoService(
         BlobStorageOptions options,
-        IPhotoReferenceProvider? referenceProvider,
         IBlobReadLinks links,
         ILogger<AzureBlobPhotoService>? logger = null)
     {
@@ -52,7 +64,6 @@ public class AzureBlobPhotoService : IPhotoService
         }
         var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
         _container = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
-        _referenceProvider = referenceProvider;
         _links = links;
         _logger = logger;
     }
@@ -155,7 +166,7 @@ public class AzureBlobPhotoService : IPhotoService
     {
         try
         {
-            using var image = await Image.LoadAsync(photoStream, cancellationToken).ConfigureAwait(false);
+            using var image = await Image.LoadAsync(PhotoDecoding, photoStream, cancellationToken).ConfigureAwait(false);
 
             // Resize if too large (max 1920x1920)
             const int MaxDimension = 1920;
@@ -197,7 +208,7 @@ public class AzureBlobPhotoService : IPhotoService
     {
         try
         {
-            using var image = await Image.LoadAsync(photoStream, cancellationToken).ConfigureAwait(false);
+            using var image = await Image.LoadAsync(PhotoDecoding, photoStream, cancellationToken).ConfigureAwait(false);
             using var msPng = new MemoryStream();
             await image.SaveAsync(msPng, new PngEncoder(), cancellationToken).ConfigureAwait(false);
 
@@ -320,10 +331,10 @@ public class AzureBlobPhotoService : IPhotoService
         _logger?.LogWarning("Closed public access on blob container {Container}; photos are now read through signed links.", _container.Name);
     }
 
-    internal string BuildBlobName(BlobUploadContext uploadContext, string extension)
+    internal static string BuildBlobName(BlobUploadContext uploadContext, string extension)
         => BuildBlobName(uploadContext, extension, DateTime.UtcNow);
 
-    internal string BuildBlobName(BlobUploadContext uploadContext, string extension, DateTime utcNow)
+    internal static string BuildBlobName(BlobUploadContext uploadContext, string extension, DateTime utcNow)
     {
         var folder = NormalizeFolder(uploadContext.Folder);
         var datePath = $"{utcNow:yyyy'/'MM'/'dd}";
@@ -357,9 +368,6 @@ public class AzureBlobPhotoService : IPhotoService
 
         return normalized;
     }
-
-    private IEnumerable<string> GetCleanupPrefixes()
-        => BlobUploadFolders.ScenarioFolders;
 }
 
 internal sealed record PreparedBlobUpload(byte[] ProcessedBytes, string FinalExtension, string ContentType);

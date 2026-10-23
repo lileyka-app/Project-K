@@ -150,7 +150,7 @@ export class PlanningDetailComponent implements OnChanges {
   /** Turn this calculated planning into a kurin-wide calendar event (name + optimal dates). */
   addToCalendar() {
     const s = this.session();
-    if (!s || !s.optimalStartDate) {
+    if (!s?.optimalStartDate) {
       return;
     }
     this.adding.set(true);

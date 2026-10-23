@@ -94,8 +94,6 @@ public sealed class KurinReportDataService
                 cancellationToken));
         }
 
-        var reportMembersByKey = reportMembers.ToDictionary(member => member.MemberKey);
-
         var reportGroups = new List<KurinReportGroup>(groups.Count);
         foreach (var group in groups)
         {
@@ -343,7 +341,7 @@ public sealed class KurinReportDataService
                 .ToArray());
     }
 
-    private IReadOnlyList<string> ResolveMentorNames(
+    private static IReadOnlyList<string> ResolveMentorNames(
         Guid groupKey,
         IEnumerable<MentorAssignment> mentorAssignments,
         IReadOnlyDictionary<Guid, Member> memberByUserKey,

@@ -1,4 +1,6 @@
-export function toDateOnlyString(d: Date | string | null | undefined): string | null {
+type DateOnlyInput = Date | string | null | undefined;
+
+export function toDateOnlyString(d: DateOnlyInput): string | null {
     if (!d) return null;
     if (typeof d === 'string') {
       if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
@@ -11,7 +13,7 @@ export function toDateOnlyString(d: Date | string | null | undefined): string | 
     return `${y}-${m}-${day}`;
   }
 
-export function parseDateOnlyString(value: Date | string | null | undefined): Date | null {
+export function parseDateOnlyString(value: DateOnlyInput): Date | null {
     if (!value) return null;
     if (value instanceof Date) return value;
 
@@ -24,7 +26,7 @@ export function parseDateOnlyString(value: Date | string | null | undefined): Da
     return new Date(year, month - 1, day);
   }
 
-export function dateOnlyTime(value: Date | string | null | undefined): number {
+export function dateOnlyTime(value: DateOnlyInput): number {
     const parsed = parseDateOnlyString(value);
     return parsed?.getTime() ?? 0;
   }

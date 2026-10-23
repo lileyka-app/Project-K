@@ -13,6 +13,7 @@ public interface IScoreUnitOfWork
     IScoreItemRepository ScoreItems { get; }
     IScoreStageRepository ScoreStages { get; }
     IScoreAttendanceRepository ScoreAttendances { get; }
+    IScoreNotHeldOccurrenceRepository ScoreNotHeldOccurrences { get; }
     IScoreEntryRepository ScoreEntries { get; }
     IScoreGroupMoveRepository ScoreGroupMoves { get; }
     IScoreTrailEventRepository ScoreTrailEvents { get; }

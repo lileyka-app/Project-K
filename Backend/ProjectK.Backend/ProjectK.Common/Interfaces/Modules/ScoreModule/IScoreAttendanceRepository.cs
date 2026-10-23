@@ -9,4 +9,7 @@ public interface IScoreAttendanceRepository : IBaseEntityRepository<ScoreAttenda
 
     /// <summary>The mark standing for that person at that occurrence, tracked — or null.</summary>
     Task<ScoreAttendance?> GetStandingAsync(Guid membershipKey, Guid agendaItemKey, DateTime occurrenceStartUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>Whether anyone's mark stands at that occurrence.</summary>
+    Task<bool> AnyAtOccurrenceAsync(Guid agendaItemKey, DateTime occurrenceStartUtc, CancellationToken cancellationToken = default);
 }

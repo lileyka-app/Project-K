@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LogoutComponent } from './logout';
 import { provideHttpClient } from '@angular/common/http';
@@ -8,12 +9,16 @@ import { of, throwError } from 'rxjs';
 describe('LogoutComponent', () => {
   let component: LogoutComponent;
   let fixture: ComponentFixture<LogoutComponent>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuthService: MockedObject<AuthService>;
+  let mockRouter: MockedObject<Router>;
 
   beforeEach(async () => {
-    mockAuthService = jasmine.createSpyObj('AuthService', ['logout']);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockAuthService = {
+      logout: vi.fn()
+    } as MockedObject<AuthService>;
+    mockRouter = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
 
     await TestBed.configureTestingModule({
       imports: [LogoutComponent],
@@ -36,7 +41,7 @@ describe('LogoutComponent', () => {
 
   describe('logout', () => {
     it('should call authService.logout', () => {
-      mockAuthService.logout.and.returnValue(of('Logged out successfully'));
+      mockAuthService.logout.mockReturnValue(of('Logged out successfully'));
 
       component.logout();
 
@@ -44,7 +49,7 @@ describe('LogoutComponent', () => {
     });
 
     it('should navigate to /login on successful logout', () => {
-      mockAuthService.logout.and.returnValue(of('Logged out successfully'));
+      mockAuthService.logout.mockReturnValue(of('Logged out successfully'));
 
       component.logout();
 
@@ -53,18 +58,18 @@ describe('LogoutComponent', () => {
 
     it('should handle logout error', () => {
       const error = { status: 500, message: 'Server error' };
-      mockAuthService.logout.and.returnValue(throwError(() => error));
-      spyOn(console, 'error');
+      mockAuthService.logout.mockReturnValue(throwError(() => error));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       component.logout();
 
-      expect(console.error).toHaveBeenCalledWith(jasmine.stringContaining('Logout failed'));
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Logout failed'));
     });
 
     it('should navigate to /login on logout error', () => {
       const error = { status: 500, message: 'Server error' };
-      mockAuthService.logout.and.returnValue(throwError(() => error));
-      spyOn(console, 'error');
+      mockAuthService.logout.mockReturnValue(throwError(() => error));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       component.logout();
 
@@ -75,7 +80,7 @@ describe('LogoutComponent', () => {
   describe('Integration scenarios', () => {
     it('should complete full logout flow', () => {
       const message = 'Successfully logged out';
-      mockAuthService.logout.and.returnValue(of(message));
+      mockAuthService.logout.mockReturnValue(of(message));
 
       component.logout();
 
@@ -85,20 +90,20 @@ describe('LogoutComponent', () => {
 
     it('should handle network error gracefully and navigate', () => {
       const networkError = new Error('Network error');
-      mockAuthService.logout.and.returnValue(throwError(() => networkError));
-      spyOn(console, 'error');
+      mockAuthService.logout.mockReturnValue(throwError(() => networkError));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       component.logout();
 
       expect(mockAuthService.logout).toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith(jasmine.stringContaining('Logout failed'));
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Logout failed'));
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
     });
 
     it('should handle 401 unauthorized error and navigate', () => {
       const error = { status: 401, message: 'Unauthorized' };
-      mockAuthService.logout.and.returnValue(throwError(() => error));
-      spyOn(console, 'error');
+      mockAuthService.logout.mockReturnValue(throwError(() => error));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       component.logout();
 

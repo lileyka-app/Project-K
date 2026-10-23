@@ -16,7 +16,6 @@ public class ProbeProgressRepository : BaseEntityRepository<ProbeProgress>, IPro
     {
         return await Context.ProbeProgresses
             .AsTracking()
-            .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(x => x.ProbeProgressKey == entityKey, cancellationToken);
     }
 
@@ -24,19 +23,6 @@ public class ProbeProgressRepository : BaseEntityRepository<ProbeProgress>, IPro
     {
         return await Context.ProbeProgresses
             .AsTracking()
-            .FirstOrDefaultAsync(
-                x => x.MemberKey == memberKey && x.ProbeId == probeId,
-                cancellationToken);
-    }
-
-    public async Task<ProbeProgress?> GetByMemberAndProbeIdWithAuditAsync(
-        Guid memberKey,
-        string probeId,
-        CancellationToken cancellationToken = default)
-    {
-        return await Context.ProbeProgresses
-            .AsTracking()
-            .Include(x => x.AuditEvents)
             .FirstOrDefaultAsync(
                 x => x.MemberKey == memberKey && x.ProbeId == probeId,
                 cancellationToken);
@@ -57,7 +43,6 @@ public class ProbeProgressRepository : BaseEntityRepository<ProbeProgress>, IPro
     {
         return await Context.ProbeProgresses
             .Where(x => x.MemberKey == memberKey)
-            .Include(x => x.AuditEvents)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }

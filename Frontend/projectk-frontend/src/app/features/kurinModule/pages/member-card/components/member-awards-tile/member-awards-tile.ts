@@ -32,13 +32,21 @@ interface AwardGroup {
 })
 export class MemberAwardsTileComponent {
   readonly awards = input<MemberAwardDto[]>([]);
+  /** Add an award and change one: whoever may change the card. */
   readonly canEdit = input(false);
   /**
    * Курінь, у якому відзначення здобуте, за його ключем. Порожня мапа, поки людина в одному курені:
    * штамп потрібен тільки там, де курінь неочевидний.
    */
   readonly kurinStamps = input<Record<string, string>>({});
-  readonly canReview = input(false);
+  /** The levels (1–4) the kurin lets the viewer confirm. */
+  readonly confirmLevels = input<number[]>([]);
+  /** Remove or change a confirmed award, or remove someone else's submission. */
+  readonly canRemove = input(false);
+  /** The viewer's account, to tell their own submissions, which they may always withdraw. */
+  readonly viewerUserKey = input<string | null>(null);
+  /** The viewer is the member: they may withdraw what waits on their own card. */
+  readonly ownCard = input(false);
 
   readonly saveAward = output<UpsertMemberAwardRequest>();
   readonly deleteAward = output<string>();
@@ -109,8 +117,41 @@ export class MemberAwardsTileComponent {
     }
   }
 
+  /** Confirming is the kurin's to give level by level; it does not need the right to change the card. */
+  canConfirm(award: MemberAwardDto | null): boolean {
+    return !!award
+      && this.normalizeStatus(award.status) === BadgeProgressStatus.Submitted
+      && this.confirmLevels().includes(this.getAwardLevelWeight(award.level));
+  }
+
+  canEditAward(award: MemberAwardDto | null): boolean {
+    if (!this.canEdit()) {
+      return false;
+    }
+    return !award || this.normalizeStatus(award.status) !== BadgeProgressStatus.Confirmed || this.canRemove();
+  }
+
+  /** The server's rule: removal rights, or withdrawing an unconfirmed one you submitted or that is yours. */
+  canDeleteAward(award: MemberAwardDto | null): boolean {
+    if (!award) {
+      return false;
+    }
+    if (this.canRemove()) {
+      return true;
+    }
+    if (this.normalizeStatus(award.status) === BadgeProgressStatus.Confirmed) {
+      return false;
+    }
+    const viewer = this.viewerUserKey()?.toLowerCase();
+    return this.ownCard() || (!!viewer && award.submittedByUserKey?.toLowerCase() === viewer);
+  }
+
+  canOpen(award: MemberAwardDto | null): boolean {
+    return this.canEditAward(award) || this.canConfirm(award) || this.canDeleteAward(award);
+  }
+
   openDialog(award?: MemberAwardDto): void {
-    if (!this.canEdit()) return;
+    if (!this.canOpen(award ?? null)) return;
     this.selectedAward = award || null;
     this.dialogVisible = true;
   }

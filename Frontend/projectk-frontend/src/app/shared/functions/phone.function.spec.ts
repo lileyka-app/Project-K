@@ -28,8 +28,8 @@ describe('phone.function', () => {
   });
 
   it('flags a number that cannot be a real one', () => {
-    expect(isPossiblePhone('+420777123456')).toBeTrue();
-    expect(isPossiblePhone('')).toBeTrue();
-    expect(isPossiblePhone('+42077')).toBeFalse();
+    expect(isPossiblePhone('+420777123456')).toBe(true);
+    expect(isPossiblePhone('')).toBe(true);
+    expect(isPossiblePhone('+42077')).toBe(false);
   });
 });

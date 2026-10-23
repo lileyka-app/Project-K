@@ -2,7 +2,8 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Models.Catalog;
+using ProjectK.BusinessLogic.Services.Audit;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
@@ -10,6 +11,8 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -27,7 +30,10 @@ public class SubmitBadgeProgressHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
     private readonly Mock<IDomainEventPublisher> _eventsMock = new();
     private readonly Mock<IKurinCatalog> _kurinCatalogMock = new();
+    private readonly Mock<IBadgesCatalogService> _badges = new();
     private readonly SubmitBadgeProgressCommandHandler _handler;
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly JournalRecorder _journal;
 
     public SubmitBadgeProgressHandlerTests()
     {
@@ -37,13 +43,22 @@ public class SubmitBadgeProgressHandlerTests
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "mentor" });
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(_kurinKey);
+        _badges.Setup(x => x.GetBadgeById("badge-1")).Returns(new Badge("badge-1", "Велосипедист", "", "", "", "", null, "", "", "", [], [], "", []));
+
+        _journal = new JournalRecorder(
+            _currentUserContextMock.Object,
+            new AuditActorResolver(_currentUserContextMock.Object, _memberDirectoryMock.Object));
 
         _handler = new SubmitBadgeProgressCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _kurinCatalogMock.Object);
+            _kurinCatalogMock.Object,
+            _journal.Audit,
+            _journal.Reader,
+            _badges.Object);
 
         OfferedBadges("badge-1");
     }
@@ -123,5 +138,38 @@ public class SubmitBadgeProgressHandlerTests
             It.IsAny<CancellationToken>()),
             Times.Once);
 
+    }
+
+    [Fact]
+    public async Task Handle_NewSubmission_ShouldRecordItInTheJournal_UnderTheBadgesTitle()
+    {
+        var memberKey = GivenMember("badge-1", null);
+        var groupKey = Guid.NewGuid();
+        _journal.Knows(memberKey, _kurinKey, groupKey, "Ivan", "Petrenko");
+
+        await _handler.Handle(new SubmitBadgeProgressCommand(memberKey, "badge-1", "готовий"), CancellationToken.None);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Badge);
+        entry.Action.Should().Be(AuditActions.Badge.Submitted);
+        entry.SubjectLabel.Should().Be("Велосипедист");
+        entry.SubjectMemberName.Should().Be("Ivan Petrenko");
+        entry.SubjectGroupKey.Should().Be(groupKey);
+        entry.Note.Should().Be("готовий");
+        entry.Changes.Should().Equal(new AuditChange("status", null, "Submitted"));
+    }
+
+    [Fact]
+    public async Task Handle_Resubmission_ShouldRecordTheStatusItCameFrom()
+    {
+        var progress = new BadgeProgress { BadgeId = "badge-1", Status = BadgeProgressStatus.Rejected };
+        var memberKey = GivenMember("badge-1", progress);
+
+        await _handler.Handle(new SubmitBadgeProgressCommand(memberKey, "badge-1", null), CancellationToken.None);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Action.Should().Be(AuditActions.Badge.Resubmitted);
+        entry.SubjectKey.Should().Be(progress.BadgeProgressKey);
+        entry.Changes.Should().Equal(new AuditChange("status", "Rejected", "Submitted"));
     }
 }

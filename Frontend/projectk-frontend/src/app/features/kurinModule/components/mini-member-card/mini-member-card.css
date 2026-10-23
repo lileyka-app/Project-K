@@ -60,7 +60,7 @@
     border-radius: 9999px;
     border: 1px solid color-mix(in srgb, var(--p-red-600) 35%, transparent);
     background: color-mix(in srgb, var(--p-red-100) 45%, var(--p-content-background) 55%);
-    width: fit-content !important;
+    width: fit-content;
 }
 
 .mini-member-card__warning-dot {

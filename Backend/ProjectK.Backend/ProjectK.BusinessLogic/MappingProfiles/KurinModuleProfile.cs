@@ -79,7 +79,10 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             // The account belongs to another module; the read of one person asks it.
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
-            .ForMember(dest => dest.InvitationSent, opt => opt.Ignore());
+            .ForMember(dest => dest.InvitationSent, opt => opt.Ignore())
+            // Filled by MemberFieldMask, which knows who is looking.
+            .ForMember(dest => dest.Birthday, opt => opt.Ignore())
+            .ForMember(dest => dest.HiddenData, opt => opt.Ignore());
 
         // Lean list read model -> same response shape as the full card. Level,
         // active leadership and active warnings are already resolved in the

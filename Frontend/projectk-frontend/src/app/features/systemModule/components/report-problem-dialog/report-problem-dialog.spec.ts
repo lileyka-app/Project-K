@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -29,10 +30,13 @@ function fakeQuill(ops: DeltaOp[]) {
 describe('ReportProblemDialogComponent', () => {
   let fixture: ComponentFixture<ReportProblemDialogComponent>;
   let component: ReportProblemDialogComponent;
-  let feedback: jasmine.SpyObj<FeedbackService>;
+  let feedback: MockedObject<FeedbackService>;
 
   beforeEach(async () => {
-    feedback = jasmine.createSpyObj<FeedbackService>('FeedbackService', ['uploadScreenshot', 'reportProblem']);
+    feedback = {
+      uploadScreenshot: vi.fn(),
+      reportProblem: vi.fn()
+    } as MockedObject<FeedbackService>;
 
     await TestBed.configureTestingModule({
       imports: [ReportProblemDialogComponent],
@@ -54,16 +58,16 @@ describe('ReportProblemDialogComponent', () => {
   });
 
   it('keeps «Надіслати» off until something is written', () => {
-    expect(component.hasDescription()).toBeFalse();
+    expect(component.hasDescription()).toBe(false);
 
     component.onEditorInit({ editor: fakeQuill([{ insert: 'Не працює\n' }]) as never });
     component.onTextChange();
 
-    expect(component.hasDescription()).toBeTrue();
+    expect(component.hasDescription()).toBe(true);
   });
 
   it('sends Markdown, the route and the version, and shows the issue it became', () => {
-    feedback.reportProblem.and.returnValue(of({ issueUrl: 'https://github.com/x/y/issues/9', issueNumber: 9 }));
+    feedback.reportProblem.mockReturnValue(of({ issueUrl: 'https://github.com/x/y/issues/9', issueNumber: 9 }));
     component.onEditorInit({ editor: fakeQuill([{ insert: 'Кнопка ' }, { insert: 'не', attributes: { bold: true } }, { insert: ' працює\n' }]) as never });
     component.onTextChange();
     component.title.set('  Кнопка  ');
@@ -71,7 +75,7 @@ describe('ReportProblemDialogComponent', () => {
 
     component.send();
 
-    const payload = feedback.reportProblem.calls.mostRecent().args[0];
+    const payload = vi.mocked(feedback.reportProblem).mock.lastCall![0];
     expect(payload.description).toBe('Кнопка **не** працює');
     expect(payload.title).toBe('Кнопка');
     expect(payload.steps).toBe('1. Натиснути');
@@ -84,7 +88,7 @@ describe('ReportProblemDialogComponent', () => {
 
   // A pasted or picked picture goes up first; only the address the server returns enters the text.
   it('uploads an attached picture and embeds the returned address', () => {
-    feedback.uploadScreenshot.and.returnValue(of({ url: 'https://blob/feedback-screenshots/a.png' }));
+    feedback.uploadScreenshot.mockReturnValue(of({ url: 'https://blob/feedback-screenshots/a.png' }));
     const quill = fakeQuill([{ insert: '\n' }]);
     component.onEditorInit({ editor: quill as never });
 
@@ -97,7 +101,7 @@ describe('ReportProblemDialogComponent', () => {
   // Quill's clipboard and drop handlers pass image files to its uploader, which by default inlines
   // them as base64; here that path leads to the server, and WebP is welcome too.
   it('routes pictures Quill receives from paste or drop through the upload', () => {
-    feedback.uploadScreenshot.and.returnValue(of({ url: 'https://blob/feedback-screenshots/b.png' }));
+    feedback.uploadScreenshot.mockReturnValue(of({ url: 'https://blob/feedback-screenshots/b.png' }));
     const quill = fakeQuill([{ insert: '\n' }]);
     component.onEditorInit({ editor: quill as never });
 
@@ -109,11 +113,11 @@ describe('ReportProblemDialogComponent', () => {
   });
 
   it('explains a failed upload and a failed send instead of going quiet', () => {
-    feedback.uploadScreenshot.and.returnValue(throwError(() => new Error('boom')));
+    feedback.uploadScreenshot.mockReturnValue(throwError(() => new Error('boom')));
     component.attach(new File(['x'], 'shot.png', { type: 'image/png' }));
     expect(component.errorMessage()).toContain('скриншот');
 
-    feedback.reportProblem.and.returnValue(throwError(() => new Error('boom')));
+    feedback.reportProblem.mockReturnValue(throwError(() => new Error('boom')));
     component.onEditorInit({ editor: fakeQuill([{ insert: 'щось\n' }]) as never });
     component.onTextChange();
     component.send();

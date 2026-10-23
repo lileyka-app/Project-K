@@ -315,6 +315,15 @@ export const routes: Routes = [
     data: { breadcrumb: 'Модерація вмілостей', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
   },
   {
+    // `?member=` opens it already filtered to one person, as the member card's «Журнал» link does.
+    path: 'kurin/:kurinKey/journal',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('journal')],
+    loadComponent: () => import('./features/kurinModule/pages/kurin-journal/kurin-journal')
+      .then(m => m.KurinJournalComponent),
+    title: 'Журнал дій',
+    data: { breadcrumb: 'Журнал дій', parent: '/kurin', titleContext: 'kurin' }
+  },
+  {
     path: 'kurin/:kurinKey/dues',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     loadComponent: () => import('./features/duesModule/pages/kurin-dues/kurin-dues')

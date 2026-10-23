@@ -58,7 +58,8 @@ public class UpsertMemberHandlerTests
             mapperConfig.CreateMapper(),
             _accountProvisioningMock.Object,
             _currentUserContextMock.Object,
-            _eventsMock.Object);
+            _eventsMock.Object,
+            FieldAccess.SeesEverything());
     }
 
     private Member GivenWrittenMember(bool isCreated, Guid? userKey = null)

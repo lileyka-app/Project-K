@@ -143,7 +143,7 @@ export class RegistryComponent implements OnInit {
    * Пошук живе тут, а не у фільтрі таблиці: таблиць дві, а поле одне, і людина шукає по складу —
    * не знаючи наперед, у якій із двох таблиць той, кого вона шукає.
    */
-  private found = computed(() => {
+  private readonly found = computed(() => {
     const needle = this.search().trim().toLowerCase();
     if (!needle) {
       return this.members();

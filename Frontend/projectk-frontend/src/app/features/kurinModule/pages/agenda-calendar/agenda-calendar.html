@@ -3,11 +3,12 @@
     <div>
       <h1>Календар</h1>
     </div>
-    @if (canManage()) {
-      <div class="lil-page-head__actions">
+    <div class="lil-page-head__actions">
+      <p-button label="Підписатися" icon="pi pi-calendar-plus" severity="secondary" [outlined]="true" (click)="openSubscription()" />
+      @if (canManage()) {
         <p-button label="Нова подія" icon="pi pi-plus" (click)="openCreate()" />
-      </div>
-    }
+      }
+    </div>
   </header>
 
   <section class="kurin-tile">
@@ -31,7 +32,7 @@
         [allowEmpty]="false" />
     </div>
 
-    <div class="agenda-calendar-host" #calHost>
+    <div class="agenda-calendar-host">
       <full-calendar [options]="calendarOptions()" />
     </div>
   </section>

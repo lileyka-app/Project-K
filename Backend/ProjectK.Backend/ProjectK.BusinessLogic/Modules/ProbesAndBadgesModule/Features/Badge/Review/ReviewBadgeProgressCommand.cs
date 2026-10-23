@@ -1,10 +1,13 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -36,17 +39,29 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
+    private readonly AuditActorResolver _actors;
+    private readonly IKurinAudit _audit;
+    private readonly IKurinJournalReader _journal;
+    private readonly IBadgesCatalogService _badges;
 
     public ReviewBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        IDomainEventPublisher events)
+        IDomainEventPublisher events,
+        AuditActorResolver actors,
+        IKurinAudit audit,
+        IKurinJournalReader journal,
+        IBadgesCatalogService badges)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
         _events = events;
+        _actors = actors;
+        _audit = audit;
+        _journal = journal;
+        _badges = badges;
     }
 
     public async Task<ServiceResult<BadgeProgressResponse>> Handle(ReviewBadgeProgressCommand request, CancellationToken cancellationToken)
@@ -76,21 +91,8 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         }
 
         var now = DateTime.UtcNow;
-        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
+        var actor = await _actors.ResolveAsync(cancellationToken);
         var targetStatus = approved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
-        string action;
-        if (approved)
-        {
-            action = "Confirmed";
-        }
-        else if (fromStatus == BadgeProgressStatus.Confirmed)
-        {
-            action = "RemovedConfirmed";
-        }
-        else
-        {
-            action = "Rejected";
-        }
 
         progress.Status = targetStatus;
         progress.ReviewedAtUtc = now;
@@ -99,17 +101,18 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         progress.ReviewedByRole = actor.Role;
         progress.ReviewNote = request.Note;
 
-        progress.AuditEvents.Add(new BadgeProgressAuditEvent
-        {
-            FromStatus = fromStatus,
-            ToStatus = targetStatus,
-            Action = action,
-            ActorUserKey = actor.UserKey,
-            ActorName = actor.Name,
-            ActorRole = actor.Role,
-            OccurredAtUtc = now,
-            Note = request.Note
-        });
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Badge,
+                approved ? AuditActions.Badge.Confirmed
+                    : canRemoveConfirmed ? AuditActions.Badge.ConfirmationRemoved
+                    : AuditActions.Badge.Rejected,
+                progress.BadgeProgressKey,
+                ProgressAuditLabels.Badge(_badges, progress.BadgeId),
+                progress.MemberKey,
+                AuditChanges.Of(("status", fromStatus, targetStatus)),
+                request.Note),
+            cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
@@ -117,15 +120,16 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
             return new ServiceResult<BadgeProgressResponse>(ResultType.InternalServerError);
         }
 
-        await NotifyMemberOwnerAsync(progress, approved, action, cancellationToken);
+        await NotifyMemberOwnerAsync(progress, approved, canRemoveConfirmed, cancellationToken);
 
-        return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress));
+        var journal = await _journal.GetForSubjectsAsync([progress.BadgeProgressKey], cancellationToken);
+        return new ServiceResult<BadgeProgressResponse>(ResultType.Success, BadgeProgressResponse.FromEntity(progress, journal));
     }
 
     private async Task NotifyMemberOwnerAsync(
         BadgeProgress progress,
         bool isApproved,
-        string action,
+        bool removedConfirmed,
         CancellationToken cancellationToken)
     {
         var ownerUserKey = await _members.FindAccountKeyAsync(progress.MemberKey, cancellationToken);
@@ -141,7 +145,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
                 progress.MemberKey,
                 ownerUserKey.Value,
                 isApproved,
-                string.Equals(action, "RemovedConfirmed", StringComparison.Ordinal),
+                removedConfirmed,
                 _currentUserContext.UserId),
             cancellationToken);
     }

@@ -58,16 +58,16 @@ describe('WaitlistRegistrationComponent', () => {
   it('keeps the button disabled and explains itself while the applicant is not a Зв’язковий', () => {
     fillEverythingBut(false);
 
-    expect(component.form.invalid).toBeTrue();
-    expect(element().querySelector('button[type=submit]')?.hasAttribute('disabled')).toBeTrue();
+    expect(component.form.invalid).toBe(true);
+    expect(element().querySelector('button[type=submit]')?.hasAttribute('disabled')).toBe(true);
     expect(element().textContent).toContain('приймаємо лише курені');
   });
 
   it('lets a Зв’язковий with a kurin number apply, and drops the notice', () => {
     fillEverythingBut(true);
 
-    expect(component.form.valid).toBeTrue();
-    expect(element().querySelector('button[type=submit]')?.hasAttribute('disabled')).toBeFalse();
+    expect(component.form.valid).toBe(true);
+    expect(element().querySelector('button[type=submit]')?.hasAttribute('disabled')).toBe(false);
     expect(element().textContent).not.toContain('приймаємо лише курені');
   });
 
@@ -76,10 +76,10 @@ describe('WaitlistRegistrationComponent', () => {
 
     for (const number of ['0', '201', '1153']) {
       component.form.patchValue({ claimedKurinNameOrNumber: number });
-      expect(component.form.invalid).withContext(number).toBeTrue();
+      expect(component.form.invalid, number).toBe(true);
     }
     component.form.patchValue({ claimedKurinNameOrNumber: '200' });
-    expect(component.form.valid).toBeTrue();
+    expect(component.form.valid).toBe(true);
   });
 
   it('comes with the default край picked, and sends the one the applicant chose', () => {
@@ -98,7 +98,7 @@ describe('WaitlistRegistrationComponent', () => {
     fillEverythingBut(true);
     component.form.patchValue({ kraiCode: null });
 
-    expect(component.form.invalid).toBeTrue();
+    expect(component.form.invalid).toBe(true);
   });
 
   it('asks for the край in words when the list does not load', () => {
@@ -107,10 +107,10 @@ describe('WaitlistRegistrationComponent', () => {
     fillEverythingBut(true);
 
     expect(element().querySelector('#regionOrCountry')).not.toBeNull();
-    expect(component.form.invalid).toBeTrue();
+    expect(component.form.invalid).toBe(true);
 
     component.form.patchValue({ regionOrCountry: 'Польща' });
-    expect(component.form.valid).toBeTrue();
+    expect(component.form.valid).toBe(true);
     expect(component.form.value.kraiCode).toBeUndefined();
   });
 
@@ -119,9 +119,9 @@ describe('WaitlistRegistrationComponent', () => {
     component.form.patchValue({ isPreparatoryKurin: true });
     fixture.detectChanges();
 
-    expect(component.form.valid).toBeTrue();
+    expect(component.form.valid).toBe(true);
     expect(component.form.value.claimedKurinNameOrNumber).toBeUndefined();
-    expect(component.form.value.isPreparatoryKurin).toBeTrue();
+    expect(component.form.value.isPreparatoryKurin).toBe(true);
     expect(element().querySelector('#kurin')).toBeNull();
   });
 });

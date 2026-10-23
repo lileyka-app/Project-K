@@ -64,6 +64,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
     private readonly IAccountProvisioningService _accountProvisioning;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
+    private readonly IMemberFieldAccess _fieldAccess;
 
     public UpsertMemberCommandHandler(
         IMediator mediator,
@@ -71,8 +72,10 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         IMapper mapper,
         IAccountProvisioningService accountProvisioning,
         ICurrentUserContext currentUserContext,
-        IDomainEventPublisher events)
+        IDomainEventPublisher events,
+        IMemberFieldAccess fieldAccess)
     {
+        _fieldAccess = fieldAccess;
         _mediator = mediator;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -175,7 +178,9 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
             await PublishProfileWentStaleAsync(member, cancellationToken);
         }
 
-        var response = _mapper.Map<MemberResponse>(member);
+        // The writer is answered like any reader: what they may not see stays kept, and unsaid.
+        var response = _mapper.Map<MemberResponse>(member)
+            .MaskFor(await _fieldAccess.ForViewerAsync(cancellationToken), profile.Data.GroupKey);
         response.InvitationSent = invitationSent;
 
         return profile.Data.IsCreated

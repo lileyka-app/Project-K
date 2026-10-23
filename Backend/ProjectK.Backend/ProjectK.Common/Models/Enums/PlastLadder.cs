@@ -48,24 +48,18 @@ public static class PlastLadder
     ];
 
     /// <summary>The branch a ступінь belongs to: старший пластун is УСП, a сеніор's ступені are УПС, the rest УПЮ.</summary>
-    public static KurinBranch BranchOf(PlastLevel level) =>
-        level == PlastLevel.Starshoplastun ? KurinBranch.USP
-        : SeniorLevels.Contains(level) ? KurinBranch.UPS
-        : KurinBranch.UPYu;
+    public static KurinBranch BranchOf(PlastLevel level) => level switch
+    {
+        PlastLevel.Starshoplastun => KurinBranch.USP,
+        _ when SeniorLevels.Contains(level) => KurinBranch.UPS,
+        _ => KurinBranch.UPYu
+    };
 
     /// <summary>The highest ступінь by its place on the ladder, not by its number; null when there is none.</summary>
     public static PlastLevel? Highest(IEnumerable<PlastLevel> levels)
     {
-        PlastLevel? best = null;
-        foreach (var level in levels)
-        {
-            if (best is null || Rank(level) > Rank(best.Value))
-            {
-                best = level;
-            }
-        }
-
-        return best;
+        var all = levels.ToList();
+        return all.Count == 0 ? null : all.MaxBy(Rank);
     }
 
     private static int Rank(PlastLevel level)

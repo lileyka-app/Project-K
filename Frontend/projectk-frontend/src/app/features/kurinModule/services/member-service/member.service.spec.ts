@@ -74,7 +74,7 @@ describe('MemberService', () => {
     const groupKey = 'g1';
 
     service.getAll(groupKey).subscribe(res => {
-      expect(res.length).toBe(1);
+      expect(res).toHaveLength(1);
     });
 
     const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
@@ -124,7 +124,7 @@ describe('MemberService', () => {
     const kurinKey = 'k1';
 
     service.getAll(undefined, kurinKey).subscribe(res => {
-      expect(res.length).toBe(1);
+      expect(res).toHaveLength(1);
     });
 
     const req = httpMock.expectOne(`${apiUrl}/kurins/${kurinKey}/members`);
@@ -141,7 +141,7 @@ describe('MemberService', () => {
       }
     });
 
-    expect(receivedError).toEqual(jasmine.any(Error));
+    expect(receivedError).toEqual(expect.any(Error));
     expect((receivedError as Error).message).toContain('Either groupKey or kurinKey must be provided.');
   });
 
@@ -155,7 +155,7 @@ describe('MemberService', () => {
     const req = httpMock.expectOne(apiUrl);
     expect(req.request.method).toBe('POST');
     const body = req.request.body as FormData;
-    expect(body instanceof FormData).toBeTrue();
+    expect(body instanceof FormData).toBe(true);
 
     // Check all DTO properties are present in FormData
     Object.entries(sampleUpsert).forEach(([key, value]) => {
@@ -200,7 +200,7 @@ describe('MemberService', () => {
     body.forEach((_v: FormDataEntryValue, key: string) => {
       if (key === 'blob') hasBlob = true;
     });
-    expect(hasBlob).toBeFalse();
+    expect(hasBlob).toBe(false);
 
     req.flush(sampleMember);
   });
@@ -234,7 +234,7 @@ describe('MemberService', () => {
       }
     });
 
-    expect(receivedError).toEqual(jasmine.any(Error));
+    expect(receivedError).toEqual(expect.any(Error));
     expect((receivedError as Error).message).toContain('Either groupKey or kurinKey must be provided for create.');
   });
 
@@ -280,7 +280,7 @@ describe('MemberService', () => {
     body.forEach((_v: FormDataEntryValue, key: string) => {
       if (key === 'blob') containsBlob = true;
     });
-    expect(containsBlob).toBeFalse();
+    expect(containsBlob).toBe(false);
 
     req.flush(sampleMember);
   });
@@ -352,7 +352,7 @@ describe('MemberService', () => {
 
   it('getMentorCandidates should call mentor-candidates endpoint', () => {
     service.getMentorCandidates('k-1').subscribe(res => {
-      expect(res.length).toBe(1);
+      expect(res).toHaveLength(1);
       expect(res[0].userKey).toBe('u1');
     });
 

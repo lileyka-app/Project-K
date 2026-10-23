@@ -6,27 +6,11 @@ using NBomber.Http.CSharp;
 
 namespace ProjectK.LoadTests;
 
-class Program
+static class Program
 {
     static void Main(string[] args)
     {
-        var baseUrl = "http://localhost:5037";
-        var apiKey = "";
-
-        // Simple argument parsing: --url <url> --api-key <key>
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "--url" && i + 1 < args.Length)
-            {
-                baseUrl = args[i + 1];
-                i++;
-            }
-            else if (args[i] == "--api-key" && i + 1 < args.Length)
-            {
-                apiKey = args[i + 1];
-                i++;
-            }
-        }
+        var (baseUrl, apiKey) = ParseArgs(args);
 
         Console.WriteLine($"Starting authenticated load tests against: {baseUrl}");
 
@@ -69,7 +53,7 @@ class Program
         {
             if (string.IsNullOrEmpty(apiKey))
             {
-                throw new Exception("API Key (--api-key) is required to authenticate the load test user.");
+                throw new InvalidOperationException("API Key (--api-key) is required to authenticate the load test user.");
             }
 
             context.Logger.Information("Authenticating load test user using API Key...");
@@ -82,8 +66,8 @@ class Program
             if (!authResponse.IsSuccessStatusCode)
             {
                 var errBody = await authResponse.Content.ReadAsStringAsync();
-                context.Logger.Error($"Passwordless authentication failed: {authResponse.StatusCode}. Body: {errBody}");
-                throw new Exception("Authentication failed. Check --api-key.");
+                context.Logger.Error("Passwordless authentication failed: {StatusCode}. Body: {Body}", authResponse.StatusCode, errBody);
+                throw new InvalidOperationException("Authentication failed. Check --api-key.");
             }
 
             var responseContent = await authResponse.Content.ReadAsStringAsync();
@@ -92,7 +76,7 @@ class Program
 
             if (string.IsNullOrEmpty(jwtToken))
             {
-                throw new Exception("Failed to extract token from login response");
+                throw new InvalidOperationException("Failed to extract token from login response");
             }
 
             context.Logger.Information("Successfully obtained JWT token.");
@@ -116,5 +100,33 @@ class Program
             .WithReportFileName("projectk_load_test_report")
             .WithReportFolder("reports")
             .Run();
+    }
+
+    /// <summary>Simple argument parsing: --url &lt;url&gt; --api-key &lt;key&gt;.</summary>
+    private static (string BaseUrl, string ApiKey) ParseArgs(string[] args)
+    {
+        var baseUrl = "http://localhost:5037";
+        var apiKey = "";
+
+        var i = 0;
+        while (i < args.Length)
+        {
+            if (args[i] == "--url" && i + 1 < args.Length)
+            {
+                baseUrl = args[i + 1];
+                i += 2;
+            }
+            else if (args[i] == "--api-key" && i + 1 < args.Length)
+            {
+                apiKey = args[i + 1];
+                i += 2;
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        return (baseUrl, apiKey);
     }
 }

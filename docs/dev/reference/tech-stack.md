@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Стан на вересень 2026 (гілка `1.0.0`).
+Стан на жовтень 2026 (`main` після релізу 1.2.1).
 
 ## Фронтенд
 
@@ -15,9 +15,12 @@ sidebar:
 - **TailwindCSS 4** для розкладки, візуальна система — токени з `lileyka-theme.css`
   (див. [Брендбук](/dev/core/brandbook/)).
 - **TypeScript 5.9**, **RxJS 7.8**.
-- `ngx-image-cropper` — обрізання фото, **FullCalendar** (MIT-плагіни) — календар, **Quill** через
+- `ngx-image-cropper` — обрізання фото, **FullCalendar 7** (лише MIT-частина, тема classic на
+  токенах бренду) — календар, **Quill** через
   `p-editor` — текст звіту про проблему.
-- Тести: **Karma / Jasmine**; e2e — **Playwright** проти контейнерного стеку `e2e`.
+- **libphonenumber-js** — поле телефону з вибором країни, формат і перевірка номера; і у
+  вебзастосунку, і в мобільному (`mobile/`).
+- Тести: **Vitest** у jsdom (білдер `@angular/build:unit-test`, як і в `mobile/`); e2e — **Playwright** проти контейнерного стеку `e2e`.
 
 ## Бекенд
 

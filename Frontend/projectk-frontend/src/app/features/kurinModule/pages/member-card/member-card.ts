@@ -2,21 +2,20 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { ProgressBarModule } from '@openng/optimus-ui/progressbar';
-import { MemberDto } from '../../models/member.dto';
+import { MemberDataGroup, MemberDto } from '../../models/member.dto';
 import { MemberService } from '../../services/member-service/member.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
-import { ConfirmationService } from '@openng/optimus-ui/api';
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { IconFieldModule } from '@openng/optimus-ui/iconfield';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
 import { SelectModule } from '@openng/optimus-ui/select';
-import { MessageService } from '@openng/optimus-ui/api';
 import { BadgesCatalogService } from '../../services/probes-and-badges/badges-catalog.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
@@ -47,10 +46,9 @@ import { LeadershipHistoryDto } from '../../models/requests/leadership/leadershi
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { memberBranchHere } from '../../functions/member-branch.function';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
-import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
+import { DuesEntryDto, MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { duesAmountLabel, money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
 import { DUES_ENTRY_KIND_LABELS, DUES_STANDING_LABELS } from '../../../duesModule/models/dues.enums';
-import { DuesEntryDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAwardService, UpsertMemberAwardRequest } from '../../services/member-award-service/member-award.service';
 import { EntityService } from '../../../authModule/services/entity-service/entity.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
@@ -72,6 +70,7 @@ import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.
 import { initials } from '../../../dashboardModule/functions/greeting.function';
 import { MemberWarningsDialogComponent } from './components/member-warnings-dialog/member-warnings-dialog';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
+import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
 
 @Component({
   selector: 'app-member-card',
@@ -174,6 +173,11 @@ export class MemberCardComponent implements OnInit {
   inlineModerationMessage: string | null = null;
   inlineModerationSeverity: 'success' | 'warn' | 'error' = 'success';
   canManageMemberActions = false;
+  /**
+   * What the kurin's policy lets the viewer do to this member: which перестороги to give and cancel,
+   * which відзначення to confirm, whether to review вмілості and read the journal. Nothing until read.
+   */
+  abilities: MemberAbilitiesDto = NO_ABILITIES;
   profileVerificationEnabled = false;
   profileVerificationSubmitting = false;
   isWarningsDialogVisible = false;
@@ -224,6 +228,16 @@ export class MemberCardComponent implements OnInit {
 
     this.loadMemberships(memberKey);
     this.loadDues(memberKey);
+    this.loadAbilities(memberKey);
+  }
+
+  /** Quietly: without an answer the card simply offers none of the policy's actions. */
+  private loadAbilities(memberKey: string): void {
+    this.abilities = NO_ABILITIES;
+    this.memberService.getAbilities(memberKey).subscribe({
+      next: abilities => this.abilities = abilities,
+      error: () => this.abilities = NO_ABILITIES
+    });
   }
 
   /**
@@ -359,6 +373,17 @@ export class MemberCardComponent implements OnInit {
         phoneLink: phoneHref(parent.phone)
       }))
       .filter(parent => parent.name || parent.phone);
+  }
+
+  /** Чи сервер приховав цю групу даних від того, хто дивиться. */
+  hides(group: MemberDataGroup): boolean {
+    return this.member?.hiddenData?.includes(group) ?? false;
+  }
+
+  /** День і місяць народження («17.05»), коли рік приховано, а день народження — ні. */
+  get birthdayText(): string | null {
+    const match = /^(\d{2})-(\d{2})$/.exec(this.member?.birthday ?? '');
+    return match ? `${match[2]}.${match[1]}` : null;
   }
 
   get emailLink(): string | null {
@@ -521,7 +546,21 @@ export class MemberCardComponent implements OnInit {
   }
 
   get canManageWarnings(): boolean {
-    return this.canEditMember && !this.isOwnCard && this.permissionService.canManageWarnings();
+    const warnings = this.abilities.warnings;
+    return !!this.member && !this.isOwnCard && (warnings.give.length > 0 || warnings.cancel !== 'None');
+  }
+
+  /** The journal of the kurin the viewer acts in, filtered to this member; null when it is not theirs to read. */
+  get journalKurinKey(): string | null {
+    return this.abilities.journal && this.member ? this.scopedKurinKey : null;
+  }
+
+  openJournal(): void {
+    const kurinKey = this.journalKurinKey;
+    if (!kurinKey || !this.memberKey) {
+      return;
+    }
+    this.router.navigate(['/kurin', kurinKey, 'journal'], { queryParams: { member: this.memberKey } });
   }
 
   get isProfileVerified(): boolean {
@@ -781,11 +820,12 @@ export class MemberCardComponent implements OnInit {
 
   get canOpenSkillsReview(): boolean {
     const kurinKey = this.member?.kurinKey || this.authService.getAuthStateValue()?.kurinKey;
-    return this.permissionService.canReviewSkills() && this.canManageMemberActions && !!kurinKey;
+    return this.permissionService.canReviewSkills() && this.abilities.badges.review && !!kurinKey;
   }
 
+  /** Confirming and removing a вмілість here: the kurin lets the viewer review this member's. */
   get canInlineModerateSkills(): boolean {
-    return this.canOpenSkillsReview && !!this.memberKey;
+    return this.abilities.badges.review && !!this.memberKey;
   }
 
   get isInlineModerationBusy(): boolean {

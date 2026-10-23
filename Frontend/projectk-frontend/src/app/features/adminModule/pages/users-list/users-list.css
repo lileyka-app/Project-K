@@ -13,8 +13,8 @@
 }
 
 :host ::ng-deep .project-table .p-datatable-table {
-  width: 100% !important;
-  min-width: 0 !important;
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 640px) {
@@ -27,7 +27,7 @@
   }
 
   :host ::ng-deep .project-table .p-datatable-tbody > tr.users-list-group-row > td {
-    padding: 0.75rem 0.5rem !important;
+    padding: 0.75rem 0.5rem;
   }
 
   :host ::ng-deep .project-table .p-datatable-tbody > tr.users-list-row {
@@ -43,8 +43,8 @@
     gap: 0.5rem;
     align-items: center;
     min-width: 0;
-    padding: 0.15rem 0 !important;
-    border: 0 !important;
+    padding: 0.15rem 0;
+    border: 0;
     overflow-wrap: anywhere;
   }
 

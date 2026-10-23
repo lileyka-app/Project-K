@@ -37,7 +37,10 @@
         @if (scorableGroups().length) {
           <p-button label="Бал гуртку" icon="pi pi-users" severity="secondary" (onClick)="giveToGroup()" />
         }
-        @if (answeredUnmarked().length) {
+        @if (!d.notHeld && !markedCount()) {
+          <p-button label="Сходин не було" icon="pi pi-calendar-times" severity="secondary" [loading]="savingNotHeld()" (onClick)="confirmNotHeld()" />
+        }
+        @if (answeredUnmarked().length && !d.notHeld) {
           <p-button [label]="'Усі, хто відповів, були (' + answeredUnmarked().length + ')'" icon="pi pi-check-circle" (onClick)="markAnswered()" />
         }
       </div>
@@ -63,6 +66,19 @@
       </app-empty-state>
     </section>
   } @else if (data(); as d) {
+
+    @if (d.notHeld; as notHeld) {
+      <p-message severity="info" styleClass="w-full" data-testid="sheet-not-held">
+        <div class="sheet-not-held">
+          <span>
+            <strong>Сходин не було</strong>
+            · {{ notHeld.markedByName ?? 'хтось із проводу' }}, {{ notHeld.markedAtUtc | date:'dd.MM.yyyy, HH:mm' }}.
+            Відмітити присутність можна, коли це повернуть.
+          </span>
+          <p-button label="Повернути" icon="pi pi-undo" severity="secondary" variant="text" size="small" [loading]="savingNotHeld()" (onClick)="saveNotHeld(false)" />
+        </div>
+      </p-message>
+    }
 
     <section class="kurin-tile">
       <div class="lil-stats">
@@ -224,7 +240,7 @@
       type="button"
       class="sheet-mark"
       [class.sheet-mark--on]="person.attendance"
-      [disabled]="!person.canScore || isBusy(person)"
+      [disabled]="!person.canScore || isBusy(person) || !!notHeld()"
       [attr.aria-pressed]="!!person.attendance"
       [attr.aria-label]="(person.attendance ? 'Зняти відмітку: ' : 'Був: ') + person.fullName"
       [pTooltip]="person.attendance?.markedByName ? 'Відмітив ' + person.attendance.markedByName : ''"

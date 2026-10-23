@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentAssertions;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -29,7 +28,6 @@ public class GetKurinByKeyHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
     private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
-    private readonly Mock<UserManager<AppUser>> _userManagerMock;
 
     private readonly GetKurinByKeyQueryHandler _handler;
 
@@ -46,9 +44,6 @@ public class GetKurinByKeyHandlerTests
         _kurinRepositoryMock = new Mock<IKurinRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
 
-        var store = new Mock<IUserStore<AppUser>>();
-        _userManagerMock = new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
-
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
         _appUserRepositoryMock
@@ -63,7 +58,7 @@ public class GetKurinByKeyHandlerTests
             .ReturnsAsync(Array.Empty<Guid>());
         _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
 
-        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object, CreateCache());
+        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>

@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -21,32 +20,26 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveW
 public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlistEntryCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly UserManager<AppUser> _userManager;
     private readonly IAccountProvisioningService _accountProvisioning;
     private readonly IEmailService _emailService;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IMembershipDirectory _memberships;
     private readonly KurinNumberOptions _numbers;
     private readonly KraiOptions _krai;
 
     public ApproveWaitlistEntryCommandHandler(
         IUnitOfWork unitOfWork,
-        UserManager<AppUser> userManager,
         IAccountProvisioningService accountProvisioning,
         IEmailService emailService,
         ICurrentUserContext currentUserContext,
-        IMembershipDirectory memberships,
         IOptions<KurinNumberOptions> numbers,
         IOptions<KraiOptions> krai)
     {
         _numbers = numbers.Value;
         _krai = krai.Value;
         _unitOfWork = unitOfWork;
-        _userManager = userManager;
         _accountProvisioning = accountProvisioning;
         _emailService = emailService;
         _currentUserContext = currentUserContext;
-        _memberships = memberships;
     }
 
     public async Task<ServiceResult<Guid>> Handle(ApproveWaitlistEntryCommand request, CancellationToken cancellationToken)

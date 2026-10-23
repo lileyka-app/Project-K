@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.NotHeld;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.ScoreModule;
@@ -18,6 +19,7 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.Mark;
 /// <summary>
 /// Marks people present at one occurrence. Someone already marked stays marked by whoever did it
 /// first — the result says so, and the unique index says so again for two судді who click at once.
+/// The first mark takes back «did not take place», if someone said it of this occurrence.
 /// </summary>
 public sealed record MarkAttendanceCommand(Guid KurinKey, Guid AgendaItemKey, DateTime OccurrenceStartUtc, MarkAttendanceRequest Request)
     : IRequest<ServiceResult<IReadOnlyList<MarkAttendanceResultDto>>>;
@@ -42,6 +44,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
     private readonly IKraiProfileProvider _profiles;
+    private readonly IKurinAudit _audit;
 
     public MarkAttendanceCommandHandler(
         ScoreAccess access,
@@ -51,7 +54,8 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
         ScoreBookReader books,
         ICurrentUserContext currentUser,
         TimeProvider time,
-        IKraiProfileProvider profiles)
+        IKraiProfileProvider profiles,
+        IKurinAudit audit)
     {
         _access = access;
         _score = score;
@@ -61,6 +65,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
         _currentUser = currentUser;
         _time = time;
         _profiles = profiles;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MarkAttendanceResultDto>>> Handle(MarkAttendanceCommand request, CancellationToken cancellationToken)
@@ -82,22 +87,23 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
 
         try
         {
-            return await MarkAsync(request, occurrence.StartUtc, youths, cancellationToken);
+            return await MarkAsync(request, occurrence, youths, cancellationToken);
         }
         catch (DuplicateRowException)
         {
             // Another judge marked one of these people between our check and our save. A second
             // pass sees their mark and answers AlreadyMarked for that person, and marks the rest.
-            return await MarkAsync(request, occurrence.StartUtc, youths, cancellationToken);
+            return await MarkAsync(request, occurrence, youths, cancellationToken);
         }
     }
 
     private async Task<ServiceResult<IReadOnlyList<MarkAttendanceResultDto>>> MarkAsync(
         MarkAttendanceCommand request,
-        DateTime occurrenceStartUtc,
+        EventOccurrence occurrence,
         IReadOnlyDictionary<Guid, KurinMembershipRecord> youths,
         CancellationToken cancellationToken)
     {
+        var occurrenceStartUtc = occurrence.StartUtc;
         var results = new List<MarkAttendanceResultDto>();
         var now = _time.GetUtcNow().UtcDateTime;
         ScoreBook? book = null;
@@ -136,6 +142,14 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
             _score.ScoreAttendances.Create(mark, cancellationToken);
             ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Attendance, mark.ScoreAttendanceKey, ScoreTrail.Created, Snapshot(mark), _currentUser.UserId, now);
             results.Add(new MarkAttendanceResultDto { MembershipKey = membershipKey, Outcome = "Marked" });
+        }
+
+        // A meeting someone was at took place, whatever was said of it before.
+        if (results.Any(r => r.Outcome == "Marked")
+            && await _score.ScoreNotHeldOccurrences.FindAsync(request.AgendaItemKey, occurrenceStartUtc, cancellationToken) is { } notHeld)
+        {
+            _score.ScoreNotHeldOccurrences.Delete(notHeld, cancellationToken);
+            await SetOccurrenceNotHeldCommandHandler.RecordAsync(_audit, request.KurinKey, occurrence, notHeld: false, cancellationToken);
         }
 
         await _score.SaveChangesAsync(cancellationToken);

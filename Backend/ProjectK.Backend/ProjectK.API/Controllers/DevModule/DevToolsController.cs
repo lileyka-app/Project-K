@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -29,9 +30,9 @@ public class DevToolsController : ControllerBase
         _mediator = mediator;
     }
 
-    public record ImpersonateRequest(DevRole Role, Guid? KurinKey);
+    public record ImpersonateRequest([property: JsonRequired] DevRole Role, Guid? KurinKey);
 
-    public record ImpersonateMemberRequest(Guid MemberKey);
+    public record ImpersonateMemberRequest([property: JsonRequired] Guid MemberKey);
 
     public record ReturnRequest(string Ticket);
 

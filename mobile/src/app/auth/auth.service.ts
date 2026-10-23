@@ -12,6 +12,7 @@ import {
   MfaRecoveryCodes,
   MfaSetup,
   MfaStatus,
+  RefreshResponse,
   SavedAccount,
 } from './auth.models';
 
@@ -26,6 +27,7 @@ const STORAGE_KEY = 'authState';
 const ERROR_TEXT: Record<string, string> = {
   InvalidCredentials: 'Неправильний email або пароль.',
   Unauthorized: 'Неправильний email або пароль.',
+  TooManyAttempts: 'Забагато невдалих спроб для цієї пошти. Зачекай 15 хвилин або віднови пароль.',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -84,12 +86,27 @@ export class AuthService {
     this.apply(toState(response));
   }
 
-  /** One request at a time: every caller waiting on a 401 shares it. */
+  /**
+   * One request at a time: every caller waiting on a 401 or a stale-access answer shares it. What
+   * the account may do comes back with the token, so an office given or taken elsewhere reaches the
+   * menu without signing in again.
+   */
   refresh(): Promise<string> {
-    this.refreshing ??= this.post<{ accessToken: string }>('auth/refresh', {})
-      .then(({ accessToken }) => {
+    this.refreshing ??= this.post<RefreshResponse>('auth/refresh', {})
+      .then(({ accessToken, access }) => {
         const current = this.state();
-        if (current) this.apply({ ...current, accessToken });
+        if (current) {
+          this.apply({
+            ...current,
+            accessToken,
+            ...(access && {
+              isAdmin: access.isAdmin,
+              roles: access.roles ?? [],
+              permissions: access.permissions ?? [],
+              kurinKey: access.kurinKey ?? null,
+            }),
+          });
+        }
         return accessToken;
       })
       .finally(() => (this.refreshing = null));
@@ -248,9 +265,10 @@ export class AuthService {
 export function loginErrorText(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
     if (isOffline(error)) return 'Немає зв’язку з сервером. Перевір інтернет.';
-    if (error.status === 429) return 'Забагато спроб. Спробуй за хвилину.';
+    // A pause on the email (429 TooManyAttempts) lasts 15 minutes; only the address limiter is a minute.
     const code = (error.error as { error?: string } | null)?.error;
     if (code && ERROR_TEXT[code]) return ERROR_TEXT[code];
+    if (error.status === 429) return 'Забагато спроб. Спробуй за хвилину.';
   }
   return fallback;
 }

@@ -1,3 +1,5 @@
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 
@@ -39,24 +41,15 @@ public sealed class ProbeProgressResponse
         };
     }
 
+    /// <summary>The проба as the clients read it, its status history taken from the journal.</summary>
+    /// <param name="entity">The проба.</param>
+    /// <param name="journal">Its entries in the kurin's journal; entries about other records are skipped.</param>
+    /// <param name="pointSignatures">Its points.</param>
     public static ProbeProgressResponse FromEntity(
         ProbeProgress entity,
+        IEnumerable<KurinAuditEvent> journal,
         IReadOnlyCollection<ProbePointProgressResponse>? pointSignatures = null)
     {
-        var auditTrail = entity.AuditEvents
-            .OrderBy(x => x.OccurredAtUtc)
-            .Select(x => new ProbeProgressAuditEventResponse(
-                x.ProbeProgressAuditEventKey,
-                x.FromStatus,
-                x.ToStatus,
-                x.Action,
-                x.ActorUserKey,
-                x.ActorName,
-                x.ActorRole,
-                x.OccurredAtUtc,
-                x.Note))
-            .ToList();
-
         return new ProbeProgressResponse
         {
             ProbeProgressKey = entity.ProbeProgressKey,
@@ -72,7 +65,7 @@ public sealed class ProbeProgressResponse
             VerifiedByUserKey = entity.VerifiedByUserKey,
             VerifiedByName = entity.VerifiedByName,
             VerifiedByRole = entity.VerifiedByRole,
-            AuditTrail = auditTrail,
+            AuditTrail = ProgressTrail.ForProbe(entity.ProbeProgressKey, journal),
             PointSignatures = pointSignatures ?? []
         };
     }

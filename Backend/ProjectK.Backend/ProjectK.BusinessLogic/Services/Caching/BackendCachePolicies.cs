@@ -20,6 +20,13 @@ public static class BackendCachePolicies
         Ttl: TimeSpan.FromMinutes(5),
         Scope: CacheScope.Shared);
 
+    // Read on every permission resolution; saving the policy drops this prefix, so the TTL only
+    // bounds how stale another instance may be.
+    public static readonly CachePolicy KurinAccessPolicyReads = new(
+        Prefix: "kurin-access-policy",
+        Ttl: EntityReadTtl,
+        Scope: CacheScope.Shared);
+
     public static readonly CachePolicy SystemSettingReads = new(
         Prefix: "system-setting",
         Ttl: TimeSpan.FromMinutes(5),

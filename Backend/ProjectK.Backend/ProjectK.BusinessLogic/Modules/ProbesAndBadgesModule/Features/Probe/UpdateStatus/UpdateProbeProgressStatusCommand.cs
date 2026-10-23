@@ -1,11 +1,14 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -31,19 +34,28 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly ICurrentUserContext _currentUserContext;
+    private readonly AuditActorResolver _actors;
+    private readonly IKurinAudit _audit;
+    private readonly IKurinJournalReader _journal;
     private readonly IProbesCatalogService _probesCatalogService;
+    private readonly IResourceAccessService _access;
 
     public UpdateProbeProgressStatusCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        ICurrentUserContext currentUserContext,
-        IProbesCatalogService probesCatalogService)
+        AuditActorResolver actors,
+        IKurinAudit audit,
+        IKurinJournalReader journal,
+        IProbesCatalogService probesCatalogService,
+        IResourceAccessService access)
     {
         _unitOfWork = unitOfWork;
         _members = members;
-        _currentUserContext = currentUserContext;
+        _actors = actors;
+        _audit = audit;
+        _journal = journal;
         _probesCatalogService = probesCatalogService;
+        _access = access;
     }
 
     public async Task<ServiceResult<ProbeProgressResponse>> Handle(UpdateProbeProgressStatusCommand request, CancellationToken cancellationToken)
@@ -78,49 +90,48 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         var currentStatus = progress.Status;
         if (currentStatus == request.Status)
         {
-            var pointSignatures = await GetPointSignatureResponsesAsync(request.MemberKey, request.ProbeId, cancellationToken);
-            return new ServiceResult<ProbeProgressResponse>(
-                ResultType.Success,
-                ProbeProgressResponse.FromEntity(progress, pointSignatures));
+            return await RespondAsync(ResultType.Success, progress, request, cancellationToken);
         }
 
         if (!IsTransitionAllowed(currentStatus, request.Status))
         {
-            var pointSignatures = await GetPointSignatureResponsesAsync(request.MemberKey, request.ProbeId, cancellationToken);
-            return new ServiceResult<ProbeProgressResponse>(
-                ResultType.Conflict,
-                ProbeProgressResponse.FromEntity(progress, pointSignatures));
+            return await RespondAsync(ResultType.Conflict, progress, request, cancellationToken);
+        }
+
+        // Taking a проба back from verified undoes a sign-off, which the kurin may keep from people
+        // it lets sign.
+        if (currentStatus == ProbeProgressStatus.Verified
+            && !(await _access.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, request.MemberKey, cancellationToken)).IsAllowed)
+        {
+            return ServiceResult<ProbeProgressResponse>.Failure(
+                ResultType.Forbidden,
+                "ProbeUnsignNotAllowed",
+                "The kurin's policy does not let you take a probe back from verified.");
         }
 
         if (request.Status == ProbeProgressStatus.Completed
             && !await HasAllPointsSignedForCompletionAsync(request.MemberKey, request.ProbeId, cancellationToken))
         {
-            var pointSignatures = await GetPointSignatureResponsesAsync(request.MemberKey, request.ProbeId, cancellationToken);
-            return new ServiceResult<ProbeProgressResponse>(
-                ResultType.Conflict,
-                ProbeProgressResponse.FromEntity(progress, pointSignatures));
+            return await RespondAsync(ResultType.Conflict, progress, request, cancellationToken);
         }
 
         var now = DateTime.UtcNow;
-        var actor = await ProgressActorResolver.ResolveAsync(_currentUserContext, _members, cancellationToken);
-        var actorName = actor.Name;
-        var auditAction = ResolveAuditAction(currentStatus, request.Status);
+        var actor = await _actors.ResolveAsync(cancellationToken);
 
         progress.Status = request.Status;
 
-        ApplyStatusSideEffects(progress, currentStatus, request.Status, now, actor.UserKey, actorName, actor.Role);
+        ApplyStatusSideEffects(progress, currentStatus, request.Status, now, actor.UserKey, actor.Name, actor.Role);
 
-        progress.AuditEvents.Add(new ProbeProgressAuditEvent
-        {
-            FromStatus = currentStatus,
-            ToStatus = request.Status,
-            Action = auditAction,
-            ActorUserKey = actor.UserKey,
-            ActorName = actorName,
-            ActorRole = actor.Role,
-            OccurredAtUtc = now,
-            Note = request.Note
-        });
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Probe,
+                JournalAction(currentStatus, request.Status),
+                progress.ProbeProgressKey,
+                ProgressAuditLabels.Probe(_probesCatalogService, progress.ProbeId),
+                request.MemberKey,
+                AuditChanges.Of(("status", currentStatus, request.Status)),
+                request.Note),
+            cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -129,10 +140,20 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
             return new ServiceResult<ProbeProgressResponse>(ResultType.InternalServerError);
         }
 
-        var updatedPointSignatures = await GetPointSignatureResponsesAsync(request.MemberKey, request.ProbeId, cancellationToken);
+        return await RespondAsync(ResultType.Success, progress, request, cancellationToken);
+    }
+
+    private async Task<ServiceResult<ProbeProgressResponse>> RespondAsync(
+        ResultType resultType,
+        ProbeProgress progress,
+        UpdateProbeProgressStatusCommand request,
+        CancellationToken cancellationToken)
+    {
+        var pointSignatures = await GetPointSignatureResponsesAsync(request.MemberKey, request.ProbeId, cancellationToken);
+        var journal = await _journal.GetForSubjectsAsync([progress.ProbeProgressKey], cancellationToken);
         return new ServiceResult<ProbeProgressResponse>(
-            ResultType.Success,
-            ProbeProgressResponse.FromEntity(progress, updatedPointSignatures));
+            resultType,
+            ProbeProgressResponse.FromEntity(progress, journal, pointSignatures));
     }
 
     private async Task<IReadOnlyCollection<ProbePointProgressResponse>> GetPointSignatureResponsesAsync(
@@ -191,21 +212,13 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         };
     }
 
-    private static string ResolveAuditAction(ProbeProgressStatus currentStatus, ProbeProgressStatus targetStatus)
+    private static string JournalAction(ProbeProgressStatus currentStatus, ProbeProgressStatus targetStatus) => targetStatus switch
     {
-        if (targetStatus == ProbeProgressStatus.InProgress
-            && (currentStatus == ProbeProgressStatus.Completed || currentStatus == ProbeProgressStatus.Verified))
-        {
-            return "Unsign";
-        }
-
-        if (targetStatus == ProbeProgressStatus.Completed && currentStatus == ProbeProgressStatus.Verified)
-        {
-            return "Unverify";
-        }
-
-        return targetStatus.ToString();
-    }
+        ProbeProgressStatus.Completed when currentStatus == ProbeProgressStatus.Verified => AuditActions.Probe.Unverified,
+        ProbeProgressStatus.Completed => AuditActions.Probe.Completed,
+        ProbeProgressStatus.Verified => AuditActions.Probe.Verified,
+        _ => AuditActions.Probe.Started
+    };
 
     private static void ApplyStatusSideEffects(
         ProbeProgress progress,

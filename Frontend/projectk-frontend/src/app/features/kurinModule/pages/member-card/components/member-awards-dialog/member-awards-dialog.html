@@ -1,6 +1,6 @@
 ﻿<p-dialog
     [(visible)]="visible"
-    [header]="awardToEdit() ? 'Редагувати відзначення' : 'Додати відзначення'"
+    [header]="awardToEdit() ? (canEdit() ? 'Редагувати відзначення' : 'Відзначення') : 'Додати відзначення'"
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
@@ -37,6 +37,7 @@
             <div class="award-dialog-danger-actions">
                 @if (canDeleteAward) {
                     <p-button icon="pi pi-trash"
+                        ariaLabel="Видалити відзначення"
                         severity="danger"
                         [outlined]="true"
                         styleClass="award-dialog-action"
@@ -45,6 +46,7 @@
                 }
                 @if (canApproveAward) {
                     <p-button icon="pi pi-check"
+                        ariaLabel="Підтвердити відзначення"
                         severity="success"
                         styleClass="award-dialog-action"
                         (click)="onApprove()"
@@ -52,6 +54,7 @@
                 }
             </div>
 
+            @if (canEdit()) {
             <div class="award-dialog-main-actions">
                 <p-button label="Зберегти"
                     icon="pi pi-save"
@@ -60,6 +63,7 @@
                     (click)="onSave()"
                  />
             </div>
+            }
         </div>
     </ng-template>
 </p-dialog>

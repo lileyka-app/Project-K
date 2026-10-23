@@ -107,12 +107,12 @@ describe('memberProbeRowsViewMapper', () => {
     const rows = buildMemberProbeRows(probes, progresses);
 
     expect(rows.map(row => row.probeId)).toEqual(['probe-1', 'probe-2', 'probe-3']);
-    expect(rows[0].isCompleted).toBeTrue();
+    expect(rows[0].isCompleted).toBe(true);
     expect(rows[0].completedAtUtc).toBe('2026-04-10T00:00:00Z');
-    expect(rows[0].canOpenDetails).toBeTrue();
+    expect(rows[0].canOpenDetails).toBe(true);
 
-    expect(rows[2].isDisabled).toBeTrue();
-    expect(rows[2].canOpenDetails).toBeFalse();
+    expect(rows[2].isDisabled).toBe(true);
+    expect(rows[2].canOpenDetails).toBe(false);
   });
 
   it('should use fallback labels and not-started status when probe data is missing', () => {
@@ -120,7 +120,7 @@ describe('memberProbeRowsViewMapper', () => {
 
     expect(rows[0].title).toBe('Перша проба');
     expect(rows[0].status).toBe(ProbeProgressStatus.NotStarted);
-    expect(rows[0].canOpenDetails).toBeFalse();
+    expect(rows[0].canOpenDetails).toBe(false);
   });
 
   it('normalizeProbeProgressStatus should support string enum values from backend JSON', () => {
@@ -134,7 +134,7 @@ describe('memberProbeRowsViewMapper', () => {
       [createProbeProgress({ probeId: 'probe-1', status: 'Completed' as unknown as ProbeProgressStatus })]
     );
 
-    expect(rows[0].isCompleted).toBeTrue();
+    expect(rows[0].isCompleted).toBe(true);
     expect(rows[0].status).toBe(ProbeProgressStatus.Completed);
   });
 
@@ -148,8 +148,8 @@ describe('memberProbeRowsViewMapper', () => {
       createProbeProgress({ probeId: 'probe-1', status: ProbeProgressStatus.InProgress })
     ]);
 
-    expect(rows[1].isDisabled).toBeTrue();
-    expect(rows[1].canOpenDetails).toBeFalse();
+    expect(rows[1].isDisabled).toBe(true);
+    expect(rows[1].canOpenDetails).toBe(false);
   });
 
   it('should unlock second probe when first probe is completed', () => {
@@ -162,7 +162,7 @@ describe('memberProbeRowsViewMapper', () => {
       createProbeProgress({ probeId: 'probe-1', status: ProbeProgressStatus.Completed, completedAtUtc: '2026-04-16T08:00:00Z' })
     ]);
 
-    expect(rows[1].isDisabled).toBeFalse();
-    expect(rows[1].canOpenDetails).toBeTrue();
+    expect(rows[1].isDisabled).toBe(false);
+    expect(rows[1].canOpenDetails).toBe(true);
   });
 });

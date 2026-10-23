@@ -172,6 +172,6 @@ describe('KurinService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
 
-    expect(completed).toBeTrue();
+    expect(completed).toBe(true);
   });
 });

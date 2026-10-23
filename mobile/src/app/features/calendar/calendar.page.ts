@@ -60,7 +60,7 @@ const VIEW_KEY = 'lil.agenda.calendarView';
 const HOUR_PX = 52;
 
 type CalendarView = 'month' | 'week' | 'day' | 'list';
-const VIEWS: CalendarView[] = ['month', 'week', 'day', 'list'];
+const VIEWS: ReadonlySet<CalendarView> = new Set<CalendarView>(['month', 'week', 'day', 'list']);
 /** What prev/next steps through in each view, for its buttons' names. */
 const STEP_NAMES: Record<Exclude<CalendarView, 'list'>, [string, string]> = {
   month: ['Попередній місяць', 'Наступний місяць'],
@@ -788,13 +788,16 @@ export class CalendarPage implements ViewWillEnter, OnDestroy {
   private async loadList(): Promise<void> {
     if (!this.kurinKey) return;
     const from = fromDayKey(this.today);
+    // Unlike the grid, the list has one slot: an answer for the switch's old position must not land on it.
+    const showSchedules = this.showSchedules();
     try {
       const items = await this.agenda.calendar(
         this.kurinKey,
         from.toISOString(),
         addDays(from, LIST_DAYS).toISOString(),
-        this.showSchedules(),
+        showSchedules,
       );
+      if (showSchedules !== this.showSchedules()) return;
       this.listState.set({ state: 'ready', value: items });
     } catch {
       if (this.listState().state !== 'ready') this.listState.set({ state: 'failed' });
@@ -809,7 +812,7 @@ export class CalendarPage implements ViewWillEnter, OnDestroy {
 
   protected setView(event: Event): void {
     const value = (event as CustomEvent<{ value?: string }>).detail.value as CalendarView | undefined;
-    if (value && VIEWS.includes(value)) this.changeView(value);
+    if (value && VIEWS.has(value)) this.changeView(value);
   }
 
   private changeView(view: CalendarView): void {
@@ -936,7 +939,7 @@ function dayHeading(day: string, today: string): string {
 function readView(): CalendarView {
   try {
     const stored = localStorage.getItem(VIEW_KEY) as CalendarView | null;
-    return stored && VIEWS.includes(stored) ? stored : 'month';
+    return stored && VIEWS.has(stored) ? stored : 'month';
   } catch {
     return 'month';
   }

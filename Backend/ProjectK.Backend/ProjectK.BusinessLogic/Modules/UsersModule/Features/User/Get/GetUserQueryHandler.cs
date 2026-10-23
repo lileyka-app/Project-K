@@ -46,8 +46,8 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<U
             Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
             TwoFactorEnabled = user.TwoFactorEnabled,
             IsSuspended = !user.CanSignIn(),
-            FirstName = user.FirstName!,
-            LastName = user.LastName!
+            FirstName = user.FirstName,
+            LastName = user.LastName
         };
 
         return new ServiceResult<UserDto>(ResultType.Success, userDto);

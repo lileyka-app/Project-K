@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -222,7 +223,7 @@ public class AuthController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("refresh")]
-    [ProducesResponseType(typeof(JwtResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> Refresh()
     {
         var refreshTokens = GetRefreshTokenCookieValues();
@@ -304,7 +305,7 @@ public class AuthController : ControllerBase
         return Ok(response.Data.Accounts);
     }
 
-    public class SwitchAccountRequest { public Guid UserKey { get; set; } }
+    public class SwitchAccountRequest { [JsonRequired] public Guid UserKey { get; set; } }
 
     /// <summary>
     /// Makes a kept account the one in use; the account that was in use is kept in its place.

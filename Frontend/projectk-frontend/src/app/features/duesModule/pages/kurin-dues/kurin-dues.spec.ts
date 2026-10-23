@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -13,7 +14,7 @@ describe('KurinDuesComponent', () => {
 
   let fixture: ComponentFixture<KurinDuesComponent>;
   let component: KurinDuesComponent;
-  let dues: jasmine.SpyObj<DuesService>;
+  let dues: MockedObject<DuesService>;
 
   const q = (year: number, number: number) => ({ year, number });
 
@@ -100,12 +101,18 @@ describe('KurinDuesComponent', () => {
   };
 
   function create(response: KurinDuesDto = data): void {
-    dues = jasmine.createSpyObj<DuesService>('DuesService', [
-      'getKurinDues', 'setTransferReceived', 'createKurinEntry', 'updateKurinEntry', 'deleteKurinEntry', 'setKurinEntryVerified', 'setKurinRate'
-    ]);
-    dues.getKurinDues.and.returnValue(of(response));
-    dues.setTransferReceived.and.returnValue(of({}));
-    dues.createKurinEntry.and.returnValue(of({}));
+    dues = {
+      getKurinDues: vi.fn(),
+      setTransferReceived: vi.fn(),
+      createKurinEntry: vi.fn(),
+      updateKurinEntry: vi.fn(),
+      deleteKurinEntry: vi.fn(),
+      setKurinEntryVerified: vi.fn(),
+      setKurinRate: vi.fn()
+    } as MockedObject<DuesService>;
+    dues.getKurinDues.mockReturnValue(of(response));
+    dues.setTransferReceived.mockReturnValue(of({}));
+    dues.createKurinEntry.mockReturnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [KurinDuesComponent],
@@ -128,20 +135,20 @@ describe('KurinDuesComponent', () => {
 
     expect(text()).toContain('Каса куреня');
     expect(text()).toContain('Соколи');
-    expect(component.pendingTransfers().length).toBe(2);
+    expect(component.pendingTransfers()).toHaveLength(2);
     expect(component.outstandingTotal()).toBe(155);
     expect(text()).toContain('чекають підтвердження: 2');
   });
 
   it('показує окремо станичні й крайові гроші, щойно курінь має крайову статтю', () => {
     create();
-    expect(component.hasKrai()).toBeFalse();
+    expect(component.hasKrai()).toBe(false);
     expect(text()).not.toContain('До передачі в край');
 
     TestBed.resetTestingModule();
     create({ ...data, rates: [{ ...data.rates[0], kraiFull: 60, kraiReduced: 30 }], toStanytsia: 240, toKrai: 60, sentToKrai: 120 });
 
-    expect(component.hasKrai()).toBeTrue();
+    expect(component.hasKrai()).toBe(true);
     expect(text()).toContain('До передачі в край');
     expect(text()).toContain('передано 120');
     expect(text()).toContain('До краю');
@@ -150,8 +157,8 @@ describe('KurinDuesComponent', () => {
   it('у краї без станиць ховає станицю й пропонує лише передачу в край', () => {
     create({ ...data, upstream: DuesUpstream.Krai, sentToStanytsia: 0, entries: [], rates: [{ ...data.rates[0], stanytsiaFull: 0, stanytsiaReduced: 0, kraiFull: 240, kraiReduced: 180 }] });
 
-    expect(component.hasStanytsia()).toBeFalse();
-    expect(component.hasKrai()).toBeTrue();
+    expect(component.hasStanytsia()).toBe(false);
+    expect(component.hasKrai()).toBe(true);
     expect(text()).not.toContain('До передачі в станицю');
     expect(text()).toContain('До передачі в край');
     expect(component.kurinKinds()).toContain(DuesEntryKind.TransferToKrai);
@@ -192,8 +199,8 @@ describe('KurinDuesComponent', () => {
   it('перевірену операцію куреня не дає змінити', () => {
     create();
 
-    expect(component.canEdit(data.entries[0])).toBeFalse();
-    expect(component.canEdit(data.entries[1])).toBeTrue();
+    expect(component.canEdit(data.entries[0])).toBe(false);
+    expect(component.canEdit(data.entries[1])).toBe(true);
     expect(component.amountLabel(data.entries[0])).toBe('−240 ₴');
   });
 

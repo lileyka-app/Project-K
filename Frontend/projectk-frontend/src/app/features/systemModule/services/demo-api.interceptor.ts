@@ -20,6 +20,20 @@ export interface DemoFixtureFile {
   entries: DemoFixtureEntry[];
 }
 
+/** The fields of a journal entry the demo filters and orders by; the rest passes through as recorded. */
+interface JournalItem {
+  key: string;
+  occurredAtUtc: string;
+  area: string;
+  actorUserKey: string | null;
+  subjectMemberKey: string | null;
+}
+
+interface JournalPage {
+  items: JournalItem[];
+  hasMore: boolean;
+}
+
 const SEAT_KEY = 'lileyka-demo-seat';
 const NOTICE_COOLDOWN_MS = 4000;
 
@@ -72,6 +86,11 @@ export class DemoApiInterceptor implements HttpInterceptor {
     const seat = sessionStorage.getItem(SEAT_KEY);
     const source = seat ? this.fixtures(seat) : this.fixtures('public');
     return from(source).pipe(switchMap(entries => {
+      const journal = req.method === 'GET' ? this.journalPage(entries, path) : null;
+      if (journal) {
+        return this.reply(200, journal);
+      }
+
       const hit = entries.get(`${req.method} ${path}`) ?? entries.get(`${req.method} ${path.split('?')[0]}`);
       if (hit) {
         return this.reply(hit.s, hit.b);
@@ -104,6 +123,51 @@ export class DemoApiInterceptor implements HttpInterceptor {
       return '/health';
     }
     return null;
+  }
+
+  /**
+   * The journal is filtered by area, person, actor and period and paged — far more combinations
+   * than a recording can hold. The recorder pages through the whole journal once; here every
+   * recorded page of it is merged and the filters and paging are applied the way the API applies
+   * them. Null when the request is not the journal or the seat has no recording of it.
+   */
+  private journalPage(entries: Map<string, DemoFixtureEntry>, path: string): JournalPage | null {
+    const [base, search = ''] = path.split('?');
+    if (!/^\/api\/kurin\/[^/]+\/journal$/.test(base)) {
+      return null;
+    }
+
+    const recorded = new Map<string, JournalItem>();
+    for (const entry of entries.values()) {
+      if (entry.m === 'GET' && entry.s === 200 && entry.p.split('?')[0] === base) {
+        for (const item of (entry.b as JournalPage | null)?.items ?? []) {
+          recorded.set(item.key, item);
+        }
+      }
+    }
+    if (recorded.size === 0) {
+      return null;
+    }
+
+    const query = new URLSearchParams(search);
+    const area = query.get('area');
+    const memberKey = query.get('memberKey');
+    const actorUserKey = query.get('actorUserKey');
+    const fromUtc = query.get('fromUtc');
+    const toUtc = query.get('toUtc');
+    const skip = Number(query.get('skip') ?? 0);
+    const take = Number(query.get('take') ?? 20);
+
+    const items = [...recorded.values()]
+      .filter(item =>
+        (!area || item.area === area)
+        && (!memberKey || item.subjectMemberKey === memberKey)
+        && (!actorUserKey || item.actorUserKey === actorUserKey)
+        && (!fromUtc || item.occurredAtUtc >= fromUtc)
+        && (!toUtc || item.occurredAtUtc < toUtc))
+      .sort((a, b) => b.occurredAtUtc.localeCompare(a.occurredAtUtc));
+
+    return { items: items.slice(skip, skip + take), hasMore: skip + take < items.length };
   }
 
   private fixtures(name: string): Promise<Map<string, DemoFixtureEntry>> {

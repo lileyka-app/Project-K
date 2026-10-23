@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
@@ -13,35 +14,48 @@ describe('SkillsReviewPageComponent', () => {
   let fixture: ComponentFixture<SkillsReviewPageComponent>;
   let component: SkillsReviewPageComponent;
 
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let memberServiceSpy: jasmine.SpyObj<MemberService>;
-  let badgesCatalogServiceSpy: jasmine.SpyObj<BadgesCatalogService>;
-  let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
-  let badgeImageBlobServiceSpy: jasmine.SpyObj<BadgeImageBlobService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let authServiceSpy: MockedObject<AuthService>;
+  let memberServiceSpy: MockedObject<MemberService>;
+  let badgesCatalogServiceSpy: MockedObject<BadgesCatalogService>;
+  let memberProgressServiceSpy: MockedObject<MemberProgressService>;
+  let badgeImageBlobServiceSpy: MockedObject<BadgeImageBlobService>;
+  let routerSpy: MockedObject<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   beforeEach(async () => {
-    authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getAll']);
-    badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
-    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeReviewQueue', 'reviewBadgeProgress']);
-    badgeImageBlobServiceSpy = jasmine.createSpyObj<BadgeImageBlobService>('BadgeImageBlobService', ['resolveBadgeImageForDisplay']);
-    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    authServiceSpy = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    memberServiceSpy = {
+      getAll: vi.fn()
+    } as MockedObject<MemberService>;
+    badgesCatalogServiceSpy = {
+      getAll: vi.fn()
+    } as MockedObject<BadgesCatalogService>;
+    memberProgressServiceSpy = {
+      getBadgeReviewQueue: vi.fn(),
+      reviewBadgeProgress: vi.fn()
+    } as MockedObject<MemberProgressService>;
+    badgeImageBlobServiceSpy = {
+      resolveBadgeImageForDisplay: vi.fn()
+    } as MockedObject<BadgeImageBlobService>;
+    routerSpy = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
     paramMapSubject = new BehaviorSubject(convertToParamMap({ kurinKey: 'kurin-1' }));
 
-    badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.and.callFake((url: string | null) => url);
+    badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.mockImplementation((url: string | null) => url);
 
-    authServiceSpy.getAuthStateValue.and.returnValue({
+    authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'user-1',
       memberKey: 'test-member-key',
       email: 'mentor@example.com',
-      isAdmin: false, permissions: ['Group:Update:OwnGroups'], roles: ['Group.Hurtkoviy'],
+      isAdmin: false, permissions: ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'], roles: ['KV.Vykhovnyk'],
       kurinKey: 'kurin-1',
       accessToken: 'token'
     });
 
-    badgesCatalogServiceSpy.getAll.and.returnValue(of([
+    badgesCatalogServiceSpy.getAll.mockReturnValue(of([
       {
         id: 'badge-1',
         title: 'Вузли',
@@ -57,7 +71,7 @@ describe('SkillsReviewPageComponent', () => {
       }
     ]));
 
-    memberProgressServiceSpy.getBadgeReviewQueue.and.returnValue(of([
+    memberProgressServiceSpy.getBadgeReviewQueue.mockReturnValue(of([
       {
         badgeProgressKey: 'bp-1',
         memberKey: 'member-1',
@@ -77,7 +91,7 @@ describe('SkillsReviewPageComponent', () => {
       }
     ]));
 
-    memberProgressServiceSpy.reviewBadgeProgress.and.returnValue(of({
+    memberProgressServiceSpy.reviewBadgeProgress.mockReturnValue(of({
       badgeProgressKey: 'bp-1',
       memberKey: 'member-1',
       kurinKey: 'kurin-1',
@@ -116,7 +130,7 @@ describe('SkillsReviewPageComponent', () => {
     fixture.detectChanges();
 
     expect(component).toBeTruthy();
-    expect(component.reviewItems.length).toBe(1);
+    expect(component.reviewItems).toHaveLength(1);
     expect(component.reviewItems[0].badgeTitle).toBe('Вузли');
     expect(component.reviewItems[0].memberDisplayName).toBe('Іван Петренко');
   });
@@ -128,9 +142,9 @@ describe('SkillsReviewPageComponent', () => {
     const reviewItem = component.reviewItems[0];
     component.onReview(reviewItem, true);
 
-    expect(component.isReviewDialogVisible).toBeTrue();
+    expect(component.isReviewDialogVisible).toBe(true);
     expect(component.pendingReviewItem?.reviewKey).toBe(reviewItem.reviewKey);
-    expect(component.pendingReviewIsApproved).toBeTrue();
+    expect(component.pendingReviewIsApproved).toBe(true);
 
     component.pendingReviewNote = '  '; // should be trimmed to null
     component.confirmReviewDialog();
@@ -139,7 +153,7 @@ describe('SkillsReviewPageComponent', () => {
       isApproved: true,
       note: null
     });
-    expect(component.reviewItems.length).toBe(0);
+    expect(component.reviewItems).toHaveLength(0);
   });
 
   it('should send note text from dialog when rejecting skill', () => {
@@ -158,7 +172,7 @@ describe('SkillsReviewPageComponent', () => {
   });
 
   it('should block queue loading for non-reviewer role', () => {
-    authServiceSpy.getAuthStateValue.and.returnValue({
+    authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'user-2',
       memberKey: 'test-member-key',
       email: 'member@example.com',
@@ -170,9 +184,9 @@ describe('SkillsReviewPageComponent', () => {
     createComponent();
     fixture.detectChanges();
 
-    expect(component.roleRestricted).toBeTrue();
+    expect(component.roleRestricted).toBe(true);
     expect(memberProgressServiceSpy.getBadgeReviewQueue).not.toHaveBeenCalled();
-    expect(component.reviewItems.length).toBe(0);
+    expect(component.reviewItems).toHaveLength(0);
   });
 
   it('goBackToKurin should navigate to kurin panel', () => {

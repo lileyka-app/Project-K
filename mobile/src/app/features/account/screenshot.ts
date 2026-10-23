@@ -1,7 +1,7 @@
 import { fitWithin } from './account.labels';
 
 /** What the upload endpoint takes as is (ImageUploadRules: PNG, JPEG, WebP up to 5 MB). */
-const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp'];
+const ACCEPTED = new Set(['image/png', 'image/jpeg', 'image/webp']);
 /** A phone photo is 4000+ px and several MB; a screenshot reads fine at this size. */
 const MAX_SIDE = 1920;
 const MAX_UNTOUCHED_BYTES = 1.5 * 1024 * 1024;
@@ -11,7 +11,7 @@ const MAX_UNTOUCHED_BYTES = 1.5 * 1024 * 1024;
  * photos, and formats the server refuses (HEIC), are drawn down to 1920 px and sent as JPEG.
  */
 export async function prepareScreenshot(file: File): Promise<{ blob: Blob; name: string }> {
-  if (ACCEPTED.includes(file.type) && file.size <= MAX_UNTOUCHED_BYTES) {
+  if (ACCEPTED.has(file.type) && file.size <= MAX_UNTOUCHED_BYTES) {
     const bitmap = await decode(file).catch(() => null);
     const small = !bitmap || Math.max(bitmap.width, bitmap.height) <= MAX_SIDE;
     bitmap?.close?.();

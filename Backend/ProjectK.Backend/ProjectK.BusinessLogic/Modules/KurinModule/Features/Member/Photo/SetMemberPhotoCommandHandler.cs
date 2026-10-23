@@ -1,5 +1,7 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -11,11 +13,13 @@ public class SetMemberPhotoCommandHandler
 {
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IPhotoService _photoService;
+    private readonly IKurinAudit _audit;
 
-    public SetMemberPhotoCommandHandler(IMemberUnitOfWork unitOfWork, IPhotoService photoService)
+    public SetMemberPhotoCommandHandler(IMemberUnitOfWork unitOfWork, IPhotoService photoService, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _photoService = photoService;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<string?>> Handle(
@@ -65,12 +69,24 @@ public class SetMemberPhotoCommandHandler
 
         // A verified profile is verified against the face on it, so a new photo puts the
         // verification back in the queue.
+        var verificationBefore = member.ProfileVerificationStatus;
         if (member.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent)
         {
             member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
         }
 
         _unitOfWork.Members.Update(member, cancellationToken);
+
+        // Where the photo is stored is not the journal's business: it says only that it changed.
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Member,
+                member.ProfilePhotoBlobName is null ? AuditActions.Member.PhotoRemoved : AuditActions.Member.PhotoChanged,
+                member.MemberKey,
+                MemberAuditFields.LabelOf(member),
+                member.MemberKey,
+                AuditChanges.Of((MemberAuditFields.ProfileVerification, verificationBefore, member.ProfileVerificationStatus))),
+            cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Only after the row no longer points at it — a blob deleted before the write would

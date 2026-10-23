@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -12,14 +13,14 @@ import { MembershipKind } from '../../../kurinModule/models/enums/membership-kin
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MemberDto } from '../../../kurinModule/models/member.dto';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
-import { MyGroupDto } from '../../models/me.dto';
+import { MyDutyDto, MyGroupDto } from '../../models/me.dto';
 import { DashboardComponent } from './dashboard';
 
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
   let component: DashboardComponent;
-  let auth: jasmine.SpyObj<AuthService>;
-  let members: jasmine.SpyObj<MemberService>;
+  let auth: MockedObject<AuthService>;
+  let members: MockedObject<MemberService>;
   let router: Router;
 
   const state: AuthState = {
@@ -47,13 +48,20 @@ describe('DashboardComponent', () => {
   ];
 
   beforeEach(() => {
-    auth = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue', 'getKurinScopeOptions', 'setKurinScope', 'getAuthState']);
-    auth.getAuthStateValue.and.returnValue(state);
-    auth.getAuthState.and.returnValue(of(state));
-    auth.getKurinScopeOptions.and.returnValue(of(kurins));
-    auth.setKurinScope.and.returnValue(of({ ...state, kurinKey: 'k2' }));
-    members = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
-    members.getByKey.and.returnValue(of(member));
+    auth = {
+      getAuthStateValue: vi.fn(),
+      getKurinScopeOptions: vi.fn(),
+      setKurinScope: vi.fn(),
+      getAuthState: vi.fn()
+    } as MockedObject<AuthService>;
+    auth.getAuthStateValue.mockReturnValue(state);
+    auth.getAuthState.mockReturnValue(of(state));
+    auth.getKurinScopeOptions.mockReturnValue(of(kurins));
+    auth.setKurinScope.mockReturnValue(of({ ...state, kurinKey: 'k2' }));
+    members = {
+      getByKey: vi.fn()
+    } as MockedObject<MemberService>;
+    members.getByKey.mockReturnValue(of(member));
 
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -64,11 +72,13 @@ describe('DashboardComponent', () => {
         provideHttpClientTesting(),
         { provide: AuthService, useValue: auth },
         { provide: MemberService, useValue: members },
-        { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) }
+        { provide: MessageService, useValue: {
+            add: vi.fn()
+          } }
       ]
     });
     router = TestBed.inject(Router);
-    spyOn(router, 'navigate').and.resolveTo(true);
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -108,5 +118,56 @@ describe('DashboardComponent', () => {
     component.openGroup(groups[1]);
     expect(auth.setKurinScope).toHaveBeenCalledWith('k2');
     expect(router.navigate).toHaveBeenCalledWith(['/group', 'g7']);
+  });
+
+  it('says «Сходин не було» through the sheet\'s endpoint and drops the row', () => {
+    const kurin = { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true };
+    const meeting: MyDutyDto = {
+      kind: 'EventWithoutAttendance', kurin, count: 1, groupKey: null, groupName: null,
+      agendaItemKey: 'e1', occurrenceStartUtc: '2026-10-05T14:00:00Z', title: 'Сходини',
+      key: 'EventWithoutAttendance:k1:-:e1:20261005T140000Z', fingerprint: '1'
+    };
+    const badges: MyDutyDto = { ...meeting, kind: 'BadgesToReview', count: 2, agendaItemKey: null, occurrenceStartUtc: null, title: null, key: 'BadgesToReview:k1:-:-:-', fingerprint: '2' };
+    component.duties.set([badges, meeting]);
+
+    component.markNotHeld(meeting);
+    const request = TestBed.inject(HttpTestingController)
+      .expectOne(r => r.url.endsWith(`/kurin/k1/score/events/e1/${encodeURIComponent('2026-10-05T14:00:00Z')}/not-held`));
+    expect(request.request.method).toBe('PUT');
+    request.flush({});
+
+    expect(component.duties()).toEqual([badges]);
+  });
+
+  it('hides a duty for this person alone, and brings the hidden ones back read afresh', () => {
+    const http = TestBed.inject(HttpTestingController);
+    const kurin = { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true };
+    const badges: MyDutyDto = {
+      kind: 'BadgesToReview', kurin, count: 2, groupKey: null, groupName: null, agendaItemKey: null, occurrenceStartUtc: null, title: null,
+      key: 'BadgesToReview:k1:-:-:-', fingerprint: '2'
+    };
+    component.duties.set([badges]);
+
+    component.hideDuty(badges);
+    const dismiss = http.expectOne(r => r.url.endsWith('/me/duties/dismissed') && r.method === 'POST');
+    expect(dismiss.request.body).toEqual({ key: 'BadgesToReview:k1:-:-:-', fingerprint: '2' });
+    dismiss.flush({});
+    expect(component.duties()).toEqual([]);
+    expect(component.dutiesHidden()).toBe(1);
+
+    component.restoreDuties();
+    http.expectOne(r => r.url.endsWith('/me/duties/dismissed') && r.method === 'DELETE').flush({});
+    http.match(r => r.url.endsWith('/me/duties/board')).forEach(r => r.flush({ items: [badges], hiddenCount: 0 }));
+    expect(component.duties()).toEqual([badges]);
+    expect(component.dutiesHidden()).toBe(0);
+  });
+
+  it('reads the bare list an older server or the static demo sends as nothing hidden', () => {
+    TestBed.inject(HttpTestingController).match(r => r.url.endsWith('/me/duties/board')).forEach(r => r.flush([
+      { kind: 'BadgesToReview', kurin: { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true }, count: 2, groupKey: null, groupName: null, agendaItemKey: null, occurrenceStartUtc: null, title: null }
+    ]));
+
+    expect(component.duties()[0].key).toBe('');
+    expect(component.dutiesHidden()).toBe(0);
   });
 });

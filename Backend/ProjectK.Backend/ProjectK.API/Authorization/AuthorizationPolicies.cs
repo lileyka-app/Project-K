@@ -26,9 +26,6 @@ public static class AuthorizationPolicies
     /// <summary>Offices that lead groups, whole-kurin management included.</summary>
     public const string RequireGroupLeadership = "RequireGroupLeadership";
 
-    /// <summary>Offices allowed to author agenda items.</summary>
-    public const string RequireAgendaAuthor = "RequireAgendaAuthor";
-
     /// <summary>Offices allowed to author planning sessions.</summary>
     public const string RequirePlanningAuthor = "RequirePlanningAuthor";
 
@@ -43,7 +40,6 @@ public static class AuthorizationPolicies
 
         options.AddPolicy(RequireKurinManagement, ByRoles(RolePermissionMap.GrantsWholeKurinManagement));
         options.AddPolicy(RequireGroupLeadership, ByRoles(RolePermissionMap.GrantsGroupLeadership));
-        options.AddPolicy(RequireAgendaAuthor, ByRoles(RolePermissionMap.GrantsAgendaAuthoring));
         options.AddPolicy(RequirePlanningAuthor, ByRoles(RolePermissionMap.GrantsPlanningAuthoring));
 
         options.AddPolicy(RequireUser,

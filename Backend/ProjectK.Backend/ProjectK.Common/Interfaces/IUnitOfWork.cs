@@ -34,6 +34,7 @@ public interface IUnitOfWork
     IWebPushSubscriptionRepository WebPushSubscriptions { get; }
     ISystemSettingRepository SystemSettings { get; }
     IUserTileLayoutRepository UserTileLayouts { get; }
+    IDismissedDutyRepository DismissedDuties { get; }
     IAppUserRepository Users { get; }
     Task<int> SaveChangesAsync(CancellationToken token = default);
     Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default);

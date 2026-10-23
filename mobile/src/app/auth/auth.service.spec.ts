@@ -1,9 +1,9 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiUrl } from '../runtime-config';
-import { AuthService } from './auth.service';
+import { AuthService, loginErrorText } from './auth.service';
 
 const signedIn = {
   userKey: 'u1',
@@ -95,8 +95,51 @@ describe('AuthService', () => {
     expect(fresh.signedIn()).toBe(true);
     expect(localStorage.getItem('authState')).not.toBeNull();
   });
+
+  it('takes the access a refresh reports, so a new office reaches the menu', async () => {
+    const login = auth.login('yunak@example.com', 'secret');
+    http.expectOne(`${api}/auth/login`).flush(signedIn);
+    await login;
+
+    const refresh = auth.refresh();
+    http.expectOne(`${api}/auth/refresh`).flush({
+      accessToken: 'access-2',
+      access: { isAdmin: false, roles: ['Group.Hurtkoviy'], permissions: ['Group:Update:OwnGroups'], kurinKey: 'k1' },
+    });
+    await refresh;
+
+    expect(auth.accessToken()).toBe('access-2');
+    expect(auth.user()?.roles).toEqual(['Group.Hurtkoviy']);
+    expect(auth.user()?.permissions).toEqual(['Group:Update:OwnGroups']);
+    expect(JSON.parse(localStorage.getItem('authState') ?? '{}').permissions).toEqual(['Group:Update:OwnGroups']);
+  });
+
+  it('keeps the access as it was when an older server answers without it', async () => {
+    const login = auth.login('yunak@example.com', 'secret');
+    http.expectOne(`${api}/auth/login`).flush({ ...signedIn, permissions: ['Member:Read:KurinWide'] });
+    await login;
+
+    const refresh = auth.refresh();
+    http.expectOne(`${api}/auth/refresh`).flush({ accessToken: 'access-2' });
+    await refresh;
+
+    expect(auth.accessToken()).toBe('access-2');
+    expect(auth.user()?.permissions).toEqual(['Member:Read:KurinWide']);
+  });
 });
 
 function settle(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve));
 }
+
+describe('loginErrorText', () => {
+  it('tells a paused email to wait 15 minutes, not a minute', () => {
+    const paused = new HttpErrorResponse({ status: 429, error: { error: 'TooManyAttempts' } });
+    expect(loginErrorText(paused, '')).toContain('15 хвилин');
+  });
+
+  it('keeps the short wait for the address limiter', () => {
+    const limited = new HttpErrorResponse({ status: 429, error: null });
+    expect(loginErrorText(limited, '')).toBe('Забагато спроб. Спробуй за хвилину.');
+  });
+});

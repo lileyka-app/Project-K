@@ -30,42 +30,19 @@ public sealed class GetAssignTargetsQueryHandler
 
     public async Task<ServiceResult<AgendaAssignTargetsResponse>> Handle(GetAssignTargetsQuery request, CancellationToken cancellationToken)
     {
-        var viewer = await _access.BuildViewerAsync(request.KurinKey, cancellationToken);
-
-        var kurinDecision = await _access.AuthorizeTargetAsync(
-            new AgendaTargetInput { TargetType = AgendaTargetType.Kurin, TargetKey = request.KurinKey },
-            ResourceAction.Create,
-            cancellationToken);
+        // The same reach the create handler checks target by target, worked out once for the tree,
+        // so the tree never offers what a save would refuse.
+        var reach = await _access.GetAssignReachAsync(request.KurinKey, cancellationToken);
+        if (!reach.CanAuthor)
+        {
+            return ServiceResult<AgendaAssignTargetsResponse>.Failure(
+                ResultType.Forbidden, "AGENDA_AUTHOR_FORBIDDEN", "The kurin's policy lets this user assign nothing.");
+        }
 
         var groups = (await _uow.Groups.GetAllAsync(request.KurinKey, cancellationToken)).ToList();
         var members = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
         var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
 
-        // Whoever may aim at the whole kurin sees every group; the rest see their own and the ones they
-        // lead. Each group is then asked the same question the create handler will ask, so the tree never
-        // offers what a save would refuse.
-        var visibleGroups = viewer.CanSeeWholeKurin || kurinDecision.IsAllowed
-            ? groups
-            : groups.Where(g => viewer.VisibilityGroupKeys.Contains(g.GroupKey)).ToList();
-
-        var targetableGroups = new HashSet<Guid>();
-        foreach (var group in visibleGroups)
-        {
-            var groupDecision = kurinDecision.IsAllowed
-                ? kurinDecision
-                : await _access.AuthorizeTargetAsync(
-                    new AgendaTargetInput { TargetType = AgendaTargetType.Group, TargetKey = group.GroupKey },
-                    ResourceAction.Create,
-                    cancellationToken);
-            if (groupDecision.IsAllowed)
-            {
-                targetableGroups.Add(group.GroupKey);
-            }
-        }
-
-        // Проводи share the scope of what they lead: КВ/Курінний провід ⇒ kurin scope, Гуртковий провід
-        // ⇒ its group. So the kurin-level offices are targetable exactly when the whole kurin is, and a
-        // гуртковий провід exactly when its group is — no extra authorization round-trips needed.
         var leaderships = await _uow.Leaderships.GetLeadershipRefsForKurinAsync(request.KurinKey, cancellationToken);
         var groupLeaderships = leaderships
             .Where(l => l.Type == LeadershipType.Group && l.GroupKey.HasValue)
@@ -79,42 +56,46 @@ public sealed class GetAssignTargetsQueryHandler
             {
                 LeadershipKey = l.LeadershipKey,
                 Label = AgendaLookups.LabelFor(l.Type, l.GroupKey, groupNames),
-                CanTarget = kurinDecision.IsAllowed
+                CanTarget = reach.ReachesProvid(null)
             })
+            .ToList();
+
+        var groupTargets = groups
+            .OrderBy(g => g.Name)
+            .Select(g => new AgendaGroupTargetDto
+            {
+                GroupKey = g.GroupKey,
+                Name = g.Name,
+                CanTargetGroup = reach.ReachesGroup(g.GroupKey),
+                Leadership = groupLeaderships.TryGetValue(g.GroupKey, out var office)
+                    ? new AgendaLeadershipTargetDto
+                    {
+                        LeadershipKey = office.LeadershipKey,
+                        Label = AgendaLookups.LabelFor(office.Type, office.GroupKey, groupNames),
+                        CanTarget = reach.ReachesProvid(g.GroupKey)
+                    }
+                    : null,
+                Members = members
+                    .Where(m => m.GroupKey == g.GroupKey)
+                    .OrderBy(m => m.LastName)
+                    .Select(m => new AgendaMemberTargetDto
+                    {
+                        MemberKey = m.MemberKey,
+                        FullName = $"{m.FirstName} {m.LastName}".Trim(),
+                        CanTarget = reach.ReachesMember(m.GroupKey, m.UserKey)
+                    })
+                    .ToList()
+            })
+            .Where(g => g.CanTargetGroup || g.Leadership?.CanTarget == true || g.Members.Any(m => m.CanTarget))
             .ToList();
 
         var response = new AgendaAssignTargetsResponse
         {
-            CanTargetKurin = kurinDecision.IsAllowed,
+            CanTargetKurin = reach.ReachesKurin,
             KurinKey = request.KurinKey,
             KurinLabel = AgendaLookups.KurinLabel,
             KurinLeaderships = kurinLeaderships,
-            Groups = visibleGroups
-                .OrderBy(g => g.Name)
-                .Select(g => new AgendaGroupTargetDto
-                {
-                    GroupKey = g.GroupKey,
-                    Name = g.Name,
-                    CanTargetGroup = targetableGroups.Contains(g.GroupKey),
-                    Leadership = groupLeaderships.TryGetValue(g.GroupKey, out var office)
-                        ? new AgendaLeadershipTargetDto
-                        {
-                            LeadershipKey = office.LeadershipKey,
-                            Label = AgendaLookups.LabelFor(office.Type, office.GroupKey, groupNames),
-                            CanTarget = targetableGroups.Contains(g.GroupKey)
-                        }
-                        : null,
-                    Members = members
-                        .Where(m => m.GroupKey == g.GroupKey)
-                        .OrderBy(m => m.LastName)
-                        .Select(m => new AgendaMemberTargetDto
-                        {
-                            MemberKey = m.MemberKey,
-                            FullName = $"{m.FirstName} {m.LastName}".Trim()
-                        })
-                        .ToList()
-                })
-                .ToList()
+            Groups = groupTargets
         };
 
         return new ServiceResult<AgendaAssignTargetsResponse>(ResultType.Success, response);

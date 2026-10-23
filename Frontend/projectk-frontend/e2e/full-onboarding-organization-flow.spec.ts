@@ -25,7 +25,9 @@ test.describe('Full onboarding organization workflow', () => {
 
     const suffix = scenarioSuffix(testInfo);
     const password = 'Flow@12345';
-    const kurinNumber = `8${Date.now().toString().slice(-4)}`;
+    // Kurin numbers are capped (KurinNumbers:MaxNumber, 200); the seeded kurins sit low, so the
+    // upper half keeps the scenario clear of them.
+    const kurinNumber = String(101 + (Date.now() % 99));
     const managerEmail = scenarioEmail(suffix, 'flow.manager');
     const mentorEmail = scenarioEmail(suffix, 'flow.mentor');
     const regularUserEmail = scenarioEmail(suffix, 'flow.user');
@@ -67,7 +69,7 @@ test.describe('Full onboarding organization workflow', () => {
       const invitation = await getLatestInvitationByEmail(request, managerEmail);
       expect(invitation.token).toBeTruthy();
 
-      await page.evaluate(() => localStorage.clear());
+      await page.evaluate(() => { localStorage.clear(); localStorage.setItem('lk.preferWeb', '1'); });
       await page.context().clearCookies();
       await page.goto(`/activate/${invitation.token}`);
       await expect(page.getByText('Активація акаунта')).toBeVisible();
@@ -196,7 +198,7 @@ test.describe('Full onboarding organization workflow', () => {
         expect(groupMemberNames).toContain(memberName);
       }
 
-      await page.evaluate(() => localStorage.clear());
+      await page.evaluate(() => { localStorage.clear(); localStorage.setItem('lk.preferWeb', '1'); });
       await page.context().clearCookies();
       await loginThroughUi(page, managerUser);
       await page.goto('/kurin');
@@ -204,7 +206,7 @@ test.describe('Full onboarding organization workflow', () => {
       await expect(page.locator('body')).toContainText(groupB.name);
       await expect(page.locator('body')).toContainText(`FlowMentor${suffix}`);
 
-      await page.evaluate(() => localStorage.clear());
+      await page.evaluate(() => { localStorage.clear(); localStorage.setItem('lk.preferWeb', '1'); });
       await page.context().clearCookies();
       await loginThroughUi(page, mentorUser);
       await page.goto(`/group/${groupA.groupKey}`);

@@ -159,8 +159,9 @@ public record AgendaPartDto
 }
 
 /// <summary>
-/// The "Assign for" tree already trimmed to what the current user may target: the whole kurin and any
-/// group/member for managers, only assigned groups and their members for mentors and group leaders.
+/// The "Assign for" tree, flagged by what the kurin's policy lets the current user target: each kind of
+/// target (the kurin, a гурток, a провід, a person) has its own row. A гурток is listed when anything
+/// in it may be picked.
 /// </summary>
 public record AgendaAssignTargetsResponse
 {
@@ -197,4 +198,7 @@ public record AgendaMemberTargetDto
 {
     public Guid MemberKey { get; set; }
     public string FullName { get; set; } = string.Empty;
+
+    /// <summary>False when the person is listed only beside the гурток or провід the viewer may pick.</summary>
+    public bool CanTarget { get; set; }
 }

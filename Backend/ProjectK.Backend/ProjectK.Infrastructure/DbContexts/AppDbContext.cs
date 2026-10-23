@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.ScoreModule;
@@ -16,6 +17,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Infrastructure.DbContexts;
@@ -40,9 +42,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<AgendaCategory> AgendaCategories { get; set; }
     public DbSet<AgendaResponse> AgendaResponses { get; set; }
     public DbSet<BadgeProgress> BadgeProgresses { get; set; }
-    public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
     public DbSet<ProbeProgress> ProbeProgresses { get; set; }
-    public DbSet<ProbeProgressAuditEvent> ProbeProgressAuditEvents { get; set; }
     public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
     public DbSet<MentorAssignment> MentorAssignments { get; set; }
     public DbSet<MemberWarning> MemberWarnings { get; set; }
@@ -62,19 +62,24 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<ScoreItem> ScoreItems { get; set; }
     public DbSet<ScoreStage> ScoreStages { get; set; }
     public DbSet<ScoreAttendance> ScoreAttendances { get; set; }
+    public DbSet<ScoreNotHeldOccurrence> ScoreNotHeldOccurrences { get; set; }
     public DbSet<ScoreEntry> ScoreEntries { get; set; }
     public DbSet<ScoreGroupMove> ScoreGroupMoves { get; set; }
     public DbSet<ScoreTrailEvent> ScoreTrailEvents { get; set; }
     public DbSet<PrivateScoreCriterion> PrivateScoreCriteria { get; set; }
     public DbSet<PrivateScoreEntry> PrivateScoreEntries { get; set; }
 
+    public DbSet<KurinAuditEvent> KurinAuditEvents { get; set; }
+
     public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
     public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+    public DbSet<CalendarFeed> CalendarFeeds { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
     public DbSet<AppNotification> AppNotifications { get; set; }
     public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<UserTileLayout> UserTileLayouts { get; set; }
+    public DbSet<DismissedDuty> DismissedDuties { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -356,6 +361,15 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasIndex(e => new { e.KurinKey, e.AgendaItemKey });
         });
 
+        builder.Entity<ScoreNotHeldOccurrence>(entity =>
+        {
+            entity.HasKey(e => e.ScoreNotHeldOccurrenceKey);
+            entity.HasIndex(e => new { e.AgendaItemKey, e.OccurrenceStartUtc })
+                .IsUnique()
+                .HasDatabaseName("IX_ScoreNotHeldOccurrences_OnePerOccurrence");
+            entity.HasIndex(e => e.KurinKey);
+        });
+
         builder.Entity<ScoreEntry>(entity =>
         {
             entity.HasKey(e => e.ScoreEntryKey);
@@ -407,6 +421,34 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
             entity.HasIndex(e => e.SubjectKey);
             entity.HasIndex(e => e.KurinKey);
+        });
+
+        // The journal holds everything by key and names by snapshot, with no foreign key anywhere:
+        // an entry has to outlive the person, the гурток and the record it describes.
+        builder.Entity<KurinAuditEvent>(entity =>
+        {
+            entity.HasKey(e => e.KurinAuditEventKey);
+            entity.Property(e => e.Area).HasConversion<int>();
+            entity.Property(e => e.Action).HasMaxLength(KurinAuditEvent.ActionMaxLength).IsRequired();
+            entity.Property(e => e.ActorName).HasMaxLength(KurinAuditEvent.NameMaxLength);
+            entity.Property(e => e.ActorRole).HasMaxLength(KurinAuditEvent.RoleMaxLength).IsRequired();
+            entity.Property(e => e.SubjectMemberName).HasMaxLength(KurinAuditEvent.NameMaxLength);
+            entity.Property(e => e.SubjectLabel).HasMaxLength(KurinAuditEvent.LabelMaxLength).IsRequired();
+            entity.Property(e => e.Note).HasMaxLength(KurinAuditEvent.NoteMaxLength);
+            entity.Property(e => e.Changes)
+                  .HasConversion(
+                      changes => JsonSerializer.Serialize(changes, (JsonSerializerOptions?)null),
+                      json => JsonSerializer.Deserialize<List<AuditChange>>(json, (JsonSerializerOptions?)null) ?? new List<AuditChange>(),
+                      new ValueComparer<List<AuditChange>>(
+                          (a, b) => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(b, (JsonSerializerOptions?)null),
+                          changes => JsonSerializer.Serialize(changes, (JsonSerializerOptions?)null).GetHashCode(),
+                          changes => JsonSerializer.Deserialize<List<AuditChange>>(JsonSerializer.Serialize(changes, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!))
+                  .IsRequired();
+            entity.HasIndex(e => new { e.KurinKey, e.OccurredAtUtc }).IsDescending(false, true);
+            entity.HasIndex(e => new { e.SubjectMemberKey, e.OccurredAtUtc });
+            entity.HasIndex(e => e.SubjectKey);
+            entity.HasIndex(e => e.ActorUserKey);
+            entity.HasIndex(e => e.OccurredAtUtc);
         });
 
         builder.Entity<MemberAward>(entity =>
@@ -591,26 +633,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .IsUnique();
         });
 
-        builder.Entity<BadgeProgressAuditEvent>(entity =>
-        {
-            entity.HasKey(e => e.BadgeProgressAuditEventKey);
-            entity.Property(e => e.FromStatus)
-                .HasConversion<int?>();
-            entity.Property(e => e.ToStatus)
-                .HasConversion<int>();
-            entity.Property(e => e.Action)
-                .HasMaxLength(100)
-                .IsRequired();
-            entity.Property(e => e.ActorRole)
-                .HasMaxLength(50)
-                .IsRequired();
-            entity.HasOne(e => e.BadgeProgress)
-                .WithMany(p => p.AuditEvents)
-                .HasForeignKey(e => e.BadgeProgressKey)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => e.BadgeProgressKey);
-        });
-
         builder.Entity<ProbeProgress>(entity =>
         {
             entity.HasKey(e => e.ProbeProgressKey);
@@ -621,26 +643,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasConversion<int>();
             entity.HasIndex(e => new { e.MemberKey, e.ProbeId })
                 .IsUnique();
-        });
-
-        builder.Entity<ProbeProgressAuditEvent>(entity =>
-        {
-            entity.HasKey(e => e.ProbeProgressAuditEventKey);
-            entity.Property(e => e.FromStatus)
-                .HasConversion<int?>();
-            entity.Property(e => e.ToStatus)
-                .HasConversion<int>();
-            entity.Property(e => e.Action)
-                .HasMaxLength(100)
-                .IsRequired();
-            entity.Property(e => e.ActorRole)
-                .HasMaxLength(50)
-                .IsRequired();
-            entity.HasOne(e => e.ProbeProgress)
-                .WithMany(p => p.AuditEvents)
-                .HasForeignKey(e => e.ProbeProgressKey)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => e.ProbeProgressKey);
         });
 
         builder.Entity<ProbePointProgress>(entity =>
@@ -683,6 +685,24 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .IsRequired();
             // Looked up by token on every refresh, and swept per user on a password change.
             entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.RevokedAtUtc });
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<CalendarFeed>(entity =>
+        {
+            entity.HasKey(e => e.CalendarFeedKey);
+            entity.Property(e => e.TokenHash)
+                .HasMaxLength(64)
+                .IsFixedLength()
+                .IsUnicode(false)
+                .IsRequired();
+            entity.Property(e => e.RevokedReason).HasConversion<int>();
+            // Looked up by hash on every fetch, and swept per user by a security change.
+            entity.HasIndex(e => e.TokenHash).IsUnique();
             entity.HasIndex(e => new { e.UserId, e.RevokedAtUtc });
             entity.HasOne(e => e.User)
                   .WithMany()
@@ -805,6 +825,23 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasForeignKey(e => e.UserKey)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.UserKey, e.BoardKey }).IsUnique();
+        });
+
+        builder.Entity<DismissedDuty>(entity =>
+        {
+            entity.HasKey(e => e.DismissedDutyKey);
+            entity.Property(e => e.DutyKey)
+                .HasMaxLength(DismissedDuty.DutyKeyMaxLength)
+                .IsRequired();
+            entity.Property(e => e.Fingerprint)
+                .HasMaxLength(DismissedDuty.FingerprintMaxLength)
+                .IsRequired();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.UserKey, e.DutyKey }).IsUnique();
+            entity.HasIndex(e => e.DismissedAtUtc);
         });
     }
 }

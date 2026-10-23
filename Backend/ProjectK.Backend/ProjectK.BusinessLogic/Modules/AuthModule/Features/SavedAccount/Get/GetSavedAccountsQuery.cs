@@ -60,15 +60,15 @@ public class GetSavedAccountsQueryHandler : IRequestHandler<GetSavedAccountsQuer
         var accounts = new List<SavedAccountDto>();
         var listed = new HashSet<Guid>(activeUsers);
 
-        foreach (var session in live.Reverse())
+        foreach (var userKey in live.Reverse().Select(session => session.UserKey))
         {
-            if (!listed.Add(session.UserKey))
+            if (!listed.Add(userKey))
             {
                 continue;
             }
 
             // A suspended account keeps its row until the session expires, but it cannot be switched to.
-            var user = await _userManager.FindByIdAsync(session.UserKey.ToString());
+            var user = await _userManager.FindByIdAsync(userKey.ToString());
             if (user is null || !user.CanSignIn())
             {
                 continue;

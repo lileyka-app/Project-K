@@ -126,6 +126,12 @@ export interface GroupScoreDto {
   canScore: boolean;
 }
 
+/** Who said an occurrence did not take place, and when. */
+export interface OccurrenceNotHeldDto {
+  markedByName: string | null;
+  markedAtUtc: string;
+}
+
 export interface AttendanceMarkDto {
   markedByName: string | null;
   markedAtUtc: string;
@@ -169,6 +175,8 @@ export interface AttendanceSheetDto {
   groups: SheetGroupDto[];
   items: ScoreItemDto[];
   canManage: boolean;
+  /** Set when someone said the occurrence did not take place; nobody can be marked then. */
+  notHeld: OccurrenceNotHeldDto | null;
 }
 
 export interface MarkAttendanceResultDto {

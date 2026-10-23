@@ -1,5 +1,7 @@
 import { Params } from '@angular/router';
+import { dateLabel, timeLabel } from '../../me/labels';
 import {
+  OccurrenceNotHeldDto,
   SCORE_SOURCE_ORDER,
   ScorePeriodDto,
   ScorePeriodQuery,
@@ -95,13 +97,18 @@ export function rsvpLabel(person: SheetPersonDto): string | null {
 }
 
 /** «mine» — the гуртки I score; «all» — the whole kurin; else one гурток's key. */
-export type SheetGroupFilter = 'mine' | 'all' | string;
+export type SheetGroupFilter = string;
+
+function inGroup(person: SheetPersonDto, group: SheetGroupFilter): boolean {
+  if (group === 'mine') return person.canScore;
+  return group === 'all' || person.groupKey === group;
+}
 
 /** Who the sheet lists: by гурток, then by name, case-insensitive. */
 export function filterSheet(people: SheetPersonDto[], group: SheetGroupFilter, term: string): SheetPersonDto[] {
   const needle = term.trim().toLocaleLowerCase('uk');
   return people
-    .filter((p) => (group === 'mine' ? p.canScore : group === 'all' ? true : p.groupKey === group))
+    .filter((p) => inGroup(p, group))
     .filter((p) => !needle || p.fullName.toLocaleLowerCase('uk').includes(needle));
 }
 
@@ -124,4 +131,10 @@ export function shortDate(value: string, withYear = false): string {
   const date = parseDay(value);
   const dm = `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
   return withYear ? `${dm}.${date.getFullYear()}` : dm;
+}
+
+/** «Гуртковий, 6 жовтня 2026, 19:00» — who said сходини did not take place, and when. */
+export function notHeldLine(notHeld: OccurrenceNotHeldDto): string {
+  const at = new Date(notHeld.markedAtUtc);
+  return [notHeld.markedByName ?? 'хтось із проводу', dateLabel(at), timeLabel(at, null, false)].join(', ');
 }

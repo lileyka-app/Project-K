@@ -27,7 +27,7 @@ import { Toasts } from '../../core/toast';
 import { IMAGE_TOO_LARGE } from './image-crop';
 import { CroppedImage, ImageCropSheet } from './image-crop.sheet';
 import { kurinAccess, shortDate, toDateOnly, utcDate } from './kurin.labels';
-import { CardFields, MemberDto, ProfileVerificationStatus, WarningLevel } from './kurin.models';
+import { CardFields, MemberDataGroup, MemberDto, ProfileVerificationStatus, WarningLevel } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
 import {
@@ -50,6 +50,7 @@ import {
   cardFieldError,
   changedCardExtras,
   fieldMode,
+  hiddenGroupOf,
   canSelectWarning,
   closeBranch,
   isPendingAccount,
@@ -63,7 +64,9 @@ import {
   toggleWarning,
   warningCalls,
   warningChecked,
+  warningInForce,
 } from './member-edit';
+import { MemberAbilities, NO_ABILITIES, mayCancelWarning, mayGiveWarning } from './abilities';
 
 const SAVE_ERRORS = {
   ContactInfoLinked: 'Телефон цього акаунта змінюється в налаштуваннях акаунта.',
@@ -113,6 +116,13 @@ const PARENT_PHONES = ['motherPhone', 'fatherPhone'] as const;
 /** A field the край requires comes back in the server's own words, which name it. */
 function saveErrorText(error: unknown, fallback: string): string {
   return cardFieldError(error) ?? apiErrorText(error, fallback, SAVE_ERRORS);
+}
+
+function resendErrorText(error: unknown): string {
+  const status = error instanceof HttpErrorResponse ? error.status : 0;
+  if (status === 409) return 'Акаунт уже активовано — запрошення більше не потрібне. Онови сторінку.';
+  if (status === 500) return 'Поштовий сервіс не прийняв лист. Спробуй за хвилину; попереднє посилання ще діє.';
+  return apiErrorText(error, 'Лист не надіслано. Спробуй ще раз.');
 }
 
 /**
@@ -385,6 +395,8 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   cardFields: CardFields | null = null;
   /** The kurin the member is in or goes to, when neither the card nor the placement says it. */
   kurinKey: string | null = null;
+  /** What the kurin's policy lets this person do to the member: which перестороги to give and lift. */
+  abilities: MemberAbilities = NO_ABILITIES;
 
   /** The profile check is done at once, as on the web; the card reads itself again after. */
   protected changed = false;
@@ -397,7 +409,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   private readonly user = this.auth.user();
   private readonly access = kurinAccess(this.user);
   /** Web isReviewer: Виховник and up. */
-  private readonly reviewer = this.access.reviewSkills;
+  private readonly reviewer = this.access.leadGroups;
 
   protected readonly form = signal<MemberForm>({ firstName: '', middleName: '', lastName: '', email: '', phoneNumber: '', dateOfBirth: '', address: '', school: '',
     motherFirstName: '', motherLastName: '', motherPhone: '', fatherFirstName: '', fatherLastName: '', fatherPhone: '' });
@@ -428,15 +440,15 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   protected readonly canWarnings = signal(false);
   protected readonly canDelete = signal(false);
 
-  /** The form's fields this sheet asks (a hidden one goes back as it was read), then the край's own. */
+  /** The form's fields this sheet asks, then the край's own; a group the kurin hides from the editor is not shown at all. */
   protected readonly rows = computed<Row[]>(() => [
-    ...FIELDS.filter((f) => (f.key !== 'email' || this.showEmail()) && fieldMode(this.card(), f.key) !== 'hidden').map((f) => ({
+    ...FIELDS.filter((f) => (f.key !== 'email' || this.showEmail()) && fieldMode(this.card(), f.key) !== 'hidden' && !this.hides(hiddenGroupOf(f.key))).map((f) => ({
       ...f,
       extra: false,
       testId: `profile-${f.key}`,
       max: f.type === 'date' ? this.today : undefined,
     })),
-    ...this.card().extra.map((f) => ({
+    ...(this.hides('extras') ? [] : this.card().extra).map((f) => ({
       key: f.key,
       label: f.label,
       type: f.type,
@@ -500,13 +512,18 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     // The провід, and a member on their own card (a change makes a verified profile stale).
     this.canRanks.set(this.reviewer || this.own);
     this.canVerify.set(this.verificationEnabled && !this.own && this.reviewer);
-    this.canWarnings.set(this.reviewer);
+    this.canWarnings.set(this.abilities.warnings.give.length > 0 || this.abilities.warnings.cancel !== 'None');
     this.canDelete.set(this.access.manageWholeKurin);
   }
 
   ngOnDestroy(): void {
     const url = this.preview();
     if (url) URL.revokeObjectURL(url);
+  }
+
+  /** Whether the kurin hides this group of the member's data from whoever edits. */
+  private hides(group: MemberDataGroup | null): boolean {
+    return !this.creating && !!group && (this.member?.hiddenData?.includes(group) ?? false);
   }
 
   protected rowValue(row: Row): string {
@@ -554,21 +571,34 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     return warningChecked(this.member?.warnings, this.draft(), level);
   }
 
-  /** As the web's checkbox: tick when the level before is ticked, untick only one's own. */
+  /**
+   * As the web's dialog: tick a level the kurin lets this person give once the one before is ticked;
+   * untick one's own while one may still give it, or anyone's with the right to.
+   */
   protected canToggle(level: WarningLevel): boolean {
     const warnings = this.member?.warnings;
-    return this.isChecked(level)
-      ? canClearWarning(warnings, this.draft(), level, this.user?.userKey)
-      : canSelectWarning(warnings, this.draft(), level);
+    if (!this.isChecked(level)) {
+      return mayGiveWarning(this.abilities, level) && canSelectWarning(warnings, this.draft(), level);
+    }
+    if (this.draft().assign.includes(level)) return true;
+    const current = warningInForce(warnings, level);
+    return !!current && mayCancelWarning(this.abilities, level, current.issuedByUserKey, this.user?.userKey)
+      && canClearWarning(warnings, this.draft(), level, this.user?.userKey, Date.now(), this.cancelsAnyone());
   }
 
   protected warningHint(level: WarningLevel): string | null {
     if (this.canToggle(level)) return null;
-    return this.isChecked(level) ? 'Скасувати може лише автор перестороги.' : 'Доступно після попереднього рівня.';
+    if (this.isChecked(level)) return 'Скасувати може автор перестороги або той, кому курінь це дозволив.';
+    return canSelectWarning(this.member?.warnings, this.draft(), level) ? 'Цю дає хтось інший.' : 'Доступно після попереднього рівня.';
   }
 
   protected toggle(level: WarningLevel, on: boolean): void {
-    this.draft.set(toggleWarning(this.member?.warnings, this.draft(), level, on, this.user?.userKey));
+    if (on === this.isChecked(level) || !this.canToggle(level)) return;
+    this.draft.set(toggleWarning(this.member?.warnings, this.draft(), level, on, this.user?.userKey, Date.now(), this.cancelsAnyone()));
+  }
+
+  private cancelsAnyone(): boolean {
+    return this.abilities.warnings.cancel === 'Any';
   }
 
   protected close(result: ProfileEditResult): void {
@@ -630,14 +660,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
       await this.data.resendInvitation(member.memberKey);
       await this.toasts.show(`Нове посилання пішло на ${member.email}. Попереднє більше не діє.`);
     } catch (error) {
-      const status = error instanceof HttpErrorResponse ? error.status : 0;
-      const text =
-        status === 409
-          ? 'Акаунт уже активовано — запрошення більше не потрібне. Онови сторінку.'
-          : status === 500
-            ? 'Поштовий сервіс не прийняв лист. Спробуй за хвилину; попереднє посилання ще діє.'
-            : apiErrorText(error, 'Лист не надіслано. Спробуй ще раз.');
-      await this.toasts.show(text, 'danger');
+      await this.toasts.show(resendErrorText(error), 'danger');
     } finally {
       this.sending.set(false);
     }

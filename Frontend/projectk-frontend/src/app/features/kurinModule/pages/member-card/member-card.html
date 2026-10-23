@@ -56,14 +56,16 @@
                     }
 
                     <div class="member-summary mt-3 grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
+                        @if (!hides('contacts')) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Email: </span>
                             <span class="member-summary-value">
                                 @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else { Не вказано }
                             </span>
                         </p>
+                        }
 
-                        @if (showsField('phoneNumber')) {
+                        @if (showsField('phoneNumber') && !hides('contacts')) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Телефон: </span>
                             <span class="member-summary-value">
@@ -72,12 +74,16 @@
                         </p>
                         }
 
+                        @if (member.dateOfBirth || birthdayText || !hides('birthDate')) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Дата народження: </span>
                             <span class="member-summary-value">
-                                {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Не вказано' }}
+                                @if (member.dateOfBirth) { {{ member.dateOfBirth | date:'dd.MM.yyyy' }} }
+                                @else if (birthdayText; as text) { {{ text }} }
+                                @else { Не вказано }
                             </span>
                         </p>
+                        }
                         @if (showsField('address') && member.address) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Адреса: </span>
@@ -115,14 +121,16 @@
 
                 </div>
 
-                @if (canEditMember) {
+                @if (canEditMember || canManageWarnings || journalKurinKey) {
                 <div class="member-actions md:justify-self-end">
-<p-button (onClick)="onEditMember()"
+                    @if (canEditMember) {
+                    <p-button (onClick)="onEditMember()"
                         label="Редагувати"
                         icon="pi pi-pencil"
                         severity="secondary"
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm !font-semibold"
                      />
+                    }
                     @if (canManageProfileVerification) {
                     <p-button (onClick)="onProfileVerificationAction()"
                         [label]="isProfileVerified ? 'Зняти верифікацію' : 'Верифікувати'"
@@ -140,6 +148,16 @@
                         severity="secondary"
                         variant="text"
                         size="small"
+                     />
+                    }
+                    @if (journalKurinKey) {
+                    <p-button (onClick)="openJournal()"
+                        label="Журнал"
+                        icon="pi pi-history"
+                        severity="secondary"
+                        variant="text"
+                        size="small"
+                        data-testid="member-journal"
                      />
                     }
                 </div>
@@ -271,7 +289,10 @@
             <app-member-awards-tile [awards]="member.awards || []"
                 [kurinStamps]="kurinStamps"
                 [canEdit]="canEditMember"
-                [canReview]="canInlineModerateSkills"
+                [confirmLevels]="abilities.awards.confirm"
+                [canRemove]="abilities.awards.remove"
+                [viewerUserKey]="currentUserKey"
+                [ownCard]="isOwnCard"
                 (saveAward)="onSaveAward($event)"
                 (deleteAward)="onDeleteAward($event)"
                 (reviewAward)="onReviewAward($event)" />
@@ -328,7 +349,7 @@
                     @if (d.isConcessionNow) {
                         <p-tag value="пільгова" severity="info" />
                     }
-                    @for (name of d.concessionNamesNow ?? []; track name) {
+                    @for (name of d.concessionNamesNow; track name) {
                         <p-tag [value]="name" severity="info" />
                     }
                 </div>
@@ -714,5 +735,7 @@
     [memberKey]="member.memberKey"
     [warnings]="member.warnings ?? []"
     [currentUserKey]="currentUserKey"
+    [giveLevels]="abilities.warnings.give"
+    [cancelAbility]="abilities.warnings.cancel"
     (changed)="onWarningsChanged()" />
 }

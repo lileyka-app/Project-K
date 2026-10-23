@@ -46,6 +46,7 @@
                             [invalid]="lastNameCtrl.invalid && (lastNameCtrl.dirty || lastNameCtrl.touched)"
                             autocomplete="off" />
                     </div>
+                    @if (!hides('birthDate')) {
                     <div class="member-form__field">
                         <label for="dateOfBirth">Дата народження</label>
                         <p-datepicker inputId="dateOfBirth" name="dateOfBirth"
@@ -56,7 +57,8 @@
                             <small class="member-form__error">Людині має бути щонайменше 6 років.</small>
                         }
                     </div>
-                    @if (fieldMode('school') !== 'hidden') {
+                    }
+                    @if (shows('school')) {
                         <div class="member-form__field member-form__field--wide">
                             <label for="school">Школа
                                 @if (fieldMode('school') === 'optional') { <span class="member-form__optional">· необовʼязково</span> }
@@ -71,16 +73,16 @@
                 </div>
             </section>
 
-            @if (canEditEmail() || fieldMode('phoneNumber') !== 'hidden' || fieldMode('address') !== 'hidden') {
+            @if (editsEmail() || shows('phoneNumber') || shows('address')) {
                 <section class="kurin-tile member-form__tile">
                     <div class="lil-tile-head">
                         <div>
                             <h2>Контакти</h2>
-                            @if (canEditEmail()) { <p>Email також вхід до Лілейки.</p> }
+                            @if (editsEmail()) { <p>Email також вхід до Лілейки.</p> }
                         </div>
                     </div>
                     <div class="member-form__grid member-form__grid--two">
-                        @if (canEditEmail()) {
+                        @if (editsEmail()) {
                             <div class="member-form__field">
                                 <label for="email">Email</label>
                                 <input pInputText id="email" name="email" type="email"
@@ -105,7 +107,7 @@
                                 }
                             </div>
                         }
-                        @if (fieldMode('phoneNumber') !== 'hidden') {
+                        @if (shows('phoneNumber')) {
                             <div class="member-form__field">
                                 <label for="phoneNumber">Телефон
                                     @if (fieldMode('phoneNumber') === 'optional') { <span class="member-form__optional">· необовʼязково</span> }
@@ -120,7 +122,7 @@
                                 }
                             </div>
                         }
-                        @if (fieldMode('address') !== 'hidden') {
+                        @if (shows('address')) {
                             <div class="member-form__field member-form__field--full">
                                 <label for="address">Адреса
                                     @if (fieldMode('address') === 'optional') { <span class="member-form__optional">· необовʼязково</span> }
@@ -136,7 +138,7 @@
                 </section>
             }
 
-            @if (fieldMode('parents') !== 'hidden') {
+            @if (shows('parents')) {
                 <section class="kurin-tile member-form__tile">
                     <div class="lil-tile-head">
                         <div>
@@ -171,7 +173,7 @@
                 </section>
             }
 
-            @if (cardFields.extra.length) {
+            @if (cardFields.extra.length && !hides('extras')) {
                 <section class="kurin-tile member-form__tile">
                     <div class="lil-tile-head"><div><h2>Від краю</h2><p>Ці поля просить край куреня.</p></div></div>
                     <div class="member-form__grid member-form__grid--two">

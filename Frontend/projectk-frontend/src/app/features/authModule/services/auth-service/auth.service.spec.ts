@@ -6,6 +6,8 @@ import { LoginRequest } from '../../models/login-request.model';
 import { LoginResponse } from '../../models/login-response.model';
 import { AuthState } from '../../models/auth-state.model';
 import { environment } from '../../../../../environments/environment';
+import { ClientCacheService } from '../../../kurinModule/services/client-cache/client-cache.service';
+import { ACCESS_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../../../kurinModule/services/client-cache/cache-policy';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -69,7 +71,7 @@ describe('AuthService', () => {
   });
 
   describe('getAuthState', () => {
-    it('should return auth state as observable', (done) => {
+    it('should return auth state as observable', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -95,7 +97,7 @@ describe('AuthService', () => {
         expect(state).toEqual(mockAuthState);
         done();
       });
-    });
+    }));
   });
 
   describe('getAuthStateValue', () => {
@@ -103,7 +105,7 @@ describe('AuthService', () => {
       expect(service.getAuthStateValue()).toBeNull();
     });
 
-    it('should return updated auth state value after login', (done) => {
+    it('should return updated auth state value after login', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -127,11 +129,11 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
   });
 
   describe('login', () => {
-    it('should send login request and update auth state', (done) => {
+    it('should send login request and update auth state', () => new Promise<void>(done => {
       const credentials: LoginRequest = {
         email: 'test@example.com',
         password: 'password123'
@@ -168,11 +170,11 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(credentials);
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush(mockResponse);
-    });
+    }));
 
-    it('should not update auth state when login requires mfa', (done) => {
+    it('should not update auth state when login requires mfa', () => new Promise<void>(done => {
       const credentials: LoginRequest = {
         email: 'mfa@example.com',
         password: 'password123'
@@ -197,11 +199,11 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush(mockResponse);
-    });
+    }));
 
-    it('should verify mfa login and update auth state', (done) => {
+    it('should verify mfa login and update auth state', () => new Promise<void>(done => {
       const mockResponse: LoginResponse = {
         userKey: 'user-123',
         memberKey: 'member-123',
@@ -233,11 +235,11 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/login-verify`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ email: 'mfa@example.com', code: '123456', rememberMe: true, mfaToken: 'challenge' });
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush(mockResponse);
-    });
+    }));
 
-    it('should fail mfa login when tokens are missing', (done) => {
+    it('should fail mfa login when tokens are missing', () => new Promise<void>(done => {
       const mockResponse: LoginResponse = {
         userKey: 'user-123',
         memberKey: null,
@@ -249,7 +251,7 @@ describe('AuthService', () => {
       };
 
       service.verifyMfaLogin('mfa@example.com', '123456', 'challenge').subscribe({
-        next: () => fail('should have failed'),
+        next: () => expect.fail('should have failed'),
         error: error => {
           expect(error.message).toBe('No tokens in response');
           expect(service.getAuthStateValue()).toBeNull();
@@ -259,9 +261,9 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/login-verify`);
       req.flush(mockResponse);
-    });
+    }));
 
-    it('should request mfa setup with credentials', (done) => {
+    it('should request mfa setup with credentials', () => new Promise<void>(done => {
       const setup = {
         sharedKey: 'shared-key',
         authenticatorUri: 'otpauth://totp/Project-K:user@example.com',
@@ -275,11 +277,11 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/setup`);
       expect(req.request.method).toBe('GET');
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush(setup);
-    });
+    }));
 
-    it('should enable mfa with verification code', (done) => {
+    it('should enable mfa with verification code', () => new Promise<void>(done => {
       const response = { enabled: true, recoveryCodes: ['code-1', 'code-2'] };
 
       service.enableMfa('123456').subscribe(result => {
@@ -290,11 +292,11 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/enable`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ code: '123456' });
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush(response);
-    });
+    }));
 
-    it('takes the fresh session enabling mfa hands back', (done) => {
+    it('takes the fresh session enabling mfa hands back', () => new Promise<void>(done => {
       const initialState: AuthState = {
         userKey: 'user-123',
         memberKey: null,
@@ -324,9 +326,9 @@ describe('AuthService', () => {
         recoveryCodes: ['code-1'],
         tokens: { accessToken: 'mfa-token', refreshToken: { token: 'r', expires: '2027-01-01T00:00:00Z' } }
       });
-    });
+    }));
 
-    it('should rotate mfa recovery codes with current password', (done) => {
+    it('should rotate mfa recovery codes with current password', () => new Promise<void>(done => {
       const response = { recoveryCodes: ['code-1', 'code-2'] };
 
       service.rotateMfaRecoveryCodes('current-password').subscribe(result => {
@@ -337,11 +339,11 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/recovery-codes`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ currentPassword: 'current-password' });
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush(response);
-    });
+    }));
 
-    it('should request mfa status with credentials', (done) => {
+    it('should request mfa status with credentials', () => new Promise<void>(done => {
       service.getMfaStatus().subscribe(response => {
         expect(response).toEqual({ isMfaEnabled: true, isMfaRequired: true });
         done();
@@ -349,18 +351,18 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/mfa/status`);
       expect(req.request.method).toBe('GET');
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush({ isMfaEnabled: true, isMfaRequired: true });
-    });
+    }));
 
-    it('should handle login error', (done) => {
+    it('should handle login error', () => new Promise<void>(done => {
       const credentials: LoginRequest = {
         email: 'test@example.com',
         password: 'wrong-password'
       };
 
       service.login(credentials).subscribe({
-        next: () => fail('should have failed'),
+        next: () => expect.fail('should have failed'),
         error: (error) => {
           expect(error.status).toBe(401);
           expect(service.getAuthStateValue()).toBeNull();
@@ -370,11 +372,11 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-    });
+    }));
   });
 
   describe('logout', () => {
-    it('should send logout request and clear auth state', (done) => {
+    it('should send logout request and clear auth state', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -393,7 +395,7 @@ describe('AuthService', () => {
 
         const logoutReq = httpMock.expectOne(`${apiUrl}/auth/logout`);
         expect(logoutReq.request.method).toBe('POST');
-        expect(logoutReq.request.withCredentials).toBeTrue();
+        expect(logoutReq.request.withCredentials).toBe(true);
         expect(logoutReq.request.responseType).toBe('text');
         logoutReq.flush('Logged out successfully');
       });
@@ -407,9 +409,9 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
 
-    it('sends the bearer token with the sign-out and only then forgets the session', (done) => {
+    it('sends the bearer token with the sign-out and only then forgets the session', () => new Promise<void>(done => {
       service.login({ email: 'test@example.com', password: 'password' }).subscribe(() => {
         service.logout().subscribe(() => {
           expect(service.getAuthStateValue()).toBeNull();
@@ -426,9 +428,9 @@ describe('AuthService', () => {
         userKey: 'user-123', memberKey: 'm', email: 'test@example.com', isAdmin: false,
         permissions: [], roles: [], kurinKey: null, tokens: { accessToken: 'token-789' }
       });
-    });
+    }));
 
-    it('refreshes an expired token once and signs out again before forgetting the session', (done) => {
+    it('refreshes an expired token once and signs out again before forgetting the session', () => new Promise<void>(done => {
       service.login({ email: 'test@example.com', password: 'password' }).subscribe(() => {
         service.logout().subscribe(() => {
           expect(service.getAuthStateValue()).toBeNull();
@@ -445,9 +447,9 @@ describe('AuthService', () => {
         userKey: 'user-123', memberKey: 'm', email: 'test@example.com', isAdmin: false,
         permissions: [], roles: [], kurinKey: null, tokens: { accessToken: 'token-789' }
       });
-    });
+    }));
 
-    it('should clear auth state if logout request fails', (done) => {
+    it('should clear auth state if logout request fails', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -459,7 +461,7 @@ describe('AuthService', () => {
 
       service.login({ email: 'test@example.com', password: 'password' }).subscribe(() => {
         service.logout().subscribe({
-          next: () => fail('should have failed'),
+          next: () => expect.fail('should have failed'),
           error: () => {
             expect(service.getAuthStateValue()).toBeNull();
             expect(localStorage.getItem('authState')).toBeNull();
@@ -480,11 +482,11 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
   });
 
   describe('refreshToken', () => {
-    it('should refresh access token and update auth state', (done) => {
+    it('should refresh access token and update auth state', () => new Promise<void>(done => {
       const initialState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -514,7 +516,7 @@ describe('AuthService', () => {
 
         const refreshReq = httpMock.expectOne(`${apiUrl}/auth/refresh`);
         expect(refreshReq.request.method).toBe('POST');
-        expect(refreshReq.request.withCredentials).toBeTrue();
+        expect(refreshReq.request.withCredentials).toBe(true);
         refreshReq.flush({ accessToken: newAccessToken });
       });
 
@@ -526,9 +528,9 @@ describe('AuthService', () => {
         kurinKey: initialState.kurinKey,
         tokens: { accessToken: initialState.accessToken }
       });
-    });
+    }));
 
-    it('should not update state if no auth state exists', (done) => {
+    it('should not update state if no auth state exists', () => new Promise<void>(done => {
       service.refreshToken().subscribe(token => {
         expect(token).toBe('new-token');
         expect(service.getAuthStateValue()).toBeNull();
@@ -537,11 +539,11 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/refresh`);
       req.flush({ accessToken: 'new-token' });
-    });
+    }));
 
-    it('should handle refresh token error', (done) => {
+    it('should handle refresh token error', () => new Promise<void>(done => {
       service.refreshToken().subscribe({
-        next: () => fail('should have failed'),
+        next: () => expect.fail('should have failed'),
         error: (error) => {
           expect(error.status).toBe(401);
           done();
@@ -550,9 +552,9 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/auth/refresh`);
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-    });
+    }));
 
-    it('should coalesce concurrent refresh token requests', (done) => {
+    it('should coalesce concurrent refresh token requests', () => new Promise<void>(done => {
       const results: string[] = [];
 
       service.refreshToken().subscribe(token => {
@@ -563,18 +565,111 @@ describe('AuthService', () => {
       });
 
       const requests = httpMock.match(`${apiUrl}/auth/refresh`);
-      expect(requests.length).toBe(1);
+      expect(requests).toHaveLength(1);
       requests[0].flush({ accessToken: 'shared-access-token' });
 
       setTimeout(() => {
         expect(results).toEqual(['shared-access-token', 'shared-access-token']);
         done();
       });
+    }));
+  });
+
+  describe('applyAccess', () => {
+    const youth: LoginResponse = {
+      userKey: 'user-1',
+      memberKey: 'member-1',
+      email: 'youth@example.com',
+      isAdmin: false,
+      permissions: ['Member:Read:KurinWide', 'Group:Read:KurinWide'],
+      roles: ['Member'],
+      kurinKey: 'kurin-1',
+      requiresMfa: false,
+      tokens: { accessToken: 'token-1' }
+    };
+
+    let invalidated: string[];
+
+    beforeEach(() => {
+      service.applyLoginResponse(youth);
+      const cache = TestBed.inject(ClientCacheService);
+      invalidated = [];
+      vi.spyOn(cache, 'invalidateByPrefix').mockImplementation(prefix => {
+        invalidated.push(prefix);
+      });
     });
+
+    it('leaves the state and the caches alone when nothing changed, whatever the order', () => {
+      const emitted: (AuthState | null)[] = [];
+      const subscription = service.getAuthState().subscribe(state => emitted.push(state));
+
+      const changed = service.applyAccess({
+        isAdmin: false,
+        roles: ['Member'],
+        permissions: ['Group:Read:KurinWide', 'Member:Read:KurinWide'],
+        kurinKey: 'kurin-1'
+      });
+      subscription.unsubscribe();
+
+      expect(changed).toBe(false);
+      expect(invalidated).toEqual([]);
+      expect(emitted).toHaveLength(1);
+    });
+
+    it('takes a new office, persists it and drops the access and member caches', () => {
+      const changed = service.applyAccess({
+        isAdmin: false,
+        roles: ['Member', 'Group.Hurtkoviy'],
+        permissions: [...youth.permissions, 'Group:Update:OwnGroups'],
+        kurinKey: 'kurin-1'
+      });
+
+      expect(changed).toBe(true);
+      expect(service.getAuthStateValue()?.roles).toEqual(['Member', 'Group.Hurtkoviy']);
+      expect(service.getAuthStateValue()?.permissions).toContain('Group:Update:OwnGroups');
+      expect(service.getAuthStateValue()?.accessToken).toBe('token-1');
+      expect(JSON.parse(localStorage.getItem('authState')!).permissions).toContain('Group:Update:OwnGroups');
+      expect(invalidated).toEqual(expect.arrayContaining([ACCESS_CACHE_PREFIX, MEMBER_CACHE_PREFIX]));
+    });
+
+    it('follows a kurin the server moved the account to', () => {
+      expect(service.applyAccess({ ...accessOf(youth), kurinKey: 'kurin-2' })).toBe(true);
+      expect(service.getAuthStateValue()?.kurinKey).toBe('kurin-2');
+    });
+
+    it('is applied by a refresh that carries it', () => {
+      service.refreshToken().subscribe();
+      httpMock.expectOne(`${apiUrl}/auth/refresh`).flush({
+        accessToken: 'token-2',
+        access: { ...accessOf(youth), permissions: [...youth.permissions, 'MemberWarning:Create:OwnGroups'] }
+      });
+
+      expect(service.getAuthStateValue()?.accessToken).toBe('token-2');
+      expect(service.getAuthStateValue()?.permissions).toContain('MemberWarning:Create:OwnGroups');
+      expect(invalidated).toContain(ACCESS_CACHE_PREFIX);
+    });
+
+    it('keeps the access as it was when an older server answers without it', () => {
+      service.refreshToken().subscribe();
+      httpMock.expectOne(`${apiUrl}/auth/refresh`).flush({ accessToken: 'token-2' });
+
+      expect(service.getAuthStateValue()?.accessToken).toBe('token-2');
+      expect(service.getAuthStateValue()?.permissions).toEqual(youth.permissions);
+      expect(invalidated).toEqual([]);
+    });
+
+    function accessOf(response: LoginResponse) {
+      return {
+        isAdmin: response.isAdmin,
+        roles: response.roles,
+        permissions: response.permissions,
+        kurinKey: response.kurinKey
+      };
+    }
   });
 
   describe('ensureAccessToken', () => {
-    it('should refresh token when hydrated state has no access token', (done) => {
+    it('should refresh token when hydrated state has no access token', () => new Promise<void>(done => {
       const storedState: AuthState = {
         userKey: 'user-123',
         memberKey: 'member-123',
@@ -594,7 +689,7 @@ describe('AuthService', () => {
       const hydratedHttpMock = TestBed.inject(HttpTestingController);
 
       hydratedService.ensureAccessToken().subscribe(isAuthenticated => {
-        expect(isAuthenticated).toBeTrue();
+        expect(isAuthenticated).toBe(true);
         expect(hydratedService.getAuthStateValue()?.accessToken).toBe('new-access-token');
         hydratedHttpMock.verify();
         done();
@@ -602,9 +697,9 @@ describe('AuthService', () => {
 
       const req = hydratedHttpMock.expectOne(`${apiUrl}/auth/refresh`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.withCredentials).toBeTrue();
+      expect(req.request.withCredentials).toBe(true);
       req.flush({ accessToken: 'new-access-token' });
-    });
+    }));
   });
 
   describe('getAccessToken', () => {
@@ -612,7 +707,7 @@ describe('AuthService', () => {
       expect(service.getAccessToken()).toBeNull();
     });
 
-    it('should return access token when auth state exists', (done) => {
+    it('should return access token when auth state exists', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -636,11 +731,11 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
   });
 
   describe('setKurinKey', () => {
-    it('should update kurin key in auth state', (done) => {
+    it('should update kurin key in auth state', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -673,9 +768,9 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
 
-    it('should set kurin key to null', (done) => {
+    it('should set kurin key to null', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -702,7 +797,7 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
 
     it('should not update state if no auth state exists', () => {
       service.setKurinKey('new-kurin-key');
@@ -711,7 +806,7 @@ describe('AuthService', () => {
   });
 
   describe('clearKurinKey', () => {
-    it('should clear kurin key from auth state', (done) => {
+    it('should clear kurin key from auth state', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
       memberKey: 'test-member-key',
@@ -738,7 +833,7 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
 
     it('should not affect state if no auth state exists', () => {
       service.clearKurinKey();
@@ -747,7 +842,7 @@ describe('AuthService', () => {
   });
 
   describe('updatePermissions', () => {
-    it('should update role in auth state and persisted storage', (done) => {
+    it('should update role in auth state and persisted storage', () => new Promise<void>(done => {
       const mockAuthState: AuthState = {
         userKey: 'user-123',
         memberKey: 'test-member-key',
@@ -774,7 +869,7 @@ describe('AuthService', () => {
         kurinKey: mockAuthState.kurinKey,
         tokens: { accessToken: mockAuthState.accessToken }
       });
-    });
+    }));
   });
 });
 

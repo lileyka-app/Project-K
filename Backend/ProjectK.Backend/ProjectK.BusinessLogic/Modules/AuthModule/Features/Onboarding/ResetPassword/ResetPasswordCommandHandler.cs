@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -14,13 +15,16 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IActivityLogger _activityLogger;
+    private readonly RefreshTokenInvalidation _sessions;
 
     public ResetPasswordCommandHandler(
         UserManager<AppUser> userManager,
-        IActivityLogger activityLogger)
+        IActivityLogger activityLogger,
+        RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
         _activityLogger = activityLogger;
+        _sessions = sessions;
     }
 
     public async Task<ServiceResult<bool>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
@@ -36,6 +40,10 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         {
             return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidResetAttempt", "Invalid reset attempt. Please check your email or token.");
         }
+
+        // Sessions are not ended here yet (a gap of its own, tracked in planning); the calendar link
+        // is, as on every other password change.
+        await _sessions.RevokeCalendarFeedAsync(user.Id, CalendarFeedRevokeReason.SecurityChange, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Account.PasswordResetCompleted",

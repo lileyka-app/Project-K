@@ -43,35 +43,50 @@ function cards(): Record<string, Record<string, unknown>> {
 /** The край's card fields as the server resolves them: without a profile, both fields asked and nothing more. */
 const DEFAULT_CARD = { fields: { middleName: 'required', phoneNumber: 'required' }, extra: [] };
 
-function memberApi(canUpdate: (memberKey: string) => boolean, cardFields: unknown = DEFAULT_CARD): ExtraApi {
+/** `leads`: whether the kurin's policy gives the viewer a leader's перестороги over the member. */
+function memberApi(
+  canUpdate: (memberKey: string) => boolean,
+  cardFields: unknown = DEFAULT_CARD,
+  leads: (memberKey: string) => boolean = () => false,
+): ExtraApi {
   const all = cards();
+  const read = (path: string, match: RegExpExecArray | null): Answer | null => {
+    if (path === 'kurin/k1') return ok(kurin);
+    if (path === 'kurin/k1/profile') return ok({ cardFields });
+    if (path === 'catalog/badges' || path === 'catalog/probes') return ok([]);
+    if (!match) return null;
+    const [, key, rest] = match;
+    switch (rest ?? '') {
+      case '': return all[key] ? ok(all[key]) : refuse(404);
+      case '/dossier/memberships':
+        return ok([{ membershipKey: `ms-${key}`, kurinKey: 'k1', kurinNumber: 7, branch: 'UPYu', kurinNamedAfter: 'Івана Франка', groupKey: 'g1',
+          groupName: 'Соколи', kind: 'Youth', joinedAtUtc: '2020-09-01T00:00:00Z', leftAtUtc: null, isCurrent: true }]);
+      case '/badges/progress': return ok([]);
+      case '/dues': return refuse(403);
+      case '/abilities':
+        return ok({
+          warnings: leads(key) ? { give: [1, 2, 3], cancel: 'OwnIssued' } : { give: [], cancel: 'None' },
+          awards: { confirm: [], remove: false },
+          probes: { sign: false, unsign: false },
+          badges: { review: false },
+          journal: false,
+        });
+    }
+    return null;
+  };
+  const verify = (method: string, key: string): Answer => {
+    all[key] = method === 'PUT'
+      ? { ...all[key], profileVerificationStatus: 'VerifiedCurrent', profileVerifiedAtUtc: '2026-10-10T09:00:00Z' }
+      : { ...all[key], profileVerificationStatus: 'Unverified', profileVerifiedAtUtc: null };
+    return ok(all[key]);
+  };
   return ({ method, path, body }): Answer | null => {
     const match = /^member\/(m\d)(\/.*)?$/.exec(path);
-    if (method === 'GET') {
-      if (path === 'kurin/k1') return ok(kurin);
-      if (path === 'kurin/k1/profile') return ok({ cardFields });
-      if (path === 'catalog/badges' || path === 'catalog/probes') return ok([]);
-      if (!match) return null;
-      const [, key, rest] = match;
-      switch (rest ?? '') {
-        case '': return all[key] ? ok(all[key]) : refuse(404);
-        case '/dossier/memberships':
-          return ok([{ membershipKey: `ms-${key}`, kurinKey: 'k1', kurinNumber: 7, branch: 'UPYu', kurinNamedAfter: 'Івана Франка', groupKey: 'g1',
-            groupName: 'Соколи', kind: 'Youth', joinedAtUtc: '2020-09-01T00:00:00Z', leftAtUtc: null, isCurrent: true }]);
-        case '/badges/progress': return ok([]);
-        case '/dues': return refuse(403);
-      }
-      return null;
-    }
+    if (method === 'GET') return read(path, match);
     if (path === 'auth/check-access') return ok(body?.entityType === 'member' && canUpdate(body.entityKey));
     if (!match) return null;
     const [, key, rest] = match;
-    if (rest === '/profile-verification') {
-      all[key] = method === 'PUT'
-        ? { ...all[key], profileVerificationStatus: 'VerifiedCurrent', profileVerifiedAtUtc: '2026-10-10T09:00:00Z' }
-        : { ...all[key], profileVerificationStatus: 'Unverified', profileVerifiedAtUtc: null };
-      return ok(all[key]);
-    }
+    if (rest === '/profile-verification') return verify(method, key);
     if (rest?.startsWith('/warnings')) return ok({});
     if (!rest && method === 'PUT') return ok(all[key]);
     if (!rest && method === 'DELETE') return { status: 204, empty: true };
@@ -128,7 +143,7 @@ async function cropPicture(page: Page, fileInput: Locator, name: string, project
 
 test('lets the Звʼязковий change a card in full: photo, email, ступені, check and перестороги', async ({ page }, info) => {
   const project = info.project.name;
-  const log = await signIn(page, member, memberApi(() => true), ZVYAZKOVYI);
+  const log = await signIn(page, member, memberApi(() => true, DEFAULT_CARD, () => true), ZVYAZKOVYI);
   const sheet = await openEdit(page, 'm2', 'Марта');
 
   // An account nobody has claimed: its address is still the record's to fix.
@@ -165,7 +180,7 @@ test('lets the Звʼязковий change a card in full: photo, email, сту�
   const warnings = sheet.getByTestId('profile-warnings');
   await expect(warnings.getByTestId('warning-Level1')).toHaveClass(/checkbox-checked/);
   await expect(warnings.getByTestId('warning-Level1')).toHaveClass(/checkbox-disabled/);
-  await expect(warnings).toContainText('Скасувати може лише автор перестороги.');
+  await expect(warnings).toContainText('Скасувати може автор перестороги або той, кому курінь це дозволив.');
   await expect(warnings.getByTestId('warning-Level3')).toHaveClass(/checkbox-disabled/);
   await warnings.getByTestId('warning-Level2').click();
   await expect(warnings.getByTestId('warning-Level2')).toHaveClass(/checkbox-checked/);
@@ -192,7 +207,7 @@ test('lets the Звʼязковий change a card in full: photo, email, сту�
 });
 
 test('lets a Виховник check and warn but not touch an account’s email or delete', async ({ page }, info) => {
-  const log = await signIn(page, member, memberApi(() => true), VYKHOVNYK);
+  const log = await signIn(page, member, memberApi(() => true, DEFAULT_CARD, () => true), VYKHOVNYK);
   const sheet = await openEdit(page, 'm3', 'Андрій');
   // A claimed account's address is its owner's.
   await expect(sheet.getByTestId('profile-email')).toHaveCount(0);
@@ -229,7 +244,7 @@ test('asks what the край asks: no middle name, an optional phone and a visa'
       { key: 'visaNote', label: 'Примітка', type: 'text', required: false },
     ],
   };
-  const log = await signIn(page, member, memberApi(() => true, visaCard), VYKHOVNYK);
+  const log = await signIn(page, member, memberApi(() => true, visaCard, () => true), VYKHOVNYK);
   await page.goto('./tabs/kurin/member/m3');
   await expect(page.getByTestId('card-extra-visaType')).toContainText('Тип візи');
   await expect(page.getByTestId('card-extra-visaType')).toContainText('D');
@@ -257,7 +272,7 @@ test('asks what the край asks: no middle name, an optional phone and a visa'
 });
 
 test('lets the Звʼязковий delete a profile after asking', async ({ page }) => {
-  const log = await signIn(page, member, memberApi(() => true), ZVYAZKOVYI);
+  const log = await signIn(page, member, memberApi(() => true, DEFAULT_CARD, () => true), ZVYAZKOVYI);
   const sheet = await openEdit(page, 'm2', 'Марта');
   await sheet.getByTestId('delete-member').click();
   await page.locator('ion-action-sheet').getByRole('button', { name: 'Видалити', exact: true }).click();
@@ -272,9 +287,11 @@ test('gives a youth on their own card the photo, the basic fields and their ст
   const sheet = await openEdit(page, 'm1', 'Остап');
   await expect(sheet.getByTestId('profile-email')).toHaveCount(0);
   await expect(sheet).toContainText('Email змінюється в налаштуваннях акаунта.');
-  for (const part of ['profile-verification', 'profile-warnings', 'delete-member', 'pending-account']) {
-    await expect(sheet.getByTestId(part)).toHaveCount(0);
-  }
+  await Promise.all(
+    ['profile-verification', 'profile-warnings', 'delete-member', 'pending-account'].map((part) =>
+      expect(sheet.getByTestId(part)).toHaveCount(0),
+    ),
+  );
   // Their own ступені are theirs to record; a checked profile then waits for the провід again.
   await expect(sheet.getByTestId('profile-ranks')).toBeVisible();
   await expect(sheet.getByTestId('ranks-stale-note')).toContainText('зніме верифікацію');

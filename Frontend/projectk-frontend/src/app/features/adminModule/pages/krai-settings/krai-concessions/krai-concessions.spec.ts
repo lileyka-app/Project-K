@@ -17,10 +17,10 @@ describe('KraiConcessionsComponent', () => {
     component.add();
 
     const items = component.value()!;
-    expect(items.length).toBe(2);
+    expect(items).toHaveLength(2);
     expect(items[0].key).toMatch(/^p-[a-z0-9]+$/);
     expect(items[0].key).not.toBe(items[1].key);
-    expect(items[0]).toEqual(jasmine.objectContaining({ kind: 'percent', value: 10, appliesTo: ['stanytsia'] }));
+    expect(items[0]).toEqual(expect.objectContaining({ kind: 'percent', value: 10, appliesTo: ['stanytsia'] }));
   });
 
   it('drops the value of an exemption and keeps the parts in their order', () => {
@@ -30,7 +30,7 @@ describe('KraiConcessionsComponent', () => {
     component.setPart(0, 'krai', true);
 
     const item = component.value()![0];
-    expect('value' in item).toBeFalse();
+    expect('value' in item).toBe(false);
     expect(item.appliesTo).toEqual(['stanytsia', 'krai', 'group']);
   });
 

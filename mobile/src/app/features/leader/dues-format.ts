@@ -178,13 +178,16 @@ export function entryProblems(draft: EntryDraft): EntryProblems {
   return problems;
 }
 
+/** An exchange moves money from one method to the other. */
+const otherMethod = (method: DuesPaymentMethod): DuesPaymentMethod => (method === 'Cash' ? 'Card' : 'Cash');
+
 /** The request the web's dues-entry-dialog sends for a valid draft. */
 export function entryRequest(draft: EntryDraft): UpsertDuesEntryRequest {
   const personal = PERSONAL_KINDS.has(draft.kind);
   return {
     kind: draft.kind,
     method: draft.method,
-    counterMethod: draft.kind === 'Exchange' ? (draft.method === 'Cash' ? 'Card' : 'Cash') : null,
+    counterMethod: draft.kind === 'Exchange' ? otherMethod(draft.method) : null,
     amount: Number(draft.amount.replace(',', '.')),
     occurredOn: draft.occurredOn,
     membershipKey: personal ? draft.membershipKey : null,

@@ -70,7 +70,7 @@ public static class AgendaVisibility
         var parameter = assigned.Parameters[0];
         Expression<Func<AgendaItem, bool>> onSchedule = item => item.Category != null && item.Category.IsKurinSchedule;
         var scheduleBody = new ParameterSwap(onSchedule.Parameters[0], parameter).Visit(onSchedule.Body);
-        return Expression.Lambda<Func<AgendaItem, bool>>(Expression.OrElse(assigned.Body, scheduleBody!), parameter);
+        return Expression.Lambda<Func<AgendaItem, bool>>(Expression.OrElse(assigned.Body, scheduleBody), parameter);
     }
 
     private sealed class ParameterSwap(ParameterExpression from, ParameterExpression to) : ExpressionVisitor

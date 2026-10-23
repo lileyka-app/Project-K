@@ -6,69 +6,9 @@
 .agenda-toolbar__title { font-size: 1.05rem; font-weight: 650; margin-inline-start: 0.5rem; }
 
 /* FullCalendar renders at natural height ('auto'); this wrapper caps it and scrolls, so the timegrid
-   scrolls inside the card instead of the whole page. */
+   scrolls inside the card instead of the whole page. The grid's theming and the event chips live in
+   agenda-calendar.global.css, since FullCalendar portals some of them out of this component. */
 .agenda-calendar-host { max-block-size: calc(100vh - 19rem); min-block-size: 18rem; overflow: auto; }
-:host ::ng-deep full-calendar { display: block; }
-
-/* FullCalendar theming — map its --fc-* tokens onto the brandbook palette (no new colours). */
-:host ::ng-deep full-calendar {
-  --fc-border-color: var(--p-content-border-color);
-  --fc-page-bg-color: var(--p-content-background);
-  --fc-neutral-bg-color: var(--p-content-hover-background);
-  --fc-today-bg-color: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
-  --fc-now-indicator-color: var(--p-primary-color);
-  --fc-event-bg-color: var(--lil-agenda-event-bg);
-  --fc-event-border-color: var(--lil-agenda-event-line);
-  --fc-event-text-color: var(--lil-agenda-event-fg);
-  font-family: inherit;
-}
-
-:host ::ng-deep .fc .fc-col-header-cell-cushion,
-:host ::ng-deep .fc .fc-daygrid-day-number,
-:host ::ng-deep .fc .fc-timegrid-axis-cushion,
-:host ::ng-deep .fc .fc-timegrid-slot-label-cushion { color: var(--p-text-color); text-decoration: none; }
-
-/* Event kinds when no category colour is set: events in the calendar blue, tasks in the same
-   grey → terracotta → green as the status tags on the board (tokens in lileyka-theme.css). */
-:host ::ng-deep .agenda-ev { border-radius: var(--p-border-radius-sm, 6px); cursor: pointer; font-size: 0.8rem; font-weight: 600; }
-:host ::ng-deep .agenda-ev--plain.agenda-ev--event { background: var(--lil-agenda-event-bg); border-color: var(--lil-agenda-event-line); color: var(--lil-agenda-event-fg); }
-:host ::ng-deep .agenda-ev--plain.agenda-ev--task { background: var(--lil-agenda-todo-bg); border-color: var(--lil-agenda-todo-line); color: var(--lil-agenda-todo-fg); }
-:host ::ng-deep .agenda-ev--plain.agenda-ev--inprogress { background: var(--lil-agenda-progress-bg); border-color: var(--lil-agenda-progress-line); color: var(--lil-agenda-progress-fg); }
-:host ::ng-deep .agenda-ev--plain.agenda-ev--done { background: var(--lil-agenda-done-bg); border-color: var(--lil-agenda-done-line); color: var(--lil-agenda-done-fg); }
-
-/* A category colours the plate through `--agenda-cat` (set on the element by eventDidMount), never
-   as a solid fill: the theme says how much of it goes into the paper (`--lil-agenda-cat-*-mix`),
-   so the light theme gets a tint under ink text and the dark one keeps its bars. */
-:host ::ng-deep .agenda-ev--category {
-  background: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-bg-mix), var(--p-content-background));
-  border-color: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-line-mix), var(--p-content-background));
-  color: var(--p-text-color);
-}
-:host ::ng-deep .agenda-ev--category .fc-event-main { color: inherit; }
-
-/* Inside the chip: dot · text · faint glyph (rendered by eventContent in the component). */
-:host ::ng-deep .agenda-ev .fc-event-main { align-items: center; display: flex; gap: 0.35rem; min-width: 0; padding: 1px 1.5rem 1px 0.35rem; position: relative; }
-:host ::ng-deep .agenda-ev__dot { background: var(--lil-agenda-todo-dot); border-radius: 50%; flex: none; height: 0.5rem; width: 0.5rem; }
-:host ::ng-deep .agenda-ev--inprogress .agenda-ev__dot { background: var(--lil-agenda-progress-dot); }
-:host ::ng-deep .agenda-ev--done .agenda-ev__dot { background: var(--lil-agenda-done-dot); }
-:host ::ng-deep .agenda-ev--event .agenda-ev__dot { background: var(--lil-agenda-event-dot); }
-:host ::ng-deep .agenda-ev--category .agenda-ev__dot { background: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-dot-mix), var(--p-text-color)); }
-:host ::ng-deep .agenda-ev__title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-:host ::ng-deep .agenda-ev__icon { color: var(--lil-agenda-glyph); font-size: 0.9rem; pointer-events: none; position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); }
-/* Time views stack the title under the time; let the text wrap there instead of clipping. */
-:host ::ng-deep .fc-timegrid-event .agenda-ev__title { white-space: normal; }
-/* Recurring occurrences read as slightly lighter and carry a repeat glyph. */
-:host ::ng-deep .agenda-ev--series { opacity: 0.92; }
-/* On the calendar only through the kurin's schedule: the group's colour as a frame around a paler
-   plate, so what is the viewer's reads first and the other гуртки's сходини do not get lost. */
-:host ::ng-deep .agenda-ev--schedule.agenda-ev--category {
-  background: color-mix(in srgb, var(--agenda-cat) calc(var(--lil-agenda-cat-bg-mix) / 3), var(--p-content-background));
-  border-color: color-mix(in srgb, var(--agenda-cat) var(--lil-agenda-cat-line-mix), var(--p-content-background));
-  color: var(--p-text-muted-color);
-}
-/* The viewer raised it for someone else: dashed, and paler than what is theirs to attend. */
-:host ::ng-deep .agenda-ev--foreign { border-style: dashed; opacity: 0.75; }
-:host ::ng-deep .agenda-ev--series .agenda-ev__title::before { content: '\21bb '; }
 
 @media (max-width: 640px) {
   .agenda-toolbar { align-items: stretch; flex-direction: column; }

@@ -7,6 +7,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -18,11 +19,16 @@ public sealed record SetAgendaArchivePolicyCommand(Guid KurinKey, int? AutoArchi
 
 public sealed class SetAgendaArchivePolicyCommandHandler : IRequestHandler<SetAgendaArchivePolicyCommand, ServiceResult<AgendaArchivePolicyDto>>
 {
-    private readonly IUnitOfWork _uow;
+    /// <summary>What the kurin's journal calls this setting.</summary>
+    public const string Label = "Архів задач";
 
-    public SetAgendaArchivePolicyCommandHandler(IUnitOfWork uow)
+    private readonly IUnitOfWork _uow;
+    private readonly IKurinAudit _audit;
+
+    public SetAgendaArchivePolicyCommandHandler(IUnitOfWork uow, IKurinAudit audit)
     {
         _uow = uow;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<AgendaArchivePolicyDto>> Handle(SetAgendaArchivePolicyCommand request, CancellationToken cancellationToken)
@@ -38,8 +44,19 @@ public sealed class SetAgendaArchivePolicyCommandHandler : IRequestHandler<SetAg
             return ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.NotFound, "KURIN_NOT_FOUND", "Kurin was not found.");
         }
 
+        var changes = AuditChanges.Of(
+            ("autoArchiveAfterDays", kurin.TaskAutoArchiveAfterDays, request.AutoArchiveAfterDays),
+            ("purgeAfterDays", kurin.TaskArchivePurgeAfterDays, request.PurgeAfterDays));
+
         kurin.TaskAutoArchiveAfterDays = request.AutoArchiveAfterDays;
         kurin.TaskArchivePurgeAfterDays = request.PurgeAfterDays;
+        if (changes.Count > 0)
+        {
+            await _audit.RecordAsync(
+                new AuditRecord(AuditArea.Settings, AuditActions.Settings.ArchivePolicyChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
+                cancellationToken);
+        }
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         return new ServiceResult<AgendaArchivePolicyDto>(ResultType.Success,

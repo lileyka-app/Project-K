@@ -38,7 +38,7 @@ describe('TileBoardComponent (projection)', () => {
 
   it('renders each declared tile as a slot', () => {
     const slots = fixture.nativeElement.querySelectorAll('.tile-board > .tile-slot');
-    expect(slots.length).toBe(2);
+    expect(slots).toHaveLength(2);
   });
 
   it('projects the actual tile content (guards against ng-template double-wrap)', () => {
@@ -54,7 +54,7 @@ describe('TileBoardComponent (projection)', () => {
 
   it('wraps projected content in a body element that is interactive by default', () => {
     const bodies = fixture.nativeElement.querySelectorAll('.tile-slot .tile-slot__body');
-    expect(bodies.length).toBe(2);
+    expect(bodies).toHaveLength(2);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.tile-slot__body .tile-content-skills')).toBeTruthy();
     expect(getComputedStyle(bodies[0]).pointerEvents).not.toBe('none');

@@ -16,7 +16,8 @@ export type Ping = 'up' | 'waking' | 'unreachable';
 export function pingResult(error: unknown): Ping {
   if (!error) return 'up';
   if (error instanceof HttpErrorResponse) {
-    return [502, 503, 504].includes(error.status) ? 'waking' : error.status === 0 ? 'unreachable' : 'up';
+    if ([502, 503, 504].includes(error.status)) return 'waking';
+    return error.status === 0 ? 'unreachable' : 'up';
   }
   // The timeout: the request is still waiting on the server.
   return 'waking';

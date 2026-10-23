@@ -246,7 +246,7 @@
 			<button id="save" class="primary" type="button" title="Ctrl+S">Зберегти</button>
 			<a id="vscode" class="button" href="#">У VS Code</a>
 			<a id="open" class="button" href="#" target="_blank" rel="noopener">Сторінка ↗</a>
-			<span id="status" class="status" role="status"></span>
+			<output id="status" class="status"></output>
 		</header>
 
 		<div id="banner" role="alert">
@@ -412,14 +412,23 @@
 			/** The heading the caret sits under, as text: «## Каса гуртка» → «Каса гуртка». */
 			function headingAboveCaret() {
 				const before = text.value.slice(0, text.selectionStart);
-				const headings = [...before.matchAll(/^#{1,6}\s+(.+?)\s*#*\s*$/gm)];
-				return headings.length ? headings[headings.length - 1][1] : null;
+				const headings = [...before.matchAll(/^#{1,6}\s+(\S.*)$/gm)];
+				return headings.length ? withoutClosingHashes(headings[headings.length - 1][1]) : null;
+			}
+
+			/** «Каса гуртка ##» → «Каса гуртка»: the optional closing sequence of an ATX heading. */
+			function withoutClosingHashes(heading) {
+				let rest = heading.trimEnd();
+				while (rest.endsWith('#')) {
+					rest = rest.slice(0, -1);
+				}
+				return rest.trimEnd();
 			}
 
 			const plain = (s) =>
 				s
 					.replace(/[*_`]/g, '')
-					.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+					.replace(/\[([^[\]]+)\]\([^)]*\)/g, '$1')
 					.replace(/\s+/g, ' ')
 					.trim()
 					.toLowerCase();
@@ -454,7 +463,7 @@
 				const source = text.value;
 				let from = 0;
 				if (under) {
-					const line = [...source.matchAll(/^#{1,6}\s+(.+?)\s*$/gm)].find((m) => plain(m[1]) === plain(under));
+					const line = [...source.matchAll(/^#{1,6}\s+(\S.*)$/gm)].find((m) => plain(m[1]) === plain(under));
 					from = line?.index ?? 0;
 				}
 				const lower = source.toLowerCase();
@@ -470,7 +479,7 @@
 				text.setSelectionRange(at, at + word.length);
 				// Put the line roughly a third down the pane.
 				const lineIndex = source.slice(0, at).split('\n').length - 1;
-				const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 22;
+				const lineHeight = Number.parseFloat(getComputedStyle(text).lineHeight) || 22;
 				text.scrollTop = Math.max(0, lineIndex * lineHeight - text.clientHeight / 3);
 			}
 
@@ -583,17 +592,15 @@
 
 			wireSplitter();
 
-			(async () => {
-				const { ok, body } = await api('list');
-				if (!ok) {
-					setStatus('Перелік сторінок не прочитався', 'error');
-					return;
-				}
-				pages = body;
+			const listed = await api('list');
+			if (listed.ok) {
+				pages = listed.body;
 				renderPicker();
 				const wanted = new URLSearchParams(location.search).get('source');
 				await open(pages.some((p) => p.source === wanted) ? wanted : pages[0].source);
-			})();
+			} else {
+				setStatus('Перелік сторінок не прочитався', 'error');
+			}
 		</script>
 	</body>
 </html>

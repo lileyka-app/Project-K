@@ -2,8 +2,12 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
@@ -26,6 +30,8 @@ public class JoinKurinByPublicIdTests
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IGroupRepository> _groups = new();
+    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
+    private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     private readonly Guid _memberKey = Guid.NewGuid();
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -52,7 +58,7 @@ public class JoinKurinByPublicIdTests
             .ReturnsAsync(new MemberSummary(
                 _memberKey, Guid.NewGuid(), Guid.NewGuid(), null, "Оксана", "Тестова", "o@example.com", null));
 
-        _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object);
+        _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, _accessChanges.Object, _journal.Audit);
         _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object);
     }
 
@@ -71,6 +77,16 @@ public class JoinKurinByPublicIdTests
         opened.Should().NotBeNull();
         opened!.MemberKey.Should().Be(_memberKey);
         opened.KurinKey.Should().Be(_kurinKey);
+        _accessChanges.Verify(s => s.MarkUser(opened.UserKey!.Value), Times.Once);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Membership);
+        entry.Action.Should().Be(AuditActions.Membership.Joined);
+        entry.KurinKey.Should().Be(_kurinKey);
+        entry.SubjectKey.Should().Be(opened.MembershipKey);
+        entry.SubjectMemberKey.Should().Be(_memberKey);
+        entry.SubjectLabel.Should().Be("Оксана Тестова");
+        entry.Changes.Should().Equal(new AuditChange("kind", null, "Youth"));
     }
 
     [Fact]

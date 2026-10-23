@@ -40,6 +40,33 @@ public class JwtServiceTests
     }
 
     [Fact]
+    public void AccessToken_ShouldSayWhenItWasMinted_InWholeSeconds()
+    {
+        var mintedAt = new DateTimeOffset(2026, 10, 23, 12, 30, 15, 700, TimeSpan.Zero);
+        var service = new JwtService(
+            new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Jwt:Key"] = "unit-test-signing-key-that-is-long-enough-for-hmac-sha256",
+                ["Jwt:Issuer"] = "lileyka-tests",
+                ["Jwt:Audience"] = "lileyka",
+                ["Jwt:ExpiresInMinutes"] = "15"
+            }).Build(),
+            new StoppedClock(mintedAt));
+
+        var token = service.GenerateAccessToken(Guid.NewGuid().ToString(), "a@b.c", ["Member"], null, false);
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        Assert.Equal(mintedAt.ToUnixTimeSeconds().ToString(), jwt.Claims.Single(c => c.Type == "iat").Value);
+        // Read as a NumericDate, so it went out as a number and not as a string.
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(mintedAt.ToUnixTimeSeconds()).UtcDateTime, jwt.IssuedAt);
+    }
+
+    private sealed class StoppedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    [Fact]
     public void MfaTrust_ShouldRoundTripTheAccountAndItsStamp()
     {
         var service = Service();

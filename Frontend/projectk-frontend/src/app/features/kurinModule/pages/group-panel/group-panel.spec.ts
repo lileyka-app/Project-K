@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GroupPanelComponent } from './group-panel';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
@@ -15,12 +16,12 @@ describe('GroupPanelComponent', () => {
   let fixture: ComponentFixture<GroupPanelComponent>;
   let component: GroupPanelComponent;
 
-  let memberServiceSpy: jasmine.SpyObj<MemberService>;
-  let groupServiceSpy: jasmine.SpyObj<GroupService>;
-  let leadershipServiceSpy: jasmine.SpyObj<LeadershipService>;
-  let entityServiceSpy: jasmine.SpyObj<EntityService>;
-  let permissionServiceSpy: jasmine.SpyObj<PermissionService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let memberServiceSpy: MockedObject<MemberService>;
+  let groupServiceSpy: MockedObject<GroupService>;
+  let leadershipServiceSpy: MockedObject<LeadershipService>;
+  let entityServiceSpy: MockedObject<EntityService>;
+  let permissionServiceSpy: MockedObject<PermissionService>;
+  let routerSpy: MockedObject<Router>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const groupKey = 'group1';
@@ -41,28 +42,49 @@ describe('GroupPanelComponent', () => {
   };
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj('MemberService', ['getAll', 'getMentorCandidates']);
-    groupServiceSpy = jasmine.createSpyObj('GroupService', ['getByKey', 'exists', 'getMentors', 'assignMentor', 'revokeMentor', 'update', 'uploadSilhouette', 'deleteSilhouette']);
-    leadershipServiceSpy = jasmine.createSpyObj('LeadershipService', ['getLeadershipByTypeAndKey']);
-    entityServiceSpy = jasmine.createSpyObj('EntityService', ['checkEntityAccess']);
-    permissionServiceSpy = jasmine.createSpyObj('PermissionService', ['canManageMentors', 'canSetupLeadership']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    memberServiceSpy = {
+      getAll: vi.fn(),
+      getMentorCandidates: vi.fn()
+    } as MockedObject<MemberService>;
+    groupServiceSpy = {
+      getByKey: vi.fn(),
+      exists: vi.fn(),
+      getMentors: vi.fn(),
+      assignMentor: vi.fn(),
+      revokeMentor: vi.fn(),
+      update: vi.fn(),
+      uploadSilhouette: vi.fn(),
+      deleteSilhouette: vi.fn()
+    } as MockedObject<GroupService>;
+    leadershipServiceSpy = {
+      getLeadershipByTypeAndKey: vi.fn()
+    } as MockedObject<LeadershipService>;
+    entityServiceSpy = {
+      checkEntityAccess: vi.fn()
+    } as MockedObject<EntityService>;
+    permissionServiceSpy = {
+      canManageMentors: vi.fn(),
+      canSetupLeadership: vi.fn()
+    } as MockedObject<PermissionService>;
+    routerSpy = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
     paramMapSubject = new BehaviorSubject(convertToParamMap({ groupKey }));
 
-    groupServiceSpy.exists.and.returnValue(of(true));
-    groupServiceSpy.getByKey.and.returnValue(of(group));
-    groupServiceSpy.getMentors.and.returnValue(of([]));
-    groupServiceSpy.assignMentor.and.returnValue(of({}));
-    groupServiceSpy.revokeMentor.and.returnValue(of({}));
-    groupServiceSpy.update.and.returnValue(of(group));
-    groupServiceSpy.uploadSilhouette.and.returnValue(of(group));
-    groupServiceSpy.deleteSilhouette.and.returnValue(of(group));
-    memberServiceSpy.getAll.and.returnValue(of([]));
-    memberServiceSpy.getMentorCandidates.and.returnValue(of([]));
-    leadershipServiceSpy.getLeadershipByTypeAndKey.and.returnValue(of(leadership));
-    entityServiceSpy.checkEntityAccess.and.returnValue(of(true));
-    permissionServiceSpy.canManageMentors.and.returnValue(true);
-    permissionServiceSpy.canSetupLeadership.and.returnValue(true);
+    groupServiceSpy.exists.mockReturnValue(of(true));
+    groupServiceSpy.getByKey.mockReturnValue(of(group));
+    groupServiceSpy.getMentors.mockReturnValue(of([]));
+    groupServiceSpy.assignMentor.mockReturnValue(of({}));
+    groupServiceSpy.revokeMentor.mockReturnValue(of({}));
+    groupServiceSpy.update.mockReturnValue(of(group));
+    groupServiceSpy.uploadSilhouette.mockReturnValue(of(group));
+    groupServiceSpy.deleteSilhouette.mockReturnValue(of(group));
+    memberServiceSpy.getAll.mockReturnValue(of([]));
+    memberServiceSpy.getMentorCandidates.mockReturnValue(of([]));
+    leadershipServiceSpy.getLeadershipByTypeAndKey.mockReturnValue(of(leadership));
+    entityServiceSpy.checkEntityAccess.mockReturnValue(of(true));
+    permissionServiceSpy.canManageMentors.mockReturnValue(true);
+    permissionServiceSpy.canSetupLeadership.mockReturnValue(true);
 
     await TestBed.configureTestingModule({
       imports: [GroupPanelComponent],
@@ -93,7 +115,7 @@ describe('GroupPanelComponent', () => {
   });
 
   it('should navigate to panel if group does not exist', () => {
-    groupServiceSpy.exists.and.returnValue(of(false));
+    groupServiceSpy.exists.mockReturnValue(of(false));
     component.refreshData();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/panel'], { replaceUrl: true });
   });
@@ -114,12 +136,12 @@ describe('GroupPanelComponent', () => {
 
     expect(memberServiceSpy.getMentorCandidates).toHaveBeenCalledWith(group.kurinKey);
     expect(groupServiceSpy.getMentors).toHaveBeenCalledWith(groupKey);
-    expect(component.mentorDialogVisible).toBeTrue();
+    expect(component.mentorDialogVisible).toBe(true);
   });
 
   it('saveProfile should update group description', () => {
     const updated = { ...group, description: 'Updated description' };
-    groupServiceSpy.update.and.returnValue(of(updated));
+    groupServiceSpy.update.mockReturnValue(of(updated));
 
     component.startProfileEdit();
     component.profileForm.patchValue({ description: '  Updated description  ' });
@@ -130,7 +152,7 @@ describe('GroupPanelComponent', () => {
       description: 'Updated description'
     });
     expect(component.group).toEqual(updated);
-    expect(component.profileEditMode).toBeFalse();
+    expect(component.profileEditMode).toBe(false);
   });
 
   it('should collapse long description until toggled', () => {
@@ -139,12 +161,12 @@ describe('GroupPanelComponent', () => {
       description: 'A'.repeat(component.descriptionCollapseLimit + 1)
     };
 
-    expect(component.isDescriptionLong).toBeTrue();
-    expect(component.descriptionExpanded).toBeFalse();
+    expect(component.isDescriptionLong).toBe(true);
+    expect(component.descriptionExpanded).toBe(false);
 
     component.toggleDescription();
 
-    expect(component.descriptionExpanded).toBeTrue();
+    expect(component.descriptionExpanded).toBe(true);
   });
 
   // Built on the first answer alone, the menu opened without «Редагувати профіль» for whoever
@@ -152,29 +174,29 @@ describe('GroupPanelComponent', () => {
   it('should offer the action menu only once both access answers are in', () => {
     const create = new Subject<boolean>();
     const update = new Subject<boolean>();
-    entityServiceSpy.checkEntityAccess.and.callFake((_type: string, _key: string, action?: string) =>
+    entityServiceSpy.checkEntityAccess.mockImplementation((_type: string, _key: string, action?: string) =>
       action === 'Create' ? create.asObservable() : update.asObservable());
 
     component.refreshData();
-    expect(component.accessResolved).toBeFalse();
+    expect(component.accessResolved).toBe(false);
 
     create.next(true);
     create.complete();
-    expect(component.accessResolved).toBeFalse();
-    expect(component.canEditGroupProfile).toBeFalse();
+    expect(component.accessResolved).toBe(false);
+    expect(component.canEditGroupProfile).toBe(false);
 
     update.next(true);
     update.complete();
-    expect(component.accessResolved).toBeTrue();
-    expect(component.canCreateMembers).toBeTrue();
-    expect(component.canEditGroupProfile).toBeTrue();
+    expect(component.accessResolved).toBe(true);
+    expect(component.canCreateMembers).toBe(true);
+    expect(component.canEditGroupProfile).toBe(true);
   });
 
   it('groupEditMenuItems should expose permitted actions in one menu', () => {
     component.group = group;
     component.canEditGroupProfile = true;
     component.canCreateMembers = true;
-    permissionServiceSpy.canManageMentors.and.returnValue(true);
+    permissionServiceSpy.canManageMentors.mockReturnValue(true);
 
     expect(component.groupEditMenuItems.map(item => item.label)).toEqual([
       'Редагувати профіль',
@@ -197,7 +219,7 @@ describe('GroupPanelComponent', () => {
     component.group = group;
     component.canEditGroupProfile = true;
     component.canCreateMembers = true;
-    permissionServiceSpy.canManageMentors.and.returnValue(true);
+    permissionServiceSpy.canManageMentors.mockReturnValue(true);
 
     const first = component.groupEditMenuItems;
     const second = component.groupEditMenuItems;
@@ -218,7 +240,7 @@ describe('GroupPanelComponent', () => {
     component.onSilhouetteSelected({ target: input } as unknown as Event);
 
     expect(groupServiceSpy.uploadSilhouette).not.toHaveBeenCalled();
-    expect(component.silhouetteDialogVisible).toBeTrue();
+    expect(component.silhouetteDialogVisible).toBe(true);
     expect(component.silhouetteImageFile).toBe(file);
     expect(component.silhouetteError).toBeNull();
   });
@@ -238,7 +260,7 @@ describe('GroupPanelComponent', () => {
   it('uploadOriginalSilhouette should send selected file and close editor', () => {
     const updated = { ...group, silhouetteUrl: 'group-silhouettes/2026/05/27/test.png' };
     const file = new File(['image'], 'silhouette.png', { type: 'image/png' });
-    groupServiceSpy.uploadSilhouette.and.returnValue(of(updated));
+    groupServiceSpy.uploadSilhouette.mockReturnValue(of(updated));
     component.silhouetteImageFile = file;
     component.silhouetteDialogVisible = true;
 
@@ -246,23 +268,23 @@ describe('GroupPanelComponent', () => {
 
     expect(groupServiceSpy.uploadSilhouette).toHaveBeenCalledWith(groupKey, file);
     expect(component.group).toEqual(updated);
-    expect(component.silhouetteDialogVisible).toBeFalse();
-    expect(component.silhouetteSaving).toBeFalse();
+    expect(component.silhouetteDialogVisible).toBe(false);
+    expect(component.silhouetteSaving).toBe(false);
   });
 
   it('uploadProcessedSilhouette should send processed png file', () => {
     const updated = { ...group, silhouetteUrl: 'group-silhouettes/2026/05/27/test.png' };
     const sourceFile = new File(['image'], 'source.jpg', { type: 'image/jpeg' });
     const processed = new Blob(['png'], { type: 'image/png' });
-    groupServiceSpy.uploadSilhouette.and.returnValue(of(updated));
+    groupServiceSpy.uploadSilhouette.mockReturnValue(of(updated));
     component.silhouetteImageFile = sourceFile;
     component.silhouetteProcessedBlob = processed;
     component.silhouetteDialogVisible = true;
 
     component.uploadProcessedSilhouette();
 
-    const uploaded = groupServiceSpy.uploadSilhouette.calls.mostRecent().args[1] as File;
-    expect(groupServiceSpy.uploadSilhouette).toHaveBeenCalledWith(groupKey, jasmine.any(File));
+    const uploaded = vi.mocked(groupServiceSpy.uploadSilhouette).mock.lastCall![1] as File;
+    expect(groupServiceSpy.uploadSilhouette).toHaveBeenCalledWith(groupKey, expect.any(File));
     expect(uploaded.name).toBe('source.png');
     expect(uploaded.type).toBe('image/png');
     expect(component.group).toEqual(updated);
@@ -278,7 +300,7 @@ describe('GroupPanelComponent', () => {
   it('deleteSilhouette should delete existing image and update group', () => {
     const withSilhouette = { ...group, silhouetteUrl: 'group-silhouettes/2026/05/27/test.png' };
     const updated = { ...group, silhouetteUrl: null };
-    groupServiceSpy.deleteSilhouette.and.returnValue(of(updated));
+    groupServiceSpy.deleteSilhouette.mockReturnValue(of(updated));
     component.group = withSilhouette;
     component.canEditGroupProfile = true;
 
@@ -286,7 +308,7 @@ describe('GroupPanelComponent', () => {
 
     expect(groupServiceSpy.deleteSilhouette).toHaveBeenCalledWith(groupKey);
     expect(component.group).toEqual(updated);
-    expect(component.silhouetteSaving).toBeFalse();
+    expect(component.silhouetteSaving).toBe(false);
   });
 
   it('saveMentorAssignments should call assign and revoke based on diff', () => {
@@ -298,6 +320,6 @@ describe('GroupPanelComponent', () => {
 
     expect(groupServiceSpy.assignMentor).toHaveBeenCalledWith(groupKey, 'u3');
     expect(groupServiceSpy.revokeMentor).toHaveBeenCalledWith(groupKey, 'u1');
-    expect(component.mentorDialogVisible).toBeFalse();
+    expect(component.mentorDialogVisible).toBe(false);
   });
 });
