@@ -41,6 +41,12 @@ export class ScoreService {
     return this.api.delete(`${this.event(kurinKey, agendaItemKey, occurrence)}/attendance/${membershipKey}`);
   }
 
+  /** «Сходин не було», or taking it back; the server refuses the first while anyone is marked. */
+  setNotHeld(kurinKey: string, agendaItemKey: string, occurrence: string, notHeld: boolean): Promise<unknown> {
+    const path = `${this.event(kurinKey, agendaItemKey, occurrence)}/not-held`;
+    return notHeld ? this.api.put(path, {}) : this.api.delete(path);
+  }
+
   createEntry(kurinKey: string, request: UpsertScoreEntryRequest): Promise<unknown> {
     return this.api.post(`kurin/${kurinKey}/score/entries`, request);
   }

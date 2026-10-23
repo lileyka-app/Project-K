@@ -2,7 +2,7 @@ import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { MessageService } from '@openng/optimus-ui/api';
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AttendanceSheetDto, SheetPersonDto } from '../../models/score.dto';
 import { ScoreService } from '../../services/score-service/score.service';
@@ -54,7 +54,8 @@ describe('AttendanceSheetComponent', () => {
     people: [oksana, taras, marta, ihor, lev],
     groups: [{ groupKey: 'sokoly', groupName: 'Соколи', canScore: true, entries: [] }, { groupKey: 'levy', groupName: 'Леви', canScore: false, entries: [] }],
     items: [],
-    canManage: false
+    canManage: false,
+    notHeld: null
   };
 
   function create(response: AttendanceSheetDto = data): void {
@@ -65,7 +66,8 @@ describe('AttendanceSheetComponent', () => {
       createEntry: vi.fn(),
       updateEntry: vi.fn(),
       deleteEntry: vi.fn(),
-      setAttendanceRate: vi.fn()
+      setAttendanceRate: vi.fn(),
+      setNotHeld: vi.fn()
     } as MockedObject<ScoreService>;
     scores.getSheet.mockReturnValue(of(response));
     messages = {
@@ -143,6 +145,52 @@ describe('AttendanceSheetComponent', () => {
 
     expect(names(component.others())).toEqual(['Ігор']);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Ігор');
+  });
+
+  it('«Сходин не було» питає підтвердження, пише й перечитує аркуш', () => {
+    create({ ...data, people: [oksana, marta] });
+    scores.setNotHeld.mockReturnValue(of({}));
+    const confirmation = fixture.debugElement.injector.get(ConfirmationService);
+    vi.spyOn(confirmation, 'confirm').mockImplementation(options => {
+      options.accept?.();
+      return confirmation;
+    });
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Сходин не було');
+    component.confirmNotHeld();
+
+    expect(scores.setNotHeld).toHaveBeenCalledWith('k1', 'e1', '2026-10-06T16:00:00Z', true);
+    expect(scores.getSheet).toHaveBeenCalledTimes(2);
+  });
+
+  it('коли хтось уже відмічений, «Сходин не було» не пропонується', () => {
+    create();
+
+    const buttons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).map(b => b.textContent?.trim());
+    expect(buttons).not.toContain('Сходин не було');
+  });
+
+  it('сходин не було: смуга з тим, хто сказав, відмічати не можна, «Повернути» знімає', () => {
+    create({ ...data, notHeld: { markedByName: 'Гуртковий', markedAtUtc: '2026-10-06T19:00:00Z' }, people: [oksana, marta] });
+    scores.setNotHeld.mockReturnValue(of({}));
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.querySelector('[data-testid="sheet-not-held"]')?.textContent).toContain('Гуртковий');
+    expect((root.querySelector('.sheet-mark') as HTMLButtonElement).disabled).toBe(true);
+    component.toggle(oksana);
+    expect(scores.markAttendance).not.toHaveBeenCalled();
+
+    component.saveNotHeld(false);
+    expect(scores.setNotHeld).toHaveBeenCalledWith('k1', 'e1', '2026-10-06T16:00:00Z', false);
+  });
+
+  it('409 на «Сходин не було» пояснює, що хтось уже відмічений', () => {
+    create({ ...data, people: [oksana, marta] });
+    scores.setNotHeld.mockReturnValue(throwError(() => ({ status: 409 })));
+
+    component.saveNotHeld(true);
+
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error', detail: expect.stringContaining('відбулися') }));
   });
 
   it('403 — це аркуш не для цієї людини', () => {

@@ -161,6 +161,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.GetSheet), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid, string, MarkAttendanceRequest>>(nameof(KurinScoreController.MarkAttendance), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid, string, Guid>>(nameof(KurinScoreController.UnmarkAttendance), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.SetNotHeld), "RequireUser");
+        yield return Row<Action<KurinScoreController, Guid, Guid, string>>(nameof(KurinScoreController.ClearNotHeld), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.CreateEntry), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid, UpsertScoreEntryRequest>>(nameof(KurinScoreController.UpdateEntry), "RequireUser");
         yield return Row<Action<KurinScoreController, Guid, Guid>>(nameof(KurinScoreController.DeleteEntry), "RequireUser");

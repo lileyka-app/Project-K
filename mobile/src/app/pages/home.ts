@@ -12,6 +12,9 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
   IonLabel,
   IonList,
   IonNote,
@@ -46,7 +49,10 @@ import {
 import { MeService } from '../me/me.service';
 import { HomeTile, TileLayout, boardLayout, homeTiles, readStoredLayout, writeStoredLayout } from '../me/home-layout';
 import { InstallCard } from '../pwa/install-card';
-import { dutiesSpanKurins, dutyRows } from '../features/leader/duties';
+import { DutyRow, dutiesSpanKurins, dutyRows } from '../features/leader/duties';
+import { SCORE_ERRORS } from '../features/score/score.models';
+import { ScoreService } from '../features/score/score.service';
+import { apiErrorText } from '../core/api';
 import { NotificationsService } from '../features/leader/notifications.service';
 
 /** A section's data: still loading, here, or failed (the rest of the screen still shows). */
@@ -79,6 +85,9 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
     IonIcon,
     IonList,
     IonItem,
+    IonItemSliding,
+    IonItemOptions,
+    IonItemOption,
     IonNote,
     IonLabel,
     IonSegment,
@@ -248,21 +257,28 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
               </ion-card-header>
               <ion-list lines="full">
                 @for (row of duties(); track row.key; let last = $last) {
-                  <ion-item
-                    [button]="!!row.link"
-                    [detail]="!!row.link"
-                    [routerLink]="row.link"
-                    [queryParams]="row.queryParams"
-                    [lines]="last ? 'none' : 'full'"
-                    data-testid="duty"
-                  >
-                    <ion-icon class="lk-tile" slot="start" [name]="row.icon" [style.--lk-tile]="row.tile" aria-hidden="true" />
-                    <ion-label class="ion-text-wrap">
-                      <h3>{{ row.label }}</h3>
-                      @if (row.detail) { <p>{{ row.detail }}</p> }
-                    </ion-label>
-                    @if (row.count !== null) { <ion-note slot="end">{{ row.count }}</ion-note> }
-                  </ion-item>
+                  <ion-item-sliding #sliding [disabled]="!row.canSayNotHeld">
+                    <ion-item
+                      [button]="!!row.link"
+                      [detail]="!!row.link"
+                      [routerLink]="row.link"
+                      [queryParams]="row.queryParams"
+                      [lines]="last ? 'none' : 'full'"
+                      data-testid="duty"
+                    >
+                      <ion-icon class="lk-tile" slot="start" [name]="row.icon" [style.--lk-tile]="row.tile" aria-hidden="true" />
+                      <ion-label class="ion-text-wrap">
+                        <h3>{{ row.label }}</h3>
+                        @if (row.detail) { <p>{{ row.detail }}</p> }
+                      </ion-label>
+                      @if (row.count !== null) { <ion-note slot="end">{{ row.count }}</ion-note> }
+                    </ion-item>
+                    @if (row.canSayNotHeld) {
+                      <ion-item-options side="end">
+                        <ion-item-option color="medium" data-testid="duty-not-held" (click)="sayNotHeld(row, sliding)">Сходин не було</ion-item-option>
+                      </ion-item-options>
+                    }
+                  </ion-item-sliding>
                 }
               </ion-list>
             </ion-card>
@@ -419,6 +435,7 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
 export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
   private readonly me = inject(MeService);
   private readonly notifications = inject(NotificationsService);
+  private readonly scores = inject(ScoreService);
   private readonly auth = inject(AuthService);
   private readonly toasts = inject(ToastController);
   private readonly glass = new GlassEffects(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement);
@@ -555,6 +572,21 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
       await this.toast('Не вдалося змінити задачу. Спробуй ще раз.');
     } finally {
       this.moving.set(null);
+    }
+  }
+
+  /** «Сходин не було» by a swipe (the web tile's action): the row leaves once the server agrees. */
+  protected async sayNotHeld(row: DutyRow, sliding: IonItemSliding): Promise<void> {
+    const duty = row.duty;
+    await sliding.close();
+    if (!duty.agendaItemKey || !duty.occurrenceStartUtc) return;
+    try {
+      await this.scores.setNotHeld(duty.kurin.kurinKey, duty.agendaItemKey, duty.occurrenceStartUtc, true);
+      const current = valueOf(this.dutyList()) ?? [];
+      this.dutyList.set({ state: 'ready', value: current.filter((d) => d !== duty) });
+      await this.toast(`${duty.title ?? 'Подію'} прибрано зі справ.`);
+    } catch (error) {
+      await this.toast(apiErrorText(error, 'Не вдалося зберегти. Спробуй ще раз.', SCORE_ERRORS));
     }
   }
 

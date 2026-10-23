@@ -2892,6 +2892,44 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("ScoreItems");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreNotHeldOccurrence", b =>
+                {
+                    b.Property<Guid>("ScoreNotHeldOccurrenceKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AgendaItemKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("MarkedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("MarkedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurrenceStartUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ScoreNotHeldOccurrenceKey");
+
+                    b.HasIndex("KurinKey");
+
+                    b.HasIndex("AgendaItemKey", "OccurrenceStartUtc")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ScoreNotHeldOccurrences_OnePerOccurrence");
+
+                    b.ToTable("ScoreNotHeldOccurrences");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.ScoreRule", b =>
                 {
                     b.Property<Guid>("ScoreRuleKey")

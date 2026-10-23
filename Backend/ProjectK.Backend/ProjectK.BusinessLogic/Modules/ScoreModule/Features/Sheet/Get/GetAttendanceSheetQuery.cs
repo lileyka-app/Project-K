@@ -106,6 +106,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             .ToList();
 
         var category = await CategoryOfAsync(item.AgendaCategoryKey, cancellationToken);
+        var notHeld = await _books.NotHeldAsync(item.AgendaItemKey, occurrence.StartUtc, cancellationToken);
 
         return new ServiceResult<AttendanceSheetResponse>(ResultType.Success, new AttendanceSheetResponse
         {
@@ -125,7 +126,10 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             People = people,
             Groups = groups,
             Items = book.Items.Where(i => !i.IsArchived).Select(ScoreBook.ToDto).ToList(),
-            CanManage = await _access.MayManageAsync(request.KurinKey, cancellationToken)
+            CanManage = await _access.MayManageAsync(request.KurinKey, cancellationToken),
+            NotHeld = notHeld is null
+                ? null
+                : new OccurrenceNotHeldDto { MarkedByName = book.NameOfAccount(notHeld.MarkedByUserKey), MarkedAtUtc = DateTime.SpecifyKind(notHeld.MarkedAtUtc, DateTimeKind.Utc) }
         });
     }
 

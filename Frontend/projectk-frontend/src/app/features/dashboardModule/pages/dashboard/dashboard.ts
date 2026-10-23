@@ -12,7 +12,7 @@ import { ROLE_DISPLAY_NAMES } from '../../../kurinModule/models/role-display-nam
 import { LeadershipRole } from '../../../kurinModule/models/enums/leadership-role.enum';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
 import { MyDuesTileComponent } from '../../components/my-dues-tile/my-dues-tile';
-import { MyDutiesTileComponent } from '../../components/my-duties-tile/my-duties-tile';
+import { MyDutiesTileComponent, dutyRowKey } from '../../components/my-duties-tile/my-duties-tile';
 import { MyKurinsTileComponent } from '../../components/my-kurins-tile/my-kurins-tile';
 import { MyProbeTileComponent } from '../../components/my-probe-tile/my-probe-tile';
 import { MyProfileTileComponent } from '../../components/my-profile-tile/my-profile-tile';
@@ -23,6 +23,7 @@ import { EventResponseChange, UpcomingEventsTileComponent, eventRowKey } from '.
 import { MyDuesDto, MyDutyDto, MyEventDto, MyGroupDto, MyGrowthDto, MyScoreDto, MyTaskDto } from '../../models/me.dto';
 import { MeService } from '../../services/me.service';
 import { AgendaService } from '../../../kurinModule/services/agenda-service/agenda.service';
+import { ScoreService } from '../../../scoreModule/services/score-service/score.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
 import { kurinName } from '../../../../shared/functions/kurin-label.function';
 
@@ -48,6 +49,7 @@ export class DashboardComponent implements OnInit {
   private readonly messages = inject(MessageService);
   private readonly me = inject(MeService);
   private readonly agenda = inject(AgendaService);
+  private readonly scoreService = inject(ScoreService);
 
   readonly boardKey = TILE_BOARD_KEYS.dashboard;
 
@@ -81,6 +83,7 @@ export class DashboardComponent implements OnInit {
   readonly duties = signal<MyDutyDto[]>([]);
   readonly dutiesLoading = signal(true);
   readonly dutiesFailed = signal(false);
+  readonly dutySaving = signal<string | null>(null);
 
   /** Проба and вмілості belong to a youth of УПЮ; the reply says so, and until it comes nothing is shown. */
   readonly hasYouthProgram = computed(() => this.growth()?.hasYouthProgram ?? false);
@@ -192,6 +195,29 @@ export class DashboardComponent implements OnInit {
       error: (error: unknown) => {
         this.respondingTo.set(null);
         this.messages.add({ severity: 'error', summary: 'Не вдалося відповісти', detail: failureDetail(error, 'Спробуй ще раз.') });
+      }
+    });
+  }
+
+  /** «Сходин не було» from the tile: said through the sheet's own endpoint, and the row leaves at once. */
+  markNotHeld(duty: MyDutyDto): void {
+    if (this.dutySaving() || !duty.agendaItemKey || !duty.occurrenceStartUtc) {
+      return;
+    }
+    const rowKey = dutyRowKey(duty);
+    this.dutySaving.set(rowKey);
+    this.scoreService.setNotHeld(duty.kurin.kurinKey, duty.agendaItemKey, duty.occurrenceStartUtc, true).subscribe({
+      next: () => {
+        this.dutySaving.set(null);
+        this.duties.set(this.duties().filter(d => dutyRowKey(d) !== rowKey));
+        this.messages.add({ severity: 'success', summary: 'Сходин не було', detail: `${duty.title ?? 'Подію'} прибрано зі справ. Повернути можна на аркуші присутності.` });
+      },
+      error: (error: unknown) => {
+        this.dutySaving.set(null);
+        const detail = (error as { status?: number } | null)?.status === 409
+          ? 'Хтось уже відмічений на цих сходинах — отже, вони відбулися.'
+          : failureDetail(error, 'Спробуй ще раз.');
+        this.messages.add({ severity: 'error', summary: 'Не вдалося зберегти', detail });
       }
     });
   }

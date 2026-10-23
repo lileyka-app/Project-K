@@ -13,7 +13,7 @@ import { MembershipKind } from '../../../kurinModule/models/enums/membership-kin
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MemberDto } from '../../../kurinModule/models/member.dto';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
-import { MyGroupDto } from '../../models/me.dto';
+import { MyDutyDto, MyGroupDto } from '../../models/me.dto';
 import { DashboardComponent } from './dashboard';
 
 describe('DashboardComponent', () => {
@@ -118,5 +118,23 @@ describe('DashboardComponent', () => {
     component.openGroup(groups[1]);
     expect(auth.setKurinScope).toHaveBeenCalledWith('k2');
     expect(router.navigate).toHaveBeenCalledWith(['/group', 'g7']);
+  });
+
+  it('says «Сходин не було» through the sheet\'s endpoint and drops the row', () => {
+    const kurin = { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true };
+    const meeting: MyDutyDto = {
+      kind: 'EventWithoutAttendance', kurin, count: 1, groupKey: null, groupName: null,
+      agendaItemKey: 'e1', occurrenceStartUtc: '2026-10-05T14:00:00Z', title: 'Сходини'
+    };
+    const badges: MyDutyDto = { ...meeting, kind: 'BadgesToReview', count: 2, agendaItemKey: null, occurrenceStartUtc: null, title: null };
+    component.duties.set([badges, meeting]);
+
+    component.markNotHeld(meeting);
+    const request = TestBed.inject(HttpTestingController)
+      .expectOne(r => r.url.endsWith(`/kurin/k1/score/events/e1/${encodeURIComponent('2026-10-05T14:00:00Z')}/not-held`));
+    expect(request.request.method).toBe('PUT');
+    request.flush({});
+
+    expect(component.duties()).toEqual([badges]);
   });
 });

@@ -7,6 +7,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { MessageModule } from '@openng/optimus-ui/message';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
@@ -30,7 +31,7 @@ type Shelf = 'answered' | 'assigned' | 'others';
   selector: 'app-attendance-sheet',
   imports: [
     DatePipe, NgTemplateOutlet, FormsModule, RouterLink, ButtonModule, TagModule, TooltipModule, SkeletonModule, InputTextModule, ToggleSwitchModule,
-    DialogModule, ConfirmDialogModule, EmptyStateComponent, ScoreEntryDialogComponent
+    DialogModule, ConfirmDialogModule, MessageModule, EmptyStateComponent, ScoreEntryDialogComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './attendance-sheet.html',
@@ -100,6 +101,10 @@ export class AttendanceSheetComponent implements OnInit {
   readonly rateDraft = signal<number | null>(null);
   readonly savingRate = signal(false);
 
+  /** Said not to have taken place: nobody can be marked until that is taken back. */
+  readonly notHeld = computed(() => this.data()?.notHeld ?? null);
+  readonly savingNotHeld = signal(false);
+
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.kurinKey = params.get('kurinKey') ?? '';
@@ -150,6 +155,9 @@ export class AttendanceSheetComponent implements OnInit {
   }
 
   toggle(person: SheetPersonDto): void {
+    if (this.notHeld()) {
+      return;
+    }
     if (person.attendance) {
       this.unmark(person);
     } else {
@@ -276,6 +284,39 @@ export class AttendanceSheetComponent implements OnInit {
             this.messages.add({ severity: 'error', summary: 'Не вдалося видалити', detail: failureDetail(error, 'Спробуй ще раз.') });
           }
         });
+      }
+    });
+  }
+
+  /** Cancelled сходини: off the провід's «Справи», and the sheet stays empty until taken back. */
+  confirmNotHeld(): void {
+    const d = this.data();
+    if (!d) {
+      return;
+    }
+    this.confirmation.confirm({
+      header: 'Сходин не було?',
+      message: `«${d.title}» цього дня не відбулися: відмічати нікого не треба, і зі «Справ» вони зникнуть. Це можна повернути.`,
+      icon: 'pi pi-calendar-times',
+      acceptButtonProps: { label: 'Сходин не було' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      accept: () => this.saveNotHeld(true)
+    });
+  }
+
+  saveNotHeld(notHeld: boolean): void {
+    this.savingNotHeld.set(true);
+    this.scores.setNotHeld(this.kurinKey, this.agendaItemKey, this.occurrence, notHeld).subscribe({
+      next: () => {
+        this.savingNotHeld.set(false);
+        this.load();
+      },
+      error: (error: unknown) => {
+        this.savingNotHeld.set(false);
+        const detail = isStatus(error, 409)
+          ? 'Хтось уже відмічений на цих сходинах — отже, вони відбулися.'
+          : failureDetail(error, 'Спробуй ще раз.');
+        this.messages.add({ severity: 'error', summary: 'Не вдалося зберегти', detail });
       }
     });
   }

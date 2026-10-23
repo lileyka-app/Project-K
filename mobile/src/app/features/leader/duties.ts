@@ -4,6 +4,7 @@ import { kurinLabel } from '../../core/kurin-label';
 
 /** One line of the «Справи» card: what to do, where, how many, and the screen it is done on. */
 export interface DutyRow {
+  duty: MyDutyDto;
   key: string;
   icon: string;
   /** The icon tile's colour on iPhone. */
@@ -15,6 +16,8 @@ export interface DutyRow {
   /** Null when the phone has no screen for it or it lies in another kurin: the row is said, not opened. */
   link: string | null;
   queryParams: Record<string, string> | null;
+  /** An event's row in the kurin the token acts in: «Сходин не було» can be said by a swipe. */
+  canSayNotHeld: boolean;
 }
 
 const META: Record<MyDutyKind, { icon: string; tile: string; label: string }> = {
@@ -46,6 +49,7 @@ export function dutyRows(duties: MyDutyDto[], today: Date, namesKurin: boolean):
 
     const link = duty.kurin.isCurrent ? linkOf(duty) : null;
     return {
+      duty,
       key: [duty.kind, duty.kurin.kurinKey, duty.groupKey ?? '', duty.agendaItemKey ?? '', duty.occurrenceStartUtc ?? ''].join('|'),
       icon: meta.icon,
       tile: meta.tile,
@@ -54,6 +58,8 @@ export function dutyRows(duties: MyDutyDto[], today: Date, namesKurin: boolean):
       count: duty.kind === 'EventWithoutAttendance' ? null : duty.count,
       link,
       queryParams: link ? queryOf(duty) : null,
+      canSayNotHeld:
+        duty.kind === 'EventWithoutAttendance' && duty.kurin.isCurrent && !!duty.agendaItemKey && !!duty.occurrenceStartUtc,
     };
   });
 }

@@ -62,6 +62,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<ScoreItem> ScoreItems { get; set; }
     public DbSet<ScoreStage> ScoreStages { get; set; }
     public DbSet<ScoreAttendance> ScoreAttendances { get; set; }
+    public DbSet<ScoreNotHeldOccurrence> ScoreNotHeldOccurrences { get; set; }
     public DbSet<ScoreEntry> ScoreEntries { get; set; }
     public DbSet<ScoreGroupMove> ScoreGroupMoves { get; set; }
     public DbSet<ScoreTrailEvent> ScoreTrailEvents { get; set; }
@@ -357,6 +358,15 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasFilter("[RemovedAtUtc] IS NULL")
                 .HasDatabaseName("IX_ScoreAttendances_OnePerOccurrence");
             entity.HasIndex(e => new { e.KurinKey, e.AgendaItemKey });
+        });
+
+        builder.Entity<ScoreNotHeldOccurrence>(entity =>
+        {
+            entity.HasKey(e => e.ScoreNotHeldOccurrenceKey);
+            entity.HasIndex(e => new { e.AgendaItemKey, e.OccurrenceStartUtc })
+                .IsUnique()
+                .HasDatabaseName("IX_ScoreNotHeldOccurrences_OnePerOccurrence");
+            entity.HasIndex(e => e.KurinKey);
         });
 
         builder.Entity<ScoreEntry>(entity =>

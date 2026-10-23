@@ -18,7 +18,7 @@
   } @else {
     <ul class="duties-tile__list">
       @for (row of rows(); track rowKey(row)) {
-        <li>
+        <li class="duties-tile__item">
           @if (row.link; as link) {
             <a class="duties-tile__row duties-tile__row--link" [routerLink]="link">
               <ng-container *ngTemplateOutlet="body; context: { row }" />
@@ -28,6 +28,20 @@
             <span class="duties-tile__row">
               <ng-container *ngTemplateOutlet="body; context: { row }" />
             </span>
+          }
+          @if (row.canSayNotHeld) {
+            <div class="duties-tile__actions">
+              <p-button
+                label="Сходин не було"
+                icon="pi pi-calendar-times"
+                severity="secondary"
+                variant="text"
+                size="small"
+                [ariaLabel]="'Сходин не було: ' + (row.duty.title ?? '')"
+                [loading]="savingKey() === rowKey(row)"
+                [disabled]="!!savingKey()"
+                (onClick)="notHeld.emit(row.duty)" />
+            </div>
           }
         </li>
       }

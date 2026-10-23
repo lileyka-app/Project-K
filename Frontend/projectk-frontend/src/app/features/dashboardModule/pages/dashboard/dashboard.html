@@ -26,7 +26,13 @@
 
     @if (duties().length) {
       <ng-template [appTileDef]="{ key: 'my-duties', span: 'half', label: 'Справи' }">
-        <app-my-duties-tile [duties]="duties()" [loading]="dutiesLoading()" [failed]="dutiesFailed()" [namesKurin]="namesKurin()" />
+        <app-my-duties-tile
+          [duties]="duties()"
+          [loading]="dutiesLoading()"
+          [failed]="dutiesFailed()"
+          [namesKurin]="namesKurin()"
+          [savingKey]="dutySaving()"
+          (notHeld)="markNotHeld($event)" />
       </ng-template>
     }
 

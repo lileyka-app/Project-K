@@ -68,6 +68,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IScoreItemRepository _scoreItems;
     private IScoreStageRepository _scoreStages;
     private IScoreAttendanceRepository _scoreAttendances;
+    private IScoreNotHeldOccurrenceRepository _scoreNotHeldOccurrences;
     private IScoreEntryRepository _scoreEntries;
     private IScoreGroupMoveRepository _scoreGroupMoves;
     private IScoreTrailEventRepository _scoreTrailEvents;
@@ -111,6 +112,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IScoreItemRepository ScoreItems => _scoreItems ??= new ScoreItemRepository(_context);
     public IScoreStageRepository ScoreStages => _scoreStages ??= new ScoreStageRepository(_context);
     public IScoreAttendanceRepository ScoreAttendances => _scoreAttendances ??= new ScoreAttendanceRepository(_context);
+    public IScoreNotHeldOccurrenceRepository ScoreNotHeldOccurrences => _scoreNotHeldOccurrences ??= new ScoreNotHeldOccurrenceRepository(_context);
     public IScoreEntryRepository ScoreEntries => _scoreEntries ??= new ScoreEntryRepository(_context);
     public IScoreGroupMoveRepository ScoreGroupMoves => _scoreGroupMoves ??= new ScoreGroupMoveRepository(_context);
     public IScoreTrailEventRepository ScoreTrailEvents => _scoreTrailEvents ??= new ScoreTrailEventRepository(_context);

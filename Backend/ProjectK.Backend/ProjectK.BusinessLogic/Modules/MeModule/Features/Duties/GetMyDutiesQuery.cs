@@ -161,7 +161,8 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
 
     /// <summary>
     /// Events of the last two weeks worth points where no one at all was marked present — the sheet
-    /// nobody opened. Only for someone who scores at least one гурток there.
+    /// nobody opened — unless someone said that occurrence did not take place. Only for someone who
+    /// scores at least one гурток there.
     /// </summary>
     private async Task AddAttendanceAsync(List<MyDutyDto> duties, MeKurinContext context, DutyRights rights, MyKurinRefDto kurin, CancellationToken cancellationToken)
     {
@@ -174,10 +175,12 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         var from = now.AddDays(-AttendanceWindowDays);
         var book = await _books.OpenAttendanceAsync(context.Membership.KurinKey, cancellationToken);
         var zone = await _profiles.ForKurinAsync(context.Membership.KurinKey, cancellationToken);
-        var marked = book.Attendances
+        var settled = book.Attendances
             .Where(a => a.RemovedAtUtc is null)
             .Select(a => (a.AgendaItemKey, a.OccurrenceStartUtc))
             .ToHashSet();
+        // An occurrence said not to have taken place has no sheet to fill.
+        settled.UnionWith(book.NotHeld.Select(n => (n.AgendaItemKey, n.OccurrenceStartUtc)));
 
         var items = await _unitOfWork.AgendaItems.GetForViewerAsync(
             context.Viewer.ToScope(), from, now, onlyDated: true, kind: AgendaItemKind.Event, cancellationToken);
@@ -186,7 +189,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         {
             var unmarkedStarts = AgendaRecurrence.Expand(item, from, now, zone)
                 .Select(occurrence => occurrence.StartUtc)
-                .Where(startUtc => startUtc <= now && !marked.Contains((item.AgendaItemKey, startUtc)));
+                .Where(startUtc => startUtc <= now && !settled.Contains((item.AgendaItemKey, startUtc)));
             foreach (var startUtc in unmarkedStarts)
             {
                 duties.Add(new MyDutyDto

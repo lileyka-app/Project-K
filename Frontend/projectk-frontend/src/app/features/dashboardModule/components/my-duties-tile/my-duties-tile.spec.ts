@@ -60,4 +60,23 @@ describe('MyDutiesTileComponent', () => {
     expect(row.detail).toBe('к. ч. 7');
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__row')).toHaveLength(0);
   });
+
+  it('offers «Сходин не було» on an event of the kurin acted in, and hands the duty up', () => {
+    const event = duty({ kind: 'EventWithoutAttendance', agendaItemKey: 'e1', occurrenceStartUtc: '2026-10-05T14:00:00Z', title: 'Сходини' });
+    const elsewhere = duty({
+      kind: 'EventWithoutAttendance', agendaItemKey: 'e2', occurrenceStartUtc: '2026-10-05T14:00:00Z', title: 'Сходини',
+      kurin: { kurinKey: 'k2', kurinNumber: 7, namedAfter: null, isCurrent: false }
+    });
+    fixture.componentRef.setInput('duties', [duty({ count: 2 }), event, elsewhere]);
+    fixture.detectChanges();
+    const emitted: MyDutyDto[] = [];
+    fixture.componentInstance.notHeld.subscribe(d => emitted.push(d));
+
+    expect(fixture.componentInstance.rows().map(r => r.canSayNotHeld)).toEqual([false, true, false]);
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.duties-tile__actions button') as HTMLButtonElement;
+    expect(button.textContent).toContain('Сходин не було');
+    button.click();
+
+    expect(emitted).toEqual([event]);
+  });
 });

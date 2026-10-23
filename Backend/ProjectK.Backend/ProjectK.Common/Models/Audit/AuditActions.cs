@@ -60,6 +60,12 @@ public static class AuditActions
 
         public const string Archived = "Agenda.Archived";
         public const string Restored = "Agenda.Restored";
+
+        /// <summary>One occurrence of an event was said not to have taken place — no сходини that week.</summary>
+        public const string OccurrenceNotHeld = "Agenda.OccurrenceNotHeld";
+
+        /// <summary>That was taken back, by hand or by marking someone present at it.</summary>
+        public const string OccurrenceHeld = "Agenda.OccurrenceHeld";
     }
 
     /// <summary>A person's card.</summary>

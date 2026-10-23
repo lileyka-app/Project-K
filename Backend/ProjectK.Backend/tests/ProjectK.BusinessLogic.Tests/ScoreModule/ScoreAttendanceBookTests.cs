@@ -12,7 +12,7 @@ public class ScoreAttendanceBookTests
     private static readonly Guid Tabir = Guid.NewGuid();
     private static readonly Guid Event = Guid.NewGuid();
 
-    private static ScoreAttendanceBook Book(params ScoreAttendanceRate[] rates) => new(rates, []);
+    private static ScoreAttendanceBook Book(params ScoreAttendanceRate[] rates) => new(rates, [], []);
 
     [Fact]
     public void AttendancePoints_TakesTheEventsOwnRate_OverItsGroups()

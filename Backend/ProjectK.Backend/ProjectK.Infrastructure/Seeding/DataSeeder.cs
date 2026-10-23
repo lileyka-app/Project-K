@@ -257,6 +257,7 @@ public static class DataSeeder
         dbContext.ScoreItems.RemoveRange(await dbContext.ScoreItems.Where(i => i.KurinKey == kurinKey).ToListAsync());
         dbContext.ScoreStages.RemoveRange(await dbContext.ScoreStages.Where(s => s.KurinKey == kurinKey).ToListAsync());
         dbContext.ScoreAttendances.RemoveRange(await dbContext.ScoreAttendances.Where(a => a.KurinKey == kurinKey).ToListAsync());
+        dbContext.ScoreNotHeldOccurrences.RemoveRange(await dbContext.ScoreNotHeldOccurrences.Where(n => n.KurinKey == kurinKey).ToListAsync());
         dbContext.ScoreEntries.RemoveRange(await dbContext.ScoreEntries.Where(e => e.KurinKey == kurinKey).ToListAsync());
         dbContext.ScoreGroupMoves.RemoveRange(await dbContext.ScoreGroupMoves.Where(m => m.KurinKey == kurinKey).ToListAsync());
         dbContext.ScoreTrailEvents.RemoveRange(await dbContext.ScoreTrailEvents.Where(e => e.KurinKey == kurinKey).ToListAsync());

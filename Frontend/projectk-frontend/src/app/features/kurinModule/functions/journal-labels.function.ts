@@ -46,6 +46,8 @@ const ACTION_LABELS: Record<string, string> = {
   'Agenda.StatusChanged': 'Задачу переставлено',
   'Agenda.Archived': 'Задачу відправлено в архів',
   'Agenda.Restored': 'Задачу повернуто з архіву',
+  'Agenda.OccurrenceNotHeld': 'Позначено, що подія не відбулася',
+  'Agenda.OccurrenceHeld': 'Знято позначку «не відбулася»',
   'Member.Added': 'Додано картку',
   'Member.Changed': 'Змінено картку',
   'Member.PhotoChanged': 'Змінено фото',

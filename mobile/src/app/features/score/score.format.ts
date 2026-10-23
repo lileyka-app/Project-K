@@ -1,5 +1,7 @@
 import { Params } from '@angular/router';
+import { dateLabel, timeLabel } from '../../me/labels';
 import {
+  OccurrenceNotHeldDto,
   SCORE_SOURCE_ORDER,
   ScorePeriodDto,
   ScorePeriodQuery,
@@ -129,4 +131,10 @@ export function shortDate(value: string, withYear = false): string {
   const date = parseDay(value);
   const dm = `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
   return withYear ? `${dm}.${date.getFullYear()}` : dm;
+}
+
+/** «Гуртковий, 6 жовтня 2026, 19:00» — who said сходини did not take place, and when. */
+export function notHeldLine(notHeld: OccurrenceNotHeldDto): string {
+  const at = new Date(notHeld.markedAtUtc);
+  return [notHeld.markedByName ?? 'хтось із проводу', dateLabel(at), timeLabel(at, null, false)].join(', ');
 }

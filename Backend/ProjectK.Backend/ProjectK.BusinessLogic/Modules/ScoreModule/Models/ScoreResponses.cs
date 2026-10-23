@@ -198,6 +198,15 @@ public sealed class AttendanceSheetResponse
     public IReadOnlyList<SheetGroupDto> Groups { get; set; } = [];
     public IReadOnlyList<ScoreItemDto> Items { get; set; } = [];
     public bool CanManage { get; set; }
+    /// <summary>Set when someone said the occurrence did not take place; nobody is marked then.</summary>
+    public OccurrenceNotHeldDto? NotHeld { get; set; }
+}
+
+/// <summary>Who said an occurrence did not take place, and when.</summary>
+public sealed class OccurrenceNotHeldDto
+{
+    public string? MarkedByName { get; set; }
+    public DateTime MarkedAtUtc { get; set; }
 }
 
 /// <summary>What became of each person a mark was asked for.</summary>

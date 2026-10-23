@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ButtonModule } from '@openng/optimus-ui/button';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { dayLabel, timeLabel } from '../../functions/day-label.function';
@@ -14,6 +15,8 @@ export interface DutyRow {
   detail: string;
   /** Null when the duty lies in a kurin the token does not act in: the row is said, not opened. */
   link: unknown[] | null;
+  /** An event's row in the kurin the token acts in: «Сходин не було» can be said from here. */
+  canSayNotHeld: boolean;
 }
 
 const DUTY_META: Record<MyDutyKind, { icon: string; label: string }> = {
@@ -22,6 +25,11 @@ const DUTY_META: Record<MyDutyKind, { icon: string; label: string }> = {
   EntriesToVerify: { icon: 'pi pi-wallet', label: 'Операції перевірити' },
   EventWithoutAttendance: { icon: 'pi pi-check-square', label: 'Відмітити присутність' }
 };
+
+/** One row of the tile, told apart from the others: what the page keys a pending action by. */
+export function dutyRowKey(duty: MyDutyDto): string {
+  return [duty.kind, duty.kurin.kurinKey, duty.groupKey ?? '', duty.agendaItemKey ?? '', duty.occurrenceStartUtc ?? ''].join('|');
+}
 
 /** Where each kind is done; every route is scoped by the kurin the token acts in. */
 function linkOf(duty: MyDutyDto): unknown[] {
@@ -45,7 +53,7 @@ function linkOf(duty: MyDutyDto): unknown[] {
  */
 @Component({
   selector: 'app-my-duties-tile',
-  imports: [NgTemplateOutlet, RouterLink, SkeletonModule, EmptyStateComponent],
+  imports: [NgTemplateOutlet, RouterLink, ButtonModule, SkeletonModule, EmptyStateComponent],
   templateUrl: './my-duties-tile.html',
   styleUrl: './my-duties-tile.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -55,6 +63,11 @@ export class MyDutiesTileComponent {
   readonly loading = input(false);
   readonly failed = input(false);
   readonly namesKurin = input(false);
+  /** The row whose action is on its way to the server. */
+  readonly savingKey = input<string | null>(null);
+
+  /** «Сходин не було» on an event's row: the page tells the server and drops the row. */
+  readonly notHeld = output<MyDutyDto>();
 
   readonly today = new Date();
 
@@ -63,8 +76,7 @@ export class MyDutiesTileComponent {
   readonly total = computed(() => this.duties().reduce((sum, duty) => sum + duty.count, 0));
 
   rowKey(row: DutyRow): string {
-    const d = row.duty;
-    return [d.kind, d.kurin.kurinKey, d.groupKey ?? '', d.agendaItemKey ?? '', d.occurrenceStartUtc ?? ''].join('|');
+    return dutyRowKey(row.duty);
   }
 
   private toRow(duty: MyDutyDto): DutyRow {
@@ -92,7 +104,8 @@ export class MyDutiesTileComponent {
       icon: meta.icon,
       label: duty.kind === 'EventWithoutAttendance' && duty.title ? `${meta.label}: ${duty.title}` : meta.label,
       detail: parts.join(' · '),
-      link: duty.kurin.isCurrent ? linkOf(duty) : null
+      link: duty.kurin.isCurrent ? linkOf(duty) : null,
+      canSayNotHeld: duty.kind === 'EventWithoutAttendance' && duty.kurin.isCurrent && !!duty.agendaItemKey && !!duty.occurrenceStartUtc
     };
   }
 }

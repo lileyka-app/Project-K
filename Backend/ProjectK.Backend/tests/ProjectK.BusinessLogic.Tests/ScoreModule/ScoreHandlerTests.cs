@@ -3,6 +3,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Entry;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.Get;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.Mark;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.NotHeld;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
@@ -15,6 +16,7 @@ using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -42,6 +44,9 @@ public class ScoreHandlerTests
     private readonly List<ScoreEntry> _entries = [];
     private readonly List<ScoreItem> _items = [];
     private readonly List<ScoreTrailEvent> _trail = [];
+    private readonly List<ScoreNotHeldOccurrence> _notHeld = [];
+    private readonly List<AuditRecord> _journal = [];
+    private readonly Mock<IKurinAudit> _audit = new();
     private readonly List<KurinMembershipRecord> _memberships = [];
     private readonly List<MemberSummary> _people = [];
     // People who stand in no kurin any more: the directory reads them only by key.
@@ -84,6 +89,13 @@ public class ScoreHandlerTests
         _score.SetupGet(s => s.ScoreEntries).Returns(entries.Object);
         _score.SetupGet(s => s.ScoreItems).Returns(items.Object);
         _score.SetupGet(s => s.ScoreTrailEvents).Returns(trail.Object);
+        var notHeld = new Mock<IScoreNotHeldOccurrenceRepository>();
+        notHeld.Setup(r => r.FindAsync(It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid e, DateTime o, CancellationToken _) => _notHeld.FirstOrDefault(n => n.AgendaItemKey == e && n.OccurrenceStartUtc == o));
+        notHeld.Setup(r => r.Create(It.IsAny<ScoreNotHeldOccurrence>(), It.IsAny<CancellationToken>())).Callback<ScoreNotHeldOccurrence, CancellationToken>((n, _) => _notHeld.Add(n));
+        notHeld.Setup(r => r.Delete(It.IsAny<ScoreNotHeldOccurrence>(), It.IsAny<CancellationToken>())).Callback<ScoreNotHeldOccurrence, CancellationToken>((n, _) => _notHeld.Remove(n));
+        _score.SetupGet(s => s.ScoreNotHeldOccurrences).Returns(notHeld.Object);
+        _audit.Setup(a => a.RecordAsync(It.IsAny<AuditRecord>(), It.IsAny<CancellationToken>())).Callback<AuditRecord, CancellationToken>((r, _) => _journal.Add(r)).Returns(Task.CompletedTask);
         _score.SetupGet(s => s.KurinScoreSettings).Returns(Empty<IKurinScoreSettingsRepository, KurinScoreSettings>(r => r.Setup(x => x.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync((KurinScoreSettings?)null)));
         _score.SetupGet(s => s.ScoreRules).Returns(Empty<IScoreRuleRepository, ScoreRule>(r => r.Setup(x => x.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([])));
         _score.SetupGet(s => s.ScoreAttendanceRates).Returns(Empty<IScoreAttendanceRateRepository, ScoreAttendanceRate>(r => r.Setup(x => x.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([])));
@@ -172,7 +184,7 @@ public class ScoreHandlerTests
         return new ScoreBookReader(_score.Object, _unitOfWork.Object, Memberships(), members.Object, NoFacts(), _time);
     }
 
-    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, _unitOfWork.Object, Memberships(), Books(), User(), _time, Mock.Of<IKraiProfileProvider>());
+    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, _unitOfWork.Object, Memberships(), Books(), User(), _time, Mock.Of<IKraiProfileProvider>(), _audit.Object);
 
     private CreateScoreEntryCommandHandler Giver() => new(Access(), Books(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileProvider>());
 
@@ -249,6 +261,107 @@ public class ScoreHandlerTests
 
         result.Type.Should().Be(ResultType.Forbidden);
         _score.Verify(s => s.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never());
+    }
+
+    private SetOccurrenceNotHeldCommandHandler NotHeldSetter() =>
+        new(Access(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileProvider>(), _audit.Object);
+
+    [Fact]
+    public async Task NotHeld_IsSaid_ByWhoeverMarksSomewhere_AndJournalled()
+    {
+        var result = await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start, true), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _notHeld.Should().ContainSingle().Which.Should().BeEquivalentTo(new { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = (Guid?)Actor });
+        _journal.Should().ContainSingle().Which.Should().BeEquivalentTo(new
+        {
+            Area = AuditArea.Agenda,
+            Action = AuditActions.Agenda.OccurrenceNotHeld,
+            SubjectKey = Skhodyny,
+            SubjectLabel = "Сходини · 06.10.2026"
+        });
+        _score.Verify(s => s.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
+    }
+
+    [Fact]
+    public async Task NotHeld_IsNotForSomeoneWhoMarksNowhere()
+    {
+        _resourceAccess.Setup(r => r.CheckAccessAsync(ResourceType.GroupScore, It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("youth"));
+
+        var result = await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start, true), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        _notHeld.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task NotHeld_OnADayTheSeriesDoesNotMeet_IsNothing()
+    {
+        var result = await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start.AddDays(1), true), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.NotFound);
+    }
+
+    [Fact]
+    public async Task NotHeld_IsRefused_WhileSomeoneIsMarkedPresent()
+    {
+        _marks.Add(new ScoreAttendance { KurinKey = Kurin, MembershipKey = _oksana, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Other, MarkedAtUtc = Start });
+
+        var result = await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start, true), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("OccurrenceHasAttendance");
+        _notHeld.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task NotHeld_TakenBack_RemovesIt_AndSaysSo()
+    {
+        _notHeld.Add(new ScoreNotHeldOccurrence { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Other });
+
+        var result = await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start, false), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _notHeld.Should().BeEmpty();
+        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActions.Agenda.OccurrenceHeld);
+    }
+
+    [Fact]
+    public async Task NotHeld_AskedAgain_ChangesNothing()
+    {
+        await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start, false), CancellationToken.None);
+        await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start, true), CancellationToken.None);
+        await NotHeldSetter().Handle(new SetOccurrenceNotHeldCommand(Kurin, Skhodyny, Start, true), CancellationToken.None);
+
+        _notHeld.Should().ContainSingle();
+        _journal.Should().ContainSingle();
+    }
+
+    // A meeting someone was at took place: the first mark takes «did not take place» back.
+    [Fact]
+    public async Task Marking_ANotHeldOccurrence_TakesNotHeldBack()
+    {
+        _notHeld.Add(new ScoreNotHeldOccurrence { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Other });
+
+        var result = await Marker().Handle(MarkCommand(_oksana), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _marks.Should().ContainSingle();
+        _notHeld.Should().BeEmpty();
+        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActions.Agenda.OccurrenceHeld);
+    }
+
+    [Fact]
+    public async Task TheSheet_SaysWhoSaidItDidNotTakePlace()
+    {
+        _notHeld.Add(new ScoreNotHeldOccurrence { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Actor, MarkedAtUtc = Start });
+
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>())
+            .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
+
+        result.Data!.NotHeld.Should().NotBeNull();
+        result.Data.NotHeld!.MarkedAtUtc.Should().Be(Start);
     }
 
     [Fact]
