@@ -1,6 +1,8 @@
 using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -62,6 +64,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     private readonly IUnitOfWork _kurinData;
     private readonly IMembershipRepository _memberships;
     private readonly IMemberFieldAccess _fieldAccess;
+    private readonly IKurinAudit _audit;
 
     public MemberProfileVerificationService(
         IMemberUnitOfWork unitOfWork,
@@ -70,9 +73,11 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         IMapper mapper,
         IResourceScopeReader scopeReader,
         IUnitOfWork kurinData,
-        IMemberFieldAccess fieldAccess)
+        IMemberFieldAccess fieldAccess,
+        IKurinAudit audit)
     {
         _fieldAccess = fieldAccess;
+        _audit = audit;
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
@@ -94,11 +99,15 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
             return validation;
         }
 
-        member!.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
+        var statusBefore = member!.ProfileVerificationStatus;
+        member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
         member.ProfileVerifiedAtUtc = DateTime.UtcNow;
         member.ProfileVerifiedByUserKey = _currentUserContext.UserId;
         member.ProfileVerificationNote = NormalizeNote(note);
         member.UpdatedDate = DateTime.UtcNow;
+
+        // Checking a profile again is an act of its own, so it is recorded even when it was already current.
+        await RecordAsync(AuditActions.Member.ProfileVerified, member, statusBefore, member.ProfileVerificationNote, cancellationToken);
 
         var result = await SaveAsync(member, groupKey, cancellationToken);
         if (result.Type == ResultType.Success)
@@ -120,11 +129,17 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
             return validation;
         }
 
-        member!.ProfileVerificationStatus = MemberProfileVerificationStatus.Unverified;
+        var statusBefore = member!.ProfileVerificationStatus;
+        member.ProfileVerificationStatus = MemberProfileVerificationStatus.Unverified;
         member.ProfileVerifiedAtUtc = null;
         member.ProfileVerifiedByUserKey = null;
         member.ProfileVerificationNote = null;
         member.UpdatedDate = DateTime.UtcNow;
+
+        if (statusBefore != MemberProfileVerificationStatus.Unverified)
+        {
+            await RecordAsync(AuditActions.Member.VerificationReset, member, statusBefore, null, cancellationToken);
+        }
 
         return await SaveAsync(member, groupKey, cancellationToken);
     }
@@ -220,6 +235,23 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         var mask = await _fieldAccess.ForViewerAsync(cancellationToken);
         return new ServiceResult<MemberResponse>(ResultType.Success, _mapper.Map<MemberResponse>(member).MaskFor(mask, groupKey));
     }
+
+    private Task RecordAsync(
+        string action,
+        MemberEntity member,
+        MemberProfileVerificationStatus statusBefore,
+        string? note,
+        CancellationToken cancellationToken) =>
+        _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Member,
+                action,
+                member.MemberKey,
+                MemberAuditFields.LabelOf(member),
+                member.MemberKey,
+                AuditChanges.Of((MemberAuditFields.ProfileVerification, statusBefore, member.ProfileVerificationStatus)),
+                note),
+            cancellationToken);
 
     private async Task PublishProfileVerifiedAsync(MemberEntity member, CancellationToken cancellationToken)
     {

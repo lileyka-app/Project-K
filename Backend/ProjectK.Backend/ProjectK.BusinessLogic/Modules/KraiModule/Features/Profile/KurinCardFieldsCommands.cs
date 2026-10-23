@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
@@ -43,12 +44,17 @@ public sealed class SetKurinCardFieldsCommandHandler : IRequestHandler<SetKurinC
     private readonly IUnitOfWork _unitOfWork;
     private readonly IKraiProfileProvider _profiles;
     private readonly IBackendCache _cache;
+    private readonly IKurinAudit _audit;
 
-    public SetKurinCardFieldsCommandHandler(IUnitOfWork unitOfWork, IKraiProfileProvider profiles, IBackendCache cache)
+    /// <summary>What the kurin's journal calls this setting.</summary>
+    public const string Label = "Поля картки";
+
+    public SetKurinCardFieldsCommandHandler(IUnitOfWork unitOfWork, IKraiProfileProvider profiles, IBackendCache cache, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _profiles = profiles;
         _cache = cache;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<IReadOnlyList<KurinCardFieldResponse>>> Handle(SetKurinCardFieldsCommand request, CancellationToken cancellationToken)
@@ -61,12 +67,37 @@ public sealed class SetKurinCardFieldsCommandHandler : IRequestHandler<SetKurinC
         }
 
         var hideable = profile.CardFields.Hideable().Select(field => field.Key).ToHashSet(StringComparer.Ordinal);
+        var hiddenBefore = kurin.HiddenCardFields;
         kurin.HiddenCardFields = KurinHiddenCardFields.Write(request.Hidden.Where(hideable.Contains));
         _unitOfWork.Kurins.Update(kurin, cancellationToken);
+
+        // One change for the whole list: a card field's key can be the very name the journal
+        // keeps private (address, school), and a field per key would be recorded without its values.
+        var changes = AuditChanges.Of((
+            "hiddenFields",
+            HiddenLabels(profile.CardFields, hiddenBefore),
+            HiddenLabels(profile.CardFields, kurin.HiddenCardFields)));
+        if (changes.Count > 0)
+        {
+            await _audit.RecordAsync(
+                new AuditRecord(AuditArea.Settings, AuditActions.Settings.CardFieldsChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
+                cancellationToken);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _cache.Invalidate(BackendCachePolicies.KurinReads);
 
         return KurinCardFieldsResult.Of(profile.CardFields, kurin.HiddenCardFields);
+    }
+
+    /// <summary>The hidden fields by the names the settings page shows, in its order; a key no longer offered is named by itself.</summary>
+    private static string HiddenLabels(KraiCardFieldsSettings card, string? hiddenJson)
+    {
+        var hidden = KurinHiddenCardFields.Read(hiddenJson);
+        var offered = card.Hideable();
+        var labels = offered.Where(field => hidden.Contains(field.Key)).Select(field => field.Label)
+            .Concat(hidden.Where(key => offered.All(field => field.Key != key)).Order(StringComparer.Ordinal));
+        return string.Join(", ", labels);
     }
 }
 

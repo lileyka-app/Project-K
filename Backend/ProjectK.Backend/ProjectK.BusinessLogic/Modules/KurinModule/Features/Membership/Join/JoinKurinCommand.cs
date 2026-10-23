@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
@@ -28,12 +29,14 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAccessChangeSignal _accessChanges;
     private readonly IMemberDirectory _members;
+    private readonly IKurinAudit _audit;
 
-    public JoinKurinCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAccessChangeSignal accessChanges)
+    public JoinKurinCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAccessChangeSignal accessChanges, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _accessChanges = accessChanges;
         _members = members;
+        _audit = audit;
     }
 
     public async Task<ServiceResult<Guid>> Handle(JoinKurinCommand request, CancellationToken cancellationToken)
@@ -75,9 +78,11 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         }
 
         // A гурток of another kurin would place them somewhere their kurin does not reach.
+        string? groupName = null;
         if (request.GroupKey.HasValue)
         {
             var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey.Value, cancellationToken);
+            groupName = group?.Name;
             if (group is null || group.KurinKey != request.KurinKey)
             {
                 return ServiceResult<Guid>.Failure(
@@ -104,6 +109,16 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         };
 
         _unitOfWork.Memberships.Open(membership);
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Membership,
+                AuditActions.Membership.Joined,
+                membership.MembershipKey,
+                person.FullName,
+                memberKey,
+                AuditChanges.Added(("kind", request.Kind), ("group", groupName)),
+                KurinKey: request.KurinKey),
+            cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         if (membership.UserKey is { } userKey)

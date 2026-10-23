@@ -12,6 +12,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
@@ -60,13 +61,19 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
     private readonly IBackendCache _cache;
     private readonly KurinNumberOptions _numbers;
     private readonly KraiOptions _krai;
-    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache, IOptions<KurinNumberOptions> numbers, IOptions<KraiOptions> krai)
+    private readonly IKurinAudit _audit;
+
+    /// <summary>What the kurin's journal calls these settings.</summary>
+    public const string Label = "Дані куреня";
+
+    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache, IOptions<KurinNumberOptions> numbers, IOptions<KraiOptions> krai, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _cache = cache;
         _numbers = numbers.Value;
         _krai = krai.Value;
+        _audit = audit;
     }
     public async Task<ServiceResult<KurinResponse>> Handle(UpsertKurinCommand request, CancellationToken cancellationToken)
     {
@@ -107,6 +114,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         else
         {
             // Update existing Kurin
+            var before = Snapshot(existing);
             _mapper.Map(request, existing);
             existing.Number = request.Number;
             existing.Stanytsia = stanytsia;
@@ -115,6 +123,14 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             existing.Description = description;
             existing.ProfileVerificationEnabled = request.ProfileVerificationEnabled;
             _unitOfWork.Kurins.Update(existing, cancellationToken);
+
+            var recorded = AuditChanges.Of(before.Zip(Snapshot(existing), (was, now) => (was.Field, was.Value, now.Value)).ToArray());
+            if (recorded.Count > 0)
+            {
+                await _audit.RecordAsync(
+                    new AuditRecord(AuditArea.Settings, AuditActions.Settings.KurinChanged, existing.KurinKey, Label, Changes: recorded, KurinKey: existing.KurinKey),
+                    cancellationToken);
+            }
         }
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -189,6 +205,17 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
 
         return null;
     }
+
+    /// <summary>The kurin's details the journal records when they change.</summary>
+    private static (string Field, object? Value)[] Snapshot(Common.Entities.KurinModule.Kurin kurin) =>
+    [
+        ("number", kurin.Number),
+        ("stanytsia", kurin.Stanytsia),
+        ("regionOrCountry", kurin.RegionOrCountry),
+        ("namedAfter", kurin.NamedAfter),
+        ("description", kurin.Description),
+        ("profileVerificationEnabled", kurin.ProfileVerificationEnabled)
+    ];
 
     private static string? NormalizeOptionalText(string? value)
     {

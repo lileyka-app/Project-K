@@ -4,10 +4,13 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -23,6 +26,7 @@ public class KurinAccessPolicyHandlerTests
     private readonly Mock<IAccessChangeSignal> _accessChanges = new();
     private readonly KurinAccessPolicyProvider _provider;
     private readonly Kurin _kurin = new(5);
+    private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     public KurinAccessPolicyHandlerTests()
     {
@@ -58,7 +62,7 @@ public class KurinAccessPolicyHandlerTests
     private static AccessPolicyCellDto Cell(KurinAccessPolicyDto dto, KurinCapability capability, PolicyAudience audience) =>
         dto.Capabilities.Single(row => row.Key == capability).Cells.Single(cell => cell.Audience == audience);
 
-    private SetKurinAccessPolicyCommandHandler SetHandler() => new(_unitOfWork.Object, _provider, _accessChanges.Object);
+    private SetKurinAccessPolicyCommandHandler SetHandler() => new(_unitOfWork.Object, _provider, _accessChanges.Object, _journal.Audit);
 
     [Fact]
     public async Task Get_GivesEveryCell_WithItsDefaultAndLock()
@@ -111,6 +115,27 @@ public class KurinAccessPolicyHandlerTests
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cache.Verify(c => c.Invalidate(BackendCachePolicies.KurinAccessPolicyReads), Times.Once);
         _accessChanges.Verify(s => s.MarkKurin(_kurin.KurinKey), Times.Once);
+
+        // One change per cell that moved, from the reach it had to the new one; filed under the kurin.
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Settings);
+        entry.Action.Should().Be(AuditActions.Settings.AccessPolicyChanged);
+        entry.KurinKey.Should().Be(_kurin.KurinKey);
+        entry.SubjectLabel.Should().Be(SetKurinAccessPolicyCommandHandler.Label);
+        entry.Changes.Should().HaveCount(2).And.OnlyContain(change => change.From != null && !change.Redacted);
+        entry.Changes.Select(change => $"{change.Field}={change.To}").Should().BeEquivalentTo(
+            "SeeBirthDate/Hurtkovyy=OwnGroup", "SeeBirthDate/Youth=None");
+    }
+
+    [Fact]
+    public async Task Set_TheSameMatrixAgain_RecordsNothing()
+    {
+        var current = await new GetKurinAccessPolicyQueryHandler(_unitOfWork.Object, _provider)
+            .Handle(new GetKurinAccessPolicyQuery(_kurin.KurinKey), default);
+
+        await SetHandler().Handle(new SetKurinAccessPolicyCommand(_kurin.KurinKey, Echo(current.Data!)), default);
+
+        _journal.Entries.Should().BeEmpty();
     }
 
     [Fact]

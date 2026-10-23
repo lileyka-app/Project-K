@@ -2,7 +2,9 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -27,6 +29,8 @@ public class UpdateAgendaItemHandlerTests
     private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
     private readonly Mock<IMemberRepository> _memberRepo = new();
     private readonly UpdateAgendaItemCommandHandler _handler;
+    private readonly JournalRecorder _journal;
+    private readonly List<Group> _groups = [];
 
     private readonly Guid _kurinKey = Guid.NewGuid();
 
@@ -42,7 +46,38 @@ public class UpdateAgendaItemHandlerTests
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, Array.Empty<Guid>(), Array.Empty<Guid>(), true, true));
         _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), ResourceAction.Create, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
-        _handler = new UpdateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object);
+        var groups = new Mock<IGroupRepository>();
+        groups.Setup(g => g.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_groups);
+        _uow.Setup(u => u.Groups).Returns(groups.Object);
+        _journal = new JournalRecorder(_currentUser.Object);
+        _handler = new UpdateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
+    }
+
+    [Fact]
+    public async Task Handle_WhenNothingChanges_RecordsNothing()
+    {
+        var item = new AgendaItem
+        {
+            AgendaItemKey = Guid.NewGuid(),
+            KurinKey = _kurinKey,
+            Kind = AgendaItemKind.Event,
+            Title = "Табір",
+            Location = "Карпати",
+            Assignments = new List<AgendaAssignment> { new() { TargetType = AgendaTargetType.Kurin, TargetKey = _kurinKey } }
+        };
+        _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+
+        var result = await _handler.Handle(new UpdateAgendaItemCommand
+        {
+            AgendaItemKey = item.AgendaItemKey,
+            Kind = AgendaItemKind.Event,
+            Title = " Табір ",
+            Location = "Карпати",
+            Targets = [new() { TargetType = AgendaTargetType.Kurin, TargetKey = _kurinKey }]
+        }, default);
+
+        result.Type.Should().Be(ResultType.Success);
+        _journal.Entries.Should().BeEmpty();
     }
 
     // Regression: stretching an event by adding an end date while keeping the same target must not
@@ -82,12 +117,20 @@ public class UpdateAgendaItemHandlerTests
         _agendaRepo.Verify(r => r.AddAssignment(It.IsAny<AgendaAssignment>()), Times.Never);
         _agendaRepo.Verify(r => r.Update(It.IsAny<AgendaItem>(), It.IsAny<CancellationToken>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+        // Measured against the item as it was before the request was written over it: only the end moved.
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Action.Should().Be(AuditActions.Agenda.Changed);
+        entry.SubjectKey.Should().Be(item.AgendaItemKey);
+        entry.KurinKey.Should().Be(_kurinKey);
+        entry.Changes.Should().Equal(new AuditChange("end", null, "2026-08-14"));
     }
 
     [Fact]
     public async Task Handle_WhenTargetsChange_RemovesGoneAddsNew()
     {
         var group = Guid.NewGuid();
+        _groups.Add(new Group("Соколи", _kurinKey) { GroupKey = group });
         var keptKurin = new AgendaAssignment { TargetType = AgendaTargetType.Kurin, TargetKey = _kurinKey };
         var removedGroup = new AgendaAssignment { TargetType = AgendaTargetType.Group, TargetKey = group };
         var item = new AgendaItem
@@ -121,6 +164,10 @@ public class UpdateAgendaItemHandlerTests
         _agendaRepo.Verify(r => r.RemoveAssignment(keptKurin), Times.Never);
         _agendaRepo.Verify(r => r.AddAssignment(It.Is<AgendaAssignment>(a => a.TargetType == AgendaTargetType.Member && a.TargetKey == newMember)), Times.Once);
         _agendaRepo.Verify(r => r.AddAssignment(It.Is<AgendaAssignment>(a => a.TargetType == AgendaTargetType.Kurin)), Times.Never);
+
+        // Someone the directory cannot name still shows up as a person.
+        _journal.Entries.Single().Changes.Should().Equal(
+            new AuditChange("targets", "Весь курінь, Соколи", "Весь курінь, Людина"));
     }
 
     // Switching «кожному окремо» to a shared mode after someone moved their part would silently drop it.

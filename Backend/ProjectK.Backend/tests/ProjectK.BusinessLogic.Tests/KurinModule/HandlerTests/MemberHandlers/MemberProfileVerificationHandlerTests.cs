@@ -7,7 +7,9 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -35,6 +37,7 @@ public class MemberProfileVerificationHandlerTests
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IResourceScopeReader> _scopeReaderMock;
     private readonly MemberProfileVerificationService _service;
+    private readonly JournalRecorder _journal;
 
     public MemberProfileVerificationHandlerTests()
     {
@@ -44,6 +47,7 @@ public class MemberProfileVerificationHandlerTests
         _uowMock.SetupGet(x => x.Members).Returns(_memberRepoMock.Object);
 
         _currentUserContextMock = new Mock<ICurrentUserContext>();
+        _journal = new JournalRecorder(_currentUserContextMock.Object);
         _eventsMock = new Mock<IDomainEventPublisher>();
         _mapperMock = new Mock<IMapper>();
         _mapperMock
@@ -66,7 +70,8 @@ public class MemberProfileVerificationHandlerTests
             _mapperMock.Object,
             _scopeReaderMock.Object,
             _kurinDataMock.Object,
-            FieldAccess.SeesEverything());
+            FieldAccess.SeesEverything(),
+            _journal.Audit);
     }
 
     [Fact]
@@ -94,6 +99,15 @@ public class MemberProfileVerificationHandlerTests
 
         _memberRepoMock.Verify(x => x.Update(member, It.IsAny<CancellationToken>()), Times.Once);
         _uowMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Member);
+        entry.Action.Should().Be(AuditActions.Member.ProfileVerified);
+        entry.KurinKey.Should().Be(kurinKey);
+        entry.SubjectMemberKey.Should().Be(member.MemberKey);
+        entry.SubjectLabel.Should().Be("Ivan Petrenko");
+        entry.Note.Should().Be("checked");
+        entry.Changes.Should().Equal(new AuditChange("profileVerification", "Unverified", "VerifiedCurrent"));
     }
 
     [Fact]
@@ -184,6 +198,13 @@ public class MemberProfileVerificationHandlerTests
         member.ProfileVerifiedAtUtc.Should().BeNull();
         member.ProfileVerifiedByUserKey.Should().BeNull();
         member.ProfileVerificationNote.Should().BeNull();
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Action.Should().Be(AuditActions.Member.VerificationReset);
+        entry.Changes.Should().Equal(new AuditChange("profileVerification", "VerifiedCurrent", "Unverified"));
+
+        await handler.Handle(new ResetMemberProfileVerificationCommand(member.MemberKey), CancellationToken.None);
+        _journal.Entries.Should().ContainSingle("resetting an unverified profile changes nothing");
     }
 
     [Fact]

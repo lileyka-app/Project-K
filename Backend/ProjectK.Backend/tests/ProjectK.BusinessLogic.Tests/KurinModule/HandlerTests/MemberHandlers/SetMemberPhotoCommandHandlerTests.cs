@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -17,12 +19,16 @@ public class SetMemberPhotoCommandHandlerTests
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IPhotoService> _photoServiceMock = new();
     private readonly SetMemberPhotoCommandHandler _handler;
+    private readonly JournalRecorder _journal;
 
     public SetMemberPhotoCommandHandlerTests()
     {
         _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _handler = new SetMemberPhotoCommandHandler(_uowMock.Object, _photoServiceMock.Object);
+        var user = new Mock<ICurrentUserContext>();
+        user.SetupGet(u => u.KurinKey).Returns(Guid.NewGuid());
+        _journal = new JournalRecorder(user.Object);
+        _handler = new SetMemberPhotoCommandHandler(_uowMock.Object, _photoServiceMock.Object, _journal.Audit);
     }
 
     private Member GivenMember(string? blobName = "old.png")
@@ -61,6 +67,14 @@ public class SetMemberPhotoCommandHandlerTests
         member.ProfilePhotoBlobName.Should().Be("new.png");
         _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
         _memberRepoMock.Verify(r => r.Update(member, It.IsAny<CancellationToken>()), Times.Once);
+
+        // That it changed, never where it is stored.
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Member);
+        entry.Action.Should().Be(AuditActions.Member.PhotoChanged);
+        entry.SubjectMemberKey.Should().Be(member.MemberKey);
+        entry.SubjectLabel.Should().Be("A B");
+        entry.Changes.Should().BeEmpty();
     }
 
     [Fact]
@@ -79,6 +93,7 @@ public class SetMemberPhotoCommandHandlerTests
             CancellationToken.None);
 
         member.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedStale);
+        _journal.Entries.Single().Changes.Should().Equal(new AuditChange("profileVerification", "VerifiedCurrent", "VerifiedStale"));
     }
 
     [Fact]
@@ -93,6 +108,7 @@ public class SetMemberPhotoCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         member.ProfilePhotoBlobName.Should().BeNull();
         _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
+        _journal.Entries.Single().Action.Should().Be(AuditActions.Member.PhotoRemoved);
     }
 
     [Fact]
@@ -107,6 +123,7 @@ public class SetMemberPhotoCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _photoServiceMock.Verify(p => p.DeletePhotoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _journal.Entries.Should().BeEmpty();
     }
 
     [Fact]

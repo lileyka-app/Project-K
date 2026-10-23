@@ -1,10 +1,14 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
@@ -20,6 +24,8 @@ public class DeleteMemberHandlerTests
     private readonly Mock<IMemberDirectory> _memberDirectory = new();
     private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock = new();
     private readonly DeleteMemberCommandHandler _handler;
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly JournalRecorder _journal;
 
     public DeleteMemberHandlerTests()
     {
@@ -35,7 +41,10 @@ public class DeleteMemberHandlerTests
             .Setup(d => d.RemoveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _handler = new DeleteMemberCommandHandler(_unitOfWorkMock.Object, _memberDirectory.Object);
+        var user = new Mock<ICurrentUserContext>();
+        user.SetupGet(u => u.KurinKey).Returns(_kurinKey);
+        _journal = new JournalRecorder(user.Object);
+        _handler = new DeleteMemberCommandHandler(_unitOfWorkMock.Object, _memberDirectory.Object, _journal.Audit);
     }
 
     [Fact]
@@ -103,5 +112,30 @@ public class DeleteMemberHandlerTests
         var act = async () => await _handler.Handle(new DeleteMemberCommand(Guid.NewGuid()), CancellationToken.None);
 
         await act.Should().ThrowAsync<Exception>().WithMessage("boom");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRecordWhoWasDeleted_WhileTheyCanStillBeNamed()
+    {
+        var memberKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        _journal.Knows(memberKey, _kurinKey, groupKey, "Олесь", "Юнак");
+        _memberDirectory
+            .Setup(d => d.FindAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(memberKey, null, _kurinKey, groupKey, "Олесь", "Юнак", "o@x", null));
+
+        await _handler.Handle(new DeleteMemberCommand(memberKey), CancellationToken.None);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Member);
+        entry.Action.Should().Be(AuditActions.Member.Deleted);
+        entry.KurinKey.Should().Be(_kurinKey);
+        entry.SubjectKey.Should().Be(memberKey);
+        entry.SubjectLabel.Should().Be("Олесь Юнак");
+        entry.SubjectMemberName.Should().Be("Олесь Юнак");
+        entry.SubjectGroupKey.Should().Be(groupKey);
+        entry.Changes.Should().Equal(
+            new AuditChange("firstName", "Олесь", null),
+            new AuditChange("lastName", "Юнак", null));
     }
 }

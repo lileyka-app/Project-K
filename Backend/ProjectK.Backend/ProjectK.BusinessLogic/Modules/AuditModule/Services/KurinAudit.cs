@@ -40,7 +40,7 @@ public sealed class KurinAudit : IKurinAudit
 
     public async Task RecordAsync(AuditRecord record, CancellationToken cancellationToken = default)
     {
-        var kurinKey = _currentUser.KurinKey;
+        var kurinKey = record.KurinKey ?? _currentUser.KurinKey;
 
         Subject? subject = null;
         if (record.SubjectMemberKey is { } memberKey)

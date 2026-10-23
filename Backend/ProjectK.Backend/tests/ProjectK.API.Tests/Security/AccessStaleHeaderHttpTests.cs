@@ -113,7 +113,7 @@ public class AccessStaleHeaderHttpTests
             .ReturnsAsync([new MemberSummary(memberKey, memberUserKey, kurinKey, null, "A", "B", "a@example.com", null)]);
 
         var handler = new UpsertLeadershipCommandHandler(
-            unitOfWork.Object, mapper.Object, assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal);
+            unitOfWork.Object, mapper.Object, assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);
         var request = new UpsertLeadershipRequest
         {
             Type = "kurin",

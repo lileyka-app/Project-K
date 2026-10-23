@@ -2,8 +2,10 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Status;
 
@@ -55,6 +57,35 @@ internal static class AgendaStatusWriter
         assignment.StatusChangedAtUtc = nowUtc;
         AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), nowUtc);
         item.UpdatedDate = nowUtc;
+    }
+
+    /// <summary>
+    /// Records a move in the kurin's journal: <c>status</c> is what was moved — a part, a target, or
+    /// the task when it has no targets — and <c>taskStatus</c> the task as a whole when it moved with
+    /// it. <paramref name="movedFrom"/> is null when the task itself was moved. A move that left
+    /// everything where it was is not recorded.
+    /// </summary>
+    public static Task RecordAsync(
+        IKurinAudit audit,
+        AgendaItem item,
+        string label,
+        Guid? memberKey,
+        AgendaItemStatus? movedFrom,
+        AgendaItemStatus movedTo,
+        AgendaItemStatus taskBefore,
+        CancellationToken cancellationToken)
+    {
+        var changes = movedFrom is null
+            ? AuditChanges.Of(("status", taskBefore, item.Status))
+            : AuditChanges.Of(("status", movedFrom, movedTo), ("taskStatus", taskBefore, item.Status));
+        if (changes.Count == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        return audit.RecordAsync(
+            new AuditRecord(AuditArea.Agenda, AuditActions.Agenda.StatusChanged, item.AgendaItemKey, label, memberKey, changes, KurinKey: item.KurinKey),
+            cancellationToken);
     }
 
     /// <summary>The author wants to know when the task they set moves as a whole — not when they moved it themselves.</summary>

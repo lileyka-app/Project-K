@@ -118,6 +118,20 @@ public class KurinAuditTests
     }
 
     [Fact]
+    public async Task AKurinNamedByTheRecord_IsWhereItIsFiled_WhateverTheRequestActsIn()
+    {
+        var namedKurin = Guid.NewGuid();
+        var unscoped = new JournalRecorder(User(null, SystemRole.Admin).Object);
+        var elsewhere = new JournalRecorder(User(_kurinKey).Object);
+
+        await unscoped.Audit.RecordAsync(new AuditRecord(AuditArea.Settings, AuditActions.Settings.KurinChanged, namedKurin, "x", KurinKey: namedKurin));
+        await elsewhere.Audit.RecordAsync(new AuditRecord(AuditArea.Settings, AuditActions.Settings.KurinChanged, namedKurin, "x", KurinKey: namedKurin));
+
+        unscoped.Entries.Single().KurinKey.Should().Be(namedKurin);
+        elsewhere.Entries.Single().KurinKey.Should().Be(namedKurin);
+    }
+
+    [Fact]
     public async Task OverlongSnapshots_AreClippedToTheirColumns()
     {
         var journal = new JournalRecorder(User(_kurinKey).Object);

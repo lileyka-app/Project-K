@@ -5,11 +5,14 @@ using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 using Xunit;
@@ -182,7 +185,8 @@ public class KraiProfileProviderTests
         Given("cz", PragueCard);
         var kurin = new Kurin(5) { KraiCode = "cz" };
         _kurins.Setup(r => r.GetByKeyAsync(kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurin);
-        var handler = new SetKurinCardFieldsCommandHandler(_unitOfWork.Object, _provider, new Mock<IBackendCache>().Object);
+        var journal = new JournalRecorder(Mock.Of<ICurrentUserContext>());
+        var handler = new SetKurinCardFieldsCommandHandler(_unitOfWork.Object, _provider, new Mock<IBackendCache>().Object, journal.Audit);
 
         var result = await handler.Handle(new SetKurinCardFieldsCommand(kurin.KurinKey, ["note", "visaType", "email"]), default);
 
@@ -193,6 +197,32 @@ public class KraiProfileProviderTests
             new KurinCardFieldResponse("school", "Школа", false),
             new KurinCardFieldResponse("parents", "Контакти батьків", false),
             new KurinCardFieldResponse("note", "Примітка", true));
+
+        // Filed under the kurin itself, so an unscoped admin's change is kept too.
+        var entry = journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Settings);
+        entry.Action.Should().Be(AuditActions.Settings.CardFieldsChanged);
+        entry.KurinKey.Should().Be(kurin.KurinKey);
+        entry.SubjectKey.Should().Be(kurin.KurinKey);
+        entry.Changes.Should().Equal(new AuditChange("hiddenFields", null, "Примітка"));
+
+        await handler.Handle(new SetKurinCardFieldsCommand(kurin.KurinKey, ["note"]), default);
+        journal.Entries.Should().ContainSingle("saving the same fields again changes nothing");
+    }
+
+    /// <summary>A card field can share its key with private data; hiding it is a setting, not that data.</summary>
+    [Fact]
+    public async Task HidingAFieldNamedLikePrivateData_IsRecordedWithItsName()
+    {
+        Given("cz", """{ "cardFields": { "fields": { "address": "optional", "school": "optional" } } }""");
+        var kurin = new Kurin(5) { KraiCode = "cz", HiddenCardFields = """["school"]""" };
+        _kurins.Setup(r => r.GetByKeyAsync(kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurin);
+        var journal = new JournalRecorder(Mock.Of<ICurrentUserContext>());
+        var handler = new SetKurinCardFieldsCommandHandler(_unitOfWork.Object, _provider, new Mock<IBackendCache>().Object, journal.Audit);
+
+        await handler.Handle(new SetKurinCardFieldsCommand(kurin.KurinKey, ["address", "school"]), default);
+
+        journal.Entries.Single().Changes.Should().Equal(new AuditChange("hiddenFields", "Школа", "Адреса, Школа"));
     }
 
     [Fact]
