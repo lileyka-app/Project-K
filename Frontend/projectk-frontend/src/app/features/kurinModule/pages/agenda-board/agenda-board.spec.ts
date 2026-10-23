@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
@@ -11,7 +12,7 @@ import { AgendaBoardComponent } from './agenda-board';
 
 describe('AgendaBoardComponent', () => {
   let fixture: ComponentFixture<AgendaBoardComponent>;
-  let agenda: jasmine.SpyObj<AgendaService>;
+  let agenda: MockedObject<AgendaService>;
 
   const task = (title: string): AgendaItemDto => ({
     agendaItemKey: title, title, kind: 'Task', viewerStatus: 'Todo', status: 'Todo', assignments: [],
@@ -28,8 +29,14 @@ describe('AgendaBoardComponent', () => {
   });
 
   beforeEach(() => {
-    agenda = jasmine.createSpyObj<AgendaService>('AgendaService', ['getBoard', 'getArchive', 'setArchived', 'changeStatus', 'delete']);
-    agenda.getBoard.and.returnValue(of(board([task('Перша')], 21)));
+    agenda = {
+      getBoard: vi.fn(),
+      getArchive: vi.fn(),
+      setArchived: vi.fn(),
+      changeStatus: vi.fn(),
+      delete: vi.fn()
+    } as MockedObject<AgendaService>;
+    agenda.getBoard.mockReturnValue(of(board([task('Перша')], 21)));
 
     TestBed.configureTestingModule({
       imports: [AgendaBoardComponent],
@@ -38,7 +45,9 @@ describe('AgendaBoardComponent', () => {
         { provide: AgendaService, useValue: agenda },
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ kurinKey: 'k1' })) } },
         { provide: PermissionService, useValue: { canManageAgenda: () => false } },
-        { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) }
+        { provide: MessageService, useValue: {
+            add: vi.fn()
+          } }
       ]
     });
     // The dialog has its own dependencies and is not under test here.
@@ -60,16 +69,16 @@ describe('AgendaBoardComponent', () => {
   it('shows each column with its count under the filter, and offers the targets on the board', () => {
     const todo = component().columns()[0];
     expect(todo.total).toBe(21);
-    expect(todo.items).toHaveSize(1);
+    expect(todo.items).toHaveLength(1);
     expect(component().targets()).toEqual([{ label: 'Соколи', value: 'Group:g1' }]);
   });
 
   it('loads the next page of that column only, and keeps a repeated card once', () => {
-    agenda.getBoard.and.returnValue(of({ columns: [{ status: 'Todo', total: 21, items: [task('Перша'), task('Друга')] }], targets: [] }));
+    agenda.getBoard.mockReturnValue(of({ columns: [{ status: 'Todo', total: 21, items: [task('Перша'), task('Друга')] }], targets: [] }));
 
     component().loadMore(component().columns()[0]);
 
-    expect(agenda.getBoard).toHaveBeenCalledWith('k1', jasmine.objectContaining({ status: 'Todo', skip: 1, take: 20 }));
+    expect(agenda.getBoard).toHaveBeenCalledWith('k1', expect.objectContaining({ status: 'Todo', skip: 1, take: 20 }));
     expect(component().columns()[0].items.map(i => i.title)).toEqual(['Перша', 'Друга']);
   });
 
@@ -78,6 +87,6 @@ describe('AgendaBoardComponent', () => {
     component().onlyMine = true;
     component().loadData();
 
-    expect(agenda.getBoard).toHaveBeenCalledWith('k1', jasmine.objectContaining({ targetType: 'Group', targetKey: 'g1', onlyMine: true }));
+    expect(agenda.getBoard).toHaveBeenCalledWith('k1', expect.objectContaining({ targetType: 'Group', targetKey: 'g1', onlyMine: true }));
   });
 });

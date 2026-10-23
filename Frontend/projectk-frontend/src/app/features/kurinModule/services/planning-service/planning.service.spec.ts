@@ -62,7 +62,7 @@ describe('PlanningService', () => {
   });
 
   it('createSession should invalidate planning cache', () => {
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.createSession({ name: 'Session' }).subscribe();
 

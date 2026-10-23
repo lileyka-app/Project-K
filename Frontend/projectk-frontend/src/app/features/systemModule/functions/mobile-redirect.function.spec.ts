@@ -22,7 +22,7 @@ describe('mobileRedirect', () => {
 
   it('should keep the pages email links and the app\'s own links land on', () => {
     for (const path of ['/activate/abc', '/reset-password', '/forgot-password', '/join', '/privacy', '/about', '/setup']) {
-      expect(mobileRedirect(facts({ path })).redirectTo).withContext(path).toBeNull();
+      expect(mobileRedirect(facts({ path })).redirectTo, path).toBeNull();
     }
   });
 

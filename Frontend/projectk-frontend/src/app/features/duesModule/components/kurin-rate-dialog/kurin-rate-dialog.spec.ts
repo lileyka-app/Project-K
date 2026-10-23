@@ -48,7 +48,7 @@ describe('KurinRateDialogComponent', () => {
       ['Станиця', DuesRecipient.Stanytsia],
       ['Курінь', DuesRecipient.Kurin]
     ]);
-    expect(dialog.valid()).toBeFalse();
+    expect(dialog.valid()).toBe(false);
   });
 
   it('sends every стаття, the full amount standing in for a пільга left empty', () => {
@@ -95,7 +95,7 @@ describe('KurinRateDialogComponent', () => {
     expect(dialog.recipientOptions().map(o => o.value)).toContain(DuesRecipient.Stanytsia);
     expect(dialog.errors()).toContain('Край не приймає вкладку через станицю: зміни, кому йде «Станиця».');
     dialog.setArticle(dialog.articles()[0].id, { recipient: DuesRecipient.Krai });
-    expect(dialog.valid()).toBeTrue();
+    expect(dialog.valid()).toBe(true);
   });
 
   it('will not save two статті of one name or a пільга above the full amount', () => {
@@ -108,9 +108,9 @@ describe('KurinRateDialogComponent', () => {
     dialog.setArticle(second.id, { name: 'Табірний фонд' });
     dialog.setArticle(first.id, { reducedAmount: 300 });
     expect(dialog.errors()).toContain('Пільгова сума не може бути вищою за повну.');
-    expect(dialog.valid()).toBeFalse();
+    expect(dialog.valid()).toBe(false);
 
     dialog.removeArticle(first.id);
-    expect(dialog.valid()).toBeTrue();
+    expect(dialog.valid()).toBe(true);
   });
 });

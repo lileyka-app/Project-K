@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UsersListComponent } from './users-list';
 import { provideHttpClient } from '@angular/common/http';
@@ -9,7 +10,7 @@ import { Confirmation, ConfirmationService, MessageService } from '@openng/optim
 describe('UsersListComponent', () => {
   let component: UsersListComponent;
   let fixture: ComponentFixture<UsersListComponent>;
-  let mockUserService: jasmine.SpyObj<UserService>;
+  let mockUserService: MockedObject<UserService>;
 
   const mockUsers: UserDto[] = [
     {
@@ -39,11 +40,16 @@ describe('UsersListComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockUserService = jasmine.createSpyObj('UserService', ['getAllUsers', 'changeUserRole', 'suspendUser', 'restoreUser']);
-    mockUserService.getAllUsers.and.returnValue(of(JSON.parse(JSON.stringify(mockUsers))));
-    mockUserService.changeUserRole.and.returnValue(of(true));
-    mockUserService.suspendUser.and.returnValue(of(true));
-    mockUserService.restoreUser.and.returnValue(of(true));
+    mockUserService = {
+      getAllUsers: vi.fn(),
+      changeUserRole: vi.fn(),
+      suspendUser: vi.fn(),
+      restoreUser: vi.fn()
+    } as MockedObject<UserService>;
+    mockUserService.getAllUsers.mockReturnValue(of(JSON.parse(JSON.stringify(mockUsers))));
+    mockUserService.changeUserRole.mockReturnValue(of(true));
+    mockUserService.suspendUser.mockReturnValue(of(true));
+    mockUserService.restoreUser.mockReturnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [UsersListComponent],
@@ -74,7 +80,7 @@ describe('UsersListComponent', () => {
 
     it('marks the row suspended once the API confirms, after the admin confirmed the dialog', () => {
       const confirmation = confirmationService();
-      spyOn(confirmation, 'confirm').and.callFake((options: Confirmation) => {
+      vi.spyOn(confirmation, 'confirm').mockImplementation((options: Confirmation) => {
         options.accept?.();
         return confirmation;
       });
@@ -83,12 +89,12 @@ describe('UsersListComponent', () => {
       component.suspendUser(user);
 
       expect(mockUserService.suspendUser).toHaveBeenCalledWith('user-1');
-      expect(user.isSuspended).toBeTrue();
+      expect(user.isSuspended).toBe(true);
     });
 
     it('does nothing until the dialog is confirmed', () => {
       const confirmation = confirmationService();
-      spyOn(confirmation, 'confirm').and.returnValue(confirmation);
+      vi.spyOn(confirmation, 'confirm').mockReturnValue(confirmation);
 
       component.suspendUser(component.users[0]);
 
@@ -103,17 +109,17 @@ describe('UsersListComponent', () => {
       component.restoreUser(user);
 
       expect(mockUserService.restoreUser).toHaveBeenCalledWith('user-2');
-      expect(user.isSuspended).toBeFalse();
+      expect(user.isSuspended).toBe(false);
     });
 
     it('leaves the mark in place when restoring failed', () => {
-      mockUserService.restoreUser.and.returnValue(throwError(() => new Error('down')));
+      mockUserService.restoreUser.mockReturnValue(throwError(() => new Error('down')));
       const user = component.users[1];
       user.isSuspended = true;
 
       component.restoreUser(user);
 
-      expect(user.isSuspended).toBeTrue();
+      expect(user.isSuspended).toBe(true);
     });
   });
 
@@ -134,22 +140,22 @@ describe('UsersListComponent', () => {
 
       expect(mockUserService.getAllUsers).toHaveBeenCalled();
       expect(component.users).toEqual(mockUsers);
-      expect(component.users).toHaveSize(3);
+      expect(component.users).toHaveLength(3);
     });
 
     it('should handle empty users list', () => {
-      mockUserService.getAllUsers.and.returnValue(of([]));
+      mockUserService.getAllUsers.mockReturnValue(of([]));
       fixture.detectChanges();
 
       expect(component.users).toEqual([]);
-      expect(component.users).toHaveSize(0);
+      expect(component.users).toHaveLength(0);
     });
 
     it('should handle error when loading users', () => {
       const error = new Error('Failed to load users');
-      mockUserService.getAllUsers.and.returnValue(throwError(() => error));
+      mockUserService.getAllUsers.mockReturnValue(throwError(() => error));
       
-      spyOn(console, 'error');
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
       fixture.detectChanges();
 
       expect(mockUserService.getAllUsers).toHaveBeenCalled();
@@ -204,7 +210,7 @@ describe('UsersListComponent', () => {
       component.onRowEditInit(user1);
       component.onRowEditInit(user2);
 
-      expect(Object.keys(component.clonedUsers)).toHaveSize(2);
+      expect(Object.keys(component.clonedUsers)).toHaveLength(2);
       expect(component.clonedUsers['user-1']).toBeDefined();
       expect(component.clonedUsers['user-2']).toBeDefined();
     });
@@ -406,7 +412,7 @@ describe('UsersListComponent', () => {
       
       expect(component.users[0].firstName).toBe('Updated1');
       expect(component.users[1].firstName).toBe('Updated2');
-      expect(Object.keys(component.clonedUsers)).toHaveSize(0);
+      expect(Object.keys(component.clonedUsers)).toHaveLength(0);
     });
 
     it('should handle mix of save and cancel operations', () => {
@@ -429,14 +435,14 @@ describe('UsersListComponent', () => {
     });
 
     it('should maintain data integrity when loading and editing users', () => {
-      expect(component.users).toHaveSize(3);
+      expect(component.users).toHaveLength(3);
       
       const user = component.users[0];
       component.onRowEditInit(user);
       user.role = 'Admin';
       component.onRowEditSave(user);
       
-      expect(component.users).toHaveSize(3);
+      expect(component.users).toHaveLength(3);
       expect(component.users[0].userId).toBe('user-1');
       expect(component.users[0].role).toBe('Admin');
     });
@@ -475,10 +481,10 @@ describe('UsersListComponent', () => {
     });
 
     it('should handle empty users array gracefully', () => {
-      mockUserService.getAllUsers.and.returnValue(of([]));
+      mockUserService.getAllUsers.mockReturnValue(of([]));
       component.ngOnInit();
       
-      expect(component.users).toHaveSize(0);
+      expect(component.users).toHaveLength(0);
       expect(() => component.onRowEditInit({} as UserDto)).not.toThrow();
     });
   });

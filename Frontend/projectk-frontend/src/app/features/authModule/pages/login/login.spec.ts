@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
@@ -13,21 +14,25 @@ import { environment } from '../../../../../environments/environment';
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
-  let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
-  let messageService: jasmine.SpyObj<MessageService>;
+  let authService: MockedObject<AuthService>;
+  let router: MockedObject<Router>;
+  let messageService: MockedObject<MessageService>;
 
   beforeEach(async () => {
-    authService = jasmine.createSpyObj('AuthService', [
-      'login',
-      'verifyMfaLogin',
-      'getAuthStateValue',
-      'getSetupStatus'
-    ]);
+    authService = {
+      login: vi.fn(),
+      verifyMfaLogin: vi.fn(),
+      getAuthStateValue: vi.fn(),
+      getSetupStatus: vi.fn()
+    } as MockedObject<AuthService>;
     // ngOnInit calls it on every fixture, so it has to emit before detectChanges.
-    authService.getSetupStatus.and.returnValue(of({ isInitialized: true }));
-    router = jasmine.createSpyObj('Router', ['navigate']);
-    messageService = jasmine.createSpyObj('MessageService', ['add']);
+    authService.getSetupStatus.mockReturnValue(of({ isInitialized: true }));
+    router = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
+    messageService = {
+      add: vi.fn()
+    } as MockedObject<MessageService>;
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
@@ -50,7 +55,7 @@ describe('LoginComponent', () => {
   });
 
   it('should send an uninitialized system to setup', () => {
-    authService.getSetupStatus.and.returnValue(of({ isInitialized: false }));
+    authService.getSetupStatus.mockReturnValue(of({ isInitialized: false }));
 
     TestBed.createComponent(LoginComponent).detectChanges();
 
@@ -58,7 +63,7 @@ describe('LoginComponent', () => {
   });
 
   it('should stay on login when the setup status cannot be read', () => {
-    authService.getSetupStatus.and.returnValue(throwError(() => new Error('offline')));
+    authService.getSetupStatus.mockReturnValue(throwError(() => new Error('offline')));
 
     TestBed.createComponent(LoginComponent).detectChanges();
 
@@ -67,8 +72,8 @@ describe('LoginComponent', () => {
 
   it('should submit credentials to auth service', () => {
     const state = createAuthState();
-    authService.login.and.returnValue(of(createLoginResponse()));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.login.mockReturnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'test@example.com';
     component.password = 'password123';
@@ -82,7 +87,7 @@ describe('LoginComponent', () => {
   });
 
   it('should show otp input when login requires mfa', () => {
-    authService.login.and.returnValue(of(createLoginResponse({ requiresMfa: true, tokens: null })));
+    authService.login.mockReturnValue(of(createLoginResponse({ requiresMfa: true, tokens: null })));
 
     component.email = 'mfa@example.com';
     component.password = 'password123';
@@ -91,16 +96,16 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(component.showOtpInput).toBeTrue();
+    expect(component.showOtpInput).toBe(true);
     expect(component.otpValue).toBe('');
-    expect(component.useRecoveryCode).toBeFalse();
+    expect(component.useRecoveryCode).toBe(false);
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
   it('should verify otp and navigate after mfa succeeds', () => {
     const state = createAuthState({ memberKey: 'member-123' });
-    authService.verifyMfaLogin.and.returnValue(of(state));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.verifyMfaLogin.mockReturnValue(of(state));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'mfa@example.com';
     component.showOtpInput = true;
@@ -115,8 +120,8 @@ describe('LoginComponent', () => {
 
   it('should navigate to active kurin for an admin with a selected kurin and no card', () => {
     const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: null, kurinKey: 'kurin-123' });
-    authService.login.and.returnValue(of(createLoginResponse()));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.login.mockReturnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'admin@example.com';
     component.password = 'password123';
@@ -128,8 +133,8 @@ describe('LoginComponent', () => {
 
   it('should navigate to admin panel for an admin without a kurin or a card', () => {
     const state = createAuthState({ isAdmin: true, permissions: [], roles: ['Admin'], memberKey: null, kurinKey: null });
-    authService.login.and.returnValue(of(createLoginResponse()));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.login.mockReturnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'admin@example.com';
     component.password = 'password123';
@@ -141,8 +146,8 @@ describe('LoginComponent', () => {
 
   it('should navigate to the dashboard when a person stands behind the account', () => {
     const state = createAuthState({ memberKey: 'member-123' });
-    authService.login.and.returnValue(of(createLoginResponse()));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.login.mockReturnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'manager@example.com';
     component.password = 'password123';
@@ -154,8 +159,8 @@ describe('LoginComponent', () => {
 
   it('should navigate to the dashboard even with no kurin chosen, when there is a card', () => {
     const state = createAuthState({ memberKey: 'member-123', kurinKey: null });
-    authService.login.and.returnValue(of(createLoginResponse()));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.login.mockReturnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'manager@example.com';
     component.password = 'password123';
@@ -167,8 +172,8 @@ describe('LoginComponent', () => {
 
   it('should navigate to kurin page when only kurin key is present', () => {
     const state = createAuthState({ memberKey: null, kurinKey: 'kurin-123' });
-    authService.login.and.returnValue(of(createLoginResponse()));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.login.mockReturnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'manager@example.com';
     component.password = 'password123';
@@ -180,8 +185,8 @@ describe('LoginComponent', () => {
 
   it('should navigate to login when authenticated state has no destination keys', () => {
     const state = createAuthState({ memberKey: null, kurinKey: null });
-    authService.login.and.returnValue(of(createLoginResponse()));
-    authService.getAuthStateValue.and.returnValue(state);
+    authService.login.mockReturnValue(of(createLoginResponse()));
+    authService.getAuthStateValue.mockReturnValue(state);
 
     component.email = 'user@example.com';
     component.password = 'password123';
@@ -192,7 +197,7 @@ describe('LoginComponent', () => {
   });
 
   it('should show our own wording for a known error code, not the English message from the API', () => {
-    authService.login.and.returnValue(throwError(() => ({
+    authService.login.mockReturnValue(throwError(() => ({
       error: { error: 'InvalidCredentials', message: 'Email or password is incorrect.' }
     })));
 
@@ -201,7 +206,7 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+    expect(messageService.add).toHaveBeenCalledWith(expect.objectContaining({
       severity: 'error',
       detail: 'Неправильний email або пароль.'
     }));
@@ -211,7 +216,7 @@ describe('LoginComponent', () => {
   it('should fall back to our text rather than the transport message on an unmapped error', () => {
     // HttpErrorResponse.message is always populated with something like "Http failure response
     // for ...", so using it as a fallback would render that string to the user.
-    authService.login.and.returnValue(throwError(() => ({
+    authService.login.mockReturnValue(throwError(() => ({
       message: 'Http failure response for http://localhost/api/auth/login: 500 Internal Server Error',
       error: { error: 'SomethingElse', message: 'An unexpected error occurred.' }
     })));
@@ -221,7 +226,7 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+    expect(messageService.add).toHaveBeenCalledWith(expect.objectContaining({
       severity: 'error',
       detail: 'Не вдалося увійти.'
     }));
@@ -238,7 +243,7 @@ describe('LoginComponent', () => {
 
     component.toggleRecoveryCode();
 
-    expect(component.useRecoveryCode).toBeTrue();
+    expect(component.useRecoveryCode).toBe(true);
     expect(component.otpValue).toBe('');
   });
 
@@ -249,9 +254,9 @@ describe('LoginComponent', () => {
 
     component.backToPassword();
 
-    expect(component.showOtpInput).toBeFalse();
+    expect(component.showOtpInput).toBe(false);
     expect(component.otpValue).toBe('');
-    expect(component.useRecoveryCode).toBeFalse();
+    expect(component.useRecoveryCode).toBe(false);
   });
 
   function createAuthState(overrides: Partial<AuthState> = {}): AuthState {
@@ -286,15 +291,17 @@ describe('LoginComponent', () => {
 
     it('offers no demo seats on an ordinary stand', () => {
       const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-      expect(component.isDemo).toBeFalse();
+      expect(component.isDemo).toBe(false);
       expect(text).not.toContain('Демо-курінь');
     });
 
     it('signs the visitor in as the chosen seat and goes home', () => {
       environment.envName = 'Demo';
-      const demo = jasmine.createSpyObj<DemoService>('DemoService', ['enter']);
-      demo.enter.and.returnValue(of({} as LoginResponse));
-      authService.getAuthStateValue.and.returnValue({ kurinKey: 'k1', roles: ['Member'] } as unknown as AuthState);
+      const demo = {
+        enter: vi.fn()
+      };
+      demo.enter.mockReturnValue(of({} as LoginResponse));
+      authService.getAuthStateValue.mockReturnValue({ kurinKey: 'k1', roles: ['Member'] } as unknown as AuthState);
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [LoginComponent],

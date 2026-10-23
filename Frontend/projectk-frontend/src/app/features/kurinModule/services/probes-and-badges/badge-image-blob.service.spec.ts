@@ -39,7 +39,7 @@ describe('BadgeImageBlobService', () => {
   it('should fetch protected image as blob and return object URL from cache', () => {
     const sourceUrl = '/badges_images/skill.png';
     const blob = new Blob(['image-bytes'], { type: 'image/png' });
-    spyOn(URL, 'createObjectURL').and.returnValue('blob://skill-1');
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob://skill-1');
     const expectedUrl = buildExpectedUrl(apiOrigin, sourceUrl);
 
     const firstResolve = service.resolveBadgeImageForDisplay(sourceUrl);

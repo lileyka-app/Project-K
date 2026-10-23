@@ -26,8 +26,8 @@ npm test
 npm run build -- --configuration production
 ```
 
-Тести йдуть у headless Chrome через Karma. Бейслайн кількості тестів і попереджень лінту — у
-`CONTRIBUTING.md` → «Перед PR».
+Тести йдуть на Vitest у jsdom, браузер не потрібен; `npm run test-c` додає покриття. Бейслайн
+кількості тестів і попереджень лінту та особливості Vitest — у `CONTRIBUTING.md` → «Перевірка».
 
 ## Оточення
 

@@ -9,7 +9,7 @@ import {
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
 const DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
-const DAY = 86_400_000;
+const DAY = 86400000;
 const NOW = Date.UTC(2026, 9, 11);
 
 function facts(overrides: Partial<InstallBannerFacts>): InstallBannerFacts {
@@ -18,32 +18,32 @@ function facts(overrides: Partial<InstallBannerFacts>): InstallBannerFacts {
 
 describe('install-app banner', () => {
   it('should show on a phone, told by its screen or by its user agent', () => {
-    expect(shouldShowInstallBanner(facts({ phoneScreen: true }))).toBeTrue();
-    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID }))).toBeTrue();
-    expect(shouldShowInstallBanner(facts({ userAgent: IPHONE }))).toBeTrue();
+    expect(shouldShowInstallBanner(facts({ phoneScreen: true }))).toBe(true);
+    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID }))).toBe(true);
+    expect(shouldShowInstallBanner(facts({ userAgent: IPHONE }))).toBe(true);
   });
 
   it('should stay away on a computer', () => {
-    expect(isMobileUserAgent(DESKTOP)).toBeFalse();
+    expect(isMobileUserAgent(DESKTOP)).toBe(false);
     // An Android tablet sends no «Mobile»: the web suits it.
-    expect(isMobileUserAgent('Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')).toBeFalse();
-    expect(shouldShowInstallBanner(facts({}))).toBeFalse();
+    expect(isMobileUserAgent('Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')).toBe(false);
+    expect(shouldShowInstallBanner(facts({}))).toBe(false);
   });
 
   it('should stay away inside the installed app', () => {
-    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID, phoneScreen: true, standalone: true }))).toBeFalse();
+    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID, phoneScreen: true, standalone: true }))).toBe(false);
   });
 
   it('should keep «Не зараз» for two weeks, then ask again', () => {
-    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID, dismissedAt: NOW - 13 * DAY }))).toBeFalse();
-    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID, dismissedAt: NOW - 14 * DAY }))).toBeTrue();
+    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID, dismissedAt: NOW - 13 * DAY }))).toBe(false);
+    expect(shouldShowInstallBanner(facts({ userAgent: ANDROID, dismissedAt: NOW - 14 * DAY }))).toBe(true);
   });
 
   it('should live on the signed-in shell and the login page only', () => {
-    expect(installBannerRoute('/kurin', false)).toBeTrue();
-    expect(installBannerRoute('/login', true)).toBeTrue();
-    expect(installBannerRoute('/join', true)).toBeFalse();
-    expect(installBannerRoute('/welcome', true)).toBeFalse();
+    expect(installBannerRoute('/kurin', false)).toBe(true);
+    expect(installBannerRoute('/login', true)).toBe(true);
+    expect(installBannerRoute('/join', true)).toBe(false);
+    expect(installBannerRoute('/welcome', true)).toBe(false);
   });
 });
 

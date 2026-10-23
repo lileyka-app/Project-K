@@ -47,7 +47,7 @@ describe('MyDutiesTileComponent', () => {
     expect(rows[3].detail).toBe('каса куреня');
     expect(rows[4].label).toBe('Відмітити присутність: Сходини куреня');
     expect(fixture.componentInstance.total()).toBe(11);
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__row')).toHaveSize(5);
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__row')).toHaveLength(5);
   });
 
   it('says a duty in another kurin without opening it, naming the kurin', () => {
@@ -58,6 +58,6 @@ describe('MyDutiesTileComponent', () => {
     const row = fixture.componentInstance.rows()[0];
     expect(row.link).toBeNull();
     expect(row.detail).toBe('к. ч. 7');
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__row')).toHaveSize(0);
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__row')).toHaveLength(0);
   });
 });

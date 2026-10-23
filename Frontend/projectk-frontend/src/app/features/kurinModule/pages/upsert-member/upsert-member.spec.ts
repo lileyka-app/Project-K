@@ -1,3 +1,4 @@
+import type { Mock, MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
 import { UpsertMemberComponent } from './upsert-member';
@@ -24,15 +25,15 @@ describe('UpsertMemberComponent', () => {
   let component: UpsertMemberComponent;
 
   let routeParamMap$: BehaviorSubject<ParamMap>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let routerSpy: MockedObject<Router>;
   let currentNavigationSignal: WritableSignal<Navigation | null>;
-  let memberServiceSpy: jasmine.SpyObj<MemberService>;
-  let kurinServiceSpy: jasmine.SpyObj<KurinService>;
-  let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
-  let messageServiceSpy: jasmine.SpyObj<MessageService>;
-  let locationSpy: jasmine.SpyObj<Location>;
-  let permissionServiceSpy: jasmine.SpyObj<PermissionService>;
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
+  let memberServiceSpy: MockedObject<MemberService>;
+  let kurinServiceSpy: MockedObject<KurinService>;
+  let confirmationServiceSpy: MockedObject<ConfirmationService>;
+  let messageServiceSpy: MockedObject<MessageService>;
+  let locationSpy: MockedObject<Location>;
+  let permissionServiceSpy: MockedObject<PermissionService>;
+  let authServiceSpy: MockedObject<AuthService>;
 
   const groupKey = 'group123';
   const memberKey = 'memberABC';
@@ -59,40 +60,67 @@ describe('UpsertMemberComponent', () => {
   beforeEach(async () => {
     routeParamMap$ = new BehaviorSubject(convertToParamMap({ groupKey, memberKey }));
     currentNavigationSignal = signal<Navigation | null>(null);
-    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    routerSpy = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
     (routerSpy as unknown as { currentNavigation: WritableSignal<Navigation | null> }).currentNavigation = currentNavigationSignal;
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete', 'verifyProfile', 'resetProfileVerification', 'resendInvitation']);
-    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields', 'getPhoneCountry']);
-    kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
-    kurinServiceSpy.getPhoneCountry.and.returnValue(of('UA'));
-    confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
-    messageServiceSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
-    locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
-    permissionServiceSpy = jasmine.createSpyObj<PermissionService>('PermissionService', ['canManageWarnings', 'isAdmin', 'canManageWholeKurin', 'isReviewer']);
-    authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
+    memberServiceSpy = {
+      getByKey: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      verifyProfile: vi.fn(),
+      resetProfileVerification: vi.fn(),
+      resendInvitation: vi.fn()
+    } as MockedObject<MemberService>;
+    kurinServiceSpy = {
+      getByKey: vi.fn(),
+      getCardFields: vi.fn(),
+      getPhoneCountry: vi.fn()
+    } as MockedObject<KurinService>;
+    kurinServiceSpy.getCardFields.mockReturnValue(of(DEFAULT_CARD_FIELDS));
+    kurinServiceSpy.getPhoneCountry.mockReturnValue(of('UA'));
+    confirmationServiceSpy = {
+      confirm: vi.fn()
+    } as MockedObject<ConfirmationService>;
+    messageServiceSpy = {
+      add: vi.fn()
+    } as MockedObject<MessageService>;
+    locationSpy = {
+      back: vi.fn()
+    } as MockedObject<Location>;
+    permissionServiceSpy = {
+      canManageWarnings: vi.fn(),
+      isAdmin: vi.fn(),
+      canManageWholeKurin: vi.fn(),
+      isReviewer: vi.fn()
+    } as MockedObject<PermissionService>;
+    authServiceSpy = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
 
-    memberServiceSpy.getByKey.and.returnValue(of(loadedMember));
-    memberServiceSpy.create.and.returnValue(of({ ...loadedMember, memberKey: 'created999' }));
-    memberServiceSpy.update.and.returnValue(of(loadedMember));
-    memberServiceSpy.delete.and.returnValue(of(void 0));
-    memberServiceSpy.verifyProfile.and.returnValue(of({
+    memberServiceSpy.getByKey.mockReturnValue(of(loadedMember));
+    memberServiceSpy.create.mockReturnValue(of({ ...loadedMember, memberKey: 'created999' }));
+    memberServiceSpy.update.mockReturnValue(of(loadedMember));
+    memberServiceSpy.delete.mockReturnValue(of(void 0));
+    memberServiceSpy.verifyProfile.mockReturnValue(of({
       ...loadedMember,
       profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent
     }));
-    memberServiceSpy.resetProfileVerification.and.returnValue(of({
+    memberServiceSpy.resetProfileVerification.mockReturnValue(of({
       ...loadedMember,
       profileVerificationStatus: MemberProfileVerificationStatus.Unverified
     }));
-    kurinServiceSpy.getByKey.and.returnValue(of({
+    kurinServiceSpy.getByKey.mockReturnValue(of({
       kurinKey: loadedMember.kurinKey,
       number: 1,
       profileVerificationEnabled: true
     }));
-    permissionServiceSpy.canManageWarnings.and.returnValue(false);
-    permissionServiceSpy.isAdmin.and.returnValue(false);
-    permissionServiceSpy.canManageWholeKurin.and.returnValue(false);
-    permissionServiceSpy.isReviewer.and.returnValue(false);
-    authServiceSpy.getAuthStateValue.and.returnValue({
+    permissionServiceSpy.canManageWarnings.mockReturnValue(false);
+    permissionServiceSpy.isAdmin.mockReturnValue(false);
+    permissionServiceSpy.canManageWholeKurin.mockReturnValue(false);
+    permissionServiceSpy.isReviewer.mockReturnValue(false);
+    authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'current-user',
       memberKey: 'current-member',
       email: 'current@example.com',
@@ -101,7 +129,7 @@ describe('UpsertMemberComponent', () => {
       accessToken: 'token'
     });
 
-    confirmationServiceSpy.confirm.and.returnValue(confirmationServiceSpy);
+    confirmationServiceSpy.confirm.mockReturnValue(confirmationServiceSpy);
 
 
     await TestBed.configureTestingModule({
@@ -146,10 +174,10 @@ describe('UpsertMemberComponent', () => {
     it('should initialize with default values', () => {
       setRouteParams({ groupKey });
       create();
-      expect(component.displayCropper).toBeFalse();
+      expect(component.displayCropper).toBe(false);
       expect(component.croppedImage).toBe('');
       expect(component.fileToUpload).toBeNull();
-      expect(component.removeProfilePhoto).toBeFalse();
+      expect(component.removeProfilePhoto).toBe(false);
       expect(component.imageFile).toBeUndefined();
       expect(component.croppedFile).toBeNull();
     });
@@ -167,7 +195,7 @@ describe('UpsertMemberComponent', () => {
   describe('ngOnInit', () => {
     it('should load member in edit mode when memberKey present', () => {
       create();
-      expect(component.isCreate).toBeFalse();
+      expect(component.isCreate).toBe(false);
       expect(component.memberKey).toBe(memberKey);
       expect(component.groupKey).toBe(groupKey);
       expect(memberServiceSpy.getByKey).toHaveBeenCalledWith(memberKey);
@@ -179,7 +207,7 @@ describe('UpsertMemberComponent', () => {
     it('should switch to create mode when memberKey absent', () => {
       setRouteParams({ groupKey });
       create();
-      expect(component.isCreate).toBeTrue();
+      expect(component.isCreate).toBe(true);
       expect(component.memberKey).toBe('');
       expect(component.groupKey).toBe(groupKey);
       expect(memberServiceSpy.getByKey).not.toHaveBeenCalled();
@@ -205,13 +233,13 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const dtoArg = memberServiceSpy.update.calls.mostRecent().args[1];
+      const dtoArg = vi.mocked(memberServiceSpy.update).mock.lastCall![1];
       expect(dtoArg.groupKey).toBeUndefined();
       expect(dtoArg.kurinKey).toBeUndefined();
     });
 
     it('should fall back to the kurin when the member cannot be loaded without a group', () => {
-      memberServiceSpy.getByKey.and.returnValue(throwError(() => new Error('Not found')));
+      memberServiceSpy.getByKey.mockReturnValue(throwError(() => new Error('Not found')));
       setRouteParams({ kurinKey: 'kurin-123', memberKey });
       // Rendering is skipped on purpose: the form template needs a loaded member.
       fixture = TestBed.createComponent(UpsertMemberComponent);
@@ -227,55 +255,55 @@ describe('UpsertMemberComponent', () => {
       };
       currentNavigationSignal.set(mockNavigation as Navigation);
       create();
-      expect(component['cameFromMember']).toBeTrue();
+      expect(component['cameFromMember']).toBe(true);
     });
 
     it('should detect navigation from member page via history.state', () => {
       currentNavigationSignal.set(null);
-      spyOnProperty(history, 'state', 'get').and.returnValue({ fromMember: true });
+      vi.spyOn(history, 'state', 'get').mockReturnValue({ fromMember: true });
       create();
-      expect(component['cameFromMember']).toBeTrue();
+      expect(component['cameFromMember']).toBe(true);
     });
 
     it('should not set cameFromMember when state is missing', () => {
       currentNavigationSignal.set(null);
-      spyOnProperty(history, 'state', 'get').and.returnValue({});
+      vi.spyOn(history, 'state', 'get').mockReturnValue({});
       create();
-      expect(component['cameFromMember']).toBeFalse();
+      expect(component['cameFromMember']).toBe(false);
     });
 
     it('should allow editing email when creating member', () => {
       setRouteParams({ groupKey });
       create();
-      expect(component.canEditEmail()).toBeTrue();
+      expect(component.canEditEmail()).toBe(true);
     });
 
     it('should allow editing email for unlinked member', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: null }));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...loadedMember, userKey: null }));
       create();
-      expect(component.canEditEmail()).toBeTrue();
+      expect(component.canEditEmail()).toBe(true);
     });
 
     it('should hide email editing for linked member when current user is not admin', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
       create();
-      expect(component.canEditEmail()).toBeFalse();
+      expect(component.canEditEmail()).toBe(false);
     });
 
     it('should let leadership correct the email of an account nobody has activated yet', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({
+      memberServiceSpy.getByKey.mockReturnValue(of({
         ...loadedMember,
         userKey: 'linked-user-key',
         accountStatus: AccountStatus.PendingActivation
       }));
       create();
-      expect(component.isPendingAccount).toBeTrue();
-      expect(component.canEditEmail()).toBeTrue();
+      expect(component.isPendingAccount).toBe(true);
+      expect(component.canEditEmail()).toBe(true);
     });
 
     it('should resend the invitation only while the address matches the saved one', () => {
-      memberServiceSpy.resendInvitation.and.returnValue(of(void 0));
-      memberServiceSpy.getByKey.and.returnValue(of({
+      memberServiceSpy.resendInvitation.mockReturnValue(of(void 0));
+      memberServiceSpy.getByKey.mockReturnValue(of({
         ...loadedMember,
         userKey: 'linked-user-key',
         accountStatus: AccountStatus.PendingActivation
@@ -289,21 +317,21 @@ describe('UpsertMemberComponent', () => {
       component.member.email = loadedMember.email;
       component.resendInvitation();
       expect(memberServiceSpy.resendInvitation).toHaveBeenCalledWith(memberKey);
-      expect(messageServiceSpy.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'success' }));
+      expect(messageServiceSpy.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
     });
 
     it('should warn when the account was opened but the letter did not go', () => {
       create();
-      memberServiceSpy.update.and.returnValue(of({ ...loadedMember, invitationSent: false }));
+      memberServiceSpy.update.mockReturnValue(of({ ...loadedMember, invitationSent: false }));
       component.submit();
-      expect(messageServiceSpy.add).toHaveBeenCalledWith(jasmine.objectContaining({ summary: 'Лист не надіслано' }));
+      expect(messageServiceSpy.add).toHaveBeenCalledWith(expect.objectContaining({ summary: 'Лист не надіслано' }));
     });
 
     it('should allow editing email for linked member when current user is admin', () => {
-      permissionServiceSpy.isAdmin.and.returnValue(true);
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
+      permissionServiceSpy.isAdmin.mockReturnValue(true);
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
       create();
-      expect(component.canEditEmail()).toBeTrue();
+      expect(component.canEditEmail()).toBe(true);
     });
 
   });
@@ -327,10 +355,10 @@ describe('UpsertMemberComponent', () => {
       component.submit();
 
       expect(memberServiceSpy.create).toHaveBeenCalledTimes(1);
-      const [dtoArg, fileArg] = memberServiceSpy.create.calls.mostRecent().args;
+      const [dtoArg, fileArg] = vi.mocked(memberServiceSpy.create).mock.lastCall!;
       
       // Use objectContaining to allow for other default properties
-      expect(dtoArg).toEqual(jasmine.objectContaining({
+      expect(dtoArg).toEqual(expect.objectContaining({
         groupKey,
         firstName: 'Alice',
         middleName: 'B',
@@ -360,7 +388,7 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const [, fileArg] = memberServiceSpy.create.calls.mostRecent().args;
+      const [, fileArg] = vi.mocked(memberServiceSpy.create).mock.lastCall!;
       expect(fileArg).toBeNull();
     });
 
@@ -369,7 +397,7 @@ describe('UpsertMemberComponent', () => {
       // Use noon to avoid timezone shifts
       component.member.dateOfBirth = new Date(2011, 0, 2, 12, 0, 0);
       component.submit();
-      const dto = memberServiceSpy.create.calls.mostRecent().args[0];
+      const dto = vi.mocked(memberServiceSpy.create).mock.lastCall![0];
       expect(dto.dateOfBirth).toBe('2011-01-02');
     });
 
@@ -377,7 +405,7 @@ describe('UpsertMemberComponent', () => {
       create();
       component.member.dateOfBirth = null;
       component.submit();
-      const dto = memberServiceSpy.create.calls.mostRecent().args[0];
+      const dto = vi.mocked(memberServiceSpy.create).mock.lastCall![0];
       expect(dto.dateOfBirth).toBeNull();
     });
     it('should handle string dateOfBirth in yyyy-MM-dd format', () => {
@@ -385,19 +413,19 @@ describe('UpsertMemberComponent', () => {
       // Pass string to match test description
       component.member.dateOfBirth = new Date('2020-05-15');
       component.submit();
-      const dto = memberServiceSpy.create.calls.mostRecent().args[0];
+      const dto = vi.mocked(memberServiceSpy.create).mock.lastCall![0];
       expect(dto.dateOfBirth).toBe('2020-05-15');
     });
 
     it('should log and handle create error', () => {
       const error = new Error('Create failed');
-      memberServiceSpy.create.and.returnValue(throwError(() => error));
-      spyOn(console, 'error');
+      memberServiceSpy.create.mockReturnValue(throwError(() => error));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
       create();
 
       component.submit();
 
-      expect(console.error).toHaveBeenCalledWith('Error creating member:', error, jasmine.any(Object));
+      expect(console.error).toHaveBeenCalledWith('Error creating member:', error, expect.any(Object));
       expect(routerSpy.navigate).not.toHaveBeenCalled();
     });
 
@@ -410,7 +438,7 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0];
+      const dtoArg = vi.mocked(memberServiceSpy.create).mock.lastCall![0];
       expect(dtoArg.groupKey).toBeUndefined();
       expect(dtoArg.kurinKey).toBe('kurin-123');
     });
@@ -425,8 +453,8 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const dtoArg = memberServiceSpy.create.calls.mostRecent().args[0];
-      expect(dtoArg.createUserAccount).toBeTrue();
+      const dtoArg = vi.mocked(memberServiceSpy.create).mock.lastCall![0];
+      expect(dtoArg.createUserAccount).toBe(true);
     });
   });
 
@@ -438,21 +466,21 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const [updatedMemberKey, dtoArg] = memberServiceSpy.update.calls.mostRecent().args;
+      const [updatedMemberKey, dtoArg] = vi.mocked(memberServiceSpy.update).mock.lastCall!;
       expect(updatedMemberKey).toBe(memberKey);
       expect(dtoArg.firstName).toBe('Updated');
-      expect(dtoArg.removeProfilePhoto).toBeTrue();
+      expect(dtoArg.removeProfilePhoto).toBe(true);
     });
 
     it('should keep current email in payload when linked non-admin cannot edit email', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...loadedMember, userKey: 'linked-user-key' }));
       create();
-      expect(component.canEditEmail()).toBeFalse();
+      expect(component.canEditEmail()).toBe(false);
 
       component.member.firstName = 'Updated';
       component.submit();
 
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      const dto = vi.mocked(memberServiceSpy.update).mock.lastCall![1];
       expect(dto.email).toBe(loadedMember.email);
     });
 
@@ -464,8 +492,8 @@ describe('UpsertMemberComponent', () => {
           { key: 'visaUntil', label: 'Віза до', type: 'date', required: false }
         ]
       };
-      kurinServiceSpy.getCardFields.and.returnValue(of(prague));
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
+      kurinServiceSpy.getCardFields.mockReturnValue(of(prague));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...loadedMember, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
       create();
       fixture.detectChanges();
 
@@ -477,24 +505,24 @@ describe('UpsertMemberComponent', () => {
       component.cardExtras['visaUntil'] = null;
       component.submit();
 
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      const dto = vi.mocked(memberServiceSpy.update).mock.lastCall![1];
       expect(dto.cardExtras).toEqual({ visaUntil: '' });
     });
 
     it('should leave address and school out when they were not touched, so the server keeps them', async () => {
-      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3' }));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3' }));
       create();
       await fixture.whenStable();
 
       component.submit();
 
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      const dto = vi.mocked(memberServiceSpy.update).mock.lastCall![1];
       expect(dto.address).toBeUndefined();
       expect(dto.school).toBeUndefined();
     });
 
     it('should send address, school and parents once edited, an emptied one as empty', async () => {
-      memberServiceSpy.getByKey.and.returnValue(of({
+      memberServiceSpy.getByKey.mockReturnValue(of({
         ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3', motherFirstName: 'Олена', motherPhone: '+380501234567'
       }));
       create();
@@ -511,7 +539,7 @@ describe('UpsertMemberComponent', () => {
       component.form().controls['motherPhone'].markAsDirty();
       component.submit();
 
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      const dto = vi.mocked(memberServiceSpy.update).mock.lastCall![1];
       expect(dto.address).toBe('Praha 3, Seifertova 1');
       expect(dto.school).toBe('');
       expect(dto.fatherFirstName).toBe('Петро');
@@ -524,7 +552,7 @@ describe('UpsertMemberComponent', () => {
       // Use noon to avoid timezone shifts
       component.member.dateOfBirth = new Date(1995, 11, 24, 12, 0, 0);
       component.submit();
-      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      const dto = vi.mocked(memberServiceSpy.update).mock.lastCall![1];
       expect(dto.dateOfBirth).toBe('1995-12-24');
     });
 
@@ -556,14 +584,14 @@ describe('UpsertMemberComponent', () => {
 
       component.submit();
 
-      const [, , fileArg] = memberServiceSpy.update.calls.mostRecent().args;
+      const [, , fileArg] = vi.mocked(memberServiceSpy.update).mock.lastCall!;
       expect(fileArg).toBe(file);
     });
 
     it('should log and handle update error', () => {
       const error = new Error('Update failed');
-      memberServiceSpy.update.and.returnValue(throwError(() => error));
-      spyOn(console, 'error');
+      memberServiceSpy.update.mockReturnValue(throwError(() => error));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
       create();
 
       component.submit();
@@ -581,7 +609,7 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('keeps a улад with a saved date on screen', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({
+      memberServiceSpy.getByKey.mockReturnValue(of({
         ...loadedMember,
         plastLevelHistories: [{ plastLevel: PlastLevel.Senior, dateAchieved: '2020-01-01' }]
       }));
@@ -595,17 +623,17 @@ describe('UpsertMemberComponent', () => {
       component.plastLevelMap[PlastLevel.Entry].dateAchieved = '2009-12-31';
       expect(component.levelDateIssue(PlastLevel.Entry)).toBe('Раніше за дату народження.');
 
-      component.plastLevelMap[PlastLevel.Entry].dateAchieved = new Date(Date.now() + 2 * 86_400_000);
+      component.plastLevelMap[PlastLevel.Entry].dateAchieved = new Date(Date.now() + 2 * 86400000);
       expect(component.levelDateIssue(PlastLevel.Entry)).toBe('Ця дата ще не настала.');
 
       component.plastLevelMap[PlastLevel.Entry].dateAchieved = '2018-05-01';
       component.plastLevelMap[PlastLevel.Uchasnyk].dateAchieved = '2018-04-01';
       expect(component.levelDateIssue(PlastLevel.Uchasnyk)).toBe('Раніше, ніж «Вступ до Пласту».');
-      expect(component.hasLevelDateIssues).toBeTrue();
+      expect(component.hasLevelDateIssues).toBe(true);
 
       component.plastLevelMap[PlastLevel.Uchasnyk].dateAchieved = '2019-04-01';
       expect(component.levelDateIssue(PlastLevel.Uchasnyk)).toBeNull();
-      expect(component.hasLevelDateIssues).toBeFalse();
+      expect(component.hasLevelDateIssues).toBe(false);
     });
 
     it('does not compare across улади', () => {
@@ -646,9 +674,9 @@ describe('UpsertMemberComponent', () => {
   });
 
   describe('leaving', () => {
-    function confirmation(answer: boolean): jasmine.Spy {
+    function confirmation(answer: boolean): Mock {
       const service = fixture.debugElement.injector.get(ConfirmationService);
-      return spyOn(service, 'confirm').and.callFake(options => {
+      return vi.spyOn(service, 'confirm').mockImplementation(options => {
         if (answer) {
           options.accept?.();
         } else {
@@ -660,7 +688,7 @@ describe('UpsertMemberComponent', () => {
 
     it('lets go without asking when nothing changed', () => {
       create();
-      expect(component.confirmLeave()).toBeTrue();
+      expect(component.confirmLeave()).toBe(true);
     });
 
     it('asks before throwing changes away', async () => {
@@ -668,7 +696,7 @@ describe('UpsertMemberComponent', () => {
       component.form().form.markAsDirty();
 
       const confirm = confirmation(false);
-      expect(await component.confirmLeave()).toBeFalse();
+      expect(await component.confirmLeave()).toBe(false);
       expect(confirm).toHaveBeenCalled();
     });
 
@@ -676,14 +704,14 @@ describe('UpsertMemberComponent', () => {
       create();
       component.form().form.markAsDirty();
       confirmation(true);
-      expect(await component.confirmLeave()).toBeTrue();
+      expect(await component.confirmLeave()).toBe(true);
     });
 
     it('does not ask after saving', () => {
       create();
       component.form().form.markAsDirty();
       component.submit();
-      expect(component.confirmLeave()).toBeTrue();
+      expect(component.confirmLeave()).toBe(true);
     });
   });
 
@@ -700,24 +728,24 @@ describe('UpsertMemberComponent', () => {
       component.fileChangeEvent(event);
       
       expect(component.imageFile).toBe(file);
-      expect(component.displayCropper).toBeTrue();
+      expect(component.displayCropper).toBe(true);
       expect(component.croppedImage).toBe('');
       expect(component.croppedFile).toBeNull();
-      expect(component.removeProfilePhoto).toBeFalse();
+      expect(component.removeProfilePhoto).toBe(false);
     });
 
     it('should warn when no file selected', () => {
-      spyOn(console, 'warn');
+      vi.spyOn(console, 'warn').mockReturnValue(undefined);
       const event: FileSelectEvent = { originalEvent: new Event('change'), files: [], currentFiles: [] };
       
       component.fileChangeEvent(event);
       
       expect(console.warn).toHaveBeenCalledWith('No file selected');
-      expect(component.displayCropper).toBeFalse();
+      expect(component.displayCropper).toBe(false);
     });
 
     it('should revoke previous object URL', () => {
-      spyOn(URL, 'revokeObjectURL');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
       component['objectUrlToRevoke'] = 'blob://old-url';
       
       const file = new File(['aa'], 'avatar.jpg', { type: 'image/jpeg' });
@@ -730,7 +758,7 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('should not revoke URL when objectUrlToRevoke is null', () => {
-      spyOn(URL, 'revokeObjectURL');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
       component['objectUrlToRevoke'] = null;
       
       const file = new File(['aa'], 'avatar.jpg', { type: 'image/jpeg' });
@@ -800,7 +828,7 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('should use objectUrl from event if available', () => {
-      spyOn(URL, 'revokeObjectURL');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
       const blob = new Blob(['xx'], { type: 'image/png' });
       component.imageFile = new File(['orig'], 'orig.jpeg', { type: 'image/jpeg' });
       component['objectUrlToRevoke'] = 'blob://old-url';
@@ -822,7 +850,7 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('should create objectUrl when not provided', () => {
-      spyOn(URL, 'createObjectURL').and.returnValue('blob://created-url');
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob://created-url');
       const blob = new Blob(['xx'], { type: 'image/png' });
       component.imageFile = new File(['orig'], 'orig.jpeg', { type: 'image/jpeg' });
       
@@ -842,7 +870,7 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('should not revoke same URL', () => {
-      spyOn(URL, 'revokeObjectURL');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
       const blob = new Blob(['xx'], { type: 'image/png' });
       component.imageFile = new File(['orig'], 'orig.jpeg', { type: 'image/jpeg' });
       component['objectUrlToRevoke'] = 'blob://same-url';
@@ -862,7 +890,7 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('should warn when neither base64 nor blob provided', () => {
-      spyOn(console, 'warn');
+      vi.spyOn(console, 'warn').mockReturnValue(undefined);
       const cropEvent: ImageCroppedEvent = {
         width: 100,
         height: 100,
@@ -882,7 +910,9 @@ describe('UpsertMemberComponent', () => {
     beforeEach(() => {
       setRouteParams({ groupKey });
       create();
-      mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
+      mockForm = {
+        markAsDirty: vi.fn()
+      } as unknown as FormGroup;
     });
 
     it('should close cropper and use croppedFile', () => {
@@ -892,9 +922,9 @@ describe('UpsertMemberComponent', () => {
       
       component.save(mockForm);
       
-      expect(component.displayCropper).toBeFalse();
+      expect(component.displayCropper).toBe(false);
       expect(component.fileToUpload).toBe(component.croppedFile);
-      expect(component.removeProfilePhoto).toBeFalse();
+      expect(component.removeProfilePhoto).toBe(false);
       expect(mockForm.markAsDirty).toHaveBeenCalled();
     });
 
@@ -906,12 +936,12 @@ describe('UpsertMemberComponent', () => {
       
       expect(component.fileToUpload).toBeTruthy();
       expect(component.fileToUpload).toBeInstanceOf(Blob);
-      expect(component.removeProfilePhoto).toBeFalse();
+      expect(component.removeProfilePhoto).toBe(false);
       expect(mockForm.markAsDirty).toHaveBeenCalled();
     });
 
     it('should warn when no cropped image available', () => {
-      spyOn(console, 'warn');
+      vi.spyOn(console, 'warn').mockReturnValue(undefined);
       component.croppedFile = null;
       component.croppedImage = '';
       
@@ -934,7 +964,7 @@ describe('UpsertMemberComponent', () => {
       
       component.onCancelCrop();
       
-      expect(component.displayCropper).toBeFalse();
+      expect(component.displayCropper).toBe(false);
       expect(component.croppedImage).toBe('');
     });
   });
@@ -945,7 +975,9 @@ describe('UpsertMemberComponent', () => {
     beforeEach(() => {
       setRouteParams({ groupKey });
       create();
-      mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
+      mockForm = {
+        markAsDirty: vi.fn()
+      } as unknown as FormGroup;
     });
 
     it('should clear all photo-related data', () => {
@@ -962,12 +994,12 @@ describe('UpsertMemberComponent', () => {
       expect(component.croppedFile).toBeNull();
       expect(component.fileToUpload).toBeNull();
       expect(component.member.profilePhotoUrl).toBeNull();
-      expect(component.removeProfilePhoto).toBeTrue();
+      expect(component.removeProfilePhoto).toBe(true);
       expect(mockForm.markAsDirty).toHaveBeenCalled();
     });
 
     it('should revoke object URL if exists', () => {
-      spyOn(URL, 'revokeObjectURL');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
       component['objectUrlToRevoke'] = 'blob://test-url';
 
       component.clearProfilePhoto(mockForm);
@@ -977,13 +1009,13 @@ describe('UpsertMemberComponent', () => {
     });
 
     it('should not revoke when no object URL exists', () => {
-      spyOn(URL, 'revokeObjectURL');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
       component['objectUrlToRevoke'] = null;
 
       component.clearProfilePhoto(mockForm);
 
       expect(URL.revokeObjectURL).not.toHaveBeenCalled();
-      expect(component.removeProfilePhoto).toBeTrue();
+      expect(component.removeProfilePhoto).toBe(true);
     });
   });
 
@@ -1000,7 +1032,7 @@ describe('UpsertMemberComponent', () => {
         currentFiles: [file] 
       };
       component.fileChangeEvent(selectEvent);
-      expect(component.displayCropper).toBeTrue();
+      expect(component.displayCropper).toBe(true);
 
       // Crop image
       const blob = new Blob(['cropped'], { type: 'image/png' });
@@ -1014,9 +1046,11 @@ describe('UpsertMemberComponent', () => {
       component.imageCropped(cropEvent);
 
       // Save cropped image
-      const mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
+      const mockForm = {
+        markAsDirty: vi.fn()
+      } as unknown as FormGroup;
       component.save(mockForm);
-      expect(component.displayCropper).toBeFalse();
+      expect(component.displayCropper).toBe(false);
       expect(component.fileToUpload).toBeTruthy();
 
       // Submit form
@@ -1032,18 +1066,20 @@ describe('UpsertMemberComponent', () => {
     it('should complete full update workflow with photo removal', () => {
       create();
       
-      const mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
+      const mockForm = {
+        markAsDirty: vi.fn()
+      } as unknown as FormGroup;
       
       // Clear photo
       component.clearProfilePhoto(mockForm);
-      expect(component.removeProfilePhoto).toBeTrue();
+      expect(component.removeProfilePhoto).toBe(true);
       
       // Update member
       component.member.firstName = 'Updated';
       component.submit();
 
-      const [, dto] = memberServiceSpy.update.calls.mostRecent().args;
-      expect(dto.removeProfilePhoto).toBeTrue();
+      const [, dto] = vi.mocked(memberServiceSpy.update).mock.lastCall!;
+      expect(dto.removeProfilePhoto).toBe(true);
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey], { replaceUrl: true });
     });
 
@@ -1058,11 +1094,11 @@ describe('UpsertMemberComponent', () => {
         currentFiles: [file] 
       };
       component.fileChangeEvent(selectEvent);
-      expect(component.displayCropper).toBeTrue();
+      expect(component.displayCropper).toBe(true);
 
       component.onCancelCrop();
 
-      expect(component.displayCropper).toBeFalse();
+      expect(component.displayCropper).toBe(false);
       expect(component.croppedImage).toBe('');
     });
   });

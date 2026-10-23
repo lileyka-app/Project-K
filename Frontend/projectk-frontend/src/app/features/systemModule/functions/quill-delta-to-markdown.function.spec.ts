@@ -79,8 +79,8 @@ describe('quillDeltaToMarkdown', () => {
   });
 
   it('treats the editor’s bare trailing newline as nothing written', () => {
-    expect(isDeltaBlank([{ insert: '\n' }])).toBeTrue();
-    expect(isDeltaBlank([{ insert: '  \n\n' }])).toBeTrue();
-    expect(isDeltaBlank([{ insert: 'щось\n' }])).toBeFalse();
+    expect(isDeltaBlank([{ insert: '\n' }])).toBe(true);
+    expect(isDeltaBlank([{ insert: '  \n\n' }])).toBe(true);
+    expect(isDeltaBlank([{ insert: 'щось\n' }])).toBe(false);
   });
 });

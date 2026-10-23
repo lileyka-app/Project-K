@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { AgendaAssignSelectComponent } from './agenda-assign-select';
@@ -6,7 +7,7 @@ import { AgendaAssignTargets } from '../../models/agenda';
 
 describe('AgendaAssignSelectComponent', () => {
   let fixture: ComponentFixture<AgendaAssignSelectComponent>;
-  let agendaService: jasmine.SpyObj<AgendaService>;
+  let agendaService: MockedObject<AgendaService>;
 
   /** What the backend hands a Гуртковий: the kurin is off limits, his гурток and its people are not. */
   const targetsForGroupProvid: AgendaAssignTargets = {
@@ -25,8 +26,10 @@ describe('AgendaAssignSelectComponent', () => {
   };
 
   beforeEach(async () => {
-    agendaService = jasmine.createSpyObj<AgendaService>('AgendaService', ['getAssignTargets']);
-    agendaService.getAssignTargets.and.returnValue(of(targetsForGroupProvid));
+    agendaService = {
+      getAssignTargets: vi.fn()
+    } as MockedObject<AgendaService>;
+    agendaService.getAssignTargets.mockReturnValue(of(targetsForGroupProvid));
 
     await TestBed.configureTestingModule({
       imports: [AgendaAssignSelectComponent],
@@ -44,7 +47,7 @@ describe('AgendaAssignSelectComponent', () => {
     const nodes = (fixture.componentInstance as unknown as { nodes: () => { key?: string; selectable?: boolean; children?: unknown[] }[] }).nodes();
 
     expect(nodes.map(node => node.key)).toEqual(['group:g1']);
-    expect(nodes[0].selectable).toBeTrue();
+    expect(nodes[0].selectable).toBe(true);
     expect((nodes[0].children ?? []).map(child => (child as { key?: string }).key)).toEqual(['leadership:l-g1', 'member:m1']);
   });
 });

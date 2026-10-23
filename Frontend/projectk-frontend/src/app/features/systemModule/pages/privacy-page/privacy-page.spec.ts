@@ -29,9 +29,9 @@ describe('PrivacyPageComponent', () => {
   it('lists every kind of stored data with a purpose and a source', () => {
     const rows = (fixture.nativeElement as HTMLElement).querySelectorAll('.privacy-table tbody tr');
 
-    expect(rows).toHaveSize(component.dataRows.length);
-    expect(component.dataRows.every(r => r.what && r.why && r.who)).toBeTrue();
-    expect(component.dataRows.some(r => /дата народження/i.test(r.what))).toBeTrue();
+    expect(rows).toHaveLength(component.dataRows.length);
+    expect(component.dataRows.every(r => r.what && r.why && r.who)).toBe(true);
+    expect(component.dataRows.some(r => /дата народження/i.test(r.what))).toBe(true);
   });
 
   it('tells minors’ data is entered on parental consent and how to have it removed', () => {

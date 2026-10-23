@@ -12,7 +12,7 @@ describe('failureDetail', () => {
   const mfaRefusal = new HttpErrorResponse({ status: 403, error: { message: MFA_REQUIRED_MESSAGE } });
 
   it('names the missing second factor instead of asking to retry', () => {
-    expect(isMfaRequiredRefusal(mfaRefusal)).toBeTrue();
+    expect(isMfaRequiredRefusal(mfaRefusal)).toBe(true);
     expect(failureDetail(mfaRefusal)).toBe(MFA_REQUIRED_DETAIL);
     expect(failureDetail(mfaRefusal)).not.toContain(RETRY_DETAIL);
   });
@@ -20,7 +20,7 @@ describe('failureDetail', () => {
   it('does not offer a retry on any other 403', () => {
     const forbidden = new HttpErrorResponse({ status: 403, error: { message: 'Forbidden' } });
 
-    expect(isMfaRequiredRefusal(forbidden)).toBeFalse();
+    expect(isMfaRequiredRefusal(forbidden)).toBe(false);
     expect(failureDetail(forbidden)).toBe(FORBIDDEN_DETAIL);
   });
 
@@ -34,6 +34,6 @@ describe('failureDetail', () => {
   it('treats the MFA message as a refusal only on a 403', () => {
     const wrongStatus = new HttpErrorResponse({ status: 401, error: { message: MFA_REQUIRED_MESSAGE } });
 
-    expect(isMfaRequiredRefusal(wrongStatus)).toBeFalse();
+    expect(isMfaRequiredRefusal(wrongStatus)).toBe(false);
   });
 });

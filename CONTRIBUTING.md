@@ -439,12 +439,29 @@ dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
 - бекенд — **1166** тестів (BusinessLogic 572 · API 489 · Infrastructure 92 · Architecture 13)
-- фронт — **754** тести, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
+- фронт — **990** тестів, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
 - e2e — **101** тест
 
 ```bash
-cd Frontend/projectk-frontend && npx ng lint && npx ng test --watch=false --browsers=ChromeHeadless && npx ng build
+cd Frontend/projectk-frontend && npm run lint && npm test && npx ng build
 ```
+
+Юніт-тести вебу йдуть на **Vitest** через білдер `@angular/build:unit-test`, у jsdom, без браузера.
+`npm test` — один прогін, `npm run test-c` — те саме з покриттям у `coverage/projectk-frontend/`
+(CI вивантажує його як артефакт). Один файл: `npx ng test --watch=false --include <шлях до spec>`.
+Кілька речей, що відрізняються від колишніх Karma/Jasmine:
+
+- Усі spec-файли ділять одне jsdom-середовище (`isolate: false`, як було в Karma). Шпигуни з
+  `vi.spyOn` знімаються після кожного тесту (`restoreMocks` у `vitest-base.config.ts`), а
+  `vi.useFakeTimers()` треба повертати самому через `vi.useRealTimers()` в `afterEach`.
+- `fakeAsync`/`tick` не працюють: zone.js ставить ProxyZone лише для Jasmine, Mocha і Jest.
+  Таймери — через `vi.useFakeTimers()` і `vi.advanceTimersByTime()`.
+- Колбека `done` немає. Тест, що чекає на емісію, повертає `new Promise<void>(done => …)`;
+  `async`-тест без очікування закінчиться раніше за `subscribe` і пройде вхолосту.
+- `vi.spyOn` за замовчуванням викликає справжній метод, на відміну від Jasmine `spyOn`. Щоб заглушити,
+  додай `.mockReturnValue(…)` або `.mockImplementation(…)`.
+- У jsdom немає `ResizeObserver`, `matchMedia` і буфера обміну. Перші два — інертні заглушки в
+  `src/test-setup.ts`; решту тест підставляє сам (`vi.stubGlobal`).
 
 E2E піднімаються через докер:
 

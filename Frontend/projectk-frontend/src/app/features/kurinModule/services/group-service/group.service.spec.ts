@@ -144,7 +144,7 @@ describe('GroupService', () => {
 
     const req = httpMock.expectOne(`${baseUrl}/g1/silhouette`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body instanceof FormData).toBeTrue();
+    expect(req.request.body instanceof FormData).toBe(true);
     expect((req.request.body as FormData).get('file')).toBe(file);
     req.flush(mockGroup);
   });

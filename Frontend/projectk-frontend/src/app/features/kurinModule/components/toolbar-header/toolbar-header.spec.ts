@@ -32,14 +32,12 @@ describe('ToolbarHeaderComponent', () => {
   it('names the missing second factor instead of asking to retry when the MFA gate refuses', () => {
     const authService = TestBed.inject(AuthService);
     const messageService = TestBed.inject(MessageService);
-    spyOn(authService, 'setKurinScope').and.returnValue(
-      throwError(() => new HttpErrorResponse({ status: 403, error: { message: MFA_REQUIRED_MESSAGE } }))
-    );
-    const add = spyOn(messageService, 'add');
+    vi.spyOn(authService, 'setKurinScope').mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403, error: { message: MFA_REQUIRED_MESSAGE } })));
+    const add = vi.spyOn(messageService, 'add').mockReturnValue(undefined);
 
     component.backToKurinPanel();
 
-    const toast = add.calls.mostRecent().args[0];
+    const toast = vi.mocked(add).mock.lastCall![0];
     expect(toast.detail).toContain('двофакторн');
     expect(toast.detail).not.toContain('Спробуй ще раз');
   });
@@ -47,13 +45,11 @@ describe('ToolbarHeaderComponent', () => {
   it('still asks to retry when leaving the kurin failed for a passing reason', () => {
     const authService = TestBed.inject(AuthService);
     const messageService = TestBed.inject(MessageService);
-    spyOn(authService, 'setKurinScope').and.returnValue(
-      throwError(() => new HttpErrorResponse({ status: 503 }))
-    );
-    const add = spyOn(messageService, 'add');
+    vi.spyOn(authService, 'setKurinScope').mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+    const add = vi.spyOn(messageService, 'add').mockReturnValue(undefined);
 
     component.backToKurinPanel();
 
-    expect(add.calls.mostRecent().args[0].detail).toBe('Спробуй ще раз.');
+    expect(vi.mocked(add).mock.lastCall![0].detail).toBe('Спробуй ще раз.');
   });
 });

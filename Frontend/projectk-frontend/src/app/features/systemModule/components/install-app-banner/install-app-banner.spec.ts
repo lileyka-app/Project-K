@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
@@ -10,17 +11,17 @@ function fakeService(canPrompt: boolean, preferWeb = false) {
   return {
     shouldOffer,
     offersMobileVersion: signal(preferWeb),
-    forgetPreferWeb: jasmine.createSpy('forgetPreferWeb'),
+    forgetPreferWeb: vi.fn().mockName('forgetPreferWeb'),
     canPrompt: signal(canPrompt),
-    prompt: jasmine.createSpy('prompt').and.resolveTo(true),
-    dismiss: jasmine.createSpy('dismiss').and.callFake(() => shouldOffer.set(false))
+    prompt: vi.fn().mockName('prompt').mockResolvedValue(true),
+    dismiss: vi.fn().mockName('dismiss').mockImplementation(() => shouldOffer.set(false))
   };
 }
 
 describe('InstallAppBannerComponent', () => {
   let fixture: ComponentFixture<InstallAppBannerComponent>;
   let service: ReturnType<typeof fakeService>;
-  let goTo: jasmine.Spy;
+  let goTo: Mock;
 
   async function create(canPrompt: boolean, preferWeb = false): Promise<void> {
     service = fakeService(canPrompt, preferWeb);
@@ -29,8 +30,10 @@ describe('InstallAppBannerComponent', () => {
       providers: [provideRouter([]), { provide: InstallAppService, useValue: service }]
     }).compileComponents();
     fixture = TestBed.createComponent(InstallAppBannerComponent);
-    // A real navigation would take the Karma page with it.
-    goTo = spyOn(fixture.componentInstance as unknown as { goTo: (url: string) => void }, 'goTo');
+    // A real navigation would take the test page with it.
+    goTo = vi.spyOn(fixture.componentInstance as unknown as {
+      goTo: (url: string) => void;
+    }, 'goTo').mockReturnValue(undefined);
     fixture.detectChanges();
   }
 
@@ -62,7 +65,7 @@ describe('InstallAppBannerComponent', () => {
 
   it('should continue on the same screen in the phone app', async () => {
     await create(false);
-    spyOnProperty(TestBed.inject(Router), 'url').and.returnValue('/calendar/k1');
+    vi.spyOn(TestBed.inject(Router), 'url', 'get').mockReturnValue('/calendar/k1');
     button('Відкрити мобільну версію').click();
     expect(goTo).toHaveBeenCalledWith('/m/tabs/calendar');
   });
@@ -70,7 +73,7 @@ describe('InstallAppBannerComponent', () => {
   it('should give a phone that chose «Повна версія» one quiet way back', async () => {
     await create(false, true);
     expect(fixture.nativeElement.querySelector('[data-testid=install-app-banner]')).toBeNull();
-    spyOnProperty(TestBed.inject(Router), 'url').and.returnValue('/');
+    vi.spyOn(TestBed.inject(Router), 'url', 'get').mockReturnValue('/');
     button('Мобільна версія').click();
     expect(service.forgetPreferWeb).toHaveBeenCalled();
     expect(goTo).toHaveBeenCalledWith('/m/tabs/home');

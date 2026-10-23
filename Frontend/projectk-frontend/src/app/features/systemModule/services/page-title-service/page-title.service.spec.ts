@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, TitleStrategy, provideRouter } from '@angular/router';
@@ -38,20 +39,31 @@ const createState = (levels: RouteLevel[]): RouterStateSnapshot => {
 
 describe('PageTitleService', () => {
   let service: PageTitleService;
-  let title: jasmine.SpyObj<Title>;
-  let authService: jasmine.SpyObj<AuthService>;
-  let kurinService: jasmine.SpyObj<KurinService>;
-  let groupService: jasmine.SpyObj<GroupService>;
-  let memberService: jasmine.SpyObj<MemberService>;
+  let title: MockedObject<Title>;
+  let authService: MockedObject<AuthService>;
+  let kurinService: MockedObject<KurinService>;
+  let groupService: MockedObject<GroupService>;
+  let memberService: MockedObject<MemberService>;
 
-  const currentTitle = (): string => title.setTitle.calls.mostRecent().args[0];
+  const currentTitle = (): string => vi.mocked(title.setTitle).mock.lastCall![0];
 
   beforeEach(() => {
-    title = jasmine.createSpyObj<Title>('Title', ['setTitle', 'getTitle']);
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
-    kurinService = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
-    groupService = jasmine.createSpyObj<GroupService>('GroupService', ['getByKey']);
-    memberService = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
+    title = {
+      setTitle: vi.fn(),
+      getTitle: vi.fn()
+    } as MockedObject<Title>;
+    authService = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    kurinService = {
+      getByKey: vi.fn()
+    } as MockedObject<KurinService>;
+    groupService = {
+      getByKey: vi.fn()
+    } as MockedObject<GroupService>;
+    memberService = {
+      getByKey: vi.fn()
+    } as MockedObject<MemberService>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -80,7 +92,7 @@ describe('PageTitleService', () => {
   });
 
   it('resolves the kurin number from the route param', () => {
-    kurinService.getByKey.and.returnValue(of({ kurinKey: 'k-1', number: 12 } as KurinDto));
+    kurinService.getByKey.mockReturnValue(of({ kurinKey: 'k-1', number: 12 } as KurinDto));
 
     service.applyRouteState('Курінь', createState([
       {},
@@ -92,8 +104,8 @@ describe('PageTitleService', () => {
   });
 
   it('falls back to the signed-in kurin when the route carries no key', () => {
-    authService.getAuthStateValue.and.returnValue({ kurinKey: 'k-7' } as ReturnType<AuthService['getAuthStateValue']>);
-    kurinService.getByKey.and.returnValue(of({ kurinKey: 'k-7', number: 7 } as KurinDto));
+    authService.getAuthStateValue.mockReturnValue({ kurinKey: 'k-7' } as ReturnType<AuthService['getAuthStateValue']>);
+    kurinService.getByKey.mockReturnValue(of({ kurinKey: 'k-7', number: 7 } as KurinDto));
 
     service.applyRouteState('Курінь', createState([{}, { data: { titleContext: 'kurin' } }]));
 
@@ -102,7 +114,7 @@ describe('PageTitleService', () => {
   });
 
   it('resolves the group name', () => {
-    groupService.getByKey.and.returnValue(of({ groupKey: 'g-1', name: 'Соколи' } as GroupDto));
+    groupService.getByKey.mockReturnValue(of({ groupKey: 'g-1', name: 'Соколи' } as GroupDto));
 
     service.applyRouteState('Гурток', createState([
       {},
@@ -113,7 +125,7 @@ describe('PageTitleService', () => {
   });
 
   it('resolves the member as last name then first name', () => {
-    memberService.getByKey.and.returnValue(of({
+    memberService.getByKey.mockReturnValue(of({
       memberKey: 'm-1',
       lastName: 'Муха',
       firstName: 'Ростислав'
@@ -128,7 +140,7 @@ describe('PageTitleService', () => {
   });
 
   it('keeps the route title when the entity cannot be loaded', () => {
-    memberService.getByKey.and.returnValue(throwError(() => new Error('offline')));
+    memberService.getByKey.mockReturnValue(throwError(() => new Error('offline')));
 
     service.applyRouteState('Картка учасника', createState([
       {},
@@ -139,7 +151,7 @@ describe('PageTitleService', () => {
   });
 
   it('drops the previous entity when the next navigation lands', () => {
-    groupService.getByKey.and.returnValue(of({ groupKey: 'g-1', name: 'Соколи' } as GroupDto));
+    groupService.getByKey.mockReturnValue(of({ groupKey: 'g-1', name: 'Соколи' } as GroupDto));
     service.applyRouteState('Гурток', createState([
       {},
       { params: { groupKey: 'g-1' }, data: { titleContext: 'group' } }
@@ -152,7 +164,7 @@ describe('PageTitleService', () => {
 
   it('ignores a resolve that lands after the user navigated away', () => {
     const slowGroup = new Subject<GroupDto>();
-    groupService.getByKey.and.returnValue(slowGroup.asObservable());
+    groupService.getByKey.mockReturnValue(slowGroup.asObservable());
 
     service.applyRouteState('Гурток', createState([
       {},

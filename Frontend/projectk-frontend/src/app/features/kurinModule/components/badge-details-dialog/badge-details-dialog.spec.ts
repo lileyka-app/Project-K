@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
@@ -25,10 +26,10 @@ const badge: BadgeCatalogItemDto = {
 
 describe('BadgeDetailsDialogComponent', () => {
   let fixture: ComponentFixture<BadgeDetailsDialogComponent>;
-  let getById: jasmine.Spy;
+  let getById: Mock;
 
   beforeEach(async () => {
-    getById = jasmine.createSpy('getById').and.returnValue(of(badge));
+    getById = vi.fn().mockName('getById').mockReturnValue(of(badge));
     await TestBed.configureTestingModule({
       imports: [BadgeDetailsDialogComponent],
       providers: [
@@ -42,7 +43,7 @@ describe('BadgeDetailsDialogComponent', () => {
   });
 
   async function open(value: BadgeCatalogItemDto): Promise<HTMLElement> {
-    getById.and.returnValue(of(value));
+    getById.mockReturnValue(of(value));
     fixture.componentRef.setInput('badgeId', value.id);
     fixture.componentRef.setInput('visible', true);
     fixture.detectChanges();
@@ -58,7 +59,7 @@ describe('BadgeDetailsDialogComponent', () => {
     expect(page.querySelector('.badge-details__title')?.textContent).toContain('Плавець I');
     const chips = Array.from(page.querySelectorAll('.badge-details__chip')).map(chip => chip.textContent?.trim());
     expect(chips).toEqual(['Україна', 'рівень 1', 'УПЮ', 'Водна']);
-    expect(page.querySelectorAll('.badge-details__requirements li')).toHaveSize(1);
+    expect(page.querySelectorAll('.badge-details__requirements li')).toHaveLength(1);
     expect(page.querySelector('.badge-details__footnote')?.textContent).toContain('Розробив: Ольга. Оновлено 29.04.2020.');
   });
 
@@ -68,7 +69,7 @@ describe('BadgeDetailsDialogComponent', () => {
     const item = page.querySelector('.badge-details__requirements li');
     expect(Array.from(item?.querySelectorAll('strong') ?? []).map(strong => strong.textContent)).toEqual(['а)', 'б)']);
     expect(item?.textContent).toContain('<b>і</b>');
-    expect(item?.textContent?.trim().endsWith('**')).toBeTrue();
+    expect(item?.textContent?.trim().endsWith('**')).toBe(true);
   });
 
   it('falls back to the requirements text when the API sends no list', async () => {

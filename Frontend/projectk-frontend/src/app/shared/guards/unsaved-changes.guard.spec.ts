@@ -6,11 +6,11 @@ describe('unsavedChangesGuard', () => {
   const state = {} as RouterStateSnapshot;
 
   it('asks the page', () => {
-    expect(unsavedChangesGuard({ confirmLeave: () => false }, route, state, state)).toBeFalse();
-    expect(unsavedChangesGuard({ confirmLeave: () => true }, route, state, state)).toBeTrue();
+    expect(unsavedChangesGuard({ confirmLeave: () => false }, route, state, state)).toBe(false);
+    expect(unsavedChangesGuard({ confirmLeave: () => true }, route, state, state)).toBe(true);
   });
 
   it('lets go when there is no page', () => {
-    expect(unsavedChangesGuard(null as never, route, state, state)).toBeTrue();
+    expect(unsavedChangesGuard(null as never, route, state, state)).toBe(true);
   });
 });

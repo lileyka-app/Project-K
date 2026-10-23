@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
@@ -7,22 +8,27 @@ import { NotificationBellComponent } from './notification-bell';
 describe('NotificationBellComponent', () => {
   let component: NotificationBellComponent;
   let fixture: ComponentFixture<NotificationBellComponent>;
-  let notificationService: jasmine.SpyObj<NotificationService>;
+  let notificationService: MockedObject<NotificationService>;
 
   beforeEach(async () => {
-    notificationService = jasmine.createSpyObj<NotificationService>(
-      'NotificationService',
-      ['getInbox', 'refreshUnreadCount', 'markAllAsRead', 'markAsRead', 'setUnreadCount'],
-      { unreadCount$: new BehaviorSubject(0) }
-    );
-    notificationService.getInbox.and.returnValue(of([]));
-    notificationService.refreshUnreadCount.and.returnValue(of(0));
+    notificationService = {
+      getInbox: vi.fn(),
+      refreshUnreadCount: vi.fn(),
+      markAllAsRead: vi.fn(),
+      markAsRead: vi.fn(),
+      setUnreadCount: vi.fn(),
+      unreadCount$: new BehaviorSubject(0)
+    } as unknown as MockedObject<NotificationService>;
+    notificationService.getInbox.mockReturnValue(of([]));
+    notificationService.refreshUnreadCount.mockReturnValue(of(0));
 
     await TestBed.configureTestingModule({
       imports: [NotificationBellComponent],
       providers: [
         { provide: NotificationService, useValue: notificationService },
-        { provide: Router, useValue: jasmine.createSpyObj<Router>('Router', ['navigateByUrl']) }
+        { provide: Router, useValue: {
+            navigateByUrl: vi.fn()
+          } }
       ]
     }).compileComponents();
 
@@ -45,7 +51,7 @@ describe('NotificationBellComponent', () => {
 
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    expect(component.isOpen).toBeFalse();
+    expect(component.isOpen).toBe(false);
   });
 
   it('keeps the inbox open when clicking inside the component', () => {
@@ -53,6 +59,6 @@ describe('NotificationBellComponent', () => {
 
     fixture.nativeElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    expect(component.isOpen).toBeTrue();
+    expect(component.isOpen).toBe(true);
   });
 });

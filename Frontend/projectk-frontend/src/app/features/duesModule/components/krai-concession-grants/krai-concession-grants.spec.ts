@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
@@ -10,7 +11,7 @@ import { fromQuarterOptions } from '../../functions/from-quarter-options.functio
 describe('KraiConcessionGrantsComponent', () => {
   let fixture: ComponentFixture<KraiConcessionGrantsComponent>;
   let component: KraiConcessionGrantsComponent;
-  let dues: jasmine.SpyObj<DuesService>;
+  let dues: MockedObject<DuesService>;
   let confirmation: ConfirmationService;
 
   const sibling: KraiConcessionDto = { key: 'sibling', name: 'Брат чи сестра', kind: 'percent', value: 20, appliesTo: ['stanytsia'] };
@@ -25,10 +26,14 @@ describe('KraiConcessionGrantsComponent', () => {
   };
 
   beforeEach(async () => {
-    dues = jasmine.createSpyObj<DuesService>('DuesService', ['grantConcession', 'updateConcessionGrant', 'deleteConcessionGrant']);
-    dues.grantConcession.and.returnValue(of({}));
-    dues.updateConcessionGrant.and.returnValue(of({}));
-    dues.deleteConcessionGrant.and.returnValue(of({}));
+    dues = {
+      grantConcession: vi.fn(),
+      updateConcessionGrant: vi.fn(),
+      deleteConcessionGrant: vi.fn()
+    } as MockedObject<DuesService>;
+    dues.grantConcession.mockReturnValue(of({}));
+    dues.updateConcessionGrant.mockReturnValue(of({}));
+    dues.deleteConcessionGrant.mockReturnValue(of({}));
 
     await TestBed.configureTestingModule({
       imports: [KraiConcessionGrantsComponent],
@@ -58,7 +63,7 @@ describe('KraiConcessionGrantsComponent', () => {
   });
 
   it('gives a пільга from the current quarter until the end picked', () => {
-    const changed = jasmine.createSpy('changed');
+    const changed = vi.fn().mockName('changed');
     component.changed.subscribe(changed);
 
     component.concessionKey.set('sibling');
@@ -87,7 +92,7 @@ describe('KraiConcessionGrantsComponent', () => {
   });
 
   it('deletes only after it is confirmed', () => {
-    spyOn(confirmation, 'confirm').and.callFake(options => { options.accept?.(); return confirmation; });
+    vi.spyOn(confirmation, 'confirm').mockImplementation(options => { options.accept?.(); return confirmation; });
 
     component.remove(grant);
 
@@ -95,7 +100,7 @@ describe('KraiConcessionGrantsComponent', () => {
   });
 
   it('shows why the server refused', () => {
-    dues.grantConcession.and.returnValue(throwError(() => new HttpErrorResponse({
+    dues.grantConcession.mockReturnValue(throwError(() => new HttpErrorResponse({
       status: 409, error: { message: 'Ця пільга вже діє в цих кварталах.' }
     })));
 

@@ -19,7 +19,7 @@ sidebar:
   `p-editor` — текст звіту про проблему.
 - **libphonenumber-js** — поле телефону з вибором країни, формат і перевірка номера; і у
   вебзастосунку, і в мобільному (`mobile/`).
-- Тести: **Karma / Jasmine**; e2e — **Playwright** проти контейнерного стеку `e2e`.
+- Тести: **Vitest** у jsdom (білдер `@angular/build:unit-test`, як і в `mobile/`); e2e — **Playwright** проти контейнерного стеку `e2e`.
 
 ## Бекенд
 

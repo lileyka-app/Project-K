@@ -78,7 +78,7 @@ describe('MemberMembershipsTileComponent', () => {
 
     expect(Array.from(root.querySelectorAll('a.membership-link')).map(a => a.getAttribute('href'))).toEqual(['/kurin', '/group/g1']);
     const buttons = root.querySelectorAll<HTMLButtonElement>('button.membership-link');
-    expect(buttons).toHaveSize(1);
+    expect(buttons).toHaveLength(1);
     buttons[0].click();
     expect(opened).toEqual([other]);
   });

@@ -50,7 +50,7 @@ describe('AboutPageComponent', () => {
     http.expectOne(() => true).flush({});
 
     expect(component.milestones[0].title).toBe('Ідея');
-    expect(component.milestones.map(m => m.title).some(t => t.includes('1.0'))).toBeTrue();
+    expect(component.milestones.map(m => m.title).some(t => t.includes('1.0'))).toBe(true);
     expect(component.milestones[component.milestones.length - 1].title).toContain('1.1');
   });
 
@@ -63,7 +63,7 @@ describe('AboutPageComponent', () => {
     // Two-part tags count: since 1.0 a release is vX.Y, and the patch number appears only when
     // there is a patch. This assertion used to demand three parts and would have failed on v1.0.
     const tags = component.milestones.flatMap(m => m.releases ?? []).map(r => r.tag);
-    expect(tags.every(tag => /^v\d+\.\d+(\.\d+)?(-(alpha|beta)(\.\d+)?)?$/.test(tag))).toBeTrue();
+    expect(tags.every(tag => /^v\d+\.\d+(\.\d+)?(-(alpha|beta)(\.\d+)?)?$/.test(tag))).toBe(true);
   });
 
   it('shows the version alone when the release carries no code name', () => {

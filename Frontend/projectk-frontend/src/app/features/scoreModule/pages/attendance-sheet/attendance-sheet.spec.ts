@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -13,8 +14,8 @@ describe('AttendanceSheetComponent', () => {
 
   let fixture: ComponentFixture<AttendanceSheetComponent>;
   let component: AttendanceSheetComponent;
-  let scores: jasmine.SpyObj<ScoreService>;
-  let messages: jasmine.SpyObj<MessageService>;
+  let scores: MockedObject<ScoreService>;
+  let messages: MockedObject<MessageService>;
 
   const person = (over: Partial<SheetPersonDto>): SheetPersonDto => ({
     membershipKey: 'm-' + nextKey(),
@@ -57,9 +58,19 @@ describe('AttendanceSheetComponent', () => {
   };
 
   function create(response: AttendanceSheetDto = data): void {
-    scores = jasmine.createSpyObj<ScoreService>('ScoreService', ['getSheet', 'markAttendance', 'unmarkAttendance', 'createEntry', 'updateEntry', 'deleteEntry', 'setAttendanceRate']);
-    scores.getSheet.and.returnValue(of(response));
-    messages = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
+    scores = {
+      getSheet: vi.fn(),
+      markAttendance: vi.fn(),
+      unmarkAttendance: vi.fn(),
+      createEntry: vi.fn(),
+      updateEntry: vi.fn(),
+      deleteEntry: vi.fn(),
+      setAttendanceRate: vi.fn()
+    } as MockedObject<ScoreService>;
+    scores.getSheet.mockReturnValue(of(response));
+    messages = {
+      add: vi.fn()
+    } as MockedObject<MessageService>;
 
     TestBed.configureTestingModule({
       imports: [AttendanceSheetComponent],
@@ -84,7 +95,7 @@ describe('AttendanceSheetComponent', () => {
     expect(names(component.answered())).toEqual(['Оксана', 'Тарас']);
     expect(names(component.assigned())).toEqual(['Марта']);
     expect(names(component.others())).toEqual(['Ігор']);
-    expect(component.hasOtherGroups()).toBeTrue();
+    expect(component.hasOtherGroups()).toBe(true);
 
     component.showOthersGroups.set(true);
     expect(names(component.answered())).toContain('Лев');
@@ -92,7 +103,7 @@ describe('AttendanceSheetComponent', () => {
 
   it('«усі, хто відповів» відмічає лише своїх і ще не відмічених', () => {
     create();
-    scores.markAttendance.and.returnValue(of([{ membershipKey: 'oksana', outcome: 'Marked', markedByName: null }]));
+    scores.markAttendance.mockReturnValue(of([{ membershipKey: 'oksana', outcome: 'Marked', markedByName: null }]));
 
     expect(names(component.answeredUnmarked())).toEqual(['Оксана']);
     component.markAnswered();
@@ -105,18 +116,18 @@ describe('AttendanceSheetComponent', () => {
   // The server says who got there first; the row shows the mark as theirs, not ours.
   it('уже відмічене кимось лишається його, з повідомленням', () => {
     create();
-    scores.markAttendance.and.returnValue(of([{ membershipKey: 'marta', outcome: 'AlreadyMarked', markedByName: 'Гуртковий' }]));
+    scores.markAttendance.mockReturnValue(of([{ membershipKey: 'marta', outcome: 'AlreadyMarked', markedByName: 'Гуртковий' }]));
 
     component.toggle(marta);
 
     const marked = component.data()!.people.find(p => p.membershipKey === 'marta')!;
     expect(marked.attendance?.markedByName).toBe('Гуртковий');
-    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'info' }));
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'info' }));
   });
 
   it('зняти відмітку — окремий запит, і рядок одразу порожній', () => {
     create();
-    scores.unmarkAttendance.and.returnValue(of({}));
+    scores.unmarkAttendance.mockReturnValue(of({}));
 
     component.toggle(taras);
 
@@ -135,22 +146,26 @@ describe('AttendanceSheetComponent', () => {
   });
 
   it('403 — це аркуш не для цієї людини', () => {
-    scores = jasmine.createSpyObj<ScoreService>('ScoreService', ['getSheet']);
-    scores.getSheet.and.returnValue(throwError(() => ({ status: 403 })));
+    scores = {
+      getSheet: vi.fn()
+    } as MockedObject<ScoreService>;
+    scores.getSheet.mockReturnValue(throwError(() => ({ status: 403 })));
     TestBed.configureTestingModule({
       imports: [AttendanceSheetComponent],
       providers: [
         provideNoopAnimations(),
         provideRouter([]),
         { provide: ScoreService, useValue: scores },
-        { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) },
+        { provide: MessageService, useValue: {
+            add: vi.fn()
+          } },
         { provide: ActivatedRoute, useValue: { paramMap: new BehaviorSubject(convertToParamMap({ kurinKey: 'k1', itemKey: 'e1', occurrence: 'x' })) } }
       ]
     });
     fixture = TestBed.createComponent(AttendanceSheetComponent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.forbidden()).toBeTrue();
+    expect(fixture.componentInstance.forbidden()).toBe(true);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Це аркуш судді');
   });
 });

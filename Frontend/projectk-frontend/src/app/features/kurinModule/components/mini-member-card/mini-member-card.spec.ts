@@ -32,7 +32,7 @@ describe('MiniMemberCardComponent', () => {
   });
 
   it('should emit navigate event', () => {
-    spyOn(component.navigate, 'emit');
+    vi.spyOn(component.navigate, 'emit').mockReturnValue(undefined);
     component.onNavigate();
     expect(component.navigate.emit).toHaveBeenCalledWith(member);
   });

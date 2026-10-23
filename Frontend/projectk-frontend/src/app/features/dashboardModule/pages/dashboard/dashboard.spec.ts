@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -18,8 +19,8 @@ import { DashboardComponent } from './dashboard';
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
   let component: DashboardComponent;
-  let auth: jasmine.SpyObj<AuthService>;
-  let members: jasmine.SpyObj<MemberService>;
+  let auth: MockedObject<AuthService>;
+  let members: MockedObject<MemberService>;
   let router: Router;
 
   const state: AuthState = {
@@ -47,13 +48,20 @@ describe('DashboardComponent', () => {
   ];
 
   beforeEach(() => {
-    auth = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue', 'getKurinScopeOptions', 'setKurinScope', 'getAuthState']);
-    auth.getAuthStateValue.and.returnValue(state);
-    auth.getAuthState.and.returnValue(of(state));
-    auth.getKurinScopeOptions.and.returnValue(of(kurins));
-    auth.setKurinScope.and.returnValue(of({ ...state, kurinKey: 'k2' }));
-    members = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey']);
-    members.getByKey.and.returnValue(of(member));
+    auth = {
+      getAuthStateValue: vi.fn(),
+      getKurinScopeOptions: vi.fn(),
+      setKurinScope: vi.fn(),
+      getAuthState: vi.fn()
+    } as MockedObject<AuthService>;
+    auth.getAuthStateValue.mockReturnValue(state);
+    auth.getAuthState.mockReturnValue(of(state));
+    auth.getKurinScopeOptions.mockReturnValue(of(kurins));
+    auth.setKurinScope.mockReturnValue(of({ ...state, kurinKey: 'k2' }));
+    members = {
+      getByKey: vi.fn()
+    } as MockedObject<MemberService>;
+    members.getByKey.mockReturnValue(of(member));
 
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -64,11 +72,13 @@ describe('DashboardComponent', () => {
         provideHttpClientTesting(),
         { provide: AuthService, useValue: auth },
         { provide: MemberService, useValue: members },
-        { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) }
+        { provide: MessageService, useValue: {
+            add: vi.fn()
+          } }
       ]
     });
     router = TestBed.inject(Router);
-    spyOn(router, 'navigate').and.resolveTo(true);
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

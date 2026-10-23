@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -14,7 +15,7 @@ describe('GroupDuesComponent', () => {
 
   let fixture: ComponentFixture<GroupDuesComponent>;
   let component: GroupDuesComponent;
-  let dues: jasmine.SpyObj<DuesService>;
+  let dues: MockedObject<DuesService>;
 
   const q = (year: number, number: number) => ({ year, number });
   const amount = (stanytsia: number, kurin: number, group: number) => ({ stanytsia, krai: 0, kurin, group, total: stanytsia + kurin + group });
@@ -116,13 +117,19 @@ describe('GroupDuesComponent', () => {
   };
 
   function create(response: GroupDuesDto = data): void {
-    dues = jasmine.createSpyObj<DuesService>('DuesService', [
-      'getGroupDues', 'createEntry', 'updateEntry', 'deleteEntry', 'setEntryVerified', 'setGroupRate', 'setConcession'
-    ]);
-    dues.getGroupDues.and.returnValue(of(response));
-    dues.createEntry.and.returnValue(of({}));
-    dues.updateEntry.and.returnValue(of({}));
-    dues.setEntryVerified.and.returnValue(of({}));
+    dues = {
+      getGroupDues: vi.fn(),
+      createEntry: vi.fn(),
+      updateEntry: vi.fn(),
+      deleteEntry: vi.fn(),
+      setEntryVerified: vi.fn(),
+      setGroupRate: vi.fn(),
+      setConcession: vi.fn()
+    } as MockedObject<DuesService>;
+    dues.getGroupDues.mockReturnValue(of(response));
+    dues.createEntry.mockReturnValue(of({}));
+    dues.updateEntry.mockReturnValue(of({}));
+    dues.setEntryVerified.mockReturnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [GroupDuesComponent],
@@ -182,7 +189,7 @@ describe('GroupDuesComponent', () => {
     expect(component.personFilterName()).toBe('Тарас Борг');
 
     component.togglePerson(debtor);
-    expect(component.filteredEntries()).toHaveSize(3);
+    expect(component.filteredEntries()).toHaveLength(3);
   });
 
   it('фільтр за кварталом дивиться на дату операції', () => {
@@ -192,15 +199,15 @@ describe('GroupDuesComponent', () => {
     expect(component.filteredEntries().map(e => e.duesEntryKey)).toEqual(['e-3']);
 
     component.kindFilter.set(DuesEntryKind.Contribution);
-    expect(component.filteredEntries()).toHaveSize(0);
+    expect(component.filteredEntries()).toHaveLength(0);
   });
 
   // Перевірену операцію впорядник замкнув — правити й видаляти її не можна, і кнопок немає.
   it('перевірену операцію не дає ні змінити, ні видалити', () => {
     create();
 
-    expect(component.canEdit(data.entries[0])).toBeFalse();
-    expect(component.canEdit(data.entries[1])).toBeTrue();
+    expect(component.canEdit(data.entries[0])).toBe(false);
+    expect(component.canEdit(data.entries[1])).toBe(true);
   });
 
   // Передачу, яку курінний уже прийняв, гурток не міняє: інакше тихо змінилася б і каса куреня.
@@ -208,8 +215,8 @@ describe('GroupDuesComponent', () => {
     create();
 
     const received = entry({ duesEntryKey: 'e-t', kind: DuesEntryKind.TransferToKurin, amount: 200, receivedAtUtc: '2026-05-02T10:00:00Z' });
-    expect(component.canEdit(received)).toBeFalse();
-    expect(component.canEdit({ ...received, receivedAtUtc: null })).toBeTrue();
+    expect(component.canEdit(received)).toBe(false);
+    expect(component.canEdit({ ...received, receivedAtUtc: null })).toBe(true);
   });
 
   it('витрата й повернення показуються зі знаком мінус, внесок — з плюсом', () => {
@@ -229,14 +236,14 @@ describe('GroupDuesComponent', () => {
       amount: 300, occurredOn: '2026-05-10', membershipKey: 'm-debt', collectedByMemberKey: null, note: null
     });
 
-    expect(dues.createEntry).toHaveBeenCalledWith('g1', jasmine.objectContaining({ amount: 300 }));
+    expect(dues.createEntry).toHaveBeenCalledWith('g1', expect.objectContaining({ amount: 300 }));
     expect(dues.getGroupDues).toHaveBeenCalledTimes(2);
-    expect(component.entryDialogVisible()).toBeFalse();
+    expect(component.entryDialogVisible()).toBe(false);
   });
 
   it('невдалий запис лишає діалог відкритим із поясненням', () => {
     create();
-    dues.createEntry.and.returnValue(throwError(() => ({ status: 409 })));
+    dues.createEntry.mockReturnValue(throwError(() => ({ status: 409 })));
     component.openEntryDialog();
 
     component.saveEntry({
@@ -244,7 +251,7 @@ describe('GroupDuesComponent', () => {
       amount: 10, occurredOn: '2026-05-10', membershipKey: null, collectedByMemberKey: null, note: null
     });
 
-    expect(component.entryDialogVisible()).toBeTrue();
+    expect(component.entryDialogVisible()).toBe(true);
     expect(component.entryError()).toBeTruthy();
   });
 
@@ -253,12 +260,14 @@ describe('GroupDuesComponent', () => {
 
     expect(text()).not.toContain('Записати операцію');
     expect(text()).not.toContain('Ставка гуртка');
-    expect(component.canEdit(data.entries[1])).toBeFalse();
+    expect(component.canEdit(data.entries[1])).toBe(false);
   });
 
   it('коли касу не вдалося прочитати, пропонує оновити', () => {
-    dues = jasmine.createSpyObj<DuesService>('DuesService', ['getGroupDues']);
-    dues.getGroupDues.and.returnValue(throwError(() => new Error('down')));
+    dues = {
+      getGroupDues: vi.fn()
+    } as MockedObject<DuesService>;
+    dues.getGroupDues.mockReturnValue(throwError(() => new Error('down')));
     TestBed.configureTestingModule({
       imports: [GroupDuesComponent],
       providers: [
@@ -271,7 +280,7 @@ describe('GroupDuesComponent', () => {
     fixture = TestBed.createComponent(GroupDuesComponent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.loadFailed()).toBeTrue();
+    expect(fixture.componentInstance.loadFailed()).toBe(true);
     expect(text()).toContain('Оновити');
   });
 });

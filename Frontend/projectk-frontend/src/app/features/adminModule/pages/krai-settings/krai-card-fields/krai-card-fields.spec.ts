@@ -28,7 +28,7 @@ describe('KraiCardFieldsComponent', () => {
     fixture.detectChanges();
 
     expect(component.extra().map(field => field.key)).toEqual(['visaType', 'field2']);
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="krai-extra"] li')).toHaveSize(2);
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="krai-extra"] li')).toHaveLength(2);
 
     component.removeField(0);
     expect(component.value()?.extra).toEqual([{ key: 'field2', label: 'Віза до', type: 'date', required: false }]);
@@ -37,7 +37,7 @@ describe('KraiCardFieldsComponent', () => {
   it('compares sections whatever their key order', () => {
     expect(sameCardFields(
       { fields: { middleName: 'hidden', phoneNumber: 'optional' } },
-      { fields: { phoneNumber: 'optional', middleName: 'hidden' }, extra: [] })).toBeTrue();
-    expect(sameCardFields(undefined, { extra: [{ key: 'a', label: 'A', type: 'text', required: false }] })).toBeFalse();
+      { fields: { phoneNumber: 'optional', middleName: 'hidden' }, extra: [] })).toBe(true);
+    expect(sameCardFields(undefined, { extra: [{ key: 'a', label: 'A', type: 'text', required: false }] })).toBe(false);
   });
 });

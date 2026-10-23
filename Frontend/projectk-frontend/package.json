@@ -7,12 +7,12 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "tailscale": "ng serve --configuration tailscale --host 0.0.0.0",
-    "test": "ng test --watch=false --browsers=ChromeHeadless",
+    "test": "ng test --watch=false",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "e2e:install": "playwright install",
-    "test-c": "ng test --code-coverage",
+    "test-c": "ng test --watch=false --coverage",
     "lint": "ng lint"
   },
   "prettier": {
@@ -64,20 +64,15 @@
     "@angular/compiler-cli": "^22.2.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
-    "@types/jasmine": "~6.0.0",
+    "@vitest/coverage-v8": "^5.0.5",
     "angular-eslint": "^22.6.0",
     "eslint": "^10.13.0",
     "eslint-plugin-sonarjs": "^4.2.2",
-    "istanbul-lib-instrument": "^6.0.3",
-    "jasmine-core": "^6.3.0",
-    "karma": "~6.4.4",
-    "karma-chrome-launcher": "~3.2.0",
-    "karma-coverage": "~2.2.1",
-    "karma-jasmine": "~5.1.0",
-    "karma-jasmine-html-reporter": "~2.3.0",
+    "jsdom": "^30.1.3",
     "postcss": "^8.5.31",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.72.0"
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
   },
   "overrides": {
     "vite": "^8.3.5"

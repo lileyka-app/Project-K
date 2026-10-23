@@ -12,13 +12,19 @@ describe('CreatePlanning', () => {
   let fixture: ComponentFixture<CreatePlanningComponent>;
 
   beforeEach(async () => {
-    const planningServiceSpy = jasmine.createSpyObj('PlanningService', ['createSession']);
-    planningServiceSpy.createSession.and.returnValue(of({}));
+    const planningServiceSpy = {
+      createSession: vi.fn()
+    };
+    planningServiceSpy.createSession.mockReturnValue(of({}));
 
-    const memberServiceSpy = jasmine.createSpyObj('MemberService', ['getKVMembers']);
-    memberServiceSpy.getKVMembers.and.returnValue(of([]));
+    const memberServiceSpy = {
+      getKVMembers: vi.fn()
+    };
+    memberServiceSpy.getKVMembers.mockReturnValue(of([]));
 
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const routerSpy = {
+      navigate: vi.fn()
+    };
 
     await TestBed.configureTestingModule({
       imports: [CreatePlanningComponent],

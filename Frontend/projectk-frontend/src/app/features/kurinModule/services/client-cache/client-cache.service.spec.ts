@@ -1,15 +1,16 @@
+import type { Mock } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { ClientCacheService } from './client-cache.service';
 
 describe('ClientCacheService', () => {
   let service: ClientCacheService;
-  let debugSpy: jasmine.Spy;
+  let debugSpy: Mock;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
     service = TestBed.inject(ClientCacheService);
-    debugSpy = spyOn(console, 'debug');
+    debugSpy = vi.spyOn(console, 'debug').mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -31,7 +32,7 @@ describe('ClientCacheService', () => {
       key: 'members:group:1',
       reason: 'empty'
     });
-    expect(debugSpy).toHaveBeenCalledWith('[ClientCache]', 'hit', jasmine.objectContaining({
+    expect(debugSpy).toHaveBeenCalledWith('[ClientCache]', 'hit', expect.objectContaining({
       key: 'members:group:1'
     }));
   });

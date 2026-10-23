@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
@@ -9,20 +10,23 @@ import { MemberWarningDto } from '../../../../models/member-warning.dto';
 describe('MemberWarningsDialogComponent', () => {
   let fixture: ComponentFixture<MemberWarningsDialogComponent>;
   let component: MemberWarningsDialogComponent;
-  let warningServiceSpy: jasmine.SpyObj<MemberWarningService>;
+  let warningServiceSpy: MockedObject<MemberWarningService>;
   let confirmation: ConfirmationService;
 
-  const inAMonth = new Date(Date.now() + 30 * 86_400_000).toISOString();
-  const lastYear = new Date(Date.now() - 365 * 86_400_000).toISOString();
+  const inAMonth = new Date(Date.now() + 30 * 86400000).toISOString();
+  const lastYear = new Date(Date.now() - 365 * 86400000).toISOString();
 
   function warning(level: MemberWarningLevel, issuedBy = 'me', expiresAtUtc = inAMonth): MemberWarningDto {
     return { memberWarningKey: `w-${level}`, memberKey: 'm1', level, issuedAtUtc: lastYear, expiresAtUtc, issuedByUserKey: issuedBy };
   }
 
   beforeEach(async () => {
-    warningServiceSpy = jasmine.createSpyObj<MemberWarningService>('MemberWarningService', ['assignWarning', 'cancelWarning']);
-    warningServiceSpy.assignWarning.and.returnValue(of(warning(MemberWarningLevel.Level1)));
-    warningServiceSpy.cancelWarning.and.returnValue(of(warning(MemberWarningLevel.Level1)));
+    warningServiceSpy = {
+      assignWarning: vi.fn(),
+      cancelWarning: vi.fn()
+    } as MockedObject<MemberWarningService>;
+    warningServiceSpy.assignWarning.mockReturnValue(of(warning(MemberWarningLevel.Level1)));
+    warningServiceSpy.cancelWarning.mockReturnValue(of(warning(MemberWarningLevel.Level1)));
 
     await TestBed.configureTestingModule({
       imports: [MemberWarningsDialogComponent],
@@ -34,7 +38,7 @@ describe('MemberWarningsDialogComponent', () => {
     }).compileComponents();
 
     confirmation = TestBed.inject(ConfirmationService);
-    spyOn(confirmation, 'confirm').and.callFake(options => {
+    vi.spyOn(confirmation, 'confirm').mockImplementation(options => {
       options.accept?.();
       return confirmation;
     });
@@ -56,22 +60,22 @@ describe('MemberWarningsDialogComponent', () => {
 
   it('opens the next while the one before stands, and not after it ran out', () => {
     create([warning(MemberWarningLevel.Level1)]);
-    expect(component.canGive(MemberWarningLevel.Level2)).toBeTrue();
+    expect(component.canGive(MemberWarningLevel.Level2)).toBe(true);
 
     create([warning(MemberWarningLevel.Level1, 'me', lastYear)]);
-    expect(component.canGive(MemberWarningLevel.Level1)).toBeTrue();
-    expect(component.canGive(MemberWarningLevel.Level2)).toBeFalse();
+    expect(component.canGive(MemberWarningLevel.Level1)).toBe(true);
+    expect(component.canGive(MemberWarningLevel.Level2)).toBe(false);
   });
 
   it('lets only whoever gave one cancel it', () => {
     create([warning(MemberWarningLevel.Level1), warning(MemberWarningLevel.Level2, 'someone-else')]);
-    expect(component.canCancel(MemberWarningLevel.Level1)).toBeTrue();
-    expect(component.canCancel(MemberWarningLevel.Level2)).toBeFalse();
+    expect(component.canCancel(MemberWarningLevel.Level1)).toBe(true);
+    expect(component.canCancel(MemberWarningLevel.Level2)).toBe(false);
   });
 
   it('gives one after asking and tells the card', () => {
     create([]);
-    const changed = spyOn(component.changed, 'emit');
+    const changed = vi.spyOn(component.changed, 'emit').mockReturnValue(undefined);
 
     component.give(WARNING_STEPS[0]);
 

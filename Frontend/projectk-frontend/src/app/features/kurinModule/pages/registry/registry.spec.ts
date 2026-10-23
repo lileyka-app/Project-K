@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 
@@ -45,7 +46,7 @@ function formerPerson(partial: Partial<FormerMemberDto> = {}): FormerMemberDto {
 describe('RegistryComponent', () => {
   let component: RegistryComponent;
   let fixture: ComponentFixture<RegistryComponent>;
-  let membership: jasmine.SpyObj<MembershipService>;
+  let membership: MockedObject<MembershipService>;
 
   /**
    * Натиснути «Так» у діалозі. `ConfirmationService` компонент дає сам, тож брати його треба з
@@ -55,7 +56,7 @@ describe('RegistryComponent', () => {
   function acceptConfirmation(): void {
     const service = fixture.debugElement.injector.get(ConfirmationService);
     pendingConfirmations = [];
-    spyOn(service, 'confirm').and.callFake(confirmation => {
+    vi.spyOn(service, 'confirm').mockImplementation(confirmation => {
       pendingConfirmations.push(confirmation);
       return service;
     });
@@ -72,12 +73,15 @@ describe('RegistryComponent', () => {
     people: MemberDto[],
     branch = KurinBranch.UPYu,
     former: FormerMemberDto[] = [],
-    setup?: (service: jasmine.SpyObj<MembershipService>) => void
+    setup?: (service: MockedObject<MembershipService>) => void
   ): void {
     TestBed.resetTestingModule();
-    membership = jasmine.createSpyObj<MembershipService>('MembershipService', ['former', 'takeBack']);
-    membership.former.and.returnValue(of(former));
-    membership.takeBack.and.returnValue(of('membership-key'));
+    membership = {
+      former: vi.fn(),
+      takeBack: vi.fn()
+    } as MockedObject<MembershipService>;
+    membership.former.mockReturnValue(of(former));
+    membership.takeBack.mockReturnValue(of('membership-key'));
 
     TestBed.configureTestingModule({
       imports: [RegistryComponent],
@@ -169,7 +173,7 @@ describe('RegistryComponent', () => {
     const counts = new Map(component.tally().map(row => [row.label, row.count]));
 
     expect(counts.get('пл. сен. праці')).toBe(1);
-    expect(counts.has('Без ступеня / інший')).toBeFalse();
+    expect(counts.has('Без ступеня / інший')).toBe(false);
   });
 
   /**
@@ -188,9 +192,9 @@ describe('RegistryComponent', () => {
   it('should keep the former list folded away until asked', () => {
     load([], KurinBranch.UPYu, [formerPerson()]);
 
-    expect(component.formerOpen()).toBeFalse();
+    expect(component.formerOpen()).toBe(false);
     component.toggleFormer();
-    expect(component.formerOpen()).toBeTrue();
+    expect(component.formerOpen()).toBe(true);
   });
 
   it('should take someone back by their key, without the code they hold', () => {
@@ -201,30 +205,32 @@ describe('RegistryComponent', () => {
     component.confirmTakeBack(person);
     pendingConfirmations[0].accept?.();
 
-    expect(membership.takeBack).toHaveBeenCalledOnceWith('kurin-1', 'gone-42');
+    expect(membership.takeBack).toHaveBeenCalledTimes(1);
+
+    expect(membership.takeBack).toHaveBeenCalledWith('kurin-1', 'gone-42');
     expect(component.former()).toEqual([]);
   });
 
   it('should leave them on the list when taking them back fails', () => {
     const person = formerPerson({ memberKey: 'gone-42' });
     load([], KurinBranch.UPYu, [person], service =>
-      service.takeBack.and.returnValue(throwError(() => new Error('nope'))));
+      service.takeBack.mockReturnValue(throwError(() => new Error('nope'))));
 
     acceptConfirmation();
     component.confirmTakeBack(person);
     pendingConfirmations[0].accept?.();
 
-    expect(component.former()).toHaveSize(1);
+    expect(component.former()).toHaveLength(1);
     expect(component.returning()).toBeNull();
   });
 
   /** Курінь, у якому ще нікого не виводили, не має бачити помилку через порожній список. */
   it('should stay quiet when the former list cannot be read', () => {
     load([member({ lastName: 'Юнак' })], KurinBranch.UPYu, [], service =>
-      service.former.and.returnValue(throwError(() => new Error('nope'))));
+      service.former.mockReturnValue(throwError(() => new Error('nope'))));
 
     expect(component.former()).toEqual([]);
-    expect(component.youth()).toHaveSize(1);
+    expect(component.youth()).toHaveLength(1);
   });
 
   it('should search across both tables at once', () => {

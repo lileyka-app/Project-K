@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberListComponent } from './member-list';
 import { MemberService } from '../../services/member-service/member.service';
@@ -14,10 +15,10 @@ import { AuthState } from '../../../authModule/models/auth-state.model';
 describe('MemberListComponent', () => {
   let component: MemberListComponent;
   let fixture: ComponentFixture<MemberListComponent>;
-  let memberServiceSpy: jasmine.SpyObj<MemberService>;
-  let leadershipServiceSpy: jasmine.SpyObj<LeadershipService>;
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let memberServiceSpy: MockedObject<MemberService>;
+  let leadershipServiceSpy: MockedObject<LeadershipService>;
+  let authServiceSpy: MockedObject<AuthService>;
+  let routerSpy: MockedObject<Router>;
 
   const mockMembers: MemberDto[] = [
     { memberKey: 'm1', firstName: 'John', lastName: 'Doe', middleName: 'M' } as MemberDto,
@@ -50,12 +51,20 @@ describe('MemberListComponent', () => {
   };
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj('MemberService', ['getAll']);
-    leadershipServiceSpy = jasmine.createSpyObj('LeadershipService', ['getLeadershipByTypeAndKey']);
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['getAuthStateValue']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    memberServiceSpy = {
+      getAll: vi.fn()
+    } as MockedObject<MemberService>;
+    leadershipServiceSpy = {
+      getLeadershipByTypeAndKey: vi.fn()
+    } as MockedObject<LeadershipService>;
+    authServiceSpy = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    routerSpy = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
 
-    authServiceSpy.getAuthStateValue.and.returnValue({ isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'] } as AuthState);
+    authServiceSpy.getAuthStateValue.mockReturnValue({ isAdmin: false, permissions: ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Kurin:Update:KurinWide', 'Leadership:Manage:KurinWide', 'PlanningSession:Manage:KurinWide'], roles: ['KV.Zvyazkovyi'] } as AuthState);
 
     await TestBed.configureTestingModule({
       imports: [MemberListComponent],
@@ -71,8 +80,8 @@ describe('MemberListComponent', () => {
     component = fixture.componentInstance;
     
     // Default mocks
-    memberServiceSpy.getAll.and.returnValue(of(mockMembers));
-    leadershipServiceSpy.getLeadershipByTypeAndKey.and.returnValue(of(mockLeadership));
+    memberServiceSpy.getAll.mockReturnValue(of(mockMembers));
+    leadershipServiceSpy.getLeadershipByTypeAndKey.mockReturnValue(of(mockLeadership));
   });
 
   it('should create', () => {
@@ -92,7 +101,7 @@ describe('MemberListComponent', () => {
       fixture.componentRef.setInput('typeKey', 'g1');
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith('g1');
-      expect(component.membersLookup).toHaveSize(1);
+      expect(component.membersLookup).toHaveLength(1);
       expect(component.membersLookup[0].phoneNumber).toBeUndefined();
       expect(component.membersLookup[0].fullNameSort).toBe('doe john m');
       expect(component.membersLookup[0].roleSortWeight).toBe(Number.MAX_SAFE_INTEGER);
@@ -103,11 +112,11 @@ describe('MemberListComponent', () => {
       fixture.componentRef.setInput('typeKey', 'k1');
       component.ngOnInit();
       expect(memberServiceSpy.getAll).toHaveBeenCalledWith(undefined, 'k1');
-      expect(component.membersLookup).toHaveSize(1);
+      expect(component.membersLookup).toHaveLength(1);
     });
 
     it('should give a manager a higher status priority than a kurinnuy', () => {
-      memberServiceSpy.getAll.and.returnValue(of([
+      memberServiceSpy.getAll.mockReturnValue(of([
         {
           ...mockMembers[0],
           memberKey: 'manager',
@@ -147,7 +156,7 @@ describe('MemberListComponent', () => {
     });
 
     it('should sort a mentor without an office among the staff, not the youth', () => {
-      memberServiceSpy.getAll.and.returnValue(of([
+      memberServiceSpy.getAll.mockReturnValue(of([
         { ...mockMembers[0], memberKey: 'mentor', userRole: null, leadershipHistories: [], mentoredGroupNames: ['Кельти'] },
         { ...mockMembers[0], memberKey: 'youth', userRole: null, leadershipHistories: [], mentoredGroupNames: [] }
       ]));
@@ -169,7 +178,7 @@ describe('MemberListComponent', () => {
       component.ngOnInit();
       expect(leadershipServiceSpy.getLeadershipByTypeAndKey).toHaveBeenCalledWith('kurin', 'k1');
       expect(component.leadership).toEqual(mockLeadership);
-      expect(component.allHistories).toHaveSize(2);
+      expect(component.allHistories).toHaveLength(2);
     });
   });
 
@@ -181,15 +190,15 @@ describe('MemberListComponent', () => {
     });
 
     it('should filter archived rows by default', () => {
-      expect(component.showArchived).toBeFalse();
-      expect(component.leadershipHistories).toHaveSize(1);
+      expect(component.showArchived).toBe(false);
+      expect(component.leadershipHistories).toHaveLength(1);
       expect(component.leadershipHistories[0].role).toBe(LeadershipRole.Kurinnuy);
     });
 
     it('should show all rows when showArchived is true', () => {
       component.showArchived = true;
       component.refreshList();
-      expect(component.leadershipHistories).toHaveSize(2);
+      expect(component.leadershipHistories).toHaveLength(2);
     });
 
     it('should sort active rows first', () => {
@@ -308,7 +317,7 @@ describe('MemberListComponent', () => {
       } as MemberLookupDto);
 
       expect(tags).toEqual([
-        jasmine.objectContaining({ label: 'Впорядник' })
+        expect.objectContaining({ label: 'Впорядник' })
       ]);
     });
 
@@ -322,7 +331,7 @@ describe('MemberListComponent', () => {
       } as MemberLookupDto);
 
       expect(tags).toEqual([
-        jasmine.objectContaining({ label: 'Впорядник: Кельти, Вовки', severity: 'info' })
+        expect.objectContaining({ label: 'Впорядник: Кельти, Вовки', severity: 'info' })
       ]);
     });
 
@@ -344,7 +353,7 @@ describe('MemberListComponent', () => {
       } as MemberLookupDto);
 
       expect(tags).toEqual([
-        jasmine.objectContaining({ label: 'Впорядник: Кельти' })
+        expect.objectContaining({ label: 'Впорядник: Кельти' })
       ]);
     });
   });
@@ -352,7 +361,7 @@ describe('MemberListComponent', () => {
     beforeEach(() => {
       fixture.componentRef.setInput('type', 'group');
       fixture.componentRef.setInput('typeKey', 'g1');
-      memberServiceSpy.getAll.and.returnValue(of([
+      memberServiceSpy.getAll.mockReturnValue(of([
         {
           memberKey: 'm1',
           firstName: 'John',
@@ -375,29 +384,29 @@ describe('MemberListComponent', () => {
 
     it('should filter members by search query', () => {
       component.memberSearchQuery = 'smith';
-      expect(component.filteredMembersLookup).toHaveSize(1);
+      expect(component.filteredMembersLookup).toHaveLength(1);
       expect(component.filteredMembersLookup[0].memberKey).toBe('m2');
     });
 
     it('should filter by plast level localized label', () => {
       component.memberSearchQuery = 'скоб';
-      expect(component.filteredMembersLookup).toHaveSize(1);
+      expect(component.filteredMembersLookup).toHaveLength(1);
       expect(component.filteredMembersLookup[0].memberKey).toBe('m2');
     });
 
     it('should restore card view state from session storage for current group key', () => {
-      const getItemSpy = spyOn(window.sessionStorage, 'getItem').and.returnValue('true');
+      const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('true');
 
       fixture.componentRef.setInput('type', 'group');
       fixture.componentRef.setInput('typeKey', 'g42');
       component.ngOnInit();
 
       expect(getItemSpy).toHaveBeenCalledWith('member-list:group-card-view:g42');
-      expect(component.showGroupCardView).toBeTrue();
+      expect(component.showGroupCardView).toBe(true);
     });
 
     it('should persist card view state to session storage on toggle change', () => {
-      const setItemSpy = spyOn(window.sessionStorage, 'setItem');
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockReturnValue(undefined);
 
       fixture.componentRef.setInput('type', 'group');
       fixture.componentRef.setInput('typeKey', 'g77');
@@ -408,7 +417,7 @@ describe('MemberListComponent', () => {
     });
 
     it('should set hasUpcomingBirthdays to false when no birthdays within 30 days', () => {
-      memberServiceSpy.getAll.and.returnValue(of([
+      memberServiceSpy.getAll.mockReturnValue(of([
         {
           memberKey: 'm1',
           groupKey: 'g1',
@@ -429,7 +438,7 @@ describe('MemberListComponent', () => {
       fixture.componentRef.setInput('typeKey', 'g1');
       component.ngOnInit();
 
-      expect(component.hasUpcomingBirthdays).toBeFalse();
+      expect(component.hasUpcomingBirthdays).toBe(false);
     });
   });
 });

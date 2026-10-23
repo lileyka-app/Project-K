@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LeadershipComponent } from './leadership';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,9 +14,9 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 describe('LeadershipComponent', () => {
   let component: LeadershipComponent;
   let fixture: ComponentFixture<LeadershipComponent>;
-  let leadershipServiceSpy: jasmine.SpyObj<LeadershipService>;
-  let memberServiceSpy: jasmine.SpyObj<MemberService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let leadershipServiceSpy: MockedObject<LeadershipService>;
+  let memberServiceSpy: MockedObject<MemberService>;
+  let routerSpy: MockedObject<Router>;
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paramMapSubject = new BehaviorSubject<any>({ get: () => null });
@@ -46,9 +47,17 @@ describe('LeadershipComponent', () => {
   };
 
   beforeEach(async () => {
-    leadershipServiceSpy = jasmine.createSpyObj('LeadershipService', ['getLeadershipByKey', 'create', 'update']);
-    memberServiceSpy = jasmine.createSpyObj('MemberService', ['getAll']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    leadershipServiceSpy = {
+      getLeadershipByKey: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn()
+    } as MockedObject<LeadershipService>;
+    memberServiceSpy = {
+      getAll: vi.fn()
+    } as MockedObject<MemberService>;
+    routerSpy = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
 
     await TestBed.configureTestingModule({
       imports: [
@@ -72,10 +81,10 @@ describe('LeadershipComponent', () => {
     fixture = TestBed.createComponent(LeadershipComponent);
     component = fixture.componentInstance;
     
-    memberServiceSpy.getAll.and.returnValue(of([mockMember]));
-    leadershipServiceSpy.getLeadershipByKey.and.returnValue(of(mockLeadership));
-    leadershipServiceSpy.create.and.returnValue(of(mockLeadership));
-    leadershipServiceSpy.update.and.returnValue(of(mockLeadership));
+    memberServiceSpy.getAll.mockReturnValue(of([mockMember]));
+    leadershipServiceSpy.getLeadershipByKey.mockReturnValue(of(mockLeadership));
+    leadershipServiceSpy.create.mockReturnValue(of(mockLeadership));
+    leadershipServiceSpy.update.mockReturnValue(of(mockLeadership));
   });
 
   it('should create', () => {
@@ -118,8 +127,8 @@ describe('LeadershipComponent', () => {
       paramMapSubject.next({
         get: (key: string) => key === 'leadershipKey' ? 'l1' : null
       });
-      leadershipServiceSpy.getLeadershipByKey.and.returnValue(throwError(() => new Error('Error')));
-      spyOn(console, 'error');
+      leadershipServiceSpy.getLeadershipByKey.mockReturnValue(throwError(() => new Error('Error')));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       fixture.detectChanges();
 
@@ -148,8 +157,8 @@ describe('LeadershipComponent', () => {
 
     it('should handle error in loadAllMembers', () => {
       component.leadershipType = 'kurin';
-      memberServiceSpy.getAll.and.returnValue(throwError(() => new Error('Err')));
-      spyOn(console, 'error');
+      memberServiceSpy.getAll.mockReturnValue(throwError(() => new Error('Err')));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       component.loadAllMembers();
       expect(console.error).toHaveBeenCalled();
@@ -215,7 +224,7 @@ describe('LeadershipComponent', () => {
         .map(c => c.getRawValue())
         .filter(v => v.role === LeadershipRole.Kurinnuy);
       
-      expect(rows).toHaveSize(2);
+      expect(rows).toHaveLength(2);
       expect(rows[0].member).toBeTruthy(); 
       expect(rows[1].member).toBeNull(); 
     });
@@ -235,26 +244,26 @@ describe('LeadershipComponent', () => {
 
     it('isRowVisible should filter archived rows', () => {
       component.showArchived = false;
-      expect(component.isRowVisible(0)).toBeFalse();
+      expect(component.isRowVisible(0)).toBe(false);
 
       component.showArchived = true;
-      expect(component.isRowVisible(0)).toBeTrue();
+      expect(component.isRowVisible(0)).toBe(true);
     });
 
     it('isRowVisible should filter by search term (member name)', () => {
       component.showArchived = true;
       component.searchTerm = 'John';
-      expect(component.isRowVisible(0)).toBeTrue();
+      expect(component.isRowVisible(0)).toBe(true);
 
       component.searchTerm = 'Alice';
-      expect(component.isRowVisible(0)).toBeFalse();
+      expect(component.isRowVisible(0)).toBe(false);
     });
 
     it('isRowVisible should filter by search term (role name)', () => {
-      spyOn(component, 'getRoleDisplayName').and.returnValue('Курінний');
+      vi.spyOn(component, 'getRoleDisplayName').mockReturnValue('Курінний');
       component.showArchived = true;
       component.searchTerm = 'Курінний'; 
-      expect(component.isRowVisible(0)).toBeTrue();
+      expect(component.isRowVisible(0)).toBe(true);
     });
   });
 
@@ -266,25 +275,25 @@ describe('LeadershipComponent', () => {
 
     it('addRoleRow should add a row', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
-      expect(component.leadershipHistories).toHaveSize(1);
+      expect(component.leadershipHistories).toHaveLength(1);
     });
 
     it('onRemoveRow should remove row', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
       component.addRoleRow(LeadershipRole.Kurinnuy);
-      expect(component.leadershipHistories).toHaveSize(2);
+      expect(component.leadershipHistories).toHaveLength(2);
 
       component.onRemoveRow(0);
-      expect(component.leadershipHistories).toHaveSize(1);
+      expect(component.leadershipHistories).toHaveLength(1);
     });
 
     it('onRemoveRow should restore empty row for single-seat roles if last one removed', () => {
       component.addRoleRow(LeadershipRole.Kurinnuy);
-      expect(component.leadershipHistories).toHaveSize(1);
+      expect(component.leadershipHistories).toHaveLength(1);
 
       component.onRemoveRow(0);
       
-      expect(component.leadershipHistories).toHaveSize(1);
+      expect(component.leadershipHistories).toHaveLength(1);
       expect(component.leadershipHistories.at(0).get('member')?.value).toBeNull();
     });
   });
@@ -310,18 +319,18 @@ describe('LeadershipComponent', () => {
       seat(LeadershipRole.Hurtkoviy);
       seat(LeadershipRole.Pysar);
 
-      expect(component.leadershipForm.valid).toBeTrue();
+      expect(component.leadershipForm.valid).toBe(true);
       component.saveCadence();
 
       expect(leadershipServiceSpy.create).toHaveBeenCalled();
-      const payload = leadershipServiceSpy.create.calls.mostRecent().args[0];
+      const payload = vi.mocked(leadershipServiceSpy.create).mock.lastCall![0];
       expect(payload.leadershipHistories.map(h => h.role)).toEqual([LeadershipRole.Hurtkoviy, LeadershipRole.Pysar]);
     });
 
     it('новий провід без жодної людини не зберігає', () => {
       component.buildFormRowsFromDefaults('kurin');
 
-      expect(component.canSave).toBeFalse();
+      expect(component.canSave).toBe(false);
       component.saveCadence();
 
       expect(leadershipServiceSpy.create).not.toHaveBeenCalled();
@@ -375,23 +384,23 @@ describe('LeadershipComponent', () => {
       const row = component.leadershipHistories.at(0);
       row.patchValue({ member: mockMember, startDate: new Date() });
 
-      leadershipServiceSpy.create.and.returnValue(throwError(() => new Error('Save failed')));
-      spyOn(console, 'error');
+      leadershipServiceSpy.create.mockReturnValue(throwError(() => new Error('Save failed')));
+      vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       component.saveCadence();
 
       expect(console.error).toHaveBeenCalled();
-      expect(component.isLoading).toBeFalse();
+      expect(component.isLoading).toBe(false);
     });
   });
   
   describe('Helpers', () => {
       it('canHaveMultipleMembers should return true for Vykhovnyk', () => {
-          expect(component.canHaveMultipleMembers(LeadershipRole.Vykhovnyk)).toBeTrue();
+          expect(component.canHaveMultipleMembers(LeadershipRole.Vykhovnyk)).toBe(true);
       });
       
       it('canHaveMultipleMembers should return false for Kurinnuy', () => {
-          expect(component.canHaveMultipleMembers(LeadershipRole.Kurinnuy)).toBeFalse();
+          expect(component.canHaveMultipleMembers(LeadershipRole.Kurinnuy)).toBe(false);
       });
 
       it('getRoleRowsCount should return correct count', () => {

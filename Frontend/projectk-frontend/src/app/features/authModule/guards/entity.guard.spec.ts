@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ActivatedRouteSnapshot, Router, convertToParamMap } from '@angular/router';
@@ -7,8 +8,8 @@ import { EntityService } from '../services/entity-service/entity.service';
 
 describe('EntityGuard', () => {
   let guard: EntityGuard;
-  let entityService: jasmine.SpyObj<EntityService>;
-  let router: jasmine.SpyObj<Router>;
+  let entityService: MockedObject<EntityService>;
+  let router: MockedObject<Router>;
 
   function routeFor(entityType: string | null, entityKey: string | null): ActivatedRouteSnapshot {
     return {
@@ -18,8 +19,12 @@ describe('EntityGuard', () => {
   }
 
   beforeEach(() => {
-    entityService = jasmine.createSpyObj('EntityService', ['checkEntityAccess']);
-    router = jasmine.createSpyObj('Router', ['navigate']);
+    entityService = {
+      checkEntityAccess: vi.fn()
+    } as MockedObject<EntityService>;
+    router = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -32,74 +37,74 @@ describe('EntityGuard', () => {
     guard = TestBed.inject(EntityGuard);
   });
 
-  it('allows navigation when the route carries no entity to check', done => {
+  it('allows navigation when the route carries no entity to check', () => new Promise<void>(done => {
     guard.canActivate(routeFor(null, null)).subscribe(allowed => {
-      expect(allowed).toBeTrue();
+      expect(allowed).toBe(true);
       expect(entityService.checkEntityAccess).not.toHaveBeenCalled();
       done();
     });
-  });
+  }));
 
-  it('allows navigation when access is granted', done => {
-    entityService.checkEntityAccess.and.returnValue(of(true));
+  it('allows navigation when access is granted', () => new Promise<void>(done => {
+    entityService.checkEntityAccess.mockReturnValue(of(true));
 
     guard.canActivate(routeFor('member', 'member-1')).subscribe(allowed => {
-      expect(allowed).toBeTrue();
+      expect(allowed).toBe(true);
       expect(router.navigate).not.toHaveBeenCalled();
       done();
     });
-  });
+  }));
 
-  it('redirects to forbidden when access is denied', done => {
-    entityService.checkEntityAccess.and.returnValue(of(false));
+  it('redirects to forbidden when access is denied', () => new Promise<void>(done => {
+    entityService.checkEntityAccess.mockReturnValue(of(false));
 
     guard.canActivate(routeFor('member', 'member-1')).subscribe(allowed => {
-      expect(allowed).toBeFalse();
+      expect(allowed).toBe(false);
       expect(router.navigate).toHaveBeenCalledWith(['/forbidden']);
       done();
     });
-  });
+  }));
 
-  it('redirects to forbidden on a cross-kurin 403', done => {
-    entityService.checkEntityAccess.and.returnValue(throwError(() =>
+  it('redirects to forbidden on a cross-kurin 403', () => new Promise<void>(done => {
+    entityService.checkEntityAccess.mockReturnValue(throwError(() =>
       new HttpErrorResponse({ status: 403, error: { message: 'Resource belongs to a different kurin scope.' } })));
 
     guard.canActivate(routeFor('member', 'member-1')).subscribe(allowed => {
-      expect(allowed).toBeFalse();
+      expect(allowed).toBe(false);
       expect(router.navigate).toHaveBeenCalledWith(['/forbidden']);
       done();
     });
-  });
+  }));
 
-  it('lets an MFA challenge through so its dialog can appear', done => {
-    entityService.checkEntityAccess.and.returnValue(throwError(() =>
+  it('lets an MFA challenge through so its dialog can appear', () => new Promise<void>(done => {
+    entityService.checkEntityAccess.mockReturnValue(throwError(() =>
       new HttpErrorResponse({ status: 403, error: { message: 'MFA is required for this operation.' } })));
 
     guard.canActivate(routeFor('member', 'member-1')).subscribe(allowed => {
-      expect(allowed).toBeTrue();
+      expect(allowed).toBe(true);
       expect(router.navigate).not.toHaveBeenCalled();
       done();
     });
-  });
+  }));
 
-  it('lets navigation through when the server was never reached', done => {
-    entityService.checkEntityAccess.and.returnValue(throwError(() =>
+  it('lets navigation through when the server was never reached', () => new Promise<void>(done => {
+    entityService.checkEntityAccess.mockReturnValue(throwError(() =>
       new HttpErrorResponse({ status: 0 })));
 
     guard.canActivate(routeFor('member', 'member-1')).subscribe(allowed => {
-      expect(allowed).toBeTrue();
+      expect(allowed).toBe(true);
       done();
     });
-  });
+  }));
 
-  it('blocks navigation when the server answers with an error it cannot read', done => {
-    entityService.checkEntityAccess.and.returnValue(throwError(() =>
+  it('blocks navigation when the server answers with an error it cannot read', () => new Promise<void>(done => {
+    entityService.checkEntityAccess.mockReturnValue(throwError(() =>
       new HttpErrorResponse({ status: 500 })));
 
     guard.canActivate(routeFor('member', 'member-1')).subscribe(allowed => {
-      expect(allowed).toBeFalse();
+      expect(allowed).toBe(false);
       expect(router.navigate).toHaveBeenCalledWith(['/forbidden']);
       done();
     });
-  });
+  }));
 });

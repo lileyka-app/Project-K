@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberCardComponent } from './member-card';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
@@ -32,16 +33,16 @@ describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
   let component: MemberCardComponent;
 
-  let memberServiceSpy: jasmine.SpyObj<MemberService>;
-  let kurinServiceSpy: jasmine.SpyObj<KurinService>;
-  let badgesCatalogServiceSpy: jasmine.SpyObj<BadgesCatalogService>;
-  let probesCatalogServiceSpy: jasmine.SpyObj<ProbesCatalogService>;
-  let memberProgressServiceSpy: jasmine.SpyObj<MemberProgressService>;
-  let badgeImageBlobServiceSpy: jasmine.SpyObj<BadgeImageBlobService>;
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let entityServiceSpy: jasmine.SpyObj<EntityService>;
-  let routerSpy: jasmine.SpyObj<Router>;
-  let duesServiceSpy: jasmine.SpyObj<DuesService>;
+  let memberServiceSpy: MockedObject<MemberService>;
+  let kurinServiceSpy: MockedObject<KurinService>;
+  let badgesCatalogServiceSpy: MockedObject<BadgesCatalogService>;
+  let probesCatalogServiceSpy: MockedObject<ProbesCatalogService>;
+  let memberProgressServiceSpy: MockedObject<MemberProgressService>;
+  let badgeImageBlobServiceSpy: MockedObject<BadgeImageBlobService>;
+  let authServiceSpy: MockedObject<AuthService>;
+  let entityServiceSpy: MockedObject<EntityService>;
+  let routerSpy: MockedObject<Router>;
+  let duesServiceSpy: MockedObject<DuesService>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
 
   const memberKey = 'abc123';
@@ -61,22 +62,50 @@ describe('MemberCardComponent', () => {
   };
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships', 'verifyProfile', 'resetProfileVerification']);
-    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields']);
-    kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
-    badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll', 'getForKurin']);
-    probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
-    memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'reviewBadgeProgress', 'getProbeProgress']);
-    badgeImageBlobServiceSpy = jasmine.createSpyObj<BadgeImageBlobService>('BadgeImageBlobService', ['resolveBadgeImageForDisplay']);
-    authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getAuthStateValue']);
-    entityServiceSpy = jasmine.createSpyObj<EntityService>('EntityService', ['checkEntityAccess']);
-    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
-    duesServiceSpy = jasmine.createSpyObj<DuesService>('DuesService', ['getMemberDues']);
-    duesServiceSpy.getMemberDues.and.returnValue(of({ hasAccount: false } as MemberDuesDto));
+    memberServiceSpy = {
+      getByKey: vi.fn(),
+      getMemberships: vi.fn(),
+      verifyProfile: vi.fn(),
+      resetProfileVerification: vi.fn()
+    } as MockedObject<MemberService>;
+    kurinServiceSpy = {
+      getByKey: vi.fn(),
+      getCardFields: vi.fn()
+    } as MockedObject<KurinService>;
+    kurinServiceSpy.getCardFields.mockReturnValue(of(DEFAULT_CARD_FIELDS));
+    badgesCatalogServiceSpy = {
+      getAll: vi.fn(),
+      getForKurin: vi.fn()
+    } as MockedObject<BadgesCatalogService>;
+    probesCatalogServiceSpy = {
+      getAll: vi.fn()
+    } as MockedObject<ProbesCatalogService>;
+    memberProgressServiceSpy = {
+      getBadgeProgresses: vi.fn(),
+      submitBadgeProgress: vi.fn(),
+      reviewBadgeProgress: vi.fn(),
+      getProbeProgress: vi.fn()
+    } as MockedObject<MemberProgressService>;
+    badgeImageBlobServiceSpy = {
+      resolveBadgeImageForDisplay: vi.fn()
+    } as MockedObject<BadgeImageBlobService>;
+    authServiceSpy = {
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    entityServiceSpy = {
+      checkEntityAccess: vi.fn()
+    } as MockedObject<EntityService>;
+    routerSpy = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
+    duesServiceSpy = {
+      getMemberDues: vi.fn()
+    } as MockedObject<DuesService>;
+    duesServiceSpy.getMemberDues.mockReturnValue(of({ hasAccount: false } as MemberDuesDto));
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
 
-    badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.and.callFake((url: string | null) => url);
-    authServiceSpy.getAuthStateValue.and.returnValue({
+    badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.mockImplementation((url: string | null) => url);
+    authServiceSpy.getAuthStateValue.mockReturnValue({
       userKey: 'user-mentor',
       memberKey: 'test-member-key',
       email: 'mentor@example.com',
@@ -85,16 +114,16 @@ describe('MemberCardComponent', () => {
       accessToken: 'token'
     });
 
-    badgesCatalogServiceSpy.getAll.and.returnValue(of([]));
-    badgesCatalogServiceSpy.getForKurin.and.returnValue(of([]));
-    kurinServiceSpy.getByKey.and.returnValue(of({
+    badgesCatalogServiceSpy.getAll.mockReturnValue(of([]));
+    badgesCatalogServiceSpy.getForKurin.mockReturnValue(of([]));
+    kurinServiceSpy.getByKey.mockReturnValue(of({
       kurinKey: member.kurinKey,
       number: 1,
       profileVerificationEnabled: true
     } as KurinDto));
-    probesCatalogServiceSpy.getAll.and.returnValue(of([]));
-    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of([]));
-    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+    probesCatalogServiceSpy.getAll.mockReturnValue(of([]));
+    memberProgressServiceSpy.getBadgeProgresses.mockReturnValue(of([]));
+    memberProgressServiceSpy.getProbeProgress.mockReturnValue(of({
       probeProgressKey: null,
       memberKey,
       kurinKey: member.kurinKey,
@@ -110,8 +139,8 @@ describe('MemberCardComponent', () => {
       verifiedByRole: null,
       auditTrail: []
     }));
-    entityServiceSpy.checkEntityAccess.and.returnValue(of(true));
-    memberProgressServiceSpy.submitBadgeProgress.and.returnValue(of({
+    entityServiceSpy.checkEntityAccess.mockReturnValue(of(true));
+    memberProgressServiceSpy.submitBadgeProgress.mockReturnValue(of({
       badgeProgressKey: 'new-progress',
       memberKey,
       kurinKey: member.kurinKey,
@@ -125,7 +154,7 @@ describe('MemberCardComponent', () => {
       reviewNote: null,
       auditTrail: []
     }));
-    memberProgressServiceSpy.reviewBadgeProgress.and.returnValue(of({
+    memberProgressServiceSpy.reviewBadgeProgress.mockReturnValue(of({
       badgeProgressKey: 'reviewed-progress',
       memberKey,
       kurinKey: member.kurinKey,
@@ -140,7 +169,7 @@ describe('MemberCardComponent', () => {
       auditTrail: []
     }));
 
-    memberServiceSpy.getMemberships.and.returnValue(of([]));
+    memberServiceSpy.getMemberships.mockReturnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [MemberCardComponent],
@@ -169,14 +198,14 @@ describe('MemberCardComponent', () => {
   }
 
   it('should create', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 
   it('should read memberKey from route params and call service', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
     expect(component.memberKey).toBe(memberKey);
@@ -191,9 +220,9 @@ describe('MemberCardComponent', () => {
       { id: 'probe-3', title: 'Третя проба', pointsCount: 14, sectionsCount: 5 }
     ];
 
-    memberServiceSpy.getByKey.and.returnValue(of(member));
-    probesCatalogServiceSpy.getAll.and.returnValue(of(probes));
-    memberProgressServiceSpy.getProbeProgress.and.callFake((_mk, probeId) => of({
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
+    probesCatalogServiceSpy.getAll.mockReturnValue(of(probes));
+    memberProgressServiceSpy.getProbeProgress.mockImplementation((_mk, probeId) => of({
       probeProgressKey: null,
       memberKey,
       kurinKey: member.kurinKey,
@@ -214,13 +243,13 @@ describe('MemberCardComponent', () => {
     fixture.detectChanges();
 
     expect(component.probeRows.map(row => row.probeId)).toEqual(['probe-1', 'probe-2', 'probe-3']);
-    expect(component.probeRows[0].isCompleted).toBeTrue();
-    expect(component.probeRows[2].isDisabled).toBeTrue();
+    expect(component.probeRows[0].isCompleted).toBe(true);
+    expect(component.probeRows[2].isDisabled).toBe(true);
     expect(component.completedProbesCount).toBe(1);
   });
 
   it('openProbeDetails should navigate only for enabled probe rows', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
 
@@ -256,14 +285,14 @@ describe('MemberCardComponent', () => {
   });
 
   it('should set member on successful load', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
     expect(component.member).toEqual(member);
   });
 
   it('should list the parents with something filled in, and none when the край hides them', () => {
-    memberServiceSpy.getByKey.and.returnValue(of({
+    memberServiceSpy.getByKey.mockReturnValue(of({
       ...member, motherFirstName: 'Олена', motherLastName: 'Петренко', motherPhone: '+380501234567', fatherFirstName: ''
     }));
     createComponent();
@@ -277,7 +306,7 @@ describe('MemberCardComponent', () => {
   });
 
   it('should show the край\'s own fields and leave out the ones it hides', () => {
-    kurinServiceSpy.getCardFields.and.returnValue(of({
+    kurinServiceSpy.getCardFields.mockReturnValue(of({
       fields: { middleName: 'hidden', phoneNumber: 'required' },
       extra: [
         { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
@@ -285,7 +314,7 @@ describe('MemberCardComponent', () => {
         { key: 'permit', label: 'Дозвіл', type: 'text', required: false }
       ]
     } as CardFieldsDto));
-    memberServiceSpy.getByKey.and.returnValue(of({ ...member, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
+    memberServiceSpy.getByKey.mockReturnValue(of({ ...member, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
     createComponent();
     fixture.detectChanges();
 
@@ -297,7 +326,7 @@ describe('MemberCardComponent', () => {
   });
 
   it('should display profile verification timestamp without timezone as local time from UTC', () => {
-    memberServiceSpy.getByKey.and.returnValue(of({
+    memberServiceSpy.getByKey.mockReturnValue(of({
       ...member,
       profileVerifiedAtUtc: '2026-07-04T20:53:00'
     }));
@@ -312,24 +341,24 @@ describe('MemberCardComponent', () => {
   });
 
   it('should navigate to panel on load error when member not preset', () => {
-    memberServiceSpy.getByKey.and.returnValue(throwError(() => new Error('Not found')));
+    memberServiceSpy.getByKey.mockReturnValue(throwError(() => new Error('Not found')));
     createComponent();
     fixture.detectChanges();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/panel'], { replaceUrl: true });
   });
 
   it('should navigate to group page on load error when existing member with groupKey set', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
-    memberServiceSpy.getByKey.and.returnValue(throwError(() => new Error('Network')));
+    memberServiceSpy.getByKey.mockReturnValue(throwError(() => new Error('Network')));
     component.member = { ...member };
     component.refreshData();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/group', member.groupKey], { replaceUrl: true });
   });
 
   it('onEditMember should navigate to edit route', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
     component.onEditMember();
@@ -341,7 +370,7 @@ describe('MemberCardComponent', () => {
 
   it('onEditMember should edit in the kurin scope when the member has no group', () => {
     const grouplessMember = { ...member, groupKey: '00000000-0000-0000-0000-000000000000' };
-    memberServiceSpy.getByKey.and.returnValue(of(grouplessMember));
+    memberServiceSpy.getByKey.mockReturnValue(of(grouplessMember));
     createComponent();
     fixture.detectChanges();
     component.onEditMember();
@@ -353,30 +382,27 @@ describe('MemberCardComponent', () => {
 
   it('onEditMember should not navigate when the member has neither group nor kurin', () => {
     const emptyGuid = '00000000-0000-0000-0000-000000000000';
-    memberServiceSpy.getByKey.and.returnValue(of({ ...member, groupKey: emptyGuid, kurinKey: emptyGuid }));
+    memberServiceSpy.getByKey.mockReturnValue(of({ ...member, groupKey: emptyGuid, kurinKey: emptyGuid }));
     createComponent();
     fixture.detectChanges();
-    routerSpy.navigate.calls.reset();
+    routerSpy.navigate.mockClear();
     component.onEditMember();
     expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
   it('should fall back to panel on load error when the group key is an empty guid', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
-    memberServiceSpy.getByKey.and.returnValue(throwError(() => new Error('Network')));
+    memberServiceSpy.getByKey.mockReturnValue(throwError(() => new Error('Network')));
     component.member = { ...member, groupKey: '00000000-0000-0000-0000-000000000000' };
     component.refreshData();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/panel'], { replaceUrl: true });
   });
 
   it('refreshData should use latest paramMap value if it changes', () => {
-    memberServiceSpy.getByKey.and.returnValues(
-      of(member),
-      of({ ...member, memberKey: 'newKey' })
-    );
-    memberProgressServiceSpy.getBadgeProgresses.and.returnValues(of([]), of([]));
+    memberServiceSpy.getByKey.mockReturnValueOnce(of(member)).mockReturnValueOnce(of({ ...member, memberKey: 'newKey' }));
+    memberProgressServiceSpy.getBadgeProgresses.mockReturnValueOnce(of([])).mockReturnValueOnce(of([]));
     createComponent();
     fixture.detectChanges();
 
@@ -447,9 +473,9 @@ describe('MemberCardComponent', () => {
       }
     ];
 
-    memberServiceSpy.getByKey.and.returnValue(of(member));
-    badgesCatalogServiceSpy.getAll.and.returnValue(of(badges));
-    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of(progresses));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
+    badgesCatalogServiceSpy.getAll.mockReturnValue(of(badges));
+    memberProgressServiceSpy.getBadgeProgresses.mockReturnValue(of(progresses));
 
     createComponent();
     fixture.detectChanges();
@@ -459,17 +485,17 @@ describe('MemberCardComponent', () => {
   });
 
   it('openAllSkillsDialog should set dialog visibility to true', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
 
     component.openAllSkillsDialog();
 
-    expect(component.isAllSkillsDialogVisible).toBeTrue();
+    expect(component.isAllSkillsDialogVisible).toBe(true);
   });
 
   it('openAddSkillDialog should open dialog and reset search state', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
 
@@ -477,14 +503,14 @@ describe('MemberCardComponent', () => {
     component.addSkillVisibleCount = 99;
     component.openAddSkillDialog();
 
-    expect(component.isAddSkillDialogVisible).toBeTrue();
+    expect(component.isAddSkillDialogVisible).toBe(true);
     expect(component.addSkillSearchTerm).toBe('');
     expect(component.addSkillVisibleCount).toBe(component.addSkillPageSize);
   });
 
   it('filteredAddSkillCandidates should filter by title and reset visible count on search change', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
-    badgesCatalogServiceSpy.getAll.and.returnValue(of([
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
+    badgesCatalogServiceSpy.getAll.mockReturnValue(of([
       {
         id: 'pl-badge',
         title: 'Rescue Badge PL',
@@ -499,7 +525,7 @@ describe('MemberCardComponent', () => {
         fixNotes: []
       }
     ]));
-    badgesCatalogServiceSpy.getForKurin.and.returnValue(of([
+    badgesCatalogServiceSpy.getForKurin.mockReturnValue(of([
       {
         id: 'badge-1',
         title: 'Rescue Badge',
@@ -541,7 +567,7 @@ describe('MemberCardComponent', () => {
   });
 
   it('loadMoreAddSkillCandidates should increase visible results count', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
 
@@ -552,7 +578,7 @@ describe('MemberCardComponent', () => {
   });
 
   it('submitBadge should call API and close add-skill dialog on success', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
 
@@ -560,13 +586,13 @@ describe('MemberCardComponent', () => {
     component.submitBadge('badge-new');
 
     expect(memberProgressServiceSpy.submitBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-new', { note: null });
-    expect(component.isAddSkillDialogVisible).toBeFalse();
+    expect(component.isAddSkillDialogVisible).toBe(false);
     expect(component.addSkillSuccessMessage).toContain('подана');
   });
 
   it('canSubmitBadge should allow re-submission for rejected badge', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
-    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of([
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
+    memberProgressServiceSpy.getBadgeProgresses.mockReturnValue(of([
       {
         badgeProgressKey: 'rejected-progress',
         memberKey,
@@ -586,12 +612,12 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
 
-    expect(component.canSubmitBadge('badge-rejected')).toBeTrue();
+    expect(component.canSubmitBadge('badge-rejected')).toBe(true);
     expect(component.getSubmitBadgeButtonLabel('badge-rejected')).toContain('знову');
   });
 
   it('openSkillsReviewFromDialog should navigate to kurin skills review route for reviewer', () => {
-    memberServiceSpy.getByKey.and.returnValue(of(member));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
     createComponent();
     fixture.detectChanges();
 
@@ -599,7 +625,7 @@ describe('MemberCardComponent', () => {
     component.isAllSkillsDialogVisible = true;
     component.openSkillsReviewFromDialog();
 
-    expect(component.isAllSkillsDialogVisible).toBeFalse();
+    expect(component.isAllSkillsDialogVisible).toBe(false);
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/kurin', member.kurinKey, 'review', 'skills']);
   });
 
@@ -633,15 +659,15 @@ describe('MemberCardComponent', () => {
       auditTrail: []
     }];
 
-    memberServiceSpy.getByKey.and.returnValue(of(member));
-    badgesCatalogServiceSpy.getAll.and.returnValue(of(badges));
-    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of(progresses));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
+    badgesCatalogServiceSpy.getAll.mockReturnValue(of(badges));
+    memberProgressServiceSpy.getBadgeProgresses.mockReturnValue(of(progresses));
 
     createComponent();
     fixture.detectChanges();
 
     component.canManageMemberActions = true;
-    const confirmSpy = spyOn(component.confirmationService, 'confirm');
+    const confirmSpy = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
 
     component.approvePendingSkill(component.skillsSummary.pendingConfirmation[0]);
 
@@ -682,15 +708,15 @@ describe('MemberCardComponent', () => {
       auditTrail: []
     }];
 
-    memberServiceSpy.getByKey.and.returnValue(of(member));
-    badgesCatalogServiceSpy.getAll.and.returnValue(of(badges));
-    memberProgressServiceSpy.getBadgeProgresses.and.returnValue(of(progresses));
+    memberServiceSpy.getByKey.mockReturnValue(of(member));
+    badgesCatalogServiceSpy.getAll.mockReturnValue(of(badges));
+    memberProgressServiceSpy.getBadgeProgresses.mockReturnValue(of(progresses));
 
     createComponent();
     fixture.detectChanges();
 
     component.canManageMemberActions = true;
-    const confirmSpy = spyOn(component.confirmationService, 'confirm').and.callFake((options) => {
+    const confirmSpy = vi.spyOn(component.confirmationService, 'confirm').mockImplementation((options) => {
       options.accept?.();
       return component.confirmationService;
     });
@@ -720,31 +746,31 @@ describe('MemberCardComponent', () => {
     });
 
     it('у курені УСП проби й вмілості не показуються і навіть не запитуються', () => {
-      memberServiceSpy.getByKey.and.returnValue(of(member));
-      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.USP)]));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.USP)]));
 
       createComponent();
       fixture.detectChanges();
 
-      expect(component.hasYouthProgram).toBeFalse();
+      expect(component.hasYouthProgram).toBe(false);
       expect(badgesCatalogServiceSpy.getAll).not.toHaveBeenCalled();
       expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
     });
 
     it('у юнацькому курені все на місці', () => {
-      memberServiceSpy.getByKey.and.returnValue(of(member));
-      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.UPYu)]));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
 
       createComponent();
       fixture.detectChanges();
 
-      expect(component.hasYouthProgram).toBeTrue();
+      expect(component.hasYouthProgram).toBe(true);
       expect(badgesCatalogServiceSpy.getAll).toHaveBeenCalled();
     });
 
     it('гілку бере членство в тому курені, де ми дивимось людину', () => {
-      memberServiceSpy.getByKey.and.returnValue(of(member));
-      memberServiceSpy.getMemberships.and.returnValue(of([
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getMemberships.mockReturnValue(of([
         { ...membershipIn(KurinBranch.UPYu), kurinKey: 'kurin-elsewhere', membershipKey: 'ms-2' },
         membershipIn(KurinBranch.USP)
       ]));
@@ -752,23 +778,23 @@ describe('MemberCardComponent', () => {
       createComponent();
       fixture.detectChanges();
 
-      expect(component.hasYouthProgram).toBeFalse();
+      expect(component.hasYouthProgram).toBe(false);
     });
 
     const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     it('старший пластун-впорядник у курені УПЮ — без юнацького й без жодних заглушок', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({
+      memberServiceSpy.getByKey.mockReturnValue(of({
         ...member,
         latestPlastLevel: PlastLevel.Starshoplastun,
         plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }]
       }));
-      memberServiceSpy.getMemberships.and.returnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
+      memberServiceSpy.getMemberships.mockReturnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
 
       createComponent();
       fixture.detectChanges();
 
-      expect(component.hasYouthProgram).toBeFalse();
+      expect(component.hasYouthProgram).toBe(false);
       expect(badgesCatalogServiceSpy.getAll).not.toHaveBeenCalled();
       expect(memberProgressServiceSpy.getBadgeProgresses).not.toHaveBeenCalled();
       expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
@@ -778,8 +804,8 @@ describe('MemberCardComponent', () => {
     });
 
     it('юнак у курені УПЮ бачить відзначення УПЮ, а впорядництва в нього немає', () => {
-      memberServiceSpy.getByKey.and.returnValue(of(member));
-      memberServiceSpy.getMemberships.and.returnValue(of([membershipIn(KurinBranch.UPYu)]));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
 
       createComponent();
       fixture.detectChanges();
@@ -810,8 +836,8 @@ describe('MemberCardComponent', () => {
     });
 
     it('показує борг і ставку за квартал, без кнопки каси для юнака', () => {
-      memberServiceSpy.getByKey.and.returnValue(of(member));
-      duesServiceSpy.getMemberDues.and.returnValue(of(dues({})));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({})));
 
       createComponent();
       fixture.detectChanges();
@@ -823,8 +849,8 @@ describe('MemberCardComponent', () => {
     });
 
     it('сплачено — зелена плашка; впорядникові є кнопка в касу гуртка', () => {
-      memberServiceSpy.getByKey.and.returnValue(of(member));
-      duesServiceSpy.getMemberDues.and.returnValue(of(dues({ balance: 0, canOpenGroupDues: true })));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0, canOpenGroupDues: true })));
 
       createComponent();
       fixture.detectChanges();
@@ -835,8 +861,8 @@ describe('MemberCardComponent', () => {
 
     // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.
     it('без доступу або без рахунку плитки немає', () => {
-      memberServiceSpy.getByKey.and.returnValue(of(member));
-      duesServiceSpy.getMemberDues.and.returnValue(throwError(() => ({ status: 403 })));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(throwError(() => ({ status: 403 })));
 
       createComponent();
       fixture.detectChanges();
@@ -850,7 +876,7 @@ describe('MemberCardComponent', () => {
     const renderedText = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     it('показує чинні ролі КВ і закріплені гуртки, без юнацьких і минулих ролей', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({
+      memberServiceSpy.getByKey.mockReturnValue(of({
         ...member,
         mentoredGroupNames: ['Gurtok 1', 'Gurtok 2'],
         leadershipHistories: [
@@ -883,7 +909,7 @@ describe('MemberCardComponent', () => {
     });
 
     it('впорядник лише із закріпленням теж має плитку', () => {
-      memberServiceSpy.getByKey.and.returnValue(of({ ...member, mentoredGroupNames: ['Gurtok 1'] }));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, mentoredGroupNames: ['Gurtok 1'] }));
 
       createComponent();
       fixture.detectChanges();
@@ -894,36 +920,36 @@ describe('MemberCardComponent', () => {
 
   describe('verification and перестороги', () => {
     function createAsReviewer(loaded: MemberDto) {
-      memberServiceSpy.getByKey.and.returnValue(of(loaded));
+      memberServiceSpy.getByKey.mockReturnValue(of(loaded));
       createComponent();
-      spyOn(component.permissionService, 'isReviewer').and.returnValue(true);
-      spyOn(component.permissionService, 'canManageWarnings').and.returnValue(true);
+      vi.spyOn(component.permissionService, 'isReviewer').mockReturnValue(true);
+      vi.spyOn(component.permissionService, 'canManageWarnings').mockReturnValue(true);
       fixture.detectChanges();
     }
 
     it('offers both to a reviewer who may edit the member', () => {
       createAsReviewer(member);
-      expect(component.canManageProfileVerification).toBeTrue();
-      expect(component.canManageWarnings).toBeTrue();
+      expect(component.canManageProfileVerification).toBe(true);
+      expect(component.canManageWarnings).toBe(true);
     });
 
     it('offers neither on the reviewer’s own card', () => {
       createAsReviewer({ ...member, memberKey: 'test-member-key' });
-      expect(component.canManageProfileVerification).toBeFalse();
-      expect(component.canManageWarnings).toBeFalse();
+      expect(component.canManageProfileVerification).toBe(false);
+      expect(component.canManageWarnings).toBe(false);
     });
 
     it('offers neither to someone who may not edit the member', () => {
-      entityServiceSpy.checkEntityAccess.and.returnValue(of(false));
+      entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
       createAsReviewer(member);
-      expect(component.canManageProfileVerification).toBeFalse();
-      expect(component.canManageWarnings).toBeFalse();
+      expect(component.canManageProfileVerification).toBe(false);
+      expect(component.canManageWarnings).toBe(false);
     });
 
     it('verifies the profile after asking', () => {
-      memberServiceSpy.verifyProfile.and.returnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent }));
+      memberServiceSpy.verifyProfile.mockReturnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent }));
       createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified });
-      const confirm = spyOn(component.confirmationService, 'confirm').and.callFake(options => {
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockImplementation(options => {
         options.accept?.();
         return component.confirmationService;
       });
@@ -932,13 +958,13 @@ describe('MemberCardComponent', () => {
 
       expect(confirm).toHaveBeenCalled();
       expect(memberServiceSpy.verifyProfile).toHaveBeenCalledWith(memberKey, null);
-      expect(component.isProfileVerified).toBeTrue();
+      expect(component.isProfileVerified).toBe(true);
     });
 
     it('removes the verification after asking', () => {
-      memberServiceSpy.resetProfileVerification.and.returnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified }));
+      memberServiceSpy.resetProfileVerification.mockReturnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified }));
       createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent });
-      spyOn(component.confirmationService, 'confirm').and.callFake(options => {
+      vi.spyOn(component.confirmationService, 'confirm').mockImplementation(options => {
         options.accept?.();
         return component.confirmationService;
       });
@@ -946,7 +972,7 @@ describe('MemberCardComponent', () => {
       component.onProfileVerificationAction();
 
       expect(memberServiceSpy.resetProfileVerification).toHaveBeenCalledWith(memberKey);
-      expect(component.isProfileVerified).toBeFalse();
+      expect(component.isProfileVerified).toBe(false);
     });
   });
 });

@@ -45,7 +45,7 @@ describe('MemberAwardService', () => {
   });
 
   it('upsertAward should invalidate member cache', () => {
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.upsertAward(memberKey, {
       level: MemberAwardLevel.First,
@@ -58,7 +58,7 @@ describe('MemberAwardService', () => {
   });
 
   it('deleteAward should invalidate member cache', () => {
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.deleteAward(memberKey, award.memberAwardKey).subscribe();
 
@@ -68,7 +68,7 @@ describe('MemberAwardService', () => {
   });
 
   it('reviewAward should invalidate member cache', () => {
-    spyOn(cache, 'invalidateByPrefix').and.callThrough();
+    vi.spyOn(cache, 'invalidateByPrefix');
 
     service.reviewAward(memberKey, award.memberAwardKey, { isApproved: true, note: 'ok' }).subscribe();
 

@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { KurinCardFieldsComponent } from './kurin-card-fields';
@@ -6,10 +7,10 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 describe('KurinCardFieldsComponent', () => {
   let fixture: ComponentFixture<KurinCardFieldsComponent>;
   let component: KurinCardFieldsComponent;
-  let kurins: jasmine.SpyObj<KurinService>;
+  let kurins: MockedObject<KurinService>;
 
   function create(fields: { key: string; label: string; hidden: boolean }[]): void {
-    kurins.getHideableCardFields.and.returnValue(of(fields));
+    kurins.getHideableCardFields.mockReturnValue(of(fields));
     fixture = TestBed.createComponent(KurinCardFieldsComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('kurinKey', 'k1');
@@ -17,8 +18,11 @@ describe('KurinCardFieldsComponent', () => {
   }
 
   beforeEach(async () => {
-    kurins = jasmine.createSpyObj<KurinService>('KurinService', ['getHideableCardFields', 'setHiddenCardFields']);
-    kurins.setHiddenCardFields.and.callFake((_, hidden) => of([{ key: 'note', label: 'Примітка', hidden: hidden.includes('note') }]));
+    kurins = {
+      getHideableCardFields: vi.fn(),
+      setHiddenCardFields: vi.fn()
+    } as MockedObject<KurinService>;
+    kurins.setHiddenCardFields.mockImplementation((_, hidden) => of([{ key: 'note', label: 'Примітка', hidden: hidden.includes('note') }]));
     await TestBed.configureTestingModule({
       imports: [KurinCardFieldsComponent],
       providers: [{ provide: KurinService, useValue: kurins }]

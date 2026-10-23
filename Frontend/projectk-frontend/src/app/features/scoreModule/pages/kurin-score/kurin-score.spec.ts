@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -13,7 +14,7 @@ describe('KurinScoreComponent', () => {
 
   let fixture: ComponentFixture<KurinScoreComponent>;
   let component: KurinScoreComponent;
-  let scores: jasmine.SpyObj<ScoreService>;
+  let scores: MockedObject<ScoreService>;
   const queryParams = new BehaviorSubject(convertToParamMap({}));
 
   const row = (over: Partial<ScoreGroupRowDto>): ScoreGroupRowDto => ({
@@ -43,8 +44,10 @@ describe('KurinScoreComponent', () => {
   };
 
   function create(response: KurinScoreDto = data): void {
-    scores = jasmine.createSpyObj<ScoreService>('ScoreService', ['getKurinScore']);
-    scores.getKurinScore.and.returnValue(of(response));
+    scores = {
+      getKurinScore: vi.fn()
+    } as MockedObject<ScoreService>;
+    scores.getKurinScore.mockReturnValue(of(response));
 
     TestBed.configureTestingModule({
       imports: [KurinScoreComponent],

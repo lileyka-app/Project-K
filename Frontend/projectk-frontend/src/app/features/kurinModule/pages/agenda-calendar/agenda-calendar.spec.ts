@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -16,7 +17,7 @@ interface Internals {
 
 describe('AgendaCalendarComponent — графіки гуртків', () => {
   let fixture: ComponentFixture<AgendaCalendarComponent>;
-  let agenda: jasmine.SpyObj<AgendaService>;
+  let agenda: MockedObject<AgendaService>;
 
   const component = () => fixture.componentInstance as unknown as Internals;
 
@@ -27,15 +28,19 @@ describe('AgendaCalendarComponent — графіки гуртків', () => {
 
   beforeEach(() => {
     localStorage.removeItem('lil.agenda.showSchedules');
-    agenda = jasmine.createSpyObj<AgendaService>('AgendaService', ['getCalendar']);
-    agenda.getCalendar.and.returnValue(of([]));
+    agenda = {
+      getCalendar: vi.fn()
+    } as MockedObject<AgendaService>;
+    agenda.getCalendar.mockReturnValue(of([]));
     TestBed.configureTestingModule({
       imports: [AgendaCalendarComponent],
       providers: [
         { provide: AgendaService, useValue: agenda },
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ kurinKey: 'k1' })) } },
         { provide: PermissionService, useValue: { canManageAgenda: () => false, canScore: () => false } },
-        { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) }
+        { provide: MessageService, useValue: {
+            add: vi.fn()
+          } }
       ]
     });
     // FullCalendar and the dialog are not under test here.
@@ -46,7 +51,7 @@ describe('AgendaCalendarComponent — графіки гуртків', () => {
 
   it('shows the schedules by default, and asks the server for them', () => {
     create();
-    expect(component().showSchedules).toBeTrue();
+    expect(component().showSchedules).toBe(true);
 
     component().currentRange = { from: 'a', to: 'b' };
     component().onShowSchedulesChange();
@@ -61,7 +66,7 @@ describe('AgendaCalendarComponent — графіки гуртків', () => {
     expect(agenda.getCalendar).toHaveBeenCalledWith('k1', 'a', 'b', false);
 
     create();
-    expect(component().showSchedules).toBeFalse();
+    expect(component().showSchedules).toBe(false);
   });
 
   it('names the гурток on a schedule event, «+N» for more', () => {

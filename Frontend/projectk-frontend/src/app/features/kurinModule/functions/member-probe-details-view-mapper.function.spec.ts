@@ -62,8 +62,8 @@ describe('memberProbeDetailsViewMapper', () => {
       })
     );
 
-    expect(rows).toHaveSize(2);
-    expect(rows.every(row => row.isSigned)).toBeTrue();
+    expect(rows).toHaveLength(2);
+    expect(rows.every(row => row.isSigned)).toBe(true);
     expect(rows[0].signedByUserKey).toBe('f0f4a2bd-1530-4ba3-b5b2-56f337f7f70d');
     expect(rows[0].signedByName).toBe('Впорядник');
     expect(rows[0].signedAtUtc).toBe('2026-04-16T10:00:00Z');
@@ -75,7 +75,7 @@ describe('memberProbeDetailsViewMapper', () => {
       createProgress({ status: ProbeProgressStatus.InProgress })
     );
 
-    expect(rows.every(row => !row.isSigned)).toBeTrue();
+    expect(rows.every(row => !row.isSigned)).toBe(true);
     expect(rows[0].signedByUserKey).toBeNull();
     expect(rows[0].signedByName).toBeNull();
     expect(rows[0].signedAtUtc).toBeNull();
@@ -93,7 +93,7 @@ describe('memberProbeDetailsViewMapper', () => {
       })
     );
 
-    expect(rows.every(row => row.isSigned)).toBeTrue();
+    expect(rows.every(row => row.isSigned)).toBe(true);
     expect(rows[0].signedByUserKey).toBe('87c30f2f-6aaf-43e8-b9d3-74f3efd85fc7');
     expect(rows[0].signedByName).toBe('Станичний');
     expect(rows[0].signedAtUtc).toBe('2026-04-16T12:30:00Z');
@@ -120,9 +120,9 @@ describe('memberProbeDetailsViewMapper', () => {
       })
     );
 
-    expect(rows[0].isSigned).toBeTrue();
+    expect(rows[0].isSigned).toBe(true);
     expect(rows[0].signedByName).toBe('Точковий підписант');
-    expect(rows[1].isSigned).toBeFalse();
+    expect(rows[1].isSigned).toBe(false);
     expect(rows[1].signedByName).toBeNull();
   });
 });

@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -11,14 +12,17 @@ import { PlanningSessionDto } from '../../models/planning-session.dto';
 describe('PlanningListComponent', () => {
   let fixture: ComponentFixture<PlanningListComponent>;
   let component: PlanningListComponent;
-  let planning: jasmine.SpyObj<PlanningService>;
+  let planning: MockedObject<PlanningService>;
 
   const session = { planningSessionKey: 'session-1', name: 'Зимовий табір', canDelete: true } as PlanningSessionDto;
 
   beforeEach(async () => {
-    planning = jasmine.createSpyObj<PlanningService>('PlanningService', ['getSessions', 'deleteSession']);
-    planning.getSessions.and.returnValue(of([session]));
-    planning.deleteSession.and.returnValue(of(''));
+    planning = {
+      getSessions: vi.fn(),
+      deleteSession: vi.fn()
+    } as MockedObject<PlanningService>;
+    planning.getSessions.mockReturnValue(of([session]));
+    planning.deleteSession.mockReturnValue(of(''));
 
     await TestBed.configureTestingModule({
       imports: [PlanningListComponent],
@@ -43,7 +47,7 @@ describe('PlanningListComponent', () => {
   it('deletes a session only once the confirmation is accepted', () => {
     const confirmations = fixture.debugElement.injector.get(ConfirmationService);
     let asked: Confirmation | undefined;
-    spyOn(confirmations, 'confirm').and.callFake((confirmation: Confirmation) => {
+    vi.spyOn(confirmations, 'confirm').mockImplementation((confirmation: Confirmation) => {
       asked = confirmation;
       return confirmations;
     });

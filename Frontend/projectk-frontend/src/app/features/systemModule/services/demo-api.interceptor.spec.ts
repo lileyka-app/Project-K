@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -17,7 +18,7 @@ function fakeFetch(files: Record<string, DemoFixtureFile>) {
 
 describe('DemoApiInterceptor', () => {
   let http: HttpClient;
-  let messages: jasmine.SpyObj<MessageService>;
+  let messages: MockedObject<MessageService>;
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
@@ -32,7 +33,9 @@ describe('DemoApiInterceptor', () => {
         ]
       }
     }) as typeof fetch;
-    messages = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
+    messages = {
+      add: vi.fn()
+    } as MockedObject<MessageService>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -51,7 +54,7 @@ describe('DemoApiInterceptor', () => {
     expect(health).toContain('"status":"ready"');
 
     const setup = await firstValueFrom(http.get<{ isInitialized: boolean }>('https://demo.invalid/api/auth/setup/status'));
-    expect(setup.isInitialized).toBeTrue();
+    expect(setup.isInitialized).toBe(true);
   });
 
   it('remembers the seat from the demo login and serves that seat’s recording', async () => {
@@ -70,8 +73,7 @@ describe('DemoApiInterceptor', () => {
     const events = await firstValueFrom(http.get<{ title: string }[]>('https://demo.invalid/api/agenda/k1/calendar?from=a&to=b'));
     expect(events[0].title).toBe('Сходини');
 
-    await expectAsync(firstValueFrom(http.get('https://demo.invalid/api/member/nobody')))
-      .toBeRejectedWith(jasmine.objectContaining({ status: 404, statusText: 'У демо цієї сторінки немає.' }));
+    await expect(firstValueFrom(http.get('https://demo.invalid/api/member/nobody'))).rejects.toEqual(expect.objectContaining({ status: 404, statusText: 'У демо цієї сторінки немає.' }));
   });
 
   it('acknowledges a write it cannot keep and tells the visitor once', async () => {
@@ -81,6 +83,6 @@ describe('DemoApiInterceptor', () => {
     await firstValueFrom(http.delete('https://demo.invalid/api/agenda/k1/items/i1'));
 
     expect(messages.add).toHaveBeenCalledTimes(1);
-    expect(messages.add.calls.mostRecent().args[0].summary).toBe('Це демо');
+    expect(vi.mocked(messages.add).mock.lastCall![0].summary).toBe('Це демо');
   });
 });

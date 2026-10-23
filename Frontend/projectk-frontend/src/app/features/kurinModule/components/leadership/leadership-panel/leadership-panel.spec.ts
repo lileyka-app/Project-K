@@ -12,10 +12,10 @@ describe('LeadershipPanelComponent', () => {
   let fixture: ComponentFixture<LeadershipPanelComponent>;
 
   beforeEach(async () => {
-    const leadershipService = jasmine.createSpyObj<LeadershipService>('LeadershipService', [
-      'getLeadershipByTypeAndKey'
-    ]);
-    leadershipService.getLeadershipByTypeAndKey.and.returnValue(of({
+    const leadershipService = {
+      getLeadershipByTypeAndKey: vi.fn()
+    };
+    leadershipService.getLeadershipByTypeAndKey.mockReturnValue(of({
       leadershipKey: 'leadership-1',
       type: 'group',
       entityKey: 'group-1',
@@ -34,8 +34,10 @@ describe('LeadershipPanelComponent', () => {
         },
         {
           provide: Router,
-          useValue: jasmine.createSpyObj<Router>('Router', ['navigate'])
+          useValue: {
+            navigate: vi.fn()
         }
+      }
       ]
     }).compileComponents();
 
@@ -47,7 +49,7 @@ describe('LeadershipPanelComponent', () => {
   it('should keep the regular table unconstrained when archive is hidden', () => {
     const table = fixture.debugElement.query(By.directive(Table)).componentInstance as Table;
 
-    expect(table.scrollable).toBeFalse();
+    expect(table.scrollable).toBe(false);
     expect(table.scrollHeight).toBeUndefined();
   });
 
@@ -56,7 +58,7 @@ describe('LeadershipPanelComponent', () => {
     fixture.detectChanges();
 
     const table = fixture.debugElement.query(By.directive(Table)).componentInstance as Table;
-    expect(table.scrollable).toBeTrue();
+    expect(table.scrollable).toBe(true);
     expect(table.scrollHeight).toBe('27.5rem');
   });
 });

@@ -1,3 +1,4 @@
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
@@ -14,8 +15,8 @@ import { MembershipKind } from '../../models/enums/membership-kind.enum';
 describe('KurinSwitcherComponent', () => {
   let fixture: ComponentFixture<KurinSwitcherComponent>;
   let component: KurinSwitcherComponent;
-  let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
+  let authService: MockedObject<AuthService>;
+  let router: MockedObject<Router>;
 
   const upyu: KurinScopeOption = {
     kurinKey: 'kurin-a',
@@ -35,16 +36,18 @@ describe('KurinSwitcherComponent', () => {
   const popover = { hide: () => undefined };
 
   beforeEach(async () => {
-    authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'getKurinScopeOptions',
-      'setKurinScope',
-      'getAuthStateValue'
-    ]);
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    authService = {
+      getKurinScopeOptions: vi.fn(),
+      setKurinScope: vi.fn(),
+      getAuthStateValue: vi.fn()
+    } as MockedObject<AuthService>;
+    router = {
+      navigate: vi.fn()
+    } as MockedObject<Router>;
 
-    authService.getKurinScopeOptions.and.returnValue(of([upyu, usp]));
-    authService.getAuthStateValue.and.returnValue({ kurinKey: 'kurin-a' } as unknown as AuthState);
-    authService.setKurinScope.and.returnValue(of({} as unknown as AuthState));
+    authService.getKurinScopeOptions.mockReturnValue(of([upyu, usp]));
+    authService.getAuthStateValue.mockReturnValue({ kurinKey: 'kurin-a' } as unknown as AuthState);
+    authService.setKurinScope.mockReturnValue(of({} as unknown as AuthState));
 
     await TestBed.configureTestingModule({
       imports: [KurinSwitcherComponent],
@@ -62,16 +65,16 @@ describe('KurinSwitcherComponent', () => {
   });
 
   it('пропонує вибір лише тому, хто належить не до одного куреня', () => {
-    expect(component.isVisible).toBeTrue();
+    expect(component.isVisible).toBe(true);
 
     component.options.set([upyu]);
-    expect(component.isVisible).toBeFalse();
+    expect(component.isVisible).toBe(false);
   });
 
   it('показує курінь, у якому людина стоїть зараз', () => {
     expect(component.currentLabel).toBe('к. ч. 7');
-    expect(component.isCurrent(upyu)).toBeTrue();
-    expect(component.isCurrent(usp)).toBeFalse();
+    expect(component.isCurrent(upyu)).toBe(true);
+    expect(component.isCurrent(usp)).toBe(false);
   });
 
   it('перемикання просить сервер видати новий токен і веде в новий курінь', () => {
@@ -88,7 +91,7 @@ describe('KurinSwitcherComponent', () => {
   });
 
   it('якщо сервер відмовив — лишаємось на місці', () => {
-    authService.setKurinScope.and.returnValue(throwError(() => new Error('403')));
+    authService.setKurinScope.mockReturnValue(throwError(() => new Error('403')));
 
     component.switchTo(usp, popover);
 

@@ -38,7 +38,7 @@ describe('EntityService', () => {
     service = TestBed.inject(EntityService);
     httpMock = TestBed.inject(HttpTestingController);
     cache = TestBed.inject(ClientCacheService);
-    spyOn(console, 'debug');
+    vi.spyOn(console, 'debug').mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -63,7 +63,7 @@ describe('EntityService', () => {
     service.checkEntityAccess('group', 'g-1', 'Update').subscribe();
     service.checkEntityAccess('group', 'g-1', 'Create').subscribe();
 
-    expect(httpMock.match(url)).toHaveSize(2);
+    expect(httpMock.match(url)).toHaveLength(2);
   });
 
   it('asks again from another kurin, and after the kurin scope is dropped', () => {
@@ -94,7 +94,7 @@ describe('EntityService', () => {
     service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answer = a);
     httpMock.expectOne(url).flush(false);
 
-    expect(answer).toBeFalse();
+    expect(answer).toBe(false);
   });
 
   it('does not keep a refused answer', () => {
@@ -106,8 +106,8 @@ describe('EntityService', () => {
     service.checkEntityAccess('member', 'm-1', 'Update').subscribe(a => answer = a);
     httpMock.expectOne(url).flush(true);
 
-    expect(failed).toBeTrue();
-    expect(answer).toBeTrue();
+    expect(failed).toBe(true);
+    expect(answer).toBe(true);
   });
 
   it('is scoped to the kurin, so a scope switch forgets it', () => {
