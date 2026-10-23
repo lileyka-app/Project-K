@@ -18,7 +18,8 @@ export type AppNotificationType =
   | 'AgendaItemUpdated'
   | 'AgendaItemStatusChanged'
   | 'AgendaItemDeleted'
-  | 'WaitlistEntrySubmitted';
+  | 'WaitlistEntrySubmitted'
+  | 'CalendarFeedRevoked';
 
 export type AppNotificationSeverity = 'Info' | 'Success' | 'Warn' | 'Error';
 

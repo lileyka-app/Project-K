@@ -188,6 +188,10 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetDuties), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.GetCalendarFeed), "RequireUser");
+        yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.IssueCalendarFeed), "RequireUser");
+        yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.UpdateCalendarFeed), "RequireUser");
+        yield return Row<Action<MeController>>(nameof(MeController.DisableCalendarFeed), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByGroup), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetAllByKurin), "RequireUser");
@@ -335,6 +339,7 @@ public class AuthorizationBaselineMatrixTests
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.GetLatestInvitationByEmail));
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.Reset));
         yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));
+        yield return AnonymousEndpoint<CalendarFeedController>(nameof(CalendarFeedController.GetFeed));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ActivateAccount));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.RequestPasswordReset));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResendInvitationByEmail));

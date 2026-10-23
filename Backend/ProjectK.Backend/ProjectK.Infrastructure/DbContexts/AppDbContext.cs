@@ -70,6 +70,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 
     public DbSet<WaitlistEntry> WaitlistEntries { get; set; }
     public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+    public DbSet<CalendarFeed> CalendarFeeds { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
     public DbSet<AppNotification> AppNotifications { get; set; }
     public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
@@ -683,6 +684,24 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .IsRequired();
             // Looked up by token on every refresh, and swept per user on a password change.
             entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.RevokedAtUtc });
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<CalendarFeed>(entity =>
+        {
+            entity.HasKey(e => e.CalendarFeedKey);
+            entity.Property(e => e.TokenHash)
+                .HasMaxLength(64)
+                .IsFixedLength()
+                .IsUnicode(false)
+                .IsRequired();
+            entity.Property(e => e.RevokedReason).HasConversion<int>();
+            // Looked up by hash on every fetch, and swept per user by a security change.
+            entity.HasIndex(e => e.TokenHash).IsUnique();
             entity.HasIndex(e => new { e.UserId, e.RevokedAtUtc });
             entity.HasOne(e => e.User)
                   .WithMany()

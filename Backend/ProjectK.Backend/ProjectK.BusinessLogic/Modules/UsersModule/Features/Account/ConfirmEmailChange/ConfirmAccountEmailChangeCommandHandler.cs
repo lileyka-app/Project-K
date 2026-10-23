@@ -18,7 +18,7 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEma
 public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAccountEmailChangeCommand, ServiceResult<AccountSettingsDto>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IMemberDirectory _members;
     private readonly IMediator _mediator;
     private readonly IActivityLogger _activityLogger;
@@ -28,13 +28,13 @@ public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAc
         IMemberDirectory members,
         IMediator mediator,
         IActivityLogger activityLogger,
-        IRefreshTokenStore refreshTokens)
+        RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
         _members = members;
         _mediator = mediator;
         _activityLogger = activityLogger;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
     }
 
     public async Task<ServiceResult<AccountSettingsDto>> Handle(ConfirmAccountEmailChangeCommand request, CancellationToken cancellationToken)
@@ -73,7 +73,7 @@ public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAc
 
         // Only once the change is stored. RevokeAllAsync commits on its own, so ending the
         // sessions first signed every device out even when this update failed.
-        await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
+        await _sessions.RevokeRefreshTokenAsync(user, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Account.EmailChangeConfirmed",

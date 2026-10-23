@@ -18,6 +18,9 @@ export function mobileRouteOf(
   const review = /^\/kurin\/([^/]+)\/review\/skills\/?$/.exec(route);
   if (review) return review[1] === currentKurinKey ? '/tabs/kurin/review/skills' : null;
 
+  // The calendar link switched off by a security change: its section on the account page.
+  if (/^\/settings\/account\/?$/.test(route)) return '/tabs/more/account';
+
   // An application to join, sent to system admins only.
   if (/^\/waitlist\/?$/.test(route)) return '/tabs/more/waitlist';
 

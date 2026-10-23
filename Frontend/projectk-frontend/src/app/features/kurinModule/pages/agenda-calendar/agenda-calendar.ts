@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
@@ -42,6 +42,7 @@ export class AgendaCalendarComponent implements OnInit {
   private readonly permissionService = inject(PermissionService);
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   private readonly calendar = viewChild(FullCalendarComponent);
 
@@ -184,6 +185,11 @@ export class AgendaCalendarComponent implements OnInit {
     }
   }
 
+  /** The link for Google, Apple and Outlook lives with the account, not with a kurin. */
+  protected openSubscription(): void {
+    void this.router.navigate(['/settings/account'], { fragment: 'calendar' });
+  }
+
   onShowSchedulesChange(): void {
     try {
       localStorage.setItem(AgendaCalendarComponent.showSchedulesKey, this.showSchedules ? 'on' : 'off');
@@ -193,12 +199,20 @@ export class AgendaCalendarComponent implements OnInit {
     this.reload();
   }
 
+  // Flipping the switch (or paging) while a fetch is in flight raced: the older answer could land
+  // last and bring back the сходини just hidden. Only the latest request may paint.
+  private reloadSeq = 0;
+
   private reload(): void {
     if (!this.kurinKey() || !this.currentRange) {
       return;
     }
+    const seq = ++this.reloadSeq;
     this.agendaService.getCalendar(this.kurinKey(), this.currentRange.from, this.currentRange.to, this.showSchedules)
       .subscribe(items => {
+        if (seq !== this.reloadSeq) {
+          return;
+        }
         this.items.set(items);
         this.calendarOptions.update(opts => ({ ...opts, events: items.map(item => this.toEvent(item)) }));
       });

@@ -64,6 +64,7 @@ public static class Program
         // і так віддає безкоштовно. Решта модулів (запити, залежності, винятки) лишається.
         builder.Services.AddApplicationInsightsTelemetry(
             options => options.EnablePerformanceCounterCollectionModule = false);
+        builder.Services.AddSingleton<Microsoft.ApplicationInsights.Extensibility.ITelemetryInitializer, ProjectK.API.Hosting.SecretPathTelemetryInitializer>();
 
         builder.Host.UseSerilog((context, services, configuration) =>
         {
@@ -71,7 +72,8 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
-                .Enrich.WithSensitiveDataMasking(_ => { });
+                .Enrich.WithSensitiveDataMasking(_ => { })
+                .Enrich.With<ProjectK.Infrastructure.Logging.SecretPathMaskingEnricher>();
 
             var devAlerts = context.Configuration
                 .GetSection("Telegram:DevAlerts")
@@ -548,6 +550,9 @@ public static class Program
         var strictWindow = TimeSpan.FromMinutes(configuration.GetValue("RateLimiting:StrictAuth:WindowMinutes", 5));
         var accountPermit = configuration.GetValue("RateLimiting:AccountSecurity:PermitLimit", 10);
         var accountWindow = TimeSpan.FromMinutes(configuration.GetValue("RateLimiting:AccountSecurity:WindowMinutes", 5));
+        // Apple polls a subscription as often as every 5 minutes; Google and Outlook far less.
+        var calendarFeedPermit = configuration.GetValue("RateLimiting:CalendarFeed:PermitLimit", 60);
+        var calendarFeedWindow = TimeSpan.FromMinutes(configuration.GetValue("RateLimiting:CalendarFeed:WindowMinutes", 60));
 
         services.AddRateLimiter(options =>
         {
@@ -562,7 +567,8 @@ public static class Program
                 }
 
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: httpContext.User.GetUserKeyValue()
+                    partitionKey: CalendarFeedPartition(httpContext)
+                        ?? httpContext.User.GetUserKeyValue()
                         ?? httpContext.Connection.RemoteIpAddress?.ToString()
                         ?? httpContext.Request.Headers.Host.ToString(),
                     factory: partition => new FixedWindowRateLimiterOptions
@@ -616,6 +622,17 @@ public static class Program
                     });
             });
 
+            options.AddPolicy<string>("CalendarFeedLimit", httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: CalendarFeedPartition(httpContext) ?? "calendar-feed",
+                    factory: partition => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = calendarFeedPermit,
+                        QueueLimit = 0,
+                        Window = calendarFeedWindow
+                    }));
+
             options.OnRejected = async (context, token) =>
             {
                 var endpoint = context.HttpContext.GetEndpoint();
@@ -626,6 +643,16 @@ public static class Program
                 await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
             };
         });
+    }
+
+    /// <summary>
+    /// Calendar links are counted per link, not per address: Google and Outlook fetch every
+    /// subscriber's link from the same few data-centre addresses, which an address limit would choke.
+    /// </summary>
+    private static string? CalendarFeedPartition(HttpContext httpContext)
+    {
+        var path = httpContext.Request.Path.Value;
+        return SecretPaths.IsSecret(path) ? "calendar-feed:" + SecretHash.Sha256Hex(path!)[..32] : null;
     }
 
     private static RateLimitPartition<string>? TryGetBypassPartition(HttpContext httpContext, IConfiguration configuration)

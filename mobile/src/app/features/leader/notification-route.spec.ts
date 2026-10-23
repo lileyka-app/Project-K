@@ -48,6 +48,10 @@ describe('mobileRouteOf', () => {
     );
   });
 
+  it('opens the account page for a calendar link that went off', () => {
+    expect(mobileRouteOf(note({ type: 'CalendarFeedRevoked', route: '/settings/account#calendar' }), null)).toBe('/tabs/more/account');
+  });
+
   it('only marks read what the phone has no screen for', () => {
     expect(mobileRouteOf(note({ route: null }), 'k1')).toBeNull();
     expect(mobileRouteOf(note({ route: '/kurin/k1/registry' }), 'k1')).toBeNull();

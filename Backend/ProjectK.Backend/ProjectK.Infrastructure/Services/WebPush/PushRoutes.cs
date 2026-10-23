@@ -40,6 +40,12 @@ public static partial class PushRoutes
             return sameKurin ? $"{Base}tabs/kurin/review/skills" : Inbox;
         }
 
+        // A calendar link switched off by a security change: its section on the account page.
+        if (AccountSettingsRoute().IsMatch(route))
+        {
+            return $"{Base}tabs/more/account";
+        }
+
         var agenda = AgendaRoute().Match(route);
         return agenda.Success ? AgendaTarget(agenda, notification) : Inbox;
     }
@@ -72,4 +78,7 @@ public static partial class PushRoutes
 
     [GeneratedRegex("^/(tasks|calendar)(/|$)")]
     private static partial Regex AgendaRoute();
+
+    [GeneratedRegex("^/settings/account/?$")]
+    private static partial Regex AccountSettingsRoute();
 }

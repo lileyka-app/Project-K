@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Suspend;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -29,7 +30,7 @@ public class SuspendUserCommandHandlerTests
     }
 
     private SuspendUserCommandHandler Suspend() =>
-        new(_userManager.Object, _currentUser.Object, _refreshTokens.Object, _activityLogger.Object);
+        new(_userManager.Object, _currentUser.Object, Revocations.Of(_refreshTokens.Object), _activityLogger.Object);
 
     private RestoreUserCommandHandler Restore() =>
         new(_userManager.Object, _currentUser.Object, _activityLogger.Object);

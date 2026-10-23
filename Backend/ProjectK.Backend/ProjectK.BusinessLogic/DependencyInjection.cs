@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddDuesModule();
         services.AddScoreModule();
         services.AddScoped<MeAgendaScopes>();
+        services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MePerson>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();

@@ -12,17 +12,17 @@ namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
 public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, ServiceResult<bool>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IActivityLogger _activityLogger;
 
     public ResetOwnMfaCommandHandler(
         UserManager<AppUser> userManager,
         IActivityLogger activityLogger,
-        IRefreshTokenStore refreshTokens)
+        RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
         _activityLogger = activityLogger;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
     }
 
     public async Task<ServiceResult<bool>> Handle(ResetOwnMfaCommand request, CancellationToken cancellationToken)
@@ -61,7 +61,7 @@ public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, Ser
         {
             // Only once the change is stored. RevokeAllAsync commits on its own, so ending
             // the sessions first signed every device out even when this update failed.
-            await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
+            await _sessions.RevokeRefreshTokenAsync(user, cancellationToken);
 
             _activityLogger.LogAudit(
                 action: "Account.MfaReset",
