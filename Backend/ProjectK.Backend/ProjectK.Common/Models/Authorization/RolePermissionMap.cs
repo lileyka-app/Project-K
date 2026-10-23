@@ -306,9 +306,7 @@ public static class RolePermissionMap
         grants.Add(new Permission(ResourceType.GroupScore, ResourceAction.Read, AccessScope.Own));
         grants.Add(new Permission(ResourceType.Member, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Create, AccessScope.Own));
-        grants.Add(new Permission(ResourceType.BadgeProgress, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Create, AccessScope.Own));
-        grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Update, AccessScope.Own));
         grants.Add(new Permission(ResourceType.MemberAward, ResourceAction.Delete, AccessScope.Own));
         return grants;
     }

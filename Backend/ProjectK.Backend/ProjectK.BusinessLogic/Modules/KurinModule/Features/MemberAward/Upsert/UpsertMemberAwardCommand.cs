@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -70,6 +71,16 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
 
         if (existingAward != null && existingAward.MemberKey == request.MemberKey)
         {
+            // An edit sends the award back for review, so editing a confirmed one un-confirms it:
+            // the same bar as removing it.
+            if (existingAward.Status == BadgeProgressStatus.Confirmed && !_currentUserContext.CanLeadGroups())
+            {
+                return ServiceResult<MemberAwardDto>.Failure(
+                    ResultType.Forbidden,
+                    "ConfirmedAwardEditRequiresLeadership",
+                    "Only leadership may change a confirmed award.");
+            }
+
             existingAward.Level = request.Level;
             existingAward.KurinKey = actingKurinKey;
             existingAward.DateAcquired = request.DateAcquired;

@@ -16,6 +16,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review
 
 public sealed class ReviewMemberAwardCommand : IRequest<ServiceResult<MemberAwardDto>>
 {
+    /// <summary>The member from the route — the one the resource check let the caller act on.</summary>
+    public Guid MemberKey { get; set; }
+
     public Guid MemberAwardKey { get; set; }
 
     /// <summary>Null means the caller did not say; the validator refuses it. See the request DTO.</summary>
@@ -47,7 +50,9 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
     public async Task<ServiceResult<MemberAwardDto>> Handle(ReviewMemberAwardCommand request, CancellationToken cancellationToken)
     {
         var award = await _unitOfWork.MemberAwards.GetByKeyAsync(request.MemberAwardKey, cancellationToken);
-        if (award is null)
+        // The resource check authorized the route's member, not the award's: anyone else's award
+        // answers as missing.
+        if (award is null || award.MemberKey != request.MemberKey)
         {
             return new ServiceResult<MemberAwardDto>(ResultType.NotFound);
         }

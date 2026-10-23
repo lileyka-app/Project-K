@@ -197,6 +197,9 @@ public class MemberAwardHandlerTests
             .ReturnsAsync(existingAward);
 
         _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
+        _currentUserContextMock
+            .SetupGet(x => x.Roles)
+            .Returns(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
 
         var result = await _upsertHandler.Handle(new UpsertMemberAwardCommand
         {
@@ -220,6 +223,108 @@ public class MemberAwardHandlerTests
         existingAward.ReviewedAtUtc.Should().BeNull();
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// An edit sends the award back for review, so whoever may record awards could otherwise
+    /// un-confirm a confirmed one just by saving it again.
+    /// </summary>
+    [Fact]
+    public async Task Upsert_ShouldRefuseEditingConfirmedAward_WithoutLeadership()
+    {
+        var memberKey = Guid.NewGuid();
+        var awardKey = Guid.NewGuid();
+        var reviewerKey = Guid.NewGuid();
+
+        _memberRepositoryMock
+            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey });
+
+        var confirmed = new MemberAward
+        {
+            MemberAwardKey = awardKey,
+            MemberKey = memberKey,
+            Level = MemberAwardLevel.First,
+            Note = "Old Note",
+            Status = BadgeProgressStatus.Confirmed,
+            ReviewedByUserKey = reviewerKey
+        };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(confirmed);
+
+        var result = await _upsertHandler.Handle(new UpsertMemberAwardCommand
+        {
+            MemberAwardKey = awardKey,
+            MemberKey = memberKey,
+            Level = MemberAwardLevel.Second,
+            DateAcquired = DateTime.UtcNow.AddDays(-1),
+            Note = "New Note"
+        }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        result.ErrorCode.Should().Be("ConfirmedAwardEditRequiresLeadership");
+        confirmed.Status.Should().Be(BadgeProgressStatus.Confirmed);
+        confirmed.Level.Should().Be(MemberAwardLevel.First);
+        confirmed.ReviewedByUserKey.Should().Be(reviewerKey);
+        _memberAwardRepositoryMock.Verify(x => x.Update(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Review_ShouldReturnNotFound_WhenAwardBelongsToAnotherMember()
+    {
+        var awardKey = Guid.NewGuid();
+        var award = new MemberAward
+        {
+            MemberAwardKey = awardKey,
+            MemberKey = Guid.NewGuid(),
+            Status = BadgeProgressStatus.Submitted
+        };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(award);
+
+        var result = await _reviewHandler.Handle(new ReviewMemberAwardCommand
+        {
+            MemberKey = Guid.NewGuid(),
+            MemberAwardKey = awardKey,
+            IsApproved = true
+        }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.NotFound);
+        award.Status.Should().Be(BadgeProgressStatus.Submitted);
+        _memberAwardRepositoryMock.Verify(x => x.Update(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_ShouldReturnNotFound_WhenAwardBelongsToAnotherMember()
+    {
+        var awardKey = Guid.NewGuid();
+        var award = new MemberAward
+        {
+            MemberAwardKey = awardKey,
+            MemberKey = Guid.NewGuid(),
+            Status = BadgeProgressStatus.Submitted
+        };
+
+        _memberAwardRepositoryMock
+            .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(award);
+        _currentUserContextMock
+            .SetupGet(x => x.Roles)
+            .Returns(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
+
+        var result = await _deleteHandler.Handle(
+            new DeleteMemberAwardCommand { MemberKey = Guid.NewGuid(), MemberAwardKey = awardKey },
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.NotFound);
+        _memberAwardRepositoryMock.Verify(x => x.Delete(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -275,6 +380,7 @@ public class MemberAwardHandlerTests
 
         var result = await _reviewHandler.Handle(new ReviewMemberAwardCommand
         {
+            MemberKey = memberKey,
             MemberAwardKey = awardKey,
             IsApproved = true
         }, CancellationToken.None);

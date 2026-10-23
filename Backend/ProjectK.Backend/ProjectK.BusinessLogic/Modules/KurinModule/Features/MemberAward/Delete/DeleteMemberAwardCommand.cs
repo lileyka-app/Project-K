@@ -12,6 +12,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete
 
 public sealed class DeleteMemberAwardCommand : IRequest<ServiceResult<Unit>>
 {
+    /// <summary>The member from the route — the one the resource check let the caller act on.</summary>
+    public Guid MemberKey { get; set; }
+
     public Guid MemberAwardKey { get; set; }
 }
 
@@ -29,7 +32,9 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
     public async Task<ServiceResult<Unit>> Handle(DeleteMemberAwardCommand request, CancellationToken cancellationToken)
     {
         var award = await _unitOfWork.MemberAwards.GetByKeyAsync(request.MemberAwardKey, cancellationToken);
-        if (award is null)
+        // The resource check authorized the route's member, not the award's: anyone else's award
+        // answers as missing.
+        if (award is null || award.MemberKey != request.MemberKey)
         {
             return new ServiceResult<Unit>(ResultType.NotFound);
         }

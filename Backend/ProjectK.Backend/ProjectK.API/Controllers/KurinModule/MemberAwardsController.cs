@@ -61,6 +61,7 @@ public class MemberAwardsController : ControllerBase
     {
         var result = await _mediator.Send(new ReviewMemberAwardCommand
         {
+            MemberKey = memberKey,
             MemberAwardKey = awardKey,
             IsApproved = request.IsApproved
         });
@@ -79,7 +80,7 @@ public class MemberAwardsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteAward(Guid memberKey, Guid awardKey)
     {
-        var result = await _mediator.Send(new DeleteMemberAwardCommand { MemberAwardKey = awardKey });
+        var result = await _mediator.Send(new DeleteMemberAwardCommand { MemberKey = memberKey, MemberAwardKey = awardKey });
         return result.ToActionResult(this);
     }
 

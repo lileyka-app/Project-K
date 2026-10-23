@@ -24,7 +24,13 @@ public class RolePermissionMapGoldenTests
     /// Every difference from the fixture that is meant. <c>Roles</c> null means every role the fixture
     /// lists; a removal there drops the permission wherever it was granted.
     /// </summary>
-    private static readonly IntendedChange[] IntendedChanges = [];
+    private static readonly IntendedChange[] IntendedChanges =
+    [
+        new(ChangeKind.Removed, "MemberAward:Update:Own",
+            "Dead grant: reviewing one's own award was only stopped by RequireGroupLeadership."),
+        new(ChangeKind.Removed, "BadgeProgress:Update:Own",
+            "Dead grant: reviewing one's own badge was only stopped by RequireGroupLeadership.")
+    ];
 
     [Fact]
     public void Resolve_MatchesTheFrozenMap_PlusIntendedChanges()
