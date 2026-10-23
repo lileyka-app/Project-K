@@ -188,8 +188,8 @@ for (const seat of seats) {
 
   // The calendar a month either side, so paging in the demo does not fall off the recording.
   await visit(page, `/calendar/${kurinKey}`);
-  for (const dir of ['prev', 'next']) {
-    const button = page.locator(`.fc-${dir}-button`).first();
+  for (const name of ['Назад', 'Далі']) {
+    const button = page.locator('app-agenda-calendar').getByRole('button', { name, exact: true });
     if (await button.count()) {
       await button.click();
       await settle(page);

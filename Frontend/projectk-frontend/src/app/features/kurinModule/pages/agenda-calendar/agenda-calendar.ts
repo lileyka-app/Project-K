@@ -1,15 +1,19 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
-import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, DateSelectArg, DatesSetArg, EventClickArg, EventContentArg, EventDropArg, EventInput, EventMountArg } from '@fullcalendar/core';
-import ukLocale from '@fullcalendar/core/locales/uk';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin, { EventResizeDoneArg } from '@fullcalendar/interaction';
+import {
+  CalendarOptions, DateSelectInfo, DatesSetInfo, DayCellInfo, DayHeaderInfo, EventApi, EventClickInfo, EventDisplayInfo, EventDropInfo,
+  EventInput, EventResizeDoneInfo, formatDate, FormatDateOptions, FullCalendarComponent, FullCalendarModule, joinClassNames, MountInfo
+} from '@fullcalendar/angular';
+import dayGridPlugin from '@fullcalendar/angular/daygrid';
+import interactionPlugin from '@fullcalendar/angular/interaction';
+import classicTheme from '@fullcalendar/angular/themes/classic';
+import timeGridPlugin from '@fullcalendar/angular/timegrid';
+// @fullcalendar/angular maps ./locales/* to files it does not ship (7.1.3), so the locale comes from the core package.
+import ukLocale from 'fullcalendar/locales/uk';
 import { MessageService } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
@@ -19,11 +23,12 @@ import { AgendaItemDto, UpdateAgendaItemRequest } from '../../models/agenda';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Month + hourly week/day calendar built on FullCalendar (MIT plugins only: daygrid, timegrid,
- * interaction). Server-expanded recurrence instances render as normal events. FullCalendar's own header
- * is disabled — navigation is driven by native Optimus buttons wired to its API — and the grid is bounded
- * so the timegrid scrolls inside the card instead of stretching the page. Drag/resize writes the new dates
- * back through UpdateAgendaItem.
+ * Month + hourly week/day calendar built on FullCalendar 7 (MIT only: daygrid, timegrid, interaction and
+ * the classic theme, whose palette is mapped onto the brand tokens in the stylesheet). Server-expanded
+ * recurrence instances render as normal events. FullCalendar's own header is disabled — navigation is
+ * driven by native Optimus buttons wired to its API — and the grid is bounded so the timegrid scrolls
+ * inside the card instead of stretching the page. Drag/resize writes the new dates back through
+ * UpdateAgendaItem.
  */
 @Component({
   selector: 'app-agenda-calendar',
@@ -32,15 +37,13 @@ const DAY_MS = 24 * 60 * 60 * 1000;
   templateUrl: './agenda-calendar.html',
   styleUrl: './agenda-calendar.css'
 })
-export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy {
+export class AgendaCalendarComponent implements OnInit {
   private readonly agendaService = inject(AgendaService);
   private readonly permissionService = inject(PermissionService);
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
 
   private readonly calendar = viewChild(FullCalendarComponent);
-  private readonly host = viewChild<ElementRef<HTMLElement>>('calHost');
-  private resizeObserver?: ResizeObserver;
 
   protected readonly kurinKey = signal('');
   protected readonly items = signal<AgendaItemDto[]>([]);
@@ -60,7 +63,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
   ];
 
   protected readonly calendarOptions = signal<CalendarOptions>({
-    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    plugins: [classicTheme, dayGridPlugin, timeGridPlugin, interactionPlugin],
     locale: ukLocale,
     initialView: 'dayGridMonth',
     firstDay: 1,
@@ -69,6 +72,15 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     // the view-harness to 0 in this layout). The .agenda-calendar-host wrapper then caps the height and
     // scrolls, so the timegrid scrolls inside the card instead of stretching the page.
     height: 'auto',
+    // Under 'auto' v7 still gives every month row a basis of width / aspectRatio / 6 (137px on a desktop
+    // card). A huge ratio drops that to nothing, so rows take their content height, as they did in v6
+    // (the v6 minimum is rebuilt by .agenda-cal__day-events and .agenda-cal__day-foot).
+    aspectRatio: 1000,
+    views: {
+      dayGridMonth: { dayCellInnerClass: 'agenda-cal__day-events', dayCellBottomClass: 'agenda-cal__day-foot' },
+      // v7's week title is «Жовтень 2026 р.»; v6 named the days.
+      timeGridWeek: { titleFormat: { year: 'numeric', month: 'short', day: 'numeric' } }
+    },
     nowIndicator: true,
     slotMinTime: '06:00:00',
     slotMaxTime: '23:00:00',
@@ -76,18 +88,29 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     editable: true,
     selectable: true,
     selectMirror: true,
-    dayMaxEvents: true,
+    // No dayMaxEvents: v6 ignored `true` under height 'auto' and showed every chip, while v7 would fold
+    // them into «+ще» links sized to the row basis.
     // Render every event as a solid block (not the default month-view dot) so a category's colour fills
     // the whole event bar in all views. Month view drags by day; the time views drag by time and day.
     eventDisplay: 'block',
     events: [],
-    eventContent: (arg: EventContentArg) => this.renderEvent(arg),
-    eventDidMount: (arg: EventMountArg) => this.paintCategory(arg),
-    datesSet: (arg: DatesSetArg) => this.onDatesSet(arg),
-    eventClick: (arg: EventClickArg) => this.onEventClick(arg),
-    select: (arg: DateSelectArg) => this.onSelect(arg),
-    eventDrop: (arg: EventDropArg) => this.applyDateChange(arg.event, arg.revert),
-    eventResize: (arg: EventResizeDoneArg) => this.applyDateChange(arg.event, arg.revert)
+    // v7 renders no semantic fc-* classes (the theme's are hashed), so the stylesheet hooks onto these.
+    eventInnerClass: 'agenda-ev__main',
+    columnEventClass: 'agenda-ev--column',
+    // Narrow (phone) cells get 1px chip margins in the theme; v6's 2px leaves the title no sliver.
+    rowEventClass: (arg: EventDisplayInfo) => arg.isNarrow && joinClassNames(arg.isStart && 'agenda-ev--narrow-start', arg.isEnd && 'agenda-ev--narrow-end'),
+    dayHeaderInnerClass: 'agenda-cal__day-head',
+    dayHeaderContent: (arg: DayHeaderInfo) => this.dayHeaderText(arg),
+    slotHeaderInnerClass: 'agenda-cal__axis',
+    allDayHeaderInnerClass: 'agenda-cal__axis',
+    dayCellTopInnerClass: (arg: DayCellInfo) => arg.isOther ? 'agenda-cal__day-num agenda-cal__day-num--other' : 'agenda-cal__day-num',
+    eventContent: (arg: EventDisplayInfo) => this.renderEvent(arg),
+    eventDidMount: (arg: MountInfo<EventDisplayInfo>) => this.paintCategory(arg),
+    datesSet: (arg: DatesSetInfo) => this.onDatesSet(arg),
+    eventClick: (arg: EventClickInfo) => this.onEventClick(arg),
+    select: (arg: DateSelectInfo) => this.onSelect(arg),
+    eventDrop: (arg: EventDropInfo) => this.applyDateChange(arg.event, arg.revert),
+    eventResize: (arg: EventResizeDoneInfo) => this.applyDateChange(arg.event, arg.revert)
   });
 
   canManage(): boolean {
@@ -98,21 +121,6 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     this.route.paramMap.subscribe(params => {
       this.kurinKey.set(params.get('kurinKey') ?? '');
     });
-  }
-
-  ngAfterViewInit(): void {
-    // FullCalendar can mount before this flex/overflow host has real dimensions, collapsing the view to
-    // zero height (only the day-of-week header shows). A ResizeObserver re-measures it the moment the host
-    // gets a size — on first layout and on every later resize — which is the reliable cure for that race.
-    const el = this.host()?.nativeElement;
-    if (el) {
-      this.resizeObserver = new ResizeObserver(() => this.calendar()?.getApi().updateSize());
-      this.resizeObserver.observe(el);
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.resizeObserver?.disconnect();
   }
 
   // ---- Native toolbar → FullCalendar API ----
@@ -150,16 +158,14 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
 
   private currentRange: { from: string; to: string } | null = null;
 
-  private onDatesSet(arg: DatesSetArg): void {
+  private onDatesSet(arg: DatesSetInfo): void {
     this.currentRange = { from: arg.start.toISOString(), to: arg.end.toISOString() };
     // «жовтень 2026 р.»: only the first letter goes up; text-transform: capitalize made it «Р.» too.
-    const title = arg.view.title;
+    // v7 joins a range as «19–25»; the spaced dash is v6's, and v7 has no separator option left.
+    const title = arg.view.title.split('–').map(part => part.trim()).join(' – ');
     this.viewTitle.set(title.charAt(0).toUpperCase() + title.slice(1));
     this.currentView.set(arg.view.type);
     this.reload();
-    // Deferred re-measure: guards the first paint, where FullCalendar can size itself before the host has
-    // layout and collapse the grid body to zero height (only the weekday header would show).
-    setTimeout(() => this.calendar()?.getApi().updateSize(), 0);
   }
 
   /**
@@ -213,7 +219,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
       end,
       allDay,
       editable: item.canEdit,
-      classNames: this.eventClasses(item),
+      className: this.eventClasses(item).join(' '),
       extendedProps: { item }
     };
   }
@@ -235,10 +241,25 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   /**
+   * v6's day heads: «пн» over the month, «пн 19.10» over a week, «четвер» over a day. v7 shortens them
+   * to one letter once a column is under 60px, and on a phone П and С would each name two days.
+   */
+  private dayHeaderText(arg: DayHeaderInfo): string | true {
+    if (arg.inPopover) {
+      return true;
+    }
+    const formats: Record<string, FormatDateOptions> = {
+      timeGridWeek: { weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true },
+      timeGridDay: { weekday: 'long' }
+    };
+    return formatDate(arg.date, { ...(formats[arg.view.type] ?? { weekday: 'short' }), locale: 'uk' });
+  }
+
+  /**
    * Dot, text, glyph: the dot carries the kind or status colour so a chip reads at a glance
    * even when a category paints the whole bar; the glyph sits faint at the far end.
    */
-  private renderEvent(arg: EventContentArg): { domNodes: Node[] } {
+  private renderEvent(arg: EventDisplayInfo): { domNodes: Node[] } {
     const item = arg.event.extendedProps['item'] as AgendaItemDto;
     const dot = document.createElement('span');
     dot.className = 'agenda-ev__dot';
@@ -272,14 +293,14 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
    * inline background: an inline fill is the same in both themes, while the stylesheet mixes the
    * colour into the paper by a per-theme amount (BRANDBOOK §2, `--lil-agenda-cat-*-mix`).
    */
-  private paintCategory(arg: EventMountArg): void {
+  private paintCategory(arg: MountInfo<EventDisplayInfo>): void {
     const item = arg.event.extendedProps['item'] as AgendaItemDto | undefined;
     if (item?.categoryColorHex) {
       arg.el.style.setProperty('--agenda-cat', item.categoryColorHex);
     }
   }
 
-  private onEventClick(arg: EventClickArg): void {
+  private onEventClick(arg: EventClickInfo): void {
     // Open for everyone: editors get the form, viewers get read-only details + RSVP.
     const item = arg.event.extendedProps['item'] as AgendaItemDto;
     this.editing.set(item);
@@ -287,7 +308,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
     this.dialogVisible.set(true);
   }
 
-  private onSelect(arg: DateSelectArg): void {
+  private onSelect(arg: DateSelectInfo): void {
     if (!this.canManage()) {
       return;
     }
@@ -304,7 +325,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
    * shifts the whole series (v1) by the same delta the dragged occurrence moved — in whole days for all-day
    * items, in milliseconds for timed ones.
    */
-  private applyDateChange(event: EventClickArg['event'], revert: () => void): void {
+  private applyDateChange(event: EventApi, revert: () => void): void {
     const item = event.extendedProps['item'] as AgendaItemDto;
     const allDay = event.allDay;
     let startUtc: string;
@@ -360,7 +381,7 @@ export class AgendaCalendarComponent implements OnInit, AfterViewInit, OnDestroy
    * New series start/end when a recurring occurrence is dragged/resized: the series base is shifted by the
    * delta between the occurrence's old and new position (whole days for all-day, real duration for timed).
    */
-  private shiftedSeriesDates(item: AgendaItemDto, event: EventClickArg['event'], allDay: boolean): { startUtc: string; endUtc: string | null } {
+  private shiftedSeriesDates(item: AgendaItemDto, event: EventApi, allDay: boolean): { startUtc: string; endUtc: string | null } {
     if (allDay) {
       const dayDelta = this.daysBetween(item.startUtc!.slice(0, 10), event.startStr.slice(0, 10));
       const seriesStartDay = this.addDays(item.seriesStartUtc!.slice(0, 10), dayDelta);
