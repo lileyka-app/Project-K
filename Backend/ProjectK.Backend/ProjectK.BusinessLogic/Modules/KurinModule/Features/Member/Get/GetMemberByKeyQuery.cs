@@ -14,7 +14,6 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 
@@ -32,56 +31,29 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IMemberFieldAccess _fieldAccess;
+    private readonly IResourceAccessService _resourceAccess;
     private readonly IMembershipRepository _memberships;
     private readonly IMentorAssignmentRepository _mentorAssignments;
     private readonly IAccountProvisioningService _accounts;
 
-    public GetMemberByKeyQueryHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUserContext, IResourceScopeReader scopeReader, IUnitOfWork kurinData, IAccountProvisioningService accounts)
+    public GetMemberByKeyQueryHandler(
+        IMemberUnitOfWork unitOfWork,
+        IMapper mapper,
+        ICurrentUserContext currentUserContext,
+        IMemberFieldAccess fieldAccess,
+        IResourceAccessService resourceAccess,
+        IUnitOfWork kurinData,
+        IAccountProvisioningService accounts)
     {
         _accounts = accounts;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserContext = currentUserContext;
-        _scopeReader = scopeReader;
+        _fieldAccess = fieldAccess;
+        _resourceAccess = resourceAccess;
         _memberships = kurinData.Memberships;
         _mentorAssignments = kurinData.MentorAssignments;
-    }
-
-    /// <summary>Clears what the viewer may not see, and answers whether they may see the private details.</summary>
-    private async Task<bool> ScrubRestrictedDataAsync(
-        MemberResponse response,
-        MemberEntity entity,
-        Guid? theirGroupKey,
-        CancellationToken ct)
-    {
-        bool isOwner = entity.UserKey.HasValue && entity.UserKey == _currentUserContext.UserId;
-        bool canViewPrivate = isOwner || _currentUserContext.CanManageWholeKurin();
-
-        var kurinKey = _currentUserContext.KurinKey;
-        if (!canViewPrivate && _currentUserContext.CanLeadGroups()
-            && _currentUserContext.UserId.HasValue && kurinKey.HasValue && theirGroupKey.HasValue)
-        {
-            var ledGroups = await _scopeReader.GetLedGroupKeysAsync(_currentUserContext.UserId.Value, kurinKey.Value, ct);
-            canViewPrivate = ledGroups.Contains(theirGroupKey.Value);
-        }
-
-        // Only the person themselves is told their code: leadership that knew it could sign them into
-        // another kurin without ever asking them.
-        if (!isOwner)
-        {
-            response.PublicId = null;
-        }
-
-        if (!canViewPrivate)
-        {
-            response.Address = string.Empty;
-            response.School = string.Empty;
-            response.SetAllParents(string.Empty);
-            response.CardExtras = new Dictionary<string, string>();
-        }
-
-        return canViewPrivate;
     }
 
     public async Task<ServiceResult<MemberResponse>> Handle(GetMemberByKeyQuery request, CancellationToken cancellationToken)
@@ -108,9 +80,11 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             memberResponse.MentoredGroupNames = [.. memberResponse.MentoredGroups.Select(g => g.Name)];
         }
 
-        var canViewPrivate = await ScrubRestrictedDataAsync(memberResponse, member, here?.GroupKey, cancellationToken);
+        memberResponse.MaskFor(await _fieldAccess.ForViewerAsync(cancellationToken), here?.GroupKey);
 
-        if (canViewPrivate && member.UserKey.HasValue)
+        // Whether the invitation is still waiting is for whoever may act on it: the people who may edit them.
+        if (member.UserKey.HasValue
+            && (await _resourceAccess.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, member.MemberKey, cancellationToken)).IsAllowed)
         {
             memberResponse.AccountStatus = (await _accounts.FindAsync(member.UserKey.Value, cancellationToken))?.Status;
         }

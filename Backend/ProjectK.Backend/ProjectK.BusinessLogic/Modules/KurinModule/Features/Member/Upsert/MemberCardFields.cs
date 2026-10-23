@@ -8,6 +8,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 /// <summary>
 /// What a край's card fields do to a write from the form: a hidden field keeps what it had, a
 /// required one must be filled, and the край's own fields are merged into what the member has.
+/// A group of data the writer may not see is not asked for: they could not have filled it.
 /// </summary>
 public static class MemberCardFields
 {
@@ -18,18 +19,23 @@ public static class MemberCardFields
     /// <summary>The member's values of the край's own fields once this write lands.</summary>
     public sealed record Outcome(string? CardExtras, string? Error);
 
-    public static Outcome Apply(KraiCardFieldsSettings card, UpsertMemberProfileCommand request, MemberEntity? existing)
+    public static Outcome Apply(
+        KraiCardFieldsSettings card,
+        UpsertMemberProfileCommand request,
+        MemberEntity? existing,
+        IReadOnlySet<MemberDataGroup>? hiddenFromWriter = null)
     {
+        hiddenFromWriter ??= new HashSet<MemberDataGroup>();
         KeepWhatTheFormDidNotSend(card, request, existing);
 
-        var error = TooLongField(request) ?? MissingRequiredField(card, request);
+        var error = TooLongField(request) ?? MissingRequiredField(card, request, hiddenFromWriter);
         if (error is not null)
         {
             return new Outcome(existing?.CardExtras, error);
         }
 
         var values = MemberCardExtras.Read(existing?.CardExtras);
-        error = MergeExtras(card, request, values);
+        error = MergeExtras(card, request, values, hiddenFromWriter.Contains(MemberDataGroup.Extras));
         return error is null
             ? new Outcome(MemberCardExtras.Write(values), null)
             : new Outcome(existing?.CardExtras, error);
@@ -92,19 +98,24 @@ public static class MemberCardFields
         return null;
     }
 
-    private static string? MissingRequiredField(KraiCardFieldsSettings card, UpsertMemberProfileCommand request)
+    private static string? MissingRequiredField(
+        KraiCardFieldsSettings card,
+        UpsertMemberProfileCommand request,
+        IReadOnlySet<MemberDataGroup> hiddenFromWriter)
     {
         var missing = new[]
             {
-                (Field: KraiCardFields.MiddleName, Value: request.MiddleName),
-                (Field: KraiCardFields.PhoneNumber, Value: request.PhoneNumber),
-                (Field: KraiCardFields.Address, Value: request.Address),
-                (Field: KraiCardFields.School, Value: request.School)
+                (Field: KraiCardFields.MiddleName, Value: request.MiddleName, Group: (MemberDataGroup?)null),
+                (Field: KraiCardFields.PhoneNumber, Value: request.PhoneNumber, Group: MemberDataGroup.Contacts),
+                (Field: KraiCardFields.Address, Value: request.Address, Group: MemberDataGroup.Address),
+                (Field: KraiCardFields.School, Value: request.School, Group: MemberDataGroup.Address)
             }
+            .Where(field => field.Group is not { } group || !hiddenFromWriter.Contains(group))
             .FirstOrDefault(field => card.ModeOf(field.Field) == KraiCardFields.Required && string.IsNullOrWhiteSpace(field.Value));
 
         // Required parents' contacts mean at least one parent the kurin can call.
         if (missing.Field is null && card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Required
+            && !hiddenFromWriter.Contains(MemberDataGroup.Parents)
             && request.MotherPhone is null && request.FatherPhone is null)
         {
             missing.Field = KraiCardFields.Parents;
@@ -113,7 +124,11 @@ public static class MemberCardFields
         return missing.Field is null ? null : $"Поле «{KraiCardFields.Labels[missing.Field]}» обовʼязкове.";
     }
 
-    private static string? MergeExtras(KraiCardFieldsSettings card, UpsertMemberProfileCommand request, Dictionary<string, string> values)
+    private static string? MergeExtras(
+        KraiCardFieldsSettings card,
+        UpsertMemberProfileCommand request,
+        Dictionary<string, string> values,
+        bool hiddenFromWriter)
     {
         foreach (var field in card.Extra)
         {
@@ -141,7 +156,7 @@ public static class MemberCardFields
                 }
             }
 
-            if (field.Required && !values.ContainsKey(field.Key))
+            if (field.Required && !hiddenFromWriter && !values.ContainsKey(field.Key))
             {
                 return $"Поле «{field.Label}» обовʼязкове.";
             }

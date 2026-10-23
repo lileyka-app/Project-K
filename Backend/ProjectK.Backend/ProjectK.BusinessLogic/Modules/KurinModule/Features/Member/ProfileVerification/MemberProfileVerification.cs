@@ -3,6 +3,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos;
@@ -60,6 +61,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     private readonly IResourceScopeReader _scopeReader;
     private readonly IUnitOfWork _kurinData;
     private readonly IMembershipRepository _memberships;
+    private readonly IMemberFieldAccess _fieldAccess;
 
     public MemberProfileVerificationService(
         IMemberUnitOfWork unitOfWork,
@@ -67,8 +69,10 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         IDomainEventPublisher events,
         IMapper mapper,
         IResourceScopeReader scopeReader,
-        IUnitOfWork kurinData)
+        IUnitOfWork kurinData,
+        IMemberFieldAccess fieldAccess)
     {
+        _fieldAccess = fieldAccess;
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
@@ -84,7 +88,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         CancellationToken cancellationToken)
     {
         var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
-        var validation = await ValidateAsync(member, cancellationToken);
+        var (validation, groupKey) = await ValidateAsync(member, cancellationToken);
         if (validation is not null)
         {
             return validation;
@@ -96,7 +100,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         member.ProfileVerificationNote = NormalizeNote(note);
         member.UpdatedDate = DateTime.UtcNow;
 
-        var result = await SaveAsync(member, cancellationToken);
+        var result = await SaveAsync(member, groupKey, cancellationToken);
         if (result.Type == ResultType.Success)
         {
             await PublishProfileVerifiedAsync(member, cancellationToken);
@@ -110,7 +114,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         CancellationToken cancellationToken)
     {
         var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
-        var validation = await ValidateAsync(member, cancellationToken);
+        var (validation, groupKey) = await ValidateAsync(member, cancellationToken);
         if (validation is not null)
         {
             return validation;
@@ -122,19 +126,20 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         member.ProfileVerificationNote = null;
         member.UpdatedDate = DateTime.UtcNow;
 
-        return await SaveAsync(member, cancellationToken);
+        return await SaveAsync(member, groupKey, cancellationToken);
     }
 
-    private async Task<ServiceResult<MemberResponse>?> ValidateAsync(MemberEntity? member, CancellationToken cancellationToken)
+    /// <summary>Refuses what may not be done, or answers with the гурток the person is placed in.</summary>
+    private async Task<(ServiceResult<MemberResponse>? Failure, Guid? GroupKey)> ValidateAsync(MemberEntity? member, CancellationToken cancellationToken)
     {
         if (!_currentUserContext.UserId.HasValue)
         {
-            return new ServiceResult<MemberResponse>(ResultType.Unauthorized);
+            return (new ServiceResult<MemberResponse>(ResultType.Unauthorized), null);
         }
 
         if (member is null)
         {
-            return new ServiceResult<MemberResponse>(ResultType.NotFound);
+            return (new ServiceResult<MemberResponse>(ResultType.NotFound), null);
         }
 
         // Whether profiles are checked at all is the asking kurin's own setting, and it is that
@@ -146,32 +151,32 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
 
         if (here is null)
         {
-            return ServiceResult<MemberResponse>.Failure(
+            return (ServiceResult<MemberResponse>.Failure(
                 ResultType.BadRequest,
                 "MemberBelongsNowhere",
-                "This person does not currently belong to a kurin.");
+                "This person does not currently belong to a kurin."), null);
         }
 
         var kurin = await _kurinData.Kurins.GetByKeyAsync(here.KurinKey, cancellationToken);
         if (kurin is null || !kurin.ProfileVerificationEnabled)
         {
-            return ServiceResult<MemberResponse>.Failure(
+            return (ServiceResult<MemberResponse>.Failure(
                 ResultType.BadRequest,
                 "ProfileVerificationDisabled",
-                "Profile verification is disabled for this kurin.");
+                "Profile verification is disabled for this kurin."), null);
         }
 
         if (member.UserKey.HasValue && member.UserKey.Value == _currentUserContext.UserId.Value)
         {
-            return new ServiceResult<MemberResponse>(ResultType.Forbidden);
+            return (new ServiceResult<MemberResponse>(ResultType.Forbidden), null);
         }
 
         if (await CanVerifyAsync(here, cancellationToken))
         {
-            return null;
+            return (null, here.GroupKey);
         }
 
-        return new ServiceResult<MemberResponse>(ResultType.Forbidden);
+        return (new ServiceResult<MemberResponse>(ResultType.Forbidden), null);
     }
 
     private async Task<bool> CanVerifyAsync(MembershipEntity here, CancellationToken cancellationToken)
@@ -203,7 +208,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         return ledGroups.Contains(here.GroupKey.Value);
     }
 
-    private async Task<ServiceResult<MemberResponse>> SaveAsync(MemberEntity member, CancellationToken cancellationToken)
+    private async Task<ServiceResult<MemberResponse>> SaveAsync(MemberEntity member, Guid? groupKey, CancellationToken cancellationToken)
     {
         _unitOfWork.Members.Update(member, cancellationToken);
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -212,7 +217,8 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
             return new ServiceResult<MemberResponse>(ResultType.InternalServerError);
         }
 
-        return new ServiceResult<MemberResponse>(ResultType.Success, _mapper.Map<MemberResponse>(member));
+        var mask = await _fieldAccess.ForViewerAsync(cancellationToken);
+        return new ServiceResult<MemberResponse>(ResultType.Success, _mapper.Map<MemberResponse>(member).MaskFor(mask, groupKey));
     }
 
     private async Task PublishProfileVerifiedAsync(MemberEntity member, CancellationToken cancellationToken)

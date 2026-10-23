@@ -134,6 +134,7 @@ export class MemberListComponent implements OnInit {
           latestPlastLevelDisplay: m.latestPlastLevelDisplay ?? null,
           phoneNumber: m.phoneNumber,
           dateOfBirth: m.dateOfBirth,
+          birthday: m.birthday,
           profileVerificationStatus: m.profileVerificationStatus,
           profileVerifiedAtUtc: m.profileVerifiedAtUtc,
           profileVerifiedByUserKey: m.profileVerifiedByUserKey,

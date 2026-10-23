@@ -50,6 +50,7 @@
                         <label for="dateOfBirth">Дата народження</label>
                         <p-datepicker inputId="dateOfBirth" name="dateOfBirth"
                             [(ngModel)]="member.dateOfBirth" (ngModelChange)="markFormDirty()"
+                            [disabled]="hides('birthDate')" [placeholder]="hides('birthDate') ? 'Приховано' : ''"
                             required minAge #dateOfBirthCtrl="ngModel"
                             [dateFormat]="defaultDateFormat" fluid />
                         @if (dateOfBirthCtrl.errors?.['minAge'] && (dateOfBirthCtrl.dirty || dateOfBirthCtrl.touched)) {
@@ -63,6 +64,7 @@
                             </label>
                             <input pInputText id="school" name="school"
                                 [(ngModel)]="member.school"
+                                [disabled]="hides('address')" [placeholder]="hides('address') ? 'Приховано' : ''"
                                 [required]="fieldMode('school') === 'required'" #schoolCtrl="ngModel"
                                 [invalid]="schoolCtrl.invalid && (schoolCtrl.dirty || schoolCtrl.touched)"
                                 maxlength="200" autocomplete="off" />
@@ -85,6 +87,7 @@
                                 <label for="email">Email</label>
                                 <input pInputText id="email" name="email" type="email"
                                     [(ngModel)]="member.email" required email #emailCtrl="ngModel"
+                                    [disabled]="hides('contacts')" [placeholder]="hides('contacts') ? 'Приховано' : ''"
                                     [invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
                                     autocomplete="off" />
                                 @if (isCreate) {
@@ -113,6 +116,7 @@
                                 <app-phone-input inputId="phoneNumber" name="phoneNumber"
                                     [defaultCountry]="phoneCountry"
                                     [(ngModel)]="member.phoneNumber" (ngModelChange)="markFormDirty()"
+                                    [disabled]="hides('contacts')"
                                     [required]="fieldMode('phoneNumber') === 'required'" #phoneNumberCtrl="ngModel"
                                     [invalid]="!!phoneNumberCtrl.invalid && !!(phoneNumberCtrl.dirty || phoneNumberCtrl.touched)" />
                                 @if (phoneNumberCtrl.errors?.['phone'] && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)) {
@@ -127,6 +131,7 @@
                                 </label>
                                 <input pInputText id="address" name="address"
                                     [(ngModel)]="member.address"
+                                    [disabled]="hides('address')" [placeholder]="hides('address') ? 'Приховано' : ''"
                                     [required]="fieldMode('address') === 'required'" #addressCtrl="ngModel"
                                     [invalid]="addressCtrl.invalid && (addressCtrl.dirty || addressCtrl.touched)"
                                     maxlength="200" autocomplete="street-address" />
@@ -149,18 +154,21 @@
                             <div class="member-form__field">
                                 <label [for]="parent.firstName">Імʼя {{ parent.of }}</label>
                                 <input pInputText [id]="parent.firstName" [name]="parent.firstName"
-                                    [(ngModel)]="member[parent.firstName]" maxlength="200" autocomplete="off" />
+                                    [(ngModel)]="member[parent.firstName]" maxlength="200" autocomplete="off"
+                                    [disabled]="hides('parents')" [placeholder]="hides('parents') ? 'Приховано' : ''" />
                             </div>
                             <div class="member-form__field">
                                 <label [for]="parent.lastName">Прізвище {{ parent.of }}</label>
                                 <input pInputText [id]="parent.lastName" [name]="parent.lastName"
-                                    [(ngModel)]="member[parent.lastName]" maxlength="200" autocomplete="off" />
+                                    [(ngModel)]="member[parent.lastName]" maxlength="200" autocomplete="off"
+                                    [disabled]="hides('parents')" [placeholder]="hides('parents') ? 'Приховано' : ''" />
                             </div>
                             <div class="member-form__field">
                                 <label [for]="parent.phone">Телефон {{ parent.of }}</label>
                                 <app-phone-input [inputId]="parent.phone" [name]="parent.phone"
                                     [defaultCountry]="phoneCountry"
                                     [(ngModel)]="member[parent.phone]" (ngModelChange)="markFormDirty()" #parentPhoneCtrl="ngModel"
+                                    [disabled]="hides('parents')"
                                     [invalid]="!!parentPhoneCtrl.invalid && !!(parentPhoneCtrl.dirty || parentPhoneCtrl.touched)" />
                                 @if (parentPhoneCtrl.errors?.['phone'] && (parentPhoneCtrl.dirty || parentPhoneCtrl.touched)) {
                                     <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
@@ -183,10 +191,12 @@
                                 @if (field.type === 'date') {
                                     <p-datepicker [inputId]="'extra-' + field.key" [name]="'extra-' + field.key"
                                         [(ngModel)]="cardExtras[field.key]" (ngModelChange)="markFormDirty()"
+                                        [disabled]="hides('extras')" [placeholder]="hides('extras') ? 'Приховано' : ''"
                                         [required]="field.required" [dateFormat]="defaultDateFormat" fluid />
                                 } @else {
                                     <input pInputText [id]="'extra-' + field.key" [name]="'extra-' + field.key"
                                         [(ngModel)]="cardExtras[field.key]" [required]="field.required"
+                                        [disabled]="hides('extras')" [placeholder]="hides('extras') ? 'Приховано' : ''"
                                         maxlength="200" autocomplete="off" />
                                 }
                             </div>

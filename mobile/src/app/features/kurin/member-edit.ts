@@ -1,7 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { dateLabel } from '../../me/labels';
 import { dateOnly, utcDate } from './kurin.labels';
-import { CardExtraField, CardFieldMode, CardFields, MemberDto, MemberWarningDto, PlastLevelHistoryDto, WarningLevel } from './kurin.models';
+import {
+  CardExtraField,
+  CardFieldMode,
+  CardFields,
+  MemberDataGroup,
+  MemberDto,
+  MemberWarningDto,
+  PlastLevelHistoryDto,
+  WarningLevel,
+} from './kurin.models';
 
 /*
  * The rules of the web's member edit (pages/upsert-member) the phone sheet follows: who changes the
@@ -304,6 +313,24 @@ export interface PhotoChange {
  * The address, school and parents' contacts go only when changed: they are private, so someone who could not see them
  * read them blank, and one left out keeps what the server has. Emptied, they go as '' to clear.
  */
+/** The fields of the form each group of hidden data covers (the server's MemberDataFields). */
+const HIDDEN_FIELDS: Record<Exclude<MemberDataGroup, 'birthday' | 'extras'>, readonly (keyof MemberForm)[]> = {
+  contacts: ['email', 'phoneNumber'],
+  birthDate: ['dateOfBirth'],
+  address: ['address', 'school'],
+  parents: PARENT_FIELDS,
+};
+
+/** The group of data a field of the form belongs to; null for one the kurin never hides. */
+export function hiddenGroupOf(key: string): MemberDataGroup | null {
+  const entry = Object.entries(HIDDEN_FIELDS).find(([, keys]) => (keys as readonly string[]).includes(key));
+  return entry ? (entry[0] as MemberDataGroup) : null;
+}
+
+/**
+ * The multipart body of `PUT member/{key}`. A group of data the kurin hides from the writer is left
+ * out: the form showed it as «Приховано», and the server keeps what it has.
+ */
 export function memberFormData(
   member: MemberDto,
   form: MemberForm,
@@ -311,10 +338,14 @@ export function memberFormData(
   photo: PhotoChange,
   extras: CardExtras = {},
 ): FormData {
+  const hidden = member.hiddenData ?? [];
   const body = new FormData();
-  appendProfile(body, form, histories, extras);
+  appendProfile(body, form, histories, hidden.includes('extras') ? {} : extras);
   for (const key of ['address', 'school', ...PARENT_FIELDS] as const) {
     if (form[key].trim() !== (member[key] ?? '').trim()) body.append(key, form[key].trim());
+  }
+  for (const group of hidden) {
+    if (group in HIDDEN_FIELDS) HIDDEN_FIELDS[group as keyof typeof HIDDEN_FIELDS].forEach((key) => body.delete(key));
   }
   body.append('removeProfilePhoto', String(photo.remove && !photo.blob));
   if (photo.blob) body.append('blob', photo.blob, photo.name);

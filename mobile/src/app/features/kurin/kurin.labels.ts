@@ -384,14 +384,22 @@ export interface UpcomingBirthday {
   daysUntil: number;
 }
 
+/** Month (0–11) and day someone was born: from `birthday` («MM-DD»), else from the full date. */
+export function bornOn(member: Pick<MemberLookupDto, 'birthday' | 'dateOfBirth'>): { month: number; day: number } | null {
+  const birthday = /^(\d{2})-(\d{2})$/.exec(member.birthday ?? '');
+  if (birthday) return { month: Number(birthday[1]) - 1, day: Number(birthday[2]) };
+  const born = dateOnly(member.dateOfBirth);
+  return born ? { month: born.getMonth(), day: born.getDate() } : null;
+}
+
 export function upcomingBirthdays(members: MemberLookupDto[], daysAhead: number, reference = new Date()): UpcomingBirthday[] {
   const today = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
   return members
     .map((member) => {
-      const born = dateOnly(member.dateOfBirth);
+      const born = bornOn(member);
       if (!born) return null;
-      let next = new Date(today.getFullYear(), born.getMonth(), born.getDate());
-      if (next < today) next = new Date(today.getFullYear() + 1, born.getMonth(), born.getDate());
+      let next = new Date(today.getFullYear(), born.month, born.day);
+      if (next < today) next = new Date(today.getFullYear() + 1, born.month, born.day);
       return { member, date: next, daysUntil: Math.round((next.getTime() - today.getTime()) / 86_400_000) };
     })
     .filter((item): item is UpcomingBirthday => item !== null && item.daysUntil <= daysAhead)

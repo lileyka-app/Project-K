@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { ProgressBarModule } from '@openng/optimus-ui/progressbar';
-import { MemberDto } from '../../models/member.dto';
+import { MemberDataGroup, MemberDto } from '../../models/member.dto';
 import { MemberService } from '../../services/member-service/member.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -357,6 +357,17 @@ export class MemberCardComponent implements OnInit {
         phoneLink: phoneHref(parent.phone)
       }))
       .filter(parent => parent.name || parent.phone);
+  }
+
+  /** Чи сервер приховав цю групу даних від того, хто дивиться. */
+  hides(group: MemberDataGroup): boolean {
+    return this.member?.hiddenData?.includes(group) ?? false;
+  }
+
+  /** День і місяць народження («17.05»), коли рік приховано, а день народження — ні. */
+  get birthdayText(): string | null {
+    const match = /^(\d{2})-(\d{2})$/.exec(this.member?.birthday ?? '');
+    return match ? `${match[2]}.${match[1]}` : null;
   }
 
   get emailLink(): string | null {

@@ -24,7 +24,11 @@ public class UpsertMemberRequest : IHasParentContacts
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string? MiddleName { get; set; }
-    public string Email { get; set; } = string.Empty;
+    /// <summary>
+    /// Left out by a form whose writer may not see the contacts; the stored address then stays.
+    /// Whether one is needed at all is the profile write's to say, not the binder's.
+    /// </summary>
+    public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
     public DateOnly DateOfBirth { get; set; }
     /// <summary>Left out keeps what is stored; sent empty clears it.</summary>

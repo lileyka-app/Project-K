@@ -13,13 +13,13 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
-public class MemberResponse : IHasParentContacts
+public class MemberResponse : IHasParentContacts, IMemberPersonalData, IHasCardExtras
 {
     public Guid MemberKey { get; set; }
 
     /// <summary>
     /// The code a person hands to another kurin's провід so it can take them in. Only ever filled
-    /// in for the person themselves — see <c>GetMemberByKeyQuery</c>, which clears it for everyone else.
+    /// in for the person themselves — see <c>MemberResponseMasking</c>, which clears it for everyone else.
     /// </summary>
     public string? PublicId { get; set; }
     public Guid GroupKey { get; set; }
@@ -50,7 +50,7 @@ public class MemberResponse : IHasParentContacts
 
     /// <summary>
     /// Where their account stands — whether the invitation is still waiting to be accepted. Filled
-    /// only by the read of one person, and only for whoever may see their private details.
+    /// only by the read of one person, and only for whoever may edit them.
     /// </summary>
     public OnboardingStatus? AccountStatus { get; set; }
 
@@ -66,6 +66,12 @@ public class MemberResponse : IHasParentContacts
     public string Email { get; set; }
     public string PhoneNumber { get; set; }
     public DateOnly? DateOfBirth { get; set; }
+
+    /// <inheritdoc />
+    public string? Birthday { get; set; }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> HiddenData { get; set; } = [];
     public string? Address { get; set; }
     public string? School { get; set; }
     public string? MotherFirstName { get; set; }

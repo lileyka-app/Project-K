@@ -15,7 +15,9 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
@@ -36,6 +38,7 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
     private readonly Mock<IKraiProfileProvider> _profilesMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
+    private readonly IMapper _mapper;
 
     public UpsertMemberProfileCommandHandlerTests()
     {
@@ -62,15 +65,19 @@ public class UpsertMemberProfileCommandHandlerTests
             .ReturnsAsync([]);
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _handler = new UpsertMemberProfileCommandHandler(
-            _uowMock.Object,
-            _kurinDataMock.Object,
-            mapperConfig.CreateMapper(),
-            _currentUserContextMock.Object,
-            _eventsMock.Object,
-            _accountsMock.Object,
-            _profilesMock.Object);
+        _mapper = mapperConfig.CreateMapper();
+        _handler = Handler(FieldAccess.SeesEverything());
     }
+
+    private UpsertMemberProfileCommandHandler Handler(IMemberFieldAccess fieldAccess) => new(
+        _uowMock.Object,
+        _kurinDataMock.Object,
+        _mapper,
+        _currentUserContextMock.Object,
+        _eventsMock.Object,
+        _accountsMock.Object,
+        _profilesMock.Object,
+        fieldAccess);
 
     private void AccountIs(Guid userKey, OnboardingStatus status) =>
         _accountsMock.Setup(a => a.FindAsync(userKey, It.IsAny<CancellationToken>()))
@@ -328,7 +335,7 @@ public class UpsertMemberProfileCommandHandlerTests
     [Fact]
     public async Task Handle_WithoutGroupOrKurin_ShouldReturnNotFound()
     {
-        var cmd = new UpsertMemberProfileCommand { FirstName = "Nowhere" };
+        var cmd = new UpsertMemberProfileCommand { FirstName = "Nowhere", Email = "nowhere@example.com" };
 
         ExistingMemberIs(null, cmd.MemberKey);
 
@@ -575,7 +582,7 @@ public class UpsertMemberProfileCommandHandlerTests
     public async Task Handle_SaveChangesFailed_ShouldReturnInternalServerError()
     {
         var group = MakeGroup();
-        var cmd = new UpsertMemberProfileCommand { GroupKey = group.GroupKey, FirstName = "Ivan" };
+        var cmd = new UpsertMemberProfileCommand { GroupKey = group.GroupKey, FirstName = "Ivan", Email = "ivan@example.com" };
 
         ExistingMemberIs(null, cmd.MemberKey);
         GroupIs(group);
@@ -632,4 +639,120 @@ public class UpsertMemberProfileCommandHandlerTests
             Address = existing.Address,
             School = existing.School
         };
+
+    /// <summary>
+    /// The form of a writer who may not see the parents, the address, the birth date or the край's
+    /// fields shows «Приховано» there and sends blanks back. Those blanks must not wipe what is
+    /// stored, and a required field the writer never saw must not turn the save away.
+    /// </summary>
+    [Fact]
+    public async Task Handle_FromTheForm_KeepsWhatTheWriterMayNotSee()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = Guid.NewGuid();
+        existing.Address = "Stored St";
+        existing.School = "Stored School";
+        existing.MotherFirstName = "Olena";
+        existing.MotherPhone = "+380501112233";
+        existing.FatherPhone = "+380504445566";
+        existing.CardExtras = """{"visaType":"D"}""";
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+        _profilesMock.Setup(p => p.GetForKurinAsync(group.KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KraiProfile("cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
+                new KraiCardFieldsSettings(
+                    new Dictionary<string, string> { [KraiCardFields.Parents] = KraiCardFields.Required, [KraiCardFields.Address] = KraiCardFields.Required },
+                    [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }, new KraiCardExtraField { Key = "school2", Label = "Друга школа", Required = true }]),
+                KraiDuesSettings.Default));
+        var writer = new MemberFieldMask(
+            Guid.NewGuid(),
+            new Dictionary<MemberDataGroup, CapabilityReach> { [MemberDataGroup.Contacts] = CapabilityReach.Kurin },
+            []);
+        var cmd = new UpsertMemberProfileCommand
+        {
+            MemberKey = existing.MemberKey,
+            FirstName = "New",
+            MiddleName = "M",
+            LastName = "Name",
+            Email = existing.Email,
+            PhoneNumber = existing.PhoneNumber,
+            DateOfBirth = default,
+            Address = string.Empty,
+            School = string.Empty,
+            MotherFirstName = string.Empty,
+            MotherLastName = string.Empty,
+            MotherPhone = string.Empty,
+            FatherFirstName = string.Empty,
+            FatherLastName = string.Empty,
+            FatherPhone = string.Empty,
+            CardExtras = new Dictionary<string, string> { ["visaType"] = string.Empty },
+            ApplyCardFields = true
+        };
+
+        var result = await Handler(FieldAccess.Of(writer)).Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.FirstName.Should().Be("New");
+        existing.DateOfBirth.Should().Be(new DateOnly(1990, 1, 1));
+        existing.Address.Should().Be("Stored St");
+        existing.School.Should().Be("Stored School");
+        existing.MotherFirstName.Should().Be("Olena");
+        existing.MotherPhone.Should().Be("+380501112233");
+        existing.FatherPhone.Should().Be("+380504445566");
+        existing.CardExtras.Should().Be("""{"visaType":"D"}""");
+    }
+
+    [Fact]
+    public async Task Handle_KeepsTheContacts_OfAWriterWhoMayNotSeeThem()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+        var cmd = new UpsertMemberProfileCommand
+        {
+            MemberKey = existing.MemberKey,
+            FirstName = existing.FirstName,
+            MiddleName = "M",
+            LastName = existing.LastName,
+            Email = string.Empty,
+            PhoneNumber = string.Empty,
+            DateOfBirth = existing.DateOfBirth
+        };
+
+        var result = await Handler(FieldAccess.SeesNothing(Guid.NewGuid())).Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.Email.Should().Be("old@example.com");
+        existing.PhoneNumber.Should().Be("+380501111111");
+    }
+
+    [Fact]
+    public async Task Handle_RefusesAnEmptyEmail_FromAWriterWhoSeesTheContacts()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+        var cmd = new UpsertMemberProfileCommand
+        {
+            MemberKey = existing.MemberKey,
+            FirstName = existing.FirstName,
+            MiddleName = "M",
+            LastName = existing.LastName,
+            Email = string.Empty,
+            PhoneNumber = existing.PhoneNumber,
+            DateOfBirth = existing.DateOfBirth
+        };
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be(UpsertMemberProfileCommandHandler.EmailRequired);
+        existing.Email.Should().Be("old@example.com");
+    }
 }

@@ -14,6 +14,7 @@ import {
   fieldMode,
   canSelectWarning,
   closeBranch,
+  hiddenGroupOf,
   memberFormData,
   newMemberFormData,
   oldEnough,
@@ -194,6 +195,25 @@ describe('member edit rules', () => {
     const created = newMemberFormData({ kurinKey: 'k1' }, form, [], { blob: null, name: '' }, { visaType: 'C' });
     expect(created.get('cardExtras[visaType]')).toBe('C');
     expect([...memberFormData(member, form, [], { blob: null, name: '', remove: false }).keys()].some((k) => k.startsWith('cardExtras'))).toBe(false);
+  });
+
+  it('leaves out every group of data the kurin hides from the writer, so the server keeps it', () => {
+    const member = {
+      memberKey: 'm1',
+      firstName: 'Остап',
+      lastName: 'Коваль',
+      email: '',
+      address: null,
+      hiddenData: ['contacts', 'birthDate', 'address', 'parents', 'extras'],
+    } as unknown as MemberDto;
+    const form = { firstName: 'Остап', middleName: '', lastName: 'Коваль', email: '', phoneNumber: '', dateOfBirth: '', address: 'Нова', school: '', ...NO_PARENTS, motherPhone: '+380' };
+
+    const body = memberFormData(member, form, [], { blob: null, name: '', remove: false }, { visaType: '' });
+
+    expect(body.get('firstName')).toBe('Остап');
+    for (const key of ['email', 'phoneNumber', 'dateOfBirth', 'address', 'school', 'motherPhone']) expect(body.has(key)).toBe(false);
+    expect([...body.keys()].some((k) => k.startsWith('cardExtras'))).toBe(false);
+    expect(['email', 'dateOfBirth', 'school', 'fatherPhone', 'firstName'].map(hiddenGroupOf)).toEqual(['contacts', 'birthDate', 'address', 'parents', null]);
   });
 
   it('sends only the extra fields changed from what was read, an emptied one as empty', () => {

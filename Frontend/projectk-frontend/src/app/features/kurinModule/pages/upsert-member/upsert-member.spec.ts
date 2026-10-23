@@ -238,6 +238,35 @@ describe('UpsertMemberComponent', () => {
       expect(dtoArg.kurinKey).toBeUndefined();
     });
 
+    it('не надсилає й не дає правити те, що курінь приховує від того, хто редагує', async () => {
+      memberServiceSpy.getByKey.mockReturnValue(of({
+        ...loadedMember,
+        email: '',
+        phoneNumber: '',
+        dateOfBirth: null,
+        address: null,
+        hiddenData: ['contacts', 'birthDate', 'address', 'parents', 'extras']
+      }));
+      setRouteParams({ memberKey });
+      create();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const address = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#address');
+      expect(address?.disabled).toBe(true);
+      expect(address?.placeholder).toBe('Приховано');
+
+      component.submit();
+
+      const dtoArg = vi.mocked(memberServiceSpy.update).mock.lastCall![1];
+      expect(dtoArg.email).toBeUndefined();
+      expect(dtoArg.phoneNumber).toBeUndefined();
+      expect(dtoArg.dateOfBirth).toBeUndefined();
+      expect(dtoArg.address).toBeUndefined();
+      expect(dtoArg.motherPhone).toBeUndefined();
+      expect(dtoArg.cardExtras).toBeUndefined();
+    });
+
     it('should fall back to the kurin when the member cannot be loaded without a group', () => {
       memberServiceSpy.getByKey.mockReturnValue(throwError(() => new Error('Not found')));
       setRouteParams({ kurinKey: 'kurin-123', memberKey });

@@ -48,6 +48,18 @@ describe('kurin labels', () => {
     expect([0, 1, 5].map(birthdayWhen)).toEqual(['сьогодні', 'завтра', 'через 5 дн.']);
   });
 
+  it('takes the birthday without the year when the kurin hides the full date', () => {
+    const people = [
+      member('a', 'Марта', 'Шевчук', { birthday: '10-12' }),
+      member('b', 'Остап', 'Коваль', { dateOfBirth: '2012-10-11', birthday: '10-11' }),
+    ];
+    const soon = upcomingBirthdays(people, 30, new Date(2026, 9, 10));
+    expect(soon.map((b) => [b.member.memberKey, b.daysUntil])).toEqual([
+      ['b', 1],
+      ['a', 2],
+    ]);
+  });
+
   it('sorts by surname or by office and searches by name, ступінь and phone', () => {
     const people = [
       member('a', 'Іван', 'Бойко', { latestPlastLevel: 'Uchasnyk' }),

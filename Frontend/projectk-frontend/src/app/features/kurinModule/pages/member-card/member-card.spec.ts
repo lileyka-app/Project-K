@@ -325,6 +325,39 @@ describe('MemberCardComponent', () => {
     expect(text).not.toContain('По батькові не вказано');
   });
 
+  it('should say «Приховано» for what the kurin hides, and give the birthday without the year', () => {
+    memberServiceSpy.getByKey.mockReturnValue(of({
+      ...member,
+      email: '',
+      phoneNumber: '',
+      dateOfBirth: null,
+      birthday: '05-17',
+      address: null,
+      school: null,
+      hiddenData: ['contacts', 'birthDate', 'address', 'parents', 'extras']
+    } as MemberDto));
+    createComponent();
+    fixture.detectChanges();
+
+    const text = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+    expect(text).toContain('Email: Приховано');
+    expect(text).toContain('Телефон: Приховано');
+    expect(text).toContain('Дата народження: 17.05');
+    expect(text).toContain('Адреса: Приховано');
+    expect(text).toContain('Контакти батьків: Приховано');
+    expect(text).not.toContain('Не вказано');
+  });
+
+  it('should still say «Не вказано» for what is simply empty', () => {
+    memberServiceSpy.getByKey.mockReturnValue(of({ ...member, email: '', dateOfBirth: null, hiddenData: [] } as MemberDto));
+    createComponent();
+    fixture.detectChanges();
+
+    const text = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+    expect(text).toContain('Email: Не вказано');
+    expect(text).not.toContain('Приховано');
+  });
+
   it('should display profile verification timestamp without timezone as local time from UTC', () => {
     memberServiceSpy.getByKey.mockReturnValue(of({
       ...member,

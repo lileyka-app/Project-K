@@ -27,7 +27,7 @@ import { Toasts } from '../../core/toast';
 import { IMAGE_TOO_LARGE } from './image-crop';
 import { CroppedImage, ImageCropSheet } from './image-crop.sheet';
 import { kurinAccess, shortDate, toDateOnly, utcDate } from './kurin.labels';
-import { CardFields, MemberDto, ProfileVerificationStatus, WarningLevel } from './kurin.models';
+import { CardFields, MemberDataGroup, MemberDto, ProfileVerificationStatus, WarningLevel } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
 import {
@@ -50,6 +50,7 @@ import {
   cardFieldError,
   changedCardExtras,
   fieldMode,
+  hiddenGroupOf,
   canSelectWarning,
   closeBranch,
   isPendingAccount,
@@ -89,6 +90,8 @@ interface Row extends Omit<FormField, 'key'> {
   testId: string;
   /** Only the birth date stops at today; a край's date may be ahead (a visa's end). */
   max?: string;
+  /** The kurin hides it from whoever edits: disabled, read as «Приховано», and not sent. */
+  hidden: boolean;
 }
 
 const FIELDS: FormField[] = [
@@ -248,6 +251,8 @@ export type ProfileEditResult = 'saved' | 'changed' | 'deleted' | { created: str
                     [attr.aria-label]="row.label"
                     [autocomplete]="$any(row.autocomplete)"
                     [max]="row.max"
+                    [disabled]="row.hidden"
+                    [placeholder]="row.hidden ? 'Приховано' : undefined"
                     [value]="rowValue(row)"
                     (ionInput)="setRow(row, $any($event).detail.value)"
                   />
@@ -442,6 +447,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
       extra: false,
       testId: `profile-${f.key}`,
       max: f.type === 'date' ? this.today : undefined,
+      hidden: this.hides(hiddenGroupOf(f.key)),
     })),
     ...this.card().extra.map((f) => ({
       key: f.key,
@@ -450,6 +456,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
       autocomplete: 'off',
       extra: true,
       testId: `profile-extra-${f.key}`,
+      hidden: this.hides('extras'),
     })),
   ]);
   protected readonly shownRanks = computed(() => RANK_FIELDS.filter((f) => f.branch === 'base' || this.open()[f.branch]));
@@ -516,11 +523,17 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     if (url) URL.revokeObjectURL(url);
   }
 
+  /** Whether the kurin hides this group of the member's data from whoever edits. */
+  private hides(group: MemberDataGroup | null): boolean {
+    return !this.creating && !!group && (this.member?.hiddenData?.includes(group) ?? false);
+  }
+
   protected rowValue(row: Row): string {
     return row.extra ? (this.extras()[row.key] ?? '') : this.form()[row.key as Field];
   }
 
   protected rowValid(row: Row): boolean {
+    if (row.hidden) return true;
     if (!row.extra) return this.fieldValid(row.key as Field);
     const field = this.card().extra.find((f) => f.key === row.key);
     return !field || cardExtraValid(field, this.extras()[row.key]);

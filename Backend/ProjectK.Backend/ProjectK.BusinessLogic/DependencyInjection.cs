@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IKurinAccessPolicyProvider, KurinAccessPolicyProvider>();
         services.AddScoped<IPermissionResolver, PermissionResolver>();
         services.AddScoped<ICurrentPermissions, CurrentPermissions>();
+        services.AddScoped<IMemberFieldAccess, MemberFieldAccess>();
         services.AddScoped<KraiProfileEditor>();
         services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
         services.AddScoped<ResourceAccessService>();

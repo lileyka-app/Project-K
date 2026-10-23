@@ -30,6 +30,11 @@ export function timeLabel(start: Date, end: Date | null, isAllDay: boolean): str
   return end ? `${clock(start)}–${clock(end)}` : clock(start);
 }
 
+/** «7 жовтня» — a birthday shown without the year. */
+export function dayMonthLabel(date: Date): string {
+  return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
+}
+
 /** «7 жовтня 2010» */
 export function dateLabel(date: Date): string {
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;

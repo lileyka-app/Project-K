@@ -7,9 +7,11 @@ export interface UpsertMemberDto {
     firstName: string;
     middleName: string;
     lastName: string;
-    email: string;
-    phoneNumber: string;
-    dateOfBirth: string;
+    /** Left out by someone the kurin hides the contacts from: the server keeps what it has. */
+    email?: string;
+    phoneNumber?: string;
+    /** Left out by someone the kurin hides the date of birth from. */
+    dateOfBirth?: string;
     address?: string | null;
     school?: string | null;
     motherFirstName?: string | null;

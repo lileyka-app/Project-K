@@ -33,6 +33,10 @@ public class UpsertMemberProfileCommandHandler
     private readonly IDomainEventPublisher _events;
     private readonly IAccountProvisioningService _accounts;
     private readonly IKraiProfileProvider _profiles;
+    private readonly IMemberFieldAccess _fieldAccess;
+
+    /// <summary>The error a write without an email is refused with.</summary>
+    public const string EmailRequired = "EmailRequired";
 
     public UpsertMemberProfileCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -41,8 +45,10 @@ public class UpsertMemberProfileCommandHandler
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IAccountProvisioningService accounts,
-        IKraiProfileProvider profiles)
+        IKraiProfileProvider profiles,
+        IMemberFieldAccess fieldAccess)
     {
+        _fieldAccess = fieldAccess;
         _accounts = accounts;
         _profiles = profiles;
         _unitOfWork = unitOfWork;
@@ -76,6 +82,19 @@ public class UpsertMemberProfileCommandHandler
             request.KurinKey = current.KurinKey;
         }
 
+        var hiddenFromWriter = existing is null
+            ? new HashSet<MemberDataGroup>()
+            : (await _fieldAccess.ForViewerAsync(cancellationToken)).HiddenFrom(existing.UserKey, current?.GroupKey);
+        if (existing is not null)
+        {
+            HiddenDataOnWrite.KeepStored(hiddenFromWriter, request, existing);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, EmailRequired, "An email is required.");
+        }
+
         GroupEntity? group = null;
         if (request.GroupKey.HasValue && request.GroupKey.Value != Guid.Empty)
         {
@@ -94,7 +113,7 @@ public class UpsertMemberProfileCommandHandler
         var cardExtras = existing?.CardExtras;
         if (request.ApplyCardFields && await _profiles.GetForKurinAsync(kurinKey, cancellationToken) is { } profile)
         {
-            var card = MemberCardFields.Apply(profile.CardFields, request, existing);
+            var card = MemberCardFields.Apply(profile.CardFields, request, existing, hiddenFromWriter);
             if (card.Error is not null)
             {
                 return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberCardFields.ErrorCode, card.Error);
@@ -254,7 +273,8 @@ public class UpsertMemberProfileCommandHandler
                 isCreated,
                 wasProfileVerifiedCurrent,
                 previousPhotoBlobName,
-                accountEmailToFollow));
+                accountEmailToFollow,
+                groupKey));
     }
 
     private bool CanEditRestrictedFields() => _currentUserContext.IsLeadership();

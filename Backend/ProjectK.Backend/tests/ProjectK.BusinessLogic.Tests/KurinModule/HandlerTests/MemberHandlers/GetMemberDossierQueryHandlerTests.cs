@@ -5,10 +5,14 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
 using Xunit;
 
@@ -22,12 +26,16 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 public class GetMemberDossierHandlerTests
 {
     private static readonly Guid MemberKey = Guid.NewGuid();
+    private static readonly Guid OwnerUserKey = Guid.NewGuid();
+    private static readonly Guid KurinKey = Guid.NewGuid();
+    private static readonly Guid GroupKey = Guid.NewGuid();
 
     private readonly Mock<IMemberUnitOfWork> _uow = new();
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IMembershipDirectory> _memberships = new();
     private readonly Mock<IMemberProgressDirectory> _progress = new();
     private readonly Mock<IMapper> _mapper = new();
+    private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly GetMemberDossierQueryHandler _handler;
 
     public GetMemberDossierHandlerTests()
@@ -39,6 +47,8 @@ public class GetMemberDossierHandlerTests
             {
                 MemberKey = MemberKey,
                 PublicId = "PL-ABCDE-12345",
+                UserKey = OwnerUserKey,
+                DateOfBirth = new DateOnly(2010, 5, 17),
                 FirstName = "Оксана",
                 LastName = "Тестова",
                 Email = "oksana@example.com",
@@ -76,8 +86,8 @@ public class GetMemberDossierHandlerTests
                 [new ProbeProgressRecord("upu-1", ProbeProgressStatus.Completed, Guid.NewGuid(), null, null)],
                 []));
 
-        _handler = new GetMemberDossierQueryHandler(
-            _uow.Object, _memberships.Object, _progress.Object, _mapper.Object);
+        _currentUser.SetupGet(c => c.KurinKey).Returns(KurinKey);
+        _handler = Handler(FieldAccess.SeesEverything());
     }
 
     private static MembershipRecord Belonging() => new(
@@ -95,7 +105,8 @@ public class GetMemberDossierHandlerTests
         result.Type.Should().Be(ResultType.Success);
         var dossier = result.Data!;
 
-        dossier.Profile.PublicId.Should().Be("PL-ABCDE-12345");
+        dossier.Profile.PublicId.Should().BeNull();
+        dossier.Profile.DateOfBirth.Should().Be(new DateOnly(2010, 5, 17));
         dossier.Folders.Should().HaveCount(6);
         dossier.Memberships.Should().BeNull();
         dossier.Offices.Should().BeNull();
@@ -175,4 +186,41 @@ public class GetMemberDossierHandlerTests
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("MemberKeyRequired");
     }
+
+    [Fact]
+    public async Task ThePublicCode_ShouldBeToldOnlyToItsOwner()
+    {
+        var owners = await Handler(FieldAccess.SeesNothing(OwnerUserKey))
+            .Handle(new GetMemberDossierQuery(MemberKey, []), CancellationToken.None);
+
+        owners.Data!.Profile.PublicId.Should().Be("PL-ABCDE-12345");
+        owners.Data.Profile.DateOfBirth.Should().Be(new DateOnly(2010, 5, 17));
+    }
+
+    [Fact]
+    public async Task TheDateOfBirth_ShouldFollowTheMask_ByWhereTheyStandInTheViewersKurin()
+    {
+        _memberships
+            .Setup(d => d.GetForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([
+                new MembershipRecord(Guid.NewGuid(), KurinKey, 42, KurinBranch.UPYu, null,
+                    GroupKey, "Гурток", MembershipKind.Youth, DateTime.UtcNow.AddYears(-1), null)
+            ]);
+        MemberFieldMask MaskOver(params Guid[] groups) => new(
+            Guid.NewGuid(),
+            new Dictionary<MemberDataGroup, CapabilityReach> { [MemberDataGroup.BirthDate] = CapabilityReach.OwnGroup },
+            groups);
+
+        var inTheirGroup = await Handler(FieldAccess.Of(MaskOver(GroupKey)))
+            .Handle(new GetMemberDossierQuery(MemberKey, []), CancellationToken.None);
+        var elsewhere = await Handler(FieldAccess.Of(MaskOver(Guid.NewGuid())))
+            .Handle(new GetMemberDossierQuery(MemberKey, []), CancellationToken.None);
+
+        inTheirGroup.Data!.Profile.DateOfBirth.Should().Be(new DateOnly(2010, 5, 17));
+        elsewhere.Data!.Profile.DateOfBirth.Should().BeNull();
+        elsewhere.Data.Profile.PublicId.Should().BeNull();
+    }
+
+    private GetMemberDossierQueryHandler Handler(IMemberFieldAccess fieldAccess) => new(
+        _uow.Object, _memberships.Object, _progress.Object, _mapper.Object, fieldAccess, _currentUser.Object);
 }

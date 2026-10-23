@@ -46,6 +46,9 @@ public class MemberProfileVerificationHandlerTests
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _eventsMock = new Mock<IDomainEventPublisher>();
         _mapperMock = new Mock<IMapper>();
+        _mapperMock
+            .Setup(x => x.Map<MemberResponse>(It.IsAny<object>()))
+            .Returns(() => new MemberResponse());
         _scopeReaderMock = new Mock<IResourceScopeReader>();
         _scopeReaderMock
             .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -62,7 +65,8 @@ public class MemberProfileVerificationHandlerTests
             _eventsMock.Object,
             _mapperMock.Object,
             _scopeReaderMock.Object,
-            _kurinDataMock.Object);
+            _kurinDataMock.Object,
+            FieldAccess.SeesEverything());
     }
 
     [Fact]

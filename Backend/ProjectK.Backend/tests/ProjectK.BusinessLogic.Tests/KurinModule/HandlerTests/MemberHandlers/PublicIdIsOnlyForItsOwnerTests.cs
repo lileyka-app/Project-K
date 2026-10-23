@@ -7,6 +7,8 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using Xunit;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
@@ -40,6 +42,7 @@ public class PublicIdIsOnlyForItsOwnerTests
             {
                 MemberKey = _memberKey,
                 PublicId = Code,
+                UserKey = _ownerUserKey,
                 FirstName = "Оксана",
                 MiddleName = string.Empty,
                 LastName = "Тестова",
@@ -95,11 +98,19 @@ public class PublicIdIsOnlyForItsOwnerTests
         result.Data!.PublicId.Should().BeNull();
     }
 
-    private GetMemberByKeyQueryHandler Handler() => new(
-        _memberData.Object,
-        _mapper.Object,
-        _currentUser.Object,
-        new Mock<IResourceScopeReader>().Object,
-        _kurinData.Object,
-        new Mock<ProjectK.Common.Interfaces.Modules.AuthModule.IAccountProvisioningService>().Object);
+    private GetMemberByKeyQueryHandler Handler()
+    {
+        var access = new Mock<IResourceAccessService>();
+        access
+            .Setup(a => a.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
+        return new(
+            _memberData.Object,
+            _mapper.Object,
+            _currentUser.Object,
+            FieldAccess.SeesEverything(_currentUser.Object.UserId),
+            access.Object,
+            _kurinData.Object,
+            new Mock<ProjectK.Common.Interfaces.Modules.AuthModule.IAccountProvisioningService>().Object);
+    }
 }

@@ -31,7 +31,7 @@ import { formatPhone } from '../../core/phone';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
-import { dateLabel } from '../../me/labels';
+import { dateLabel, dayMonthLabel } from '../../me/labels';
 import { AwardSheet } from './award.sheet';
 import {
   AwardGroup,
@@ -44,6 +44,7 @@ import {
   awardGroups,
   awardTitle,
   awardWeight,
+  bornOn,
   currentOffices,
   dateOnly,
   duesAmountLabel,
@@ -73,6 +74,7 @@ import {
   CardFields,
   GroupDto,
   MemberAwardDto,
+  MemberDataGroup,
   MemberDto,
   MemberDuesDto,
   MembershipDto,
@@ -93,6 +95,9 @@ interface Skills {
 }
 
 const STANDING: Record<string, string | null> = { Current: null, Moved: 'переведений', Left: 'вибув' };
+
+/** What a field the kurin hides from this viewer says instead of its value. */
+const HIDDEN_TEXT = 'Приховано';
 
 /**
  * A member card (web member-card): profile and contacts, skills, probes and awards (youth only),
@@ -293,10 +298,10 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
             <ion-list [inset]="true" data-testid="contacts">
               <ion-item-group>
                 <ion-item [href]="emailHref(m.email)" [detail]="false">
-                  <ion-label><h3>Email</h3><p>{{ m.email || 'Не вказано' }}</p></ion-label>
+                  <ion-label><h3>Email</h3><p>{{ m.email || emptyText('contacts') }}</p></ion-label>
                 </ion-item>
                 <ion-item [href]="phoneHref(m.phoneNumber)" [detail]="false">
-                  <ion-label><h3>Телефон</h3><p>{{ formatPhone(m.phoneNumber) || 'Не вказано' }}</p></ion-label>
+                  <ion-label><h3>Телефон</h3><p>{{ formatPhone(m.phoneNumber) || emptyText('contacts') }}</p></ion-label>
                 </ion-item>
                 <ion-item>
                   <ion-label><h3>Дата народження</h3><p>{{ birthDate() }}</p></ion-label>
@@ -590,14 +595,26 @@ export class MemberPage implements OnInit {
     return (m && plastLevelLabel(m)) || 'Ступінь не вказано';
   });
   protected readonly warning = computed(() => activeWarning(this.memberValue()?.warnings));
-  /** Address and school when known and the край keeps them on the card. */
+  /** Whether the server hid this group of the person's data from whoever is looking. */
+  protected hides(group: MemberDataGroup): boolean {
+    return this.memberValue()?.hiddenData?.includes(group) ?? false;
+  }
+
+  /** What an empty field says: «Приховано» when the kurin hides it, else «Не вказано». */
+  protected emptyText(group: MemberDataGroup): string {
+    return this.hides(group) ? HIDDEN_TEXT : 'Не вказано';
+  }
+
+  /** Address and school when known (or hidden) and the край keeps them on the card. */
   protected readonly privateRows = computed(() => {
     const card = this.cardFields() ?? DEFAULT_CARD_FIELDS;
     const m = this.memberValue();
+    const addressHidden = this.hides('address');
     const rows = ([['address', 'Адреса'], ['school', 'Школа']] as const)
-      .filter(([key]) => card.fields[key] !== 'hidden' && !!m?.[key])
-      .map(([key, label]) => ({ key: key as string, label, value: m![key]! }));
+      .filter(([key]) => card.fields[key] !== 'hidden' && (!!m?.[key] || addressHidden))
+      .map(([key, label]) => ({ key: key as string, label, value: m?.[key] || HIDDEN_TEXT }));
     if (!m || card.fields.parents === 'hidden') return rows;
+    if (this.hides('parents')) return [...rows, { key: 'parents', label: 'Контакти батьків', value: HIDDEN_TEXT }];
     const parents = [
       { key: 'mother', label: 'Мама', first: m.motherFirstName, last: m.motherLastName, phone: m.motherPhone },
       { key: 'father', label: 'Тато', first: m.fatherFirstName, last: m.fatherLastName, phone: m.fatherPhone },
@@ -608,9 +625,14 @@ export class MemberPage implements OnInit {
   });
   /** The край's own fields that have a value on this card. */
   protected readonly extraRows = computed(() => cardExtraRows(this.cardFields() ?? DEFAULT_CARD_FIELDS, this.memberValue()?.cardExtras));
+  /** The full date; without the year when only the birthday is shown; else why there is none. */
   protected readonly birthDate = computed(() => {
-    const born = dateOnly(this.memberValue()?.dateOfBirth);
-    return born ? dateLabel(born) : 'Не вказано';
+    const m = this.memberValue();
+    const born = dateOnly(m?.dateOfBirth);
+    if (born) return dateLabel(born);
+    const day = m?.birthday ? bornOn(m) : null;
+    if (day) return dayMonthLabel(new Date(2000, day.month, day.day));
+    return this.emptyText('birthDate');
   });
   private readonly skillViews = computed(() => {
     const s = valueOf(this.skills());

@@ -14,6 +14,8 @@ export interface MemberLookupDto {
     latestPlastLevelDisplay?: string | null;
     phoneNumber?: string | null;
     dateOfBirth?: string | Date | null;
+    /** День і місяць народження як `MM-DD`, коли рік приховано. */
+    birthday?: string | null;
     profileVerificationStatus?: MemberProfileVerificationStatus;
     profileVerifiedAtUtc?: string | Date | null;
     profileVerifiedByUserKey?: string | null;

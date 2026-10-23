@@ -8,11 +8,15 @@ using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
 using Xunit;
 
@@ -28,6 +32,8 @@ public class GetMemberByKeyHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+    private readonly Mock<IResourceAccessService> _accessMock = new();
+    private readonly Mock<IAccountProvisioningService> _accountsMock = new();
     private readonly GetMemberByKeyQueryHandler _handler;
 
     public GetMemberByKeyHandlerTests()
@@ -48,7 +54,10 @@ public class GetMemberByKeyHandlerTests
         _membershipsMock
             .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        _handler = new GetMemberByKeyQueryHandler(_uowMock.Object, _mapperMock.Object, _currentUserContextMock.Object, new Mock<IResourceScopeReader>().Object, _kurinDataMock.Object, new Mock<ProjectK.Common.Interfaces.Modules.AuthModule.IAccountProvisioningService>().Object);
+        _accessMock
+            .Setup(a => a.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("test"));
+        _handler = Handler(FieldAccess.SeesEverything());
     }
 
     [Fact]
@@ -174,4 +183,99 @@ public class GetMemberByKeyHandlerTests
         _memberRepoMock.Verify(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()), Times.Once);
         _mapperMock.VerifyNoOtherCalls();
     }
+
+    [Fact]
+    public async Task Handle_ShouldHideWhatThePolicyDoesNotShow_AndSayWhat()
+    {
+        var (memberKey, groupKey, member) = ArrangeCardOfSomeoneElse();
+        var mask = new MemberFieldMask(
+            Guid.NewGuid(),
+            new Dictionary<MemberDataGroup, CapabilityReach>
+            {
+                [MemberDataGroup.Contacts] = CapabilityReach.OwnGroup,
+                [MemberDataGroup.Birthday] = CapabilityReach.Kurin
+            },
+            [groupKey]);
+
+        var result = await Handler(FieldAccess.Of(mask)).Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
+
+        var card = result.Data!;
+        card.Email.Should().Be(member.Email);
+        card.DateOfBirth.Should().BeNull();
+        card.Birthday.Should().Be("05-17");
+        card.Address.Should().BeNull();
+        card.MotherPhone.Should().BeNull();
+        card.CardExtras.Should().BeEmpty();
+        card.PublicId.Should().BeNull();
+        card.HiddenData.Should().Equal("birthDate", "address", "parents", "extras");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldTellTheAccountStatus_OnlyToWhoeverMayEditThem()
+    {
+        var (memberKey, _, member) = ArrangeCardOfSomeoneElse();
+        var account = member.UserKey!.Value;
+        _accountsMock
+            .Setup(a => a.FindAsync(account, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountSnapshot(account, member.Email, OnboardingStatus.PendingActivation));
+
+        var denied = await _handler.Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
+        _accessMock
+            .Setup(a => a.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
+        var allowed = await _handler.Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
+
+        denied.Data!.AccountStatus.Should().BeNull();
+        allowed.Data!.AccountStatus.Should().Be(OnboardingStatus.PendingActivation);
+    }
+
+    private (Guid MemberKey, Guid GroupKey, Member Member) ArrangeCardOfSomeoneElse()
+    {
+        var memberKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var member = new Member
+        {
+            MemberKey = memberKey,
+            UserKey = Guid.NewGuid(),
+            FirstName = "Ivan",
+            MiddleName = "",
+            LastName = "P",
+            Email = "i@e.com",
+            PhoneNumber = "+380501234567",
+            DateOfBirth = new DateOnly(2010, 5, 17)
+        };
+
+        _membershipsMock
+            .Setup(m => m.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = memberKey, KurinKey = Guid.NewGuid(), GroupKey = groupKey, JoinedAtUtc = DateTime.UtcNow }]);
+        _memberRepoMock.Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
+        _mentorRepoMock
+            .Setup(r => r.GetActiveGroupsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _mapperMock.Setup(m => m.Map<MemberResponse>(member)).Returns(() => new MemberResponse
+        {
+            MemberKey = memberKey,
+            UserKey = member.UserKey,
+            PublicId = "PL-1",
+            FirstName = member.FirstName,
+            MiddleName = "",
+            LastName = member.LastName,
+            Email = member.Email,
+            PhoneNumber = member.PhoneNumber,
+            DateOfBirth = member.DateOfBirth,
+            Address = "Street 1",
+            MotherPhone = "+380501112233",
+            CardExtras = new Dictionary<string, string> { ["visa"] = "D" }
+        });
+        return (memberKey, groupKey, member);
+    }
+
+    private GetMemberByKeyQueryHandler Handler(IMemberFieldAccess fieldAccess) => new(
+        _uowMock.Object,
+        _mapperMock.Object,
+        _currentUserContextMock.Object,
+        fieldAccess,
+        _accessMock.Object,
+        _kurinDataMock.Object,
+        _accountsMock.Object);
 }

@@ -59,7 +59,7 @@
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Email: </span>
                             <span class="member-summary-value">
-                                @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else { Не вказано }
+                                @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else if (hides('contacts')) { Приховано } @else { Не вказано }
                             </span>
                         </p>
 
@@ -67,7 +67,7 @@
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Телефон: </span>
                             <span class="member-summary-value">
-                                @if (phoneLink; as href) { <a [href]="href">{{ phoneText }}</a> } @else { {{ phoneText || 'Не вказано' }} }
+                                @if (phoneLink; as href) { <a [href]="href">{{ phoneText }}</a> } @else { {{ phoneText || (hides('contacts') ? 'Приховано' : 'Не вказано') }} }
                             </span>
                         </p>
                         }
@@ -75,19 +75,28 @@
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Дата народження: </span>
                             <span class="member-summary-value">
-                                {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Не вказано' }}
+                                @if (member.dateOfBirth) { {{ member.dateOfBirth | date:'dd.MM.yyyy' }} }
+                                @else if (birthdayText; as text) { {{ text }} }
+                                @else if (hides('birthDate')) { Приховано }
+                                @else { Не вказано }
                             </span>
                         </p>
-                        @if (showsField('address') && member.address) {
+                        @if (showsField('address') && (member.address || hides('address'))) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Адреса: </span>
-                            <span class="member-summary-value">{{ member.address }}</span>
+                            <span class="member-summary-value">{{ member.address || 'Приховано' }}</span>
                         </p>
                         }
-                        @if (showsField('school') && member.school) {
+                        @if (showsField('school') && (member.school || hides('address'))) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Школа: </span>
-                            <span class="member-summary-value">{{ member.school }}</span>
+                            <span class="member-summary-value">{{ member.school || 'Приховано' }}</span>
+                        </p>
+                        }
+                        @if (showsField('parents') && hides('parents')) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">Контакти батьків: </span>
+                            <span class="member-summary-value">Приховано</span>
                         </p>
                         }
                         @for (parent of parentLines; track parent.label) {

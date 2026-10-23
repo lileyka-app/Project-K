@@ -274,8 +274,7 @@ public class MemberRepositoryIntegrationTests
             });
         await context.SaveChangesAsync();
 
-        var visibility = new MemberFieldVisibility(CanSeeAllPrivate: true, CurrentUserId: null, VisibleGroupKeys: Array.Empty<Guid>());
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var item = Assert.Single(items);
         var activeLeadership = Assert.Single(item.LeadershipHistories);
@@ -288,7 +287,7 @@ public class MemberRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task GetListItemsByKurinKeyAsync_ShouldMaskPrivateFields_ByVisibility()
+    public async Task GetListItemsByKurinKeyAsync_ShouldReadPrivateFieldsAsStored_LeavingTheMaskToTheQuery()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -321,22 +320,16 @@ public class MemberRepositoryIntegrationTests
         Placed(uow, hidden, kurin.KurinKey, hiddenGroup.GroupKey);
         await uow.SaveChangesAsync();
 
-        // Caller is a mentor: not admin/manager, owns `owner`'s account, assigned to visibleGroup only.
-        var visibility = new MemberFieldVisibility(
-            CanSeeAllPrivate: false,
-            CurrentUserId: ownerUserKey,
-            VisibleGroupKeys: new[] { visibleGroup.GroupKey });
-
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var ownerItem = items.Single(i => i.MemberKey == owner.MemberKey);
         var visibleItem = items.Single(i => i.MemberKey == inVisibleGroup.MemberKey);
         var hiddenItem = items.Single(i => i.MemberKey == hidden.MemberKey);
 
-        Assert.Equal("Owner St", ownerItem.Address);           // own record
-        Assert.Equal("Visible St", visibleItem.Address);       // assigned group
-        Assert.Null(hiddenItem.Address);                       // masked
-        Assert.Null(hiddenItem.School);
+        Assert.Equal("Owner St", ownerItem.Address);
+        Assert.Equal("Visible St", visibleItem.Address);
+        Assert.Equal("Hidden St", hiddenItem.Address);
+        Assert.Equal("Hidden School", hiddenItem.School);
     }
 
     /// <summary>
@@ -419,8 +412,7 @@ public class MemberRepositoryIntegrationTests
             });
         await context.SaveChangesAsync();
 
-        var visibility = new MemberFieldVisibility(CanSeeAllPrivate: true, CurrentUserId: null, VisibleGroupKeys: Array.Empty<Guid>());
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var plainItem = items.Single(item => item.MemberKey == youth.MemberKey);
         var hurtkovyiItem = items.Single(item => item.MemberKey == hurtkovyi.MemberKey);
@@ -505,8 +497,7 @@ public class MemberRepositoryIntegrationTests
             Held(elsewhereMentor, foreignKvOffice, LeadershipRole.Vykhovnyk));
         await context.SaveChangesAsync();
 
-        var visibility = new MemberFieldVisibility(CanSeeAllPrivate: true, CurrentUserId: null, VisibleGroupKeys: Array.Empty<Guid>());
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey, visibility)).ToList();
+        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var offices = context.Set<Leadership>().ToDictionary(office => office.LeadershipKey);
         var expected = context.Set<LeadershipHistory>()

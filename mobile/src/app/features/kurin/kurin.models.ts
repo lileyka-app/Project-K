@@ -64,6 +64,9 @@ export interface LeadershipDto {
   leadershipHistories: LeadershipHistoryDto[];
 }
 
+/** A group of a person's data the kurin shows or hides as one; the names `hiddenData` carries. */
+export type MemberDataGroup = 'contacts' | 'birthDate' | 'birthday' | 'address' | 'parents' | 'extras';
+
 /** A row of a member list (`member/kurins/{k}/members`, `member/groups/{g}/members`, `members/kv/{k}`). */
 export interface MemberLookupDto {
   memberKey: string;
@@ -76,6 +79,10 @@ export interface MemberLookupDto {
   latestPlastLevel?: string | null;
   phoneNumber?: string | null;
   dateOfBirth?: string | null;
+  /** Day and month of birth as «MM-DD», sent when the kurin shows the birthday. */
+  birthday?: string | null;
+  /** The groups of data the server hid from this viewer: shown as «Приховано», not «Не вказано». */
+  hiddenData?: MemberDataGroup[];
   profileVerificationStatus?: ProfileVerificationStatus | null;
   leadershipHistories?: LeadershipHistoryDto[];
   mentoredGroupNames?: string[];
