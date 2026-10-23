@@ -5,6 +5,11 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { firstValueFrom } from 'rxjs';
 import { DemoApiInterceptor, DemoFixtureFile } from './demo-api.interceptor';
 
+interface JournalPage {
+  items: { key: string }[];
+  hasMore: boolean;
+}
+
 /** The fixture files the interceptor would fetch, served from memory. */
 function fakeFetch(files: Record<string, DemoFixtureFile>) {
   return (input: string | URL | Request) => {
@@ -93,8 +98,7 @@ describe('DemoApiInterceptor', () => {
 
   it('answers any filter and page of the journal from the recorded pages', async () => {
     await firstValueFrom(http.post('https://demo.invalid/api/demo/login', { seat: 'Youth' }));
-    type Page = { items: { key: string }[]; hasMore: boolean };
-    const page = (query: string) => firstValueFrom(http.get<Page>(`https://demo.invalid/api/kurin/k1/journal?${query}`));
+    const page = (query: string) => firstValueFrom(http.get<JournalPage>(`https://demo.invalid/api/kurin/k1/journal?${query}`));
 
     const probes = await page('area=Probe&skip=0&take=20');
     expect(probes.items.map(i => i.key)).toEqual(['j2', 'j1']);
