@@ -259,11 +259,22 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
   ] as const;
 
   /**
-   * Whether the kurin hides this group of the person's data from whoever edits. Its fields stay
-   * disabled and are not sent: the server keeps what it has, and blanks would not wipe it anyway.
+   * Whether the kurin hides this group of the person's data from whoever edits. Its fields are not
+   * shown and not sent: the server keeps what it has, and blanks would not wipe it anyway.
    */
   hides(group: MemberDataGroup): boolean {
     return !this.isCreate && (this.member.hiddenData?.includes(group) ?? false);
+  }
+
+  /** Whether the form shows the email: the editor may change it and may see the person's contacts. */
+  editsEmail(): boolean {
+    return this.canEditEmail() && !this.hides('contacts');
+  }
+
+  /** Whether the form shows this card field: the kurin keeps it and the editor may see it. */
+  shows(field: StandardCardField): boolean {
+    const group = CARD_FIELD_GROUP[field];
+    return this.fieldMode(field) !== 'hidden' && !(group && this.hides(group));
   }
 
   private privateFieldValue(field: PrivateField): string | undefined {
@@ -661,6 +672,15 @@ type ParentField = 'motherFirstName' | 'motherLastName' | 'motherPhone' | 'fathe
 type PrivateField = 'address' | 'school' | ParentField;
 
 const PARENT_FIELDS: PrivateField[] = ['motherFirstName', 'motherLastName', 'motherPhone', 'fatherFirstName', 'fatherLastName', 'fatherPhone'];
+
+/** Which group of a person's data each card field belongs to; the middle name is in none. */
+const CARD_FIELD_GROUP: Record<StandardCardField, MemberDataGroup | null> = {
+  middleName: null,
+  phoneNumber: 'contacts',
+  address: 'address',
+  school: 'address',
+  parents: 'parents'
+};
 
 interface LevelGroup {
   key: LevelGroupKey;

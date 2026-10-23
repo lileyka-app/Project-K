@@ -44,7 +44,7 @@ export interface MemberDto {
     birthday?: string | null;
     /**
      * Групи даних, які сервер приховав від того, хто дивиться: `contacts`, `birthDate`, `birthday`,
-     * `address`, `parents`, `extras`. Поле такої групи показують як «Приховано», а не «Не вказано».
+     * `address`, `parents`, `extras`. Поля такої групи картка й форма не показують узагалі.
      */
     hiddenData?: MemberDataGroup[];
     address?: string | null;

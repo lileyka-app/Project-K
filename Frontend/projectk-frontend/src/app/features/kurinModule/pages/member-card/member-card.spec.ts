@@ -336,7 +336,7 @@ describe('MemberCardComponent', () => {
     expect(text).not.toContain('По батькові не вказано');
   });
 
-  it('should say «Приховано» for what the kurin hides, and give the birthday without the year', () => {
+  it('should leave out what the kurin hides, and give the birthday without the year', () => {
     memberServiceSpy.getByKey.mockReturnValue(of({
       ...member,
       email: '',
@@ -351,12 +351,23 @@ describe('MemberCardComponent', () => {
     fixture.detectChanges();
 
     const text = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
-    expect(text).toContain('Email: Приховано');
-    expect(text).toContain('Телефон: Приховано');
+    expect(text).not.toContain('Email:');
+    expect(text).not.toContain('Телефон:');
     expect(text).toContain('Дата народження: 17.05');
-    expect(text).toContain('Адреса: Приховано');
-    expect(text).toContain('Контакти батьків: Приховано');
+    expect(text).not.toContain('Адреса:');
+    expect(text).not.toContain('Мама:');
     expect(text).not.toContain('Не вказано');
+  });
+
+  it('should leave out the birth date when the kurin hides even the birthday', () => {
+    memberServiceSpy.getByKey.mockReturnValue(of({
+      ...member, dateOfBirth: null, birthday: null, hiddenData: ['birthDate', 'birthday']
+    } as MemberDto));
+    createComponent();
+    fixture.detectChanges();
+
+    const text = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+    expect(text).not.toContain('Дата народження:');
   });
 
   it('should still say «Не вказано» for what is simply empty', () => {
@@ -366,7 +377,6 @@ describe('MemberCardComponent', () => {
 
     const text = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
     expect(text).toContain('Email: Не вказано');
-    expect(text).not.toContain('Приховано');
   });
 
   it('should display profile verification timestamp without timezone as local time from UTC', () => {

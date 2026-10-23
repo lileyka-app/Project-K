@@ -92,8 +92,6 @@ interface Row extends Omit<FormField, 'key'> {
   testId: string;
   /** Only the birth date stops at today; a край's date may be ahead (a visa's end). */
   max?: string;
-  /** The kurin hides it from whoever edits: disabled, read as «Приховано», and not sent. */
-  hidden: boolean;
 }
 
 const FIELDS: FormField[] = [
@@ -253,8 +251,6 @@ export type ProfileEditResult = 'saved' | 'changed' | 'deleted' | { created: str
                     [attr.aria-label]="row.label"
                     [autocomplete]="$any(row.autocomplete)"
                     [max]="row.max"
-                    [disabled]="row.hidden"
-                    [placeholder]="row.hidden ? 'Приховано' : undefined"
                     [value]="rowValue(row)"
                     (ionInput)="setRow(row, $any($event).detail.value)"
                   />
@@ -444,23 +440,21 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   protected readonly canWarnings = signal(false);
   protected readonly canDelete = signal(false);
 
-  /** The form's fields this sheet asks (a hidden one goes back as it was read), then the край's own. */
+  /** The form's fields this sheet asks, then the край's own; a group the kurin hides from the editor is not shown at all. */
   protected readonly rows = computed<Row[]>(() => [
-    ...FIELDS.filter((f) => (f.key !== 'email' || this.showEmail()) && fieldMode(this.card(), f.key) !== 'hidden').map((f) => ({
+    ...FIELDS.filter((f) => (f.key !== 'email' || this.showEmail()) && fieldMode(this.card(), f.key) !== 'hidden' && !this.hides(hiddenGroupOf(f.key))).map((f) => ({
       ...f,
       extra: false,
       testId: `profile-${f.key}`,
       max: f.type === 'date' ? this.today : undefined,
-      hidden: this.hides(hiddenGroupOf(f.key)),
     })),
-    ...this.card().extra.map((f) => ({
+    ...(this.hides('extras') ? [] : this.card().extra).map((f) => ({
       key: f.key,
       label: f.label,
       type: f.type,
       autocomplete: 'off',
       extra: true,
       testId: `profile-extra-${f.key}`,
-      hidden: this.hides('extras'),
     })),
   ]);
   protected readonly shownRanks = computed(() => RANK_FIELDS.filter((f) => f.branch === 'base' || this.open()[f.branch]));
@@ -537,7 +531,6 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   }
 
   protected rowValid(row: Row): boolean {
-    if (row.hidden) return true;
     if (!row.extra) return this.fieldValid(row.key as Field);
     const field = this.card().extra.find((f) => f.key === row.key);
     return !field || cardExtraValid(field, this.extras()[row.key]);

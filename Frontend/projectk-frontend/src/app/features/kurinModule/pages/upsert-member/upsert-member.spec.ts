@@ -236,7 +236,7 @@ describe('UpsertMemberComponent', () => {
       expect(dtoArg.kurinKey).toBeUndefined();
     });
 
-    it('не надсилає й не дає правити те, що курінь приховує від того, хто редагує', async () => {
+    it('не показує й не надсилає те, що курінь приховує від того, хто редагує', async () => {
       memberServiceSpy.getByKey.mockReturnValue(of({
         ...loadedMember,
         email: '',
@@ -250,9 +250,10 @@ describe('UpsertMemberComponent', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      const address = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#address');
-      expect(address?.disabled).toBe(true);
-      expect(address?.placeholder).toBe('Приховано');
+      const page = fixture.nativeElement as HTMLElement;
+      for (const id of ['#email', '#phoneNumber', '#dateOfBirth', '#address', '#school', '#motherPhone']) {
+        expect(page.querySelector(id), `${id} should not be rendered`).toBeNull();
+      }
 
       component.submit();
 

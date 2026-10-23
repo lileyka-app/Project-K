@@ -56,47 +56,44 @@
                     }
 
                     <div class="member-summary mt-3 grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
+                        @if (!hides('contacts')) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Email: </span>
                             <span class="member-summary-value">
-                                @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else if (hides('contacts')) { Приховано } @else { Не вказано }
-                            </span>
-                        </p>
-
-                        @if (showsField('phoneNumber')) {
-                        <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Телефон: </span>
-                            <span class="member-summary-value">
-                                @if (phoneLink; as href) { <a [href]="href">{{ phoneText }}</a> } @else { {{ phoneText || (hides('contacts') ? 'Приховано' : 'Не вказано') }} }
+                                @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else { Не вказано }
                             </span>
                         </p>
                         }
 
+                        @if (showsField('phoneNumber') && !hides('contacts')) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">Телефон: </span>
+                            <span class="member-summary-value">
+                                @if (phoneLink; as href) { <a [href]="href">{{ phoneText }}</a> } @else { {{ phoneText || 'Не вказано' }} }
+                            </span>
+                        </p>
+                        }
+
+                        @if (member.dateOfBirth || birthdayText || !hides('birthDate')) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Дата народження: </span>
                             <span class="member-summary-value">
                                 @if (member.dateOfBirth) { {{ member.dateOfBirth | date:'dd.MM.yyyy' }} }
                                 @else if (birthdayText; as text) { {{ text }} }
-                                @else if (hides('birthDate')) { Приховано }
                                 @else { Не вказано }
                             </span>
                         </p>
-                        @if (showsField('address') && (member.address || hides('address'))) {
+                        }
+                        @if (showsField('address') && member.address) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Адреса: </span>
-                            <span class="member-summary-value">{{ member.address || 'Приховано' }}</span>
+                            <span class="member-summary-value">{{ member.address }}</span>
                         </p>
                         }
-                        @if (showsField('school') && (member.school || hides('address'))) {
+                        @if (showsField('school') && member.school) {
                         <p class="member-summary-line text-sm">
                             <span class="member-summary-label">Школа: </span>
-                            <span class="member-summary-value">{{ member.school || 'Приховано' }}</span>
-                        </p>
-                        }
-                        @if (showsField('parents') && hides('parents')) {
-                        <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Контакти батьків: </span>
-                            <span class="member-summary-value">Приховано</span>
+                            <span class="member-summary-value">{{ member.school }}</span>
                         </p>
                         }
                         @for (parent of parentLines; track parent.label) {

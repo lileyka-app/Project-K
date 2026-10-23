@@ -335,7 +335,7 @@ export function hiddenGroupOf(key: string): MemberDataGroup | null {
 
 /**
  * The multipart body of `PUT member/{key}`. A group of data the kurin hides from the writer is left
- * out: the form showed it as «Приховано», and the server keeps what it has.
+ * out: the form does not show it, and the server keeps what it has.
  */
 export function memberFormData(
   member: MemberDto,

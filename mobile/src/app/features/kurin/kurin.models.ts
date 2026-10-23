@@ -81,7 +81,7 @@ export interface MemberLookupDto {
   dateOfBirth?: string | null;
   /** Day and month of birth as «MM-DD», sent when the kurin shows the birthday. */
   birthday?: string | null;
-  /** The groups of data the server hid from this viewer: shown as «Приховано», not «Не вказано». */
+  /** The groups of data the server hid from this viewer; their fields are not shown at all. */
   hiddenData?: MemberDataGroup[];
   profileVerificationStatus?: ProfileVerificationStatus | null;
   leadershipHistories?: LeadershipHistoryDto[];
