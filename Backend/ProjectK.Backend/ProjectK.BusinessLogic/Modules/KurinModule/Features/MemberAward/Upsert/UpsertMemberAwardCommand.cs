@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -34,19 +34,22 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
     private readonly IMembershipRepository _memberships;
+    private readonly IResourceAccessService _access;
 
     public UpsertMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IMapper mapper,
-        IUnitOfWork kurinData)
+        IUnitOfWork kurinData,
+        IResourceAccessService access)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
         _mapper = mapper;
         _memberships = kurinData.Memberships;
+        _access = access;
     }
 
     public async Task<ServiceResult<MemberAwardDto>> Handle(UpsertMemberAwardCommand request, CancellationToken cancellationToken)
@@ -73,12 +76,13 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         {
             // An edit sends the award back for review, so editing a confirmed one un-confirms it:
             // the same bar as removing it.
-            if (existingAward.Status == BadgeProgressStatus.Confirmed && !_currentUserContext.CanLeadGroups())
+            if (existingAward.Status == BadgeProgressStatus.Confirmed
+                && !(await _access.CheckCapabilityAsync(KurinCapability.RemoveAward, ResourceType.Member, request.MemberKey, cancellationToken)).IsAllowed)
             {
                 return ServiceResult<MemberAwardDto>.Failure(
                     ResultType.Forbidden,
-                    "ConfirmedAwardEditRequiresLeadership",
-                    "Only leadership may change a confirmed award.");
+                    "ConfirmedAwardEditNotAllowed",
+                    "Only those the kurin lets remove awards may change a confirmed award.");
             }
 
             existingAward.Level = request.Level;

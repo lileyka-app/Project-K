@@ -1,7 +1,9 @@
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -9,22 +11,28 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 /// <summary>
 /// The single authorization decision point. It answers two orthogonal questions: <b>what</b> the
-/// user may do (their <see cref="Permission"/> set, resolved from roles via <see cref="RolePermissionMap"/>)
-/// and <b>where</b> it applies (the <see cref="AccessScope"/> of the widest matching permission,
-/// checked against the resource's kurin/group/owner). Role names are never inspected here beyond the
-/// system-admin bypass.
+/// user may do (their <see cref="Permission"/> set, resolved from roles and the kurin's policy by
+/// <see cref="ICurrentPermissions"/>) and <b>where</b> it applies (the <see cref="AccessScope"/> of
+/// the widest matching permission, checked against the resource's kurin/group/owner). Role names
+/// are never inspected here beyond the system-admin bypass.
 /// </summary>
 public class ResourceAccessService : IResourceAccessService
 {
     private readonly IResourceScopeReader _scopeReader;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IBackendCache _cache;
+    private readonly ICurrentPermissions _permissions;
 
-    public ResourceAccessService(IResourceScopeReader scopeReader, ICurrentUserContext currentUserContext, IBackendCache cache)
+    public ResourceAccessService(
+        IResourceScopeReader scopeReader,
+        ICurrentUserContext currentUserContext,
+        IBackendCache cache,
+        ICurrentPermissions permissions)
     {
         _scopeReader = scopeReader;
         _currentUserContext = currentUserContext;
         _cache = cache;
+        _permissions = permissions;
     }
 
     public Task<ResourceAccessDecision> CheckAccessAsync(
@@ -41,6 +49,86 @@ public class ResourceAccessService : IResourceAccessService
         Guid scopeResourceKey,
         CancellationToken cancellationToken = default)
     {
+        if (Precheck() is { } early)
+        {
+            return early;
+        }
+
+        var grantedScope = await _permissions.WidestScopeAsync(resourceType, action, cancellationToken);
+        if (grantedScope is null)
+        {
+            return ResourceAccessDecision.Deny($"No permission for {action} on {resourceType}.");
+        }
+
+        return await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+    }
+
+    public async Task<ResourceAccessDecision> CheckCapabilityAsync(
+        KurinCapability capability,
+        ResourceType scopeResourceType,
+        Guid scopeResourceKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (Precheck() is { } early)
+        {
+            return early;
+        }
+
+        var grantedScope = (await _permissions.ReachAsync(capability, cancellationToken)).ToScope();
+        if (grantedScope is null)
+        {
+            return ResourceAccessDecision.Deny($"The kurin's policy does not give {capability}.");
+        }
+
+        return await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+    }
+
+    public async Task<IReadOnlySet<KurinCapability>> ReachableCapabilitiesAsync(
+        ResourceType scopeResourceType,
+        Guid scopeResourceKey,
+        CancellationToken cancellationToken = default)
+    {
+        var reachable = new HashSet<KurinCapability>();
+        if (Precheck() is { } early)
+        {
+            if (early.IsAllowed)
+            {
+                reachable.UnionWith(KurinCapabilities.All.Select(descriptor => descriptor.Key));
+            }
+
+            return reachable;
+        }
+
+        if (_currentUserContext.KurinKey is not { } currentKurinKey)
+        {
+            return reachable;
+        }
+
+        var scope = await _scopeReader.GetScopeAsync(scopeResourceType, scopeResourceKey, currentKurinKey, cancellationToken);
+        if (scope is null || scope.KurinKey != currentKurinKey)
+        {
+            return reachable;
+        }
+
+        foreach (var descriptor in KurinCapabilities.All)
+        {
+            var grantedScope = (await _permissions.ReachAsync(descriptor.Key, cancellationToken)).ToScope();
+            if (grantedScope is not null
+                && (await EvaluateScopeAsync(grantedScope.Value, scope, currentKurinKey, cancellationToken)).IsAllowed)
+            {
+                reachable.Add(descriptor.Key);
+            }
+        }
+
+        return reachable;
+    }
+
+    /// <summary>
+    /// The answer reached before any permission is looked at: deny for nobody, allow for an admin
+    /// with no kurin, null to go on.
+    /// </summary>
+    private ResourceAccessDecision? Precheck()
+    {
         if (!_currentUserContext.IsAuthenticated)
         {
             return ResourceAccessDecision.Deny("User is not authenticated.");
@@ -54,13 +142,15 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Allow("Admin bypass: no kurin scope selected.");
         }
 
-        var permissions = RolePermissionMap.Resolve(_currentUserContext.Roles);
-        var grantedScope = RolePermissionMap.WidestScope(permissions, resourceType, action);
-        if (grantedScope is null)
-        {
-            return ResourceAccessDecision.Deny($"No permission for {action} on {resourceType}.");
-        }
+        return null;
+    }
 
+    private async Task<ResourceAccessDecision> CheckScopeAsync(
+        AccessScope grantedScope,
+        ResourceType scopeResourceType,
+        Guid scopeResourceKey,
+        CancellationToken cancellationToken)
+    {
         var currentKurinKey = _currentUserContext.KurinKey;
         if (currentKurinKey is null)
         {
@@ -73,7 +163,7 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny("Resource was not found or has no resolvable scope.");
         }
 
-        var scopeDecision = await EvaluateScopeAsync(grantedScope.Value, scope, currentKurinKey.Value, cancellationToken);
+        var scopeDecision = await EvaluateScopeAsync(grantedScope, scope, currentKurinKey.Value, cancellationToken);
         if (!scopeDecision.IsAllowed)
         {
             return scopeDecision;

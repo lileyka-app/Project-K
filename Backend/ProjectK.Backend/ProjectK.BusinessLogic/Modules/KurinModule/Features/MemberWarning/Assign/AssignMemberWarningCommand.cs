@@ -8,6 +8,7 @@ using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -42,17 +43,20 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
+    private readonly IResourceAccessService _access;
 
     public AssignMemberWarningCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMapper mapper)
+        IMapper mapper,
+        IResourceAccessService access)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
         _mapper = mapper;
+        _access = access;
     }
 
     public async Task<ServiceResult<MemberWarningDto>> Handle(AssignMemberWarningCommand request, CancellationToken cancellationToken)
@@ -71,6 +75,18 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
         if (member is null)
         {
             return new ServiceResult<MemberWarningDto>(ResultType.NotFound);
+        }
+
+        // The permission at the endpoint covers every level; which levels this person may give is
+        // the kurin's policy.
+        var level = await _access.CheckCapabilityAsync(
+            KurinCapabilities.GiveWarning(request.Level), ResourceType.Member, request.MemberKey, cancellationToken);
+        if (!level.IsAllowed)
+        {
+            return ServiceResult<MemberWarningDto>.Failure(
+                ResultType.Forbidden,
+                "WarningLevelNotAllowed",
+                "The kurin's policy does not let you give a warning of this level.");
         }
 
         var now = DateTime.UtcNow;

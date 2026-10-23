@@ -7,6 +7,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Abilities;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
@@ -49,6 +50,21 @@ public class MemberController : ControllerBase
     {
         var request = new GetMemberByKeyQuery(memberKey);
         var response = await _mediator.Send(request);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// What the caller may do to this member under the kurin's policy — which перестороги to give
+    /// and cancel, which відзначення to confirm, whether to sign probes — so the buttons shown are
+    /// the ones the server accepts.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{memberKey:guid}/abilities")]
+    [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
+    [ProducesResponseType(typeof(MemberAbilitiesDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAbilities(Guid memberKey)
+    {
+        var response = await _mediator.Send(new GetMemberAbilitiesQuery(memberKey));
         return response.ToActionResult(this);
     }
 

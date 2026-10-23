@@ -16,12 +16,14 @@ using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Helpers;
+using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -148,17 +150,21 @@ public class MemberAwardRouteMemberHttpIntegrationTests
 
             var mapper = new Mock<IMapper>();
             mapper.Setup(x => x.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
+            var members = new Mock<IMemberDirectory>();
+            members.Setup(x => x.FindAccountKeyAsync(routeMemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(routeMemberUserKey);
 
             builder.Services.AddScoped<IMediator>(services =>
             {
                 var currentUser = services.GetRequiredService<ICurrentUserContext>();
+                var access = services.GetRequiredService<IResourceAccessService>();
                 var review = new ReviewMemberAwardCommandHandler(
                     unitOfWork.Object,
-                    Mock.Of<IMemberDirectory>(),
+                    members.Object,
                     currentUser,
                     Mock.Of<IDomainEventPublisher>(),
-                    mapper.Object);
-                var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser);
+                    mapper.Object,
+                    access);
+                var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser, members.Object, access);
 
                 var mediator = new Mock<IMediator>();
                 mediator
@@ -176,6 +182,8 @@ public class MemberAwardRouteMemberHttpIntegrationTests
             builder.Services.AddSingleton(Mock.Of<IAwardImagesCatalog>());
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
+            builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
+            builder.Services.AddSingleton<IKurinAccessPolicyProvider>(new FixedKurinAccessPolicyProvider());
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
             builder.Services.AddControllers().AddApplicationPart(typeof(MemberAwardsController).Assembly);

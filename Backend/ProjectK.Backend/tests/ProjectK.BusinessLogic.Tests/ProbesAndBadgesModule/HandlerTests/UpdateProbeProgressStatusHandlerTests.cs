@@ -9,6 +9,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -22,6 +23,7 @@ public class UpdateProbeProgressStatusHandlerTests
     private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
     private readonly Mock<IProbesCatalogService> _probesCatalogServiceMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
+    private readonly Mock<IResourceAccessService> _access = new();
     private readonly UpdateProbeProgressStatusCommandHandler _handler;
 
     public UpdateProbeProgressStatusHandlerTests()
@@ -32,6 +34,8 @@ public class UpdateProbeProgressStatusHandlerTests
         _probePointProgressRepositoryMock = new Mock<IProbePointProgressRepository>();
         _probesCatalogServiceMock = new Mock<IProbesCatalogService>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
+        _access.Setup(x => x.CheckCapabilityAsync(It.IsAny<KurinCapability>(), It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
         _unitOfWorkMock.SetupGet(x => x.ProbeProgresses).Returns(_probeProgressRepositoryMock.Object);
         _unitOfWorkMock.SetupGet(x => x.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
@@ -53,7 +57,8 @@ public class UpdateProbeProgressStatusHandlerTests
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
             _currentUserContextMock.Object,
-            _probesCatalogServiceMock.Object);
+            _probesCatalogServiceMock.Object,
+            _access.Object);
     }
 
     [Fact]
@@ -211,5 +216,35 @@ public class UpdateProbeProgressStatusHandlerTests
         Assert.Equal(ResultType.Conflict, result.Type);
         Assert.Equal(ProbeProgressStatus.InProgress, progress.Status);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true, ResultType.Success, ProbeProgressStatus.Completed)]
+    [InlineData(false, ResultType.Forbidden, ProbeProgressStatus.Verified)]
+    public async Task Handle_TakingAProbeBackFromVerified_TakesUnsignProbe(bool mayUnsign, ResultType expected, ProbeProgressStatus after)
+    {
+        var memberKey = Guid.NewGuid();
+        _access.Setup(x => x.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mayUnsign ? ResourceAccessDecision.Allow() : ResourceAccessDecision.Deny("Refused by the test."));
+        _memberDirectoryMock
+            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        var progress = new ProbeProgress
+        {
+            MemberKey = memberKey,
+            ProbeId = "probe-1",
+            Status = ProbeProgressStatus.Verified,
+            VerifiedAtUtc = DateTime.UtcNow
+        };
+        _probeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndProbeIdAsync(memberKey, "probe-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(progress);
+
+        var result = await _handler.Handle(
+            new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.Completed, null),
+            CancellationToken.None);
+
+        Assert.Equal(expected, result.Type);
+        Assert.Equal(after, progress.Status);
     }
 }

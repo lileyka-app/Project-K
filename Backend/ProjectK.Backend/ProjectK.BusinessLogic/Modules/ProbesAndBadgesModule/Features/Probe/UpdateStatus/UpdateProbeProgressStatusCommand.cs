@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -33,17 +34,20 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IProbesCatalogService _probesCatalogService;
+    private readonly IResourceAccessService _access;
 
     public UpdateProbeProgressStatusCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        IProbesCatalogService probesCatalogService)
+        IProbesCatalogService probesCatalogService,
+        IResourceAccessService access)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
         _probesCatalogService = probesCatalogService;
+        _access = access;
     }
 
     public async Task<ServiceResult<ProbeProgressResponse>> Handle(UpdateProbeProgressStatusCommand request, CancellationToken cancellationToken)
@@ -90,6 +94,17 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
             return new ServiceResult<ProbeProgressResponse>(
                 ResultType.Conflict,
                 ProbeProgressResponse.FromEntity(progress, pointSignatures));
+        }
+
+        // Taking a проба back from verified undoes a sign-off, which the kurin may keep from people
+        // it lets sign.
+        if (currentStatus == ProbeProgressStatus.Verified
+            && !(await _access.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, request.MemberKey, cancellationToken)).IsAllowed)
+        {
+            return ServiceResult<ProbeProgressResponse>.Failure(
+                ResultType.Forbidden,
+                "ProbeUnsignNotAllowed",
+                "The kurin's policy does not let you take a probe back from verified.");
         }
 
         if (request.Status == ProbeProgressStatus.Completed

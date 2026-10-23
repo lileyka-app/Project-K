@@ -5,6 +5,7 @@ using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -30,13 +31,20 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IMapper _mapper;
     private readonly TimeProvider _timeProvider;
+    private readonly IResourceAccessService _access;
 
-    public CancelMemberWarningCommandHandler(IMemberUnitOfWork unitOfWork, ICurrentUserContext currentUserContext, IMapper mapper, TimeProvider timeProvider)
+    public CancelMemberWarningCommandHandler(
+        IMemberUnitOfWork unitOfWork,
+        ICurrentUserContext currentUserContext,
+        IMapper mapper,
+        TimeProvider timeProvider,
+        IResourceAccessService access)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _mapper = mapper;
         _timeProvider = timeProvider;
+        _access = access;
     }
 
     public async Task<ServiceResult<MemberWarningDto>> Handle(CancelMemberWarningCommand request, CancellationToken cancellationToken)
@@ -57,7 +65,7 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
             return new ServiceResult<MemberWarningDto>(ResultType.Conflict);
         }
 
-        if (warning.IssuedByUserKey != _currentUserContext.UserId.Value)
+        if (!await MayCancelAsync(warning, _currentUserContext.UserId.Value, cancellationToken))
         {
             return new ServiceResult<MemberWarningDto>(ResultType.Forbidden);
         }
@@ -74,6 +82,26 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
 
         var response = _mapper.Map<MemberWarningDto>(warning);
         return new ServiceResult<MemberWarningDto>(ResultType.Success, response);
+    }
+
+    /// <summary>
+    /// Whoever gave a пересторога may take it back while they could still give it; anyone else
+    /// needs <see cref="KurinCapability.CancelWarning"/>.
+    /// </summary>
+    private async Task<bool> MayCancelAsync(
+        Common.Entities.KurinModule.MemberWarning warning,
+        Guid userKey,
+        CancellationToken cancellationToken)
+    {
+        if (warning.IssuedByUserKey == userKey
+            && (await _access.CheckCapabilityAsync(
+                KurinCapabilities.GiveWarning(warning.Level), ResourceType.Member, warning.MemberKey, cancellationToken)).IsAllowed)
+        {
+            return true;
+        }
+
+        return (await _access.CheckCapabilityAsync(
+            KurinCapability.CancelWarning, ResourceType.Member, warning.MemberKey, cancellationToken)).IsAllowed;
     }
 }
 

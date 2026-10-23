@@ -28,6 +28,16 @@ public class ResourceScopeReader : IResourceScopeReader
             // a Виховник in one kurin an ordinary member in another.
             ResourceType.Member => await MembershipScopeAsync(resourceKey, inKurinKey, cancellationToken),
 
+            // A person's data is keyed by the person and reaches as far as they do.
+            ResourceType.MemberContacts or ResourceType.MemberBirthDate or ResourceType.MemberBirthday
+                or ResourceType.MemberAddress or ResourceType.MemberParents or ResourceType.MemberExtras
+                => await MembershipScopeAsync(resourceKey, inKurinKey, cancellationToken),
+
+            ResourceType.KurinJournal => await _context.Kurins
+                .Where(k => k.KurinKey == resourceKey)
+                .Select(k => new ResourceScope(k.KurinKey, null, null))
+                .FirstOrDefaultAsync(cancellationToken),
+
             ResourceType.Group => await _context.Groups
                 .Where(g => g.GroupKey == resourceKey)
                 .Select(g => new ResourceScope(g.KurinKey, g.GroupKey, null))

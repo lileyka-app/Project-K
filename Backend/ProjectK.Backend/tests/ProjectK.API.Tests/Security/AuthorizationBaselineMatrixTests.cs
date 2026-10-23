@@ -250,7 +250,7 @@ public class AuthorizationBaselineMatrixTests
 
         yield return Row<Action<MemberProgressController, Guid>>(nameof(MemberProgressController.GetBadgeProgresses), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, SubmitBadgeProgressRequest>>(nameof(MemberProgressController.SubmitBadgeProgress), "RequireUser");
-        yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), AuthorizationPolicies.RequireUser);
         yield return Row<Action<MemberProgressController, Guid, string>>(nameof(MemberProgressController.GetProbeProgress), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, UpdateProbeProgressStatusRequest>>(nameof(MemberProgressController.UpdateProbeProgressStatus), "RequireUser");
 
@@ -290,11 +290,12 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.ReportProblem), AuthorizationPolicies.RequireUser);
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.UploadScreenshot), AuthorizationPolicies.RequireUser);
         yield return Endpoint<PhoneAppController>(nameof(PhoneAppController.GetInstallCode), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberController>(nameof(MemberController.CreateByKurin), "RequireUser");
+        yield return Endpoint<MemberController>(nameof(MemberController.GetAbilities), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberController>(nameof(MemberController.GetKurinMentorCandidates), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<MemberController>(nameof(MemberController.ResendInvitation), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberController>(nameof(MemberController.ResetProfileVerification), AuthorizationPolicies.RequireGroupLeadership);

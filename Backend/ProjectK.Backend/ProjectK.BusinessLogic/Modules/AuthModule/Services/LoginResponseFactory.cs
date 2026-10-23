@@ -22,17 +22,20 @@ public class LoginResponseFactory : ILoginResponseFactory
     private readonly IJwtService _jwtService;
     private readonly IMemberDirectory _members;
     private readonly IRefreshTokenStore _refreshTokens;
+    private readonly IPermissionResolver _permissions;
 
     public LoginResponseFactory(
         IAccessContextResolver access,
         IJwtService jwtService,
         IMemberDirectory members,
-        IRefreshTokenStore refreshTokens)
+        IRefreshTokenStore refreshTokens,
+        IPermissionResolver permissions)
     {
         _access = access;
         _jwtService = jwtService;
         _members = members;
         _refreshTokens = refreshTokens;
+        _permissions = permissions;
     }
 
     public async Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken)
@@ -55,13 +58,16 @@ public class LoginResponseFactory : ILoginResponseFactory
 
         var member = await _members.FindByAccountAsync(user.Id, cancellationToken);
 
+        // The kurin's own policy, so the client hides exactly what the server would refuse.
+        var permissions = await _permissions.ResolveAsync(roles, access.KurinKey, cancellationToken);
+
         return new LoginUserResponse
         {
             UserKey = user.Id,
             MemberKey = member?.MemberKey,
             Email = user.Email!,
             IsAdmin = access.IsAdmin,
-            Permissions = access.Permissions.Select(permission => permission.ToClaimValue()).ToArray(),
+            Permissions = permissions.Select(permission => permission.ToClaimValue()).ToArray(),
             Roles = [.. roles],
             KurinKey = kurinKey,
             RequiresMfa = false,

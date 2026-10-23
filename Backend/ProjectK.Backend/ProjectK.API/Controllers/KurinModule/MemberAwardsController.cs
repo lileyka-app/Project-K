@@ -51,10 +51,13 @@ public class MemberAwardsController : ControllerBase
     }
 
     /// <summary>
-    /// Confirms or refuses a recorded award. Leadership only.
+    /// Confirms or refuses a recorded award.
     /// </summary>
+    /// <remarks>
+    /// The resource check admits whoever confirms awards of this member at all; which levels they
+    /// may confirm is the kurin's policy, checked by the handler.
+    /// </remarks>
     [HttpPost("{awardKey:guid}/review")]
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [ResourceAuthorize(ResourceType.MemberAward, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(MemberAwardDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReviewAward(Guid memberKey, Guid awardKey, [FromBody] ReviewBadgeProgressRequest request)
@@ -72,11 +75,12 @@ public class MemberAwardsController : ControllerBase
     /// Removes an award.
     /// </summary>
     /// <remarks>
-    /// A confirmed award can only be removed by leadership — the same bar that confirming it required. An
-    /// unconfirmed one the member entered themselves, they can withdraw.
+    /// An unconfirmed award can be withdrawn by the member it is about or by whoever submitted it. A
+    /// confirmed one, or someone else's submission, takes the kurin's «remove awards» right — so
+    /// the endpoint lets in whoever may see the member and the handler decides.
     /// </remarks>
     [HttpDelete("{awardKey:guid}")]
-    [ResourceAuthorize(ResourceType.MemberAward, ResourceAction.Delete, "route:memberKey", ResourceType.Member)]
+    [ResourceAuthorize(ResourceType.MemberAward, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteAward(Guid memberKey, Guid awardKey)
     {

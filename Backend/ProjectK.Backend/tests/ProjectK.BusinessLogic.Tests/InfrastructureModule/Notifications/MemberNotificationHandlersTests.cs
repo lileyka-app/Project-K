@@ -55,7 +55,7 @@ public class MemberNotificationHandlersTests
         var actorUserKey = Guid.NewGuid();
         var mentorUserKey = Guid.NewGuid();
         _recipients
-            .Setup(x => x.ResolveAsync(kurinKey, groupKey, actorUserKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ResolveAsync(It.IsAny<ReviewSubject>(), kurinKey, groupKey, actorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([mentorUserKey]);
         var handler = StaleHandler((new Membership { MemberKey = memberKey, KurinKey = kurinKey, GroupKey = groupKey }, true));
 
@@ -86,7 +86,7 @@ public class MemberNotificationHandlersTests
             Raised(new MemberProfileWentStale(Guid.NewGuid(), "Іван", null)),
             CancellationToken.None);
 
-        _recipients.Verify(x => x.ResolveAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _recipients.Verify(x => x.ResolveAsync(It.IsAny<ReviewSubject>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
         _notifications.Verify(x => x.NotifyManyAsync(It.IsAny<IEnumerable<NotificationRequest>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -153,7 +153,7 @@ public class MemberNotificationHandlersTests
         var mentorUserKey = Guid.NewGuid();
 
         _recipients
-            .Setup(x => x.ResolveAsync(kurinKey, groupKey, actorUserKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ResolveAsync(It.IsAny<ReviewSubject>(), kurinKey, groupKey, actorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([managerUserKey, mentorUserKey]);
 
         var handler = new MemberAwardSubmittedEventHandler(_notifications.Object, _recipients.Object);
@@ -182,7 +182,7 @@ public class MemberNotificationHandlersTests
     public async Task SubmittedAward_WithNoReviewers_ShouldSendNothing()
     {
         _recipients
-            .Setup(x => x.ResolveAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ResolveAsync(It.IsAny<ReviewSubject>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var handler = new MemberAwardSubmittedEventHandler(_notifications.Object, _recipients.Object);
@@ -231,7 +231,7 @@ public class MemberNotificationHandlersTests
         var mentorUserKey = Guid.NewGuid();
 
         _recipients
-            .Setup(x => x.ResolveAsync(kurinKey, null, null, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ResolveAsync(It.IsAny<ReviewSubject>(), kurinKey, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync([mentorUserKey]);
 
         var handler = new BadgeProgressSubmittedEventHandler(_notifications.Object, _recipients.Object);

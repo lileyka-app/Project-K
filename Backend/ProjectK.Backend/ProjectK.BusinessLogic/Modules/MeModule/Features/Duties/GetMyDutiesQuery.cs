@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
@@ -35,6 +36,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
     private readonly IKraiProfileProvider _profiles;
+    private readonly IPermissionResolver _permissions;
 
     public GetMyDutiesQueryHandler(
         MeAgendaScopes scopes,
@@ -45,7 +47,8 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         ScoreBookReader books,
         ICurrentUserContext currentUser,
         TimeProvider time,
-        IKraiProfileProvider profiles)
+        IKraiProfileProvider profiles,
+        IPermissionResolver permissions)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
@@ -56,6 +59,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         _currentUser = currentUser;
         _time = time;
         _profiles = profiles;
+        _permissions = permissions;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MyDutyDto>>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
@@ -69,7 +73,8 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
                 continue;
             }
 
-            var rights = new DutyRights(context.Roles, context.LedGroupKeys);
+            var permissions = await _permissions.ResolveAsync(context.Roles, context.Membership.KurinKey, cancellationToken);
+            var rights = new DutyRights(permissions, context.LedGroupKeys);
             var kurin = MeKurins.Ref(context.Membership, _currentUser.KurinKey);
 
             await AddBadgesAsync(duties, context, rights, kurin, cancellationToken);

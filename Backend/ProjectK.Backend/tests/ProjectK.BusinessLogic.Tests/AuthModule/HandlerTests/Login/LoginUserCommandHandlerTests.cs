@@ -66,7 +66,7 @@ public class LoginUserCommandHandlerTests
         _uowMock = new Mock<IUnitOfWork>();
 
         _refreshTokensMock = new Mock<IRefreshTokenStore>();
-        _loginResponseFactory = new LoginResponseFactory(_accessMock.Object, _jwtServiceMock.Object, _memberDirectoryMock.Object, _refreshTokensMock.Object);
+        _loginResponseFactory = new LoginResponseFactory(_accessMock.Object, _jwtServiceMock.Object, _memberDirectoryMock.Object, _refreshTokensMock.Object, new PermissionResolver(new FixedKurinAccessPolicyProvider()));
         _handler = CreateHandler(_configurationMock.Object, Environments.Development);
     }
 

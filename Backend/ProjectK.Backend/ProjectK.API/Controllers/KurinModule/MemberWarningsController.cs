@@ -66,11 +66,13 @@ public class MemberWarningsController : ControllerBase
     /// Cancels a warning.
     /// </summary>
     /// <remarks>
-    /// Cancelling rather than deleting: the record stays, so the history remains readable.
+    /// Cancelling rather than deleting: the record stays, so the history remains readable. Who may
+    /// cancel depends on the warning — its issuer while they could still give it, or whoever the
+    /// kurin lets cancel anyone's — so the endpoint lets in whoever may see it and the handler decides.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("{warningKey:guid}")]
-    [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
+    [ResourceAuthorize(ResourceType.MemberWarning, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(MemberWarningDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

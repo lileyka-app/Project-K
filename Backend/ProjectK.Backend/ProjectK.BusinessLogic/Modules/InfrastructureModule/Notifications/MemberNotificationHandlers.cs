@@ -49,6 +49,7 @@ public sealed class MemberProfileWentStaleEventHandler
             }
 
             recipientUserKeys.UnionWith(await _recipients.ResolveAsync(
+                ReviewSubject.Profile,
                 membership.KurinKey,
                 membership.GroupKey,
                 raised.ActorUserKey,
@@ -129,6 +130,7 @@ public sealed class MemberAwardSubmittedEventHandler
     {
         var raised = notification.Event;
         var recipientUserKeys = await _recipients.ResolveAsync(
+            ReviewSubject.Award,
             raised.KurinKey,
             raised.GroupKey,
             raised.ActorUserKey,
@@ -250,6 +252,7 @@ public sealed class BadgeProgressSubmittedEventHandler
     {
         var raised = notification.Event;
         var recipientUserKeys = await _recipients.ResolveAsync(
+            ReviewSubject.Badge,
             raised.KurinKey,
             raised.GroupKey,
             raised.ActorUserKey,

@@ -6,6 +6,7 @@ using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -32,16 +33,19 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
+    private readonly IResourceAccessService _access;
 
     public ReviewMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMapper mapper)
+        IMapper mapper,
+        IResourceAccessService access)
     {
         _unitOfWork = unitOfWork;
         _members = members;
+        _access = access;
         _currentUserContext = currentUserContext;
         _events = events;
         _mapper = mapper;
@@ -61,6 +65,18 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         if (fromStatus != BadgeProgressStatus.Submitted)
         {
             return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
+        }
+
+        // The permission at the endpoint is shared by every level; which levels this person may
+        // confirm is the kurin's policy.
+        var level = await _access.CheckCapabilityAsync(
+            KurinCapabilities.ConfirmAward(award.Level), ResourceType.Member, award.MemberKey, cancellationToken);
+        if (!level.IsAllowed)
+        {
+            return ServiceResult<MemberAwardDto>.Failure(
+                ResultType.Forbidden,
+                "AwardLevelNotAllowed",
+                "The kurin's policy does not let you confirm an award of this level.");
         }
 
         // Said, because the validator refused the request otherwise.

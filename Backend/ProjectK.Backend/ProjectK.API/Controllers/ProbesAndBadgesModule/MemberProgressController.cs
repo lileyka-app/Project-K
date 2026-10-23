@@ -67,9 +67,9 @@ public class MemberProgressController : ControllerBase
     }
 
     /// <summary>
-    /// Accepts or refuses a submitted badge. Leadership only.
+    /// Accepts or refuses a submitted badge.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("badges/{badgeId}/review")]
     [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
@@ -143,7 +143,7 @@ public class MemberProgressController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
-    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Delete, "route:memberKey", ResourceType.Member)]
     [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

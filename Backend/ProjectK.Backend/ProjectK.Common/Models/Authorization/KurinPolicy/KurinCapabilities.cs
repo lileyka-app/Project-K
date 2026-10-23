@@ -52,6 +52,25 @@ public static class KurinCapabilities
     /// <summary>The row of a capability.</summary>
     public static CapabilityDescriptor Get(KurinCapability capability) => ByKey[capability];
 
+    /// <summary>The capability of giving a пересторога of <paramref name="level"/>.</summary>
+    public static KurinCapability GiveWarning(MemberWarningLevel level) => level switch
+    {
+        MemberWarningLevel.Level1 => KurinCapability.GiveWarning1,
+        MemberWarningLevel.Level2 => KurinCapability.GiveWarning2,
+        MemberWarningLevel.Level3 => KurinCapability.GiveWarning3,
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, "Unknown warning level.")
+    };
+
+    /// <summary>The capability of confirming a відзначення of <paramref name="level"/>.</summary>
+    public static KurinCapability ConfirmAward(MemberAwardLevel level) => level switch
+    {
+        MemberAwardLevel.First => KurinCapability.ConfirmAward1,
+        MemberAwardLevel.Second => KurinCapability.ConfirmAward2,
+        MemberAwardLevel.Third => KurinCapability.ConfirmAward3,
+        MemberAwardLevel.Fourth => KurinCapability.ConfirmAward4,
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, "Unknown award level.")
+    };
+
     /// <summary>
     /// Whether (resource, action) is decided by the kurin's policy rather than by the static map.
     /// Every scope of such a pair comes from the policy, except the self-service <c>Own</c> grants.

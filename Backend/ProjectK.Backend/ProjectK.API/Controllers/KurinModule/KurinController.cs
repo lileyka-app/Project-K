@@ -55,9 +55,10 @@ public class KurinController : ControllerBase
     }
 
     /// <summary>
-    /// Lists badge submissions across the kurin that are waiting on a decision.
+    /// Lists badge submissions across the kurin that are waiting on a decision: all of them, or those
+    /// of the гуртки the caller leads, as far as the kurin lets them review.
     /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/badges/review")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]

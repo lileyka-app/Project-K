@@ -197,7 +197,7 @@ public sealed class AgendaAccess : IAgendaAccess
             return decision;
         }
 
-        var reach = RolePermissionMap.WidestScope(_currentUser.Permissions(), ResourceType.PlanningSession, ResourceAction.Create);
+        var reach = RolePermissionMap.WidestScope(_currentUser.StaticPermissions(), ResourceType.PlanningSession, ResourceAction.Create);
         if (reach == AccessScope.KurinWide)
         {
             return ResourceAccessDecision.Allow("Курінний провід addresses the whole kurin.");
