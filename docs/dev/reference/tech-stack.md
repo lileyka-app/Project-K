@@ -15,7 +15,8 @@ sidebar:
 - **TailwindCSS 4** для розкладки, візуальна система — токени з `lileyka-theme.css`
   (див. [Брендбук](/dev/core/brandbook/)).
 - **TypeScript 5.9**, **RxJS 7.8**.
-- `ngx-image-cropper` — обрізання фото, **FullCalendar** (MIT-плагіни) — календар, **Quill** через
+- `ngx-image-cropper` — обрізання фото, **FullCalendar 7** (лише MIT-частина, тема classic на
+  токенах бренду) — календар, **Quill** через
   `p-editor` — текст звіту про проблему.
 - **libphonenumber-js** — поле телефону з вибором країни, формат і перевірка номера; і у
   вебзастосунку, і в мобільному (`mobile/`).

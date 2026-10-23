@@ -32,6 +32,9 @@
             "styles": [
               "node_modules/@openng/icons/openng-icons.css",
               "node_modules/lucide-static/font/lucide.css",
+              "node_modules/@fullcalendar/angular/skeleton.css",
+              "node_modules/@fullcalendar/angular/themes/classic/theme.css",
+              "src/app/features/kurinModule/pages/agenda-calendar/agenda-calendar.global.css",
               "src/styles.css"
             ]
           },
