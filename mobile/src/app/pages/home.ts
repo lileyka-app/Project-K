@@ -40,6 +40,7 @@ import {
   AgendaItemStatus,
   AgendaRsvpStatus,
   MyDuesDto,
+  MyDutiesDto,
   MyDutyDto,
   MyEventDto,
   MyGrowthDto,
@@ -257,13 +258,13 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
               </ion-card-header>
               <ion-list lines="full">
                 @for (row of duties(); track row.key; let last = $last) {
-                  <ion-item-sliding #sliding [disabled]="!row.canSayNotHeld">
+                  <ion-item-sliding #sliding [disabled]="!row.canSayNotHeld && !row.canHide">
                     <ion-item
                       [button]="!!row.link"
                       [detail]="!!row.link"
                       [routerLink]="row.link"
                       [queryParams]="row.queryParams"
-                      [lines]="last ? 'none' : 'full'"
+                      [lines]="last && !dutiesHidden() ? 'none' : 'full'"
                       data-testid="duty"
                     >
                       <ion-icon class="lk-tile" slot="start" [name]="row.icon" [style.--lk-tile]="row.tile" aria-hidden="true" />
@@ -273,12 +274,24 @@ const RSVP: { value: AgendaRsvpStatus; label: string }[] = [
                       </ion-label>
                       @if (row.count !== null) { <ion-note slot="end">{{ row.count }}</ion-note> }
                     </ion-item>
-                    @if (row.canSayNotHeld) {
-                      <ion-item-options side="end">
+                    <ion-item-options side="end">
+                      @if (row.canSayNotHeld) {
                         <ion-item-option color="medium" data-testid="duty-not-held" (click)="sayNotHeld(row, sliding)">Сходин не було</ion-item-option>
-                      </ion-item-options>
-                    }
+                      }
+                      @if (row.canHide) {
+                        <ion-item-option color="light" data-testid="duty-hide" (click)="hideDuty(row, sliding)">Приховати</ion-item-option>
+                      }
+                    </ion-item-options>
                   </ion-item-sliding>
+                } @empty {
+                  <ion-item lines="full">
+                    <ion-label class="ion-text-wrap"><p>Усе зроблено. Решту приховано — вона повернеться, щойно в ній щось додасться.</p></ion-label>
+                  </ion-item>
+                }
+                @if (dutiesHidden()) {
+                  <ion-item lines="none" [button]="true" [detail]="false" [disabled]="restoring()" (click)="restoreDuties()" data-testid="duties-restore">
+                    <ion-label color="primary">Показати приховані ({{ dutiesHidden() }})</ion-label>
+                  </ion-item>
                 }
               </ion-list>
             </ion-card>
@@ -452,7 +465,8 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
   private readonly growth = signal<Loaded<MyGrowthDto>>({ state: 'loading' });
   private readonly score = signal<Loaded<MyScoreDto[]>>({ state: 'loading' });
   private readonly dues = signal<Loaded<MyDuesDto[]>>({ state: 'loading' });
-  private readonly dutyList = signal<Loaded<MyDutyDto[]>>({ state: 'loading' });
+  private readonly dutyList = signal<Loaded<MyDutiesDto>>({ state: 'loading' });
+  protected readonly restoring = signal(false);
   /** The web's last read of the layout starts the screen; the API's answer replaces it. */
   private readonly layout = signal<TileLayout | null>(readStoredLayout());
   protected readonly layoutReady = signal(this.layout() !== null);
@@ -470,17 +484,18 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
   protected readonly growthValue = computed(() => valueOf(this.growth()));
   protected readonly scoreValue = computed(() => valueOf(this.score()) ?? []);
   protected readonly duesValue = computed(() => valueOf(this.dues()) ?? []);
-  /** Like the web: the card is there only while something waits (a failed read hides it too). */
+  /** Like the web: the card is there only while something waits or is hidden (a failed read hides it too). */
   protected readonly duties = computed(() => {
-    const duties = valueOf(this.dutyList()) ?? [];
+    const duties = valueOf(this.dutyList())?.items ?? [];
     return dutyRows(duties, new Date(), dutiesSpanKurins(duties));
   });
+  protected readonly dutiesHidden = computed(() => valueOf(this.dutyList())?.hiddenCount ?? 0);
   /** The tiles with something to show, in the phone's order; then the web's layout over them. */
   protected readonly tiles = computed<HomeTile[]>(() => {
     if (!this.layoutReady()) return [];
     const growth = this.growthValue();
     const present: HomeTile[] = [];
-    if (this.duties().length) present.push('my-duties');
+    if (this.duties().length || this.dutiesHidden()) present.push('my-duties');
     present.push('upcoming-events', 'my-tasks');
     if (growth?.hasYouthProgram && growth.probe) present.push('my-probe');
     if (growth?.hasYouthProgram) present.push('my-skills');
@@ -488,7 +503,7 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
     if (this.duesValue().length) present.push('my-dues');
     return homeTiles(this.layout(), present);
   });
-  protected readonly dutiesTotal = computed(() => (valueOf(this.dutyList()) ?? []).reduce((sum, d) => sum + d.count, 0));
+  protected readonly dutiesTotal = computed(() => (valueOf(this.dutyList())?.items ?? []).reduce((sum, d) => sum + d.count, 0));
 
   constructor() {
     addIcons({ chevronForward, star, arrowDown, wallet, checkbox });
@@ -582,12 +597,44 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
     if (!duty.agendaItemKey || !duty.occurrenceStartUtc) return;
     try {
       await this.scores.setNotHeld(duty.kurin.kurinKey, duty.agendaItemKey, duty.occurrenceStartUtc, true);
-      const current = valueOf(this.dutyList()) ?? [];
-      this.dutyList.set({ state: 'ready', value: current.filter((d) => d !== duty) });
+      this.dropDuty(duty, 0);
       await this.toast(`${duty.title ?? 'Подію'} прибрано зі справ.`);
     } catch (error) {
       await this.toast(apiErrorText(error, 'Не вдалося зберегти. Спробуй ще раз.', SCORE_ERRORS));
     }
+  }
+
+  /** «Приховати» by a swipe (the web tile's action): off this person's list until the duty grows. */
+  protected async hideDuty(row: DutyRow, sliding: IonItemSliding): Promise<void> {
+    await sliding.close();
+    try {
+      await this.me.dismissDuty(row.duty);
+      this.dropDuty(row.duty, 1);
+    } catch {
+      await this.toast('Не вдалося приховати. Спробуй ще раз.');
+    }
+  }
+
+  /** Every hidden duty back, read afresh: some may have been done meanwhile. */
+  protected async restoreDuties(): Promise<void> {
+    if (this.restoring()) return;
+    this.restoring.set(true);
+    try {
+      await this.me.restoreDuties();
+      await settle(this.me.duties(), this.dutyList);
+    } catch {
+      await this.toast('Не вдалося повернути. Спробуй ще раз.');
+    } finally {
+      this.restoring.set(false);
+    }
+  }
+
+  private dropDuty(duty: MyDutyDto, hidden: number): void {
+    const current = valueOf(this.dutyList()) ?? { items: [], hiddenCount: 0 };
+    this.dutyList.set({
+      state: 'ready',
+      value: { items: current.items.filter((d) => d !== duty), hiddenCount: current.hiddenCount + hidden },
+    });
   }
 
   private async load(): Promise<void> {

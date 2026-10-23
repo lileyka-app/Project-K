@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
@@ -19,11 +20,12 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 /// What waits on the person as провід, in every kurin where they hold an office: вмілості to
 /// confirm, money to acknowledge or verify, past events nobody marked attendance at. Each source is
 /// read only where their offices there give the right to act on it, so the list never names a thing
-/// the page behind it would refuse.
+/// the page behind it would refuse. What the person hid stays out while it has not grown, and is
+/// counted instead.
 /// </summary>
-public sealed record GetMyDutiesQuery : IRequest<ServiceResult<IReadOnlyList<MyDutyDto>>>;
+public sealed record GetMyDutiesQuery : IRequest<ServiceResult<MyDutiesResponse>>;
 
-public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, ServiceResult<IReadOnlyList<MyDutyDto>>>
+public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, ServiceResult<MyDutiesResponse>>
 {
     private const int AttendanceWindowDays = 14;
 
@@ -62,7 +64,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         _permissions = permissions;
     }
 
-    public async Task<ServiceResult<IReadOnlyList<MyDutyDto>>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MyDutiesResponse>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
     {
         var duties = new List<MyDutyDto>();
 
@@ -82,7 +84,22 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
             await AddAttendanceAsync(duties, context, rights, kurin, cancellationToken);
         }
 
-        return new ServiceResult<IReadOnlyList<MyDutyDto>>(ResultType.Success, duties);
+        foreach (var duty in duties)
+        {
+            duty.Key = DutyDismissals.KeyOf(duty);
+            duty.Fingerprint = DutyDismissals.FingerprintOf(duty);
+        }
+
+        var dismissed = _currentUser.UserId is { } userKey && duties.Count > 0
+            ? (await _unitOfWork.DismissedDuties.GetForUserAsync(userKey, cancellationToken)).ToDictionary(d => d.DutyKey, StringComparer.Ordinal)
+            : new Dictionary<string, DismissedDuty>(StringComparer.Ordinal);
+        bool Hidden(MyDutyDto duty) => dismissed.TryGetValue(duty.Key, out var dismissal) && DutyDismissals.StillHidden(duty, dismissal);
+
+        return new ServiceResult<MyDutiesResponse>(ResultType.Success, new MyDutiesResponse
+        {
+            Items = duties.Where(duty => !Hidden(duty)).ToList(),
+            HiddenCount = duties.Count(Hidden)
+        });
     }
 
     /// <summary>Вмілості handed in by the youths whose progress the person may confirm.</summary>

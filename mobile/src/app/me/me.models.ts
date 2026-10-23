@@ -94,6 +94,16 @@ export interface MyDutyDto {
   agendaItemKey: string | null;
   occurrenceStartUtc: string | null;
   title: string | null;
+  /** Which duty this is, the same on every read: what hiding it names. Empty from a server that cannot hide. */
+  key: string;
+  /** How big it is now; hidden, it comes back when this grows. */
+  fingerprint: string;
+}
+
+/** «Справи»: what waits, less what the person hid, and how many they hid (the web's MyDutiesDto). */
+export interface MyDutiesDto {
+  items: MyDutyDto[];
+  hiddenCount: number;
 }
 
 /** The member card (Frontend kurinModule/models/member.dto.ts), the fields the profile shows. */

@@ -17,6 +17,8 @@ export interface DutyRow {
   link: unknown[] | null;
   /** An event's row in the kurin the token acts in: «Сходин не було» can be said from here. */
   canSayNotHeld: boolean;
+  /** The server named the duty, so the person can take it off their own list. */
+  canHide: boolean;
 }
 
 const DUTY_META: Record<MyDutyKind, { icon: string; label: string }> = {
@@ -49,7 +51,7 @@ function linkOf(duty: MyDutyDto): unknown[] {
 /**
  * The провід's queue: what waits on the person across their kurins, each row a way straight to
  * where it is done. Only for someone who holds an office somewhere — the page decides that from
- * the reply itself.
+ * the reply itself. Each row can be hidden for this person alone; it comes back when it grows.
  */
 @Component({
   selector: 'app-my-duties-tile',
@@ -68,6 +70,12 @@ export class MyDutiesTileComponent {
 
   /** «Сходин не було» on an event's row: the page tells the server and drops the row. */
   readonly notHeld = output<MyDutyDto>();
+  /** Duties the person hid and that have not grown since: the tile offers them back. */
+  readonly hiddenCount = input(0);
+  /** «Приховати» on a row: off this person's list until it grows. */
+  readonly hide = output<MyDutyDto>();
+  /** «Показати приховані»: every hidden duty back. */
+  readonly restoreHidden = output<void>();
 
   readonly today = new Date();
 
@@ -105,7 +113,8 @@ export class MyDutiesTileComponent {
       label: duty.kind === 'EventWithoutAttendance' && duty.title ? `${meta.label}: ${duty.title}` : meta.label,
       detail: parts.join(' · '),
       link: duty.kurin.isCurrent ? linkOf(duty) : null,
-      canSayNotHeld: duty.kind === 'EventWithoutAttendance' && duty.kurin.isCurrent && !!duty.agendaItemKey && !!duty.occurrenceStartUtc
+      canSayNotHeld: duty.kind === 'EventWithoutAttendance' && duty.kurin.isCurrent && !!duty.agendaItemKey && !!duty.occurrenceStartUtc,
+      canHide: !!duty.key
     };
   }
 }

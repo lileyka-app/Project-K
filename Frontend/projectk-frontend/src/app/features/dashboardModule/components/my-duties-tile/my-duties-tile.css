@@ -102,3 +102,8 @@
   justify-content: flex-end;
   gap: 0.25rem;
 }
+
+.duties-tile__hidden {
+  display: flex;
+  justify-content: center;
+}

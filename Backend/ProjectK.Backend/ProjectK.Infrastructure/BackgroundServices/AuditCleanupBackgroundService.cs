@@ -24,6 +24,9 @@ public class AuditCleanupBackgroundService : BackgroundService
     private const int EndedSessionRetentionDays = 30;
     private const int RevokedCalendarFeedRetentionDays = 90;
 
+    /// <summary>How long a duty someone hid from their «Справи» stays hidden at most; then it shows again if it still waits.</summary>
+    internal const int DismissedDutyRetentionDays = 30;
+
     /// <summary>How long the kurin's journal keeps an entry: a year, the owner's decision.</summary>
     internal const int JournalRetentionDays = 365;
 
@@ -137,6 +140,14 @@ public class AuditCleanupBackgroundService : BackgroundService
 
         if (deletedJournalEntries > 0)
             _logger.LogInformation("Cleaned up {Count} old KurinAuditEvents.", deletedJournalEntries);
+
+        // 8. Cleanup duties people hid from their «Справи» (> 30 days)
+        var deletedDismissals = await dbContext.DismissedDuties
+            .Where(d => d.DismissedAtUtc < now.AddDays(-DismissedDutyRetentionDays))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (deletedDismissals > 0)
+            _logger.LogInformation("Cleaned up {Count} old DismissedDuties.", deletedDismissals);
     }
 
     /// <summary>Deletes journal entries older than <paramref name="cutoffUtc"/>, <paramref name="batchSize"/> per statement.</summary>

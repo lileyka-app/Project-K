@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces;
@@ -42,6 +43,9 @@ public class GetMyDutiesQueryTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IScoreUnitOfWork> _score = new();
     private readonly Mock<ICurrentUserContext> _user = new();
+    private readonly List<DismissedDuty> _dismissed = [];
+    private readonly Mock<IMemberProgressDirectory> _progress = new();
+    private int _submittedBadges;
 
     public GetMyDutiesQueryTests()
     {
@@ -57,6 +61,10 @@ public class GetMyDutiesQueryTests
         leaderships.Setup(l => l.GetActiveLeadershipKeysForMemberAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _unitOfWork.SetupGet(u => u.AgendaItems).Returns(agenda.Object);
         _unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        var dismissed = new Mock<IDismissedDutyRepository>();
+        dismissed.Setup(d => d.GetForUserAsync(User, It.IsAny<CancellationToken>())).ReturnsAsync(() => _dismissed);
+        _unitOfWork.SetupGet(u => u.DismissedDuties).Returns(dismissed.Object);
+        _progress.Setup(p => p.CountSubmittedBadgesAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => _submittedBadges);
 
         var rates = new Mock<IScoreAttendanceRateRepository>();
         rates.Setup(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()))
@@ -78,6 +86,7 @@ public class GetMyDutiesQueryTests
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(Person, User, Kurin, null, "Тарас", "Чупринка", "t@x", null));
+        members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         var offices = new Mock<IOfficeDirectory>();
         offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
@@ -89,12 +98,21 @@ public class GetMyDutiesQueryTests
         var books = new ScoreBookReader(_score.Object, _unitOfWork.Object, memberships.Object, members.Object, Mock.Of<IScoreFactSource>(), _time);
 
         return new GetMyDutiesQueryHandler(
-            scopes, _unitOfWork.Object, Mock.Of<IDuesUnitOfWork>(), members.Object, Mock.Of<IMemberProgressDirectory>(),
+            scopes, _unitOfWork.Object, Mock.Of<IDuesUnitOfWork>(), members.Object, _progress.Object,
             books, _user.Object, _time, Mock.Of<IKraiProfileProvider>(), permissions.Object);
     }
 
-    private async Task<IReadOnlyList<MyDutyDto>> DutiesAsync() =>
+    private async Task<MyDutiesResponse> ReadAsync() =>
         (await Handler().Handle(new GetMyDutiesQuery(), CancellationToken.None)).Data!;
+
+    private async Task<IReadOnlyList<MyDutyDto>> DutiesAsync() => (await ReadAsync()).Items;
+
+    /// <summary>Someone who may also confirm вмілості, with <paramref name="count"/> of them waiting.</summary>
+    private void ConfirmsBadges(int count)
+    {
+        _permissions.Add(new(ResourceType.BadgeProgress, ResourceAction.Update, AccessScope.KurinWide));
+        _submittedBadges = count;
+    }
 
     [Fact]
     public async Task AnUnmarkedMeetingWorthPoints_WaitsOnHim()
@@ -118,5 +136,59 @@ public class GetMyDutiesQueryTests
         _notHeld.Add(new ScoreNotHeldOccurrence { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start });
 
         (await DutiesAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task EveryDuty_IsNamed_TheSameOnEveryRead()
+    {
+        ConfirmsBadges(3);
+
+        var first = await DutiesAsync();
+        var second = await DutiesAsync();
+
+        first.Select(d => d.Key).Should().Equal(second.Select(d => d.Key));
+        first.Select(d => d.Key).Should().OnlyHaveUniqueItems();
+        first.Single(d => d.Kind == MyDutyKind.EventWithoutAttendance).Key
+            .Should().Be($"EventWithoutAttendance:{Kurin:N}:-:{Skhodyny:N}:20261006T160000Z");
+        first.Single(d => d.Kind == MyDutyKind.BadgesToReview).Fingerprint.Should().Be("3");
+    }
+
+    [Fact]
+    public async Task AHiddenDuty_StaysOff_AndIsCounted()
+    {
+        var meeting = (await DutiesAsync()).Single();
+        _dismissed.Add(new DismissedDuty { UserKey = User, DutyKey = meeting.Key, Fingerprint = meeting.Fingerprint });
+
+        var read = await ReadAsync();
+
+        read.Items.Should().BeEmpty();
+        read.HiddenCount.Should().Be(1);
+    }
+
+    // Three вмілості hidden: one confirmed meanwhile keeps it hidden, one more brings it back.
+    [Fact]
+    public async Task AHiddenCount_ComesBack_OnlyWhenItGrows()
+    {
+        ConfirmsBadges(3);
+        var badges = (await DutiesAsync()).Single(d => d.Kind == MyDutyKind.BadgesToReview);
+        _dismissed.Add(new DismissedDuty { UserKey = User, DutyKey = badges.Key, Fingerprint = badges.Fingerprint });
+
+        _submittedBadges = 2;
+        (await DutiesAsync()).Should().NotContain(d => d.Kind == MyDutyKind.BadgesToReview);
+
+        _submittedBadges = 4;
+        var read = await ReadAsync();
+        read.Items.Should().Contain(d => d.Kind == MyDutyKind.BadgesToReview && d.Count == 4);
+        read.HiddenCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AHiddenDutyThatIsDone_IsNotCounted()
+    {
+        var meeting = (await DutiesAsync()).Single();
+        _dismissed.Add(new DismissedDuty { UserKey = User, DutyKey = meeting.Key, Fingerprint = meeting.Fingerprint });
+        _marks.Add(new ScoreAttendance { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start });
+
+        (await ReadAsync()).HiddenCount.Should().Be(0);
     }
 }

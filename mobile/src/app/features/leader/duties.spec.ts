@@ -11,6 +11,8 @@ function duty(overrides: Partial<MyDutyDto>): MyDutyDto {
     agendaItemKey: null,
     occurrenceStartUtc: null,
     title: null,
+    key: 'BadgesToReview:k1:-:-:-',
+    fingerprint: '1',
     ...overrides,
   };
 }
@@ -76,5 +78,10 @@ describe('dutyRows', () => {
     );
 
     expect(rows.map((r) => r.canSayNotHeld)).toEqual([false, true, false]);
+  });
+
+  it('lets a duty be hidden only when the server named it', () => {
+    const rows = dutyRows([duty({}), duty({ key: '' })], new Date(), false);
+    expect(rows.map((r) => r.canHide)).toEqual([true, false]);
   });
 });

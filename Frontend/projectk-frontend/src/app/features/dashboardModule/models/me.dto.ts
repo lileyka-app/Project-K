@@ -121,6 +121,16 @@ export interface MyDutyDto {
   agendaItemKey: string | null;
   occurrenceStartUtc: string | null;
   title: string | null;
+  /** Which duty this is, the same on every read: what hiding it names. Empty from a server that cannot hide. */
+  key: string;
+  /** How big it is now; hidden, it comes back when this grows. */
+  fingerprint: string;
+}
+
+/** «Справи»: what waits, less what the person hid, and how many they hid. */
+export interface MyDutiesDto {
+  items: MyDutyDto[];
+  hiddenCount: number;
 }
 
 /** A гурток the person is in as a youth, or leads. */

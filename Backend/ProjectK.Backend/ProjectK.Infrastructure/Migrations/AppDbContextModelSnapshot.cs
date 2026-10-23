@@ -356,6 +356,38 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("CalendarFeeds");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.DismissedDuty", b =>
+                {
+                    b.Property<Guid>("DismissedDutyKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DismissedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DutyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("UserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DismissedDutyKey");
+
+                    b.HasIndex("DismissedAtUtc");
+
+                    b.HasIndex("UserKey", "DutyKey")
+                        .IsUnique();
+
+                    b.ToTable("DismissedDuties");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.Invitation", b =>
                 {
                     b.Property<Guid>("InvitationKey")
@@ -3112,6 +3144,17 @@ namespace ProjectK.Infrastructure.Migrations
                     b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.DismissedDuty", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserKey")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

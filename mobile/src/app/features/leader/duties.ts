@@ -18,6 +18,8 @@ export interface DutyRow {
   queryParams: Record<string, string> | null;
   /** An event's row in the kurin the token acts in: «Сходин не було» can be said by a swipe. */
   canSayNotHeld: boolean;
+  /** The server named the duty, so a swipe can take it off this person's own list. */
+  canHide: boolean;
 }
 
 const META: Record<MyDutyKind, { icon: string; tile: string; label: string }> = {
@@ -60,6 +62,7 @@ export function dutyRows(duties: MyDutyDto[], today: Date, namesKurin: boolean):
       queryParams: link ? queryOf(duty) : null,
       canSayNotHeld:
         duty.kind === 'EventWithoutAttendance' && duty.kurin.isCurrent && !!duty.agendaItemKey && !!duty.occurrenceStartUtc,
+      canHide: !!duty.key,
     };
   });
 }

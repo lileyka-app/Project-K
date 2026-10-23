@@ -26,6 +26,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.Common.Models.Dtos.MeModule.Requests;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
@@ -190,6 +191,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetDues), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetScore), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetDuties), "RequireUser");
+        yield return Row<Action<MeController, DismissDutyRequest>>(nameof(MeController.DismissDuty), "RequireUser");
+        yield return Row<Action<MeController, string?>>(nameof(MeController.RestoreDuties), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetCalendarFeed), "RequireUser");
         yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.IssueCalendarFeed), "RequireUser");

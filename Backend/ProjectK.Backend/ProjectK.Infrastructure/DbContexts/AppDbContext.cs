@@ -79,6 +79,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<UserTileLayout> UserTileLayouts { get; set; }
+    public DbSet<DismissedDuty> DismissedDuties { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -824,6 +825,23 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasForeignKey(e => e.UserKey)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.UserKey, e.BoardKey }).IsUnique();
+        });
+
+        builder.Entity<DismissedDuty>(entity =>
+        {
+            entity.HasKey(e => e.DismissedDutyKey);
+            entity.Property(e => e.DutyKey)
+                .HasMaxLength(DismissedDuty.DutyKeyMaxLength)
+                .IsRequired();
+            entity.Property(e => e.Fingerprint)
+                .HasMaxLength(DismissedDuty.FingerprintMaxLength)
+                .IsRequired();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserKey)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.UserKey, e.DutyKey }).IsUnique();
+            entity.HasIndex(e => e.DismissedAtUtc);
         });
     }
 }

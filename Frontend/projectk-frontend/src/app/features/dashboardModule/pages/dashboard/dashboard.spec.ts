@@ -124,9 +124,10 @@ describe('DashboardComponent', () => {
     const kurin = { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true };
     const meeting: MyDutyDto = {
       kind: 'EventWithoutAttendance', kurin, count: 1, groupKey: null, groupName: null,
-      agendaItemKey: 'e1', occurrenceStartUtc: '2026-10-05T14:00:00Z', title: 'Сходини'
+      agendaItemKey: 'e1', occurrenceStartUtc: '2026-10-05T14:00:00Z', title: 'Сходини',
+      key: 'EventWithoutAttendance:k1:-:e1:20261005T140000Z', fingerprint: '1'
     };
-    const badges: MyDutyDto = { ...meeting, kind: 'BadgesToReview', count: 2, agendaItemKey: null, occurrenceStartUtc: null, title: null };
+    const badges: MyDutyDto = { ...meeting, kind: 'BadgesToReview', count: 2, agendaItemKey: null, occurrenceStartUtc: null, title: null, key: 'BadgesToReview:k1:-:-:-', fingerprint: '2' };
     component.duties.set([badges, meeting]);
 
     component.markNotHeld(meeting);
@@ -136,5 +137,37 @@ describe('DashboardComponent', () => {
     request.flush({});
 
     expect(component.duties()).toEqual([badges]);
+  });
+
+  it('hides a duty for this person alone, and brings the hidden ones back read afresh', () => {
+    const http = TestBed.inject(HttpTestingController);
+    const kurin = { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true };
+    const badges: MyDutyDto = {
+      kind: 'BadgesToReview', kurin, count: 2, groupKey: null, groupName: null, agendaItemKey: null, occurrenceStartUtc: null, title: null,
+      key: 'BadgesToReview:k1:-:-:-', fingerprint: '2'
+    };
+    component.duties.set([badges]);
+
+    component.hideDuty(badges);
+    const dismiss = http.expectOne(r => r.url.endsWith('/me/duties/dismissed') && r.method === 'POST');
+    expect(dismiss.request.body).toEqual({ key: 'BadgesToReview:k1:-:-:-', fingerprint: '2' });
+    dismiss.flush({});
+    expect(component.duties()).toEqual([]);
+    expect(component.dutiesHidden()).toBe(1);
+
+    component.restoreDuties();
+    http.expectOne(r => r.url.endsWith('/me/duties/dismissed') && r.method === 'DELETE').flush({});
+    http.match(r => r.url.endsWith('/me/duties')).forEach(r => r.flush({ items: [badges], hiddenCount: 0 }));
+    expect(component.duties()).toEqual([badges]);
+    expect(component.dutiesHidden()).toBe(0);
+  });
+
+  it('reads the bare list an older server or the static demo sends as nothing hidden', () => {
+    TestBed.inject(HttpTestingController).match(r => r.url.endsWith('/me/duties')).forEach(r => r.flush([
+      { kind: 'BadgesToReview', kurin: { kurinKey: 'k1', kurinNumber: 1, namedAfter: null, isCurrent: true }, count: 2, groupKey: null, groupName: null, agendaItemKey: null, occurrenceStartUtc: null, title: null }
+    ]));
+
+    expect(component.duties()[0].key).toBe('');
+    expect(component.dutiesHidden()).toBe(0);
   });
 });

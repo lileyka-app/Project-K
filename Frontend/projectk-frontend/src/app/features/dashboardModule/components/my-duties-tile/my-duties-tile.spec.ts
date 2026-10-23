@@ -13,6 +13,8 @@ function duty(overrides: Partial<MyDutyDto>): MyDutyDto {
     agendaItemKey: null,
     occurrenceStartUtc: null,
     title: null,
+    key: 'BadgesToReview:k1:-:-:-',
+    fingerprint: '1',
     ...overrides
   };
 }
@@ -73,10 +75,43 @@ describe('MyDutiesTileComponent', () => {
     fixture.componentInstance.notHeld.subscribe(d => emitted.push(d));
 
     expect(fixture.componentInstance.rows().map(r => r.canSayNotHeld)).toEqual([false, true, false]);
-    const button = (fixture.nativeElement as HTMLElement).querySelector('.duties-tile__actions button') as HTMLButtonElement;
+    const button = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.duties-tile__actions button'))
+      .find(b => b.textContent?.includes('Сходин не було')) as HTMLButtonElement;
     expect(button.textContent).toContain('Сходин не було');
     button.click();
 
     expect(emitted).toEqual([event]);
+  });
+
+  it('lets each named duty be hidden, and offers the hidden ones back', () => {
+    const badges = duty({ count: 3 });
+    fixture.componentRef.setInput('duties', [badges, duty({ kind: 'TransfersToConfirm', key: '' })]);
+    fixture.componentRef.setInput('hiddenCount', 2);
+    fixture.detectChanges();
+    const hidden: MyDutyDto[] = [];
+    let restored = 0;
+    fixture.componentInstance.hide.subscribe(d => hidden.push(d));
+    fixture.componentInstance.restoreHidden.subscribe(() => restored++);
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(fixture.componentInstance.rows().map(r => r.canHide)).toEqual([true, false]);
+    const hide = Array.from(root.querySelectorAll('.duties-tile__actions button')).find(b => b.textContent?.includes('Приховати')) as HTMLButtonElement;
+    hide.click();
+    const restore = root.querySelector('.duties-tile__hidden button') as HTMLButtonElement;
+    expect(restore.textContent).toContain('Показати приховані (2)');
+    restore.click();
+
+    expect(hidden).toEqual([badges]);
+    expect(restored).toBe(1);
+  });
+
+  it('says everything is done, and that the rest is hidden, when only hidden duties are left', () => {
+    fixture.componentRef.setInput('duties', []);
+    fixture.componentRef.setInput('hiddenCount', 1);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Решту приховано');
+    expect(text).toContain('Показати приховані (1)');
   });
 });

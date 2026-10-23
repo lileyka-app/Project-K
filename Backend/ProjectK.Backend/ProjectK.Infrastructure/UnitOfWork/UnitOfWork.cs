@@ -56,6 +56,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private ISystemSettingRepository _systemSettings;
     private IAppUserRepository _users;
     private IUserTileLayoutRepository _userTileLayouts;
+    private IDismissedDutyRepository _dismissedDuties;
     private IKurinDuesRateRepository _kurinDuesRates;
     private IGroupDuesRateRepository _groupDuesRates;
     private IDuesConcessionRepository _duesConcessions;
@@ -100,6 +101,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IWebPushSubscriptionRepository WebPushSubscriptions => _webPushSubscriptions ??= new WebPushSubscriptionRepository(_context);
     public ISystemSettingRepository SystemSettings => _systemSettings ??= new SystemSettingRepository(_context);
     public IUserTileLayoutRepository UserTileLayouts => _userTileLayouts ??= new UserTileLayoutRepository(_context);
+    public IDismissedDutyRepository DismissedDuties => _dismissedDuties ??= new DismissedDutyRepository(_context);
     public IKurinDuesRateRepository KurinDuesRates => _kurinDuesRates ??= new KurinDuesRateRepository(_context);
     public IGroupDuesRateRepository GroupDuesRates => _groupDuesRates ??= new GroupDuesRateRepository(_context);
     public IDuesConcessionRepository DuesConcessions => _duesConcessions ??= new DuesConcessionRepository(_context);

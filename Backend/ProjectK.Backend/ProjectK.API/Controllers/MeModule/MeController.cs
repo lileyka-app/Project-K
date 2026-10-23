@@ -17,6 +17,7 @@ using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule.Requests;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.MeModule;
@@ -84,12 +85,31 @@ public class MeController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    /// <summary>What waits on the person as провід, per kurin where they hold an office; empty for anyone else.</summary>
+    /// <summary>What waits on the person as провід, per kurin where they hold an office, less what they hid; empty for anyone else.</summary>
     [HttpGet("duties")]
-    [ProducesResponseType(typeof(IReadOnlyList<MyDutyDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MyDutiesResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDuties()
     {
         var result = await _mediator.Send(new GetMyDutiesQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Hides one duty from the person's own «Справи» until it grows.</summary>
+    [HttpPost("duties/dismissed")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DismissDuty([FromBody] DismissDutyRequest request)
+    {
+        var result = await _mediator.Send(new DismissDutyCommand(request.Key, request.Fingerprint));
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Brings hidden duties back: the one under <paramref name="key"/>, or all of them without it.</summary>
+    [HttpDelete("duties/dismissed")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RestoreDuties([FromQuery] string? key = null)
+    {
+        var result = await _mediator.Send(new RestoreDutiesCommand(key));
         return result.ToActionResult(this);
     }
 

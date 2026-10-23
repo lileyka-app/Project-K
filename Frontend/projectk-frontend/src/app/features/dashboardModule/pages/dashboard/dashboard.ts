@@ -83,6 +83,8 @@ export class DashboardComponent implements OnInit {
   readonly duties = signal<MyDutyDto[]>([]);
   readonly dutiesLoading = signal(true);
   readonly dutiesFailed = signal(false);
+  readonly dutiesHidden = signal(0);
+  /** The duty action on its way: a row's key for «Сходин не було», 'hide:' + it for hiding, 'restore'. */
   readonly dutySaving = signal<string | null>(null);
 
   /** Проба and вмілості belong to a youth of УПЮ; the reply says so, and until it comes nothing is shown. */
@@ -140,7 +142,12 @@ export class DashboardComponent implements OnInit {
 
   private loadDuties(): void {
     this.me.getDuties().subscribe({
-      next: duties => { this.duties.set(duties); this.dutiesLoading.set(false); this.dutiesFailed.set(false); },
+      next: duties => {
+        this.duties.set(duties.items);
+        this.dutiesHidden.set(duties.hiddenCount);
+        this.dutiesLoading.set(false);
+        this.dutiesFailed.set(false);
+      },
       error: () => { this.dutiesLoading.set(false); this.dutiesFailed.set(true); }
     });
   }
@@ -218,6 +225,44 @@ export class DashboardComponent implements OnInit {
           ? 'Хтось уже відмічений на цих сходинах — отже, вони відбулися.'
           : failureDetail(error, 'Спробуй ще раз.');
         this.messages.add({ severity: 'error', summary: 'Не вдалося зберегти', detail });
+      }
+    });
+  }
+
+  /** Off this person's own list at once; the server keeps it off until the duty grows. */
+  hideDuty(duty: MyDutyDto): void {
+    if (this.dutySaving() || !duty.key) {
+      return;
+    }
+    const rowKey = dutyRowKey(duty);
+    this.dutySaving.set('hide:' + rowKey);
+    this.me.dismissDuty(duty).subscribe({
+      next: () => {
+        this.dutySaving.set(null);
+        this.duties.set(this.duties().filter(d => dutyRowKey(d) !== rowKey));
+        this.dutiesHidden.set(this.dutiesHidden() + 1);
+      },
+      error: (error: unknown) => {
+        this.dutySaving.set(null);
+        this.messages.add({ severity: 'error', summary: 'Не вдалося приховати', detail: failureDetail(error, 'Спробуй ще раз.') });
+      }
+    });
+  }
+
+  /** Every hidden duty back, read afresh: some may have been done meanwhile. */
+  restoreDuties(): void {
+    if (this.dutySaving()) {
+      return;
+    }
+    this.dutySaving.set('restore');
+    this.me.restoreDuties().subscribe({
+      next: () => {
+        this.dutySaving.set(null);
+        this.loadDuties();
+      },
+      error: (error: unknown) => {
+        this.dutySaving.set(null);
+        this.messages.add({ severity: 'error', summary: 'Не вдалося повернути', detail: failureDetail(error, 'Спробуй ще раз.') });
       }
     });
   }
