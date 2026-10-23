@@ -42,4 +42,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Security\RolePermissionMap.golden.json" />
+  </ItemGroup>
+
 </Project>
