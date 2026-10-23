@@ -36,7 +36,8 @@ test.describe('on a phone', () => {
 
   test('keeps the pages email links and the app land on', async ({ page }) => {
     await page.goto('/reset-password?token=t&email=a%40b.c');
-    await expect(page).toHaveURL(/\/reset-password\?token=t&email=a%40b\.c$/);
+    // The router may write the address back with the @ decoded; it is the same link either way.
+    await expect(page).toHaveURL(/\/reset-password\?token=t&email=a(%40|@)b\.c$/);
     await page.goto('/join');
     await expect(page).toHaveURL(/\/join$/);
     await expect(app(page)).toHaveCount(0);

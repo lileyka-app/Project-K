@@ -23,12 +23,15 @@ test.describe('Route action boundaries', () => {
       await expectForbiddenRoute(page, `/group/${unassignedGroupKey}/member/upsert`);
     });
 
-    test('mentor cannot open leadership setup routes directly', async ({ page, request }) => {
+    // A впорядник seats his own гурток's провід (STAB-08), but not another гурток's, the kurin's or the КВ.
+    test('mentor sets up only his own гурток provid', async ({ page, request }) => {
       const kurinKey = await getSeededKurinKey(request, user);
-      const groupKey = await getSeededGroupKey(request, user, 'Gurtok 1');
+      const assignedGroupKey = await getSeededGroupKey(request, user, 'Gurtok 1');
+      const unassignedGroupKey = await getSeededGroupKey(request, user, 'Gurtok 2');
 
+      await expectAllowedRoute(page, `/leadership/create/group/${assignedGroupKey}`);
+      await expectForbiddenRoute(page, `/leadership/create/group/${unassignedGroupKey}`);
       await expectForbiddenRoute(page, `/leadership/create/kurin/${kurinKey}`);
-      await expectForbiddenRoute(page, `/leadership/create/group/${groupKey}`);
       await expectForbiddenRoute(page, `/leadership/create/kv/${kurinKey}`);
     });
   });

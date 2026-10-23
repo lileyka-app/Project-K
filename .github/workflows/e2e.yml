@@ -13,6 +13,8 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    # The suite takes about ten minutes; anything far past that is a hang, not a slow run.
+    timeout-minutes: 45
     name: Playwright against the e2e stack
     steps:
       - uses: actions/checkout@v7

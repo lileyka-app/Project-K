@@ -131,7 +131,11 @@ cmd_down() {
 
 cmd_logs() {
   local env="${1:-}"; [[ -n "$env" ]] || die "Usage: dev.sh logs <env> [service]"
-  app_compose "$env" no-override logs -f "${@:2}"
+  # Follow only at a terminal: in CI there is no one to press Ctrl+C, and a followed log never
+  # ends — the e2e job sat on it until GitHub killed it six hours later.
+  local follow=()
+  [[ -t 1 ]] && follow=(-f)
+  app_compose "$env" no-override logs ${follow[@]+"${follow[@]}"} "${@:2}"
 }
 
 cmd_ps() {

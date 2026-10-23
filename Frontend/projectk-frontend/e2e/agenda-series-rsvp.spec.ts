@@ -24,13 +24,27 @@ async function bearer(request: APIRequestContext, user: E2eUser): Promise<{ Auth
   return { Authorization: `Bearer ${login.tokens!.accessToken}` };
 }
 
-/** A weekly series of exactly two occurrences, the first tomorrow at 17:00 UTC, aimed at the whole kurin. */
+/** The seeded kurin's offset from UTC at that moment, in minutes; it lives in Ukraine. */
+function kurinOffsetMinutes(at: Date): number {
+  const zone = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Kyiv', timeZoneName: 'longOffset' })
+    .formatToParts(at)
+    .find(part => part.type === 'timeZoneName')!.value;
+  const match = /GMT([+-])(\d{2}):(\d{2})/.exec(zone);
+  return match ? (match[1] === '-' ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3])) : 0;
+}
+
+/**
+ * A weekly series of exactly two occurrences, the first tomorrow at 17:00 UTC, aimed at the whole kurin.
+ * The series repeats on the kurin's wall clock, so a week that crosses a DST change moves the second
+ * occurrence by an hour in UTC — adding seven days of milliseconds would name a time it never meets.
+ */
 async function createTwoOccurrenceSeries(request: APIRequestContext, user: E2eUser, suffix: string): Promise<SeriesScenario> {
   const kurinKey = await getSeededKurinKey(request, user);
   const first = new Date();
   first.setUTCDate(first.getUTCDate() + 1);
   first.setUTCHours(17, 0, 0, 0);
-  const second = new Date(first.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const weekLater = new Date(first.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const second = new Date(weekLater.getTime() + (kurinOffsetMinutes(first) - kurinOffsetMinutes(weekLater)) * 60 * 1000);
   const title = `Сходини серії ${suffix}`;
 
   const response = await request.post(`${e2eApiUrl}/agenda`, {
