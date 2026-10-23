@@ -15,11 +15,13 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
+    private readonly IAccessChangeSignal _accessChanges;
 
-    public RevokeMentorCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache)
+    public RevokeMentorCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache, IAccessChangeSignal accessChanges)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
+        _accessChanges = accessChanges;
     }
 
     public async Task<ServiceResult<bool>> Handle(RevokeMentorCommand request, CancellationToken cancellationToken)
@@ -44,6 +46,7 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
         // Revocation must take effect at once, not after the TTL — otherwise the
         // mentor keeps write access to the group until the cached set expires.
         _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _accessChanges.MarkUser(request.MentorUserKey);
 
         return new ServiceResult<bool>(ResultType.Success, true);
     }

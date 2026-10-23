@@ -6,6 +6,8 @@ import { LoginRequest } from '../../models/login-request.model';
 import { LoginResponse } from '../../models/login-response.model';
 import { AuthState } from '../../models/auth-state.model';
 import { environment } from '../../../../../environments/environment';
+import { ClientCacheService } from '../../../kurinModule/services/client-cache/client-cache.service';
+import { ACCESS_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../../../kurinModule/services/client-cache/cache-policy';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -571,6 +573,99 @@ describe('AuthService', () => {
         done();
       });
     }));
+  });
+
+  describe('applyAccess', () => {
+    const youth: LoginResponse = {
+      userKey: 'user-1',
+      memberKey: 'member-1',
+      email: 'youth@example.com',
+      isAdmin: false,
+      permissions: ['Member:Read:KurinWide', 'Group:Read:KurinWide'],
+      roles: ['Member'],
+      kurinKey: 'kurin-1',
+      requiresMfa: false,
+      tokens: { accessToken: 'token-1' }
+    };
+
+    let invalidated: string[];
+
+    beforeEach(() => {
+      service.applyLoginResponse(youth);
+      const cache = TestBed.inject(ClientCacheService);
+      invalidated = [];
+      vi.spyOn(cache, 'invalidateByPrefix').mockImplementation(prefix => {
+        invalidated.push(prefix);
+      });
+    });
+
+    it('leaves the state and the caches alone when nothing changed, whatever the order', () => {
+      const emitted: (AuthState | null)[] = [];
+      const subscription = service.getAuthState().subscribe(state => emitted.push(state));
+
+      const changed = service.applyAccess({
+        isAdmin: false,
+        roles: ['Member'],
+        permissions: ['Group:Read:KurinWide', 'Member:Read:KurinWide'],
+        kurinKey: 'kurin-1'
+      });
+      subscription.unsubscribe();
+
+      expect(changed).toBe(false);
+      expect(invalidated).toEqual([]);
+      expect(emitted).toHaveLength(1);
+    });
+
+    it('takes a new office, persists it and drops the access and member caches', () => {
+      const changed = service.applyAccess({
+        isAdmin: false,
+        roles: ['Member', 'Group.Hurtkoviy'],
+        permissions: [...youth.permissions, 'Group:Update:OwnGroups'],
+        kurinKey: 'kurin-1'
+      });
+
+      expect(changed).toBe(true);
+      expect(service.getAuthStateValue()?.roles).toEqual(['Member', 'Group.Hurtkoviy']);
+      expect(service.getAuthStateValue()?.permissions).toContain('Group:Update:OwnGroups');
+      expect(service.getAuthStateValue()?.accessToken).toBe('token-1');
+      expect(JSON.parse(localStorage.getItem('authState')!).permissions).toContain('Group:Update:OwnGroups');
+      expect(invalidated).toEqual(expect.arrayContaining([ACCESS_CACHE_PREFIX, MEMBER_CACHE_PREFIX]));
+    });
+
+    it('follows a kurin the server moved the account to', () => {
+      expect(service.applyAccess({ ...accessOf(youth), kurinKey: 'kurin-2' })).toBe(true);
+      expect(service.getAuthStateValue()?.kurinKey).toBe('kurin-2');
+    });
+
+    it('is applied by a refresh that carries it', () => {
+      service.refreshToken().subscribe();
+      httpMock.expectOne(`${apiUrl}/auth/refresh`).flush({
+        accessToken: 'token-2',
+        access: { ...accessOf(youth), permissions: [...youth.permissions, 'MemberWarning:Create:OwnGroups'] }
+      });
+
+      expect(service.getAuthStateValue()?.accessToken).toBe('token-2');
+      expect(service.getAuthStateValue()?.permissions).toContain('MemberWarning:Create:OwnGroups');
+      expect(invalidated).toContain(ACCESS_CACHE_PREFIX);
+    });
+
+    it('keeps the access as it was when an older server answers without it', () => {
+      service.refreshToken().subscribe();
+      httpMock.expectOne(`${apiUrl}/auth/refresh`).flush({ accessToken: 'token-2' });
+
+      expect(service.getAuthStateValue()?.accessToken).toBe('token-2');
+      expect(service.getAuthStateValue()?.permissions).toEqual(youth.permissions);
+      expect(invalidated).toEqual([]);
+    });
+
+    function accessOf(response: LoginResponse) {
+      return {
+        isAdmin: response.isAdmin,
+        roles: response.roles,
+        permissions: response.permissions,
+        kurinKey: response.kurinKey
+      };
+    }
   });
 
   describe('ensureAccessToken', () => {

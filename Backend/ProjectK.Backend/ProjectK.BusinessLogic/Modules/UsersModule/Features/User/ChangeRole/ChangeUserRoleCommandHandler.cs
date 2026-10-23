@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
@@ -18,15 +19,18 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IActivityLogger _activityLogger;
+    private readonly IAccessChangeSignal _accessChanges;
 
     public ChangeUserRoleCommandHandler(
         UserManager<AppUser> userManager,
         ICurrentUserContext currentUserContext,
-        IActivityLogger activityLogger)
+        IActivityLogger activityLogger,
+        IAccessChangeSignal accessChanges)
     {
         _userManager = userManager;
         _currentUserContext = currentUserContext;
         _activityLogger = activityLogger;
+        _accessChanges = accessChanges;
     }
 
     public async Task<ServiceResult<bool>> Handle(ChangeUserRoleCommand request, CancellationToken cancellationToken)
@@ -77,6 +81,8 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
                 await _userManager.AddToRoleAsync(targetUser, SystemRole.Member);
             }
         }
+
+        _accessChanges.MarkUser(targetUser.Id);
 
         _activityLogger.LogAudit(
             action: "Admin.UserRoleChanged",

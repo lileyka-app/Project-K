@@ -2,9 +2,11 @@ using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -55,20 +57,31 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
+    private readonly IMemberDirectory _members;
+    private readonly IBackendCache _cache;
+    private readonly IAccessChangeSignal _accessChanges;
+
     public UpsertLeadershipCommandHandler(
         IUnitOfWork unitOfWork,
         IMapper mapper,
-        ICurrentUserContext currentUserContext)
+        ICurrentUserContext currentUserContext,
+        IMemberDirectory members,
+        IBackendCache cache,
+        IAccessChangeSignal accessChanges)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserContext = currentUserContext;
+        _members = members;
+        _cache = cache;
+        _accessChanges = accessChanges;
     }
 
     public async Task<ServiceResult<LeadershipResponse>> Handle(UpsertLeadershipCommand request, CancellationToken cancellationToken)
     {
         LeadershipEntity? existing = null;
         bool isCreated = false;
+        IReadOnlyCollection<Guid> touchedHolders;
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         if (request.LeadershipKey != null && request.LeadershipKey != Guid.Empty)
         {
@@ -85,7 +98,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                 return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
             }
 
-            ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
+            touchedHolders = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
             _unitOfWork.Leaderships.Update(existing, cancellationToken);
         }
         else
@@ -107,7 +120,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                 return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
             }
 
-            ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
+            touchedHolders = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
             _unitOfWork.Leaderships.Add(existing, cancellationToken);
             isCreated = true;
         }
@@ -119,14 +132,29 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             return new ServiceResult<LeadershipResponse>(ResultType.InternalServerError);
         }
 
-        // Nothing to realign: what an office grants is worked out from this registry when a token
-        // is minted, so seating someone in an office is the whole of the change. It reaches them
-        // on their next refresh, as it always did.
+        // What an office grants is worked out from this registry when a token is minted. Whoever
+        // was seated or unseated is told their token is stale, so the change reaches them on their
+        // next request; the cached led-group sets are read from offices too and must not lag.
+        if (touchedHolders.Count > 0)
+        {
+            _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+            await MarkHoldersAsync(touchedHolders, cancellationToken);
+        }
+
         var response = _mapper.Map<LeadershipResponse>(existing);
 
         return isCreated
             ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
             : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
+    }
+
+    private async Task MarkHoldersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken)
+    {
+        var holders = await _members.GetByKeysAsync(memberKeys, cancellationToken);
+        foreach (var userKey in holders.Select(holder => holder.UserKey).OfType<Guid>().Distinct())
+        {
+            _accessChanges.MarkUser(userKey);
+        }
     }
 
     private static void PlaceOnEntity(LeadershipEntity leadership, Guid? entityKey)
@@ -195,11 +223,16 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             .Distinct()
             .ToList();
 
-    private static void ApplyLeadershipHistoryChanges(
+    /// <summary>
+    /// Ends the holders the request no longer names and seats the new ones. Answers the members
+    /// whose offices changed either way.
+    /// </summary>
+    private static HashSet<Guid> ApplyLeadershipHistoryChanges(
         LeadershipEntity leadership,
         IEnumerable<LeadershipHistoryMemberDto> requestedHistories,
         DateOnly today)
     {
+        var touched = new HashSet<Guid>();
         var requestedAssignments = requestedHistories
             .Where(history => history.EndDate == null)
             .Where(history => history.Member?.MemberKey is Guid memberKey && memberKey != Guid.Empty)
@@ -225,6 +258,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             if (!isStillAssigned)
             {
                 activeHistory.EndDate = today;
+                touched.Add(activeHistory.MemberKey);
             }
         }
 
@@ -248,6 +282,9 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                 StartDate = today,
                 EndDate = null
             });
+            touched.Add(assignment.MemberKey);
         }
+
+        return touched;
     }
 }

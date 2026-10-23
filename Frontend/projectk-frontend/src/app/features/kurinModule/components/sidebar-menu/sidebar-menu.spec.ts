@@ -123,6 +123,36 @@ describe('SidebarMenuComponent', () => {
       });
     }));
 
+    it('rebuilds the menu when a refresh changes the permissions', async () => {
+      const youth: AuthState = {
+        userKey: 'user-1',
+        memberKey: 'member-1',
+        email: 'youth@example.com',
+        isAdmin: false, permissions: [], roles: ['Member'],
+        kurinKey: 'kurin-1',
+        accessToken: 'token-1'
+      };
+      authStateSubject.next(youth);
+      mockAuthService.getAuthStateValue.mockImplementation(() => authStateSubject.value);
+      fixture.componentRef.setInput('state$', authStateSubject.asObservable());
+      component.ngOnChanges({ state$: new SimpleChange(null, component.state$(), true) });
+
+      const builds: MenuItem[][] = [];
+      const settingsShown = new Promise<void>(resolve => {
+        component.items$.subscribe(items => {
+          builds.push(items);
+          if (builds.length === 1) {
+            authStateSubject.next({ ...youth, permissions: ['Kurin:Update:KurinWide'], roles: ['KV.Zvyazkovyi'] });
+          } else if (items.some(item => item.label === 'Налаштування куреня')) {
+            resolve();
+          }
+        });
+      });
+
+      await settingsShown;
+      expect(builds[0].some(item => item.label === 'Налаштування куреня')).toBe(false);
+    });
+
     it('should set email$ to null when state is null', () => new Promise<void>(done => {
       fixture.componentRef.setInput('state$', of(null));
       mockAuthService.getAuthStateValue.mockReturnValue(null);

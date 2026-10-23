@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -25,11 +26,13 @@ public sealed record JoinKurinCommand(
 public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAccessChangeSignal _accessChanges;
     private readonly IMemberDirectory _members;
 
-    public JoinKurinCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
+    public JoinKurinCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAccessChangeSignal accessChanges)
     {
         _unitOfWork = unitOfWork;
+        _accessChanges = accessChanges;
         _members = members;
     }
 
@@ -102,6 +105,11 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
 
         _unitOfWork.Memberships.Open(membership);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (membership.UserKey is { } userKey)
+        {
+            _accessChanges.MarkUser(userKey);
+        }
 
         return new ServiceResult<Guid>(ResultType.Created, membership.MembershipKey);
     }

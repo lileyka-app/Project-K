@@ -22,20 +22,20 @@ public class LoginResponseFactory : ILoginResponseFactory
     private readonly IJwtService _jwtService;
     private readonly IMemberDirectory _members;
     private readonly IRefreshTokenStore _refreshTokens;
-    private readonly IPermissionResolver _permissions;
+    private readonly IAccessSnapshotFactory _snapshots;
 
     public LoginResponseFactory(
         IAccessContextResolver access,
         IJwtService jwtService,
         IMemberDirectory members,
         IRefreshTokenStore refreshTokens,
-        IPermissionResolver permissions)
+        IAccessSnapshotFactory snapshots)
     {
         _access = access;
         _jwtService = jwtService;
         _members = members;
         _refreshTokens = refreshTokens;
-        _permissions = permissions;
+        _snapshots = snapshots;
     }
 
     public async Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken)
@@ -43,12 +43,10 @@ public class LoginResponseFactory : ILoginResponseFactory
         // What this person may do is answered for the kurin they are in, not for the account.
         // Sign in, refresh and switching kurin all ask the same question here.
         var access = await _access.ResolveAsync(user, cancellationToken);
-        var kurinKey = access.KurinKey?.ToString();
-        var roles = access.Roles;
 
         var jwt = new JwtResponse
         {
-            AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, roles, kurinKey, user.TwoFactorEnabled),
+            AccessToken = _jwtService.GenerateAccessToken(user.Id.ToString(), user.Email!, access.Roles, access.KurinKey?.ToString(), user.TwoFactorEnabled),
             RefreshToken = _jwtService.GenerateRefreshToken()
         };
 
@@ -58,18 +56,17 @@ public class LoginResponseFactory : ILoginResponseFactory
 
         var member = await _members.FindByAccountAsync(user.Id, cancellationToken);
 
-        // The kurin's own policy, so the client hides exactly what the server would refuse.
-        var permissions = await _permissions.ResolveAsync(roles, access.KurinKey, cancellationToken);
+        var snapshot = await _snapshots.CreateAsync(access, cancellationToken);
 
         return new LoginUserResponse
         {
             UserKey = user.Id,
             MemberKey = member?.MemberKey,
             Email = user.Email!,
-            IsAdmin = access.IsAdmin,
-            Permissions = permissions.Select(permission => permission.ToClaimValue()).ToArray(),
-            Roles = [.. roles],
-            KurinKey = kurinKey,
+            IsAdmin = snapshot.IsAdmin,
+            Permissions = snapshot.Permissions,
+            Roles = snapshot.Roles,
+            KurinKey = snapshot.KurinKey,
             RequiresMfa = false,
             Tokens = jwt
         };

@@ -95,6 +95,37 @@ describe('AuthService', () => {
     expect(fresh.signedIn()).toBe(true);
     expect(localStorage.getItem('authState')).not.toBeNull();
   });
+
+  it('takes the access a refresh reports, so a new office reaches the menu', async () => {
+    const login = auth.login('yunak@example.com', 'secret');
+    http.expectOne(`${api}/auth/login`).flush(signedIn);
+    await login;
+
+    const refresh = auth.refresh();
+    http.expectOne(`${api}/auth/refresh`).flush({
+      accessToken: 'access-2',
+      access: { isAdmin: false, roles: ['Group.Hurtkoviy'], permissions: ['Group:Update:OwnGroups'], kurinKey: 'k1' },
+    });
+    await refresh;
+
+    expect(auth.accessToken()).toBe('access-2');
+    expect(auth.user()?.roles).toEqual(['Group.Hurtkoviy']);
+    expect(auth.user()?.permissions).toEqual(['Group:Update:OwnGroups']);
+    expect(JSON.parse(localStorage.getItem('authState') ?? '{}').permissions).toEqual(['Group:Update:OwnGroups']);
+  });
+
+  it('keeps the access as it was when an older server answers without it', async () => {
+    const login = auth.login('yunak@example.com', 'secret');
+    http.expectOne(`${api}/auth/login`).flush({ ...signedIn, permissions: ['Member:Read:KurinWide'] });
+    await login;
+
+    const refresh = auth.refresh();
+    http.expectOne(`${api}/auth/refresh`).flush({ accessToken: 'access-2' });
+    await refresh;
+
+    expect(auth.accessToken()).toBe('access-2');
+    expect(auth.user()?.permissions).toEqual(['Member:Read:KurinWide']);
+  });
 });
 
 function settle(): Promise<void> {

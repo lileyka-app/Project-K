@@ -122,7 +122,8 @@ public class KurinPolicyHttpIntegrationTests
             using var scope = _app.Services.CreateScope();
             var handler = new SetKurinAccessPolicyCommandHandler(
                 scope.ServiceProvider.GetRequiredService<IUnitOfWork>(),
-                scope.ServiceProvider.GetRequiredService<IKurinAccessPolicyProvider>());
+                scope.ServiceProvider.GetRequiredService<IKurinAccessPolicyProvider>(),
+                new Mock<IAccessChangeSignal>().Object);
             var result = await handler.Handle(
                 new SetKurinAccessPolicyCommand(Kurin.KurinKey, Matrix(capability, audience, reach)), CancellationToken.None);
             Assert.Equal(ResultType.Success, result.Type);

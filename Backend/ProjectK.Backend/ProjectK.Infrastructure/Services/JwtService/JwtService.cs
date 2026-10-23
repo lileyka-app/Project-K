@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -40,11 +41,13 @@ public class JwtService : IJwtService
     /// </summary>
     public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? kurinKey, bool hasSecondFactor)
     {
+        var now = _timeProvider.GetUtcNow();
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.Email, email),
-            new Claim(AccessTokenClaims.AuthenticationMethods, hasSecondFactor ? AccessTokenClaims.Mfa : AccessTokenClaims.Password)
+            new Claim(AccessTokenClaims.AuthenticationMethods, hasSecondFactor ? AccessTokenClaims.Mfa : AccessTokenClaims.Password),
+            new Claim(AccessTokenClaims.IssuedAt, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
@@ -60,7 +63,7 @@ public class JwtService : IJwtService
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: _timeProvider.GetUtcNow().UtcDateTime.AddMinutes(int.Parse(_config["Jwt:ExpiresInMinutes"])),
+            expires: now.UtcDateTime.AddMinutes(int.Parse(_config["Jwt:ExpiresInMinutes"])),
             signingCredentials: creds
         );
 

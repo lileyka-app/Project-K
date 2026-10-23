@@ -24,6 +24,7 @@ public class AssignMentorCommandHandlerTests
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
+    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
 
     public AssignMentorCommandHandlerTests()
     {
@@ -61,12 +62,13 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(mentorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, Guid.NewGuid(), null, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _mentorAssignmentRepoMock.Verify(x => x.Create(It.IsAny<MentorAssignmentEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+        _accessChanges.Verify(s => s.MarkUser(mentorUserKey), Times.Once);
     }
 
     [Fact]
@@ -84,7 +86,7 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.GetByKurinAsync(kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
@@ -107,7 +109,7 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -132,7 +134,7 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Conflict);
@@ -164,7 +166,7 @@ public class AssignMentorCommandHandlerTests
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
-        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object);
+        var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
 

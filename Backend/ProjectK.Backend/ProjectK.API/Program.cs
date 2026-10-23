@@ -162,7 +162,8 @@ public static class Program
                     policy.WithOrigins(origins)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials();
+                        .AllowCredentials()
+                        .WithExposedHeaders(AccessStaleHeaderMiddleware.HeaderName);
                 }
             });
         });
@@ -374,6 +375,8 @@ public static class Program
         app.UseCors("EnvCorsPolicy");
 
         app.UseAuthentication();
+
+        app.UseMiddleware<AccessStaleHeaderMiddleware>();
 
         // Geo-blocking runs before the rate limiter so blocked regions are rejected
         // without consuming limiter accounting.

@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -15,10 +16,12 @@ public sealed record LeaveKurinCommand(Guid MemberKey, Guid KurinKey) : IRequest
 public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand, ServiceResult<object>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAccessChangeSignal _accessChanges;
 
-    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork)
+    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges)
     {
         _unitOfWork = unitOfWork;
+        _accessChanges = accessChanges;
     }
 
     public async Task<ServiceResult<object>> Handle(LeaveKurinCommand request, CancellationToken cancellationToken)
@@ -46,6 +49,11 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
         // stops granting the office the moment the membership closes, so there is nothing else to
         // end. The office record stays as history.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (membership.UserKey is { } userKey)
+        {
+            _accessChanges.MarkUser(userKey);
+        }
 
         return new ServiceResult<object>(ResultType.Success);
     }

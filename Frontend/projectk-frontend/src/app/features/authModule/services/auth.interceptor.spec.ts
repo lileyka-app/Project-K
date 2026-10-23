@@ -2,10 +2,10 @@ import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { AuthInterceptor } from './auth.interceptor';
+import { AuthInterceptor, DENIED_REFRESH_THROTTLE_MS } from './auth.interceptor';
 import { AuthService } from './auth-service/auth.service';
 import { Router } from '@angular/router';
-import { throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 describe('AuthInterceptor', () => {
   let httpMock: HttpTestingController;
@@ -58,6 +58,66 @@ describe('AuthInterceptor', () => {
 
     expect(seen).toEqual([403]);
     expect(mockRouter.navigate).not.toHaveBeenCalled();
+    expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
+  });
+
+  describe('access changed elsewhere', () => {
+    beforeEach(() => {
+      mockAuthService.refreshToken.mockReturnValue(of('new-token'));
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('refreshes in the background when the answer says the token is stale', () => {
+      mockAuthService.getAccessToken.mockReturnValue('valid-token');
+      const bodies: unknown[] = [];
+
+      httpClient.get('/api/data').subscribe(body => bodies.push(body));
+      httpMock.expectOne('/api/data').flush({ ok: true }, { headers: { 'X-Access-Stale': '1' } });
+
+      expect(bodies).toEqual([{ ok: true }]);
+      expect(mockAuthService.refreshToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not refresh again for a stale answer to a token already replaced', () => {
+      mockAuthService.getAccessToken.mockReturnValueOnce('old-token').mockReturnValue('new-token');
+
+      httpClient.get('/api/data').subscribe();
+      httpMock.expectOne('/api/data').flush({}, { headers: { 'X-Access-Stale': '1' } });
+
+      expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
+    });
+
+    it('does not refresh for an answer without the header', () => {
+      mockAuthService.getAccessToken.mockReturnValue('valid-token');
+
+      httpClient.get('/api/data').subscribe();
+      httpMock.expectOne('/api/data').flush({});
+
+      expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
+    });
+
+    it('refreshes after a resource refusal, at most once in thirty seconds', () => {
+      mockAuthService.getAccessToken.mockReturnValue('valid-token');
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+      const deny = () => {
+        httpClient.get('/api/member/m-1').subscribe({ error: () => undefined });
+        httpMock.expectOne('/api/member/m-1').flush(
+          { error: 'ResourceAccessDenied', message: 'No' },
+          { status: 403, statusText: 'Forbidden' });
+      };
+
+      deny();
+      now.mockReturnValue(1_000_000 + DENIED_REFRESH_THROTTLE_MS - 1);
+      deny();
+      expect(mockAuthService.refreshToken).toHaveBeenCalledTimes(1);
+
+      now.mockReturnValue(1_000_000 + DENIED_REFRESH_THROTTLE_MS);
+      deny();
+      expect(mockAuthService.refreshToken).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('should not try to refresh token if 401 occurs on /api/auth/logout', () => {

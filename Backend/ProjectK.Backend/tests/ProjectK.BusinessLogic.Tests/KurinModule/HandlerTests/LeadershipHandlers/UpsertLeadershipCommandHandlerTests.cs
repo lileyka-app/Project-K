@@ -7,10 +7,12 @@ using AutoMapper;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
@@ -25,6 +27,9 @@ public class UpsertLeadershipHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IMemberDirectory> _membersMock = new();
+    private readonly Mock<IBackendCache> _cacheMock = new();
+    private readonly Mock<IAccessChangeSignal> _accessChangesMock = new();
     private readonly Mock<ProjectK.Common.Interfaces.Modules.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
     private readonly UpsertLeadershipCommandHandler _handler;
 
@@ -37,10 +42,31 @@ public class UpsertLeadershipHandlerTests
                 ProjectK.Common.Models.Enums.LeadershipType.KV,
                 ProjectK.Common.Models.Enums.LeadershipRole.Zvyazkovyi)
         });
+        _membersMock
+            .Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => keys
+                .Select(key => new MemberSummary(key, AccountOf(key), Guid.NewGuid(), null, "A", "B", "a@example.com", null))
+                .ToList());
         _handler = new UpsertLeadershipCommandHandler(
             _unitOfWorkMock.Object,
             _mapperMock.Object,
-            _currentUserContextMock.Object);
+            _currentUserContextMock.Object,
+            _membersMock.Object,
+            _cacheMock.Object,
+            _accessChangesMock.Object);
+    }
+
+    private readonly Dictionary<Guid, Guid> _accounts = new();
+
+    private Guid AccountOf(Guid memberKey)
+    {
+        if (!_accounts.TryGetValue(memberKey, out var userKey))
+        {
+            userKey = Guid.NewGuid();
+            _accounts[memberKey] = userKey;
+        }
+
+        return userKey;
     }
 
     private static UpsertLeadershipRequest BuildRequest(string type = "kurin") => new()
@@ -419,6 +445,86 @@ public class UpsertLeadershipHandlerTests
         Assert.Equal(LeadershipRole.Kurinnuy, newHistory.Role);
         Assert.Equal(today, newHistory.StartDate);
         Assert.Null(newHistory.EndDate);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldMarkTheOldAndNewHolders_AndDropTheLedGroupCache_WhenAHolderChanges()
+    {
+        var oldMemberKey = Guid.NewGuid();
+        var newMemberKey = Guid.NewGuid();
+        var stayingMemberKey = Guid.NewGuid();
+        var existing = LeadershipHeldBy(
+            (LeadershipRole.Kurinnuy, oldMemberKey),
+            (LeadershipRole.Pysar, stayingMemberKey));
+        var command = new UpsertLeadershipCommand(
+            RequestSeating(existing, (LeadershipRole.Kurinnuy, newMemberKey), (LeadershipRole.Pysar, stayingMemberKey)),
+            existing.LeadershipKey);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ResultType.Success, result.Type);
+        _accessChangesMock.Verify(s => s.MarkUser(AccountOf(oldMemberKey)), Times.Once);
+        _accessChangesMock.Verify(s => s.MarkUser(AccountOf(newMemberKey)), Times.Once);
+        _accessChangesMock.Verify(s => s.MarkUser(AccountOf(stayingMemberKey)), Times.Never);
+        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.MentorScopeReads), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldMarkNobody_WhenTheSameHoldersAreResubmitted()
+    {
+        var memberKey = Guid.NewGuid();
+        var existing = LeadershipHeldBy((LeadershipRole.Kurinnuy, memberKey));
+        var command = new UpsertLeadershipCommand(
+            RequestSeating(existing, (LeadershipRole.Kurinnuy, memberKey)),
+            existing.LeadershipKey);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        _accessChangesMock.Verify(s => s.MarkUser(It.IsAny<Guid>()), Times.Never);
+        _cacheMock.Verify(c => c.Invalidate(It.IsAny<CachePolicy>()), Times.Never);
+    }
+
+    private Leadership LeadershipHeldBy(params (LeadershipRole Role, Guid MemberKey)[] holders)
+    {
+        var existing = BuildLeadershipEntity();
+        existing.Type = LeadershipType.Kurin;
+        existing.KurinKey = Guid.NewGuid();
+        foreach (var (role, memberKey) in holders)
+        {
+            existing.LeadershipHistories.Add(new LeadershipHistory
+            {
+                LeadershipHistoryKey = Guid.NewGuid(),
+                LeadershipKey = existing.LeadershipKey,
+                Leadership = existing,
+                MemberKey = memberKey,
+                Role = role,
+                StartDate = new DateOnly(2024, 1, 1),
+                EndDate = null
+            });
+        }
+
+        _leadershipRepoMock
+            .Setup(r => r.GetByKeyAsync(existing.LeadershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        return existing;
+    }
+
+    private static UpsertLeadershipRequest RequestSeating(Leadership existing, params (LeadershipRole Role, Guid MemberKey)[] holders)
+    {
+        var request = BuildRequest("kurin");
+        request.EntityKey = existing.KurinKey;
+        request.LeadershipHistories = holders
+            .Select(holder => new LeadershipHistoryMemberDto
+            {
+                Role = holder.Role.ToString(),
+                Member = new MemberLookupDto { MemberKey = holder.MemberKey, FirstName = "A", LastName = "B" }
+            })
+            .ToList();
+        return request;
     }
 
     [Fact]

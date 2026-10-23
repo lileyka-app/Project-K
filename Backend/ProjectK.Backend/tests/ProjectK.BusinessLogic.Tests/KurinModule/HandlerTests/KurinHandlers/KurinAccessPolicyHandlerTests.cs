@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -19,6 +20,7 @@ public class KurinAccessPolicyHandlerTests
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IBackendCache> _cache = new();
+    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
     private readonly KurinAccessPolicyProvider _provider;
     private readonly Kurin _kurin = new(5);
 
@@ -56,7 +58,7 @@ public class KurinAccessPolicyHandlerTests
     private static AccessPolicyCellDto Cell(KurinAccessPolicyDto dto, KurinCapability capability, PolicyAudience audience) =>
         dto.Capabilities.Single(row => row.Key == capability).Cells.Single(cell => cell.Audience == audience);
 
-    private SetKurinAccessPolicyCommandHandler SetHandler() => new(_unitOfWork.Object, _provider);
+    private SetKurinAccessPolicyCommandHandler SetHandler() => new(_unitOfWork.Object, _provider, _accessChanges.Object);
 
     [Fact]
     public async Task Get_GivesEveryCell_WithItsDefaultAndLock()
@@ -93,7 +95,7 @@ public class KurinAccessPolicyHandlerTests
     }
 
     [Fact]
-    public async Task Set_StoresOnlyWhatDiffersFromTheDefaults_AndDropsTheCache()
+    public async Task Set_StoresOnlyWhatDiffersFromTheDefaults_DropsTheCache_AndMarksTheKurin()
     {
         var current = await new GetKurinAccessPolicyQueryHandler(_unitOfWork.Object, _provider)
             .Handle(new GetKurinAccessPolicyQuery(_kurin.KurinKey), default);
@@ -108,6 +110,7 @@ public class KurinAccessPolicyHandlerTests
         _kurins.Verify(r => r.Update(_kurin, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cache.Verify(c => c.Invalidate(BackendCachePolicies.KurinAccessPolicyReads), Times.Once);
+        _accessChanges.Verify(s => s.MarkKurin(_kurin.KurinKey), Times.Once);
     }
 
     [Fact]
@@ -137,6 +140,7 @@ public class KurinAccessPolicyHandlerTests
         _kurin.AccessPolicy.Should().BeNull();
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _cache.Verify(c => c.Invalidate(It.IsAny<CachePolicy>()), Times.Never);
+        _accessChanges.Verify(s => s.MarkKurin(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]

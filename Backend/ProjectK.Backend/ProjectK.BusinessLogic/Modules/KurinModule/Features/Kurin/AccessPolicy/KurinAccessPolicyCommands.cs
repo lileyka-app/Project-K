@@ -45,11 +45,16 @@ public sealed class SetKurinAccessPolicyCommandHandler : IRequestHandler<SetKuri
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IKurinAccessPolicyProvider _policies;
+    private readonly IAccessChangeSignal _accessChanges;
 
-    public SetKurinAccessPolicyCommandHandler(IUnitOfWork unitOfWork, IKurinAccessPolicyProvider policies)
+    public SetKurinAccessPolicyCommandHandler(
+        IUnitOfWork unitOfWork,
+        IKurinAccessPolicyProvider policies,
+        IAccessChangeSignal accessChanges)
     {
         _unitOfWork = unitOfWork;
         _policies = policies;
+        _accessChanges = accessChanges;
     }
 
     public async Task<ServiceResult<KurinAccessPolicyDto>> Handle(SetKurinAccessPolicyCommand request, CancellationToken cancellationToken)
@@ -74,6 +79,7 @@ public sealed class SetKurinAccessPolicyCommandHandler : IRequestHandler<SetKuri
         _unitOfWork.Kurins.Update(kurin, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _policies.Invalidate();
+        _accessChanges.MarkKurin(request.KurinKey);
 
         return KurinAccessPolicyResult.Of(policy);
     }

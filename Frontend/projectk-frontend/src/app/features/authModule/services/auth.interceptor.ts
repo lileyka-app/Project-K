@@ -5,12 +5,20 @@ import {
     HttpRequest,
     HttpHandler,
     HttpEvent,
-    HttpErrorResponse
+    HttpErrorResponse,
+    HttpHeaders,
+    HttpResponse
 } from "@angular/common/http";
 import { AuthService } from "./auth-service/auth.service";
 import { Observable, throwError, BehaviorSubject } from "rxjs";
-import { catchError, switchMap, filter, take, finalize } from "rxjs/operators";
+import { catchError, switchMap, filter, take, finalize, tap } from "rxjs/operators";
 import { Router } from "@angular/router";
+
+/** Set by the API when the token predates a change to what the caller may do. */
+export const ACCESS_STALE_HEADER = 'X-Access-Stale';
+
+/** How often a refusal may trigger a refresh, so a page that is simply not this person's cannot loop. */
+export const DENIED_REFRESH_THROTTLE_MS = 30 * 1000;
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -19,6 +27,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     private isRefreshing = false;
     private readonly refreshTokenSubject = new BehaviorSubject<string | null>(null);
+    private lastDeniedRefreshAt = Number.NEGATIVE_INFINITY;
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         // Skip refresh token requests to avoid loops
@@ -28,7 +37,12 @@ export class AuthInterceptor implements HttpInterceptor {
 
         const authReq = this.addAuthHeader(req);
         return next.handle(authReq).pipe(
-            catchError(error => this.handleError(error, req, next))
+            tap(event => {
+                if (event instanceof HttpResponse) {
+                    this.refreshIfStale(authReq, event.headers);
+                }
+            }),
+            catchError(error => this.handleError(error, req, authReq, next))
         );
     }
 
@@ -41,12 +55,18 @@ export class AuthInterceptor implements HttpInterceptor {
         });
     }
 
-    private handleError(error: any, req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    private handleError(error: any, req: HttpRequest<any>, authReq: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         if (error instanceof HttpErrorResponse && error.status === 401) {
             if (this.shouldSkipRefreshOnUnauthorized(req)) {
                 return throwError(() => error);
             }
             return this.tryRefreshAndRepeat(req, next);
+        }
+
+        if (error instanceof HttpErrorResponse
+            && !this.refreshIfStale(authReq, error.headers)
+            && this.isResourceAccessDenied(error)) {
+            this.refreshAfterDenial();
         }
 
         // 403 is passed through, not navigated on. Navigation belongs to the router's guards:
@@ -56,6 +76,49 @@ export class AuthInterceptor implements HttpInterceptor {
         // that deliberately answer 403 inline (member-card, skills-review-page), whose messages
         // were never seen.
         return throwError(() => error);
+    }
+
+    /**
+     * Refreshes in the background when the server says the token is stale. Only a request sent with
+     * the token still in use counts: once a refresh has replaced it, the answers to requests that
+     * went out before would each ask for another one.
+     */
+    private refreshIfStale(authReq: HttpRequest<any>, headers: HttpHeaders | null | undefined): boolean {
+        if (headers?.get(ACCESS_STALE_HEADER) !== '1') {
+            return false;
+        }
+
+        const current = this.authService.getAccessToken();
+        if (!current || authReq.headers.get('Authorization') !== `Bearer ${current}`) {
+            return false;
+        }
+
+        this.refreshSilently();
+        return true;
+    }
+
+    private isResourceAccessDenied(error: HttpErrorResponse): boolean {
+        return error.status === 403 && error.error?.error === 'ResourceAccessDenied';
+    }
+
+    /**
+     * A refusal can mean an office was taken away on another instance, where no stale mark reached
+     * this one. A refresh brings the menu in line.
+     */
+    private refreshAfterDenial(): void {
+        const now = Date.now();
+        if (!this.authService.getAccessToken() || now - this.lastDeniedRefreshAt < DENIED_REFRESH_THROTTLE_MS) {
+            return;
+        }
+
+        this.lastDeniedRefreshAt = now;
+        this.refreshSilently();
+    }
+
+    // AuthService.refreshToken is single-flight, so a burst of stale answers costs one refresh. A
+    // failure is left alone: the next request meets a 401 and the usual path takes over.
+    private refreshSilently(): void {
+        this.authService.refreshToken().subscribe({ error: () => undefined });
     }
 
     private shouldSkipRefreshOnUnauthorized(req: HttpRequest<any>): boolean {

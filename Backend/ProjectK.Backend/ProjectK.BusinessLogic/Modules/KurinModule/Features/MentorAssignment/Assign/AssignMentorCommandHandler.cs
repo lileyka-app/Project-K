@@ -17,12 +17,14 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly IBackendCache _cache;
+    private readonly IAccessChangeSignal _accessChanges;
 
-    public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache)
+    public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache, IAccessChangeSignal accessChanges)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _cache = cache;
+        _accessChanges = accessChanges;
     }
 
     public async Task<ServiceResult<Guid>> Handle(AssignMentorCommand request, CancellationToken cancellationToken)
@@ -75,6 +77,7 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
         // The assignment itself is what grants гуртковий access — it is read when access is
         // decided. Only the cached scope set has to go, so the next check sees it at once.
         _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _accessChanges.MarkUser(request.MentorUserKey);
 
         return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);
     }

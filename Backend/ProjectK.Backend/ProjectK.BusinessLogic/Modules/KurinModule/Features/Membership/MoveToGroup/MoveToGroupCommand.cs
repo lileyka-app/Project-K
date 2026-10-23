@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
@@ -16,11 +17,13 @@ public sealed record MoveToGroupCommand(Guid MemberKey, Guid KurinKey, Guid? Gro
 public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupCommand, ServiceResult<object>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAccessChangeSignal _accessChanges;
     private readonly IDomainEventPublisher _events;
 
-    public MoveToGroupCommandHandler(IUnitOfWork unitOfWork, IDomainEventPublisher events)
+    public MoveToGroupCommandHandler(IUnitOfWork unitOfWork, IDomainEventPublisher events, IAccessChangeSignal accessChanges)
     {
         _unitOfWork = unitOfWork;
+        _accessChanges = accessChanges;
         _events = events;
     }
 
@@ -61,6 +64,12 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
 
         membership.GroupKey = request.GroupKey;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // What "own гурток" reaches moves with them.
+        if (membership.UserKey is { } userKey)
+        {
+            _accessChanges.MarkUser(userKey);
+        }
 
         return new ServiceResult<object>(ResultType.Success);
     }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -21,6 +22,7 @@ public class ChangeUserRoleCommandHandlerTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IActivityLogger> _activityLoggerMock;
+    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
     private readonly ChangeUserRoleCommandHandler _handler;
 
     public ChangeUserRoleCommandHandlerTests()
@@ -33,7 +35,8 @@ public class ChangeUserRoleCommandHandlerTests
         _handler = new ChangeUserRoleCommandHandler(
             _userManagerMock.Object,
             _currentUserContextMock.Object,
-            _activityLoggerMock.Object);
+            _activityLoggerMock.Object,
+            _accessChanges.Object);
     }
 
     [Fact]
@@ -48,6 +51,7 @@ public class ChangeUserRoleCommandHandlerTests
 
         result.Type.Should().Be(ResultType.Forbidden);
         result.Data.Should().BeFalse();
+        _accessChanges.Verify(s => s.MarkUser(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]
@@ -65,6 +69,7 @@ public class ChangeUserRoleCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         result.Data.Should().BeTrue();
         _userManagerMock.Verify(m => m.AddToRoleAsync(user, "Admin"), Times.Once);
+        _accessChanges.Verify(s => s.MarkUser(targetUserId), Times.Once);
     }
 
     [Fact]

@@ -12,6 +12,7 @@ import {
   MfaRecoveryCodes,
   MfaSetup,
   MfaStatus,
+  RefreshResponse,
   SavedAccount,
 } from './auth.models';
 
@@ -85,12 +86,27 @@ export class AuthService {
     this.apply(toState(response));
   }
 
-  /** One request at a time: every caller waiting on a 401 shares it. */
+  /**
+   * One request at a time: every caller waiting on a 401 or a stale-access answer shares it. What
+   * the account may do comes back with the token, so an office given or taken elsewhere reaches the
+   * menu without signing in again.
+   */
   refresh(): Promise<string> {
-    this.refreshing ??= this.post<{ accessToken: string }>('auth/refresh', {})
-      .then(({ accessToken }) => {
+    this.refreshing ??= this.post<RefreshResponse>('auth/refresh', {})
+      .then(({ accessToken, access }) => {
         const current = this.state();
-        if (current) this.apply({ ...current, accessToken });
+        if (current) {
+          this.apply({
+            ...current,
+            accessToken,
+            ...(access && {
+              isAdmin: access.isAdmin,
+              roles: access.roles ?? [],
+              permissions: access.permissions ?? [],
+              kurinKey: access.kurinKey ?? null,
+            }),
+          });
+        }
         return accessToken;
       })
       .finally(() => (this.refreshing = null));

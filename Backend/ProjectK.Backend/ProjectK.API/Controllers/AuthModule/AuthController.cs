@@ -223,7 +223,7 @@ public class AuthController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("refresh")]
-    [ProducesResponseType(typeof(JwtResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> Refresh()
     {
         var refreshTokens = GetRefreshTokenCookieValues();

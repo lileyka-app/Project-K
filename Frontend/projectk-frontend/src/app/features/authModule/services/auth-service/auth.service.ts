@@ -5,6 +5,7 @@ import { environment } from "../../../../../environments/environment";
 import { LoginRequest } from "../../models/login-request.model";
 import { LoginResponse } from "../../models/login-response.model";
 import { AuthState } from "../../models/auth-state.model";
+import { AccessSnapshot, RefreshResponse } from "../../models/access-snapshot.model";
 import { KurinScopeOption } from "../../../kurinModule/models/kurin-scope-option.model";
 import { SavedAccount } from "../../models/saved-account.model";
 import { clearMfaSessionState } from "../mfa-session-state";
@@ -237,12 +238,17 @@ export class AuthService {
       return this.refreshTokenRequest$;
     }
 
-    this.refreshTokenRequest$ = this.http.post<{ accessToken: string }>(
+    this.refreshTokenRequest$ = this.http.post<RefreshResponse>(
       `${this.apiUrl}/auth/refresh`,
       {},
       { withCredentials: true, context: requestFeedback('silent') }
     ).pipe(
-      tap(res => this.applyAccessToken(res.accessToken)),
+      tap(res => {
+        this.applyAccessToken(res.accessToken);
+        if (res.access) {
+          this.applyAccess(res.access);
+        }
+      }),
       map(res => res.accessToken),
       finalize(() => {
         this.refreshTokenRequest$ = null;
@@ -325,13 +331,39 @@ export class AuthService {
     }
   }
 
-  updatePermissions(permissions: string[], roles: string[], isAdmin: boolean): void {
+  updatePermissions(permissions: string[], roles: string[], isAdmin: boolean, kurinKey?: string | null): void {
     const state = this.authState$.value;
     if (state) {
-      const newState = { ...state, permissions, roles, isAdmin };
+      const newState = { ...state, permissions, roles, isAdmin, kurinKey: kurinKey === undefined ? state.kurinKey : kurinKey };
       this.authState$.next(newState);
       this.persistAuthState(newState);
     }
+  }
+
+  /**
+   * Takes what a refresh says this person may do now. Nothing happens when it matches what is
+   * already held; a change drops every cached answer given for the old access (check-access, member
+   * data masked for the old roles) before the new state goes out, so whatever reacts to it — the
+   * menu, the open page — reads afresh. Answers whether anything changed.
+   */
+  applyAccess(access: AccessSnapshot): boolean {
+    const state = this.authState$.value;
+    if (!state) {
+      return false;
+    }
+
+    const kurinKey = access.kurinKey ?? null;
+    const changed = state.isAdmin !== access.isAdmin
+      || state.kurinKey !== kurinKey
+      || !sameMembers(state.roles, access.roles)
+      || !sameMembers(state.permissions, access.permissions);
+    if (!changed) {
+      return false;
+    }
+
+    this.forgetKurinScopedEntities();
+    this.updatePermissions(access.permissions ?? [], access.roles ?? [], access.isAdmin, kurinKey);
+    return true;
   }
 
   clearKurinKey(): void {
@@ -416,4 +448,11 @@ export class AuthService {
       accessToken: null
     };
   }
+}
+
+/** The same strings regardless of order; the server sends permissions in no promised order. */
+function sameMembers(held: readonly string[] | null | undefined, given: readonly string[] | null | undefined): boolean {
+  const a = new Set(held ?? []);
+  const b = new Set(given ?? []);
+  return a.size === b.size && [...a].every(value => b.has(value));
 }

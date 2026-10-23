@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
@@ -26,6 +27,7 @@ public class JoinKurinByPublicIdTests
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IGroupRepository> _groups = new();
+    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
 
     private readonly Guid _memberKey = Guid.NewGuid();
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -52,7 +54,7 @@ public class JoinKurinByPublicIdTests
             .ReturnsAsync(new MemberSummary(
                 _memberKey, Guid.NewGuid(), Guid.NewGuid(), null, "Оксана", "Тестова", "o@example.com", null));
 
-        _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object);
+        _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, _accessChanges.Object);
         _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object);
     }
 
@@ -71,6 +73,7 @@ public class JoinKurinByPublicIdTests
         opened.Should().NotBeNull();
         opened!.MemberKey.Should().Be(_memberKey);
         opened.KurinKey.Should().Be(_kurinKey);
+        _accessChanges.Verify(s => s.MarkUser(opened.UserKey!.Value), Times.Once);
     }
 
     [Fact]
