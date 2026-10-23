@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
@@ -35,6 +36,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
     private readonly IMemberDirectory _members;
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
+    private readonly IKurinJournalReader _journal;
     private readonly IProbesCatalogService _probes;
 
     public UpdateProbePointSignatureCommandHandler(
@@ -42,12 +44,14 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         IMemberDirectory members,
         AuditActorResolver actors,
         IKurinAudit audit,
+        IKurinJournalReader journal,
         IProbesCatalogService probes)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _actors = actors;
         _audit = audit;
+        _journal = journal;
         _probes = probes;
     }
 
@@ -135,9 +139,10 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
             return new ServiceResult<ProbeProgressResponse>(ResultType.Success, notStarted);
         }
 
+        var journal = await _journal.GetForSubjectsAsync([probeProgress.ProbeProgressKey], cancellationToken);
         return new ServiceResult<ProbeProgressResponse>(
             ResultType.Success,
-            ProbeProgressResponse.FromEntity(probeProgress, latestPointSignatures));
+            ProbeProgressResponse.FromEntity(probeProgress, journal, latestPointSignatures));
     }
 
     /// <summary>

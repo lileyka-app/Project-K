@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
@@ -51,9 +50,6 @@ public class AuditCleanupBackgroundServiceTests : IDisposable
         var loggerMock = new Mock<ILogger<AuditCleanupBackgroundService>>();
         var service = new AuditCleanupBackgroundService(serviceProvider, loggerMock.Object);
 
-        var oldDateProgress = DateTime.UtcNow.AddDays(-181);
-        var newDateProgress = DateTime.UtcNow.AddDays(-179);
-
         var oldDateOnboarding = DateTime.UtcNow.AddDays(-31);
         var newDateOnboarding = DateTime.UtcNow.AddDays(-29);
         var oldReadNotificationDate = DateTime.UtcNow.AddDays(-8);
@@ -63,20 +59,6 @@ public class AuditCleanupBackgroundServiceTests : IDisposable
 
         using (var context = new AppDbContext(_options))
         {
-            // Note: BadgeProgress requires a related BadgeProgress entity, but we only need the audit event for the test if FKs allow, 
-            // but SQLite will enforce FKs. So we create dummy parents or disable FKs.
-            // SQLite in-memory PRAGMA foreign_keys = OFF is default unless enabled. We'll see.
-
-            context.BadgeProgressAuditEvents.AddRange(
-                new BadgeProgressAuditEvent { BadgeProgressAuditEventKey = Guid.NewGuid(), OccurredAtUtc = oldDateProgress },
-                new BadgeProgressAuditEvent { BadgeProgressAuditEventKey = Guid.NewGuid(), OccurredAtUtc = newDateProgress }
-            );
-
-            context.ProbeProgressAuditEvents.AddRange(
-                new ProbeProgressAuditEvent { ProbeProgressAuditEventKey = Guid.NewGuid(), OccurredAtUtc = oldDateProgress },
-                new ProbeProgressAuditEvent { ProbeProgressAuditEventKey = Guid.NewGuid(), OccurredAtUtc = newDateProgress }
-            );
-
             context.WaitlistEntries.AddRange(
                 new WaitlistEntry
                 {
@@ -126,8 +108,6 @@ public class AuditCleanupBackgroundServiceTests : IDisposable
         // Assert
         using (var context = new AppDbContext(_options))
         {
-            Assert.Equal(1, await context.BadgeProgressAuditEvents.CountAsync());
-            Assert.Equal(1, await context.ProbeProgressAuditEvents.CountAsync());
             Assert.Equal(1, await context.WaitlistEntries.CountAsync());
             Assert.Equal(1, await context.Invitations.CountAsync());
 

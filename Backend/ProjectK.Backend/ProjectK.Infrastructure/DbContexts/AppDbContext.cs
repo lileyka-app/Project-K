@@ -42,9 +42,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<AgendaCategory> AgendaCategories { get; set; }
     public DbSet<AgendaResponse> AgendaResponses { get; set; }
     public DbSet<BadgeProgress> BadgeProgresses { get; set; }
-    public DbSet<BadgeProgressAuditEvent> BadgeProgressAuditEvents { get; set; }
     public DbSet<ProbeProgress> ProbeProgresses { get; set; }
-    public DbSet<ProbeProgressAuditEvent> ProbeProgressAuditEvents { get; set; }
     public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
     public DbSet<MentorAssignment> MentorAssignments { get; set; }
     public DbSet<MemberWarning> MemberWarnings { get; set; }
@@ -624,26 +622,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .IsUnique();
         });
 
-        builder.Entity<BadgeProgressAuditEvent>(entity =>
-        {
-            entity.HasKey(e => e.BadgeProgressAuditEventKey);
-            entity.Property(e => e.FromStatus)
-                .HasConversion<int?>();
-            entity.Property(e => e.ToStatus)
-                .HasConversion<int>();
-            entity.Property(e => e.Action)
-                .HasMaxLength(100)
-                .IsRequired();
-            entity.Property(e => e.ActorRole)
-                .HasMaxLength(50)
-                .IsRequired();
-            entity.HasOne(e => e.BadgeProgress)
-                .WithMany(p => p.AuditEvents)
-                .HasForeignKey(e => e.BadgeProgressKey)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => e.BadgeProgressKey);
-        });
-
         builder.Entity<ProbeProgress>(entity =>
         {
             entity.HasKey(e => e.ProbeProgressKey);
@@ -654,26 +632,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasConversion<int>();
             entity.HasIndex(e => new { e.MemberKey, e.ProbeId })
                 .IsUnique();
-        });
-
-        builder.Entity<ProbeProgressAuditEvent>(entity =>
-        {
-            entity.HasKey(e => e.ProbeProgressAuditEventKey);
-            entity.Property(e => e.FromStatus)
-                .HasConversion<int?>();
-            entity.Property(e => e.ToStatus)
-                .HasConversion<int>();
-            entity.Property(e => e.Action)
-                .HasMaxLength(100)
-                .IsRequired();
-            entity.Property(e => e.ActorRole)
-                .HasMaxLength(50)
-                .IsRequired();
-            entity.HasOne(e => e.ProbeProgress)
-                .WithMany(p => p.AuditEvents)
-                .HasForeignKey(e => e.ProbeProgressKey)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => e.ProbeProgressKey);
         });
 
         builder.Entity<ProbePointProgress>(entity =>

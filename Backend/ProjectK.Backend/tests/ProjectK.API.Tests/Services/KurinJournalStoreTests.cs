@@ -220,6 +220,26 @@ public class KurinJournalStoreTests : IDisposable
         Assert.True(left.OccurredAtUtc > now.AddDays(-365));
     }
 
+    [Fact]
+    public async Task TheReadBySubjects_TakesEveryKurin_OldestFirst_AndOnlyThoseRecords()
+    {
+        var now = DateTime.UtcNow;
+        var first = Entry(now.AddMinutes(-1));
+        var second = Entry(now.AddMinutes(-3), kurinKey: Guid.NewGuid());
+        var sameRecord = Entry(now.AddMinutes(-2));
+        sameRecord.SubjectKey = first.SubjectKey;
+        await SeedAsync(first, second, sameRecord, Entry(now));
+
+        await using var context = new AppDbContext(_options);
+        var reader = new KurinJournalReader(context);
+        var read = await reader.GetForSubjectsAsync([first.SubjectKey, second.SubjectKey]);
+
+        Assert.Equal(
+            new[] { second.KurinAuditEventKey, sameRecord.KurinAuditEventKey, first.KurinAuditEventKey },
+            read.Select(e => e.KurinAuditEventKey));
+        Assert.Empty(await reader.GetForSubjectsAsync([]));
+    }
+
     private static WaitlistEntry Waitlisted(Guid key) => new()
     {
         WaitlistEntryKey = key,

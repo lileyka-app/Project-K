@@ -18,5 +18,4 @@ public class BadgeProgress : Entity
     public string? ReviewedByName { get; set; }
     public string? ReviewedByRole { get; set; }
     public string? ReviewNote { get; set; }
-    public ICollection<BadgeProgressAuditEvent> AuditEvents { get; set; } = new List<BadgeProgressAuditEvent>();
 }

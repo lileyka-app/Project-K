@@ -5,10 +5,9 @@ namespace ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 public interface IProbeProgressRepository : IBaseEntityRepository<ProbeProgress>
 {
     Task<ProbeProgress?> GetByMemberAndProbeIdAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
-    Task<ProbeProgress?> GetByMemberAndProbeIdWithAuditAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ProbeProgress>> GetByMemberKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>Every проба of these people, without the audit trail: one query for a whole roster.</summary>
+    /// <summary>Every проба of these people: one query for a whole roster.</summary>
     Task<IEnumerable<ProbeProgress>> GetByMemberKeysAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -17,7 +16,7 @@ public interface IProbeProgressRepository : IBaseEntityRepository<ProbeProgress>
     /// </summary>
     Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
 
-    /// <summary>Every row earned in a kurin, untracked and without its audit trail.</summary>
+    /// <summary>Every row earned in a kurin, untracked.</summary>
     Task<IReadOnlyList<ProbeProgress>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>How many rows one person has here, without reading them.</summary>

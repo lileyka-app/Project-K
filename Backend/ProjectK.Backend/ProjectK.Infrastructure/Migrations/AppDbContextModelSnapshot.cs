@@ -2443,56 +2443,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("BadgeProgresses");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgressAuditEvent", b =>
-                {
-                    b.Property<Guid>("BadgeProgressAuditEventKey")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ActorName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ActorRole")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid?>("ActorUserKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("BadgeProgressKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("FromStatus")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("OccurredAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ToStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("BadgeProgressAuditEventKey");
-
-                    b.HasIndex("BadgeProgressKey");
-
-                    b.ToTable("BadgeProgressAuditEvents");
-                });
-
             modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbePointProgress", b =>
                 {
                     b.Property<Guid>("ProbePointProgressKey")
@@ -2601,56 +2551,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ProbeProgresses");
-                });
-
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgressAuditEvent", b =>
-                {
-                    b.Property<Guid>("ProbeProgressAuditEventKey")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ActorName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ActorRole")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid?>("ActorUserKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("FromStatus")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("OccurredAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ProbeProgressKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("ToStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ProbeProgressAuditEventKey");
-
-                    b.HasIndex("ProbeProgressKey");
-
-                    b.ToTable("ProbeProgressAuditEvents");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.KurinScoreSettings", b =>
@@ -3487,28 +3387,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Member");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgressAuditEvent", b =>
-                {
-                    b.HasOne("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", "BadgeProgress")
-                        .WithMany("AuditEvents")
-                        .HasForeignKey("BadgeProgressKey")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BadgeProgress");
-                });
-
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgressAuditEvent", b =>
-                {
-                    b.HasOne("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress", "ProbeProgress")
-                        .WithMany("AuditEvents")
-                        .HasForeignKey("ProbeProgressKey")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ProbeProgress");
-                });
-
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntry", b =>
                 {
                     b.Navigation("Events");
@@ -3576,16 +3454,6 @@ namespace ProjectK.Infrastructure.Migrations
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.PlanningSession", b =>
                 {
                     b.Navigation("Participants");
-                });
-
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", b =>
-                {
-                    b.Navigation("AuditEvents");
-                });
-
-            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProgress", b =>
-                {
-                    b.Navigation("AuditEvents");
                 });
 #pragma warning restore 612, 618
         }

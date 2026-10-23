@@ -326,13 +326,7 @@ public static class DataSeeder
             .Select(p => p.BadgeProgressKey)
             .ToListAsync();
 
-        if (badgeProgressKeys.Count > 0)
-        {
-            var badgeAuditEvents = await dbContext.BadgeProgressAuditEvents
-                .Where(e => badgeProgressKeys.Contains(e.BadgeProgressKey))
-                .ToListAsync();
-            dbContext.BadgeProgressAuditEvents.RemoveRange(badgeAuditEvents);
-        }
+        await RemoveJournalOfAsync(dbContext, badgeProgressKeys);
 
         var badgeProgresses = await dbContext.BadgeProgresses
             .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
@@ -344,13 +338,7 @@ public static class DataSeeder
             .Select(p => p.ProbeProgressKey)
             .ToListAsync();
 
-        if (probeProgressKeys.Count > 0)
-        {
-            var probeAuditEvents = await dbContext.ProbeProgressAuditEvents
-                .Where(e => probeProgressKeys.Contains(e.ProbeProgressKey))
-                .ToListAsync();
-            dbContext.ProbeProgressAuditEvents.RemoveRange(probeAuditEvents);
-        }
+        await RemoveJournalOfAsync(dbContext, probeProgressKeys);
 
         var probePointProgresses = await dbContext.ProbePointProgresses
             .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
@@ -361,6 +349,19 @@ public static class DataSeeder
             .Where(p => p.KurinKey == kurinKey || memberKeys.Contains(p.MemberKey))
             .ToListAsync();
         dbContext.ProbeProgresses.RemoveRange(probeProgresses);
+    }
+
+    private static async Task RemoveJournalOfAsync(AppDbContext dbContext, List<Guid> subjectKeys)
+    {
+        if (subjectKeys.Count == 0)
+        {
+            return;
+        }
+
+        var entries = await dbContext.KurinAuditEvents
+            .Where(e => subjectKeys.Contains(e.SubjectKey))
+            .ToListAsync();
+        dbContext.KurinAuditEvents.RemoveRange(entries);
     }
 
     private static async Task RemoveAgendaAsync(AppDbContext dbContext, Guid kurinKey)

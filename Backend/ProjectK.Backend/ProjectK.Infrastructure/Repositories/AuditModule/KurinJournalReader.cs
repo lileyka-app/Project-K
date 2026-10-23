@@ -66,4 +66,22 @@ public sealed class KurinJournalReader : IKurinJournalReader
             .Take(Math.Max(0, take))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<KurinAuditEvent>> GetForSubjectsAsync(
+        IReadOnlyCollection<Guid> subjectKeys,
+        CancellationToken cancellationToken = default)
+    {
+        if (subjectKeys.Count == 0)
+        {
+            return [];
+        }
+
+        var keys = subjectKeys.Distinct().ToList();
+        return await _context.KurinAuditEvents
+            .AsNoTracking()
+            .Where(entry => keys.Contains(entry.SubjectKey))
+            .OrderBy(entry => entry.OccurredAtUtc)
+            .ThenBy(entry => entry.KurinAuditEventKey)
+            .ToListAsync(cancellationToken);
+    }
 }

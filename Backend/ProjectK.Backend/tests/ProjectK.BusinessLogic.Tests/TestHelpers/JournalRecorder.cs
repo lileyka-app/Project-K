@@ -50,4 +50,32 @@ internal sealed class JournalRecorder : IKurinAuditWriter
     }
 
     public void Add(KurinAuditEvent entry) => Entries.Add(entry);
+
+    /// <summary>Every key set a handler asked the journal about, one per read.</summary>
+    public List<IReadOnlyCollection<Guid>> SubjectReads { get; } = [];
+
+    /// <summary>The journal read back: what was recorded, as the database would return it.</summary>
+    public IKurinJournalReader Reader => new RecordedJournal(this);
+
+    private sealed class RecordedJournal(JournalRecorder recorder) : IKurinJournalReader
+    {
+        public Task<IReadOnlyList<KurinAuditEvent>> ReadAsync(
+            KurinJournalFilter filter, int skip, int take, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<KurinAuditEvent>>(recorder.Entries
+                .Where(entry => entry.KurinKey == filter.KurinKey)
+                .OrderByDescending(entry => entry.OccurredAtUtc)
+                .Skip(skip)
+                .Take(take)
+                .ToList());
+
+        public Task<IReadOnlyList<KurinAuditEvent>> GetForSubjectsAsync(
+            IReadOnlyCollection<Guid> subjectKeys, CancellationToken cancellationToken = default)
+        {
+            recorder.SubjectReads.Add(subjectKeys.ToList());
+            return Task.FromResult<IReadOnlyList<KurinAuditEvent>>(recorder.Entries
+                .Where(entry => subjectKeys.Contains(entry.SubjectKey))
+                .OrderBy(entry => entry.OccurredAtUtc)
+                .ToList());
+        }
+    }
 }

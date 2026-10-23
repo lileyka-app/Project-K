@@ -68,6 +68,7 @@ public class UpdateProbeProgressStatusHandlerTests
             _memberDirectoryMock.Object,
             _journal.Actors,
             _journal.Audit,
+            _journal.Reader,
             _probesCatalogServiceMock.Object,
             _access.Object);
     }
@@ -123,7 +124,8 @@ public class UpdateProbeProgressStatusHandlerTests
         Assert.Equal(actorUserKey, progress.VerifiedByUserKey);
         Assert.Equal("Verifier", progress.VerifiedByName);
         Assert.Equal("Manager", progress.VerifiedByRole);
-        Assert.Empty(progress.AuditEvents);
+        Assert.Empty(_journal.Entries);
+        Assert.Empty(result.Data!.AuditTrail);
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -166,9 +168,12 @@ public class UpdateProbeProgressStatusHandlerTests
         Assert.Equal("Ivan Shevchenko", progress.CompletedByName);
         Assert.Equal("Mentor", progress.CompletedByRole);
 
-        var lastAudit = progress.AuditEvents.Last();
-        Assert.Equal("Ivan Shevchenko", lastAudit.ActorName);
-        Assert.Equal("Mentor", lastAudit.ActorRole);
+        var trail = Assert.Single(result.Data!.AuditTrail);
+        Assert.Equal("Ivan Shevchenko", trail.ActorName);
+        Assert.Equal("Mentor", trail.ActorRole);
+        Assert.Equal(ProbeProgressStatus.InProgress, trail.FromStatus);
+        Assert.Equal(ProbeProgressStatus.Completed, trail.ToStatus);
+        Assert.Equal("Completed", trail.Action);
 
         // The journal names the same actor the signature does, from the one resolution.
         var entry = Assert.Single(_journal.Entries);
@@ -177,6 +182,8 @@ public class UpdateProbeProgressStatusHandlerTests
         Assert.Equal(actorUserKey, entry.ActorUserKey);
         Assert.Equal(progress.ProbeProgressKey, entry.SubjectKey);
         Assert.Equal(new AuditChange("status", "InProgress", "Completed"), Assert.Single(entry.Changes));
+        Assert.Equal(entry.KurinAuditEventKey, trail.ProbeProgressAuditEventKey);
+        Assert.Equal([progress.ProbeProgressKey], Assert.Single(_journal.SubjectReads));
         _memberDirectoryMock.Verify(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()), Times.Once);
     }
 

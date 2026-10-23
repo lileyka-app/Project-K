@@ -56,8 +56,8 @@ public class SubmitBadgeProgressHandlerTests
             _currentUserContextMock.Object,
             _eventsMock.Object,
             _kurinCatalogMock.Object,
-            _journal.Actors,
             _journal.Audit,
+            _journal.Reader,
             _badges.Object);
 
         OfferedBadges("badge-1");

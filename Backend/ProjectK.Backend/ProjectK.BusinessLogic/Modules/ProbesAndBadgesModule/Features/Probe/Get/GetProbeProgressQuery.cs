@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -23,11 +24,13 @@ public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgr
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
+    private readonly IKurinJournalReader _journal;
 
-    public GetProbeProgressQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
+    public GetProbeProgressQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IKurinJournalReader journal)
     {
         _unitOfWork = unitOfWork;
         _members = members;
+        _journal = journal;
     }
 
     public async Task<ServiceResult<ProbeProgressResponse>> Handle(GetProbeProgressQuery request, CancellationToken cancellationToken)
@@ -44,7 +47,7 @@ public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgr
         }
 
         var progress = await _unitOfWork.ProbeProgresses
-            .GetByMemberAndProbeIdWithAuditAsync(request.MemberKey, request.ProbeId, cancellationToken);
+            .GetByMemberAndProbeIdAsync(request.MemberKey, request.ProbeId, cancellationToken);
 
         var pointSignatures = await _unitOfWork.ProbePointProgresses
             .GetByMemberAndProbeAsync(request.MemberKey, request.ProbeId.Trim(), cancellationToken);
@@ -71,8 +74,9 @@ public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgr
             return new ServiceResult<ProbeProgressResponse>(ResultType.Success, notStarted);
         }
 
+        var journal = await _journal.GetForSubjectsAsync([progress.ProbeProgressKey], cancellationToken);
         return new ServiceResult<ProbeProgressResponse>(
             ResultType.Success,
-            ProbeProgressResponse.FromEntity(progress, pointSignatureResponses));
+            ProbeProgressResponse.FromEntity(progress, journal, pointSignatureResponses));
     }
 }

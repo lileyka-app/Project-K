@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KraiModule;
@@ -12,6 +13,7 @@ using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
@@ -621,17 +623,9 @@ public class DemoDataSeeder : IDemoDataSeeder
             progress.CompletedByUserKey = mentor.UserKey;
             progress.CompletedByName = mentor.FullName;
             progress.CompletedByRole = mentorRole;
-            progress.AuditEvents.Add(new ProbeProgressAuditEvent
-            {
-                FromStatus = ProbeProgressStatus.InProgress,
-                ToStatus = ProbeProgressStatus.Completed,
-                Action = nameof(ProbeProgressStatus.Completed),
-                ActorUserKey = mentor.UserKey,
-                ActorName = mentor.FullName,
-                ActorRole = mentorRole,
-                OccurredAtUtc = completedAt,
-                Note = "Усі точки підписані"
-            });
+            AddJournalEntry(
+                person, kurinKey, AuditArea.Probe, AuditActions.Probe.Completed, progress.ProbeProgressKey, probe.Title,
+                ProbeProgressStatus.InProgress, ProbeProgressStatus.Completed, mentor, mentorRole, completedAt, "Усі точки підписані");
         }
 
         if (status == ProbeProgressStatus.Verified && verifier is not null)
@@ -642,17 +636,9 @@ public class DemoDataSeeder : IDemoDataSeeder
             progress.VerifiedByUserKey = verifier.UserKey;
             progress.VerifiedByName = verifier.FullName;
             progress.VerifiedByRole = verifierRole;
-            progress.AuditEvents.Add(new ProbeProgressAuditEvent
-            {
-                FromStatus = ProbeProgressStatus.Completed,
-                ToStatus = ProbeProgressStatus.Verified,
-                Action = nameof(ProbeProgressStatus.Verified),
-                ActorUserKey = verifier.UserKey,
-                ActorName = verifier.FullName,
-                ActorRole = verifierRole,
-                OccurredAtUtc = verifiedAt,
-                Note = "Перевірено на сходинах куреня"
-            });
+            AddJournalEntry(
+                person, kurinKey, AuditArea.Probe, AuditActions.Probe.Verified, progress.ProbeProgressKey, probe.Title,
+                ProbeProgressStatus.Completed, ProbeProgressStatus.Verified, verifier, verifierRole, verifiedAt, "Перевірено на сходинах куреня");
         }
 
         _dbContext.ProbeProgresses.Add(progress);
@@ -701,18 +687,10 @@ public class DemoDataSeeder : IDemoDataSeeder
                 ReviewedByRole = mentorRole,
                 ReviewNote = note
             };
-            AddSubmittedEvent(progress, person, submittedAt);
-            progress.AuditEvents.Add(new BadgeProgressAuditEvent
-            {
-                FromStatus = BadgeProgressStatus.Submitted,
-                ToStatus = BadgeProgressStatus.Confirmed,
-                Action = "Confirmed",
-                ActorUserKey = mentor.UserKey,
-                ActorName = mentor.FullName,
-                ActorRole = mentorRole,
-                OccurredAtUtc = reviewedAt,
-                Note = note
-            });
+            AddSubmittedEntry(progress, person, submittedAt);
+            AddJournalEntry(
+                person, kurinKey, AuditArea.Badge, AuditActions.Badge.Confirmed, progress.BadgeProgressKey, badgeId,
+                BadgeProgressStatus.Submitted, BadgeProgressStatus.Confirmed, mentor, mentorRole, reviewedAt, note);
             _dbContext.BadgeProgresses.Add(progress);
         }
 
@@ -731,7 +709,7 @@ public class DemoDataSeeder : IDemoDataSeeder
                     SubmittedAtUtc = submittedAt,
                     ReviewNote = "Здав на останніх сходинах, прошу підтвердити"
                 };
-                AddSubmittedEvent(progress, person, submittedAt, progress.ReviewNote);
+                AddSubmittedEntry(progress, person, submittedAt, progress.ReviewNote);
                 _dbContext.BadgeProgresses.Add(progress);
             }
         }
@@ -757,34 +735,53 @@ public class DemoDataSeeder : IDemoDataSeeder
                     ReviewedByRole = mentorRole,
                     ReviewNote = note
                 };
-                AddSubmittedEvent(progress, person, submittedAt);
-                progress.AuditEvents.Add(new BadgeProgressAuditEvent
-                {
-                    FromStatus = BadgeProgressStatus.Submitted,
-                    ToStatus = BadgeProgressStatus.Rejected,
-                    Action = "Rejected",
-                    ActorUserKey = mentor.UserKey,
-                    ActorName = mentor.FullName,
-                    ActorRole = mentorRole,
-                    OccurredAtUtc = reviewedAt,
-                    Note = note
-                });
+                AddSubmittedEntry(progress, person, submittedAt);
+                AddJournalEntry(
+                    person, kurinKey, AuditArea.Badge, AuditActions.Badge.Rejected, progress.BadgeProgressKey, badgeId,
+                    BadgeProgressStatus.Submitted, BadgeProgressStatus.Rejected, mentor, mentorRole, reviewedAt, note);
                 _dbContext.BadgeProgresses.Add(progress);
             }
         }
     }
 
-    private static void AddSubmittedEvent(BadgeProgress progress, Person person, DateTime submittedAt, string? note = null)
+    private void AddSubmittedEntry(BadgeProgress progress, Person person, DateTime submittedAt, string? note = null) =>
+        AddJournalEntry(
+            person, progress.KurinKey, AuditArea.Badge, AuditActions.Badge.Submitted, progress.BadgeProgressKey, progress.BadgeId,
+            null, BadgeProgressStatus.Submitted, person, SystemRole.Member, submittedAt, note);
+
+    /// <summary>
+    /// The journal entry the status handlers write for one step of a проба or a вмілість, so the
+    /// demo's history reads as if the people in it had done it through the app.
+    /// </summary>
+    private void AddJournalEntry(
+        Person subject,
+        Guid kurinKey,
+        AuditArea area,
+        string action,
+        Guid subjectKey,
+        string label,
+        Enum? fromStatus,
+        Enum toStatus,
+        Person actor,
+        string actorRole,
+        DateTime occurredAtUtc,
+        string? note)
     {
-        progress.AuditEvents.Add(new BadgeProgressAuditEvent
+        _dbContext.KurinAuditEvents.Add(new KurinAuditEvent
         {
-            FromStatus = null,
-            ToStatus = BadgeProgressStatus.Submitted,
-            Action = "Submitted",
-            ActorUserKey = person.UserKey,
-            ActorName = person.FullName,
-            ActorRole = SystemRole.Member,
-            OccurredAtUtc = submittedAt,
+            KurinKey = kurinKey,
+            OccurredAtUtc = occurredAtUtc,
+            ActorUserKey = actor.UserKey,
+            ActorName = actor.FullName,
+            ActorRole = actorRole,
+            Area = area,
+            Action = action,
+            SubjectMemberKey = subject.Key,
+            SubjectMemberName = subject.FullName,
+            SubjectGroupKey = subject.GroupKey,
+            SubjectKey = subjectKey,
+            SubjectLabel = label,
+            Changes = AuditChanges.Of(("status", fromStatus, toStatus)).ToList(),
             Note = note
         });
     }

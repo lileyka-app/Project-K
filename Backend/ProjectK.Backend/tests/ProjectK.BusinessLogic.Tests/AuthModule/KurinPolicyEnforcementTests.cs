@@ -317,7 +317,8 @@ public class KurinPolicyEnforcementTests
             .ReturnsAsync(() => _access.LedGroups.ToArray());
 
         var handler = new GetBadgeReviewQueueQueryHandler(
-            unitOfWork.Object, members.Object, actor, scopes.Object, FakeBlobReadLinks.Instance, _access.PermissionsFor(actor));
+            unitOfWork.Object, members.Object, actor, scopes.Object, FakeBlobReadLinks.Instance, _access.PermissionsFor(actor),
+            new JournalRecorder(actor).Reader);
         return await handler.Handle(new GetBadgeReviewQueueQuery(_access.KurinKey), CancellationToken.None);
     }
 

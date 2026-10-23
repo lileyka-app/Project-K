@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -21,6 +22,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
     private readonly IResourceScopeReader _scopeReader;
     private readonly IBlobReadLinks _links;
     private readonly ICurrentPermissions _permissions;
+    private readonly IKurinJournalReader _journal;
 
     public GetBadgeReviewQueueQueryHandler(
         IUnitOfWork unitOfWork,
@@ -28,7 +30,8 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
         ICurrentUserContext currentUserContext,
         IResourceScopeReader scopeReader,
         IBlobReadLinks links,
-        ICurrentPermissions permissions)
+        ICurrentPermissions permissions,
+        IKurinJournalReader journal)
     {
         _unitOfWork = unitOfWork;
         _members = members;
@@ -36,6 +39,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
         _scopeReader = scopeReader;
         _links = links;
         _permissions = permissions;
+        _journal = journal;
     }
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressResponse>>> Handle(GetBadgeReviewQueueQuery request, CancellationToken cancellationToken)
@@ -71,9 +75,12 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
 
         var progresses = await _unitOfWork.BadgeProgresses.GetByMemberKeysAsync(memberKeys, cancellationToken);
 
-        var allProgresses = progresses
-            .Where(p => p.Status == BadgeProgressStatus.Submitted)
-            .Select(p => BadgeProgressResponse.FromEntity(p, membersDict[p.MemberKey], _links.For(membersDict[p.MemberKey].ProfilePhotoBlobName)))
+        var submitted = progresses.Where(p => p.Status == BadgeProgressStatus.Submitted).ToList();
+        var journal = (await _journal.GetForSubjectsAsync(submitted.Select(p => p.BadgeProgressKey).ToList(), cancellationToken))
+            .ToLookup(entry => entry.SubjectKey);
+
+        var allProgresses = submitted
+            .Select(p => BadgeProgressResponse.FromEntity(p, journal[p.BadgeProgressKey], membersDict[p.MemberKey], _links.For(membersDict[p.MemberKey].ProfilePhotoBlobName)))
             .OrderByDescending(p => p.SubmittedAtUtc)
             .ToList();
 

@@ -56,6 +56,7 @@ public class UpdateProbePointSignatureHandlerTests
             _memberDirectoryMock.Object,
             _journal.Actors,
             _journal.Audit,
+            _journal.Reader,
             Mock.Of<IProbesCatalogService>());
     }
 

@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -21,11 +22,13 @@ public sealed class GetBadgeProgressesQueryHandler : IRequestHandler<GetBadgePro
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
+    private readonly IKurinJournalReader _journal;
 
-    public GetBadgeProgressesQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members)
+    public GetBadgeProgressesQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IKurinJournalReader journal)
     {
         _unitOfWork = unitOfWork;
         _members = members;
+        _journal = journal;
     }
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressResponse>>> Handle(GetBadgeProgressesQuery request, CancellationToken cancellationToken)
@@ -35,10 +38,12 @@ public sealed class GetBadgeProgressesQueryHandler : IRequestHandler<GetBadgePro
             return new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.NotFound);
         }
 
-        var progresses = await _unitOfWork.BadgeProgresses.GetByMemberKeyAsync(request.MemberKey, cancellationToken);
+        var progresses = (await _unitOfWork.BadgeProgresses.GetByMemberKeyAsync(request.MemberKey, cancellationToken)).ToList();
+        var journal = (await _journal.GetForSubjectsAsync(progresses.Select(x => x.BadgeProgressKey).ToList(), cancellationToken))
+            .ToLookup(entry => entry.SubjectKey);
         var response = progresses
             .OrderByDescending(x => x.UpdatedDate)
-            .Select(BadgeProgressResponse.FromEntity)
+            .Select(x => BadgeProgressResponse.FromEntity(x, journal[x.BadgeProgressKey]))
             .ToList();
 
         return new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.Success, response);

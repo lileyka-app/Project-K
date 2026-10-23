@@ -14,7 +14,7 @@ public interface IBadgeProgressRepository : IBaseEntityRepository<BadgeProgress>
     /// </summary>
     Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
 
-    /// <summary>Every row earned in a kurin, untracked and without its audit trail.</summary>
+    /// <summary>Every row earned in a kurin, untracked.</summary>
     Task<IReadOnlyList<BadgeProgress>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>How many rows one person has here, without reading them.</summary>
