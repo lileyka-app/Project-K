@@ -11,7 +11,8 @@ import { Observable } from 'rxjs/internal/Observable';
 import { catchError, map, of, tap } from 'rxjs';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { browserTimeZone } from '../../functions/browser-time-zone.function';
-import { ENTITY_CACHE_TTL_MS, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
+import { ACCESS_CACHE_PREFIX, ENTITY_CACHE_TTL_MS, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
+import { KurinAccessPolicyDto, SetKurinAccessPolicyRequest } from '../../models/kurin-access-policy.dto';
 import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 
 @Injectable({
@@ -122,6 +123,24 @@ export class KurinService {
   setHiddenCardFields(kurinKey: string, hidden: string[]): Observable<KurinCardFieldDto[]> {
     return this.http.put<KurinCardFieldDto[]>(`${this.apiUrl}/${kurinKey}/card-fields`, { hidden }).pipe(
       tap(() => this.cache.invalidate(`${KURIN_CACHE_PREFIX}card-fields:${kurinKey}`))
+    );
+  }
+
+  /** «Права й видимість»: every cell with what the kurin has, its default and whether it is locked. */
+  getAccessPolicy(kurinKey: string): Observable<KurinAccessPolicyDto> {
+    return this.http.get<KurinAccessPolicyDto>(`${this.apiUrl}/${kurinKey}/access-policy`);
+  }
+
+  /**
+   * Saves the whole matrix. What people see of a card and which buttons it offers change at once, so
+   * the cards and the abilities read before are dropped.
+   */
+  setAccessPolicy(kurinKey: string, request: SetKurinAccessPolicyRequest): Observable<KurinAccessPolicyDto> {
+    return this.http.put<KurinAccessPolicyDto>(`${this.apiUrl}/${kurinKey}/access-policy`, request).pipe(
+      tap(() => {
+        this.cache.invalidateByPrefix(MEMBER_CACHE_PREFIX);
+        this.cache.invalidateByPrefix(ACCESS_CACHE_PREFIX);
+      })
     );
   }
 

@@ -1,0 +1,100 @@
+<div class="access-policy" data-testid="access-policy">
+  @if (!loaded()) {
+    <p class="access-policy__note">Завантажуємо права…</p>
+  } @else if (failed()) {
+    <p class="access-policy__note">Не вдалося завантажити права й видимість. Спробуй оновити сторінку.</p>
+  } @else {
+    @if (phone()) {
+      @for (group of groups(); track group.group) {
+        <section class="access-card" [attr.aria-labelledby]="'access-group-' + group.group">
+          <h3 [id]="'access-group-' + group.group">{{ group.label }}</h3>
+          @for (row of group.rows; track row.key) {
+            <div class="access-card__row">
+              <p class="access-card__capability">{{ row.label }}</p>
+              @for (cell of row.cells; track cell.audience) {
+                @if (row.youthConfigurable || cell.audience !== 'Youth') {
+                  <div class="access-card__cell" [attr.data-testid]="'access-cell-' + row.key + '-' + cell.audience">
+                    <span class="access-card__audience">
+                      {{ cell.audienceLabel }}
+                      @if (cell.changed) {
+                        <span class="access-changed">змінено · {{ cell.defaultHint.toLowerCase() }}</span>
+                      }
+                    </span>
+                    <p-selectbutton
+                      [options]="reachOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      [allowEmpty]="false"
+                      size="small"
+                      [disabled]="cell.locked"
+                      [ariaLabel]="row.label + ': ' + cell.audienceLabel"
+                      [ngModel]="cell.value"
+                      (ngModelChange)="set(row.key, cell.audience, $event)" />
+                  </div>
+                }
+              }
+            </div>
+          }
+        </section>
+      }
+    } @else {
+      <p-table
+        [value]="groups()"
+        styleClass="project-table access-matrix"
+        [scrollable]="true"
+        dataKey="group">
+        <ng-template #header>
+          <tr>
+            <th pFrozenColumn class="access-matrix__capability" scope="col">Право</th>
+            @for (column of audiences(); track column.audience) {
+              <th scope="col" class="access-matrix__audience">{{ column.label }}</th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-group>
+          <tr class="access-matrix__group">
+            <td pFrozenColumn class="access-matrix__capability">{{ group.label }}</td>
+            <td [attr.colspan]="audiences().length"></td>
+          </tr>
+          @for (row of group.rows; track row.key) {
+            <tr>
+              <td pFrozenColumn class="access-matrix__capability">{{ row.label }}</td>
+              @for (cell of row.cells; track cell.audience) {
+                <td class="access-matrix__cell" [attr.data-testid]="'access-cell-' + row.key + '-' + cell.audience">
+                  <p-select
+                    [options]="reachOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    appendTo="body"
+                    [disabled]="cell.locked"
+                    [ariaLabel]="row.label + ': ' + cell.audienceLabel"
+                    [ngModel]="cell.value"
+                    (ngModelChange)="set(row.key, cell.audience, $event)" />
+                  @if (cell.changed) {
+                    <span class="access-changed" [pTooltip]="cell.defaultHint" tooltipPosition="top"
+                      [attr.aria-label]="'Змінено. ' + cell.defaultHint">змінено</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    }
+
+    <div class="access-policy__footer">
+      <p class="access-policy__note">
+        Свої дані людина бачить завжди. Звʼязковий має всі права, щоб курінь не лишився без того, хто їх поверне.
+      </p>
+      <p-button
+        label="Як за замовчуванням"
+        icon="pi pi-undo"
+        severity="secondary"
+        variant="text"
+        [disabled]="!customised()"
+        (onClick)="resetToDefaults()"
+        data-testid="access-reset" />
+    </div>
+  }
+</div>
