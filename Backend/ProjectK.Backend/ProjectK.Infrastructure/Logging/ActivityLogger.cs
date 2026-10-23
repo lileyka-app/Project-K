@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Security;
 using Serilog.Context;
 
 namespace ProjectK.Infrastructure.Logging;
@@ -191,7 +192,7 @@ public sealed class ActivityLogger : IActivityLogger
         var userId = httpContext.User.GetUserKeyValue();
 
         var ip = ipOverride ?? httpContext.Connection.RemoteIpAddress?.ToString();
-        var path = httpContext.Request?.Path.Value;
+        var path = SecretPaths.Mask(httpContext.Request?.Path.Value);
         var method = httpContext.Request?.Method;
         var userAgent = httpContext.Request?.Headers["User-Agent"].ToString();
         var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;

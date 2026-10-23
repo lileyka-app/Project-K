@@ -788,13 +788,16 @@ export class CalendarPage implements ViewWillEnter, OnDestroy {
   private async loadList(): Promise<void> {
     if (!this.kurinKey) return;
     const from = fromDayKey(this.today);
+    // Unlike the grid, the list has one slot: an answer for the switch's old position must not land on it.
+    const showSchedules = this.showSchedules();
     try {
       const items = await this.agenda.calendar(
         this.kurinKey,
         from.toISOString(),
         addDays(from, LIST_DAYS).toISOString(),
-        this.showSchedules(),
+        showSchedules,
       );
+      if (showSchedules !== this.showSchedules()) return;
       this.listState.set({ state: 'ready', value: items });
     } catch {
       if (this.listState().state !== 'ready') this.listState.set({ state: 'failed' });

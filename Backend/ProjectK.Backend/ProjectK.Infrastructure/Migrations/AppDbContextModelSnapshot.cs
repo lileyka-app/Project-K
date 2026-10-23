@@ -235,6 +235,53 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.CalendarFeed", b =>
+                {
+                    b.Property<Guid>("CalendarFeedKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IncludeSchedules")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IncludeTasks")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastFetchedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RevokedReason")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("CalendarFeedKey");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "RevokedAtUtc");
+
+                    b.ToTable("CalendarFeeds");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.Invitation", b =>
                 {
                     b.Property<Guid>("InvitationKey")
@@ -3046,6 +3093,17 @@ namespace ProjectK.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ActiveKurinKey")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.CalendarFeed", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.AuthModule.Invitation", b =>

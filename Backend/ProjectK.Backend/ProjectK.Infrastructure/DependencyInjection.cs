@@ -52,6 +52,7 @@ public static class DependencyInjection
 
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
+        services.AddScoped<ICalendarFeedStore, CalendarFeedStore>();
         services.AddSingleton<IQrCodeService, QrCodeService>();
 
         services.AddHostedService<AuditCleanupBackgroundService>();

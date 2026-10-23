@@ -22,6 +22,7 @@ public class AuditCleanupBackgroundService : BackgroundService
     /// account leaves a spent row behind several times a day.
     /// </summary>
     private const int EndedSessionRetentionDays = 30;
+    private const int RevokedCalendarFeedRetentionDays = 90;
 
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AuditCleanupBackgroundService> _logger;
@@ -127,6 +128,16 @@ public class AuditCleanupBackgroundService : BackgroundService
 
         if (deletedSessions > 0)
             _logger.LogInformation("Cleaned up {Count} ended UserRefreshTokens.", deletedSessions);
+
+        // 8. Cleanup revoked calendar links. Until then an old link answers with a notice that it is
+        // off; after it, with 404, and a calendar app that still polls it gives up on its own.
+        var calendarFeedRetentionDate = now.AddDays(-RevokedCalendarFeedRetentionDays);
+        var deletedCalendarFeeds = await dbContext.CalendarFeeds
+            .Where(feed => feed.RevokedAtUtc.HasValue && feed.RevokedAtUtc < calendarFeedRetentionDate)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (deletedCalendarFeeds > 0)
+            _logger.LogInformation("Cleaned up {Count} revoked CalendarFeeds.", deletedCalendarFeeds);
     }
 
     /// <summary>

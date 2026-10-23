@@ -13,19 +13,19 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
 public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, ServiceResult<MfaEnableResponseDto>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly ILoginResponseFactory _loginResponses;
     private readonly IActivityLogger _activityLogger;
 
     public EnableMfaCommandHandler(
         UserManager<AppUser> userManager,
         IActivityLogger activityLogger,
-        IRefreshTokenStore refreshTokens,
+        RefreshTokenInvalidation sessions,
         ILoginResponseFactory loginResponses)
     {
         _userManager = userManager;
         _activityLogger = activityLogger;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
         _loginResponses = loginResponses;
     }
 
@@ -61,7 +61,7 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
 
         // Only once the change is stored. RevokeAllAsync commits on its own, so ending the
         // sessions first signed every device out even when this update failed.
-        await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, user, cancellationToken);
+        await _sessions.RevokeRefreshTokenAsync(user, cancellationToken);
 
         // The device that just enabled it keeps working: a session minted now carries the second
         // factor in its token, where the privileged-MFA gate reads it. The old access token said

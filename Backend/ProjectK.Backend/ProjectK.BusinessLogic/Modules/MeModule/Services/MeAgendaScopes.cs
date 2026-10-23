@@ -49,13 +49,17 @@ public sealed class MeAgendaScopes
     }
 
     /// <summary>Empty when nobody is signed in or no person stands behind the account.</summary>
-    public async Task<IReadOnlyList<MeKurinContext>> BuildAsync(CancellationToken cancellationToken)
-    {
-        if (_currentUser.UserId is not { } userKey)
-        {
-            return [];
-        }
+    public Task<IReadOnlyList<MeKurinContext>> BuildAsync(CancellationToken cancellationToken) =>
+        _currentUser.UserId is { } userKey
+            ? BuildForAsync(userKey, cancellationToken)
+            : Task.FromResult<IReadOnlyList<MeKurinContext>>([]);
 
+    /// <summary>
+    /// The same for an account named by key rather than by the request's token — the calendar link,
+    /// fetched by a calendar app that signs nobody in. Empty when no person stands behind it.
+    /// </summary>
+    public async Task<IReadOnlyList<MeKurinContext>> BuildForAsync(Guid userKey, CancellationToken cancellationToken)
+    {
         var person = await _members.FindByAccountAsync(userKey, cancellationToken);
         if (person is null)
         {

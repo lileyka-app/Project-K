@@ -2,7 +2,7 @@ import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { MessageService } from '@openng/optimus-ui/api';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { AgendaItemDto } from '../../models/agenda';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
@@ -11,6 +11,7 @@ import { AgendaCalendarComponent } from './agenda-calendar';
 interface Internals {
   showSchedules: boolean;
   currentRange: { from: string; to: string } | null;
+  items(): AgendaItemDto[];
   onShowSchedulesChange(): void;
   eventTitle(item: AgendaItemDto): string;
 }
@@ -67,6 +68,24 @@ describe('AgendaCalendarComponent — графіки гуртків', () => {
 
     create();
     expect(component().showSchedules).toBe(false);
+  });
+
+  it('paints only the latest answer when the switch flips mid-fetch', () => {
+    create();
+    const withSchedules = new Subject<AgendaItemDto[]>();
+    const withoutSchedules = new Subject<AgendaItemDto[]>();
+    agenda.getCalendar.mockReturnValueOnce(withSchedules).mockReturnValueOnce(withoutSchedules);
+    component().currentRange = { from: 'a', to: 'b' };
+
+    component().onShowSchedulesChange();
+    component().showSchedules = false;
+    component().onShowSchedulesChange();
+
+    const own = { agendaItemKey: 'own', assignments: [] } as unknown as AgendaItemDto;
+    withoutSchedules.next([own]);
+    withSchedules.next([own, { agendaItemKey: 'skhodyny', assignments: [] } as unknown as AgendaItemDto]);
+
+    expect(component().items().map(i => i.agendaItemKey)).toEqual(['own']);
   });
 
   it('names the гурток on a schedule event, «+N» for more', () => {

@@ -300,6 +300,8 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(mockUserManager.Object);
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton(new Mock<IRefreshTokenStore>().Object);
+            builder.Services.AddSingleton(new Mock<ICalendarFeedStore>().Object);
+            builder.Services.AddScoped<RefreshTokenInvalidation>();
             builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
             builder.Services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
             builder.Services.AddScoped<IMemberDirectory, MemberDirectory>();

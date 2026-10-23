@@ -20,18 +20,18 @@ public class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, Ser
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IActivityLogger _activityLogger;
 
     public SuspendUserCommandHandler(
         UserManager<AppUser> userManager,
         ICurrentUserContext currentUserContext,
-        IRefreshTokenStore refreshTokens,
+        RefreshTokenInvalidation sessions,
         IActivityLogger activityLogger)
     {
         _userManager = userManager;
         _currentUserContext = currentUserContext;
-        _refreshTokens = refreshTokens;
+        _sessions = sessions;
         _activityLogger = activityLogger;
     }
 
@@ -64,7 +64,7 @@ public class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, Ser
 
         // Only once the status is stored: RevokeAllAsync commits on its own, and ending the
         // sessions of an account that then stayed active would just have signed them out once.
-        await RefreshTokenInvalidation.RevokeRefreshTokenAsync(_refreshTokens, target, cancellationToken);
+        await _sessions.RevokeRefreshTokenAsync(target, CalendarFeedRevokeReason.Suspended, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Admin.UserSuspended",

@@ -3,7 +3,7 @@
     <header class="settings-header">
       <div>
         <h1>Налаштування акаунта</h1>
-        <p>Контактні дані, пароль і двофакторна автентифікація.</p>
+        <p>Контактні дані, пароль, двофакторна автентифікація і календар.</p>
       </div>
       @if (settings) {
         <p-tag [value]="roleTag.label" [severity]="roleTag.severity" />
@@ -252,6 +252,20 @@
             </div>
           }
         </div>
+      </section>
+
+      <p-divider />
+
+      <section class="settings-section" id="calendar">
+        <div class="section-copy">
+          <h2>Календар у Google, Apple, Outlook</h2>
+          <p>
+            Твої події з Лілейки у твоєму календарі. Посилання одне на всі курені й оновлюється само: нові й змінені події
+            приходять без жодних дій.
+          </p>
+        </div>
+
+        <app-calendar-feed-section />
       </section>
     }
   </section>

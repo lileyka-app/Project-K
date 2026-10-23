@@ -53,6 +53,14 @@ public class PushRoutesTests
         Assert.Equal(expected, url);
     }
 
+    [Fact]
+    public void ACalendarLinkGoneOff_ShouldOpenTheAccountPage()
+    {
+        var url = PushRoutes.For(Notification(AppNotificationType.CalendarFeedRevoked, "/settings/account#calendar"), null);
+
+        Assert.Equal("/m/tabs/more/account", url);
+    }
+
     [Theory]
     [InlineData("/waitlist")]
     [InlineData(null)]

@@ -34,6 +34,7 @@ import { Toasts } from '../../core/toast';
 import { PASSWORD_RULES, isPrivileged, passwordMeetsRules } from './account.labels';
 import { AccountSettings } from './account.models';
 import { AccountService } from './account.service';
+import { CalendarFeedComponent } from './calendar-feed';
 import { KurinApi } from '../kurin/kurin.service';
 
 const CONTACT_ERRORS: Record<string, string> = {
@@ -80,6 +81,7 @@ type Sheet = 'contacts' | 'password' | 'codes' | null;
     IonModal,
     IonSkeletonText,
     IonSpinner,
+    CalendarFeedComponent,
   ],
   styles: `
     .footnote {
@@ -238,6 +240,8 @@ type Sheet = 'contacts' | 'password' | 'codes' | null;
                 Можеш увімкнути його для додаткового захисту акаунта.
               }
             </p>
+
+            <app-calendar-feed />
           }
         }
       }

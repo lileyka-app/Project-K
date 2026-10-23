@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
@@ -322,6 +323,6 @@ public class AccountEmailConfirmationHandlerTests
             _memberDirectoryMock.Object,
             _mediatorMock.Object,
             new Mock<IActivityLogger>().Object,
-            _refreshTokensMock.Object);
+            Revocations.Of(_refreshTokensMock.Object));
     }
 }

@@ -50,4 +50,51 @@ public class AgendaAudienceTests
     {
         Response(Event(Sokoly), YouthOfSokoly()).Audience.Should().Be(AgendaAudience.Assigned);
     }
+
+    // The switch «Графіки гуртків» hides only Schedule rows, so the cases below are what it never hides.
+
+    [Fact]
+    public void AnotherGurtoksSkhodyny_RaisedByTheViewer_AreAssigned()
+    {
+        var viewer = YouthOfSokoly();
+        var item = Event(Kelty);
+        item.CreatedByUserKey = viewer.ViewerUserKey!.Value;
+
+        Response(item, viewer).Audience.Should().Be(AgendaAudience.Assigned);
+    }
+
+    [Fact]
+    public void SkhodynyOfAGurtokTheViewerLeads_AreAssigned()
+    {
+        var mentorOfKelty = new AgendaViewerContext(Kurin, Guid.NewGuid(), Guid.NewGuid(), Sokoly, [Sokoly, Kelty], [], false, true, [Kelty]);
+
+        Response(Event(Kelty), mentorOfKelty).Audience.Should().Be(AgendaAudience.Assigned);
+    }
+
+    [Fact]
+    public void SkhodynyAimedAlsoAtTheWholeKurin_AreAssigned()
+    {
+        var item = Event(Kelty);
+        item.Assignments.Add(new AgendaAssignment { TargetType = AgendaTargetType.Kurin, TargetKey = Kurin });
+
+        Response(item, YouthOfSokoly()).Audience.Should().Be(AgendaAudience.Assigned);
+    }
+
+    [Fact]
+    public void AnotherGurtoksSkhodyny_ForAWholeKurinViewerWhoDidNotRaiseThem_AreOnTheSchedule()
+    {
+        var zvyazkovyi = new AgendaViewerContext(Kurin, Guid.NewGuid(), Guid.NewGuid(), null, [], [], true, true);
+
+        Response(Event(Kelty), zvyazkovyi).Audience.Should().Be(AgendaAudience.Schedule);
+    }
+
+    [Fact]
+    public void AGroupEventOutsideTheSchedule_IsAssigned_ForAWholeKurinViewer()
+    {
+        var zvyazkovyi = new AgendaViewerContext(Kurin, Guid.NewGuid(), Guid.NewGuid(), null, [], [], true, true);
+        var item = Event(Kelty);
+        item.AgendaCategoryKey = null;
+
+        Response(item, zvyazkovyi).Audience.Should().Be(AgendaAudience.Assigned);
+    }
 }
