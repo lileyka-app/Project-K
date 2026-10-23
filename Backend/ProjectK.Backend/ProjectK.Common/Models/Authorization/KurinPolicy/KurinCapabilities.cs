@@ -19,8 +19,8 @@ public static class KurinCapabilities
     /// <summary>Every row, in the order the settings page shows them.</summary>
     public static readonly IReadOnlyList<CapabilityDescriptor> All =
     [
-        Data(KurinCapability.SeeContacts, ResourceType.MemberContacts, K, K, K, K, K, K, K, K),
-        Data(KurinCapability.SeeBirthDate, ResourceType.MemberBirthDate, K, K, K, K, K, K, K, K),
+        Data(KurinCapability.SeeContacts, ResourceType.MemberContacts, K, K, K, K, K, G, G, G),
+        Data(KurinCapability.SeeBirthDate, ResourceType.MemberBirthDate, K, K, K, N, N, N, N, N),
         Data(KurinCapability.SeeBirthday, ResourceType.MemberBirthday, K, K, K, K, K, K, K, K),
         Data(KurinCapability.SeeAddress, ResourceType.MemberAddress, K, G, G, N, N, N, N, N),
         Data(KurinCapability.SeeParents, ResourceType.MemberParents, K, G, G, N, N, N, N, N),

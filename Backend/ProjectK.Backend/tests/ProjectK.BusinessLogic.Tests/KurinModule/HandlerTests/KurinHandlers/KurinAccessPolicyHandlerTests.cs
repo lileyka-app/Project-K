@@ -67,7 +67,7 @@ public class KurinAccessPolicyHandlerTests
     [Fact]
     public async Task Get_GivesEveryCell_WithItsDefaultAndLock()
     {
-        _kurin.AccessPolicy = """{"v":1,"grants":{"SeeContacts":{"Youth":"OwnGroup"}}}""";
+        _kurin.AccessPolicy = """{"v":1,"grants":{"SeeContacts":{"Youth":"None"}}}""";
 
         var result = await new GetKurinAccessPolicyQueryHandler(_unitOfWork.Object, _provider)
             .Handle(new GetKurinAccessPolicyQuery(_kurin.KurinKey), default);
@@ -79,7 +79,7 @@ public class KurinAccessPolicyHandlerTests
         dto.Capabilities.Should().OnlyContain(row => row.Cells.Count == dto.Audiences.Count);
 
         Cell(dto, KurinCapability.SeeContacts, PolicyAudience.Youth)
-            .Should().Be(new AccessPolicyCellDto(PolicyAudience.Youth, CapabilityReach.OwnGroup, CapabilityReach.Kurin, false));
+            .Should().Be(new AccessPolicyCellDto(PolicyAudience.Youth, CapabilityReach.None, CapabilityReach.OwnGroup, false));
         Cell(dto, KurinCapability.SeeContacts, PolicyAudience.Zvyazkovyi).Locked.Should().BeTrue();
         Cell(dto, KurinCapability.GiveWarning1, PolicyAudience.Youth).Locked.Should().BeTrue();
         Cell(dto, KurinCapability.GiveWarning1, PolicyAudience.Vykhovnyk)
@@ -104,13 +104,13 @@ public class KurinAccessPolicyHandlerTests
         var current = await new GetKurinAccessPolicyQueryHandler(_unitOfWork.Object, _provider)
             .Handle(new GetKurinAccessPolicyQuery(_kurin.KurinKey), default);
         var matrix = Echo(current.Data!);
-        matrix["SeeBirthDate"] = new Dictionary<string, string?>(matrix["SeeBirthDate"]) { ["Youth"] = "None", ["Hurtkovyy"] = "OwnGroup" };
+        matrix["SeeBirthDate"] = new Dictionary<string, string?>(matrix["SeeBirthDate"]) { ["Youth"] = "OwnGroup", ["Hurtkovyy"] = "OwnGroup" };
 
         var result = await SetHandler().Handle(new SetKurinAccessPolicyCommand(_kurin.KurinKey, matrix), default);
 
         result.Type.Should().Be(ResultType.Success);
-        _kurin.AccessPolicy.Should().Be("""{"v":1,"grants":{"SeeBirthDate":{"Hurtkovyy":"OwnGroup","Youth":"None"}}}""");
-        Cell(result.Data!, KurinCapability.SeeBirthDate, PolicyAudience.Youth).Effective.Should().Be(CapabilityReach.None);
+        _kurin.AccessPolicy.Should().Be("""{"v":1,"grants":{"SeeBirthDate":{"Hurtkovyy":"OwnGroup","Youth":"OwnGroup"}}}""");
+        Cell(result.Data!, KurinCapability.SeeBirthDate, PolicyAudience.Youth).Effective.Should().Be(CapabilityReach.OwnGroup);
         _kurins.Verify(r => r.Update(_kurin, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cache.Verify(c => c.Invalidate(BackendCachePolicies.KurinAccessPolicyReads), Times.Once);
@@ -124,7 +124,7 @@ public class KurinAccessPolicyHandlerTests
         entry.SubjectLabel.Should().Be(SetKurinAccessPolicyCommandHandler.Label);
         entry.Changes.Should().HaveCount(2).And.OnlyContain(change => change.From != null && !change.Redacted);
         entry.Changes.Select(change => $"{change.Field}={change.To}").Should().BeEquivalentTo(
-            "SeeBirthDate/Hurtkovyy=OwnGroup", "SeeBirthDate/Youth=None");
+            "SeeBirthDate/Hurtkovyy=OwnGroup", "SeeBirthDate/Youth=OwnGroup");
     }
 
     [Fact]
@@ -141,10 +141,10 @@ public class KurinAccessPolicyHandlerTests
     [Fact]
     public async Task Set_TheDefaults_ClearsTheColumn()
     {
-        _kurin.AccessPolicy = """{"v":1,"grants":{"SeeContacts":{"Youth":"OwnGroup"}}}""";
+        _kurin.AccessPolicy = """{"v":1,"grants":{"SeeContacts":{"Youth":"None"}}}""";
 
         var result = await SetHandler().Handle(
-            new SetKurinAccessPolicyCommand(_kurin.KurinKey, Matrix(("SeeContacts", "Youth", "Kurin"))), default);
+            new SetKurinAccessPolicyCommand(_kurin.KurinKey, Matrix(("SeeContacts", "Youth", "OwnGroup"))), default);
 
         result.Type.Should().Be(ResultType.Success);
         _kurin.AccessPolicy.Should().BeNull();

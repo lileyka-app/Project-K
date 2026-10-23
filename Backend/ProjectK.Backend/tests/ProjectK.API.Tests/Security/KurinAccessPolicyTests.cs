@@ -242,20 +242,20 @@ public class KurinAccessPolicyTests
     public void WriteThenRead_KeepsOnlyWhatDiffers()
     {
         var policy = Set(
-            (KurinCapability.SeeContacts, PolicyAudience.Youth, CapabilityReach.OwnGroup),
+            (KurinCapability.SeeContacts, PolicyAudience.Youth, CapabilityReach.None),
             (KurinCapability.SeeContacts, PolicyAudience.Vykhovnyk, CapabilityReach.Kurin),
             (KurinCapability.ReadJournal, PolicyAudience.Kurinnyy, CapabilityReach.Kurin));
 
         var json = policy.Write();
 
         Assert.Equal(
-            """{"v":1,"grants":{"SeeContacts":{"Youth":"OwnGroup"},"ReadJournal":{"Kurinnyy":"Kurin"}}}""",
+            """{"v":1,"grants":{"SeeContacts":{"Youth":"None"},"ReadJournal":{"Kurinnyy":"Kurin"}}}""",
             json);
 
         var read = KurinAccessPolicy.Read(json);
-        Assert.Equal(CapabilityReach.OwnGroup, read.Reach(KurinCapability.SeeContacts, PolicyAudience.Youth));
+        Assert.Equal(CapabilityReach.None, read.Reach(KurinCapability.SeeContacts, PolicyAudience.Youth));
         Assert.Equal(CapabilityReach.Kurin, read.Reach(KurinCapability.ReadJournal, PolicyAudience.Kurinnyy));
-        Assert.Equal(CapabilityReach.Kurin, read.Reach(KurinCapability.SeeContacts, PolicyAudience.Hurtkovyy));
+        Assert.Equal(CapabilityReach.OwnGroup, read.Reach(KurinCapability.SeeContacts, PolicyAudience.Hurtkovyy));
         Assert.Equal(json, read.Write());
     }
 
@@ -263,7 +263,7 @@ public class KurinAccessPolicyTests
     public void TheDefaults_AreWrittenAsNothing()
     {
         Assert.Null(KurinAccessPolicy.Default.Write());
-        Assert.True(Set((KurinCapability.SeeContacts, PolicyAudience.Youth, CapabilityReach.Kurin)).IsDefault);
+        Assert.True(Set((KurinCapability.SeeContacts, PolicyAudience.Youth, CapabilityReach.OwnGroup)).IsDefault);
     }
 
     [Theory]
@@ -301,7 +301,7 @@ public class KurinAccessPolicyTests
               "future": true,
               "grants": {
                 "SeeFutureThing": { "Youth": "None" },
-                "SeeContacts": { "Youth": "OwnGroup", "Martian": "None", "Hurtkovyy": "Galaxy", "Instruktor": 2 },
+                "SeeContacts": { "Youth": "None", "Martian": "None", "Hurtkovyy": "Galaxy", "Instruktor": 2 },
                 "SeeBirthDate": { "Zvyazkovyi": "None" },
                 "GiveWarning1": { "Youth": "Kurin" },
                 "SeeAddress": { "Hurtkovyy": "None" },

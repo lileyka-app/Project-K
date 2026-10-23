@@ -20,6 +20,13 @@ public class RolePermissionMapGoldenTests
 
     private static readonly JsonSerializerOptions FixtureJson = new() { WriteIndented = true, NewLine = "\n" };
 
+    // Declared before IntendedChanges: static fields initialise in textual order.
+    private static readonly string[] KurinOffices =
+        ["Kurin.Kurinnuy", "Kurin.Gospodar", "Kurin.Horunjiy", "Kurin.Hronikar", "Kurin.OtherKurin", "Kurin.Pysar", "Kurin.Skarbnyk", "Kurin.Suddya"];
+
+    private static readonly string[] GroupOffices =
+        ["Group.Hurtkoviy", "Group.Gospodar", "Group.Horunjiy", "Group.Hronikar", "Group.OtherGroup", "Group.Pysar", "Group.Skarbnyk", "Group.Suddya"];
+
     /// <summary>
     /// Every difference from the fixture that is meant. <c>Roles</c> null means every role the fixture
     /// lists; a removal there drops the permission wherever it was granted.
@@ -32,9 +39,14 @@ public class RolePermissionMapGoldenTests
             "Dead grant: reviewing one's own badge was only stopped by RequireGroupLeadership."),
 
         new(ChangeKind.Added, "MemberContacts:Read:KurinWide",
-            "Contacts became their own resource; by default everyone still sees them kurin-wide."),
+            "Contacts became their own resource; by default the КВ and the kurin's провід see them kurin-wide.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin, .. KurinOffices]),
+        new(ChangeKind.Added, "MemberContacts:Read:OwnGroups",
+            "Closed default (owner, 2026-10-23): a гурток's провід and youth see contacts only in their own гурток.",
+            [SystemRole.Member, .. GroupOffices]),
         new(ChangeKind.Added, "MemberBirthDate:Read:KurinWide",
-            "The birth date became its own resource; by default everyone still sees it kurin-wide."),
+            "Closed default (owner, 2026-10-23): the full birth date with the year is for the КВ only.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin]),
         new(ChangeKind.Added, "MemberBirthday:Read:KurinWide",
             "The birthday became its own resource; by default everyone still sees it kurin-wide."),
         .. PrivateDataReads("MemberAddress"),
