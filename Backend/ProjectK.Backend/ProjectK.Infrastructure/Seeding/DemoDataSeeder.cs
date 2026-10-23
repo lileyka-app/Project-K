@@ -15,9 +15,11 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Seeding;
@@ -215,6 +217,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         SeedProgress(youth, mentors, zvyazkovyi, kurinKey);
         SeedAwards(youth, mentors, zvyazkovyi, kurinKey);
         SeedWarnings(youth, mentors, zvyazkovyi, kurinKey);
+        SeedAccessPolicy(kurin, zvyazkovyi);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var groups = new Dictionary<string, Group> { [Sokoly] = sokoly, ["Леви"] = levy, ["Ведмеді"] = vedmedi };
@@ -765,7 +768,24 @@ public class DemoDataSeeder : IDemoDataSeeder
         Person actor,
         string actorRole,
         DateTime occurredAtUtc,
-        string? note)
+        string? note) =>
+        AddJournalEntry(
+            subject, kurinKey, area, action, subjectKey, label,
+            AuditChanges.Of(("status", fromStatus, toStatus)), actor, actorRole, occurredAtUtc, note);
+
+    /// <summary>The journal entry a handler writes for one change of a member's record.</summary>
+    private void AddJournalEntry(
+        Person subject,
+        Guid kurinKey,
+        AuditArea area,
+        string action,
+        Guid subjectKey,
+        string label,
+        IReadOnlyList<AuditChange> changes,
+        Person actor,
+        string actorRole,
+        DateTime occurredAtUtc,
+        string? note = null)
     {
         _dbContext.KurinAuditEvents.Add(new KurinAuditEvent
         {
@@ -781,10 +801,96 @@ public class DemoDataSeeder : IDemoDataSeeder
             SubjectGroupKey = subject.GroupKey,
             SubjectKey = subjectKey,
             SubjectLabel = label,
-            Changes = AuditChanges.Of(("status", fromStatus, toStatus)).ToList(),
+            Changes = changes.ToList(),
             Note = note
         });
     }
+
+    private void AddAwardEntries(MemberAward award, Person subject, Person submitter, string submitterRole, Person? reviewer)
+    {
+        var label = KurinReportTerminology.AwardLevel(award.Level);
+        AddJournalEntry(
+            subject, award.KurinKey, AuditArea.Award, AuditActions.Award.Added, award.MemberAwardKey, label,
+            AuditChanges.Added(
+                ("level", award.Level),
+                ("dateAcquired", award.DateAcquired),
+                ("note", award.Note),
+                ("status", BadgeProgressStatus.Submitted)),
+            submitter, submitterRole, award.SubmittedAtUtc!.Value);
+
+        if (reviewer is not null && award.ReviewedAtUtc is { } reviewedAt)
+        {
+            AddJournalEntry(
+                subject, award.KurinKey, AuditArea.Award, AuditActions.Award.Confirmed, award.MemberAwardKey, label,
+                AuditChanges.Of(("status", BadgeProgressStatus.Submitted, award.Status)),
+                reviewer, ZvyazkovyiRole, reviewedAt);
+        }
+    }
+
+    private void AddWarningEntries(MemberWarning warning, Person subject, Person issuer, string issuerRole, Person? revoker)
+    {
+        var label = KurinReportTerminology.WarningLevel(warning.Level);
+        AddJournalEntry(
+            subject, warning.KurinKey, AuditArea.Warning, AuditActions.Warning.Given, warning.MemberWarningKey, label,
+            AuditChanges.Added(("level", warning.Level), ("expiresAtUtc", warning.ExpiresAtUtc)),
+            issuer, issuerRole, warning.IssuedAtUtc);
+
+        if (revoker is not null && warning.RevokedAtUtc is { } revokedAt)
+        {
+            AddJournalEntry(
+                subject, warning.KurinKey, AuditArea.Warning, AuditActions.Warning.Cancelled, warning.MemberWarningKey, label,
+                AuditChanges.Removed(
+                    ("level", warning.Level),
+                    ("issuedAtUtc", warning.IssuedAtUtc),
+                    ("expiresAtUtc", warning.ExpiresAtUtc)),
+                revoker, ZvyazkovyiRole, revokedAt);
+        }
+    }
+
+    /// <summary>
+    /// The demo kurin follows the правильник on the senior levels: only the Зв'язковий gives the third
+    /// пересторога and confirms the third and fourth відзначення. The settings page shows these cells
+    /// as changed, and the journal has the change that made them so.
+    /// </summary>
+    private void SeedAccessPolicy(Kurin kurin, Person zvyazkovyi)
+    {
+        (KurinCapability Capability, PolicyAudience Audience)[] narrowed =
+        [
+            (KurinCapability.GiveWarning3, PolicyAudience.Vykhovnyk),
+            (KurinCapability.GiveWarning3, PolicyAudience.Instruktor),
+            (KurinCapability.ConfirmAward3, PolicyAudience.Vykhovnyk),
+            (KurinCapability.ConfirmAward3, PolicyAudience.Instruktor),
+            (KurinCapability.ConfirmAward4, PolicyAudience.Vykhovnyk),
+            (KurinCapability.ConfirmAward4, PolicyAudience.Instruktor)
+        ];
+
+        var grants = narrowed
+            .GroupBy(cell => cell.Capability)
+            .ToDictionary(
+                row => row.Key.ToString(),
+                row => row.ToDictionary(cell => cell.Audience.ToString(), _ => CapabilityReach.None.ToString()));
+        kurin.AccessPolicy = JsonSerializer.Serialize(new { v = 1, grants });
+
+        _dbContext.KurinAuditEvents.Add(new KurinAuditEvent
+        {
+            KurinKey = kurin.KurinKey,
+            OccurredAtUtc = DaysAgo(40),
+            ActorUserKey = zvyazkovyi.UserKey,
+            ActorName = zvyazkovyi.FullName,
+            ActorRole = ZvyazkovyiRole,
+            Area = AuditArea.Settings,
+            Action = AuditActions.Settings.AccessPolicyChanged,
+            SubjectKey = kurin.KurinKey,
+            SubjectLabel = "Права й видимість",
+            Changes = narrowed
+                .Select(cell => new AuditChange($"{cell.Capability}/{cell.Audience}", CapabilityReach.OwnGroup.ToString(), CapabilityReach.None.ToString()))
+                .ToList(),
+            Note = "Старші рівні — за рішенням ради куреня"
+        });
+    }
+
+    private static readonly string ZvyazkovyiRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string VykhovnykRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
 
     // ── Відзначення і перестороги ─────────────────────────────────────────────────────────────────
 
@@ -800,7 +906,8 @@ public class DemoDataSeeder : IDemoDataSeeder
 
         for (var i = 0; i < Math.Min(3, senior.Count); i++)
         {
-            _dbContext.MemberAwards.Add(new MemberAward
+            var mentor = mentors[senior[i].GroupKey!.Value];
+            var award = new MemberAward
             {
                 MemberKey = senior[i].Key,
                 KurinKey = kurinKey,
@@ -809,15 +916,17 @@ public class DemoDataSeeder : IDemoDataSeeder
                 Note = "За участь у таборі «Соколине гніздо»",
                 Status = BadgeProgressStatus.Confirmed,
                 SubmittedAtUtc = lastSummer.AddDays(3),
-                SubmittedByUserKey = mentors[senior[i].GroupKey!.Value].UserKey,
+                SubmittedByUserKey = mentor.UserKey,
                 ReviewedAtUtc = lastSummer.AddDays(5),
                 ReviewedByUserKey = zvyazkovyi.UserKey
-            });
+            };
+            _dbContext.MemberAwards.Add(award);
+            AddAwardEntries(award, senior[i], mentor, VykhovnykRole, zvyazkovyi);
         }
 
         if (senior.Count > 3)
         {
-            _dbContext.MemberAwards.Add(new MemberAward
+            var award = new MemberAward
             {
                 MemberKey = senior[3].Key,
                 KurinKey = kurinKey,
@@ -829,12 +938,15 @@ public class DemoDataSeeder : IDemoDataSeeder
                 SubmittedByUserKey = zvyazkovyi.UserKey,
                 ReviewedAtUtc = DaysAgo(197),
                 ReviewedByUserKey = zvyazkovyi.UserKey
-            });
+            };
+            _dbContext.MemberAwards.Add(award);
+            AddAwardEntries(award, senior[3], zvyazkovyi, ZvyazkovyiRole, zvyazkovyi);
         }
 
         // One still on the Зв'язковий's desk.
         var pending = senior[^1];
-        _dbContext.MemberAwards.Add(new MemberAward
+        var pendingMentor = mentors[pending.GroupKey!.Value];
+        var pendingAward = new MemberAward
         {
             MemberKey = pending.Key,
             KurinKey = kurinKey,
@@ -843,8 +955,10 @@ public class DemoDataSeeder : IDemoDataSeeder
             Note = "За організацію прибирання домівки",
             Status = BadgeProgressStatus.Submitted,
             SubmittedAtUtc = DaysAgo(4),
-            SubmittedByUserKey = mentors[pending.GroupKey!.Value].UserKey
-        });
+            SubmittedByUserKey = pendingMentor.UserKey
+        };
+        _dbContext.MemberAwards.Add(pendingAward);
+        AddAwardEntries(pendingAward, pending, pendingMentor, VykhovnykRole, reviewer: null);
     }
 
     private void SeedWarnings(IReadOnlyList<Person> youth, IReadOnlyDictionary<Guid, Person> mentors, Person zvyazkovyi, Guid kurinKey)
@@ -855,18 +969,21 @@ public class DemoDataSeeder : IDemoDataSeeder
         }
 
         var active1 = youth[1];
-        _dbContext.MemberWarnings.Add(new MemberWarning
+        var active1Mentor = mentors[active1.GroupKey!.Value];
+        var first = new MemberWarning
         {
             MemberKey = active1.Key,
             KurinKey = kurinKey,
             Level = MemberWarningLevel.Level1,
             IssuedAtUtc = DaysAgo(20),
             ExpiresAtUtc = DaysAgo(20).AddMonths(3),
-            IssuedByUserKey = mentors[active1.GroupKey!.Value].UserKey
-        });
+            IssuedByUserKey = active1Mentor.UserKey
+        };
+        _dbContext.MemberWarnings.Add(first);
+        AddWarningEntries(first, active1, active1Mentor, VykhovnykRole, revoker: null);
 
         var active2 = youth[4];
-        _dbContext.MemberWarnings.Add(new MemberWarning
+        var second = new MemberWarning
         {
             MemberKey = active2.Key,
             KurinKey = kurinKey,
@@ -874,20 +991,25 @@ public class DemoDataSeeder : IDemoDataSeeder
             IssuedAtUtc = DaysAgo(33),
             ExpiresAtUtc = DaysAgo(33).AddMonths(6),
             IssuedByUserKey = zvyazkovyi.UserKey
-        });
+        };
+        _dbContext.MemberWarnings.Add(second);
+        AddWarningEntries(second, active2, zvyazkovyi, ZvyazkovyiRole, revoker: null);
 
         var revoked = youth[5];
-        _dbContext.MemberWarnings.Add(new MemberWarning
+        var revokedMentor = mentors[revoked.GroupKey!.Value];
+        var cancelled = new MemberWarning
         {
             MemberKey = revoked.Key,
             KurinKey = kurinKey,
             Level = MemberWarningLevel.Level1,
             IssuedAtUtc = DaysAgo(150),
             ExpiresAtUtc = DaysAgo(150).AddMonths(3),
-            IssuedByUserKey = mentors[revoked.GroupKey!.Value].UserKey,
+            IssuedByUserKey = revokedMentor.UserKey,
             RevokedAtUtc = DaysAgo(70),
             RevokedByUserKey = zvyazkovyi.UserKey
-        });
+        };
+        _dbContext.MemberWarnings.Add(cancelled);
+        AddWarningEntries(cancelled, revoked, revokedMentor, VykhovnykRole, zvyazkovyi);
     }
 
     // ── Календар і задачі ────────────────────────────────────────────────────────────────────────

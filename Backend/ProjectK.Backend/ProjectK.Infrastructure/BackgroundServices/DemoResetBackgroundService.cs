@@ -17,17 +17,20 @@ public sealed class DemoResetBackgroundService : BackgroundService
 
     private readonly IServiceProvider _services;
     private readonly IHostEnvironment _environment;
+    private readonly IHostApplicationLifetime _lifetime;
     private readonly ILogger<DemoResetBackgroundService> _logger;
     private readonly int _resetHourUtc;
 
     public DemoResetBackgroundService(
         IServiceProvider services,
         IHostEnvironment environment,
+        IHostApplicationLifetime lifetime,
         IConfiguration configuration,
         ILogger<DemoResetBackgroundService> logger)
     {
         _services = services;
         _environment = environment;
+        _lifetime = lifetime;
         _logger = logger;
         _resetHourUtc = Math.Clamp(configuration.GetValue("Demo:ResetHourUtc", 3), 0, 23);
     }
@@ -48,6 +51,15 @@ public sealed class DemoResetBackgroundService : BackgroundService
 
         _logger.LogInformation("Demo reset scheduled daily at {Hour:00}:00 UTC.", _resetHourUtc);
 
+        // The startup seed runs before any hosted service starts, so the probe and badge catalogue
+        // is still empty then and the demo kurin gets no проби or вмілості. Once the host has
+        // started, the catalogue is loaded: plant the kurin again so a fresh stand is complete
+        // from its first minute, not from the first night.
+        if (await WaitForStartAsync(stoppingToken))
+        {
+            await ResetAsync("after start");
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var wait = NextResetAfter(DateTime.UtcNow, _resetHourUtc) - DateTime.UtcNow;
@@ -60,16 +72,37 @@ public sealed class DemoResetBackgroundService : BackgroundService
                 break;
             }
 
-            try
-            {
-                _logger.LogInformation("Demo reset: reseeding the demo kurin.");
-                await DataSeeder.SeedAsync(_services);
-                _logger.LogInformation("Demo reset done.");
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogError(ex, "Demo reset failed; the stand keeps yesterday's data until the next attempt.");
-            }
+            await ResetAsync("nightly");
+        }
+    }
+
+    private async Task<bool> WaitForStartAsync(CancellationToken stoppingToken)
+    {
+        var started = new TaskCompletionSource();
+        using var onStarted = _lifetime.ApplicationStarted.Register(() => started.TrySetResult());
+        using var onStopping = stoppingToken.Register(() => started.TrySetCanceled());
+        try
+        {
+            await started.Task;
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private async Task ResetAsync(string when)
+    {
+        try
+        {
+            _logger.LogInformation("Demo reset ({When}): reseeding the demo kurin.", when);
+            await DataSeeder.SeedAsync(_services);
+            _logger.LogInformation("Demo reset done.");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Demo reset failed; the stand keeps the previous data until the next attempt.");
         }
     }
 }
