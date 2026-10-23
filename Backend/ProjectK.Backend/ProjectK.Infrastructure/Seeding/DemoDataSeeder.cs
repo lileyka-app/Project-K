@@ -692,7 +692,7 @@ public class DemoDataSeeder : IDemoDataSeeder
             };
             AddSubmittedEntry(progress, person, submittedAt);
             AddJournalEntry(
-                person, kurinKey, AuditArea.Badge, AuditActions.Badge.Confirmed, progress.BadgeProgressKey, badgeId,
+                person, kurinKey, AuditArea.Badge, AuditActions.Badge.Confirmed, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
                 BadgeProgressStatus.Submitted, BadgeProgressStatus.Confirmed, mentor, mentorRole, reviewedAt, note);
             _dbContext.BadgeProgresses.Add(progress);
         }
@@ -740,7 +740,7 @@ public class DemoDataSeeder : IDemoDataSeeder
                 };
                 AddSubmittedEntry(progress, person, submittedAt);
                 AddJournalEntry(
-                    person, kurinKey, AuditArea.Badge, AuditActions.Badge.Rejected, progress.BadgeProgressKey, badgeId,
+                    person, kurinKey, AuditArea.Badge, AuditActions.Badge.Rejected, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
                     BadgeProgressStatus.Submitted, BadgeProgressStatus.Rejected, mentor, mentorRole, reviewedAt, note);
                 _dbContext.BadgeProgresses.Add(progress);
             }
@@ -749,7 +749,7 @@ public class DemoDataSeeder : IDemoDataSeeder
 
     private void AddSubmittedEntry(BadgeProgress progress, Person person, DateTime submittedAt, string? note = null) =>
         AddJournalEntry(
-            person, progress.KurinKey, AuditArea.Badge, AuditActions.Badge.Submitted, progress.BadgeProgressKey, progress.BadgeId,
+            person, progress.KurinKey, AuditArea.Badge, AuditActions.Badge.Submitted, progress.BadgeProgressKey, _catalog.GetBadgeTitle(progress.BadgeId),
             null, BadgeProgressStatus.Submitted, person, SystemRole.Member, submittedAt, note);
 
     /// <summary>

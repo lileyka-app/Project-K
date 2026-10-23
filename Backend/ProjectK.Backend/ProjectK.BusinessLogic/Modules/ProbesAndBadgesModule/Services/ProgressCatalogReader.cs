@@ -33,4 +33,10 @@ public sealed class ProgressCatalogReader : IProgressCatalogReader
             .Select(badge => badge.Id)
             .ToList();
     }
+
+    public string GetBadgeTitle(string badgeId)
+    {
+        var badge = _badges.GetAll().FirstOrDefault(candidate => string.Equals(candidate.Id, badgeId, StringComparison.OrdinalIgnoreCase));
+        return badge?.Title is { Length: > 0 } title ? title : badgeId;
+    }
 }
