@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
@@ -25,12 +26,14 @@ public sealed class CreateKraiCommandHandler : IRequestHandler<CreateKraiCommand
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly IBackendCache _cache;
+    private readonly ICatalogKraiNames _catalogNames;
 
-    public CreateKraiCommandHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUser, IBackendCache cache)
+    public CreateKraiCommandHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUser, IBackendCache cache, ICatalogKraiNames catalogNames)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _cache = cache;
+        _catalogNames = catalogNames;
     }
 
     public async Task<ServiceResult<KraiResponse>> Handle(CreateKraiCommand request, CancellationToken cancellationToken)
@@ -92,6 +95,7 @@ public sealed class CreateKraiCommandHandler : IRequestHandler<CreateKraiCommand
 
         // A read of this code before it existed may have cached "no such край".
         _cache.Invalidate(BackendCachePolicies.KraiProfileReads);
+        _catalogNames.Name(code, name);
 
         return new ServiceResult<KraiResponse>(ResultType.Success, new KraiResponse { Code = code, Name = name, KurinCount = 0 });
     }
@@ -101,11 +105,13 @@ public sealed class RenameKraiCommandHandler : IRequestHandler<RenameKraiCommand
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
+    private readonly ICatalogKraiNames _catalogNames;
 
-    public RenameKraiCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache)
+    public RenameKraiCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache, ICatalogKraiNames catalogNames)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
+        _catalogNames = catalogNames;
     }
 
     public async Task<ServiceResult<KraiResponse>> Handle(RenameKraiCommand request, CancellationToken cancellationToken)
@@ -132,6 +138,7 @@ public sealed class RenameKraiCommandHandler : IRequestHandler<RenameKraiCommand
             krai.Name = name;
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             _cache.Invalidate(BackendCachePolicies.KraiProfileReads);
+            _catalogNames.Name(krai.Code, name);
         }
 
         var kurins = await _unitOfWork.Kurins.GetAllAsync(cancellationToken);

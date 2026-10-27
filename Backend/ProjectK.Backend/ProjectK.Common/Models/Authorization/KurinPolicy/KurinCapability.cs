@@ -64,6 +64,9 @@ public enum KurinCapability
     /// <summary>Confirm or return a вмілість.</summary>
     ReviewBadge,
 
+    /// <summary>Choose which edition of the probe programme a гурток walks.</summary>
+    ChooseProbeEdition,
+
     /// <summary>Assign an event or a task to the whole kurin. Reaches the kurin or nobody.</summary>
     AssignKurin,
 

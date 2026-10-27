@@ -542,6 +542,24 @@ public class UpsertLeadershipHandlerTests
         Assert.Empty(_journal.Entries);
     }
 
+    [Fact]
+    public async Task Handle_ShouldMarkEverySittingHolder_WhenTheProvidMovesToAnotherKurin()
+    {
+        var memberKey = Guid.NewGuid();
+        var existing = LeadershipHeldBy((LeadershipRole.Kurinnuy, memberKey));
+        var request = RequestSeating(existing, (LeadershipRole.Kurinnuy, memberKey));
+        request.EntityKey = Guid.NewGuid();
+        var command = new UpsertLeadershipCommand(request, existing.LeadershipKey);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        _accessChangesMock.Verify(s => s.MarkUser(AccountOf(memberKey)), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.MentorScopeReads), Times.Once);
+        Assert.Empty(_journal.Entries);
+    }
+
     private Leadership LeadershipHeldBy(params (LeadershipRole Role, Guid MemberKey)[] holders)
     {
         var existing = BuildLeadershipEntity();

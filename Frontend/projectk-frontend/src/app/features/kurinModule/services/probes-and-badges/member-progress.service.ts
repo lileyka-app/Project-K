@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.dto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probe-progress.dto';
+import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dto';
 import { ReviewBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/review-badge-progress-request.dto';
 import { SubmitBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/submit-badge-progress-request.dto';
 import { UpdateProbePointSignatureRequestDto } from '../../models/probes-and-badges/requests/update-probe-point-signature-request.dto';
@@ -61,6 +62,14 @@ export class MemberProgressService {
       ENTITY_CACHE_TTL_MS,
       () => this.http.get<BadgeProgressDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/badges/review`)
     );
+  }
+
+  /**
+   * Проби, якими людина йде, по черзі: редакція її гуртка, якщо закрита проба не тримає її в іншій.
+   * Не кешується — програму гуртка можуть перемкнути будь-коли.
+   */
+  getProbeLine(memberKey: string): Observable<ProbeSummaryDto[]> {
+    return this.http.get<ProbeSummaryDto[]>(`${this.apiUrl}/${memberKey}/probes/line`);
   }
 
   getProbeProgress(memberKey: string, probeId: string): Observable<ProbeProgressDto> {

@@ -8,6 +8,7 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.ProbeEdition;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
@@ -268,6 +269,26 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> SetCardFields(Guid kurinKey, [FromBody] SetKurinCardFieldsRequest body)
     {
         var response = await _mediator.Send(new SetKurinCardFieldsCommand(kurinKey, body.Hidden ?? []));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Every гурток's edition of the probe programme, for the kurin's settings.
+    /// </summary>
+    /// <remarks>
+    /// Carries the editions the catalogue offers the kurin's край and, per гурток, each youth's
+    /// standing: a closed probe past the first holds them to its edition, one only under way moves
+    /// with the гурток. That is progress data, hence the same gate as the rest of the settings.
+    /// A гурток switches through <c>PUT api/group/{groupKey}/probe-edition</c>.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey:guid}/probe-editions")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinProbeEditionsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProbeEditions(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new GetKurinProbeEditionsQuery(kurinKey), cancellationToken);
         return response.ToActionResult(this);
     }
 

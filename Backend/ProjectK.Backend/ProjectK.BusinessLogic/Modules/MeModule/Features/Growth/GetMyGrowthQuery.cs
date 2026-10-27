@@ -20,13 +20,20 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
     private readonly IMemberProgressDirectory _progress;
     private readonly IProbesCatalogService _probes;
     private readonly IBadgesCatalogService _badges;
+    private readonly IMemberProbeLine _line;
 
-    public GetMyGrowthQueryHandler(MePerson me, IMemberProgressDirectory progress, IProbesCatalogService probes, IBadgesCatalogService badges)
+    public GetMyGrowthQueryHandler(
+        MePerson me,
+        IMemberProgressDirectory progress,
+        IProbesCatalogService probes,
+        IBadgesCatalogService badges,
+        IMemberProbeLine line)
     {
         _me = me;
         _progress = progress;
         _probes = probes;
         _badges = badges;
+        _line = line;
     }
 
     public async Task<ServiceResult<MyGrowthDto>> Handle(GetMyGrowthQuery request, CancellationToken cancellationToken)
@@ -58,7 +65,8 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
     private async Task<MyProbeDto?> ProbeAsync(Guid memberKey, IReadOnlyCollection<ProbeProgressRecord> progresses, CancellationToken cancellationToken)
     {
         var byId = progresses.ToDictionary(p => p.ProbeId);
-        var currentId = GrowthSummary.CurrentProbeId(_probes.GetProbes().Select(p => p.Id), byId.Values.Select(p => (p.ProbeId, p.Status)));
+        var line = await _line.ForMemberAsync(memberKey, cancellationToken);
+        var currentId = GrowthSummary.CurrentProbeId(line.Select(p => p.Id), byId.Values.Select(p => (p.ProbeId, p.Status)));
         if (currentId is null || _probes.GetGroupedProbeById(currentId) is not { } probe)
         {
             return null;

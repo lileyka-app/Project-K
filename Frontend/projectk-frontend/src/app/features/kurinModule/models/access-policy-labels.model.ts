@@ -18,6 +18,7 @@ export type KurinCapability =
   | 'SignProbe'
   | 'UnsignProbe'
   | 'ReviewBadge'
+  | 'ChooseProbeEdition'
   | 'AssignKurin'
   | 'AssignGroups'
   | 'AssignMembers'
@@ -60,6 +61,7 @@ export const CAPABILITY_LABELS: Record<KurinCapability, string> = {
   SignProbe: 'Підписувати точки й закривати пробу',
   UnsignProbe: 'Знімати підписи',
   ReviewBadge: 'Підтверджувати вмілості',
+  ChooseProbeEdition: 'Обирати пробу гуртку',
   AssignKurin: 'Призначати всьому куреню',
   AssignGroups: 'Призначати гурткам',
   AssignMembers: 'Призначати окремим людям',

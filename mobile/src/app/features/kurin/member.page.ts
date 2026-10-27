@@ -56,6 +56,7 @@ import {
   membershipPeriod,
   phoneHref,
   plastLevelLabel,
+  probeLine,
   probeMeta,
   probeRows,
   progressStatus,
@@ -65,6 +66,7 @@ import {
   type RoleTag,
   shortDate,
   skillsSummary,
+  startedProbeIds,
   utcDate,
   warningText,
 } from './kurin.labels';
@@ -949,10 +951,17 @@ export class MemberPage implements OnInit {
 
   private loadProbes(key: string): Promise<void> {
     return settle(
-      this.data.probes().then(async (probes) => {
-        const progresses = await Promise.all(probes.map((p) => this.data.probeProgress(key, p.id).catch(() => null)));
-        return probeRows(probes, progresses.filter((p) => p !== null));
-      }),
+      // The server lays out the line; an API without that route gets the catalogue and the fallback line.
+      this.data
+        .probeLine(key)
+        .then((probes) => ({ probes, laidOut: true }))
+        .catch(() => this.data.probes().then((probes) => ({ probes, laidOut: false })))
+        .then(async ({ probes, laidOut }) => {
+          const progresses = (await Promise.all(probes.map((p) => this.data.probeProgress(key, p.id).catch(() => null)))).filter(
+            (p) => p !== null,
+          );
+          return probeRows(laidOut ? probes : probeLine(probes, startedProbeIds(progresses)), progresses);
+        }),
       this.probes,
     );
   }

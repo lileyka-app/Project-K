@@ -68,11 +68,26 @@ public class CatalogMapperTests
     {
         var probes = Map().Probes;
 
-        Assert.Equal(["probe-1", "probe-2"], probes.Select(p => p.Id));
+        Assert.Equal(["probe-1", "probe-1-2026", "probe-2"], probes.Select(p => p.Id));
         Assert.Equal(["a-1", "a-2", "b-1"], probes[0].Points.Select(p => p.Id));
         Assert.Equal(2, probes[0].Sections!.Count);
         Assert.Equal("Знає", probes[0].Sections![0].Points[0].Title);
-        Assert.Equal(["p2-1"], probes[1].Points.Select(p => p.Id));
+        Assert.Equal(["p2-1"], probes[2].Points.Select(p => p.Id));
+    }
+
+    [Fact]
+    public void Probes_CarryTheirEditionItsTitlePlaceKraiAndStatus()
+    {
+        var probes = Map().ProbesById;
+
+        Assert.Null(probes["probe-1"].Edition);
+        Assert.Null(probes["probe-1"].EditionTitle);
+        Assert.Equal("approved", probes["probe-1"].StatusCode);
+        Assert.Equal("upyu-2026", probes["probe-1-2026"].Edition);
+        Assert.Equal("Оновлена проба (2026)", probes["probe-1-2026"].EditionTitle);
+        Assert.Equal(1, probes["probe-1-2026"].Order);
+        Assert.Equal("ua", probes["probe-1-2026"].KraiCode);
+        Assert.Equal("trial", probes["probe-1-2026"].StatusCode);
     }
 
     [Fact]

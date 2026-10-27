@@ -38,6 +38,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalReader _journal;
     private readonly IProbesCatalogService _probes;
+    private readonly IMemberProbeLine _line;
 
     public UpdateProbePointSignatureCommandHandler(
         IUnitOfWork unitOfWork,
@@ -45,8 +46,10 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         AuditActorResolver actors,
         IKurinAudit audit,
         IKurinJournalReader journal,
-        IProbesCatalogService probes)
+        IProbesCatalogService probes,
+        IMemberProbeLine line)
     {
+        _line = line;
         _unitOfWork = unitOfWork;
         _members = members;
         _actors = actors;
@@ -76,6 +79,15 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
 
         var probeProgress = await _unitOfWork.ProbeProgresses
             .GetByMemberAndProbeIdAsync(request.MemberKey, normalizedProbeId, cancellationToken);
+
+        // The first signature starts a probe, and a probe starts only in its turn.
+        if (request.IsSigned
+            && (probeProgress is null || probeProgress.Status == ProbeProgressStatus.NotStarted)
+            && ProbeStartRefusal.Of<ProbeProgressResponse>(
+                await _line.CanStartAsync(request.MemberKey, normalizedProbeId, cancellationToken)) is { } refusal)
+        {
+            return refusal;
+        }
 
         var actor = await _actors.ResolveAsync(cancellationToken);
         var actorName = actor.Name;

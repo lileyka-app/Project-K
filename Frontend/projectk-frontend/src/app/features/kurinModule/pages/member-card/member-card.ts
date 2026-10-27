@@ -20,7 +20,7 @@ import { BadgesCatalogService } from '../../services/probes-and-badges/badges-ca
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ProbesCatalogService } from '../../services/probes-and-badges/probes-catalog.service';
 import { buildMemberSkillsSummary, normalizeBadgeProgressStatus, resolveBadgeImageUrl } from '../../functions/member-skills-view-mapper.function';
-import { buildMemberProbeRows } from '../../functions/member-probe-rows-view-mapper.function';
+import { buildMemberProbeRows, probeLine, startedProbeIds } from '../../functions/member-probe-rows-view-mapper.function';
 import { MemberSkillsSummaryView } from '../../models/probes-and-badges/member-skills-summary.view';
 import { BadgeCatalogItemDto } from '../../models/probes-and-badges/badge-catalog-item.dto';
 import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.dto';
@@ -128,7 +128,7 @@ export class MemberCardComponent implements OnInit {
   cardFields: CardFieldsDto = DEFAULT_CARD_FIELDS;
   memberKey: string | null = null;
   skillsSummary: MemberSkillsSummaryView = this.createEmptySkillsSummary();
-  probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
+  probeRows: MemberProbeRowView[] = [];
   allBadgesCatalog: BadgeCatalogItemDto[] = [];
   /** The вмілості the member's kurin is offered by its край; the whole catalogue stays for what they already have. */
   offeredBadges: BadgeCatalogItemDto[] = [];
@@ -888,12 +888,12 @@ export class MemberCardComponent implements OnInit {
   }
 
   getProbeSummaryMeta(row: MemberProbeRowView): string {
-    if (row.probeId === 'probe-2' && row.isDisabled) {
-      return 'Відкриється після закриття першої проби';
+    if (row.lockedBehindTitle) {
+      return `Відкриється після закриття: ${row.lockedBehindTitle}`;
     }
 
-    if (row.probeId === 'probe-3' && row.isDisabled) {
-      return 'Третя проба буде реалізована окремим етапом';
+    if (row.hasNoPoints) {
+      return 'Поточкове відстеження цієї проби буде окремим етапом';
     }
 
     if (row.completedAtUtc) {
@@ -1082,17 +1082,25 @@ export class MemberCardComponent implements OnInit {
 
     let hasLoadError = false;
 
-    this.probesCatalogService
-      .getAll()
-      .pipe(
+    // The server lays out the line (the гурток's edition, or the one a closed probe holds them to).
+    // An API or a recorded demo without that route gets the catalogue and the fallback line instead.
+    const line$ = this.memberProgressService.getProbeLine(memberKey).pipe(
+      map(probes => ({ probes, laidOut: true })),
+      catchError(() => this.probesCatalogService.getAll().pipe(
+        map(probes => ({ probes, laidOut: false })),
         catchError((error) => {
           console.error('Error fetching probes catalog:', error);
           hasLoadError = true;
-          return of([] as ProbeSummaryDto[]);
-        }),
-        switchMap((probes) => {
+          return of({ probes: [] as ProbeSummaryDto[], laidOut: true });
+        })
+      ))
+    );
+
+    line$
+      .pipe(
+        switchMap(({ probes, laidOut }) => {
           if (probes.length === 0) {
-            return of({ probes, progresses: [] as ProbeProgressDto[] });
+            return of({ probes, laidOut, progresses: [] as ProbeProgressDto[] });
           }
 
           return forkJoin(
@@ -1108,13 +1116,15 @@ export class MemberCardComponent implements OnInit {
           ).pipe(
             map(progresses => ({
               probes,
+              laidOut,
               progresses: progresses.filter((progress): progress is ProbeProgressDto => progress !== null)
             }))
           );
         })
       )
-      .subscribe(({ probes, progresses }) => {
-        this.probeRows = buildMemberProbeRows(probes, progresses);
+      .subscribe(({ probes, laidOut, progresses }) => {
+        const line = laidOut ? probes : probeLine(probes, startedProbeIds(progresses));
+        this.probeRows = buildMemberProbeRows(line, progresses);
         this.probesLoadFailed = hasLoadError;
         this.isProbesLoading = false;
       });
@@ -1128,9 +1138,6 @@ export class MemberCardComponent implements OnInit {
     };
   }
 
-  private createEmptyProbeRows(): MemberProbeRowView[] {
-    return buildMemberProbeRows([], []);
-  }
 
   private formatDate(value: string): string {
     return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;

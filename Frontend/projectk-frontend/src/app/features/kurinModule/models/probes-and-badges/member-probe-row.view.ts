@@ -8,6 +8,12 @@ export interface MemberProbeRowView {
   completedAtUtc: string | null;
   isCompleted: boolean;
   isDisabled: boolean;
+
+  /** Назва проби, яку треба закрити, щоб відкрилась ця; null, коли ця не чекає на попередню. */
+  lockedBehindTitle: string | null;
+
+  /** Проба без точок у каталозі (зараз це третя): відстежувати її поточково нема чого. */
+  hasNoPoints: boolean;
   canOpenDetails: boolean;
   pointsCount: number | null;
   sectionsCount: number | null;

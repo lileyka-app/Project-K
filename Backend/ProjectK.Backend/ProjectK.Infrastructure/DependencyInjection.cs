@@ -6,6 +6,7 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Settings;
@@ -159,6 +160,7 @@ public static class DependencyInjection
         services.AddSingleton<CatalogStore>();
         services.AddSingleton<IBadgesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddSingleton<IProbesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
+        services.AddSingleton<ICatalogKraiNames>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddHttpClient(CatalogClient.HttpClientName, client => client.Timeout = timeout);
         services.AddSingleton<CatalogClient>();
         services.AddSingleton<IAwardImagesCatalog, CatalogAwardImages>();

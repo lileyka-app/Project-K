@@ -14,6 +14,7 @@ using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.LoadTest;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Add;
@@ -25,12 +26,10 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaStatus;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Register;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
@@ -59,62 +58,22 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a kurin together with its first account, which becomes that kurin's Зв'язковий.
+    /// Opens a kurin and invites the person who will be its Зв'язковий.
     /// </summary>
     /// <remarks>
-    /// Admin only, because it is the one call that brings a new kurin into being. Every other registration
-    /// attaches a person to a kurin that already exists. The password, the name and the kurin number are
-    /// all required: an account minted with a placeholder password is an account whose password is written
-    /// in this repository.
+    /// Admin only, because it is the one call that brings a new kurin into being. It takes no password:
+    /// the person gets an invitation letter, chooses their own password on activation and is seated
+    /// then, exactly as after an approved kurin-leader application. An address that already has an
+    /// account or an application waiting is refused with 409. Answers 201 with
+    /// <c>invitationSent: false</c> when everything was stored but the letter did not go.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("register/kurin")]
-    [ProducesResponseType(typeof(RegisterUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinFounderInvitation), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RegisterKurin([FromBody] RegisterUserRequest request)
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RegisterKurin([FromBody] InviteKurinFounderCommand command)
     {
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            return this.Failure(ResultType.BadRequest, "PasswordRequired", "A password for the first account is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
-        {
-            return this.Failure(ResultType.BadRequest, "NameRequired", "First and last name are required.");
-        }
-
-        if (request.KurinNumber is not > 0)
-        {
-            return this.Failure(ResultType.BadRequest, "KurinNumberRequired", "A positive kurin number is required.");
-        }
-
-        var command = new RegisterKurinCommand
-        {
-            Email = request.Email,
-            Password = request.Password,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            PhoneNumber = request.PhoneNumber ?? string.Empty,
-            KurinNumber = request.KurinNumber.Value
-        };
-        var response = await _mediator.Send(command);
-        return response.ToActionResult(this);
-    }
-
-    /// <summary>
-    /// Creates an account inside the caller's own kurin.
-    /// </summary>
-    /// <remarks>
-    /// Restricted to kurin management and rate-limited: it is the path an attacker would use to mint
-    /// accounts if a management token leaked.
-    /// </remarks>
-    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
-    [EnableRateLimiting("StrictAuthLimit")]
-    [HttpPost("register")]
-    [ProducesResponseType(typeof(RegisterUserResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
-    {
-        var command = _mapper.Map<RegisterUserCommand>(request);
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);
     }

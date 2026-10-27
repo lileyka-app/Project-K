@@ -94,8 +94,11 @@ describe('MemberCardComponent', () => {
       getBadgeProgresses: vi.fn(),
       submitBadgeProgress: vi.fn(),
       reviewBadgeProgress: vi.fn(),
-      getProbeProgress: vi.fn()
+      getProbeProgress: vi.fn(),
+      // No line route by default: the card falls back to the catalogue, as against an older API.
+      getProbeLine: vi.fn()
     } as MockedObject<MemberProgressService>;
+    memberProgressServiceSpy.getProbeLine.mockReturnValue(throwError(() => new Error('No line route')));
     badgeImageBlobServiceSpy = {
       resolveBadgeImageForDisplay: vi.fn()
     } as MockedObject<BadgeImageBlobService>;
@@ -224,11 +227,11 @@ describe('MemberCardComponent', () => {
     expect(memberProgressServiceSpy.getBadgeProgresses).toHaveBeenCalledWith(memberKey);
   });
 
-  it('should build probe rows and keep third probe disabled', () => {
+  it('should build probe rows and keep a probe without points disabled', () => {
     const probes: ProbeSummaryDto[] = [
       { id: 'probe-1', title: 'Перша проба', pointsCount: 10, sectionsCount: 3 },
       { id: 'probe-2', title: 'Друга проба', pointsCount: 12, sectionsCount: 4 },
-      { id: 'probe-3', title: 'Третя проба', pointsCount: 14, sectionsCount: 5 }
+      { id: 'probe-3', title: 'Третя проба', pointsCount: 0, sectionsCount: 0 }
     ];
 
     memberServiceSpy.getByKey.mockReturnValue(of(member));
@@ -272,6 +275,8 @@ describe('MemberCardComponent', () => {
       completedAtUtc: null,
       isCompleted: false,
       isDisabled: false,
+      lockedBehindTitle: null,
+      hasNoPoints: false,
       canOpenDetails: true,
       pointsCount: 10,
       sectionsCount: 3,

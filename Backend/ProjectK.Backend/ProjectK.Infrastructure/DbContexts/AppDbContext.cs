@@ -165,6 +165,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasMaxLength(1000);
             entity.Property(e => e.SilhouetteBlobName)
                 .HasMaxLength(500);
+            entity.Property(e => e.ProbeEdition)
+                .HasMaxLength(64);
             entity.HasOne(e => e.Kurin)
                   .WithMany(k => k.Groups)
                   .HasForeignKey(e => e.KurinKey)

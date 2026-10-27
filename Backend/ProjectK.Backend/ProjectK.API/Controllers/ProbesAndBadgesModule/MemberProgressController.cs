@@ -83,6 +83,23 @@ public class MemberProgressController : ControllerBase
     }
 
     /// <summary>
+    /// Returns the probes the member walks, in order.
+    /// </summary>
+    /// <remarks>
+    /// The edition their гурток chose, unless a closed probe past the first holds them to another;
+    /// a probe they started elsewhere keeps a place their edition lacks.
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("probes/line")]
+    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
+    [ProducesResponseType(typeof(IReadOnlyList<ProbeSummaryResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProbeLine(Guid memberKey)
+    {
+        var response = await _mediator.Send(new GetMemberProbeLineQuery(memberKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
     /// Returns the member's progress through one probe, point by point.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]

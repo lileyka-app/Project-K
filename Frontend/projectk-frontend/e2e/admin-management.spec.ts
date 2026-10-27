@@ -11,8 +11,8 @@ describeRole('admin', 'Admin management surfaces', () => {
     await page.getByRole('button', { name: /Створити/ }).click();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page).locator('.actions').last().getByRole('button').last()).toBeDisabled();
-    // Only the number: the admin panel creates the kurin alone, and the Зв'язковий arrives through
-    // an application and an invitation, not through a password typed here (SEC-4.4).
+    // Only the number: the Зв'язковий fields are optional, and none of them is a password — the
+    // founder chooses one from the invitation letter (SEC-4.4, kurin-founder-invitation.spec).
     await fillManagePanelFields(page, [`91${Date.now().toString().slice(-3)}`]);
     await expect(dialog(page).locator('.actions').last().getByRole('button').last()).toBeEnabled();
     await cancelManagePanel(page);

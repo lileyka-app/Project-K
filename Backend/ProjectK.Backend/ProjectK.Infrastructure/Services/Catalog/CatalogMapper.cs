@@ -32,8 +32,16 @@ internal static class CatalogMapper
             .GroupBy(category => category.Id)
             .ToDictionary(group => group.Key, group => group.First().Title);
 
+        var editions = (document.Editions ?? [])
+            .GroupBy(edition => edition.Id)
+            .ToDictionary(group => group.Key, group => group.First().Title);
+
         var badges = (document.Badges ?? []).Select(badge => ToBadge(badge, categories)).ToList();
-        var probes = (document.Probes ?? []).OrderBy(probe => probe.Order).Select(ToProbe).ToList();
+        var probes = (document.Probes ?? [])
+            .OrderBy(probe => probe.Order)
+            .ThenBy(probe => probe.Edition, StringComparer.Ordinal)
+            .Select(probe => ToProbe(probe, editions))
+            .ToList();
         var awardImages = (document.Awards ?? [])
             .Where(award => award.Group == "upyu-vidznachennia" && award.Level is not null && award.Images is not null)
             .GroupBy(award => award.Level!.Value)
@@ -80,14 +88,23 @@ internal static class CatalogMapper
         };
     }
 
-    private static Probe ToProbe(CatalogProbe probe)
+    private static Probe ToProbe(CatalogProbe probe, IReadOnlyDictionary<string, string> editions)
     {
         var sections = (probe.Sections ?? [])
             .Select(section => new ProbeSection(section.Id, section.Code, section.Title, ToPoints(section.Points)))
             .ToList();
         var own = ToPoints(probe.Points);
 
-        return new Probe(probe.Id, probe.Title, own.Count > 0 ? own : [.. sections.SelectMany(s => s.Points)], sections);
+        var edition = string.IsNullOrWhiteSpace(probe.Edition) ? null : probe.Edition.Trim();
+
+        return new Probe(probe.Id, probe.Title, own.Count > 0 ? own : [.. sections.SelectMany(s => s.Points)], sections)
+        {
+            Edition = edition,
+            EditionTitle = edition is null ? null : editions.GetValueOrDefault(edition),
+            Order = probe.Order,
+            KraiCode = KraiCode(probe.Krai),
+            StatusCode = probe.Status?.Trim().ToLowerInvariant() ?? string.Empty
+        };
     }
 
     private static string KraiCode(string? krai) => krai?.Trim().ToLowerInvariant() ?? string.Empty;

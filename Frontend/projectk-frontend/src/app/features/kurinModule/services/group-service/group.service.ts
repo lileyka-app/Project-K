@@ -7,6 +7,7 @@ import { CreateGroupDto } from '../../models/requests/create-group.dto';
 import { UpdateGroupDto } from '../../models/requests/update-group.dto';
 import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto';
 import { ClientCacheService } from '../client-cache/client-cache.service';
+import { KurinProbeEditionsDto } from '../../models/group-probe-edition.dto';
 import { ENTITY_CACHE_TTL_MS, GROUP_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
 
 export interface MentorAssignmentDto {
@@ -82,6 +83,15 @@ export class GroupService {
       ENTITY_CACHE_TTL_MS,
       () => this.http.get<boolean>(`${this.apiUrl}/exists/${groupKey}`)
     );
+  }
+
+  /** Проба кожного гуртка куреня, для налаштувань куреня. */
+  getKurinProbeEditions(kurinKey: string): Observable<KurinProbeEditionsDto> {
+    return this.http.get<KurinProbeEditionsDto>(`${environment.apiUrl}/kurin/${kurinKey}/probe-editions`);
+  }
+
+  setProbeEdition(groupKey: string, edition: string | null): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${groupKey}/probe-edition`, { edition });
   }
 
   getMentors(groupKey: string): Observable<MemberLookupDto[]> {
