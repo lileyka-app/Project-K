@@ -86,6 +86,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
     {
         LeadershipEntity? existing = null;
         bool isCreated = false;
+        var moved = false;
         IReadOnlyList<OfficeChange> officeChanges;
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         if (request.LeadershipKey != null && request.LeadershipKey != Guid.Empty)
@@ -96,8 +97,10 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         if (existing != null)
         {
             // Update existing Leadership
+            var placedBefore = (existing.Type, existing.KurinKey, existing.GroupKey);
             existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
             PlaceOnEntity(existing, request.EntityKey);
+            moved = placedBefore != (existing.Type, existing.KurinKey, existing.GroupKey);
             if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
             {
                 return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
@@ -131,6 +134,12 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         }
 
         var touchedHolders = officeChanges.SelectMany(change => change.Ended.Concat(change.Seated)).ToHashSet();
+        if (moved)
+        {
+            // A провід moved to another гурток or курінь changes what every sitting holder may do,
+            // though none of them was seated or unseated.
+            touchedHolders.UnionWith(existing.LeadershipHistories.Where(history => history.EndDate == null).Select(history => history.MemberKey));
+        }
         IReadOnlyCollection<MemberSummary> holders = touchedHolders.Count == 0
             ? []
             : await _members.GetByKeysAsync(touchedHolders, cancellationToken);
