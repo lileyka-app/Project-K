@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Options;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -25,6 +26,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
     private readonly ICurrentUserContext _currentUserContext;
     private readonly KurinNumberOptions _numbers;
     private readonly KraiOptions _krai;
+    private readonly IBackendCache _cache;
 
     public ApproveWaitlistEntryCommandHandler(
         IUnitOfWork unitOfWork,
@@ -32,10 +34,12 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         IEmailService emailService,
         ICurrentUserContext currentUserContext,
         IOptions<KurinNumberOptions> numbers,
-        IOptions<KraiOptions> krai)
+        IOptions<KraiOptions> krai,
+        IBackendCache cache)
     {
         _numbers = numbers.Value;
         _krai = krai.Value;
+        _cache = cache;
         _unitOfWork = unitOfWork;
         _accountProvisioning = accountProvisioning;
         _emailService = emailService;
@@ -120,6 +124,10 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (entry.IsKurinLeaderCandidate)
+        {
+            _cache.Invalidate(BackendCachePolicies.KurinReads);
+        }
 
         // 5. Send Invitation Email
         await _emailService.SendInvitationEmailAsync(entry.Email, provisioned.Data.InvitationToken, cancellationToken);

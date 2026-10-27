@@ -5,6 +5,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { KurinDto } from '../../models/kurin.dto';
 import { KraiDto } from '../../models/krai.dto';
+import { InviteKurinFounderRequest, KurinFounderInvitationDto } from '../../models/kurin-founder-invitation.dto';
 import { CardFieldsDto, DEFAULT_CARD_FIELDS, KurinCardFieldDto } from '../../models/card-fields.dto';
 import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/import/import-model';
 import { Observable } from 'rxjs/internal/Observable';
@@ -161,6 +162,13 @@ export class KurinService {
         }
       }
     ).pipe(
+      tap(() => this.invalidateKurinDataCache())
+    );
+  }
+
+  /** Opens a kurin and sends its Зв'язковий an invitation; 409 when the address is already held. */
+  inviteKurinFounder(request: InviteKurinFounderRequest): Observable<KurinFounderInvitationDto> {
+    return this.http.post<KurinFounderInvitationDto>(`${environment.apiUrl}/auth/register/kurin`, request).pipe(
       tap(() => this.invalidateKurinDataCache())
     );
   }

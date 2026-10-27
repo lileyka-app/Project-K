@@ -23,6 +23,7 @@ using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
@@ -301,6 +302,7 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton(new Mock<IRefreshTokenStore>().Object);
             builder.Services.AddSingleton(new Mock<ICalendarFeedStore>().Object);
+            builder.Services.AddSingleton(new Mock<IBackendCache>().Object);
             builder.Services.AddScoped<RefreshTokenInvalidation>();
             builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
             builder.Services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();

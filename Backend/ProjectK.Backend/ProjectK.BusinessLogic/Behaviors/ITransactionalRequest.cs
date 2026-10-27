@@ -6,7 +6,7 @@ namespace ProjectK.BusinessLogic.Behaviors;
 /// rollback on any exception.
 /// </summary>
 /// <remarks>
-/// Do NOT add this to a handler that opens its own transaction (e.g. RegisterKurinCommandHandler) —
+/// Do NOT add this to a handler that opens its own transaction (<c>BeginTransactionAsync</c>) —
 /// SQL Server does not support nested transactions and the behaviour would collide with it.
 /// </remarks>
 public interface ITransactionalRequest;

@@ -15,6 +15,7 @@ using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Controllers.TestModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
@@ -105,8 +106,7 @@ public class AuthorizationBaselineMatrixTests
 
     public static IEnumerable<object[]> PolicyEndpoints()
     {
-        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.RegisterKurin), "RequireAdmin");
-        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.Register), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<AuthController, InviteKurinFounderCommand>>(nameof(AuthController.RegisterKurin), "RequireAdmin");
         yield return Row<Action<AuthController>>(nameof(AuthController.Logout), "RequireUser");
         yield return Row<Action<AuthController, CheckEntityAccessRequest>>(nameof(AuthController.CheckAccess), "RequireUser");
         yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup), "RequireUser");

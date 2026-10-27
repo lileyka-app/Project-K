@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -23,6 +24,7 @@ public class ApproveWaitlistEntryHandlerTests
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IKraiRepository> _krais = new();
     private readonly Mock<IAccountProvisioningService> _provisioning = new();
+    private readonly Mock<IBackendCache> _cache = new();
     private readonly ApproveWaitlistEntryCommandHandler _handler;
     private Kurin? _openedKurin;
 
@@ -46,7 +48,8 @@ public class ApproveWaitlistEntryHandlerTests
             new Mock<IEmailService>().Object,
             new Mock<ICurrentUserContext>().Object,
             Options.Create(new KurinNumberOptions()),
-            Options.Create(new KraiOptions()));
+            Options.Create(new KraiOptions()),
+            _cache.Object);
     }
 
     [Fact]
@@ -59,6 +62,8 @@ public class ApproveWaitlistEntryHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _openedKurin!.Number.Should().Be(47);
         entry.FoundedKurinKey.Should().Be(_openedKurin.KurinKey);
+        // The admin's cached list of kurins must show the one just opened.
+        _cache.Verify(x => x.Invalidate(BackendCachePolicies.KurinReads), Times.Once);
     }
 
     [Fact]

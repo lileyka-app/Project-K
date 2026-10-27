@@ -14,6 +14,14 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { HttpErrorResponse } from '@angular/common/http';
+
+/** The create form: the kurin, and optionally the person invited to be its Звʼязковий. */
+type KurinCreateForm = KurinDto & {
+  founderEmail?: string | null;
+  founderFirstName?: string | null;
+  founderLastName?: string | null;
+};
 
 @Component({
   selector: 'app-admin-panel',
@@ -58,13 +66,22 @@ export class AdminPanelComponent implements OnInit {
         required: true,
         hiddenOn: ['delete'],
       },
-      AdminPanelComponent.kraiField([])
+      AdminPanelComponent.kraiField([]),
+      {
+        name: 'founderEmail',
+        label: 'Email Звʼязкового',
+        type: 'text',
+        placeholder: 'Порожньо — курінь без Звʼязкового',
+        hiddenOn: ['update', 'delete']
+      },
+      { name: 'founderFirstName', label: 'Імʼя Звʼязкового', type: 'text', hiddenOn: ['update', 'delete'] },
+      { name: 'founderLastName', label: 'Прізвище Звʼязкового', type: 'text', hiddenOn: ['update', 'delete'] }
     ],
     displayName: (entity: KurinDto) => {
       const name = entity.number === null ? 'Підготовчий курінь' : `${entity.number} курінь`;
       return entity.namedAfter ? `${name} ім. ${entity.namedAfter}` : name;
     },
-    createFactory: () => ({ kurinKey: '', number: null, kraiCode: null }),
+    createFactory: () => ({ kurinKey: '', number: null, kraiCode: null, founderEmail: null, founderFirstName: null, founderLastName: null }),
   }
 
   private static kraiField(krais: KraiDto[]): ManagePanelField {
@@ -114,13 +131,16 @@ export class AdminPanelComponent implements OnInit {
     this.managePanelParameter = param;
   }
 
-  onManageAction(e: { action: ManageAction; entity: KurinDto; entityType: string }): void {
+  onManageAction(e: { action: ManageAction; entity: KurinCreateForm; entityType: string }): void {
     switch (e.action) {
       case 'create':
-        // The kurin alone. Its Звʼязковий arrives through the waitlist as a kurin-leader candidate,
-        // or is seated by an admin once the person has an account — the old "email of the
-        // Звʼязковий" field posted to a route the API never had.
-        this.kurinService.createKurin(e.entity).subscribe(() => { this.refreshData(); });
+        // With an address the kurin opens with an invitation for its Звʼязковий, who chooses their
+        // own password on activation; without one it opens empty, to be claimed through the waitlist.
+        if (e.entity.founderEmail?.trim()) {
+          this.inviteFounder(e.entity);
+        } else {
+          this.kurinService.createKurin(e.entity).subscribe(() => { this.refreshData(); });
+        }
         break;
       case 'update': {
         // The край moves through its own admin-only call, after the rest of the record is saved.
@@ -146,6 +166,60 @@ export class AdminPanelComponent implements OnInit {
       case 'delete':
         this.kurinService.deleteKurin(e.entity.kurinKey).subscribe(() => this.refreshData());
         break;
+    }
+  }
+
+  private inviteFounder(form: KurinCreateForm): void {
+    const email = form.founderEmail!.trim();
+    const firstName = form.founderFirstName?.trim();
+    const lastName = form.founderLastName?.trim();
+    if (!firstName || !lastName) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Курінь не створено',
+        detail: 'Для запрошення потрібні імʼя й прізвище Звʼязкового.'
+      });
+      return;
+    }
+
+    this.kurinService.inviteKurinFounder({
+      email,
+      firstName,
+      lastName,
+      kurinNumber: form.number,
+      kraiCode: form.kraiCode || null
+    }).subscribe({
+      next: invitation => {
+        this.refreshData();
+        this.messageService.add(invitation.invitationSent
+          ? { severity: 'success', summary: 'Курінь створено', detail: `Запрошення надіслано на ${invitation.email}.` }
+          : {
+            severity: 'warn',
+            summary: 'Курінь створено, лист не пішов',
+            detail: 'Звʼязковий може попросити його знову через «Забув пароль» на сторінці входу.'
+          });
+      },
+      error: (error: unknown) => this.messageService.add({
+        severity: 'error',
+        summary: 'Курінь не створено',
+        detail: AdminPanelComponent.inviteFailure(error)
+      })
+    });
+  }
+
+  private static inviteFailure(error: unknown): string {
+    const code = error instanceof HttpErrorResponse ? (error.error as { error?: string } | null)?.error : undefined;
+    switch (code) {
+      case 'EmailTaken':
+        return 'За цією адресою вже є акаунт.';
+      case 'WaitlistPending':
+        return 'Від цієї адреси вже є заявка — схвали її в «Заявках».';
+      case 'KurinNumberTaken':
+        return 'Курінь з таким числом у цьому краї вже є.';
+      case 'VALIDATION_ERROR':
+        return 'Перевір адресу, імʼя та число куреня.';
+      default:
+        return failureDetail(error);
     }
   }
 

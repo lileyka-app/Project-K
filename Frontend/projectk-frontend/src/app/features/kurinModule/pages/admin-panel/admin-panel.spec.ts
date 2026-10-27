@@ -11,6 +11,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
 import { MessageService } from '@openng/optimus-ui/api';
+import { HttpErrorResponse } from '@angular/common/http';
 
 describe('AdminPanelComponent', () => {
   let component: AdminPanelComponent;
@@ -36,6 +37,7 @@ describe('AdminPanelComponent', () => {
     const kurinServiceSpy = {
       getKurins: vi.fn(),
       createKurin: vi.fn(),
+      inviteKurinFounder: vi.fn(),
       updateKurin: vi.fn(),
       deleteKurin: vi.fn(),
       getKrais: vi.fn(),
@@ -192,6 +194,65 @@ describe('AdminPanelComponent', () => {
       component.onManageAction({ action: 'create', entity: newEntity, entityType: 'kurin' });
       expect(kurinService.createKurin).toHaveBeenCalledWith(newEntity);
       expect(kurinService.getKurins).toHaveBeenCalledTimes(2); // initial + refresh
+    });
+
+    it('invites the Звʼязковий instead of opening an empty kurin when an address is given', () => {
+      kurinService.inviteKurinFounder.mockReturnValue(of({ kurinKey: '3', userKey: 'u', email: 'f@example.com', invitationSent: true }));
+      const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+
+      component.onManageAction({
+        action: 'create',
+        entity: { kurinKey: '', number: 103, kraiCode: 'cz', founderEmail: ' f@example.com ', founderFirstName: 'Ореста', founderLastName: 'Коваль' } as KurinDto,
+        entityType: 'kurin'
+      });
+
+      expect(kurinService.inviteKurinFounder).toHaveBeenCalledWith({
+        email: 'f@example.com', firstName: 'Ореста', lastName: 'Коваль', kurinNumber: 103, kraiCode: 'cz'
+      });
+      expect(kurinService.createKurin).not.toHaveBeenCalled();
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success', detail: 'Запрошення надіслано на f@example.com.' }));
+      expect(kurinService.getKurins).toHaveBeenCalledTimes(2);
+    });
+
+    it('asks for the name before inviting', () => {
+      const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+
+      component.onManageAction({
+        action: 'create',
+        entity: { kurinKey: '', number: 103, founderEmail: 'f@example.com' } as KurinDto,
+        entityType: 'kurin'
+      });
+
+      expect(kurinService.inviteKurinFounder).not.toHaveBeenCalled();
+      expect(kurinService.createKurin).not.toHaveBeenCalled();
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'warn' }));
+    });
+
+    it('says when the letter did not go', () => {
+      kurinService.inviteKurinFounder.mockReturnValue(of({ kurinKey: '3', userKey: 'u', email: 'f@example.com', invitationSent: false }));
+      const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+
+      component.onManageAction({
+        action: 'create',
+        entity: { kurinKey: '', number: 103, founderEmail: 'f@example.com', founderFirstName: 'О', founderLastName: 'К' } as KurinDto,
+        entityType: 'kurin'
+      });
+
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'warn', summary: 'Курінь створено, лист не пішов' }));
+    });
+
+    it('names a taken address', () => {
+      kurinService.inviteKurinFounder.mockReturnValue(throwError(() =>
+        new HttpErrorResponse({ status: 409, error: { error: 'EmailTaken', message: '' } })));
+      const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+
+      component.onManageAction({
+        action: 'create',
+        entity: { kurinKey: '', number: 103, founderEmail: 'f@example.com', founderFirstName: 'О', founderLastName: 'К' } as KurinDto,
+        entityType: 'kurin'
+      });
+
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error', detail: 'За цією адресою вже є акаунт.' }));
     });
 
     it('handles update', () => {

@@ -38,7 +38,6 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
 
         // Auth module
         yield return Row("POST", "/api/auth/logout");
-        yield return Row("POST", "/api/auth/register", "{}");
         yield return Row("POST", "/api/auth/register/kurin", "{}");
         yield return Row("POST", "/api/auth/check-access", "{}");
 
