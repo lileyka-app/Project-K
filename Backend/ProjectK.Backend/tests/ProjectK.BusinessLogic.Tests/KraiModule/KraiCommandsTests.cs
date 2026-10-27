@@ -20,6 +20,7 @@ public class KraiCommandsTests
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IBackendCache> _cache = new();
+    private readonly Mock<ICatalogKraiNames> _catalogNames = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly Guid _admin = Guid.NewGuid();
     private readonly List<Krai> _addedKrais = [];
@@ -38,7 +39,7 @@ public class KraiCommandsTests
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
     }
 
-    private CreateKraiCommandHandler Create() => new(_unitOfWork.Object, _user.Object, _cache.Object);
+    private CreateKraiCommandHandler Create() => new(_unitOfWork.Object, _user.Object, _cache.Object, _catalogNames.Object);
 
     [Fact]
     public async Task Creating_AddsTheKraiWithAFirstRevision_ReadingUkrainesBadges()
@@ -54,6 +55,7 @@ public class KraiCommandsTests
         revision.CreatedByUserKey.Should().Be(_admin);
         revision.Json.Should().Be("""{"catalog":{"badgeSources":["ua"]}}""");
         _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _catalogNames.Verify(n => n.Name("sk", "Словаччина"), Times.Once);
     }
 
     [Fact]
@@ -107,13 +109,14 @@ public class KraiCommandsTests
         _krais.Setup(r => r.GetForUpdateAsync("cz", It.IsAny<CancellationToken>())).ReturnsAsync(krai);
         _kurins.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([new Kurin(5) { KraiCode = "cz" }]);
 
-        var result = await new RenameKraiCommandHandler(_unitOfWork.Object, _cache.Object)
+        var result = await new RenameKraiCommandHandler(_unitOfWork.Object, _cache.Object, _catalogNames.Object)
             .Handle(new RenameKraiCommand(" CZ ", " Пласт Чехія "), default);
 
         result.Type.Should().Be(ResultType.Success);
         krai.Name.Should().Be("Пласт Чехія");
         result.Data!.KurinCount.Should().Be(1);
         _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _catalogNames.Verify(n => n.Name("cz", "Пласт Чехія"), Times.Once);
     }
 
     [Fact]
@@ -121,7 +124,7 @@ public class KraiCommandsTests
     {
         var created = await Create().Handle(new CreateKraiCommand("sk", " чехія ", null), default);
         _krais.Setup(r => r.GetForUpdateAsync("ua", It.IsAny<CancellationToken>())).ReturnsAsync(_existing[0]);
-        var renamed = await new RenameKraiCommandHandler(_unitOfWork.Object, _cache.Object)
+        var renamed = await new RenameKraiCommandHandler(_unitOfWork.Object, _cache.Object, _catalogNames.Object)
             .Handle(new RenameKraiCommand("ua", "Чехія"), default);
 
         created.Type.Should().Be(ResultType.Conflict);
@@ -134,7 +137,7 @@ public class KraiCommandsTests
     [Fact]
     public async Task Renaming_AnUnknownKrai_IsNotFound()
     {
-        var result = await new RenameKraiCommandHandler(_unitOfWork.Object, _cache.Object)
+        var result = await new RenameKraiCommandHandler(_unitOfWork.Object, _cache.Object, _catalogNames.Object)
             .Handle(new RenameKraiCommand("xx", "Ніде"), default);
 
         result.Type.Should().Be(ResultType.NotFound);
