@@ -41,9 +41,9 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidResetAttempt", "Invalid reset attempt. Please check your email or token.");
         }
 
-        // Sessions are not ended here yet (a gap of its own, tracked in planning); the calendar link
-        // is, as on every other password change.
-        await _sessions.RevokeCalendarFeedAsync(user.Id, CalendarFeedRevokeReason.SecurityChange, cancellationToken);
+        // A reset is what someone does when they suspect the password is known: a session opened
+        // with the old one must not outlive it, here as on every other password change.
+        await _sessions.RevokeRefreshTokenAsync(user, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Account.PasswordResetCompleted",
