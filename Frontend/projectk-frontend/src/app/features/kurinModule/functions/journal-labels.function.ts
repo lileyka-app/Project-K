@@ -2,6 +2,7 @@ import { JournalArea, JournalChangeDto, KurinJournalEntryDto } from '../models/k
 import { AUDIENCE_LABELS, CAPABILITY_LABELS, labelOf, REACH_LABELS } from '../models/access-policy-labels.model';
 import { parseOfficeRole } from './system-role.function';
 import { leadershipRoleDisplayName } from './leadership-role-display.function';
+import { REGULAR_PROBE_LABEL } from '../models/group-probe-edition.dto';
 
 /** The journal's sections, in the order the «Розділ» filter lists them. */
 export const JOURNAL_AREA_LABELS: Record<JournalArea, string> = {
@@ -65,7 +66,8 @@ const ACTION_LABELS: Record<string, string> = {
   'Settings.KurinChanged': 'Змінено налаштування куреня',
   'Settings.AccessPolicyChanged': 'Змінено права й видимість',
   'Settings.CardFieldsChanged': 'Змінено поля картки',
-  'Settings.ArchivePolicyChanged': 'Змінено строки архіву задач'
+  'Settings.ArchivePolicyChanged': 'Змінено строки архіву задач',
+  'Settings.GroupProbeEditionChanged': 'Змінено пробу гуртка'
 };
 
 /** For an action this build does not know yet: what part of the kurin it touched. */
@@ -127,7 +129,8 @@ const FIELD_LABELS: Record<string, string> = {
   number: 'Число куреня',
   hidden: 'Приховані поля',
   purgeAfterDays: 'Видалення з архіву, днів',
-  autoArchiveAfterDays: 'Перенесення в архів, днів'
+  autoArchiveAfterDays: 'Перенесення в архів, днів',
+  probeEdition: 'Проба гуртка'
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -198,6 +201,10 @@ export function journalFieldLabel(field: string): string {
 
 /** A value as a person reads it: names of states and levels in Ukrainian, dates as on the rest of the site. */
 export function journalValueLabel(field: string, value: string | null | undefined): string {
+  // The journal keeps the catalogue's name of the edition; none means the regular probes.
+  if (field === 'probeEdition') {
+    return value || REGULAR_PROBE_LABEL;
+  }
   if (value === null || value === undefined || value === '') {
     return '—';
   }
@@ -220,7 +227,8 @@ export function journalChangeView(change: JournalChangeDto): JournalChangeView {
   if (change.redacted) {
     return { field: journalFieldLabel(change.field), from: '', to: 'змінено', redacted: true };
   }
-  const side = (value: string | null | undefined) => (value ? journalValueLabel(change.field, value) : '');
+  const side = (value: string | null | undefined) =>
+    (value || change.field === 'probeEdition' ? journalValueLabel(change.field, value) : '');
   return { field: journalFieldLabel(change.field), from: side(change.from), to: side(change.to), redacted: false };
 }
 

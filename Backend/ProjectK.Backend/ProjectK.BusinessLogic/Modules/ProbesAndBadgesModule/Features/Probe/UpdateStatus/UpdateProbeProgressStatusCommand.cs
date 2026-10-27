@@ -39,6 +39,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
     private readonly IKurinJournalReader _journal;
     private readonly IProbesCatalogService _probesCatalogService;
     private readonly IResourceAccessService _access;
+    private readonly IMemberProbeLine _line;
 
     public UpdateProbeProgressStatusCommandHandler(
         IUnitOfWork unitOfWork,
@@ -47,8 +48,10 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         IKurinAudit audit,
         IKurinJournalReader journal,
         IProbesCatalogService probesCatalogService,
-        IResourceAccessService access)
+        IResourceAccessService access,
+        IMemberProbeLine line)
     {
+        _line = line;
         _unitOfWork = unitOfWork;
         _members = members;
         _actors = actors;
@@ -96,6 +99,13 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         if (!IsTransitionAllowed(currentStatus, request.Status))
         {
             return await RespondAsync(ResultType.Conflict, progress, request, cancellationToken);
+        }
+
+        if (currentStatus == ProbeProgressStatus.NotStarted
+            && ProbeStartRefusal.Of<ProbeProgressResponse>(
+                await _line.CanStartAsync(request.MemberKey, progress.ProbeId, cancellationToken)) is { } refusal)
+        {
+            return refusal;
         }
 
         // Taking a проба back from verified undoes a sign-off, which the kurin may keep from people

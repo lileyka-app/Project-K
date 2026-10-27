@@ -27,6 +27,7 @@ public class UpdateProbeProgressStatusHandlerTests
     private readonly Mock<IProbesCatalogService> _probesCatalogServiceMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IResourceAccessService> _access = new();
+    private readonly Mock<IMemberProbeLine> _line = new();
     private readonly UpdateProbeProgressStatusCommandHandler _handler;
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly JournalRecorder _journal;
@@ -38,6 +39,8 @@ public class UpdateProbeProgressStatusHandlerTests
         _probeProgressRepositoryMock = new Mock<IProbeProgressRepository>();
         _probePointProgressRepositoryMock = new Mock<IProbePointProgressRepository>();
         _probesCatalogServiceMock = new Mock<IProbesCatalogService>();
+        _line.Setup(x => x.CanStartAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeStart.Allowed);
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _access.Setup(x => x.CheckCapabilityAsync(It.IsAny<KurinCapability>(), It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
@@ -70,7 +73,25 @@ public class UpdateProbeProgressStatusHandlerTests
             _journal.Audit,
             _journal.Reader,
             _probesCatalogServiceMock.Object,
-            _access.Object);
+            _access.Object,
+            _line.Object);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefuseToStartAProbe_ThatIsNotInTheMembersLine()
+    {
+        var memberKey = Guid.NewGuid();
+        _memberDirectoryMock
+            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_kurinKey);
+        _line.Setup(x => x.CanStartAsync(memberKey, "probe-1-2026", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeStart.NotInLine);
+
+        var result = await _handler.Handle(
+            new UpdateProbeProgressStatusCommand(memberKey, "probe-1-2026", ProbeProgressStatus.InProgress, null), CancellationToken.None);
+
+        Assert.Equal(ResultType.Conflict, result.Type);
+        Assert.Equal("ProbeNotInLine", result.ErrorCode);
     }
 
     [Fact]

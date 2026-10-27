@@ -1,0 +1,60 @@
+@if (failed()) {
+  <p class="editions__note">Не вдалося прочитати проби гуртків. Онови сторінку.</p>
+} @else if (state(); as editions) {
+  <div class="editions">
+    @for (group of editions.groups; track group.groupKey) {
+      <article class="editions__group" [class.editions__group--changed]="isChanged(group)">
+        <header class="editions__head">
+          <h3 class="editions__name">{{ group.name }}</h3>
+          @if (group.canChange) {
+            <p-select
+              [inputId]="'probe-edition-' + group.groupKey"
+              [ariaLabel]="'Проба гуртка ' + group.name"
+              [options]="options()"
+              [ngModel]="selected(group)"
+              (ngModelChange)="choose(group, $event)"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              styleClass="editions__select" />
+          } @else {
+            <span class="editions__current">{{ editionLabel(group.edition) }}</span>
+          }
+          @if (isChanged(group)) {
+            <span class="editions__pending">зміниться після «Зберегти»</span>
+          }
+        </header>
+
+        @if (probesOf(group).length) {
+          <p class="editions__note">Проби: {{ probesOf(group).join(' → ') }}</p>
+        }
+
+        @if (group.members.length) {
+          <details class="editions__who">
+            <summary>
+              Хто якою пробою піде
+              <span class="editions__counts">
+                за гуртком: {{ count(group, 'follows') + count(group, 'continues') + count(group, 'abandons') }}
+                @if (count(group, 'abandons')) { (з них не продовжують розпочату пробу: {{ count(group, 'abandons') }}) }
+                @if (count(group, 'held')) { · на своїй: {{ count(group, 'held') }} }
+              </span>
+            </summary>
+            <ul>
+              @for (outcome of outcomes(group); track outcome.member.memberKey) {
+                <li [class.editions__row--attention]="outcome.kind === 'held' || outcome.kind === 'abandons'">
+                  <span class="editions__person">{{ outcome.member.fullName }}</span>
+                  <span class="editions__edition">{{ editionLabel(outcome.edition) }}</span>
+                  @if (outcome.note) {
+                    <span class="editions__why">{{ outcome.note }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          </details>
+        } @else {
+          <p class="editions__note">У гуртку ще немає юнаків.</p>
+        }
+      </article>
+    }
+  </div>
+}

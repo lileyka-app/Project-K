@@ -43,13 +43,17 @@ import { GroupedProbeDto, MemberDto, MembershipDto, ProbeProgressDto } from './k
 import { KurinApi } from './kurin.service';
 import { MemberAbilities, NO_ABILITIES } from './abilities';
 
-const CONFLICT = { Conflict: 'Стан проби вже змінено. Дані оновлено.' };
+const CONFLICT = {
+  Conflict: 'Стан проби вже змінено. Дані оновлено.',
+  ProbeWaitsForPrevious: 'Ця проба відкриється, коли закриють попередню.',
+  ProbeNotInLine: 'Ця проба не з тієї, якою йде людина: вона йде пробою свого гуртка, а хто вже закрив першу — своєю.',
+};
 
 /**
  * One probe of a member (web member-probe-page): sections as an accordion with every point and who
  * signed it when. Whoever the kurin lets sign does so and, once all are signed, closes the probe;
  * taking a signature back is a right of its own. A senior's probe is their archive: read-only. The probe comes as
- * `?id=probe-1|probe-2` (the route has no :probeId).
+ * `?id=<probe id>` (the route has no :probeId).
  */
 @Component({
   selector: 'app-probe',
@@ -211,7 +215,7 @@ export class ProbePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   private readonly memberKey = this.route.snapshot.paramMap.get('memberKey') ?? '';
-  private readonly probeId = this.route.snapshot.queryParamMap.get('id') ?? 'probe-1';
+  private readonly probeId = this.route.snapshot.queryParamMap.get('id') ?? '';
 
   protected readonly failedText = FAILED_TEXT;
   protected readonly loading = signal(true);
@@ -246,7 +250,6 @@ export class ProbePage implements OnInit {
   protected readonly canClose = computed(
     () =>
       this.canSign() &&
-      ['probe-1', 'probe-2'].includes(this.probeId) &&
       !this.closed() &&
       this.total() > 0 &&
       this.signedCount() === this.total(),
@@ -311,10 +314,7 @@ export class ProbePage implements OnInit {
 
   protected async confirmClose(): Promise<void> {
     const sheet = await this.sheets.create({
-      header:
-        this.probeId === 'probe-1'
-          ? 'Закрити пробу? Після закриття першої проби відкриється друга.'
-          : 'Закрити пробу? Буде зафіксовано дату закриття другої проби.',
+      header: 'Закрити пробу? Буде зафіксовано дату закриття, і відкриється наступна проба, якщо вона є.',
       buttons: [
         { text: 'Здати і закрити', data: 'close' },
         { text: 'Скасувати', role: 'cancel' },
@@ -326,9 +326,7 @@ export class ProbePage implements OnInit {
     this.busy.set('close');
     try {
       this.progress.set(await this.data.closeProbe(this.memberKey, this.probeId));
-      await this.toasts.show(
-        this.probeId === 'probe-1' ? 'Пробу здано і закрито. Друга проба тепер доступна.' : 'Пробу здано і закрито.',
-      );
+      await this.toasts.show('Пробу здано і закрито.');
     } catch (error) {
       await this.toasts.show(apiErrorText(error, 'Не вдалося закрити пробу. Спробуй ще раз.', CONFLICT), 'danger');
       await this.load();

@@ -81,6 +81,10 @@ public static class DependencyInjection
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
         services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
+        services.AddScoped<MemberProbeLine>();
+        services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
+        services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
+        services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
 
         return services;
     }

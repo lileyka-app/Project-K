@@ -10,7 +10,15 @@ internal sealed record CatalogDocument(
     [property: JsonPropertyName("categories")] IReadOnlyList<CatalogCategory>? Categories,
     [property: JsonPropertyName("badges")] IReadOnlyList<CatalogBadge>? Badges,
     [property: JsonPropertyName("probes")] IReadOnlyList<CatalogProbe>? Probes,
-    [property: JsonPropertyName("awards")] IReadOnlyList<CatalogAward>? Awards);
+    [property: JsonPropertyName("awards")] IReadOnlyList<CatalogAward>? Awards)
+{
+    [JsonPropertyName("editions")] public IReadOnlyList<CatalogEdition>? Editions { get; init; }
+}
+
+/// <summary>An edition of the probes and the name the catalogue gives it for people.</summary>
+internal sealed record CatalogEdition(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("title")] string Title);
 
 internal sealed record CatalogCategory(
     [property: JsonPropertyName("id")] string Id,
@@ -43,7 +51,12 @@ internal sealed record CatalogProbe(
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("order")] int Order,
     [property: JsonPropertyName("sections")] IReadOnlyList<CatalogProbeSection>? Sections,
-    [property: JsonPropertyName("points")] IReadOnlyList<CatalogRequirement>? Points);
+    [property: JsonPropertyName("points")] IReadOnlyList<CatalogRequirement>? Points)
+{
+    [JsonPropertyName("krai")] public string? Krai { get; init; }
+    [JsonPropertyName("edition")] public string? Edition { get; init; }
+    [JsonPropertyName("status")] public string? Status { get; init; }
+}
 
 internal sealed record CatalogProbeSection(
     [property: JsonPropertyName("id")] string Id,

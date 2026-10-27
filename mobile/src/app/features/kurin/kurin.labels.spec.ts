@@ -14,10 +14,13 @@ import {
   membershipPeriod,
   phoneHref,
   plastLevelLabel,
+  probeLine,
+  probeMeta,
   probeRows,
   probeSections,
   signerLabel,
   sortMembers,
+  startedProbeIds,
   upcomingBirthdays,
 } from './kurin.labels';
 import { GroupDto, GroupedProbeDto, MemberAwardDto, MemberLookupDto, MembershipDto, MentorAssignmentDto, ProbeProgressDto, ProbeSummaryDto } from './kurin.models';
@@ -145,8 +148,9 @@ describe('kurin labels', () => {
 
   it('unlocks the second probe once the first is closed and counts a closed probe as fully signed', () => {
     const probes = [
-      { id: 'probe-1', pointsCount: 4 },
-      { id: 'probe-2', pointsCount: 10 },
+      { id: 'probe-1', title: 'Перша проба', pointsCount: 4, order: 1 },
+      { id: 'probe-2', title: 'Друга проба', pointsCount: 10, order: 2 },
+      { id: 'probe-3', title: 'Третя проба', pointsCount: 0, order: 3 },
     ] as ProbeSummaryDto[];
     const open = probeRows(probes, [{ probeId: 'probe-1', status: 'InProgress', pointSignatures: [{ isSigned: true }, { isSigned: false }] }] as never);
     expect(open.map((r) => [r.probeId, r.canOpen, r.signedPoints, r.percent])).toEqual([
@@ -154,9 +158,34 @@ describe('kurin labels', () => {
       ['probe-2', false, 0, 0],
       ['probe-3', false, 0, null],
     ]);
+    expect(probeMeta(open[1])).toBe('Відкриється після закриття: Перша проба');
+    expect(open[2].hasNoPoints).toBe(true);
     const closed = probeRows(probes, [{ probeId: 'probe-1', status: 'Completed', completedAtUtc: '2026-05-01T10:00:00Z', pointSignatures: [] }] as never);
     expect(closed[0]).toMatchObject({ isCompleted: true, signedPoints: 4, percent: 100 });
     expect(closed[1]).toMatchObject({ isDisabled: false, canOpen: true });
+  });
+
+  it('falls back to the unnamed edition, with a started probe of another edition in its place', () => {
+    const probes = [
+      { id: 'probe-1', title: 'Перша проба', pointsCount: 4, order: 1 },
+      { id: 'probe-2', title: 'Друга проба', pointsCount: 10, order: 2 },
+      { id: 'znak-2026', title: 'Знак прихильника', pointsCount: 3, order: 0, edition: 'upyu-2026' },
+      { id: 'probe-2-2026', title: 'Друга проба', pointsCount: 8, order: 2, edition: 'upyu-2026' },
+    ] as ProbeSummaryDto[];
+    expect(probeLine(probes, new Set()).map((p) => p.id)).toEqual(['probe-1', 'probe-2']);
+    const progresses = [{ probeId: 'probe-2-2026', status: 'InProgress', pointSignatures: [] }] as never as ProbeProgressDto[];
+    expect(probeLine(probes, startedProbeIds(progresses)).map((p) => p.id)).toEqual(['probe-1', 'probe-2-2026']);
+  });
+
+  it('lays out rows in the order the server sent, named edition included', () => {
+    const line = [
+      { id: 'znak-2026', title: 'Знак прихильника', pointsCount: 3, order: 0, edition: 'upyu-2026' },
+      { id: 'probe-1-2026', title: 'Перша проба', pointsCount: 8, order: 1, edition: 'upyu-2026' },
+    ] as ProbeSummaryDto[];
+    expect(probeRows(line, []).map((r) => [r.probeId, r.lockedBehind])).toEqual([
+      ['znak-2026', null],
+      ['probe-1-2026', 'Знак прихильника'],
+    ]);
   });
 
   it('shows who signed each point, falling back to whoever closed the probe', () => {

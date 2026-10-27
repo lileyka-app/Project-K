@@ -8,6 +8,7 @@ using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.ProbeEdition;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
@@ -112,6 +113,25 @@ public class GroupController : ControllerBase
     {
         var command = new UpsertGroupCommand(groupKey, request.Name, request.Description);
         var response = await _mediator.Send(command);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Moves the group to another edition of the probe programme.
+    /// </summary>
+    /// <remarks>
+    /// Never refused for who is in the group: a probe under way stays in its edition. Only an
+    /// edition the catalogue offers the kurin's край is accepted (400 <c>ProbeEditionNotOffered</c>).
+    /// </remarks>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpPut("{groupKey:guid}/probe-edition")]
+    [ResourceAuthorize(ResourceType.GroupProbeEdition, ResourceAction.Update, "route:groupKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetProbeEdition(Guid groupKey, [FromBody] SetGroupProbeEditionRequest request)
+    {
+        var response = await _mediator.Send(new SetGroupProbeEditionCommand(groupKey, request.Edition));
         return response.ToActionResult(this);
     }
 

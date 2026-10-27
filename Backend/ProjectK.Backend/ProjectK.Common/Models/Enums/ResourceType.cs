@@ -47,5 +47,8 @@ public enum ResourceType
     MemberExtras,
 
     /// <summary>The kurin's Журнал дій. Keyed by the kurin.</summary>
-    KurinJournal
+    KurinJournal,
+
+    /// <summary>Which edition of the probe programme a гурток walks. Keyed by the гурток.</summary>
+    GroupProbeEdition
 }

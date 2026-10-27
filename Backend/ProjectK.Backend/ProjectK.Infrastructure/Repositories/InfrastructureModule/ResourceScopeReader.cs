@@ -51,7 +51,7 @@ public class ResourceScopeReader : IResourceScopeReader
                 .Select(g => new ResourceScope(g.KurinKey, g.GroupKey, null))
                 .FirstOrDefaultAsync(cancellationToken),
 
-            ResourceType.GroupScore => await _context.Groups
+            ResourceType.GroupScore or ResourceType.GroupProbeEdition => await _context.Groups
                 .Where(g => g.GroupKey == resourceKey)
                 .Select(g => new ResourceScope(g.KurinKey, g.GroupKey, null))
                 .FirstOrDefaultAsync(cancellationToken),

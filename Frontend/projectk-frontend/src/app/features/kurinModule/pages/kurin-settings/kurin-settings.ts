@@ -16,6 +16,8 @@ import { AgendaCategoryManagerComponent } from '../../components/agenda-category
 import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-policy/agenda-archive-policy';
 import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
 import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
+import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editions/kurin-probe-editions';
+import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 
 @Component({
   selector: 'app-kurin-settings',
@@ -29,7 +31,8 @@ import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
-    KurinAccessPolicyComponent
+    KurinAccessPolicyComponent,
+    KurinProbeEditionsComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -45,6 +48,10 @@ export class KurinSettingsComponent implements OnInit {
   private readonly archivePolicy = viewChild<AgendaArchivePolicyComponent>('archivePolicy');
   private readonly cardFields = viewChild<KurinCardFieldsComponent>('cardFields');
   private readonly accessPolicy = viewChild<KurinAccessPolicyComponent>('accessPolicy');
+  private readonly probeEditions = viewChild<KurinProbeEditionsComponent>('probeEditions');
+
+  /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
+  protected readonly hasYouthProgram = hasYouthProgram;
 
   kurinKey = '';
   kurin: KurinDto | null = null;
@@ -129,11 +136,13 @@ export class KurinSettingsComponent implements OnInit {
 
     const cardFields = this.cardFields();
     const accessPolicy = this.accessPolicy();
+    const probeEditions = this.probeEditions();
     forkJoin([
       this.kurinService.updateKurin(request),
       archive ? archive.save() : of(undefined),
       cardFields ? cardFields.save() : of(undefined),
-      accessPolicy ? accessPolicy.save() : of(undefined)
+      accessPolicy ? accessPolicy.save() : of(undefined),
+      probeEditions ? probeEditions.save() : of(undefined)
     ]).subscribe({
       next: ([updated]) => {
         this.kurin = updated;
@@ -157,6 +166,8 @@ export class KurinSettingsComponent implements OnInit {
         return `Курінь з числом ${this.number} уже є в Лілейці. Перевірте число.`;
       case 'KurinNumberOutOfRange':
         return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
+      case 'ProbeEditionNotOffered':
+        return 'Пробу гуртка не збережено: такої проби для вашого краю вже немає. Онови сторінку.';
       case 'AccessPolicyInvalid':
         return 'Права й видимість не збережено: сервер не прийняв цю таблицю. Онови сторінку й спробуй ще раз.';
       default:

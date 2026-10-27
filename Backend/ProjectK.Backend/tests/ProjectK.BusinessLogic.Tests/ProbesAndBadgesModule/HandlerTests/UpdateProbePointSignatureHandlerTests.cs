@@ -26,9 +26,12 @@ public class UpdateProbePointSignatureHandlerTests
     private readonly UpdateProbePointSignatureCommandHandler _handler;
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly JournalRecorder _journal;
+    private readonly Mock<IMemberProbeLine> _line = new();
 
     public UpdateProbePointSignatureHandlerTests()
     {
+        _line.Setup(x => x.CanStartAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeStart.Allowed);
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _memberDirectoryMock = new Mock<IMemberDirectory>();
         _probeProgressRepositoryMock = new Mock<IProbeProgressRepository>();
@@ -57,7 +60,41 @@ public class UpdateProbePointSignatureHandlerTests
             _journal.Actors,
             _journal.Audit,
             _journal.Reader,
-            Mock.Of<IProbesCatalogService>());
+            Mock.Of<IProbesCatalogService>(),
+            _line.Object);
+    }
+
+    [Fact]
+    public async Task Signing_ShouldRefuseToStartAProbe_OutOfTurn()
+    {
+        var memberKey = Guid.NewGuid();
+        _memberDirectoryMock
+            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_kurinKey);
+        _line.Setup(x => x.CanStartAsync(memberKey, "probe-2", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeStart.WaitsForPrevious);
+
+        var result = await _handler.Handle(new UpdateProbePointSignatureCommand(memberKey, "probe-2", "p-1", true, null), CancellationToken.None);
+
+        Assert.Equal(ResultType.Conflict, result.Type);
+        Assert.Equal("ProbeWaitsForPrevious", result.ErrorCode);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Signing_ShouldNotAskTheTurn_OfAProbeUnderWay()
+    {
+        var memberKey = Guid.NewGuid();
+        _memberDirectoryMock
+            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_kurinKey);
+        _probeProgressRepositoryMock
+            .Setup(x => x.GetByMemberAndProbeIdAsync(memberKey, "probe-2", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProbeProgress { MemberKey = memberKey, KurinKey = _kurinKey, ProbeId = "probe-2", Status = ProbeProgressStatus.InProgress });
+
+        await _handler.Handle(new UpdateProbePointSignatureCommand(memberKey, "probe-2", "p-1", true, null), CancellationToken.None);
+
+        _line.Verify(x => x.CanStartAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

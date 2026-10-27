@@ -103,6 +103,21 @@
       <app-kurin-card-fields #cardFields [kurinKey]="kurinKey" />
     </section>
 
+    @if (kurin && hasYouthProgram(kurin.branch)) {
+      <!-- Hidden, not removed, while there is one edition: the component has to load to know. -->
+      <section class="kurin-tile" aria-labelledby="probe-editions-title" [hidden]="!probeEditions.offersChoice()">
+        <div class="setting-copy">
+          <h2 id="probe-editions-title">Проба гуртків</h2>
+          <p>
+            Якою пробою іде кожен гурток, поки край переходить на оновлену. Хто вже закрив першу
+            пробу, продовжує свою пробу до кінця; решта йде пробою гуртка. Розгорни «Хто якою
+            пробою піде», щоб побачити це до збереження.
+          </p>
+        </div>
+        <app-kurin-probe-editions #probeEditions [kurinKey]="kurinKey" />
+      </section>
+    }
+
     <section class="kurin-tile" aria-labelledby="access-policy-title">
       <div class="setting-copy">
         <h2 id="access-policy-title">Права й видимість</h2>
