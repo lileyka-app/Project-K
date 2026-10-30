@@ -38,7 +38,7 @@
                     #autoField
                     [id]="'manage-field-' + f.name"
                     pInputText
-                    [placeholder]="f.placeholder"
+                    [placeholder]="f.placeholder ?? ''"
                     [formControlName]="f.name" />
                 }
                 @case ('number') {
@@ -47,7 +47,7 @@
                     [id]="'manage-field-' + f.name"
                     pInputText
                     type="number"
-                    [placeholder]="f.placeholder"
+                    [placeholder]="f.placeholder ?? ''"
                     [formControlName]="f.name" />
                 }
                 @case ('select') {
@@ -56,7 +56,7 @@
                     [options]="f.options ?? []"
                     optionLabel="label"
                     optionValue="value"
-                    [placeholder]="f.placeholder"
+                    [placeholder]="f.placeholder ?? ''"
                     [showClear]="!f.required"
                     [formControlName]="f.name"
                     appendTo="body"
@@ -68,7 +68,7 @@
                     [id]="'manage-field-' + f.name"
                     pTextarea
                     rows="3"
-                    [placeholder]="f.placeholder"
+                    [placeholder]="f.placeholder ?? ''"
                   [formControlName]="f.name"></textarea>
                 }
               }

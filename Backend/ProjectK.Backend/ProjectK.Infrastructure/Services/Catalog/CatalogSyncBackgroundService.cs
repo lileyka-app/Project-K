@@ -1,7 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Services.Catalog;
 
@@ -21,6 +24,7 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
     private readonly CatalogStore _store;
     private readonly CatalogClient _client;
     private readonly CatalogOptions _options;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CatalogSyncBackgroundService> _logger;
     private readonly string _snapshotPath;
     private string? _etag;
@@ -32,11 +36,13 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
         CatalogStore store,
         CatalogClient client,
         IOptions<CatalogOptions> options,
+        IServiceScopeFactory scopeFactory,
         ILogger<CatalogSyncBackgroundService> logger)
     {
         _store = store;
         _client = client;
         _options = options.Value;
+        _scopeFactory = scopeFactory;
         _logger = logger;
         _snapshotPath = Path.IsPathRooted(_options.SnapshotPath)
             ? _options.SnapshotPath
@@ -45,6 +51,7 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
+        await LoadKraiNamesAsync(cancellationToken);
         LoadSnapshot();
         if (!_store.IsLoaded)
         {
@@ -100,6 +107,8 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
     /// <summary>One fetch. True when the store holds the service's current catalogue afterwards.</summary>
     internal async Task<bool> RefreshAsync(CancellationToken cancellationToken)
     {
+        // Another instance may have added or renamed a край since; this one only hears of its own.
+        await LoadKraiNamesAsync(cancellationToken);
         var refreshed = await FetchAsync(cancellationToken);
         if (refreshed)
         {
@@ -151,6 +160,27 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
                 "Could not fetch the catalogue from {Url}; keeping revision {Revision} ({Badges} вмілостей).",
                 _client.CatalogUrl, _store.State.Revision, _store.State.Badges.Count);
             return false;
+        }
+    }
+
+    /// <summary>The names the <c>Krais</c> table holds; until it answers, the seeded ones stand.</summary>
+    private async Task LoadKraiNamesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var names = await db.Krais.AsNoTracking()
+                .Select(krai => new { krai.Code, krai.Name })
+                .ToListAsync(cancellationToken);
+            _store.NameAll(names.Select(krai => KeyValuePair.Create(krai.Code, krai.Name)));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not read the краї names; вмілості keep the names they show.");
         }
     }
 

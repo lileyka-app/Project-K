@@ -517,17 +517,15 @@ export interface ProbeRow {
   completedAtUtc: string | null;
   isCompleted: boolean;
   isDisabled: boolean;
+  /** Title of the probe to close before this one opens; null when it waits for none. */
+  lockedBehind: string | null;
+  /** The catalogue gives the probe no points (the third, for now): nothing to track point by point. */
+  hasNoPoints: boolean;
   canOpen: boolean;
   pointsCount: number | null;
   signedPoints: number;
   percent: number | null;
 }
-
-const PROBE_ROWS = [
-  { probeId: 'probe-1', label: 'Перша проба', policyDisabled: false },
-  { probeId: 'probe-2', label: 'Друга проба', policyDisabled: false },
-  { probeId: 'probe-3', label: 'Третя проба', policyDisabled: true },
-];
 
 const closed = (status: ProbeStatus) => status === 'Completed' || status === 'Verified';
 
@@ -536,33 +534,58 @@ function probePercent(signedPoints: number, total: number, status: ProbeStatus):
   return closed(status) ? 100 : null;
 }
 
-/** The three probes as the card lists them; the second opens once the first is closed (web buildMemberProbeRows). */
-export function probeRows(probes: ProbeSummaryDto[], progresses: ProbeProgressDto[]): ProbeRow[] {
-  const rows = PROBE_ROWS.map((template) => {
-    const probe = probes.find((p) => p.id === template.probeId);
-    const progress = progresses.find((p) => p.probeId === template.probeId);
+/** The probes the person has started something in. */
+export function startedProbeIds(progresses: ProbeProgressDto[]): Set<string> {
+  return new Set(progresses.filter((p) => probeStatus(p.status) !== 'NotStarted' || !!p.completedAtUtc).map((p) => p.probeId));
+}
+
+/**
+ * The fallback line when the server does not lay it out (an older API): the edition with no name,
+ * and wherever the person started a probe of another edition, that one. The real rule, with the
+ * гурток's edition and the one a closed probe holds them to, is ProbeLine on the server.
+ */
+export function probeLine(probes: ProbeSummaryDto[], started: ReadonlySet<string>): ProbeSummaryDto[] {
+  const places = new Map<number, ProbeSummaryDto[]>();
+  probes.forEach((probe, index) => {
+    if (probe.edition && !started.has(probe.id)) return;
+    // An answer without order (an older API) already comes in the catalogue's order.
+    const order = probe.order ?? index;
+    places.set(order, [...(places.get(order) ?? []), probe]);
+  });
+  return [...places.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([, place]) => place.find((p) => started.has(p.id)) ?? place.find((p) => !p.edition)!);
+}
+
+/** Rows of a line already laid out; each opens once the one before is closed (web buildMemberProbeRows). */
+export function probeRows(line: ProbeSummaryDto[], progresses: ProbeProgressDto[]): ProbeRow[] {
+  const started = startedProbeIds(progresses);
+  const rows = line.map((probe): ProbeRow => {
+    const progress = progresses.find((p) => p.probeId === probe.id);
     const status = probeStatus(progress?.status);
-    const total = probe?.pointsCount ?? 0;
+    const total = probe.pointsCount;
     const counted = (progress?.pointSignatures ?? []).filter((p) => p.isSigned).length;
     const signedPoints = closed(status) && counted === 0 ? total : counted;
+    const hasNoPoints = total === 0;
     return {
-      probeId: template.probeId,
-      label: template.label,
+      probeId: probe.id,
+      label: probe.title,
       status,
       completedAtUtc: progress?.completedAtUtc ?? progress?.verifiedAtUtc ?? null,
       isCompleted: closed(status),
-      isDisabled: template.policyDisabled,
-      canOpen: !template.policyDisabled && !!probe,
-      pointsCount: probe?.pointsCount ?? null,
+      isDisabled: hasNoPoints,
+      lockedBehind: null,
+      hasNoPoints,
+      canOpen: !hasNoPoints,
+      pointsCount: probe.pointsCount,
       signedPoints,
       percent: probePercent(signedPoints, total, status),
     };
   });
-  const firstClosed = rows[0].isCompleted;
-  return rows.map((row) => {
-    if (row.probeId !== 'probe-2') return row;
-    const unlocked = firstClosed || row.status !== 'NotStarted' || !!row.completedAtUtc;
-    return { ...row, isDisabled: !unlocked, canOpen: unlocked && row.canOpen };
+  return rows.map((row, index) => {
+    const previous = rows[index - 1];
+    if (!previous || row.isDisabled || previous.isCompleted || started.has(row.probeId)) return row;
+    return { ...row, isDisabled: true, lockedBehind: previous.label, canOpen: false };
   });
 }
 
@@ -575,8 +598,8 @@ const PROBE_STATUS_LABELS: Record<ProbeStatus, string> = {
 
 /** The line under a probe on the card (web getProbeSummaryMeta). */
 export function probeMeta(row: ProbeRow): string {
-  if (row.probeId === 'probe-2' && row.isDisabled) return 'Відкриється після закриття першої проби';
-  if (row.probeId === 'probe-3' && row.isDisabled) return 'Третя проба буде реалізована окремим етапом';
+  if (row.lockedBehind) return `Відкриється після закриття: ${row.lockedBehind}`;
+  if (row.hasNoPoints) return 'Поточкове відстеження цієї проби буде окремим етапом';
   if (row.completedAtUtc) return `Завершено: ${shortDate(utcDate(row.completedAtUtc))}`;
   const status = PROBE_STATUS_LABELS[row.status];
   return row.pointsCount === null ? status : `${status} · ${row.pointsCount} точок`;

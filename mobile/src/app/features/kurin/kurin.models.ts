@@ -210,6 +210,10 @@ export interface ProbeSummaryDto {
   title: string;
   pointsCount: number;
   sectionsCount: number;
+  /** Edition of the programme; null for the one kurins have walked from the start (web ProbeSummaryDto). */
+  edition?: string | null;
+  /** Place within the edition; probes open one after another by it. */
+  order?: number;
 }
 
 export interface GroupedProbeDto {

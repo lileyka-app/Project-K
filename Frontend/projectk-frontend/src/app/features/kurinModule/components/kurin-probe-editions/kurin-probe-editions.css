@@ -1,0 +1,22 @@
+.editions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+
+.editions__group { border: 1px solid var(--p-content-border-color); border-radius: 12px; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.85rem 1rem; }
+.editions__group--changed { border-color: var(--p-primary-color); }
+
+.editions__head { align-items: center; display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+.editions__name { font-size: 1rem; font-weight: 700; margin: 0; min-width: 8rem; }
+:host ::ng-deep .editions__select { min-width: min(100%, 18rem); }
+.editions__current { color: var(--p-text-muted-color); }
+.editions__pending { color: var(--p-primary-color); font-size: var(--lil-text-caption); font-weight: 600; }
+
+.editions__note { color: var(--p-text-muted-color); font-size: var(--lil-text-caption); margin: 0; }
+
+.editions__who summary { cursor: pointer; font-size: var(--lil-text-caption); font-weight: 600; }
+.editions__who summary:focus-visible { outline: 2px solid var(--p-primary-color); outline-offset: 2px; border-radius: 4px; }
+.editions__counts { color: var(--p-text-muted-color); font-weight: 400; margin-left: 0.4rem; }
+.editions__who ul { display: flex; flex-direction: column; gap: 0.35rem; list-style: none; margin: 0.6rem 0 0; padding: 0; }
+.editions__who li { display: flex; flex-wrap: wrap; gap: 0.15rem 0.75rem; font-size: 0.9rem; }
+.editions__person { font-weight: 600; min-width: 10rem; }
+.editions__edition { color: var(--p-text-muted-color); }
+.editions__why { color: var(--p-text-muted-color); font-size: var(--lil-text-caption); }
+.editions__row--attention .editions__why { color: var(--lil-clay-600); }

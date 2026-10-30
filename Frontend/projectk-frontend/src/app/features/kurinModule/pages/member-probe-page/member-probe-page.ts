@@ -195,7 +195,7 @@ export class MemberProbePageComponent implements OnInit {
       return false;
     }
 
-    if (this.isUpdatingProbeStatus || !this.isCloseFlowSupportedProbe(this.probeId)) {
+    if (this.isUpdatingProbeStatus || !this.isCloseFlowSupportedProbe()) {
       return false;
     }
 
@@ -208,7 +208,7 @@ export class MemberProbePageComponent implements OnInit {
   }
 
   get showCloseProbeInfo(): boolean {
-    if (!this.probeId || !this.isCloseFlowSupportedProbe(this.probeId)) {
+    if (!this.probeId || !this.isCloseFlowSupportedProbe()) {
       return false;
     }
 
@@ -262,9 +262,7 @@ export class MemberProbePageComponent implements OnInit {
       return;
     }
 
-    const confirmationText = this.probeId === 'probe-1'
-      ? 'Після закриття першої проби відкриється друга проба для перегляду.'
-      : 'Буде зафіксовано дату закриття другої проби.';
+    const confirmationText = 'Буде зафіксовано дату закриття, і відкриється наступна проба, якщо вона є.';
 
     this.confirmationService.confirm({
       header: 'Закриття проби',
@@ -318,9 +316,7 @@ export class MemberProbePageComponent implements OnInit {
       .subscribe({
         next: (progress) => {
           this.applyProbeProgress(progress);
-          this.reviewerActionSuccessMessage = this.probeId === 'probe-1'
-            ? 'Пробу здано і закрито. Друга проба тепер доступна до перегляду.'
-            : 'Пробу здано і закрито. Дату закриття зафіксовано.';
+          this.reviewerActionSuccessMessage = 'Пробу здано і закрито. Дату закриття зафіксовано.';
         },
         error: (error) => {
           console.error('Error closing probe:', error);
@@ -427,8 +423,9 @@ export class MemberProbePageComponent implements OnInit {
     return normalizedStatus === ProbeProgressStatus.Completed || normalizedStatus === ProbeProgressStatus.Verified;
   }
 
-  private isCloseFlowSupportedProbe(probeId: string): boolean {
-    return probeId === 'probe-1' || probeId === 'probe-2';
+  /** Закрити поточково можна пробу з точками; та, що їх у каталозі не має (третя), — окремий етап. */
+  private isCloseFlowSupportedProbe(): boolean {
+    return (this.groupedProbe?.pointsCount ?? 0) > 0;
   }
 
   private updatePointSignature(pointId: string, isSigned: boolean, successMessage: string): void {
@@ -456,6 +453,11 @@ export class MemberProbePageComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error updating probe point signature:', error);
+          const turn = probeTurnRefusal(error);
+          if (turn) {
+            this.reviewerActionErrorMessage = turn;
+            return;
+          }
           if (error?.status === 409) {
             const conflictProgress = this.extractConflictProbeProgress(error);
             if (!conflictProgress) {
@@ -513,4 +515,17 @@ function signerRoleLabel(systemRole: string | null | undefined): string | null {
   }
   // Older signatures already carry the office's name.
   return /^[A-Za-z.]+$/.test(systemRole) ? null : systemRole;
+}
+
+/** What the server says when a probe is started out of its turn, in words; null for any other answer. */
+function probeTurnRefusal(error: unknown): string | null {
+  const code = (error as { error?: { error?: string } } | null)?.error?.error;
+  switch (code) {
+    case 'ProbeWaitsForPrevious':
+      return 'Ця проба відкриється, коли закриють попередню.';
+    case 'ProbeNotInLine':
+      return 'Ця проба не з тієї, якою йде людина: вона йде пробою свого гуртка, а хто вже закрив першу — своєю.';
+    default:
+      return null;
+  }
 }

@@ -261,7 +261,7 @@ test('shows one’s own card and edits it, adds a skill and an award', async ({ 
   await expect(page.getByTestId('skills')).toContainText('Плавець');
   await expect(page.getByTestId('skills')).toContainText('очікує');
   await expect(page.getByTestId('probe').first()).toContainText('Підписано 1 з 3');
-  await expect(page.getByTestId('probes')).toContainText('Відкриється після закриття першої проби');
+  await expect(page.getByTestId('probes')).toContainText('Відкриється після закриття: Перша проба');
   await expect(page.getByTestId('awards')).toContainText('Перше відзначення');
   await expect(page.getByTestId('dues')).toContainText('−150 ₴');
   await expect(page.getByTestId('memberships')).toContainText('к. ч. 7 · ім. Івана Франка');

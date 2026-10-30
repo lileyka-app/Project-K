@@ -15,6 +15,7 @@ using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Controllers.TestModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
@@ -105,8 +106,7 @@ public class AuthorizationBaselineMatrixTests
 
     public static IEnumerable<object[]> PolicyEndpoints()
     {
-        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.RegisterKurin), "RequireAdmin");
-        yield return Row<Action<AuthController, RegisterUserRequest>>(nameof(AuthController.Register), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<AuthController, InviteKurinFounderCommand>>(nameof(AuthController.RegisterKurin), "RequireAdmin");
         yield return Row<Action<AuthController>>(nameof(AuthController.Logout), "RequireUser");
         yield return Row<Action<AuthController, CheckEntityAccessRequest>>(nameof(AuthController.CheckAccess), "RequireUser");
         yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup), "RequireUser");
@@ -215,6 +215,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupController, Guid, UploadImageRequest, CancellationToken>>(nameof(GroupController.UploadSilhouette), "RequireUser");
         yield return Row<Action<GroupController, Guid, CancellationToken>>(nameof(GroupController.DeleteSilhouette), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Delete), "RequireUser");
+        yield return Row<Action<GroupController, Guid, SetGroupProbeEditionRequest>>(nameof(GroupController.SetProbeEdition), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetMentors), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetKurinMentorAssignments), "RequireUser");
 
@@ -225,6 +226,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinKraiRequest>>(nameof(KurinController.SetKrai), "RequireAdmin");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetCardFields), "RequireUser");
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
+        yield return Endpoint<KurinController>(nameof(KurinController.GetProbeEditions), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetAccessPolicy), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.SetAccessPolicy), "RequireUser");
 
@@ -260,6 +262,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinCatalogController, Guid>>(nameof(KurinCatalogController.GetBadges), "RequireUser");
 
         yield return Row<Action<MemberProgressController, Guid>>(nameof(MemberProgressController.GetBadgeProgresses), "RequireUser");
+        yield return Row<Action<MemberProgressController, Guid>>(nameof(MemberProgressController.GetProbeLine), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, SubmitBadgeProgressRequest>>(nameof(MemberProgressController.SubmitBadgeProgress), "RequireUser");
         yield return Row<Action<MemberProgressController, Guid, string, ReviewBadgeProgressRequest>>(nameof(MemberProgressController.ReviewBadgeProgress), AuthorizationPolicies.RequireUser);
         yield return Row<Action<MemberProgressController, Guid, string>>(nameof(MemberProgressController.GetProbeProgress), "RequireUser");

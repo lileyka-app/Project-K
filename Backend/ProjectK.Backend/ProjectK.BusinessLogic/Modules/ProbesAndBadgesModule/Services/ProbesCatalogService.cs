@@ -19,7 +19,8 @@ public sealed class ProbesCatalogService : IProbesCatalogService
 
     public IReadOnlyList<ProbeSummaryResponse> GetProbes()
     {
-        return _cache.GetOrCreate("catalog:probes:list", entry =>
+        // Keyed by the catalogue's version, so a new edition shows up with the fetch that brought it.
+        return _cache.GetOrCreate($"catalog:probes:list:{_probesCatalog.Version}", entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CatalogCacheTtl;
             return _probesCatalog
@@ -31,7 +32,7 @@ public sealed class ProbesCatalogService : IProbesCatalogService
 
     public GroupedProbeResponse? GetGroupedProbeById(string probeId)
     {
-        var cacheKey = $"catalog:probes:grouped:{probeId}";
+        var cacheKey = $"catalog:probes:grouped:{_probesCatalog.Version}:{probeId}";
 
         if (_cache.TryGetValue(cacheKey, out GroupedProbeResponse? cachedProbe))
         {

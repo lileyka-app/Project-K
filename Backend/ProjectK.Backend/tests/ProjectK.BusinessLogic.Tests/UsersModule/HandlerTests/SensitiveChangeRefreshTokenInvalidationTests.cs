@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -96,6 +97,52 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         Assert.False(result.Data);
         AssertEverySessionRevoked(user, Times.Never());
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ResetPassword_ShouldRevokeEverySession_WhenResetSucceeds()
+    {
+        // Arrange
+        var user = CreateSignedInUser();
+        user.OnboardingStatus = OnboardingStatus.Active;
+        var handler = new ResetPasswordCommandHandler(
+            _userManagerMock.Object,
+            _activityLoggerMock.Object,
+            Revocations.Of(_refreshTokensMock.Object));
+
+        _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email!)).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.ResetPasswordAsync(user, "reset-token", "new-password"))
+            .ReturnsAsync(IdentityResult.Success);
+
+        // Act
+        var result = await handler.Handle(new ResetPasswordCommand(user.Email!, "reset-token", "new-password"), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(ResultType.Success, result.Type);
+        AssertEverySessionRevoked(user, Times.Once());
+    }
+
+    [Fact]
+    public async Task ResetPassword_ShouldKeepSessions_WhenTokenIsRejected()
+    {
+        // Arrange
+        var user = CreateSignedInUser();
+        user.OnboardingStatus = OnboardingStatus.Active;
+        var handler = new ResetPasswordCommandHandler(
+            _userManagerMock.Object,
+            _activityLoggerMock.Object,
+            Revocations.Of(_refreshTokensMock.Object));
+
+        _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email!)).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.ResetPasswordAsync(user, "stale-token", "new-password"))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "InvalidToken" }));
+
+        // Act
+        var result = await handler.Handle(new ResetPasswordCommand(user.Email!, "stale-token", "new-password"), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(ResultType.BadRequest, result.Type);
+        AssertEverySessionRevoked(user, Times.Never());
     }
 
     [Fact]

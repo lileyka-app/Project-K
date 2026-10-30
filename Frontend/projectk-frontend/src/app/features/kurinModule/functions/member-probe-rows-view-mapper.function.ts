@@ -5,18 +5,6 @@ import { ProbeSummaryDto } from '../models/probes-and-badges/probe-summary.dto';
 
 export type ProbeProgressStatusLike = ProbeProgressStatus | string | number;
 
-interface ProbeRowTemplate {
-  probeId: string;
-  label: string;
-  isPolicyDisabled: boolean;
-}
-
-const PROBE_ROW_TEMPLATES: ProbeRowTemplate[] = [
-  { probeId: 'probe-1', label: 'Перша проба', isPolicyDisabled: false },
-  { probeId: 'probe-2', label: 'Друга проба', isPolicyDisabled: false },
-  { probeId: 'probe-3', label: 'Третя проба', isPolicyDisabled: true }
-];
-
 function resolveCompletedAtUtc(progress: ProbeProgressDto | undefined): string | null {
   if (!progress) {
     return null;
@@ -60,54 +48,80 @@ export function normalizeProbeProgressStatus(status: ProbeProgressStatusLike): P
   return ProbeProgressStatus.NotStarted;
 }
 
+/** Чи людина вже щось почала в цій пробі: рядок поступу існує або вона не «не почата». */
+function hasProgress(progress: ProbeProgressDto | undefined): boolean {
+  return !!progress
+    && (!!progress.probeProgressKey || normalizeProbeProgressStatus(progress.status) !== ProbeProgressStatus.NotStarted);
+}
+
+/** Проби, в яких людина вже щось почала. */
+export function startedProbeIds(progresses: ProbeProgressDto[]): Set<string> {
+  return new Set(progresses.filter(hasProgress).map(progress => progress.probeId));
+}
+
+/**
+ * Запасна черга, коли сервер не віддав `api/member/{key}/probes/line` (старий API, записане демо):
+ * редакція без назви, а на місці, де людина почала пробу іншої редакції, — саме вона. Справжнє
+ * правило, з програмою гуртка й редакцією, що тримає закрита проба, — `ProbeLine` на сервері.
+ */
+export function probeLine(probes: ProbeSummaryDto[], started: ReadonlySet<string>): ProbeSummaryDto[] {
+  const places = new Map<number, ProbeSummaryDto[]>();
+  probes.forEach((probe, index) => {
+    if (probe.edition && !started.has(probe.id)) {
+      return;
+    }
+    // Відповідь без `order` (старий API, записане демо) уже йде в порядку каталогу.
+    const order = probe.order ?? index;
+    places.set(order, [...(places.get(order) ?? []), probe]);
+  });
+
+  return [...places.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([, place]) => place.find(probe => started.has(probe.id)) ?? place.find(probe => !probe.edition)!);
+}
+
+/** Рядки картки з уже розставленої черги проб (`probeLine` або відповідь сервера). */
 export function buildMemberProbeRows(
-  probes: ProbeSummaryDto[],
+  line: ProbeSummaryDto[],
   progresses: ProbeProgressDto[]
 ): MemberProbeRowView[] {
-  const probeById = new Map<string, ProbeSummaryDto>(probes.map(probe => [probe.id, probe]));
   const progressByProbeId = new Map<string, ProbeProgressDto>(progresses.map(progress => [progress.probeId, progress]));
+  const started = startedProbeIds(progresses);
 
-  const rows = PROBE_ROW_TEMPLATES.map(template => {
-    const probe = probeById.get(template.probeId);
-    const progress = progressByProbeId.get(template.probeId);
+  const rows = line.map((probe): MemberProbeRowView => {
+    const progress = progressByProbeId.get(probe.id);
     const status = normalizeProbeProgressStatus(progress?.status ?? ProbeProgressStatus.NotStarted);
-    const totalPoints = probe?.pointsCount ?? 0;
+    const totalPoints = probe.pointsCount;
     const signedPoints = isCompletedStatus(status) && countSignedPoints(progress) === 0
       ? totalPoints
       : countSignedPoints(progress);
+    const hasNoPoints = totalPoints === 0;
 
     return {
-      probeId: probe?.id ?? template.probeId,
-      label: template.label,
-      title: probe?.title ?? template.label,
+      probeId: probe.id,
+      label: probe.title,
+      title: probe.title,
       status,
       completedAtUtc: resolveCompletedAtUtc(progress),
       isCompleted: isCompletedStatus(status),
-      isDisabled: template.isPolicyDisabled,
-      canOpenDetails: !template.isPolicyDisabled && !!probe,
-      pointsCount: probe?.pointsCount ?? null,
-      sectionsCount: probe?.sectionsCount ?? null,
+      isDisabled: hasNoPoints,
+      lockedBehindTitle: null,
+      hasNoPoints,
+      canOpenDetails: !hasNoPoints,
+      pointsCount: probe.pointsCount,
+      sectionsCount: probe.sectionsCount,
       signedPointsCount: signedPoints,
       completionPercent: completionPercentOf(signedPoints, totalPoints, status)
     };
   });
 
-  const firstProbe = rows[0];
-  const isFirstProbeClosed = !!firstProbe && firstProbe.isCompleted;
-
-  return rows.map(row => {
-    if (row.probeId !== 'probe-2') {
+  // Наступна проба відкривається, коли закрито попередню, — або вже почата, бо почате не ховаємо.
+  return rows.map((row, index) => {
+    const previous = rows[index - 1];
+    if (!previous || row.isDisabled || previous.isCompleted || started.has(row.probeId) || row.completedAtUtc) {
       return row;
     }
 
-    const hasOwnProgress = row.status !== ProbeProgressStatus.NotStarted || !!row.completedAtUtc;
-    const isUnlocked = isFirstProbeClosed || hasOwnProgress;
-    const isDisabled = !isUnlocked;
-
-    return {
-      ...row,
-      isDisabled,
-      canOpenDetails: !isDisabled && row.canOpenDetails
-    };
+    return { ...row, isDisabled: true, lockedBehindTitle: previous.title, canOpenDetails: false };
   });
 }

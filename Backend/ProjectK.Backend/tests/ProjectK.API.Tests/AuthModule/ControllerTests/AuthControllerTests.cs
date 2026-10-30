@@ -8,6 +8,7 @@ using Moq;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
@@ -16,7 +17,6 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.RegisterKurin;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -45,47 +45,18 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public async Task RegisterKurin_ShouldReturnOk_WhenMediatorReturnsSuccess()
+    public async Task RegisterKurin_ShouldAnswerCreated_WithTheInvitation()
     {
-        // Arrange
-        var request = new RegisterUserRequest
-        {
-            Email = "test@example.com",
-            Password = "Chosen-by-the-admin-1!",
-            FirstName = "Kurin",
-            LastName = "Founder",
-            KurinNumber = 1
-        };
+        // The route takes no password any more: the founder chooses one on activation.
+        var command = new InviteKurinFounderCommand("founder@example.com", "Kurin", "Founder", null, 1, null);
+        var invitation = new KurinFounderInvitation(Guid.NewGuid(), Guid.NewGuid(), command.Email, InvitationSent: true);
+        _mediatorMock.Setup(m => m.Send(command, default))
+            .ReturnsAsync(new ServiceResult<KurinFounderInvitation>(ResultType.Created, invitation));
 
-        var serviceResult = new ServiceResult<RegisterUserResponse>(ResultType.Success, new RegisterUserResponse());
-        _mediatorMock.Setup(m => m.Send(It.IsAny<RegisterKurinCommand>(), default))
-            .ReturnsAsync(serviceResult);
+        var result = await _controller.RegisterKurin(command);
 
-        // Act
-        var result = await _controller.RegisterKurin(request);
-
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(serviceResult.Data, okResult.Value);
-    }
-
-    [Fact]
-    public async Task RegisterKurin_ShouldRefuse_WhenNoPasswordIsGiven()
-    {
-        // The endpoint used to fill in "tempManagerPass1!" — a password anyone could read off the
-        // repository — for every request that left it out.
-        var request = new RegisterUserRequest
-        {
-            Email = "test@example.com",
-            FirstName = "Kurin",
-            LastName = "Founder",
-            KurinNumber = 1
-        };
-
-        var result = await _controller.RegisterKurin(request);
-
-        ApiErrorAssert.HasError(result, 400, "PasswordRequired");
-        _mediatorMock.Verify(m => m.Send(It.IsAny<RegisterKurinCommand>(), default), Times.Never);
+        var created = Assert.IsType<CreatedResult>(result);
+        Assert.Equal(invitation, created.Value);
     }
 
     [Fact]

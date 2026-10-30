@@ -43,6 +43,7 @@ public static class KurinCapabilities
         Act(KurinCapability.SignProbe, CapabilityGroup.ProbesBadges, ResourceType.ProbeProgress, ResourceAction.Update, K, G, G, N, N, N, N),
         Act(KurinCapability.UnsignProbe, CapabilityGroup.ProbesBadges, ResourceType.ProbeProgress, ResourceAction.Delete, K, G, G, N, N, N, N),
         Act(KurinCapability.ReviewBadge, CapabilityGroup.ProbesBadges, ResourceType.BadgeProgress, ResourceAction.Update, K, G, G, N, N, N, N),
+        Act(KurinCapability.ChooseProbeEdition, CapabilityGroup.ProbesBadges, ResourceType.GroupProbeEdition, ResourceAction.Update, K, N, N, N, N, N, N),
 
         // One pair for the four: the client's AgendaItem:Create says only whether the person may
         // author at all; whom they may address is asked per target kind.

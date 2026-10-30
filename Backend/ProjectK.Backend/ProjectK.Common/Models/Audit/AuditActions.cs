@@ -112,5 +112,8 @@ public static class AuditActions
 
         public const string CardFieldsChanged = "Settings.CardFieldsChanged";
         public const string ArchivePolicyChanged = "Settings.ArchivePolicyChanged";
+
+        /// <summary>A гурток moved to another edition of the probe programme.</summary>
+        public const string GroupProbeEditionChanged = "Settings.GroupProbeEditionChanged";
     }
 }

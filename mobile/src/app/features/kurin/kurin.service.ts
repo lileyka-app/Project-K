@@ -154,6 +154,11 @@ export class KurinApi {
     return this.api.get('catalog/probes');
   }
 
+  /** The probes the member walks, laid out by the server (web getProbeLine). */
+  probeLine(memberKey: string): Promise<ProbeSummaryDto[]> {
+    return this.api.get(`member/${memberKey}/probes/line`);
+  }
+
   groupedProbe(probeId: string): Promise<GroupedProbeDto> {
     return this.api.get(`catalog/probes/${probeId}/grouped`);
   }

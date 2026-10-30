@@ -1,10 +1,14 @@
 using System.Net;
 using System.Net.Http.Headers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.Catalog;
 using Xunit;
 
@@ -23,7 +27,34 @@ public sealed class CatalogSyncBackgroundServiceTests : IDisposable
         var options = Options.Create(new CatalogOptions { BaseUrl = "https://catalog.test/", Krai = krai, RefreshMinutes = refreshMinutes, SnapshotPath = SnapshotPath });
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(CatalogClient.HttpClientName)).Returns(() => new HttpClient(_handler, disposeHandler: false));
-        return new CatalogSyncBackgroundService(_store, new CatalogClient(factory.Object, options), options, NullLogger<CatalogSyncBackgroundService>.Instance);
+        return new CatalogSyncBackgroundService(_store, new CatalogClient(factory.Object, options), options, _database.GetRequiredService<IServiceScopeFactory>(), NullLogger<CatalogSyncBackgroundService>.Instance);
+    }
+
+    private readonly ServiceProvider _database = Database(Guid.NewGuid().ToString());
+
+    // The name is taken once: the options lambda runs for every scope, and a name made inside it
+    // would hand each scope a database of its own.
+    private static ServiceProvider Database(string name) => new ServiceCollection()
+        .AddDbContext<AppDbContext>(db => db.UseInMemoryDatabase(name))
+        .BuildServiceProvider();
+
+    [Fact]
+    public async Task Start_ShowsTheKraiNameTheTableHolds_NotTheSeededOne()
+    {
+        using (var scope = _database.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Krais.Add(new Krai { Code = "ua", Name = "Пласт в Україні" });
+            await db.SaveChangesAsync();
+        }
+
+        _handler.Respond(HttpStatusCode.OK, CatalogTestData.Bytes, "\"r7\"");
+        var service = Service();
+
+        await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.Equal("Пласт в Україні", ((IBadgesCatalog)_store).GetById("plavets")!.Country);
     }
 
     [Fact]
@@ -155,6 +186,7 @@ public sealed class CatalogSyncBackgroundServiceTests : IDisposable
 
     public void Dispose()
     {
+        _database.Dispose();
         if (Directory.Exists(_directory))
         {
             Directory.Delete(_directory, recursive: true);

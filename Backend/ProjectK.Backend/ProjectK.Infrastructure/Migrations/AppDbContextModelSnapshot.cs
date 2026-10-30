@@ -1877,6 +1877,10 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ProbeEdition")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<string>("SilhouetteBlobName")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");

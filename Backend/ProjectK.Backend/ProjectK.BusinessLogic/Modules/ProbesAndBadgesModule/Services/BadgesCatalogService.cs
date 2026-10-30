@@ -7,6 +7,8 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
 public sealed class BadgesCatalogService : IBadgesCatalogService
 {
+    // Every key carries the catalogue's version: the catalogue changes under this cache (a new
+    // fetch, a renamed край), and a six-hour entry would keep serving the old one.
     private static readonly TimeSpan CatalogCacheTtl = TimeSpan.FromHours(6);
 
     private readonly IBadgesCatalog _badgesCatalog;
@@ -25,7 +27,7 @@ public sealed class BadgesCatalogService : IBadgesCatalogService
 
     public BadgesMetadata GetBadgesMetadata()
     {
-        const string cacheKey = "catalog:badges:metadata";
+        var cacheKey = $"catalog:badges:metadata:{_badgesCatalog.Version}";
 
         if (_cache.TryGetValue(cacheKey, out BadgesMetadata? cachedMetadata))
         {
@@ -49,7 +51,7 @@ public sealed class BadgesCatalogService : IBadgesCatalogService
     public IReadOnlyList<Badge> GetBadges(int take)
     {
         var safeTake = Math.Clamp(take, 1, 1000);
-        var cacheKey = $"catalog:badges:list:{safeTake}";
+        var cacheKey = $"catalog:badges:list:{_badgesCatalog.Version}:{safeTake}";
 
         if (_cache.TryGetValue(cacheKey, out IReadOnlyList<Badge>? cachedBadges))
         {
@@ -79,7 +81,7 @@ public sealed class BadgesCatalogService : IBadgesCatalogService
 
     public Badge? GetBadgeById(string id)
     {
-        var cacheKey = $"catalog:badges:by-id:{id}";
+        var cacheKey = $"catalog:badges:by-id:{_badgesCatalog.Version}:{id}";
 
         if (_cache.TryGetValue(cacheKey, out Badge? cachedBadge))
         {

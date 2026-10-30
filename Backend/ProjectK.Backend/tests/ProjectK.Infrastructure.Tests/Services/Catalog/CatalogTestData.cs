@@ -10,6 +10,7 @@ internal static class CatalogTestData
           "revision": 7,
           "krai": null,
           "categories": [{ "id": "vodna", "title": "Водна" }, { "id": "turystychna", "title": "Туристична" }],
+          "editions": [{ "id": "upyu-2026", "title": "Оновлена проба (2026)", "ulad": "upyu", "krai": "ua" }],
           "badges": [
             {
               "id": "plavets", "level": 1, "title": "Плавець", "categories": ["vodna", "turystychna"], "ulady": ["upyu"],
@@ -38,6 +39,11 @@ internal static class CatalogTestData
                 { "id": "s-b", "code": "Б", "title": "Історія", "points": [{ "id": "b-1", "text": "Розповість" }] }
               ],
               "points": []
+            },
+            {
+              "id": "probe-1-2026", "title": "Перша проба", "ulad": "upyu", "krai": "UA", "edition": "upyu-2026", "order": 1, "status": "trial",
+              "images": { "color": null, "bw": null }, "sections": [],
+              "points": [{ "id": "n1-1", "text": "Знає закон", "level": "knows", "competencies": ["hromadianska"] }]
             }
           ],
           "awards": [
