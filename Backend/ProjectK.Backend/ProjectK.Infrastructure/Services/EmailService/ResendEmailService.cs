@@ -109,7 +109,7 @@ public class ResendEmailService : IEmailService
 
     public async Task SendWaitlistSubmittedEmailAsync(string to, string applicantName, string? claimedKurin, CancellationToken cancellationToken = default)
     {
-        var kurin = string.IsNullOrWhiteSpace(claimedKurin) ? "курінь не вказано" : $"курінь {claimedKurin}";
+        var kurin = string.IsNullOrWhiteSpace(claimedKurin) ? "курінь не вказано" : claimedKurin;
         var letter = new Letter(
             Title: "Нова заявка на розгляд",
             Paragraphs:
@@ -122,6 +122,22 @@ public class ResendEmailService : IEmailService
             Footer: "Цей лист приходить кожному адміністратору Лілейки, коли зʼявляється нова заявка.");
 
         await SendAsync(to, "Лілейка · нова заявка на розгляд", Frame(letter), PlainText(letter), cancellationToken);
+    }
+
+    public async Task SendKurinBranchRequestEmailAsync(string to, string kurin, string wanted, CancellationToken cancellationToken = default)
+    {
+        var letter = new Letter(
+            Title: "Запит на зміну гілок куреня",
+            Paragraphs:
+            [
+                $"{kurin} просить змінити свої гілки й числа: {wanted}.",
+                "Запит чекає на ваше рішення поруч із заявками: схвалити або відхилити.",
+            ],
+            ButtonText: "Переглянути запити",
+            Url: $"{_settings.BaseUrl}/waitlist",
+            Footer: "Цей лист приходить кожному адміністратору Лілейки, коли курінь надсилає такий запит.");
+
+        await SendAsync(to, "Лілейка · запит на зміну гілок куреня", Frame(letter), PlainText(letter), cancellationToken);
     }
 
     /// <summary>What every letter says: a title, the paragraphs, one button with its link, a footer.</summary>

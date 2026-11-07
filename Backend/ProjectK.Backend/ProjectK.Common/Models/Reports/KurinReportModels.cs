@@ -11,6 +11,7 @@ namespace ProjectK.Common.Models.Reports;
 /// Everyone, staff included, in one list — this is what the per-person картотека pages are built
 /// from, and кадра gets a картотека like anyone else.
 /// </param>
+/// <param name="ShowsTags">Whether the kurin uses tags, so the report has a place for them.</param>
 public sealed record KurinReportData(
     KurinReportHeader Header,
     KurinReportKurin Kurin,
@@ -18,7 +19,8 @@ public sealed record KurinReportData(
     IReadOnlyList<KurinReportMember> Staff,
     IReadOnlyList<KurinReportMember> Youth,
     IReadOnlyList<KurinReportLevelCount> LevelTally,
-    IReadOnlyList<KurinReportMember> Members);
+    IReadOnlyList<KurinReportMember> Members,
+    bool ShowsTags);
 
 /// <summary>One row of the чисельність table: a ступінь and how many юнаки stand at it.</summary>
 public sealed record KurinReportLevelCount(string Label, int Count);
@@ -37,7 +39,12 @@ public sealed record KurinReportKurin(
     string? Stanytsia,
     string? RegionOrCountry,
     string? NamedAfter,
-    string? Description);
+    string? Description,
+    string? SeniorBranches = null)
+{
+    /// <summary>A УСП or УПС kurin: named by its own name and its гілки, with no УПЮ number plate.</summary>
+    public bool IsSenior => SeniorBranches is not null;
+}
 
 public sealed record KurinReportGroup(
     Guid GroupKey,
@@ -78,7 +85,9 @@ public sealed record KurinReportMember(
     IReadOnlyList<KurinReportBadge> ConfirmedBadges,
     IReadOnlyList<KurinReportWarning> ActiveWarnings,
     IReadOnlyList<KurinReportAward> Awards,
-    IReadOnlyList<KurinReportLeadershipHistory> LeadershipHistory);
+    IReadOnlyList<KurinReportLeadershipHistory> LeadershipHistory,
+    /// <summary>The kurin's tags on this person, by name. Empty when the kurin has tags off.</summary>
+    IReadOnlyList<string> Tags);
 
 public sealed record KurinReportPlastLevel(PlastLevel PlastLevel, DateOnly DateAchieved);
 
@@ -118,7 +127,7 @@ public sealed record KurinReportWarning(
     bool IsRevoked);
 
 public sealed record KurinReportAward(
-    MemberAwardLevel Level,
+    MemberAwardLevel? Level,
     string LevelLabel,
     DateTime DateAcquired,
     string? Note,

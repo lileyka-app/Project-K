@@ -186,7 +186,8 @@ public class GroupController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes a group.
+    /// Dissolves a group. Its people stay in the kurin without a гурток; the гурток, its провід and
+    /// that провід's history stay in the kurin's archive.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("{groupKey}")]

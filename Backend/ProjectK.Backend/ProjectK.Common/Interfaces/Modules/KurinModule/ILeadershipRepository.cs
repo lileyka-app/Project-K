@@ -31,6 +31,12 @@ public interface ILeadershipRepository
     Task<IReadOnlyList<Guid>> DeleteForGroupAsync(Guid groupKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Ends the провід of a гурток being dissolved and everyone still seated in it, on
+    /// <paramref name="on"/>. The records stay for the archive. Reports the office keys.
+    /// </summary>
+    Task<IReadOnlyList<Guid>> CloseForGroupAsync(Guid groupKey, DateOnly on, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Marks every office in a kurin for deletion — its own and its гуртки's — and reports the keys.
     /// <para>
     /// Both <c>Leadership.Kurin</c> and <c>Leadership.Group</c> are <c>NO ACTION</c>. Гуртки cascade

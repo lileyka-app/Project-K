@@ -61,9 +61,12 @@ public class GetMyDutiesQueryTests
         leaderships.Setup(l => l.GetActiveLeadershipKeysForMemberAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _unitOfWork.SetupGet(u => u.AgendaItems).Returns(agenda.Object);
         _unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        _unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
         var dismissed = new Mock<IDismissedDutyRepository>();
         dismissed.Setup(d => d.GetForUserAsync(User, It.IsAny<CancellationToken>())).ReturnsAsync(() => _dismissed);
         _unitOfWork.SetupGet(u => u.DismissedDuties).Returns(dismissed.Object);
+        // A kurin the repository does not know keeps точкування, as every kurin did before the switch.
+        _unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<IKurinRepository>());
         _progress.Setup(p => p.CountSubmittedBadgesAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => _submittedBadges);
 
         var rates = new Mock<IScoreAttendanceRateRepository>();

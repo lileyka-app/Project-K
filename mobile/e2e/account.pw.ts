@@ -182,10 +182,10 @@ test('switches the kurin from the header, as the web does', async ({ page }, inf
   const sheet = page.locator('ion-action-sheet');
   await expect(sheet.getByRole('button', { name: 'к. ч. 7 ✓' })).toBeVisible();
   await shot(page, info.project.name, 'nav-03-kurin-switcher');
-  await sheet.getByRole('button', { name: 'к. ч. 42 ім. Сірого Лева' }).click();
+  await sheet.getByRole('button', { name: 'Сірого Лева · 42-й курінь УСП' }).click();
   await expect(page).toHaveURL(/\/m\/tabs\/home$/);
   expect(fixture.authWrites.find((w) => w.path === 'auth/kurin-scope')?.body).toEqual({ kurinKey: 'k2' });
-  await expect(page.locator('app-home').getByTestId('kurin-switcher')).toContainText('к. ч. 42');
+  await expect(page.locator('app-home').getByTestId('kurin-switcher')).toContainText('42-й курінь УСП');
 });
 
 test('«Як у вебі» swaps the tabs for the web’s ☰ drawer', async ({ page }, info) => {
@@ -389,7 +389,7 @@ test('switches the kurin and opens Головна in it', async ({ page }, info)
   const kurins = page.locator('app-kurins');
   await expect(kurins.getByTestId('kurin-7')).toContainText('УПЮ · Юнацтво');
   await expect(kurins.getByTestId('kurin-7').getByLabel('Поточний курінь')).toBeVisible();
-  await expect(kurins.getByTestId('kurin-42')).toContainText('к. ч. 42 ім. Сірого Лева');
+  await expect(kurins.getByTestId('kurin-42')).toContainText('Сірого Лева · 42-й курінь УСП');
   await expect(kurins.getByTestId('group-g7')).toContainText('впорядник · к. ч. 42');
   await shot(page, info.project.name, 'account-09-kurins');
 
@@ -399,7 +399,7 @@ test('switches the kurin and opens Головна in it', async ({ page }, info)
   expect(fixture.authWrites.find((w) => w.path === 'auth/kurin-scope')?.body).toEqual({ kurinKey: 'k2' });
   expect(await storedKurin(page)).toBe('k2');
   await openMore(page);
-  await expect(page.locator('app-more').getByTestId('kurins-row')).toContainText('к. ч. 42');
+  await expect(page.locator('app-more').getByTestId('kurins-row')).toContainText('42-й курінь УСП');
 });
 
 test('names a підготовчий курінь without a number, last in the list', async ({ page }) => {

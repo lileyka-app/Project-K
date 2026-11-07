@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, input, output, signal } fro
 import { Router } from '@angular/router';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
+import { TransferCodeDialogComponent } from '../transfer-code-dialog/transfer-code-dialog';
+import { CardCheckDialogComponent } from '../card-check-dialog/card-check-dialog';
 import { AuthService } from '../../services/auth-service/auth.service';
 import { SavedAccount } from '../../models/saved-account.model';
 import { authenticatedHomeRoute } from '../../functions/authenticated-home-route';
@@ -22,7 +24,7 @@ interface SwitcherRow {
  */
 @Component({
   selector: 'app-account-switcher',
-  imports: [TagModule, ProgressSpinnerModule],
+  imports: [TagModule, ProgressSpinnerModule, TransferCodeDialogComponent, CardCheckDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './account-switcher.html',
   styleUrl: './account-switcher.css'
@@ -41,6 +43,24 @@ export class AccountSwitcherComponent {
   readonly rows = signal<SwitcherRow[]>([]);
   /** The account being switched to, while the server answers. */
   readonly switching = signal<string | null>(null);
+  readonly codeVisible = signal(false);
+  readonly cardVisible = signal(false);
+
+  /** «Мій код для переходу» is a person's; an account with no member behind it (an admin) has none. */
+  get hasOwnCode(): boolean {
+    return !!this.authService.getAuthStateValue()?.memberKey;
+  }
+
+  showCode(): void {
+    this.open.set(false);
+    this.codeVisible.set(true);
+  }
+
+  /** «Показати картку»: the three-minute QR anyone may scan to check the person. */
+  showCard(): void {
+    this.open.set(false);
+    this.cardVisible.set(true);
+  }
 
   toggle(): void {
     const opening = !this.open();

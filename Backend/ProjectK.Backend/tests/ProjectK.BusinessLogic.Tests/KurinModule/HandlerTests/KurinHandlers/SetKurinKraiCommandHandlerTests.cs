@@ -61,7 +61,7 @@ public class SetKurinKraiCommandHandlerTests
     public async Task Handle_ShouldRefuse_WhenTheNumberIsTakenInTheTargetKrai()
     {
         var kurin = Given(12);
-        _kurins.Setup(r => r.ExistsAsync("cz", 12, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _kurins.Setup(r => r.IsNumberTakenAsync("cz", KurinBranch.UPYu, 12, kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await _handler.Handle(new SetKurinKraiCommand(kurin.KurinKey, "cz"), default);
 
@@ -79,7 +79,7 @@ public class SetKurinKraiCommandHandlerTests
         var result = await _handler.Handle(new SetKurinKraiCommand(kurin.KurinKey, "cz"), default);
 
         result.Type.Should().Be(ResultType.Success);
-        _kurins.Verify(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _kurins.Verify(r => r.IsNumberTakenAsync(It.IsAny<string>(), It.IsAny<KurinBranch>(), It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

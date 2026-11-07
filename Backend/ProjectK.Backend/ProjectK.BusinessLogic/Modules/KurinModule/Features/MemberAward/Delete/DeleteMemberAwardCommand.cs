@@ -1,9 +1,11 @@
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
@@ -24,6 +26,7 @@ public sealed class DeleteMemberAwardCommand : IRequest<ServiceResult<Unit>>
 /// <summary>
 /// Removes an award. An unconfirmed one may be withdrawn by the person it is about or by whoever
 /// submitted it; a confirmed one, or someone else's submission, takes <see cref="KurinCapability.RemoveAward"/>.
+/// A senior відзначення is removed from a УСП or УПС kurin, or by its owner wherever they act, as it is recorded.
 /// </summary>
 public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemberAwardCommand, ServiceResult<Unit>>
 {
@@ -32,19 +35,25 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
+    private readonly IHonoursCatalog _honours;
+    private readonly IKurinRepository _kurins;
 
     public DeleteMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUser,
         IMemberDirectory members,
         IResourceAccessService access,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        IHonoursCatalog honours,
+        IUnitOfWork kurinData)
     {
+        _kurins = kurinData.Kurins;
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _members = members;
         _access = access;
         _audit = audit;
+        _honours = honours;
     }
 
     public async Task<ServiceResult<Unit>> Handle(DeleteMemberAwardCommand request, CancellationToken cancellationToken)
@@ -55,6 +64,20 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
         if (award is null || award.MemberKey != request.MemberKey)
         {
             return new ServiceResult<Unit>(ResultType.NotFound);
+        }
+
+        if (award.CatalogId is not null
+            && !await ActsInSeniorKurinAsync(cancellationToken)
+            && await _members.FindAccountKeyAsync(award.MemberKey, cancellationToken) != _currentUser.UserId)
+        {
+            return ServiceResult<Unit>.Failure(
+                ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "A senior відзначення is removed in a УСП or УПС kurin.");
+        }
+
+        if (award.CatalogId is null
+            && await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Delete, award.MemberKey, cancellationToken: cancellationToken, capability: KurinCapability.RemoveAward) is { IsAllowed: false } senior)
+        {
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
         }
 
         if (!await MayWithdrawAsync(award, cancellationToken))
@@ -78,10 +101,11 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
                 AuditArea.Award,
                 AuditActions.Award.Deleted,
                 award.MemberAwardKey,
-                KurinReportTerminology.AwardLevel(award.Level),
+                KurinReportTerminology.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title),
                 award.MemberKey,
                 AuditChanges.Removed(
                     ("level", award.Level),
+                    ("award", award.CatalogId is { } catalogId ? _honours.GetById(catalogId)?.Title ?? catalogId : null),
                     ("dateAcquired", award.DateAcquired),
                     ("note", award.Note),
                     ("status", award.Status))),
@@ -92,9 +116,26 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
+    private async Task<bool> ActsInSeniorKurinAsync(CancellationToken cancellationToken)
+    {
+        var kurin = _currentUser.KurinKey is { } kurinKey ? await _kurins.GetByKeyAsync(kurinKey, cancellationToken) : null;
+        return kurin is not null && KurinBranchSet.IsSenior(kurin.Branch);
+    }
+
     private async Task<bool> MayWithdrawAsync(Common.Entities.KurinModule.MemberAward award, CancellationToken cancellationToken)
     {
-        if (award.Status == BadgeProgressStatus.Confirmed || _currentUser.UserId is not { } userKey)
+        if (_currentUser.UserId is not { } userKey)
+        {
+            return false;
+        }
+
+        // A senior відзначення is the person's own record, confirmed or not: they may take it back.
+        if (award.CatalogId is not null)
+        {
+            return await _members.FindAccountKeyAsync(award.MemberKey, cancellationToken) == userKey;
+        }
+
+        if (award.Status == BadgeProgressStatus.Confirmed)
         {
             return false;
         }

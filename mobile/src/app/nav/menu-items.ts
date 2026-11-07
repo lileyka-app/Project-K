@@ -67,12 +67,12 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
   const access = kurinAccess(state);
   const canSeeRegistry = state.isAdmin || access.manageWholeKurin || has(state, 'Group:Update');
   const canManageKurinSettings = state.isAdmin || has(state, 'Kurin:Update:KurinWide');
+  // The whole КВ reads the kurin's settings (web: «Лише перегляд»); only who may change the kurin edits them.
+  const canReadKurinSettings = canManageKurinSettings || has(state, 'KurinSettings:Read');
   const items: MenuEntry[] = [{ key: 'kurin', label: 'Курінь', icon: 'flag', tile: '#ff9500', link: '/tabs/kurin' }];
   if (canSeeRegistry) {
+    // One web page for склад, переходи, архів and імпорт; the phone keeps «Переходи» of its own.
     items.push({ key: 'registry', label: 'Реєстр', icon: 'grid', tile: '#8e8e93', web: '/kurin/registry' });
-  }
-  if (canManageKurinSettings) {
-    items.push({ key: 'import', label: 'Імпорт складу', icon: 'cloud-upload', tile: '#8e8e93', web: '/kurin/import' });
   }
   items.push(
     { key: 'calendar', label: 'Календар', icon: 'calendar', tile: '#ff3b30', link: '/tabs/calendar' },
@@ -104,10 +104,13 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
       link: `/tabs/kurin/group/${group.groupKey}/dues`,
     });
   }
+  // A senior kurin keeps each person's account in its own box: the treasurer's register is the web's.
   if (access.seeKurinDues) {
-    items.push({ key: 'kurin-dues', label: 'Вкладка куреня', icon: 'wallet', tile: '#34a853', link: '/tabs/kurin/dues' });
+    items.push(context.youthKurin
+      ? { key: 'kurin-dues', label: 'Вкладка куреня', icon: 'wallet', tile: '#34a853', link: '/tabs/kurin/dues' }
+      : { key: 'kurin-dues', label: 'Вкладка куреня', icon: 'wallet', tile: '#34a853', web: `/kurin/${kurinKey}/dues` });
   }
-  if (canManageKurinSettings) {
+  if (canReadKurinSettings) {
     items.push({
       key: 'kurin-settings',
       label: 'Налаштування куреня',

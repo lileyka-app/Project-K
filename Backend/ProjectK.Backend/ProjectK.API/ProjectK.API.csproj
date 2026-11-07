@@ -34,7 +34,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.1" />
     <!-- Pin transitive Microsoft.OpenApi above the vulnerable range (GHSA-v5pm-xwqc-g5wc). -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.13.0" />
-    <PackageReference Include="ProjectK.Optimization" Version="1.1.1" />
+    <PackageReference Include="ProjectK.Optimization" Version="1.1.2" />
   </ItemGroup>
 
   <ItemGroup>

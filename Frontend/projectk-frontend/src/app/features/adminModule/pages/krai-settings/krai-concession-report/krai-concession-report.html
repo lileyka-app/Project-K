@@ -37,7 +37,7 @@
                 {{ row.name }}
                 <span class="report__kurins">
                   @for (kurin of row.kurins; track kurin.kurinKey) {
-                    <span>{{ kurinLabel(kurin.number) }}: {{ kurin.people }}</span>
+                    <span>{{ kurinLabel(kurin) }}: {{ kurin.people }}</span>
                   }
                 </span>
               </th>

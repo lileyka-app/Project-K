@@ -212,11 +212,7 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
     {
         try
         {
-            using var stream = typeof(CatalogSyncBackgroundService).Assembly.GetManifestResourceStream(SeedResourceName)
-                ?? throw new InvalidOperationException($"The assembly carries no {SeedResourceName}.");
-            using var buffer = new MemoryStream();
-            stream.CopyTo(buffer);
-            _store.Replace(CatalogMapper.ToState(CatalogClient.Parse(buffer.ToArray()), _options.BaseUrl, null));
+            LoadBuiltIn(_store, _options.BaseUrl);
             _logger.LogWarning(
                 "The catalogue service did not answer; serving the built-in copy (revision {Revision}) until it does.",
                 _store.State.Revision);
@@ -225,6 +221,19 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
         {
             _logger.LogError(ex, "Could not load the built-in catalogue copy; the catalogue stays empty until the service answers.");
         }
+    }
+
+    /// <summary>
+    /// Puts the copy built into the assembly into the store. Also called by the demo seeder, which
+    /// runs before any hosted service starts and would otherwise seed no probes and no вмілості.
+    /// </summary>
+    internal static void LoadBuiltIn(CatalogStore store, string? baseUrl)
+    {
+        using var stream = typeof(CatalogSyncBackgroundService).Assembly.GetManifestResourceStream(SeedResourceName)
+            ?? throw new InvalidOperationException($"The assembly carries no {SeedResourceName}.");
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        store.Replace(CatalogMapper.ToState(CatalogClient.Parse(buffer.ToArray()), baseUrl, null));
     }
 
     private void SaveSnapshot(byte[] body, string? etag)

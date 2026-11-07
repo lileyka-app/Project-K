@@ -1,0 +1,115 @@
+/* Крокам майстра не потрібна вся ширина сторінки: текст читається у вужчій колонці. */
+.import {
+  max-width: 64rem;
+}
+
+.import__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.import__panel h2 {
+  font-size: var(--lil-text-h3);
+  letter-spacing: var(--lil-tracking-h3);
+}
+
+/* Чого ще бракує на кроці зіставлення: назви полів як плашки, щоб їх було видно з першого погляду. */
+.import__missing { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.import__missing-field {
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+}
+
+.import__hint {
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.import__error {
+  display: block;
+}
+
+/* The native file input is unusable as-is, so the label is the control and the input is hidden
+   behind it — keyboard focus still lands on the input, which is why it is not display:none. */
+.import__file {
+  align-self: flex-start;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 8px;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import__file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.import__file:hover {
+  background: var(--p-primary-hover-color);
+}
+
+.import__row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+}
+
+.import__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.import__select {
+  min-width: 14rem;
+}
+
+.import__sample,
+.import__reason {
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+}
+
+.import__tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
+.import__tally strong {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--p-text-color);
+  margin-right: 0.25rem;
+}
+
+.import__tally--bad strong {
+  color: var(--p-red-500);
+}
+
+@media (max-width: 640px) {
+  .import__actions {
+    justify-content: stretch;
+  }
+
+  .import__actions > * {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,294 @@
+<section class="kurin-tile" data-testid="probe-projects">
+    <div class="projects-head">
+        <div class="min-w-0">
+            <h2 class="projects-title">Проєкти</h2>
+            <p class="projects-muted text-xs">
+                {{ mains().length }} з {{ limits().maxMainProjects }} основних · один з кожної ділянки ·
+                спільних {{ sharedCount() }} з {{ limits().maxSharedMainProjects }}
+            </p>
+            <div class="projects-areas" aria-label="Ділянки, які вже мають проєкт">
+                @for (item of areas; track item.value) {
+                <span class="area-chip" [class.area-chip--covered]="coveredAreas().has(item.value)" [title]="item.label">{{ item.letter }}</span>
+                }
+            </div>
+        </div>
+        @if (canAdd() && tab().projects.length) {
+        <p-button [label]="nextIsSpare() ? 'Додати запасний' : 'Додати проєкт'" icon="pi pi-plus" (onClick)="openNew()" />
+        }
+    </div>
+
+    @if (!tab().projects.length) {
+    <app-empty-state art="list"
+        title="Тут будуть проєкти"
+        [body]="canEdit() ? 'Пʼять проєктів, по одному з кожної ділянки, і ще один запасний. Опиши ціль і план, а підсумки й фото додаси по ходу.' : 'Проєктів третьої проби ще не описано.'">
+        @if (canAdd()) {
+        <p-button label="Додати проєкт" icon="pi pi-plus" (onClick)="openNew()" />
+        }
+    </app-empty-state>
+    } @else {
+    <div class="projects-list">
+        @for (item of mains(); track item.project.projectKey) {
+        <ng-container *ngTemplateOutlet="projectCard; context: { $implicit: item }" />
+        }
+    </div>
+
+    @if (spares().length) {
+    <h3 class="projects-subtitle">Запасний проєкт</h3>
+    <p class="projects-muted text-xs">Розписаний наперед. Якщо основний не вдасться, постав запасний на його місце.</p>
+    <div class="projects-list">
+        @for (item of spares(); track item.project.projectKey) {
+        <ng-container *ngTemplateOutlet="projectCard; context: { $implicit: item }" />
+        }
+    </div>
+    }
+    }
+</section>
+
+<ng-template #projectCard let-item>
+    <article class="project-card" [class.project-card--spare]="item.project.isSpare" data-testid="probe-project">
+        <div class="project-card__head">
+            @if (item.area) {
+            <span class="area-chip area-chip--covered" [title]="item.area.label">{{ item.area.letter }}</span>
+            }
+            <h3 class="project-card__title">{{ item.project.title }}</h3>
+            @if (item.project.isShared) {
+            <p-tag value="Спільний" severity="secondary" styleClass="!rounded-full !text-[10px] !font-semibold" />
+            }
+            @if (item.project.completedAtUtc) {
+            <p-tag value="Виконано" severity="success" styleClass="!rounded-full !text-[10px] !font-semibold" />
+            } @else if (item.project.approvedAtUtc) {
+            <p-tag value="Дозвіл є" severity="info" styleClass="!rounded-full !text-[10px] !font-semibold" />
+            }
+        </div>
+
+        <dl class="project-facts">
+            @if (item.area) { <dt>Ділянка</dt><dd>{{ item.area.letter }}. {{ item.area.label }}</dd> }
+            @if (item.reach.length) { <dt>Корисний для</dt><dd>{{ item.reach.join(', ') }}</dd> }
+            @if (item.dates) { <dt>Коли</dt><dd>{{ item.dates }}</dd> }
+            @if (item.project.location) { <dt>Де</dt><dd>{{ item.project.location }}</dd> }
+            @if (item.project.eventLeads) { <dt>Провід заходу</dt><dd>{{ item.project.eventLeads }}</dd> }
+            @if (item.project.coordinatorName || item.project.coordinatorContact) {
+            <dt>Координатор</dt>
+            <dd>{{ item.project.coordinatorName || 'без імені' }}@if (item.project.coordinatorContact) { · {{ item.project.coordinatorContact }} }</dd>
+            }
+            @if (item.project.isShared && item.project.sharedWith) { <dt>Разом з</dt><dd>{{ item.project.sharedWith }}</dd> }
+        </dl>
+
+        @for (text of item.texts; track text.label) {
+        <div class="project-text">
+            <h4 class="project-text__label">{{ text.label }}</h4>
+            <app-markdown-view [blocks]="text.blocks" />
+        </div>
+        } @empty {
+        <p class="projects-muted text-xs">Ціль, підготовку й підсумки ще не описано.</p>
+        }
+
+        @if (item.project.approvedAtUtc || item.project.completedAtUtc) {
+        <div class="project-signs">
+            @if (item.project.approvedAtUtc) {
+            <p><span class="pi pi-check" aria-hidden="true"></span> Дозвіл: {{ item.project.approvedByName || 'провід' }}</p>
+            }
+            @if (item.project.completedAtUtc) {
+            <p><span class="pi pi-check-circle" aria-hidden="true"></span> Успішно виконано: {{ item.project.completedByName || 'провід' }}</p>
+            @if (item.project.coordinatorComment) {
+            <blockquote class="project-comment">«{{ item.project.coordinatorComment }}» — координатор</blockquote>
+            }
+            }
+        </div>
+        }
+
+        <div class="project-card__foot">
+            <p class="projects-muted text-xs">{{ item.updatedLabel }}</p>
+            <div class="project-actions">
+                @if (canSign() && !item.project.approvedAtUtc) {
+                <p-button label="Дати дозвіл" icon="pi pi-check" size="small" severity="secondary" [outlined]="true" (onClick)="approve(item.project, true)" />
+                } @else if (canUnsign() && item.project.approvedAtUtc && !item.project.completedAtUtc) {
+                <p-button label="Зняти дозвіл" icon="pi pi-undo" size="small" severity="secondary" variant="text" (onClick)="approve(item.project, false)" />
+                }
+                @if (canSign() && !item.project.completedAtUtc) {
+                <p-button label="Виконано" icon="pi pi-check-circle" size="small" severity="success" [outlined]="true" (onClick)="openCompletion(item.project)" />
+                } @else if (canUnsign() && item.project.completedAtUtc) {
+                <p-button label="Зняти «виконано»" icon="pi pi-undo" size="small" severity="secondary" variant="text" (onClick)="uncomplete(item.project)" />
+                }
+                @if (canEdit() && item.project.isSpare && mains().length) {
+                <p-button label="Поставити замість…" icon="pi pi-arrow-right-arrow-left" size="small" severity="secondary" variant="text" (onClick)="openSwap(item.project)" />
+                }
+                @if (canEdit()) {
+                <p-button label="Редагувати" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="edit(item.project)" />
+                <p-button label="Видалити" icon="pi pi-trash" size="small" severity="danger" variant="text" (onClick)="remove(item.project)" />
+                }
+            </div>
+        </div>
+    </article>
+</ng-template>
+
+<p-dialog
+    [header]="editingKey() ? 'Проєкт' : (nextIsSpare() ? 'Запасний проєкт' : 'Новий проєкт')"
+    [visible]="dialogVisible()"
+    (visibleChange)="dialogVisible.set($event)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: 'min(96vw, 52rem)' }"
+    styleClass="probe-project-dialog">
+
+    <div class="project-field">
+        <label for="project-title">Назва проєкту</label>
+        <input pInputText id="project-title" class="w-full" [attr.maxlength]="200"
+            placeholder="Наприклад: «Мандрівка Чорногорою»"
+            [ngModel]="title()" (ngModelChange)="title.set($event)" />
+    </div>
+
+    <div class="project-field">
+        <label for="project-area">Тематика (ділянка)</label>
+        <p-select inputId="project-area" [options]="areas" optionValue="value" optionLabel="label" appendTo="body"
+            placeholder="Обери ділянку" [showClear]="true" styleClass="w-full"
+            [ngModel]="area()" (ngModelChange)="area.set($event)">
+            <ng-template #item let-option>{{ option.letter }}. {{ option.label }}</ng-template>
+            <ng-template #selectedItem let-option>{{ option.letter }}. {{ option.label }}</ng-template>
+        </p-select>
+    </div>
+
+    <fieldset class="project-field project-fieldset">
+        <legend class="project-label">Реалізується на рівні та корисний для</legend>
+        <div class="project-checks">
+            @for (item of reaches; track item.value) {
+            <span class="project-check">
+                <p-checkbox [binary]="true" [inputId]="'reach-' + item.value" [ngModel]="reach().includes(item.value)" (ngModelChange)="toggleReach(item.value, $event)" />
+                <label [for]="'reach-' + item.value">{{ item.label }}</label>
+            </span>
+            }
+        </div>
+    </fieldset>
+
+    <div class="project-field-row">
+        <div class="project-field">
+            <label for="project-start">Дата початку</label>
+            <p-datepicker inputId="project-start" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+                [ngModel]="startsOn()" (ngModelChange)="startsOn.set($event)" />
+        </div>
+        <div class="project-field">
+            <label for="project-end">Дата закінчення</label>
+            <p-datepicker inputId="project-end" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+                [minDate]="startsOn()" [ngModel]="endsOn()" (ngModelChange)="endsOn.set($event)" />
+        </div>
+    </div>
+
+    <div class="project-field">
+        <label for="project-location">Локація</label>
+        <input pInputText id="project-location" class="w-full" [attr.maxlength]="200"
+            placeholder="Країна, область, місце"
+            [ngModel]="location()" (ngModelChange)="location.set($event)" />
+    </div>
+
+    <div class="project-field-row">
+        <div class="project-field">
+            <label for="project-leads">Провід заходу</label>
+            <input pInputText id="project-leads" class="w-full" [attr.maxlength]="200"
+                [ngModel]="eventLeads()" (ngModelChange)="eventLeads.set($event)" />
+        </div>
+        <div class="project-field">
+            <label for="project-coordinator">Координатор / комендант</label>
+            <input pInputText id="project-coordinator" class="w-full" [attr.maxlength]="200"
+                placeholder="Хто курує проєкт і дає рекомендацію"
+                [ngModel]="coordinatorName()" (ngModelChange)="coordinatorName.set($event)" />
+        </div>
+        <div class="project-field">
+            <label for="project-coordinator-contact">Контакт координатора</label>
+            <input pInputText id="project-coordinator-contact" class="w-full" [attr.maxlength]="200"
+                placeholder="Телефон чи пошта"
+                [ngModel]="coordinatorContact()" (ngModelChange)="coordinatorContact.set($event)" />
+        </div>
+    </div>
+    <p class="projects-muted project-hint">Координатором може бути й не пластун: тренер, майстер, учитель.</p>
+
+    <div class="project-field project-field--inline">
+        <p-checkbox inputId="project-shared" [binary]="true" [ngModel]="isShared()" (ngModelChange)="isShared.set($event)" />
+        <label for="project-shared">Спільний з іншими третьопробниками</label>
+    </div>
+    @if (isShared()) {
+    <div class="project-field">
+        <label for="project-shared-with">З ким</label>
+        <input pInputText id="project-shared-with" class="w-full" [attr.maxlength]="200"
+            [ngModel]="sharedWith()" (ngModelChange)="sharedWith.set($event)" />
+    </div>
+    }
+
+    @for (text of texts; track text.field) {
+    <div class="project-field">
+        <span class="project-label">{{ text.label }}</span>
+        <span class="projects-muted project-hint project-hint--tight">{{ text.hint }}</span>
+        <p-editor
+            [formats]="editorFormats"
+            [style]="{ height: '9rem' }"
+            (onInit)="onEditorInit(text.field, $any($event))"
+            (onTextChange)="onTextChange()">
+            <ng-template #header>
+                <span class="ql-formats">
+                    <button class="ql-header" value="2" type="button" aria-label="Заголовок"></button>
+                    <button class="ql-bold" type="button" aria-label="Жирний"></button>
+                    <button class="ql-italic" type="button" aria-label="Курсив"></button>
+                    <button class="ql-strike" type="button" aria-label="Закреслений"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-list" value="ordered" type="button" aria-label="Нумерований список"></button>
+                    <button class="ql-list" value="bullet" type="button" aria-label="Список"></button>
+                    <button class="ql-list" value="check" type="button" aria-label="Список справ"></button>
+                    <button class="ql-blockquote" type="button" aria-label="Цитата"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-link" type="button" aria-label="Посилання"></button>
+                    <button class="ql-image" type="button" aria-label="Зображення"></button>
+                </span>
+            </ng-template>
+        </p-editor>
+    </div>
+    }
+
+    <p class="projects-muted project-hint" data-testid="project-limits">
+        @if (isUploading()) { <span class="pi pi-spin pi-spinner" aria-hidden="true"></span> Завантажую… · }
+        Зображень {{ imageCount() }} з {{ limits().maxImagesPerProject }} на проєкт, кожне до {{ maxImageLabel() }} МБ (PNG, JPEG, WebP) · усі файли проби — до {{ storedLimitLabel() }}
+        · кожен текст до {{ limits().maxTextLength.toLocaleString('uk-UA') }} знаків
+    </p>
+
+    @if (errorMessage(); as message) {
+    <p class="project-error" role="alert">{{ message }}</p>
+    }
+
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="close()" />
+        <p-button label="Зберегти" icon="pi pi-check" [loading]="isSaving()" [disabled]="isUploading()" (onClick)="save()" />
+    </ng-template>
+</p-dialog>
+
+<p-dialog header="Проєкт виконано" [visible]="!!completing()" (visibleChange)="!$event && completing.set(null)"
+    [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 32rem)' }" styleClass="probe-project-dialog">
+    <p class="projects-muted project-hint">«{{ completing()?.title }}». Перепиши коментар координатора, якщо він його дав.</p>
+    <div class="project-field">
+        <label for="coordinator-comment">Коментар координатора</label>
+        <textarea pTextarea id="coordinator-comment" rows="4" class="w-full" maxlength="2000"
+            [ngModel]="coordinatorComment()" (ngModelChange)="coordinatorComment.set($event)"></textarea>
+    </div>
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="completing.set(null)" />
+        <p-button label="Позначити виконаним" icon="pi pi-check-circle" (onClick)="complete()" />
+    </ng-template>
+</p-dialog>
+
+<p-dialog header="Поставити запасний замість основного" [visible]="!!swapping()" (visibleChange)="!$event && swapping.set(null)"
+    [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 32rem)' }" styleClass="probe-project-dialog">
+    <p class="projects-muted project-hint">«{{ swapping()?.title }}» стане основним, а обраний — запасним. Обидва лишаються як є.</p>
+    <div class="project-swap">
+        @for (item of mains(); track item.project.projectKey) {
+        <span class="project-check">
+            <p-radiobutton name="swap-with" [value]="item.project.projectKey" [inputId]="'swap-' + item.project.projectKey"
+                [ngModel]="swapWith()" (ngModelChange)="swapWith.set($event)" />
+            <label [for]="'swap-' + item.project.projectKey">@if (item.area) { {{ item.area.letter }}. } {{ item.project.title }}</label>
+        </span>
+        }
+    </div>
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="swapping.set(null)" />
+        <p-button label="Поміняти" icon="pi pi-arrow-right-arrow-left" [disabled]="!swapWith()" (onClick)="swap()" />
+    </ng-template>
+</p-dialog>

@@ -13,6 +13,7 @@ public interface IDuesUnitOfWork
     IDuesConcessionGrantRepository DuesConcessionGrants { get; }
     IDuesChargeRepository DuesCharges { get; }
     IDuesEntryRepository DuesEntries { get; }
+    IKurinDuesSettingsRepository KurinDuesSettings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken token = default);
 }

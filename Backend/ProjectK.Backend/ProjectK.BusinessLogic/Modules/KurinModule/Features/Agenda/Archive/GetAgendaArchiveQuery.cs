@@ -49,7 +49,7 @@ public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArch
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var matching = items
-            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.LeadershipLabels, lookups.Categories, roster))
+            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster))
             .Where(response => AgendaSearch.Matches(response, request.Search))
             .ToList();
 

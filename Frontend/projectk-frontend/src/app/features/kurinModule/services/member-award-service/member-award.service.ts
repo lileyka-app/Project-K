@@ -10,7 +10,9 @@ import { MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
 
 export interface UpsertMemberAwardRequest {
     memberAwardKey?: string;
-    level: MemberAwardLevel;
+    level?: MemberAwardLevel | null;
+    /** A senior відзначення from the catalogue, instead of a level. */
+    catalogId?: string | null;
     dateAcquired: string;
     note?: string;
 }
@@ -25,6 +27,13 @@ export class MemberAwardService {
 
     upsertAward(memberKey: string, request: UpsertMemberAwardRequest): Observable<MemberAwardDto> {
         return this.http.post<MemberAwardDto>(`${this.apiUrl}/${memberKey}/awards`, request).pipe(
+            tap(() => this.invalidateMemberData())
+        );
+    }
+
+    /** Pins or unpins one of the caller's own відзначення: every grant of that level or catalogue id. */
+    pinAward(request: { level?: MemberAwardLevel | null; catalogId?: string | null; pinned: boolean }): Observable<boolean> {
+        return this.http.put<boolean>(`${environment.apiUrl}/me/awards/pin`, request).pipe(
             tap(() => this.invalidateMemberData())
         );
     }

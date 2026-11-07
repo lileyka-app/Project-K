@@ -21,9 +21,11 @@ public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, Se
     private readonly MePerson _me;
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetMyScoreQueryHandler(MePerson me, ScoreBookReader books, ICurrentUserContext currentUser)
+    public GetMyScoreQueryHandler(MePerson me, ScoreBookReader books, ICurrentUserContext currentUser, IUnitOfWork unitOfWork)
     {
+        _unitOfWork = unitOfWork;
         _me = me;
         _books = books;
         _currentUser = currentUser;
@@ -40,6 +42,12 @@ public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, Se
         var rows = new List<MyScoreDto>();
         foreach (var membership in me.Memberships.Where(m => m.Kind == MembershipKind.Youth && m.GroupKey.HasValue && me.HasYouthProgramIn(m)))
         {
+            // Switched off, точкування keeps its records but shows nowhere.
+            if (!((await _unitOfWork.Kurins.GetByKeyAsync(membership.KurinKey, cancellationToken))?.IsScoreEnabled ?? true))
+            {
+                continue;
+            }
+
             var book = await _books.OpenAsync(membership.KurinKey, cancellationToken);
             if (book.ResolvePeriod(new ScorePeriodQuery()) is not { } resolved)
             {

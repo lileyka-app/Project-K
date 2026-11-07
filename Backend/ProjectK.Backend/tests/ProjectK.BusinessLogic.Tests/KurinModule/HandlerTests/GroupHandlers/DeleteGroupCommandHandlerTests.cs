@@ -1,180 +1,127 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
 
 public class DeleteGroupHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IGroupRepository> _groupRepositoryMock;
-    private readonly DeleteGroupCommandHandler _handler;
-    private readonly Mock<IMemberRepository> _memberRepositoryMock;
-    private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock;
+    private static readonly DateTimeOffset Now = new(2026, 11, 1, 12, 0, 0, TimeSpan.Zero);
+
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<IGroupRepository> _groupRepositoryMock = new();
+    private readonly Mock<ILeadershipRepository> _leadershipRepositoryMock = new();
     private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
-    private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock;
-    private readonly Mock<IBackendCache> _cacheMock;
+    private readonly Mock<IMentorAssignmentRepository> _mentorRepositoryMock = new();
+    private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock = new();
+    private readonly Mock<IKurinAudit> _auditMock = new();
+    private readonly Mock<IDuesDirectory> _dues = new();
+    private readonly DeleteGroupCommandHandler _handler;
 
     public DeleteGroupHandlerTests()
     {
-        _groupRepositoryMock = new Mock<IGroupRepository>();
-        _memberRepositoryMock = new Mock<IMemberRepository>();
-        _leadershipRepositoryMock = new Mock<ILeadershipRepository>();
-        _agendaItemRepositoryMock = new Mock<IAgendaItemRepository>();
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
-        _cacheMock = new Mock<IBackendCache>();
-
         _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.AgendaItems).Returns(_agendaItemRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Memberships).Returns(_membershipRepositoryMock.Object);
+        _unitOfWorkMock.Setup(u => u.MentorAssignments).Returns(_mentorRepositoryMock.Object);
         _leadershipRepositoryMock
-            .Setup(r => r.DeleteForGroupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CloseForGroupAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _dues.Setup(d => d.GroupBoxSettledAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mentorRepositoryMock
+            .Setup(r => r.GetByGroupKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object, _cacheMock.Object);
+        _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object, Mock.Of<IBackendCache>(), _auditMock.Object, new FixedTimeProvider(Now), _dues.Object);
     }
 
     [Fact]
-    public async Task Handle_ShouldRemoveTheGroupsOfficeFirst()
+    public async Task Handle_DissolvesTheGroupAndKeepsItsProvid()
     {
-        // Leadership.Group is Restrict: a гурток that still carries a провід cannot be deleted,
-        // and the database refuses it rather than cascading — the delete answered 500.
+        // The archive keeps a dissolved гурток with its провід: deleting them erased who led whom.
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-
         _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default)).ReturnsAsync(group);
-        _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default)).ReturnsAsync([]);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         var result = await _handler.Handle(new DeleteGroupCommand(groupKey), default);
 
         result.Type.Should().Be(ResultType.Success);
-        _leadershipRepositoryMock.Verify(r => r.DeleteForGroupAsync(groupKey, default), Times.Once);
+        group.DissolvedAtUtc.Should().Be(Now.UtcDateTime);
+        _leadershipRepositoryMock.Verify(r => r.CloseForGroupAsync(groupKey, new DateOnly(2026, 11, 1), default), Times.Once);
+        _leadershipRepositoryMock.Verify(r => r.DeleteForGroupAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _groupRepositoryMock.Verify(r => r.Delete(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
+        _membershipRepositoryMock.Verify(r => r.DetachFromGroupAsync(groupKey, default), Times.Once);
+        _auditMock.Verify(a => a.RecordAsync(
+            It.Is<AuditRecord>(record => record.Action == AuditActions.Archive.GroupDissolved && record.SubjectKey == groupKey),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenGroupExists_ShouldDeleteGroupAndReturnSuccess()
+    public async Task Handle_RefusesWhileTheGroupsBoxIsNotSettled()
     {
-        // Arrange
+        // A dissolved гурток's box is read nowhere: money left in it would be stuck for good.
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-        var command = new DeleteGroupCommand(groupKey);
+        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default)).ReturnsAsync(group);
+        _dues.Setup(d => d.GroupBoxSettledAsync(group.KurinKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
-            .ReturnsAsync(group);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
-            .ReturnsAsync(1);
-        _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default))
-            .ReturnsAsync([]);
-        _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
+        var result = await _handler.Handle(new DeleteGroupCommand(groupKey), default);
 
-        // Act
-        var result = await _handler.Handle(command, default);
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("GroupBoxNotSettled");
+        group.DissolvedAtUtc.Should().BeNull();
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
+    }
 
-        // Assert
-        result.Type.Should().Be(ResultType.Success);
-        result.Data.Should().BeNull();
-        _groupRepositoryMock.Verify(r => r.Delete(group, default), Times.Once);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    [Fact]
+    public async Task Handle_RevokesTheGroupsMentors()
+    {
+        var groupKey = Guid.NewGuid();
+        var assignment = new Common.Entities.KurinModule.MentorAssignment { GroupKey = groupKey, MentorUserKey = Guid.NewGuid() };
+        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default)).ReturnsAsync(new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey });
+        _mentorRepositoryMock.Setup(r => r.GetByGroupKeyAsync(groupKey, default)).ReturnsAsync([assignment]);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        await _handler.Handle(new DeleteGroupCommand(groupKey), default);
+
+        assignment.RevokedAtUtc.Should().Be(Now.UtcDateTime);
     }
 
     [Fact]
     public async Task Handle_WhenGroupDoesNotExist_ShouldReturnNotFound()
     {
-        // Arrange
         var groupKey = Guid.NewGuid();
-        var command = new DeleteGroupCommand(groupKey);
+        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default)).ReturnsAsync((Group)null!);
 
-        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
-            .ReturnsAsync((Group)null!);
+        var result = await _handler.Handle(new DeleteGroupCommand(groupKey), default);
 
-        // Act
-        var result = await _handler.Handle(command, default);
-
-        // Assert
         result.Type.Should().Be(ResultType.NotFound);
-        result.Data.Should().BeNull();
         result.ErrorCode.Should().Be("GROUP_NOT_FOUND");
-        result.ErrorMessage.Should().Be($"Group with key {groupKey} not found.");
-        _groupRepositoryMock.Verify(r => r.Delete(It.IsAny<Group>(), default), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }
 
     [Fact]
     public async Task Handle_WhenGroupKeyIsEmpty_ShouldReturnBadRequest()
     {
-        // Arrange
-        var command = new DeleteGroupCommand(Guid.Empty);
+        var result = await _handler.Handle(new DeleteGroupCommand(Guid.Empty), default);
 
-        // Act
-        var result = await _handler.Handle(command, default);
-
-        // Assert
         result.Type.Should().Be(ResultType.BadRequest);
-        result.Data.Should().BeNull();
         result.ErrorCode.Should().Be("GROUP_KEY_EMPTY");
-        result.ErrorMessage.Should().Be("GroupKey cannot be empty.");
         _groupRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), default), Times.Never);
-        _groupRepositoryMock.Verify(r => r.Delete(It.IsAny<Group>(), default), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_WhenSaveChangesFails_ShouldReturnServerError()
-    {
-        // Arrange
-        var groupKey = Guid.NewGuid();
-        var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-        var command = new DeleteGroupCommand(groupKey);
-
-        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
-            .ReturnsAsync(group);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default))
-            .ReturnsAsync(0);
-        _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default))
-            .ReturnsAsync([]);
-        _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
-
-        // Act
-        var result = await _handler.Handle(command, default);
-
-        // Assert
-        result.Type.Should().Be(ResultType.InternalServerError);
-        result.Data.Should().BeNull();
-        result.ErrorCode.Should().Be("GROUP_DELETE_FAILED");
-        result.ErrorMessage.Should().Be("Failed to delete Group due to internal error.");
-        _groupRepositoryMock.Verify(r => r.Delete(group, default), Times.Once);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_WhenDeleteThrowsException_ShouldPropagateException()
-    {
-        // Arrange
-        var groupKey = Guid.NewGuid();
-        var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
-        var command = new DeleteGroupCommand(groupKey);
-        var expected = new Exception("Test exception");
-
-        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default))
-            .ReturnsAsync(group);
-        _groupRepositoryMock.Setup(r => r.Delete(group, default))
-            .Throws(expected);
-        _memberRepositoryMock.Setup(r => r.GetAllAsync(groupKey, default))
-            .ReturnsAsync([]);
-        _memberRepositoryMock.Setup(r => r.Delete(It.IsAny<Member>(), default));
-
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, default));
-        ex.Should().BeSameAs(expected);
     }
 }

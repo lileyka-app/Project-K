@@ -98,6 +98,24 @@ public class UpsertGroupHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldRefuseAGroup_InASeniorKurin()
+    {
+        var senior = new Kurin(5, KurinBranch.USP);
+        _groupRepositoryMock
+            .Setup(r => r.GetByKeyAsync(Guid.Empty, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Group)null!);
+        _kurinRepositoryMock
+            .Setup(r => r.GetByKeyAsync(senior.KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(senior);
+
+        var result = await _handler.Handle(new UpsertGroupCommand("Alpha", senior.KurinKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("NoGroupsInSeniorKurin");
+        _groupRepositoryMock.Verify(r => r.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_WhenKurinDoesNotExistOnCreate_ShouldReturnNotFound()
     {
         // Arrange

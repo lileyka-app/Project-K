@@ -22,13 +22,15 @@ public static class DuesEntryRules
     };
 
     /// <summary>
-    /// Kinds the kurin's own box may hold. Nothing personal: people pay their гурток, and what
-    /// reaches the kurin arrives as a гурток's transfer, not as an operation written here.
+    /// Kinds the kurin's own box may hold. Personal ones only in a kurin without гуртки (checked
+    /// against the kurin, not here): elsewhere people pay their гурток, and what reaches the kurin
+    /// arrives as a гурток's transfer, not as an operation written here.
     /// </summary>
     public static readonly IReadOnlySet<DuesEntryKind> KurinKinds = new HashSet<DuesEntryKind>
     {
         DuesEntryKind.Expense, DuesEntryKind.OtherIncome, DuesEntryKind.Exchange, DuesEntryKind.TransferToStanytsia,
-        DuesEntryKind.TransferToKrai
+        DuesEntryKind.TransferToKrai,
+        DuesEntryKind.Contribution, DuesEntryKind.Refund, DuesEntryKind.Correction
     };
 
     public static void Apply(AbstractValidator<UpsertDuesEntryRequest> validator, TimeProvider time, IReadOnlySet<DuesEntryKind> allowedKinds)

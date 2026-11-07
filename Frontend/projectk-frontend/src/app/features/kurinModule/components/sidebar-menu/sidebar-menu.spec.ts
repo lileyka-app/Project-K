@@ -525,6 +525,17 @@ describe('SidebarMenuComponent', () => {
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'journal']);
     });
 
+    it('has one «Реєстр» for склад, переходи, архів and імпорт, for whoever has any of them', async () => {
+      const zvyazkovyi = (await itemsFor(['Group:Manage:KurinWide', 'KurinArchive:Read:KurinWide', 'Kurin:Update:KurinWide'])).map(item => item.label);
+      const hurtkovyi = (await itemsFor(['Group:Update:OwnGroups', 'KurinArchive:Read:OwnGroups'])).map(item => item.label);
+      const member = (await itemsFor([])).map(item => item.label);
+
+      expect(zvyazkovyi.filter(label => label === 'Реєстр')).toHaveLength(1);
+      expect(zvyazkovyi.some(label => ['Склад куреня', 'Імпорт складу', 'Архів куреня'].includes(label as string))).toBe(false);
+      expect(hurtkovyi).toContain('Реєстр');
+      expect(member).not.toContain('Реєстр');
+    });
+
     it('hides «Журнал дій» from whoever the kurin does not let read it', async () => {
       const items = await itemsFor(['Group:Update:OwnGroups']);
 

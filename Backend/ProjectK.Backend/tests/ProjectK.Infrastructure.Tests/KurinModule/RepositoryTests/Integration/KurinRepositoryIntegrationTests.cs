@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.UnitOfWork;
 
@@ -57,7 +59,7 @@ public class KurinRepositoryIntegrationTests
             await unitOfWork.SaveChangesAsync();
 
             // Act
-            kurin.Number = 20;
+            kurin.SetNumber(20);
             unitOfWork.Kurins.Update(kurin);
             await unitOfWork.SaveChangesAsync();
 
@@ -124,6 +126,58 @@ public class KurinRepositoryIntegrationTests
 
         Assert.Equal(czech.KurinKey, fetched!.KurinKey);
         Assert.False(await unitOfWork.Kurins.ExistsAsync("pl", 15));
+    }
+
+    [Fact]
+    public async Task IsNumberTakenAsync_ShouldCountEveryBranchOfAKurin_AndOnlyThatBranch()
+    {
+        using var context = CreateInMemoryDbContext();
+        var unitOfWork = new UnitOfWork(context);
+        var order = Kurin.InBranches([new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)]);
+        unitOfWork.Kurins.Create(order);
+        unitOfWork.Kurins.Create(new Kurin(5));
+        await unitOfWork.SaveChangesAsync();
+
+        Assert.True(await unitOfWork.Kurins.IsNumberTakenAsync("ua", KurinBranch.UPS, 20));
+        Assert.True(await unitOfWork.Kurins.IsNumberTakenAsync("ua", KurinBranch.USP, 5));
+        Assert.False(await unitOfWork.Kurins.IsNumberTakenAsync("ua", KurinBranch.UPS, 5));
+        Assert.False(await unitOfWork.Kurins.IsNumberTakenAsync("ua", KurinBranch.UPS, 20, order.KurinKey));
+
+        context.ChangeTracker.Clear();
+        var read = await unitOfWork.Kurins.GetByKeyAsync(order.KurinKey);
+        Assert.Equal([new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)], read!.Numbering);
+    }
+
+    [Fact]
+    public void TheDatabase_ShouldHoldEachNumberOncePerKraiAndBranch_AndOneOpenRequestPerKurin()
+    {
+        using var context = CreateInMemoryDbContext();
+
+        var numbers = context.Model.FindEntityType(typeof(KurinBranchNumber))!.GetIndexes()
+            .Single(index => index.Properties.Select(p => p.Name).SequenceEqual(["KraiCode", "Branch", "Number"]));
+        var open = context.Model.FindEntityType(typeof(KurinBranchRequest))!.GetIndexes()
+            .Single(index => index.GetDatabaseName() == "IX_KurinBranchRequests_KurinKey_Pending");
+
+        Assert.True(numbers.IsUnique);
+        Assert.True(open.IsUnique);
+        Assert.Equal("[Status] = 0", open.GetFilter());
+    }
+
+    [Fact]
+    public async Task TheSeederReset_ShouldTakeOnlyTheYouthKurin1_NeverASeniorOne()
+    {
+        using var context = CreateInMemoryDbContext();
+        var senior = new Kurin(1, KurinBranch.USP);
+        context.Kurins.Add(senior);
+        await context.SaveChangesAsync();
+
+        Assert.Null(await ProjectK.Infrastructure.Seeding.DataSeeder.FindSeederKurinAsync(context));
+
+        var youth = new Kurin(1);
+        context.Kurins.Add(youth);
+        await context.SaveChangesAsync();
+
+        Assert.Equal(youth.KurinKey, (await ProjectK.Infrastructure.Seeding.DataSeeder.FindSeederKurinAsync(context))!.KurinKey);
     }
 
     [Fact]

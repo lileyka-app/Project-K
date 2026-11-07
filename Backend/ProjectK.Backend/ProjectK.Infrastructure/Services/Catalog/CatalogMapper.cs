@@ -47,6 +47,8 @@ internal static class CatalogMapper
             .GroupBy(award => award.Level!.Value)
             .ToDictionary(group => group.Key, group => group.First().Images!);
 
+        var honours = Honours(document);
+
         var metadata = new BadgesMetadata(
             ParserVersion: $"schema {document.SchemaVersion}, revision {document.Revision}",
             ToolAuthor: string.Empty,
@@ -57,8 +59,54 @@ internal static class CatalogMapper
             FixerMode: string.Empty,
             TotalBadges: badges.Count);
 
-        return new CatalogState(document.Revision, metadata, badges, probes, awardImages);
+        return new CatalogState(document.Revision, metadata, badges, probes, awardImages) { Honours = honours };
     }
+
+    // Вишколи are not відзначення and are not recorded on the card.
+    private static readonly HashSet<string> TrainingGroups = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "lsh", "shb", "kv-upn", "kv-upyu", "zb", "kvdch"
+    };
+
+    // The УПЮ відзначення stay out: they are recorded by level, with their pictures by level.
+    private const string YouthAwardGroup = "upyu-vidznachennia";
+
+    private static List<CatalogHonour> Honours(CatalogDocument document)
+    {
+        var degrees = (document.Degrees ?? [])
+            .OrderBy(degree => UladRank(degree.Ulad))
+            .ThenBy(degree => degree.Order)
+            .Select(degree => new CatalogHonour(
+                degree.Id,
+                HonourKind.Degree,
+                degree.Title,
+                degree.Ulad ?? string.Empty,
+                degree.Ulad ?? string.Empty,
+                degree.Order,
+                degree.Images?.Color ?? degree.Images?.Bw ?? string.Empty));
+
+        var awards = (document.Awards ?? [])
+            .Where(award => award.Group != YouthAwardGroup && !TrainingGroups.Contains(award.Group) && !string.IsNullOrWhiteSpace(award.Title))
+            .Select((award, index) => new CatalogHonour(
+                award.Id,
+                HonourKind.Award,
+                award.Title!,
+                award.Group,
+                award.Ulad ?? string.Empty,
+                index,
+                award.Images?.Color ?? award.Images?.Bw ?? string.Empty));
+
+        return [.. degrees, .. awards];
+    }
+
+    // A senior's own ступені first, УСП before УПС; the youth ones after, for whoever records the whole way.
+    private static int UladRank(string? ulad) => ulad?.ToLowerInvariant() switch
+    {
+        "usp" => 0,
+        "ups" => 1,
+        "upyu" => 2,
+        _ => 3
+    };
 
     private static Badge ToBadge(CatalogBadge badge, IReadOnlyDictionary<string, string> categories)
     {

@@ -26,6 +26,8 @@ public sealed class SetGroupDuesRateRequest
 public sealed class SetKurinDuesRateRequest
 {
     public QuarterRequest FromQuarter { get; set; } = new();
+    /// <summary>The tag the rate is for, in a kurin without гуртки; null for everyone else.</summary>
+    public Guid? TagKey { get; set; }
     public List<DuesArticleRequest>? Articles { get; set; }
     public decimal StanytsiaFull { get; set; }
     public decimal StanytsiaReduced { get; set; }
@@ -88,3 +90,10 @@ public sealed class SetDuesTransferReceivedRequest
 {
     public bool IsReceived { get; set; }
 }
+
+/// <summary>Body of <c>PUT api/kurin/{kurinKey}/dues/settings</c>.</summary>
+public sealed class SetKurinDuesSettingsRequest
+{
+    public DuesChargeTiming ChargeTiming { get; set; }
+}
+

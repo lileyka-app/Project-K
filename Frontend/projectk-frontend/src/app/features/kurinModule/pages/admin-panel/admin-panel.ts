@@ -15,6 +15,9 @@ import { AuthService } from '../../../authModule/services/auth-service/auth.serv
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { HttpErrorResponse } from '@angular/common/http';
+import { isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { TagModule } from '@openng/optimus-ui/tag';
+import { compareKurinsByBranch, kurinBranchesName, kurinBranchTags, kurinGroupTitle } from '../../../../shared/functions/kurin-label.function';
 
 /** The create form: the kurin, and optionally the person invited to be its Звʼязковий. */
 type KurinCreateForm = KurinDto & {
@@ -25,7 +28,7 @@ type KurinCreateForm = KurinDto & {
 
 @Component({
   selector: 'app-admin-panel',
-  imports: [TableModule, SplitButtonModule, ManagePanelComponent, ButtonModule, EmptyStateComponent, RouterModule],
+  imports: [TableModule, TagModule, SplitButtonModule, ManagePanelComponent, ButtonModule, EmptyStateComponent, RouterModule],
   templateUrl: './admin-panel.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './admin-panel.css'
@@ -77,10 +80,7 @@ export class AdminPanelComponent implements OnInit {
       { name: 'founderFirstName', label: 'Імʼя Звʼязкового', type: 'text', hiddenOn: ['update', 'delete'] },
       { name: 'founderLastName', label: 'Прізвище Звʼязкового', type: 'text', hiddenOn: ['update', 'delete'] }
     ],
-    displayName: (entity: KurinDto) => {
-      const name = entity.number === null ? 'Підготовчий курінь' : `${entity.number} курінь`;
-      return entity.namedAfter ? `${name} ім. ${entity.namedAfter}` : name;
-    },
+    displayName: (entity: KurinDto) => kurinGroupTitle(entity),
     createFactory: () => ({ kurinKey: '', number: null, kraiCode: null, founderEmail: null, founderFirstName: null, founderLastName: null }),
   }
 
@@ -229,16 +229,29 @@ export class AdminPanelComponent implements OnInit {
     });
   }
 
-  /** The kurins grouped by край: Україна first, then the rest by name; by number inside a край. */
+  /** The kurins grouped by край: Україна first, then the rest by name; inside a край УПЮ before senior, by number. */
   private sortedByKrai(kurins: KurinDto[]): KurinDto[] {
     const rank = (code?: string) => code === 'ua' ? '' : this.kraiName(code);
     return [...kurins].sort((a, b) =>
       rank(a.kraiCode).localeCompare(rank(b.kraiCode), 'uk')
-      || (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
+      || compareKurinsByBranch(a, b));
   }
 
   kraiName(code?: string): string {
     return this.krais.find(krai => krai.code === code)?.name ?? code ?? '';
+  }
+
+  isSenior(kurin: KurinDto): boolean {
+    return isSeniorBranch(kurin.branch);
+  }
+
+  /** «УСП · УПС»: the улади a senior kurin stands in, on its row. */
+  branchTags(kurin: KurinDto): string {
+    return kurinBranchTags(kurin.branches, kurin.branch);
+  }
+
+  seniorTitle(kurin: KurinDto): string {
+    return kurinBranchesName(kurin.branches);
   }
 
   kurinCountInKrai(code?: string): number {

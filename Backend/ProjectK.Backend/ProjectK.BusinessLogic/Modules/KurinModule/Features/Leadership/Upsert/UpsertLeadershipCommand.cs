@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -186,7 +187,16 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         IReadOnlyCollection<MemberSummary> holders,
         CancellationToken cancellationToken)
     {
+        if (officeChanges.Count == 0)
+        {
+            return;
+        }
+
         var names = holders.GroupBy(holder => holder.MemberKey).ToDictionary(found => found.Key, found => found.First().FullName);
+        // The entry lands in the провід's kurin, or the acting one for a гурток's: name the role as that kurin does.
+        var kurinKey = leadership.KurinKey ?? _currentUserContext.KurinKey;
+        var kurin = kurinKey is { } key ? await _unitOfWork.Kurins.GetByKeyAsync(key, cancellationToken) : null;
+        var kurinNames = KurinRoleNames.Read(kurin?.RoleNames);
         foreach (var change in officeChanges)
         {
             var seated = change.Seated.Count > 0;
@@ -196,7 +206,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                     AuditArea.Office,
                     seated ? AuditActions.Office.Assigned : AuditActions.Office.Ended,
                     leadership.LeadershipKey,
-                    KurinReportTerminology.LeadershipRole(change.Role),
+                    ArchiveErrors.RoleLabel(change.Role, kurinNames),
                     subject.Count == 1 ? subject[0] : null,
                     AuditChanges.Of(("holder", NamesOf(change.Ended, names), NamesOf(change.Seated, names))),
                     KurinKey: leadership.KurinKey),

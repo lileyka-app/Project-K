@@ -1,0 +1,42 @@
+.degree-highest {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.degree-highest-image {
+  flex: none;
+  width: 6.5rem;
+  height: 7.5rem;
+  object-fit: contain;
+}
+
+.degree-highest-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.degree-highest-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.degree-highest-image.degree-image--empty {
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+}
+
+.degree-date,
+.degree-empty {
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}
+
+.degree-empty {
+  margin: 0;
+}

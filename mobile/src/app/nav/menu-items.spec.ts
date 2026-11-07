@@ -54,7 +54,6 @@ describe('menuEntries', () => {
       'Мій профіль',
       'Курінь',
       'Реєстр',
-      'Імпорт складу',
       'Календар',
       'Задачі',
       'Планування',
@@ -80,6 +79,11 @@ describe('menuEntries', () => {
     expect(byKey['review'].link).toBe('/tabs/kurin/review/skills');
     expect(byKey['journal'].web).toBe('/kurin/k1/journal');
     expect(byKey['journal'].icon).toBe('time');
+  });
+
+  it('opens the kurin settings to the whole КВ, not to the rest of the провід', () => {
+    expect(labels(state({ permissions: ['Group:Update:OwnGroups', 'KurinSettings:Read:KurinWide'] }))).toContain('Налаштування куреня');
+    expect(labels(state({ permissions: ['Leadership:Update:KurinWide'] }))).not.toContain('Налаштування куреня');
   });
 
   it('follows the kurin policy for skill review and the journal, not leading a гурток', () => {
@@ -110,6 +114,13 @@ describe('menuEntries', () => {
     expect(entries.filter((entry) => entry.key.includes('dues')).map((entry) => [entry.label, entry.link])).toEqual([
       ['Вкладка куреня', '/tabs/kurin/dues'],
     ]);
+  });
+
+  it('opens a senior kurin’s box in the web, where its register is', () => {
+    const entries = menuEntries(state({ permissions: ['KurinDues:Read:KurinWide'] }), { youthKurin: false, duesGroups: [] });
+    const dues = entries.find((entry) => entry.key === 'kurin-dues');
+    expect(dues?.web).toBe('/kurin/k1/dues');
+    expect(dues?.link).toBeUndefined();
   });
 
   it('gives an administrator outside a kurin the administration, with the applications on the phone', () => {

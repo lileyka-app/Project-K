@@ -23,8 +23,8 @@ public class Member : Entity, IHasParentContacts
     public Guid MemberKey { get; set; } = Guid.NewGuid();
 
     /// <summary>
-    /// The code this person shares so another kurin can find them. Derived from
-    /// <see cref="MemberKey"/> — see <c>MemberPublicId</c>.
+    /// The code this person shares so another kurin can find them. Drawn at random when the member
+    /// is first saved, never derived from <see cref="MemberKey"/> — see <c>MemberPublicId</c>.
     /// </summary>
     public string PublicId { get; set; } = string.Empty;
     public Guid? UserKey { get; set; }

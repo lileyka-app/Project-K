@@ -50,6 +50,19 @@ public sealed class MemberDirectory : IMemberDirectory
         return member?.PlastLevelHistory.Select(h => h.PlastLevel).ToList() ?? [];
     }
 
+    public async Task<string?> GetPublicIdAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken))?.PublicId;
+
+    public async Task<DateOnly?> GetDateOfBirthAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken))?.DateOfBirth is { } born && born != default ? born : null;
+
+    public async Task<IReadOnlyList<ConfirmedAward>> GetConfirmedAwardsAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.MemberAwards.GetByMemberKeyAsync(memberKey, cancellationToken))
+            .Where(a => a.Status == BadgeProgressStatus.Confirmed)
+            .OrderByDescending(a => a.DateAcquired)
+            .Select(a => new ConfirmedAward(a.Level, a.CatalogId, a.DateAcquired))
+            .ToList();
+
     public Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)

@@ -1,4 +1,5 @@
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Models;
 
@@ -7,6 +8,8 @@ public sealed class MyKurinRefDto
 {
     public Guid KurinKey { get; set; }
     public int? KurinNumber { get; set; }
+    /// <summary>Every гілка with the kurin's number there, main one first.</summary>
+    public IReadOnlyList<KurinNumbering> Branches { get; set; } = [];
     public string? NamedAfter { get; set; }
     /// <summary>Whether this is the kurin the token acts in; what can be done from the dashboard depends on it.</summary>
     public bool IsCurrent { get; set; }

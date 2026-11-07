@@ -1,0 +1,11 @@
+@if (isSenior()) {
+  @if (emblemUrl(); as url) {
+    <img class="kurin-mark__emblem" [src]="url" [alt]="name() ? 'Емблема: ' + name() : 'Емблема куреня'" />
+  } @else {
+    <span class="kurin-mark__empty" role="img" aria-label="Емблему ще не завантажено">
+      <i class="pi pi-flag" aria-hidden="true"></i>
+    </span>
+  }
+} @else {
+  <app-kurin-number [number]="number()" />
+}

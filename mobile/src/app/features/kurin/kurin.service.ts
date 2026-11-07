@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
+import { rememberKurinRoleNames } from './kurin.labels';
 import { CountryCode } from 'libphonenumber-js';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
@@ -15,13 +16,24 @@ import {
   KurinDto,
   LeadershipDto,
   MemberAwardDto,
+  AwardLevel,
+  CatalogHonour,
   MemberDto,
   MemberDuesDto,
   MemberLookupDto,
+  MembershipCandidateDto,
+  FormerMemberStandingDto,
+  MembershipRequestDto,
+  MembershipRequestKind,
   MemberWarningDto,
   MembershipDto,
   MentorAssignmentDto,
   ProbeProgressDto,
+  ProbeProjectImageDto,
+  ProbeProjectRequest,
+  ThirdProbeDto,
+  ThirdProbeFileRequest,
+  ThirdProbeStagesRequest,
   ProbeSummaryDto,
   UpsertAwardRequest,
   UpsertLeadershipRequest,
@@ -30,6 +42,7 @@ import {
 import { KraiProfileCardFields, NewMemberPlacement, cardFieldsOf } from './member-edit';
 import { browserTimeZone } from './kurin-profile';
 import { MemberAbilities } from './abilities';
+import { KurinTagsDto } from './kurin-tags';
 
 /**
  * The endpoints the web's kurinModule services call (kurin, group, member, leadership,
@@ -48,8 +61,16 @@ export class KurinApi {
   /** Bumped after a провід is saved: the kurin tab and the провід page above it read it again. */
   readonly leadershipChanged = signal(0);
 
+  /** The kurin's tags (web KurinTagService); empty with `enabled: false` when the kurin has them off. */
+  kurinTags(kurinKey: string): Promise<KurinTagsDto> {
+    return this.api.get(`kurin/${kurinKey}/tags`);
+  }
+
   kurin(kurinKey: string): Promise<KurinDto> {
-    return this.api.get(`kurin/${kurinKey}`);
+    return this.api.get<KurinDto>(`kurin/${kurinKey}`).then((kurin) => {
+      rememberKurinRoleNames(kurin.kurinKey, kurin.roleNames);
+      return kurin;
+    });
   }
 
   /** The kurin's record (web kurin-panel «Редагування даних куреня»); the whole record goes back. */
@@ -167,6 +188,68 @@ export class KurinApi {
     return this.api.get(`member/${memberKey}/probes/${probeId}/progress`);
   }
 
+  /** The «Третя проба» tab (web member-progress getThirdProbe). Every write below answers with it too. */
+  thirdProbe(memberKey: string, probeId: string): Promise<ThirdProbeDto> {
+    return this.api.get(this.thirdProbeUrl(memberKey, probeId));
+  }
+
+  saveThirdProbeFile(memberKey: string, probeId: string, body: ThirdProbeFileRequest): Promise<ThirdProbeDto> {
+    return this.api.put(this.thirdProbeUrl(memberKey, probeId), body);
+  }
+
+  setThirdProbeStages(memberKey: string, probeId: string, body: ThirdProbeStagesRequest): Promise<ThirdProbeDto> {
+    return this.api.put(`${this.thirdProbeUrl(memberKey, probeId)}/stages`, body);
+  }
+
+  confirmReflection(memberKey: string, probeId: string, sign: boolean): Promise<ThirdProbeDto> {
+    const url = `${this.thirdProbeUrl(memberKey, probeId)}/reflection/confirmation`;
+    return sign ? this.api.put(url) : this.api.delete(url);
+  }
+
+  uploadCampCertificate(memberKey: string, probeId: string, file: File): Promise<ThirdProbeDto> {
+    const body = new FormData();
+    body.append('file', file, file.name || 'posvidka');
+    return this.api.post(`${this.thirdProbeUrl(memberKey, probeId)}/camp/certificate`, body);
+  }
+
+  deleteCampCertificate(memberKey: string, probeId: string): Promise<ThirdProbeDto> {
+    return this.api.delete(`${this.thirdProbeUrl(memberKey, probeId)}/camp/certificate`);
+  }
+
+  saveProbeProject(memberKey: string, probeId: string, projectKey: string | null, body: ProbeProjectRequest): Promise<{ projectKey: string; tab: ThirdProbeDto }> {
+    const url = this.projectsUrl(memberKey, probeId);
+    return projectKey ? this.api.put(`${url}/${projectKey}`, body) : this.api.post(url, body);
+  }
+
+  deleteProbeProject(memberKey: string, probeId: string, projectKey: string): Promise<ThirdProbeDto> {
+    return this.api.delete(`${this.projectsUrl(memberKey, probeId)}/${projectKey}`);
+  }
+
+  swapSpareProject(memberKey: string, probeId: string, spareKey: string, mainKey: string): Promise<ThirdProbeDto> {
+    return this.api.post(`${this.projectsUrl(memberKey, probeId)}/${spareKey}/swap/${mainKey}`);
+  }
+
+  /** «Дозвіл» (`approval`) or «Успішно виконав» (`completion`), given or taken back. */
+  signProbeProject(memberKey: string, probeId: string, projectKey: string, part: 'approval' | 'completion', sign: boolean, comment: string | null = null): Promise<ThirdProbeDto> {
+    const url = `${this.projectsUrl(memberKey, probeId)}/${projectKey}/${part}`;
+    if (!sign) return this.api.delete(url);
+    return this.api.put(url, part === 'completion' ? { coordinatorComment: comment } : {});
+  }
+
+  uploadProbeProjectImage(memberKey: string, probeId: string, projectKey: string, file: File): Promise<ProbeProjectImageDto> {
+    const body = new FormData();
+    body.append('file', file, file.name || 'image.jpg');
+    return this.api.post(`${this.projectsUrl(memberKey, probeId)}/${projectKey}/images`, body);
+  }
+
+  private thirdProbeUrl(memberKey: string, probeId: string): string {
+    return `member/${memberKey}/probes/${encodeURIComponent(probeId)}/third-probe`;
+  }
+
+  private projectsUrl(memberKey: string, probeId: string): string {
+    return `member/${memberKey}/probes/${encodeURIComponent(probeId)}/projects`;
+  }
+
   signPoint(memberKey: string, probeId: string, pointId: string, sign: boolean): Promise<ProbeProgressDto> {
     return this.api.put(`member/${memberKey}/probes/${probeId}/points/${pointId}/${sign ? 'sign' : 'unsign'}`, { note: null });
   }
@@ -181,6 +264,22 @@ export class KurinApi {
 
   deleteAward(memberKey: string, awardKey: string): Promise<void> {
     return this.api.delete(`member/${memberKey}/awards/${awardKey}`);
+  }
+
+  /** Pins or unpins one of the caller's own відзначення: every grant of that level or catalogue id. */
+  pinAward(request: { level?: AwardLevel | null; catalogId?: string | null; pinned: boolean }): Promise<boolean> {
+    return this.api.put('me/awards/pin', request);
+  }
+
+  private honoursRead?: Promise<CatalogHonour[]>;
+
+  /** The catalogue's ступені and senior відзначення, read once; a failed read is tried again next time. */
+  honours(): Promise<CatalogHonour[]> {
+    this.honoursRead ??= this.api.get<CatalogHonour[]>('catalog/honours').catch((error) => {
+      this.honoursRead = undefined;
+      throw error;
+    });
+    return this.honoursRead;
   }
 
   reviewAward(memberKey: string, awardKey: string, isApproved: boolean): Promise<MemberAwardDto> {
@@ -278,6 +377,40 @@ export class KurinApi {
     this.membersChanged.update((n) => n + 1);
   }
 
+
+  /** Former members with the kurins they stand in now, for taking someone back. */
+  formerStanding(kurinKey: string): Promise<FormerMemberStandingDto[]> {
+    return this.api.get(`kurin/${kurinKey}/membership-requests/former`);
+  }
+
+  /** The kurin's requests both ways (web «Реєстр», mode «Переходи»). */
+  membershipRequests(kurinKey: string): Promise<{ incoming: MembershipRequestDto[]; outgoing: MembershipRequestDto[] }> {
+    return this.api.get(`kurin/${kurinKey}/membership-requests`);
+  }
+
+  /** The person a code names, with the kurins they stand in now. */
+  membershipCandidate(kurinKey: string, publicId: string): Promise<MembershipCandidateDto> {
+    return this.api.get(`kurin/${kurinKey}/memberships/candidate`, { publicId });
+  }
+
+  /** Asks for a person; someone who stands nowhere is taken in at once (`joined`). */
+  async requestMembership(
+    kurinKey: string,
+    body: { publicId?: string; memberKey?: string; kind: MembershipRequestKind; membershipKind: 'Youth' | 'Staff'; fromKurinKey: string | null },
+  ): Promise<{ membershipRequestKey: string | null; joined: boolean }> {
+    const sent = await this.api.post<{ membershipRequestKey: string | null; joined: boolean }>(`kurin/${kurinKey}/membership-requests`, body);
+    if (sent.joined) this.membersChanged.update((n) => n + 1);
+    return sent;
+  }
+
+  async decideMembershipRequest(kurinKey: string, requestKey: string, approve: boolean): Promise<void> {
+    await this.api.post(`kurin/${kurinKey}/membership-requests/${requestKey}/${approve ? 'approve' : 'decline'}`, {});
+    if (approve) this.membersChanged.update((n) => n + 1);
+  }
+
+  cancelMembershipRequest(kurinKey: string, requestKey: string): Promise<unknown> {
+    return this.api.delete(`kurin/${kurinKey}/membership-requests/${requestKey}`);
+  }
   /** The КВ people who may be a гурток's виховник (the Звʼязковий only). */
   mentorCandidates(kurinKey: string): Promise<MemberLookupDto[]> {
     return this.api.get(`member/members/mentor-candidates/${kurinKey}`);

@@ -160,7 +160,7 @@ public record AgendaPartDto
 
 /// <summary>
 /// The "Assign for" tree, flagged by what the kurin's policy lets the current user target: each kind of
-/// target (the kurin, a гурток, a провід, a person) has its own row. A гурток is listed when anything
+/// target (the kurin, a гурток, a провід, a person, a tag) has its own row. A гурток is listed when anything
 /// in it may be picked.
 /// </summary>
 public record AgendaAssignTargetsResponse
@@ -172,6 +172,23 @@ public record AgendaAssignTargetsResponse
     /// <summary>Kurin-level проводи the viewer may target: КВ and Курінний провід.</summary>
     public List<AgendaLeadershipTargetDto> KurinLeaderships { get; set; } = [];
     public List<AgendaGroupTargetDto> Groups { get; set; } = [];
+
+    /// <summary>
+    /// People in no гурток and not in the КВ — in a senior kurin, everyone. Listed one by one, so an
+    /// item can be aimed at a person a гурток would never reach.
+    /// </summary>
+    public List<AgendaMemberTargetDto> UnplacedMembers { get; set; } = [];
+
+    /// <summary>The kurin's tags, when it uses them and the viewer may aim at them; empty otherwise.</summary>
+    public List<AgendaTagTargetDto> Tags { get; set; } = [];
+}
+
+/// <summary>Everyone carrying a kurin tag, as one target.</summary>
+public record AgendaTagTargetDto
+{
+    public Guid KurinTagKey { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string ColorHex { get; set; } = string.Empty;
 }
 
 public record AgendaGroupTargetDto
@@ -192,6 +209,12 @@ public record AgendaLeadershipTargetDto
     public Guid LeadershipKey { get; set; }
     public string Label { get; set; } = string.Empty;
     public bool CanTarget { get; set; }
+
+    /// <summary>
+    /// The КВ's members who are in no гурток, to pick one by one; a member placed in a гурток is
+    /// picked there. Empty for every other провід.
+    /// </summary>
+    public List<AgendaMemberTargetDto> Members { get; set; } = [];
 }
 
 public record AgendaMemberTargetDto

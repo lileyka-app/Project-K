@@ -12,6 +12,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
 {
     private const string PhoneLabel = "Телефон";
     private const string LevelLabel = "Ступінь";
+    private const string TagsLabel = "Теги";
 
     /// <summary>
     /// Draws the report. Every timestamp in <paramref name="report"/> is UTC — that is how they are
@@ -57,8 +58,8 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 // Той самий порядок, що й на екрані реєстру: спершу юнаки, потім кадра, потім
                 // чисельність. Провід читає одне поруч з іншим, і різний порядок змушував би
                 // щоразу перевіряти, чи це та сама таблиця.
-                column.Item().Element(container => ComposeYouthSection(container, report.Youth));
-                column.Item().Element(container => ComposeStaffSection(container, report.Staff));
+                column.Item().Element(container => ComposeYouthSection(container, report.Youth, report.ShowsTags));
+                column.Item().Element(container => ComposeStaffSection(container, report.Staff, report.ShowsTags));
                 column.Item().Element(container => ComposeLevelTally(container, report.LevelTally));
             });
         });
@@ -102,18 +103,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 column.Item().Row(row =>
                 {
                     row.ConstantItem(92).Element(container => ComposePhotoPlaceholder(container, member));
-                    row.RelativeItem().Element(container => KeyValueGrid(container, new[]
-                    {
-                        ("Ініціали", member.Initials),
-                        ("Гурток", member.GroupName ?? "-"),
-                        ("Пошта", member.Email),
-                        (PhoneLabel, member.PhoneNumber),
-                        ("Дата народження", member.DateOfBirth.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
-                        ("Адреса", member.Address ?? "-"),
-                        ("Школа", member.School ?? "-"),
-                        (LevelLabel, KurinReportTerminology.PlastLevel(member.LatestPlastLevel)),
-                        ("Діловодство", FormatList(CurrentOffices(member)))
-                    }));
+                    row.RelativeItem().Element(container => KeyValueGrid(container, MemberFacts(report, member)));
                 });
 
                 column.Item().Element(container => ComposeProbeState(container, member, zone));
@@ -122,6 +112,29 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 column.Item().Element(container => ComposeLeadershipHistory(container, member));
             });
         });
+    }
+
+    // A person's facts on their картотека page; tags only when the kurin uses them.
+    private static List<(string Label, string Value)> MemberFacts(KurinReportData report, KurinReportMember member)
+    {
+        var facts = new List<(string Label, string Value)>
+        {
+            ("Ініціали", member.Initials),
+            ("Гурток", member.GroupName ?? "-"),
+            ("Пошта", member.Email),
+            (PhoneLabel, member.PhoneNumber),
+            ("Дата народження", member.DateOfBirth.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            ("Адреса", member.Address ?? "-"),
+            ("Школа", member.School ?? "-"),
+            (LevelLabel, KurinReportTerminology.PlastLevel(member.LatestPlastLevel)),
+            ("Діловодство", FormatList(CurrentOffices(member)))
+        };
+        if (report.ShowsTags)
+        {
+            facts.Add((TagsLabel, FormatList(member.Tags)));
+        }
+
+        return facts;
     }
 
     private static void ConfigurePage(PageDescriptor page, KurinReportData report, TimeZoneInfo zone)
@@ -151,7 +164,11 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text(report.Kurin.Number is int number ? $"Курінь #{number}" : "Підготовчий курінь").FontSize(15).Bold();
+                column.Item().Text(Title(report.Kurin)).FontSize(15).Bold();
+                if (report.Kurin.IsSenior && report.Kurin.NamedAfter is not null)
+                {
+                    column.Item().Text(report.Kurin.SeniorBranches!).FontSize(9).FontColor(Colors.Grey.Darken1);
+                }
                 column.Item().Text("Beta export звіту").FontSize(8).SemiBold().FontColor(Colors.Orange.Darken2);
                 column.Item().Text($"Звіт сформовано: {ReportClock.Format(report.Header.GeneratedAtUtc, zone)} {ReportClock.Label(zone)}").FontSize(8).FontColor(Colors.Grey.Darken1);
             });
@@ -179,20 +196,40 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             column.Item().Element(item => SectionHeader(item, "Інформація куреня"));
             column.Item().Row(row =>
             {
-                row.ConstantItem(110).Element(item => ComposeKurinSilhouette(item, report.Kurin.Number));
-                row.RelativeItem().Element(item => KeyValueGrid(item, new[]
+                // The red number plate is a УПЮ відзнака; a senior kurin's report goes without it.
+                if (!report.Kurin.IsSenior)
                 {
-                    ("Число куреня", report.Kurin.Number?.ToString(CultureInfo.InvariantCulture) ?? "підготовчий"),
-                    ("Станиця", report.Kurin.Stanytsia ?? "-"),
-                    ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
-                    ("Ім. кого", report.Kurin.NamedAfter ?? "-"),
-                    ("Опис", report.Kurin.Description ?? "-")
-                }));
+                    row.ConstantItem(110).Element(item => ComposeKurinSilhouette(item, report.Kurin.Number));
+                }
+
+                row.RelativeItem().Element(item => KeyValueGrid(item, report.Kurin.IsSenior
+                    ? new[]
+                    {
+                        ("Улади й числа", report.Kurin.SeniorBranches!),
+                        ("Назва", report.Kurin.NamedAfter ?? "-"),
+                        ("Станиця", report.Kurin.Stanytsia ?? "-"),
+                        ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
+                        ("Опис", report.Kurin.Description ?? "-")
+                    }
+                    : new[]
+                    {
+                        ("Число куреня", report.Kurin.Number?.ToString(CultureInfo.InvariantCulture) ?? "підготовчий"),
+                        ("Станиця", report.Kurin.Stanytsia ?? "-"),
+                        ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
+                        ("Ім. кого", report.Kurin.NamedAfter ?? "-"),
+                        ("Опис", report.Kurin.Description ?? "-")
+                    }));
             });
         });
     }
 
     /// <summary>The kurin's plaque; a підготовчий курінь has no number yet, so its plaque is blank.</summary>
+    /// <summary>«Курінь #47»; a senior kurin by its own name, else its гілки.</summary>
+    private static string Title(KurinReportKurin kurin)
+        => kurin.IsSenior
+            ? kurin.NamedAfter ?? kurin.SeniorBranches!
+            : kurin.Number is int number ? $"Курінь #{number}" : "Підготовчий курінь";
+
     private static void ComposeKurinSilhouette(IContainer container, int? number)
     {
         container
@@ -306,7 +343,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         });
     }
 
-    private static void ComposeYouthSection(IContainer container, IReadOnlyList<KurinReportMember> members)
+    private static void ComposeYouthSection(IContainer container, IReadOnlyList<KurinReportMember> members, bool showsTags)
     {
         container.Column(column =>
         {
@@ -327,12 +364,20 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     columns.RelativeColumn(3);
                     columns.RelativeColumn(3);
                     columns.RelativeColumn(3);
+                    if (showsTags)
+                    {
+                        columns.RelativeColumn(3);
+                    }
                 });
 
                 HeaderCell(table, "ПІБ");
                 HeaderCell(table, "Гурток");
                 HeaderCell(table, LevelLabel);
                 HeaderCell(table, PhoneLabel);
+                if (showsTags)
+                {
+                    HeaderCell(table, TagsLabel);
+                }
 
                 foreach (var member in members)
                 {
@@ -340,6 +385,10 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     BodyCell(table, member.GroupName ?? "-");
                     BodyCell(table, KurinReportTerminology.PlastLevel(member.LatestPlastLevel));
                     BodyCell(table, member.PhoneNumber);
+                    if (showsTags)
+                    {
+                        BodyCell(table, FormatList(member.Tags));
+                    }
                 }
             });
         });
@@ -349,7 +398,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
     /// Кадра виховників. Замість власного гуртка — закріплення: виховника членство ставить у курінь
     /// і зазвичай у жоден гурток, тож та колонка в них порожня.
     /// </summary>
-    private static void ComposeStaffSection(IContainer container, IReadOnlyList<KurinReportMember> members)
+    private static void ComposeStaffSection(IContainer container, IReadOnlyList<KurinReportMember> members, bool showsTags)
     {
         container.Column(column =>
         {
@@ -371,6 +420,10 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     columns.RelativeColumn(3);
                     columns.RelativeColumn(2);
                     columns.RelativeColumn(3);
+                    if (showsTags)
+                    {
+                        columns.RelativeColumn(3);
+                    }
                 });
 
                 HeaderCell(table, "ПІБ");
@@ -378,6 +431,10 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 HeaderCell(table, "Пошта");
                 HeaderCell(table, PhoneLabel);
                 HeaderCell(table, "Діловодство");
+                if (showsTags)
+                {
+                    HeaderCell(table, TagsLabel);
+                }
 
                 foreach (var member in members)
                 {
@@ -386,6 +443,10 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     BodyCell(table, member.Email);
                     BodyCell(table, member.PhoneNumber);
                     BodyCell(table, FormatList(CurrentOffices(member)));
+                    if (showsTags)
+                    {
+                        BodyCell(table, FormatList(member.Tags));
+                    }
                 }
             });
         });

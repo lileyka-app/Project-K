@@ -124,4 +124,25 @@ describe('WaitlistRegistrationComponent', () => {
     expect(component.form.value.isPreparatoryKurin).toBe(true);
     expect(element().querySelector('#kurin')).toBeNull();
   });
+
+  it('keeps УПЮ alone, and sends a senior kurin with a number in each of УСП and УПС', () => {
+    fillEverythingBut(true);
+    component.form.patchValue({ ulady: ['UPYu', 'USP'] });
+    expect(component.form.value.ulady).toEqual(['USP']);
+    component.form.patchValue({ ulady: ['USP', 'UPS'] });
+    fixture.detectChanges();
+    expect(element().querySelector('#kurin')).toBeNull();
+    expect(component.form.invalid).toBe(true);
+
+    component.form.patchValue({ uspNumber: '5', upsNumber: '20' });
+    expect(component.form.valid).toBe(true);
+    component.onSubmit();
+
+    expect(submitted?.uspNumber).toBe(5);
+    expect(submitted?.upsNumber).toBe(20);
+    expect(submitted?.claimedKurinNameOrNumber).toBeNull();
+
+    component.form.patchValue({ ulady: ['USP', 'UPS', 'UPYu'] });
+    expect(component.form.value.ulady).toEqual(['UPYu']);
+  });
 });

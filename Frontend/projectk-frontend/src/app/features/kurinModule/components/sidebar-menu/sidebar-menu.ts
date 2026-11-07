@@ -22,6 +22,16 @@ import { DuesGroupLinkDto } from '../../../duesModule/models/group-dues.dto';
 import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
 import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
+import { MembershipService } from '../../services/membership-service/membership.service';
+import { RegistryModes } from '../../pages/registry/registry-modes';
+
+/** Чим курінь користується — від цього залежать пункти меню. */
+interface KurinMenuFeatures {
+  youth: boolean;
+  score: boolean;
+}
+
+const ALL_FEATURES: KurinMenuFeatures = { youth: true, score: true };
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -35,7 +45,9 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly kurinService = inject(KurinService);
   private readonly waitlistAttention = inject(WaitlistAttentionService);
   private readonly duesService = inject(DuesService);
+  private readonly memberships = inject(MembershipService);
   private readonly installApp = inject(InstallAppService);
+  private readonly registryModes = inject(RegistryModes);
   readonly visible = model(false);
   /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
   readonly reportVisible = signal(false);
@@ -74,11 +86,13 @@ export class SidebarMenuComponent implements OnChanges {
           }
         }),
         switchMap(([state, url]) => combineLatest([
-          this.youthProgram$(state?.kurinKey ?? null),
+          this.features$(state?.kurinKey ?? null),
           this.waitlistAttention.pending$,
-          this.duesGroups$(state?.kurinKey ?? null)
+          this.duesGroups$(state?.kurinKey ?? null),
+          this.requestsWaiting$(state?.kurinKey ?? null)
         ]).pipe(
-          map(([isYouthKurin, pendingWaitlist, duesGroups]) => this.markCurrent(this.buildItems(state, isYouthKurin, pendingWaitlist, duesGroups), url))
+          map(([features, pendingWaitlist, duesGroups, requestsWaiting]) =>
+            this.markCurrent(this.buildItems(state, features, pendingWaitlist, duesGroups, requestsWaiting), url))
         ))
       );
       this.email$ = this.state$().pipe(
@@ -128,18 +142,19 @@ export class SidebarMenuComponent implements OnChanges {
   }
 
   /**
-   * Чи веде цей курінь юнацький вишкіл. Курінь читається через кеш, який і так скидається при зміні
-   * скоупу, тож перемикання куреня саме собою приносить правильну відповідь.
+   * Чим користується цей курінь: юнацький вишкіл (за гілкою) і точкування (перемикач у налаштуваннях).
+   * Курінь читається через кеш, який і так скидається при зміні скоупу, тож перемикання куреня саме
+   * собою приносить правильну відповідь.
    */
-  private youthProgram$(kurinKey: string | null): Observable<boolean> {
+  private features$(kurinKey: string | null): Observable<KurinMenuFeatures> {
     if (!kurinKey) {
-      return of(true);
+      return of(ALL_FEATURES);
     }
 
     return this.kurinService.getByKey(kurinKey).pipe(
-      map(kurin => hasYouthProgram(kurin.branch)),
+      map(kurin => ({ youth: hasYouthProgram(kurin.branch), score: kurin.scoreEnabled ?? true })),
       // Не змогли прочитати курінь — не привід ховати пункт меню, який людина має право бачити.
-      catchError(() => of(true))
+      catchError(() => of(ALL_FEATURES))
     );
   }
 
@@ -155,14 +170,26 @@ export class SidebarMenuComponent implements OnChanges {
     return this.duesService.getReadableGroups(kurinKey).pipe(catchError(() => of([])));
   }
 
-  private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = []): MenuItem[] {
+  /**
+   * Скільки запитів від інших куренів чекає відповіді Звʼязкового. Перечитується з кожним переходом,
+   * тож крапка гасне одразу після відповіді.
+   */
+  private requestsWaiting$(kurinKey: string | null): Observable<number> {
+    if (!kurinKey || !this.permissionService.canManageWholeKurin()) {
+      return of(0);
+    }
+
+    return this.memberships.waitingRequests(kurinKey).pipe(catchError(() => of(0)));
+  }
+
+  private buildItems(state: AuthState | null, features: KurinMenuFeatures = ALL_FEATURES, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = [], requestsWaiting = 0): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
 
     return [
       ...(memberKey ? this.personalItems(memberKey) : []),
-      ...(kurinKey ? this.kurinItems(kurinKey, isYouthKurin, duesGroups) : []),
+      ...(kurinKey ? this.kurinItems(kurinKey, features, duesGroups, requestsWaiting) : []),
       ...(isAdmin && !kurinKey ? this.adminItems(pendingWaitlist) : []),
       ...this.commonItems()
     ];
@@ -185,25 +212,23 @@ export class SidebarMenuComponent implements OnChanges {
     ];
   }
 
-  private kurinItems(kurinKey: string, isYouthKurin: boolean, duesGroups: DuesGroupLinkDto[]): MenuItem[] {
-    const canSeeRegistry = this.permissionService.isAdmin()
-      || this.permissionService.canManageWholeKurin()
-      || this.permissionService.canLeadGroups();
-    const canManageKurinSettings = this.permissionService.canManageKurinSettings();
+  private kurinItems(kurinKey: string, features: KurinMenuFeatures, duesGroups: DuesGroupLinkDto[], requestsWaiting: number): MenuItem[] {
+    const isYouthKurin = features.youth;
     const disabled = !kurinKey;
     const items: MenuItem[] = [
       this.navItem({ label: 'Курінь', icon: 'pi pi-flag', routerLink: ['/kurin'], disabled })
     ];
 
-    // Реєстр — суцільний склад куреня рядками, з контактами. Це інструмент проводу, тож
-    // юнакові його не показуємо; сторінка так само закрита capabilityGuard.
-    if (canSeeRegistry) {
-      items.push(this.navItem({ label: 'Реєстр', icon: 'pi pi-table', routerLink: ['/kurin/registry'], disabled }));
-    }
-
-    // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового.
-    if (canManageKurinSettings) {
-      items.push(this.navItem({ label: 'Імпорт складу', icon: 'pi pi-upload', routerLink: ['/kurin/import'], disabled }));
+    // «Реєстр» — склад, переходи, архів, імпорт на одній сторінці. Пункт є, коли людина має бодай
+    // один режим; крапка — є запит від іншого куреня, на який чекають відповіді.
+    if (this.registryModes.available().length) {
+      items.push(this.navItem({
+        label: 'Реєстр',
+        icon: 'pi pi-table',
+        routerLink: ['/kurin/registry'],
+        disabled,
+        styleClass: requestsWaiting > 0 ? 'lil-menu-item--attention' : undefined
+      }));
     }
 
     // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
@@ -212,9 +237,11 @@ export class SidebarMenuComponent implements OnChanges {
     items.push(
       this.navItem({ label: 'Календар', icon: 'pi pi-calendar', routerLink: ['/calendar', kurinKey] }),
       this.navItem({ label: 'Задачі', icon: 'pi pi-check-square', routerLink: ['/tasks', kurinKey] }),
-      this.navItem({ label: 'Планування', icon: 'pi pi-clock', routerLink: ['/planning', kurinKey] }),
-      this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] })
+      this.navItem({ label: 'Планування', icon: 'pi pi-clock', routerLink: ['/planning', kurinKey] })
     );
+    if (features.score) {
+      items.push(this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] }));
+    }
 
     // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
     // сторінки, разом із іконками pi-sitemap і pi-address-book.
@@ -233,7 +260,7 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Вкладка куреня', icon: 'pi pi-wallet', routerLink: ['/kurin', kurinKey, 'dues'] }));
     }
 
-    if (canManageKurinSettings) {
+    if (this.permissionService.canReadKurinSettings()) {
       items.push(this.navItem({ label: 'Налаштування куреня', icon: 'pi pi-cog', routerLink: ['/kurin', kurinKey, 'settings'] }));
     }
 

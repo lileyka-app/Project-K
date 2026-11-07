@@ -1,0 +1,32 @@
+:host {
+  --kurin-mark-size: 10rem;
+  display: inline-block;
+}
+
+app-kurin-number {
+  --kurin-number-size: var(--kurin-mark-size);
+}
+
+.kurin-mark__emblem {
+  display: block;
+  width: var(--kurin-mark-size);
+  height: var(--kurin-mark-size);
+  object-fit: contain;
+}
+
+.kurin-mark__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--kurin-mark-size);
+  height: var(--kurin-mark-size);
+  box-sizing: border-box;
+  border: 1px dashed var(--p-content-border-color);
+  border-radius: 12px;
+  color: var(--p-text-muted-color);
+  font-size: calc(var(--kurin-mark-size) * 0.3);
+}
+
+.kurin-mark__empty .pi {
+  font-size: inherit;
+}

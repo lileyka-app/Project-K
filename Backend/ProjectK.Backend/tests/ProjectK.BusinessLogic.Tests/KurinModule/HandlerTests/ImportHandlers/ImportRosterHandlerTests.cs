@@ -81,6 +81,20 @@ public class ImportRosterHandlerTests
     /// run does it, and a row without an address is rejected and says why.
     /// </summary>
     [Fact]
+    public async Task ASeniorKurin_IsRefused_AndGetsNoGroups()
+    {
+        _kurins.Setup(r => r.GetByKeyAsync(KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(5, KurinBranch.USP) { KurinKey = KurinKey });
+
+        var report = await _handler.Handle(
+            new ImportRosterCommand(KurinKey, [Row(2, "Петренко", "Іван", "01.01.1990", "", "", "Ведмеді", "5", "ivan@example.com")], FullMapping, CreateMissingGroups: true, DryRun: false),
+            CancellationToken.None);
+
+        report.ErrorCode.Should().Be(ImportRosterCommandHandler.NotForSeniorKurinCode);
+        _groups.Verify(g => g.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ARowWithAnAddress_IsPromisedAnAccount_OnADryRun_AndOneWithoutIsRejected()
     {
         var report = await _handler.Handle(

@@ -39,6 +39,14 @@ public static class RolePermissionMap
     // everyone's. So the гурток's score and the КВ's private one stay out of the baseline read.
     private static readonly ResourceType[] ScoreResources = [ResourceType.GroupScore, ResourceType.KurinScorePrivate];
 
+    // The kurin's settings are the КВ's to read, not every member's.
+    private static readonly ResourceType[] SettingsResources = [ResourceType.KurinSettings];
+
+    // The archive is for those who may correct it: the Звʼязковий, and a гурток's провід for its own.
+    private static readonly ResourceType[] ArchiveResources = [ResourceType.KurinArchive];
+
+    private static readonly ResourceAction[] ArchiveCorrecting = [ResourceAction.Read, ResourceAction.Update];
+
     private static readonly ResourceAction[] DuesKeeping =
         [ResourceAction.Read, ResourceAction.Create, ResourceAction.Update, ResourceAction.Delete];
 
@@ -62,13 +70,15 @@ public static class RolePermissionMap
             Append(KurinProvidGrants, new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.KurinWide)),
             ResourceType.GroupScore, AccessScope.KurinWide, ScoreKeeping);
 
-    // Гуртковий: as Курінний, bounded to his гурток, and he keeps the гурток's box.
+    // Гуртковий: as Курінний, bounded to his гурток, and he keeps the гурток's box and corrects its archive.
     private static readonly IReadOnlyList<Permission> HurtkovyyGrants =
         WithActions(
             WithActions(
-                Append(GroupProvidGrants, new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.OwnGroups)),
-                ResourceType.GroupDues, AccessScope.OwnGroups, DuesKeeping),
-            ResourceType.GroupScore, AccessScope.OwnGroups, ScoreKeeping);
+                WithActions(
+                    Append(GroupProvidGrants, new Permission(ResourceType.Leadership, ResourceAction.Update, AccessScope.OwnGroups)),
+                    ResourceType.GroupDues, AccessScope.OwnGroups, DuesKeeping),
+                ResourceType.GroupScore, AccessScope.OwnGroups, ScoreKeeping),
+            ResourceType.KurinArchive, AccessScope.OwnGroups, ArchiveCorrecting);
 
     // Гуртковий скарбник: the гурток's провід, and the гурток's box.
     private static readonly IReadOnlyList<Permission> GroupSkarbnykGrants =
@@ -316,7 +326,7 @@ public static class RolePermissionMap
     {
         var grants = new List<Permission>();
         var policyRead = AllResources.Where(resource => KurinCapabilities.IsConfigurable(resource, ResourceAction.Read));
-        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources).Except(policyRead))
+        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources).Except(SettingsResources).Except(ArchiveResources).Except(policyRead))
         {
             grants.Add(new Permission(resource, ResourceAction.Read, AccessScope.KurinWide));
         }
@@ -378,6 +388,12 @@ public static class RolePermissionMap
         // He scores his гурток, and with the other впорядники keeps the КВ's own score.
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.GroupScore, action, AccessScope.OwnGroups)));
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.KurinScorePrivate, action, AccessScope.KurinWide)));
+
+        // He reads the kurin's settings with the rest of the КВ; only the Звʼязковий changes them.
+        grants.Add(new Permission(ResourceType.KurinSettings, ResourceAction.Read, AccessScope.KurinWide));
+
+        // He corrects his гурток's archive; deleting from it stays the Звʼязковий's.
+        grants.AddRange(ArchiveCorrecting.Select(action => new Permission(ResourceType.KurinArchive, action, AccessScope.OwnGroups)));
         return WithoutPolicyPairs(grants);
     }
 
@@ -405,11 +421,14 @@ public static class RolePermissionMap
         }
 
         // The baseline leaves money out of what everyone reads; he reads all of it.
-        grants.AddRange(DuesResources.Concat(ScoreResources).Select(resource => new Permission(resource, ResourceAction.Read, AccessScope.KurinWide)));
+        grants.AddRange(DuesResources.Concat(ScoreResources).Concat(SettingsResources).Select(resource => new Permission(resource, ResourceAction.Read, AccessScope.KurinWide)));
 
         // Kurin settings, but not the irreversible Delete/Manage (Admin-only).
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Create, AccessScope.KurinWide));
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Update, AccessScope.KurinWide));
+
+        // The whole archive; Delete is the danger zone, which also asks for its ticket.
+        grants.AddRange(ArchiveCorrecting.Append(ResourceAction.Delete).Select(action => new Permission(ResourceType.KurinArchive, action, AccessScope.KurinWide)));
         return WithoutPolicyPairs(grants);
     }
 

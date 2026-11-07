@@ -28,6 +28,18 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
         => await AsRecords(Context.Memberships.Where(m => m.MemberKey == memberKey))
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetRecordsForMembersAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = Context.Memberships.Where(m => memberKeys.Contains(m.MemberKey));
+        var owners = await rows.Select(m => new { m.MembershipKey, m.MemberKey }).ToDictionaryAsync(m => m.MembershipKey, m => m.MemberKey, cancellationToken);
+        var records = await AsRecords(rows).ToListAsync(cancellationToken);
+        return records
+            .GroupBy(record => owners[record.MembershipKey])
+            .ToDictionary(group => group.Key, group => (IReadOnlyCollection<MembershipRecord>)group.ToList());
+    }
+
     public async Task<IReadOnlyCollection<FormerMember>> GetFormerInKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)
@@ -107,7 +119,8 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                     m.Group != null ? m.Group.Name : null,
                     m.Kind,
                     m.JoinedAtUtc,
-                    m.LeftAtUtc)
+                    m.LeftAtUtc,
+                    m.Kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList())
             })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -153,7 +166,8 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                 m.Group != null ? m.Group.Name : null,
                 m.Kind,
                 m.JoinedAtUtc,
-                m.LeftAtUtc));
+                m.LeftAtUtc,
+                m.Kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList()));
 
     public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => Context.Memberships.CountAsync(m => m.MemberKey == memberKey, cancellationToken);
@@ -195,13 +209,7 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
         Guid? groupKey,
         CancellationToken cancellationToken = default)
     {
-        var current = await CurrentOfAsync(memberKey, cancellationToken);
-        var here = current.FirstOrDefault(m => m.KurinKey == kurinKey);
-
-        foreach (var elsewhere in current.Where(m => m != here))
-        {
-            elsewhere.LeftAtUtc = DateTime.UtcNow;
-        }
+        var here = (await CurrentOfAsync(memberKey, cancellationToken)).FirstOrDefault(m => m.KurinKey == kurinKey);
 
         if (here is null)
         {

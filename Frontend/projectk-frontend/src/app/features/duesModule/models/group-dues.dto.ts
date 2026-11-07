@@ -1,4 +1,4 @@
-import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
+import { DuesChargeTiming, DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
 import type { DuesConcessionGrantDto, KraiConcessionDto } from './concession.dto';
 
 export interface QuarterDto {
@@ -23,6 +23,8 @@ export interface DuesArticleDto {
 
 export interface KurinDuesRateDto {
   fromQuarter: QuarterDto;
+  /** The tag the rate is for, in a kurin without гуртки; null for everyone else. */
+  tagKey?: string | null;
   /** The kurin's статті, in its order; the amounts below are their totals. */
   articles: DuesArticleDto[];
   stanytsiaFull: number;
@@ -65,6 +67,12 @@ export interface DuesAccountDto {
   fullName: string;
   standing: DuesAccountStanding;
   isConcessionNow: boolean;
+  /** The kurin's tags on the person that the viewer may see. */
+  tagKeys?: string[];
+  /** What the running quarter costs them where they stand now; null once they left. */
+  rateNow?: number | null;
+  /** The tag whose rate they pay now, in a kurin without гуртки. */
+  rateTagKey?: string | null;
   /** The пільги of the край given to the person, newest first. */
   grants: DuesConcessionGrantDto[];
   quarters: DuesAccountQuarterDto[];
@@ -97,6 +105,8 @@ export interface DuesBoxDto {
   card: number;
   total: number;
   toForward: number;
+  /** Paid for quarters not charged yet, in a senior kurin's box; kept out of `own`. */
+  ahead?: number;
   own: number;
   inTransit: number;
 }
@@ -107,6 +117,16 @@ export interface DuesHandoverDto {
   received: number;
   outstanding: number;
 }
+
+/** A tag of the kurin, as the dues screens name and colour it. */
+export interface DuesTagDto {
+  tagKey: string;
+  name: string;
+  colorHex: string;
+}
+
+/** Which box an account is kept in: a гурток's, or a senior kurin's own. */
+export type DuesBoxRef = { groupKey: string } | { kurinKey: string };
 
 export interface DuesPersonDto {
   memberKey: string;
@@ -141,6 +161,8 @@ export interface GroupDuesDto {
   box: DuesBoxDto;
   handover: DuesHandoverDto;
   people: DuesPersonDto[];
+  /** The kurin's tags, for naming and filtering the register by them. */
+  tags?: DuesTagDto[];
   viewer: DuesViewerDto;
 }
 
@@ -212,6 +234,8 @@ export interface KurinDuesDto {
   /** Where the край's kurins hand the вкладка up. */
   upstream: DuesUpstream;
   currentQuarter: QuarterDto;
+  /** When the вкладка falls due; the quarter a person leaves in is never charged. */
+  chargeTiming: DuesChargeTiming;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
   /** `toForward` is what still goes to the станиця and the край; `inTransit` — handed over by гуртки, not confirmed yet. */
@@ -222,6 +246,12 @@ export interface KurinDuesDto {
   sentToStanytsia: number;
   sentToKrai: number;
   groups: KurinGroupHandoverDto[];
+  /** A senior kurin has no гуртки: each person's account is in the kurin's own box. */
+  isSenior?: boolean;
+  /** The personal accounts in the kurin's own box. */
+  accounts?: DuesAccountDto[];
+  tags?: DuesTagDto[];
+  kraiConcessions?: KraiConcessionDto[];
   quarters: KurinDuesQuarterDto[];
   transfers: DuesTransferDto[];
   entries: DuesEntryDto[];
@@ -230,7 +260,8 @@ export interface KurinDuesDto {
 }
 
 export interface MemberDuesAccountDto {
-  groupKey: string;
+  /** Null for an account in the kurin's own box. */
+  groupKey: string | null;
   groupName: string;
   standing: DuesAccountStanding;
   quarters: DuesAccountQuarterDto[];
@@ -249,6 +280,8 @@ export interface MemberDuesDto {
   numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
+  /** Unpaid quarters already behind them — what keeps them in the kurin. The running quarter is not in it. */
+  owedToLeave: number;
   quarterRate: DuesAmountDto | null;
   isConcessionNow: boolean;
   /** The край's пільги the person holds this quarter. */
@@ -278,6 +311,7 @@ export interface SetGroupDuesRateRequest {
 
 export interface SetKurinDuesRateRequest {
   fromQuarter: QuarterDto;
+  tagKey?: string | null;
   articles: DuesArticleRequest[];
 }
 

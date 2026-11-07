@@ -19,6 +19,40 @@ public static class AuditActions
         public const string Completed = "Probe.Completed";
         public const string Verified = "Probe.Verified";
         public const string Unverified = "Probe.Unverified";
+
+        /// <summary>A project of the third probe was described, rewritten or removed.</summary>
+        public const string ProjectAdded = "Probe.ProjectAdded";
+        public const string ProjectEdited = "Probe.ProjectEdited";
+        public const string ProjectRemoved = "Probe.ProjectRemoved";
+        public const string ProjectApproved = "Probe.ProjectApproved";
+        public const string ProjectApprovalRemoved = "Probe.ProjectApprovalRemoved";
+        public const string ProjectCompleted = "Probe.ProjectCompleted";
+        public const string ProjectCompletionRemoved = "Probe.ProjectCompletionRemoved";
+
+        /// <summary>The spare project took a main one's place.</summary>
+        public const string ProjectsSwapped = "Probe.ProjectsSwapped";
+
+        /// <summary>The third-probe file: mentors, reflection, camp, résumé.</summary>
+        public const string FileEdited = "Probe.FileEdited";
+        public const string ReflectionConfirmed = "Probe.ReflectionConfirmed";
+        public const string ReflectionUnconfirmed = "Probe.ReflectionUnconfirmed";
+
+        /// <summary>The referent's stages: motivation letter, self-reflection, application, opened, done, named, archived.</summary>
+        public const string StagesChanged = "Probe.StagesChanged";
+        public const string CertificateAttached = "Probe.CertificateAttached";
+        public const string CertificateRemoved = "Probe.CertificateRemoved";
+
+        /// <summary>The action of confirming (or taking back) a part of the third probe, by the part's name.</summary>
+        public static string ThirdProbe(string part, bool confirmed) => (part, confirmed) switch
+        {
+            ("Reflection", true) => ReflectionConfirmed,
+            ("Reflection", false) => ReflectionUnconfirmed,
+            ("ProjectApproval", true) => ProjectApproved,
+            ("ProjectApproval", false) => ProjectApprovalRemoved,
+            ("ProjectCompletion", true) => ProjectCompleted,
+            ("ProjectCompletion", false) => ProjectCompletionRemoved,
+            _ => throw new ArgumentOutOfRangeException(nameof(part), part, "Unknown part of the third probe.")
+        };
     }
 
     /// <summary>Вмілості.</summary>
@@ -91,6 +125,9 @@ public static class AuditActions
 
         public const string MentorAssigned = "Office.MentorAssigned";
         public const string MentorRevoked = "Office.MentorRevoked";
+
+        /// <summary>A former holding's dates or role were corrected in the archive.</summary>
+        public const string Corrected = "Office.Corrected";
     }
 
     /// <summary>Who belongs to the kurin, and in which гурток.</summary>
@@ -99,6 +136,27 @@ public static class AuditActions
         public const string Joined = "Membership.Joined";
         public const string Left = "Membership.Left";
         public const string MovedToGroup = "Membership.MovedToGroup";
+
+        /// <summary>A former membership's dates or kind were corrected in the archive.</summary>
+        public const string Corrected = "Membership.Corrected";
+    }
+
+    /// <summary>
+    /// The kurin's archive and its danger zone. A deletion carries what was deleted in its changes:
+    /// the record itself is gone, so the entry is the only trace left of it.
+    /// </summary>
+    public static class Archive
+    {
+        public const string GroupDissolved = "Archive.GroupDissolved";
+        public const string DangerZoneEntered = "Archive.DangerZoneEntered";
+
+        /// <summary>A wrong password or code; the entry carries which, never what was typed.</summary>
+        public const string DangerZoneRefused = "Archive.DangerZoneRefused";
+
+        public const string DangerZoneEnded = "Archive.DangerZoneEnded";
+        public const string OfficeDeleted = "Archive.OfficeDeleted";
+        public const string MembershipDeleted = "Archive.MembershipDeleted";
+        public const string GroupDeleted = "Archive.GroupDeleted";
     }
 
     /// <summary>The kurin's own settings.</summary>
@@ -115,5 +173,24 @@ public static class AuditActions
 
         /// <summary>A гурток moved to another edition of the probe programme.</summary>
         public const string GroupProbeEditionChanged = "Settings.GroupProbeEditionChanged";
+
+        /// <summary>Tags turned on or off, or whether people see their own.</summary>
+        public const string TagSettingsChanged = "Settings.TagSettingsChanged";
+    }
+
+    /// <summary>The kurin's tags and who carries them.</summary>
+    public static class Tag
+    {
+        public const string Created = "Tag.Created";
+        public const string Changed = "Tag.Changed";
+
+        /// <summary>The tag is gone, and with it from everyone who carried it.</summary>
+        public const string Deleted = "Tag.Deleted";
+
+        /// <summary>The tag was put on a person; one entry per person.</summary>
+        public const string Put = "Tag.Put";
+
+        /// <summary>The tag was taken off a person.</summary>
+        public const string TakenOff = "Tag.TakenOff";
     }
 }

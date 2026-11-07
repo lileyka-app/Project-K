@@ -22,9 +22,18 @@ public sealed class UpsertMemberAwardCommandValidator : AbstractValidator<Upsert
 
         // The enum starts at 1 precisely so that "not said" is not a valid level — see
         // MemberAwardLevel. This is what makes that intent hold at the boundary.
+        // One or the other: an УПЮ відзначення by its level, a senior one by its catalogue id.
+        RuleFor(command => command)
+            .Must(command => (command.Level is null) != string.IsNullOrWhiteSpace(command.CatalogId))
+            .WithName(nameof(UpsertMemberAwardCommand.Level))
+            .WithMessage("A відзначення is either an УПЮ level or a senior one from the catalogue.");
+
         RuleFor(command => command.Level)
             .IsInEnum()
+            .When(command => command.Level is not null)
             .WithMessage("A відзначення level is required.");
+
+        RuleFor(command => command.CatalogId).MaximumLength(ProjectK.Common.Entities.KurinModule.MemberAward.CatalogIdMaxLength);
 
         RuleFor(command => command.DateAcquired)
             .NotEmpty()

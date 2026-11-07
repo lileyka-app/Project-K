@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Entry;
@@ -55,6 +56,8 @@ public class ScoreHandlerTests
     private readonly AgendaItem _event;
     private readonly Mock<IScoreUnitOfWork> _score = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IKurinTagVisibility> _tagVisibility = new();
+    private readonly Mock<IKurinTagRepository> _tags = new();
     private readonly Mock<IResourceAccessService> _resourceAccess = new();
 
     private readonly Guid _oksana;
@@ -122,6 +125,7 @@ public class ScoreHandlerTests
         _unitOfWork.SetupGet(u => u.AgendaItems).Returns(agenda.Object);
         _unitOfWork.SetupGet(u => u.AgendaResponses).Returns(responses.Object);
         _unitOfWork.SetupGet(u => u.AgendaCategories).Returns(new Mock<IAgendaCategoryRepository>().Object);
+        _unitOfWork.SetupGet(u => u.KurinTags).Returns(_tags.Object);
 
         // A гуртковий суддя of Соколи: Соколи yes, Леви no, the whole kurin no.
         _resourceAccess.Setup(r => r.CheckAccessAsync(ResourceType.GroupScore, It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -199,7 +203,7 @@ public class ScoreHandlerTests
         var oksanaUser = _people.Single(p => p.FirstName == "Оксана").UserKey!.Value;
         _responses.Add(new AgendaResponse { AgendaItemKey = Skhodyny, UserKey = oksanaUser, Status = AgendaRsvpStatus.Going });
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>())
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -209,13 +213,34 @@ public class ScoreHandlerTests
         taras.Should().BeEquivalentTo(new { Rsvp = (AgendaRsvpStatus?)null, IsAssigned = false, CanScore = false });
     }
 
+    /// <summary>
+    /// Whoever carries a tag the event is aimed at counts as aimed at — but only on a sheet whose reader
+    /// may see that person's tags; otherwise the flag would tell a гурток's провід who carries what elsewhere.
+    /// </summary>
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task TheSheet_CountsTagCarriersAsAimedAt_OnlyWhereTheReaderSeesTags(bool readerSeesTags, bool tarasAimedAt)
+    {
+        var novices = Guid.NewGuid();
+        var tarasMember = _memberships.Single(m => m.MembershipKey == _taras).MemberKey;
+        _event.Assignments.Add(new AgendaAssignment { AgendaItemKey = Skhodyny, TargetType = AgendaTargetType.Tag, TargetKey = novices });
+        _tags.Setup(t => t.GetMemberKeysAsync(novices, It.IsAny<CancellationToken>())).ReturnsAsync([tarasMember]);
+        _tagVisibility.Setup(v => v.ShowsTagsOfAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync((_, _) => readerSeesTags);
+
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+            .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
+
+        result.Data!.People.Single(p => p.MembershipKey == _taras).IsAssigned.Should().Be(tarasAimedAt);
+    }
+
     [Fact]
     public async Task TheSheet_IsNotForSomeoneWhoScoresNowhere()
     {
         _resourceAccess.Setup(r => r.CheckAccessAsync(ResourceType.GroupScore, It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Deny("youth"));
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>())
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
@@ -359,7 +384,7 @@ public class ScoreHandlerTests
     {
         _notHeld.Add(new ScoreNotHeldOccurrence { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Actor, MarkedAtUtc = Start });
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>())
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Data!.NotHeld.Should().NotBeNull();

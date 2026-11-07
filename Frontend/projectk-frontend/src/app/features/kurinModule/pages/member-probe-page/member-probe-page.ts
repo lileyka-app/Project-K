@@ -28,6 +28,7 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { parseOfficeRole } from '../../functions/system-role.function';
 import { leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { ThirdProbeComponent } from '../../components/third-probe/third-probe';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -38,7 +39,7 @@ interface ProbeDetailSectionView {
 
 @Component({
   selector: 'app-member-probe-page',
-  imports: [ButtonModule, ProgressBarModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule],
+  imports: [ButtonModule, ProgressBarModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule, ThirdProbeComponent],
   providers: [ConfirmationService],
   templateUrl: './member-probe-page.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -103,6 +104,14 @@ export class MemberProbePageComponent implements OnInit {
   /** Take a signature back; a kurin may give it to fewer people than signing. */
   get canUnsignProbePoints(): boolean {
     return !this.isArchive && this.abilities.probes.unsign;
+  }
+
+  /**
+   * A probe the catalogue gives no points (the third: it is made of projects). Its point list
+   * would only be an empty accordion, so the page leaves it out.
+   */
+  get hasNoPoints(): boolean {
+    return !this.isLoading && !this.loadFailed && !!this.groupedProbe && this.groupedProbe.pointsCount === 0;
   }
 
   get canManageProbePoints(): boolean {
@@ -238,17 +247,17 @@ export class MemberProbePageComponent implements OnInit {
     }
 
     this.confirmationService.confirm({
-      header: 'Скасування підпису',
-      message: `Скасувати підпис точки "${point.pointTitle}"?`,
-      icon: 'pi pi-exclamation-triangle',
-      rejectLabel: 'Ні',
+      header: 'Зняти підпис?',
+      message: `Точка «${point.pointTitle}» знову чекатиме підпису.`,
+      icon: 'pi pi-times-circle',
+      rejectLabel: 'Скасувати',
       rejectButtonProps: {
-        label: 'Ні',
+        label: 'Скасувати',
         severity: 'secondary',
         outlined: true
       },
       acceptButtonProps: {
-        label: 'Так, скасувати',
+        label: 'Зняти підпис',
         severity: 'danger'
       },
       accept: () => {
@@ -265,9 +274,9 @@ export class MemberProbePageComponent implements OnInit {
     const confirmationText = 'Буде зафіксовано дату закриття, і відкриється наступна проба, якщо вона є.';
 
     this.confirmationService.confirm({
-      header: 'Закриття проби',
+      header: 'Закрити пробу?',
       message: confirmationText,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-check',
       rejectLabel: 'Скасувати',
       rejectButtonProps: {
         label: 'Скасувати',
@@ -275,8 +284,7 @@ export class MemberProbePageComponent implements OnInit {
         outlined: true
       },
       acceptButtonProps: {
-        label: 'Закрити',
-        severity: 'contrast'
+        label: 'Закрити'
       },
       accept: () => {
         this.executeCloseProbe();

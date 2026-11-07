@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -25,6 +26,7 @@ public class ExportRegistryHandlerTests
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<ISpreadsheetWriter> _writer = new();
+    private readonly Mock<IKurinTagRepository> _tags = new();
     private readonly ExportRegistryQueryHandler _handler;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -33,6 +35,8 @@ public class ExportRegistryHandlerTests
     public ExportRegistryHandlerTests()
     {
         _uow.Setup(u => u.Kurins).Returns(_kurins.Object);
+        _uow.Setup(u => u.KurinTags).Returns(_tags.Object);
+        _tags.Setup(t => t.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         KurinOfBranch(KurinBranch.UPYu);
 
         _writer
@@ -50,7 +54,7 @@ public class ExportRegistryHandlerTests
     private void KurinOfBranch(KurinBranch branch)
         => _kurins
             .Setup(k => k.GetByKeyAsync(_kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Kurin(3) { KurinKey = _kurinKey, Branch = branch });
+            .ReturnsAsync(new Kurin(3, branch) { KurinKey = _kurinKey });
 
     private static MemberResponse Person(
         string lastName,
@@ -88,6 +92,28 @@ public class ExportRegistryHandlerTests
             .Single(sheet => sheet.Name == "Чисельність")
             .Rows
             .ToDictionary(row => row[0].Text!, row => row[1].Number);
+
+    /// <summary>
+    /// Tags go out by name, and only those the roster read already let the caller see: the export
+    /// names whatever keys it is given and adds none of its own.
+    /// </summary>
+    [Fact]
+    public async Task TagsColumn_ShouldNameThePersonsTags_InOrder()
+    {
+        var camp = new KurinTag { KurinKey = _kurinKey, Name = "Табір" };
+        var novice = new KurinTag { KurinKey = _kurinKey, Name = "Новики" };
+        _tags.Setup(t => t.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([camp, novice]);
+        var tagged = Person("Юнак", PlastLevel.Uchasnyk);
+        tagged.TagKeys = [camp.KurinTagKey, novice.KurinTagKey];
+        RosterIs(tagged, Person("Без тегів", PlastLevel.Uchasnyk));
+
+        await Export("tags");
+
+        var youth = _written.Single(sheet => sheet.Name == "Юнаки");
+        youth.Headers.Should().Equal("Прізвище та ім'я", "Теги");
+        youth.Rows.Single(row => row[0].Text == "Юнак Тест")[1].Text.Should().Be("Новики, Табір");
+        youth.Rows.Single(row => row[0].Text == "Без тегів Тест")[1].Text.Should().BeNull();
+    }
 
     [Fact]
     public async Task ShouldWriteYouthAndStaffToTheirOwnSheets()

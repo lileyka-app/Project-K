@@ -1,4 +1,5 @@
 import { DuesAmountDto, QuarterDto } from './group-dues.dto';
+import { KurinBranch, KurinNumbering } from '../../kurinModule/models/enums/kurin-branch.enum';
 
 /** How a пільга of the край changes the вкладка: a percent off, a sum off, or nothing to pay. */
 export type ConcessionKind = 'percent' | 'amount' | 'exempt';
@@ -80,7 +81,18 @@ export interface KraiConcessionReportRowDto {
   name: string;
   people: number;
   reduction: DuesAmountDto;
-  kurins: { kurinKey: string; number: number | null; people: number; reduction: number }[];
+  kurins: KraiConcessionReportKurinDto[];
+}
+
+/** One kurin in a row of the report; its улад and name tell 5-й УПЮ from 5-й УСП. */
+export interface KraiConcessionReportKurinDto {
+  kurinKey: string;
+  number: number | null;
+  branch?: KurinBranch | null;
+  branches?: KurinNumbering[] | null;
+  namedAfter?: string | null;
+  people: number;
+  reduction: number;
 }
 
 /** «−20 % · станиця, курінь», «−100 ₴ · гурток», «звільнення · уся вкладка». */

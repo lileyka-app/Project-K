@@ -100,6 +100,7 @@ public class AccessStaleHeaderHttpTests
         leaderships.Setup(r => r.GetByKeyAsync(leadership.LeadershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(leadership);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<ProjectK.Common.Interfaces.Modules.KurinModule.IKurinRepository>());
         unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var mapper = new Mock<IMapper>();

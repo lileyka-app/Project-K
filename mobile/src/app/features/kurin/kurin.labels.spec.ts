@@ -1,5 +1,7 @@
 import {
   activeWarning,
+  currentDegree,
+  isSeniorPerson,
   awardGroups,
   birthdayWhen,
   duesAmountLabel,
@@ -10,6 +12,14 @@ import {
   memberBranch,
   memberRoleTags,
   officeTag,
+  officesIn,
+  degreeRows,
+  seniorAwardRows,
+  seniorAwardBlocks,
+  orderAwardBlocks,
+  SENIOR_LADDER,
+  YOUTH_LADDER,
+  membershipOf,
   roleTone,
   membershipPeriod,
   phoneHref,
@@ -22,6 +32,10 @@ import {
   sortMembers,
   startedProbeIds,
   upcomingBirthdays,
+  actInKurin,
+  rememberKurinRoleNames,
+  roleName,
+  warningRows,
 } from './kurin.labels';
 import { GroupDto, GroupedProbeDto, MemberAwardDto, MemberLookupDto, MembershipDto, MentorAssignmentDto, ProbeProgressDto, ProbeSummaryDto } from './kurin.models';
 
@@ -163,6 +177,13 @@ describe('kurin labels', () => {
     const closed = probeRows(probes, [{ probeId: 'probe-1', status: 'Completed', completedAtUtc: '2026-05-01T10:00:00Z', pointSignatures: [] }] as never);
     expect(closed[0]).toMatchObject({ isCompleted: true, signedPoints: 4, percent: 100 });
     expect(closed[1]).toMatchObject({ isDisabled: false, canOpen: true });
+    // The third has no points but its projects: it opens once the second is closed.
+    const second = probeRows(probes, [
+      { probeId: 'probe-1', status: 'Completed', completedAtUtc: '2026-05-01T10:00:00Z', pointSignatures: [] },
+      { probeId: 'probe-2', status: 'Completed', completedAtUtc: '2026-09-01T10:00:00Z', pointSignatures: [] },
+    ] as never);
+    expect(second[2]).toMatchObject({ hasNoPoints: true, isDisabled: false, canOpen: true });
+    expect(probeMeta(second[2])).toBe('Складається з проєктів: опис і фото на сторінці проби');
   });
 
   it('falls back to the unnamed edition, with a started probe of another edition in its place', () => {
@@ -236,5 +257,140 @@ describe('kurin labels', () => {
     expect(membershipPeriod({ isCurrent: false, joinedAtUtc: '2018-09-01T00:00:00Z', leftAtUtc: '2019-06-01T00:00:00Z' } as MembershipDto)).toBe('2018 — 2019');
     expect(phoneHref('+380 (67) 111-22-33')).toBe('tel:+380671112233');
     expect(phoneHref('12')).toBeNull();
+  });
+});
+
+describe('kurin role names', () => {
+  afterEach(() => actInKurin(null));
+
+  it('says the current kurin\'s own name, and keeps it when another kurin\'s names arrive', () => {
+    rememberKurinRoleNames('orden', { Pysar: 'Скриптор' });
+    actInKurin('orden');
+    rememberKurinRoleNames('chorty', { Pysar: 'Літописець' });
+
+    expect(roleName('Pysar')).toBe('Скриптор');
+    expect(roleName('Pysar', 'chorty')).toBe('Літописець');
+    actInKurin(null);
+    expect(roleName('Pysar')).toBe('Писар');
+  });
+
+  it('names an office by its own kurin and keeps offices of other kurins off this card', () => {
+    rememberKurinRoleNames('orden', { Pysar: 'Скриптор' });
+    actInKurin('orden');
+    const office = (role: string, kurinKey: string) =>
+      ({ leadershipHistoryKey: role + kurinKey, leadershipKey: 'l', role, kurinKey, startDate: '2026-01-01', endDate: null }) as never;
+    const held = [office('Pysar', 'orden'), office('Kurinnyi', 'plain')];
+
+    expect(officeTag(held[0])).toEqual({ label: 'Скриптор', tone: roleTone('Pysar') });
+    expect(officeTag(office('Pysar', 'plain')).label).toBe('Писар');
+    expect(officesIn(held, 'orden').map((h) => h.role)).toEqual(['Pysar']);
+    expect(memberRoleTags({ leadershipHistories: [office('Pysar', 'plain')] } as never)).toEqual([{ label: 'Писар', tone: roleTone('Pysar') }]);
+  });
+});
+
+describe('senior warning rows', () => {
+  it('puts a current пересторога first and says how long it lasts', () => {
+    const now = Date.parse('2026-11-01T00:00:00Z');
+    const rows = warningRows(
+      [
+        { memberWarningKey: 'old', level: 'Level1', issuedAtUtc: '2026-01-10T00:00:00Z', expiresAtUtc: '2026-04-10T00:00:00Z' },
+        { memberWarningKey: 'now', level: 'Level2', issuedAtUtc: '2026-10-20T00:00:00Z', expiresAtUtc: '2026-11-11T00:00:00Z' },
+        { memberWarningKey: 'closed', level: 'Level1', issuedAtUtc: '2025-12-01T00:00:00Z', expiresAtUtc: '2026-03-01T00:00:00Z', revokedAtUtc: '2026-03-01T00:00:00Z' },
+        { memberWarningKey: 'lifted', level: 'Level1', issuedAtUtc: '2025-11-01T00:00:00Z', expiresAtUtc: '2026-02-01T00:00:00Z', revokedAtUtc: '2025-11-05T00:00:00Z', revokedByUserKey: 'u1' },
+      ],
+      now,
+    );
+    expect(rows.map((r) => r.key)).toEqual(['now', 'old', 'closed', 'lifted']);
+    expect(rows[2].line).toContain('минула');
+    expect(rows[3].line).toContain('знято');
+    expect(rows[0].title).toBe('Друга пересторога');
+    expect(rows[0].line).toContain('ще 10 дн.');
+    expect(rows[1].line).toContain('минула');
+  });
+});
+
+describe('membership in a line of text', () => {
+  it('names a senior kurin by its own name and a УПЮ kurin by its number', () => {
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
+    expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
+  });
+});
+
+describe('ступені й старші відзначення з каталогу', () => {
+  const honours = [
+    { id: 'usp-starsha-plastunka', kind: 'Degree', title: 'Старша пластунка', group: 'usp', ulad: 'usp', order: 2, imageUrl: 'https://catalog.test/spl.svg' },
+    { id: 'upyu-virlytsia', kind: 'Degree', title: 'Пластунка вірлиця', group: 'upyu', ulad: 'upyu', order: 7, imageUrl: '' },
+    { id: 'orden-sv-yuriia-bronza', kind: 'Award', title: 'Орден святого Юрія в бронзі', group: 'orden-sv-yuriia', ulad: 'usp', order: 0, imageUrl: 'https://catalog.test/o.png' },
+  ] as const;
+  const histories = [
+    { plastLevel: 'Skob', dateAchieved: '2014-06-10', isPlastunka: true, catalogId: 'upyu-virlytsia' },
+    { plastLevel: 'Starshoplastun', dateAchieved: '2016-12-03', isPlastunka: true, catalogId: 'usp-starsha-plastunka' },
+  ];
+
+  it('shows each membership its own ladder, named and drawn for a пластунка', () => {
+    expect(degreeRows(histories, YOUTH_LADDER, [...honours]).map((r) => r.title)).toEqual(['Пластунка вірлиця']);
+    expect(degreeRows(histories, SENIOR_LADDER, [...honours]).map((r) => [r.title, r.imageUrl])).toEqual([['Старша пластунка', 'https://catalog.test/spl.svg']]);
+    expect(degreeRows(histories, SENIOR_LADDER, []).map((r) => r.title)).toEqual(['ст. пл.']);
+  });
+
+  it('shows the current ступінь, the highest on the whole ladder: a сеніор over the скоб of 2002', () => {
+    const zvyazkovyi = [
+      { plastLevel: 'Skob', dateAchieved: '2002-06-01' },
+      { plastLevel: 'Senior', dateAchieved: '2015-04-26' },
+    ];
+    expect(currentDegree(zvyazkovyi, [])?.title).toBe('пл. сен.');
+    expect(currentDegree(histories, [...honours])?.title).toBe('Старша пластунка');
+    expect(currentDegree([], [])).toBeNull();
+  });
+
+  it('counts a сеніор who leads an УПЮ kurin as a senior person, a юнак as not', () => {
+    const upyu = [{ membershipKey: 'm', kurinKey: 'k', kurinNumber: 5, branch: 'UPYu', kind: 'Staff', isCurrent: true, joinedAtUtc: '2020-01-01' }] as never;
+    expect(isSeniorPerson({ kurinKey: 'k', latestPlastLevel: 'Senior', plastLevelHistories: [{ plastLevel: 'Skob' }, { plastLevel: 'Senior' }] } as never, upyu)).toBe(true);
+    expect(isSeniorPerson({ kurinKey: 'k', latestPlastLevel: 'Skob', plastLevelHistories: [{ plastLevel: 'Skob' }] } as never, upyu)).toBe(false);
+  });
+
+  it('lists senior відзначення apart from the УПЮ levels', () => {
+    const base = { memberKey: 'm', kurinKey: 'k', status: 'Confirmed' as const };
+    const awards = [
+      { ...base, memberAwardKey: 'a', level: 'First' as const, catalogId: null, dateAcquired: '2015-01-01T00:00:00' },
+      { ...base, memberAwardKey: 'b', level: null, catalogId: 'orden-sv-yuriia-bronza', dateAcquired: '2018-04-23T00:00:00' },
+    ];
+    expect(seniorAwardRows(awards, [...honours]).map((r) => [r.award.memberAwardKey, r.title, r.imageUrl, r.section])).toEqual([
+      ['b', 'Орден святого Юрія в бронзі', 'https://catalog.test/o.png', 'УСП'],
+    ]);
+    expect(awardGroups(awards).map((g) => g.latest.memberAwardKey)).toEqual(['a']);
+  });
+});
+
+describe('відзначення блоками', () => {
+  const base = { memberKey: 'm', kurinKey: 'k', status: 'Confirmed' as const };
+  const honours = [
+    { id: 'usp-hramota-zasluhy', kind: 'Award', title: 'Грамота заслуги', group: 'usp-vidznachennia', ulad: 'usp', order: 0, imageUrl: '' },
+    { id: 'ups-hramota-zasluhy', kind: 'Award', title: 'Грамота заслуги', group: 'ups-vidznachennia', ulad: 'ups', order: 1, imageUrl: '' },
+  ] as const;
+
+  it('puts every grant of one відзначення under one block, newest first, and pinned blocks before the rest', () => {
+    const blocks = seniorAwardBlocks(
+      [
+        { ...base, memberAwardKey: 'a', catalogId: 'usp-hramota-zasluhy', dateAcquired: '2012-10-20T00:00:00', note: 'За табір' },
+        { ...base, memberAwardKey: 'b', catalogId: 'usp-hramota-zasluhy', dateAcquired: '2015-03-14T00:00:00' },
+        { ...base, memberAwardKey: 'c', catalogId: 'ups-hramota-zasluhy', dateAcquired: '2020-01-01T00:00:00', isPinned: true },
+        { ...base, memberAwardKey: 'd', level: 'First' as const, dateAcquired: '2021-01-01T00:00:00' },
+      ],
+      [...honours],
+      true,
+    );
+
+    expect(blocks.map((b) => [b.key, b.section, b.grants.map((g) => g.award.memberAwardKey), b.pinned])).toEqual([
+      ['ups-hramota-zasluhy', 'УПС', ['c'], true],
+      ['usp-hramota-zasluhy', 'УСП', ['b', 'a'], false],
+    ]);
+  });
+
+  it('orders unpinned blocks by the latest grant', () => {
+    const block = (key: string, date: string, pinned = false) =>
+      ({ key, title: key, imageUrl: null, section: '', pinned, pending: false, pin: {}, grants: [{ award: { ...base, memberAwardKey: key, dateAcquired: date }, pending: false, canOpen: true }] });
+    expect(orderAwardBlocks([block('old', '2010-01-01'), block('new', '2024-01-01'), block('liked', '2005-01-01', true)]).map((b) => b.key)).toEqual(['liked', 'new', 'old']);
   });
 });

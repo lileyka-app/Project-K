@@ -7,6 +7,13 @@
     <div class="actions">
       <a pButton routerLink="/kurin" severity="secondary">До куреня</a>
     </div>
+    } @else if (featureOff) {
+    <h1>Тут такого немає</h1>
+    <p>Точкування в цьому курені вимкнене. Увімкнути його знову можна в налаштуваннях куреня — усі бали на місці.</p>
+
+    <div class="actions">
+      <a pButton routerLink="/kurin" severity="secondary">До куреня</a>
+    </div>
     } @else {
     <h1>Немає доступу</h1>
     <p>У вас немає прав на перегляд цієї сторінки.</p>

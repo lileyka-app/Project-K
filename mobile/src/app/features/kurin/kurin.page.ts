@@ -30,7 +30,7 @@ import {
 } from '@ionic/angular';
 import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
-import { add, alertCircle, checkmarkCircle, people, personAdd, ribbon, settingsOutline, swapVertical, trophy } from 'ionicons/icons';
+import { add, alertCircle, checkmarkCircle, flagOutline, people, personAdd, ribbon, settingsOutline, swapHorizontal, swapVertical, trophy } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { canShareFile, saveFile, shareFile } from '../../core/file-share';
@@ -38,7 +38,6 @@ import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
 import { GlassEffects } from '../../ui/glass';
 import {
-  BRANCH_LABELS,
   KvRow,
   MemberSort,
   currentOffices,
@@ -64,7 +63,7 @@ import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { KurinEditSheet } from './kurin-edit.sheet';
 import { reportFileName } from './kurin-profile';
 import { LeadershipSheet } from './leadership.sheet';
-import { kurinTitle } from '../../core/kurin-label';
+import { isSeniorBranch, kurinBranchTags, kurinBranchesName, kurinTitle } from '../../core/kurin-label';
 
 type Section = 'overview' | 'members';
 
@@ -123,6 +122,21 @@ const DESCRIPTION_LIMIT = 360;
       display: flex;
       gap: 14px;
       align-items: center;
+    }
+    .emblem {
+      width: 48px;
+      height: 48px;
+      flex: none;
+      object-fit: contain;
+    }
+    .emblem--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed var(--lk-line);
+      border-radius: 12px;
+      color: var(--ion-color-medium);
+      font-size: 20px;
     }
     .head .edit {
       margin: -6px -8px 0 auto;
@@ -235,10 +249,22 @@ const DESCRIPTION_LIMIT = 360;
                 @default {
                   @if (kurinValue(); as k) {
                     <div class="head">
-                      <app-kurin-plaque [number]="k.number" [size]="48" data-testid="kurin-plaque" />
+                      @if (isSenior(k)) {
+                        @if (k.emblemUrl) {
+                          <img class="emblem" [src]="k.emblemUrl" alt="Емблема куреня" width="48" height="48" data-testid="kurin-emblem" />
+                        } @else {
+                          <span class="emblem emblem--empty" role="img" aria-label="Емблему ще не завантажено"><ion-icon name="flag-outline" aria-hidden="true" /></span>
+                        }
+                      } @else {
+                        <app-kurin-plaque [number]="k.number" [size]="48" data-testid="kurin-plaque" />
+                      }
                       <div>
-                        <h2>{{ title(k.number) }}</h2>
-                        @if (k.namedAfter) { <p>ім. {{ k.namedAfter }}</p> }
+                        <h2>{{ heading(k) }}</h2>
+                        @if (isSenior(k)) {
+                          @if (k.namedAfter) { <p>{{ branchesName(k) }}</p> }
+                        } @else if (k.namedAfter) {
+                          <p>ім. {{ k.namedAfter }}</p>
+                        }
                         <ion-badge class="lk-tag--secondary">{{ branchLabel(k) }}</ion-badge>
                       </div>
                       @if (canManageGroups()) {
@@ -273,12 +299,21 @@ const DESCRIPTION_LIMIT = 360;
             </ion-card-content>
           </ion-card>
 
+          @if ((kurinValue()?.scoreEnabled ?? true) || canManageGroups() || canReviewSkills()) {
           <ion-list [inset]="true">
             <ion-item-group>
-              <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/score">
-                <ion-icon class="lk-tile" slot="start" name="trophy" aria-hidden="true" style="--lk-tile: #f2a900" />
-                <ion-label>Точкування</ion-label>
-              </ion-item>
+              @if (kurinValue()?.scoreEnabled ?? true) {
+                <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/score">
+                  <ion-icon class="lk-tile" slot="start" name="trophy" aria-hidden="true" style="--lk-tile: #f2a900" />
+                  <ion-label>Точкування</ion-label>
+                </ion-item>
+              }
+              @if (canManageGroups()) {
+                <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/transfers" data-testid="transfers">
+                  <ion-icon class="lk-tile" slot="start" name="swap-horizontal" aria-hidden="true" style="--lk-tile: #0e6e4e" />
+                  <ion-label>Переходи</ion-label>
+                </ion-item>
+              }
               @if (canReviewSkills()) {
                 <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/review/skills">
                   <ion-icon class="lk-tile" slot="start" name="ribbon" aria-hidden="true" style="--lk-tile: #5e5ce6" />
@@ -287,7 +322,9 @@ const DESCRIPTION_LIMIT = 360;
               }
             </ion-item-group>
           </ion-list>
+          }
 
+          @if (!kurinIsSenior()) {
           <ion-list [inset]="true" data-testid="groups">
             <ion-list-header><ion-label>Гуртки</ion-label></ion-list-header>
             <ion-item-group>
@@ -313,6 +350,7 @@ const DESCRIPTION_LIMIT = 360;
               }
             </ion-item-group>
           </ion-list>
+          }
 
           <ion-list [inset]="true" data-testid="kv">
             <ion-list-header><ion-label>КВ</ion-label></ion-list-header>
@@ -427,7 +465,7 @@ const DESCRIPTION_LIMIT = 360;
   `,
 })
 export class KurinPage implements OnInit, OnDestroy {
-  protected readonly title = kurinTitle;
+
   private readonly data = inject(KurinApi);
   private readonly auth = inject(AuthService);
   private readonly sheets = inject(ActionSheetController);
@@ -458,6 +496,8 @@ export class KurinPage implements OnInit, OnDestroy {
 
   protected readonly kurinValue = computed(() => valueOf(this.kurin()));
   protected readonly groupList = computed(() => valueOf(this.groups()) ?? []);
+  /** A senior kurin has no гуртки: the section is not there at all. */
+  protected readonly kurinIsSenior = computed(() => isSeniorBranch(this.kurinValue()?.branch));
   protected readonly kvList = computed(() => valueOf(this.kv()) ?? []);
   protected readonly offices = computed(() => currentOffices(valueOf(this.leadership())?.leadershipHistories));
   protected readonly description = computed(() => this.kurinValue()?.description?.trim() ?? '');
@@ -483,7 +523,7 @@ export class KurinPage implements OnInit, OnDestroy {
   });
 
   constructor() {
-    addIcons({ add, personAdd, trophy, ribbon, people, swapVertical, checkmarkCircle, alertCircle, settingsOutline });
+    addIcons({ add, personAdd, trophy, ribbon, people, swapHorizontal, swapVertical, checkmarkCircle, alertCircle, settingsOutline, flagOutline });
     afterRenderEffect(() => {
       this.section();
       this.glass.sync();
@@ -523,7 +563,21 @@ export class KurinPage implements OnInit, OnDestroy {
   }
 
   protected branchLabel(kurin: KurinDto): string {
-    return BRANCH_LABELS[kurin.branch ?? 'UPYu'];
+    return kurinBranchTags(kurin.branches, kurin.branch ?? 'UPYu');
+  }
+
+  protected isSenior(kurin: KurinDto): boolean {
+    return isSeniorBranch(kurin.branch);
+  }
+
+  /** «47 курінь»; a senior kurin by its own name, its гілки under it. */
+  protected heading(kurin: KurinDto): string {
+    return this.isSenior(kurin) ? kurin.namedAfter || this.branchesName(kurin) : kurinTitle(kurin.number);
+  }
+
+  /** «5-й курінь УСП · 20-й курінь УПС». */
+  protected branchesName(kurin: KurinDto): string {
+    return kurinBranchesName(kurin.branches);
   }
 
   /** The ступінь above the office tags; «Учасник» only for someone with neither (web «Статус»). */
@@ -590,7 +644,7 @@ export class KurinPage implements OnInit, OnDestroy {
   /** The web's «Редагувати» menu on the kurin's header. */
   protected async kurinActions(kurin: KurinDto): Promise<void> {
     const sheet = await this.sheets.create({
-      header: kurinTitle(kurin.number),
+      header: this.heading(kurin),
       buttons: [
         { text: 'Редагування даних куреня', data: 'edit' },
         { text: 'Експорт звіту куреня', data: 'report' },

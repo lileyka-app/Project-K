@@ -13,7 +13,7 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.SetConcession;
 
 /// <summary>Switches a person's пільга on or off from a quarter on. Earlier quarters keep what they had.</summary>
-public sealed record SetDuesConcessionCommand(Guid GroupKey, Guid MembershipKey, SetDuesConcessionRequest Request)
+public sealed record SetDuesConcessionCommand(Guid BoxKey, Guid MembershipKey, SetDuesConcessionRequest Request)
     : IRequest<ServiceResult<object>>;
 
 public sealed class SetDuesConcessionCommandValidator : AbstractValidator<SetDuesConcessionCommand>
@@ -47,7 +47,7 @@ public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesCon
 
     public async Task<ServiceResult<object>> Handle(SetDuesConcessionCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<object>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenBoxAsync<object>(request.BoxKey, cancellationToken);
         if (group is null)
         {
             return failure!;

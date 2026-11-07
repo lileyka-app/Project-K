@@ -1,7 +1,7 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -15,12 +15,15 @@ import { MenuModule } from '@openng/optimus-ui/menu';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { KurinService } from '../../services/kurin-service/kurin.service';
-import { KurinNumberComponent } from '../../components/kurin-number/kurin-number';
+import { KurinMarkComponent } from '../../components/kurin-mark/kurin-mark';
+import { MessageService } from '@openng/optimus-ui/api';
+import { MAX_IMAGE_BYTES, isImageTooLarge } from '../../../../shared/functions/image-upload.function';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { MemberListComponent } from '../../components/member-list/member-list';
 import { KurinDto } from '../../models/kurin.dto';
-import { KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { KurinBranch, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { kurinBranchTags, kurinBranchesName } from '../../../../shared/functions/kurin-label.function';
 import { KvPanelComponent } from '../../components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../../components/leadership/leadership-panel/leadership-panel';
 import { MenuItemsCache } from '../../functions/menu-items-cache';
@@ -37,7 +40,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     SplitButton,
     MenuModule,
     ManagePanelComponent,
-    KurinNumberComponent,
+    KurinMarkComponent,
     MemberListComponent,
     TagModule,
     TooltipModule,
@@ -54,6 +57,9 @@ export class KurinPanelComponent implements OnInit {
   private readonly router: Router = inject(Router);
   private readonly groupService = inject(GroupService);
   private readonly kurinService = inject(KurinService);
+  private readonly messageService = inject(MessageService);
+  private readonly emblemInput = viewChild<ElementRef<HTMLInputElement>>('emblemInput');
+  emblemSaving = false;
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
   private readonly fb = inject(FormBuilder);
@@ -87,6 +93,7 @@ export class KurinPanelComponent implements OnInit {
   groupPanelConfig: ManagePanelConfig = {
     entityType: 'group',
     title: 'Гурток',
+    deleteAction: { verb: 'Розформувати', question: 'Розформувати гурток', note: 'Гурток і його провід лишаться в архіві куреня.' },
     fields: [
       {
         name: 'groupKey',
@@ -126,8 +133,52 @@ export class KurinPanelComponent implements OnInit {
   }
 
   /** Гілка куреня. Курені, заведені до появи поділу, — УПЮ, і це не заглушка, а те, чим вони є. */
+  onEmblemPicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.kurinKey) return;
+    if (isImageTooLarge(file)) {
+      this.messageService.add({ severity: 'error', summary: 'Не завантажено', detail: `Емблема більша за ${MAX_IMAGE_BYTES / 1024 / 1024} МБ. Обери менший файл.` });
+      return;
+    }
+    this.emblemSaving = true;
+    this.kurinService.uploadEmblem(this.kurinKey, file).subscribe({
+      next: kurin => this.emblemSaved(kurin, 'Емблему збережено'),
+      error: () => {
+        this.emblemSaving = false;
+        this.messageService.add({ severity: 'error', summary: 'Не завантажено', detail: 'Емблему не збережено: потрібна картинка PNG, JPEG чи WebP.' });
+      }
+    });
+  }
+
+  private removeEmblem(): void {
+    if (!this.kurinKey) return;
+    this.emblemSaving = true;
+    this.kurinService.deleteEmblem(this.kurinKey).subscribe({
+      next: kurin => this.emblemSaved(kurin, 'Емблему прибрано'),
+      error: () => { this.emblemSaving = false; }
+    });
+  }
+
+  private emblemSaved(kurin: KurinDto, summary: string): void {
+    this.emblemSaving = false;
+    this.kurinData = kurin;
+    this.messageService.add({ severity: 'success', summary });
+  }
+
   get branchLabel(): string {
-    return KURIN_BRANCH_LABELS[this.kurinData?.branch ?? KurinBranch.UPYu];
+    return kurinBranchTags(this.kurinData?.branches, this.kurinData?.branch ?? KurinBranch.UPYu);
+  }
+
+  /** Старший курінь (УСП, УПС чи обидві) — називається числами в гілках, а не одним числом. */
+  get isSenior(): boolean {
+    return isSeniorBranch(this.kurinData?.branch);
+  }
+
+  /** «5-й курінь УСП · 20-й курінь УПС». */
+  get seniorTitle(): string {
+    return kurinBranchesName(this.kurinData?.branches);
   }
 
   get isDescriptionLong(): boolean {
@@ -143,6 +194,9 @@ export class KurinPanelComponent implements OnInit {
       [
         this.canEditKurinProfile,
         this.canManageGroups,
+        this.isSenior,
+        this.kurinData?.emblemUrl ?? null,
+        this.emblemSaving,
         this.canManageKurinSettings,
         this.reportDownloading,
         this.kurinKey
@@ -159,6 +213,24 @@ export class KurinPanelComponent implements OnInit {
         icon: 'pi pi-pencil',
         command: () => this.startProfileEdit()
       });
+    }
+
+    // A senior kurin shows its emblem where УПЮ shows the number plate; it puts it there itself.
+    if (this.canEditKurinProfile && this.isSenior) {
+      items.push({
+        label: this.kurinData?.emblemUrl ? 'Замінити емблему' : 'Завантажити емблему',
+        icon: 'pi pi-image',
+        disabled: this.emblemSaving,
+        command: () => this.emblemInput()?.nativeElement.click()
+      });
+      if (this.kurinData?.emblemUrl) {
+        items.push({
+          label: 'Прибрати емблему',
+          icon: 'pi pi-trash',
+          disabled: this.emblemSaving,
+          command: () => this.removeEmblem()
+        });
+      }
     }
 
     if (this.canManageGroups) {
@@ -228,8 +300,8 @@ export class KurinPanelComponent implements OnInit {
         command: () => { this.onGroupActionClick(item, 'update'); }
       },
       {
-        label: 'Видалити',
-        icon: 'pi pi-trash',
+        label: 'Розформувати',
+        icon: 'pi pi-inbox',
         command: () => { this.onGroupActionClick(item, 'delete'); }
       }
     ];
@@ -245,7 +317,15 @@ export class KurinPanelComponent implements OnInit {
     switch (e.action) {
       case 'create': this.groupService.create(e.entity).subscribe(() => this.refreshData()); break;
       case 'update': this.groupService.update(e.entity.groupKey, e.entity).subscribe(() => this.refreshData()); break;
-      case 'delete': this.groupService.delete(e.entity.groupKey).subscribe(() => this.refreshData()); break;
+      case 'delete':
+        this.groupService.delete(e.entity.groupKey).subscribe({
+          next: () => this.refreshData(),
+          error: (error: unknown) => this.messageService.add({
+            severity: 'error',
+            summary: error instanceof HttpErrorResponse && error.error?.error === 'GroupBoxNotSettled' ? 'У скриньці гуртка ще є гроші чи борги' : 'Не вдалося розформувати гурток'
+          })
+        });
+        break;
     }
   }
 

@@ -27,6 +27,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
     private readonly IResourceAccessService _resourceAccess;
     private readonly TimeProvider _time;
     private readonly IKraiProfileProvider _profiles;
+    private readonly IDuesKurinShape _shape;
+    private readonly DuesAccountRows _rows;
 
     public GetKurinDuesQueryHandler(
         KurinDuesAccess access,
@@ -37,7 +39,9 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
         TimeProvider time,
-        IKraiProfileProvider profiles)
+        IKraiProfileProvider profiles,
+        IDuesKurinShape shape,
+        DuesAccountRows rows)
     {
         _access = access;
         _dues = dues;
@@ -48,6 +52,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         _resourceAccess = resourceAccess;
         _time = time;
         _profiles = profiles;
+        _shape = shape;
+        _rows = rows;
     }
 
     public async Task<ServiceResult<KurinDuesResponse>> Handle(GetKurinDuesQuery request, CancellationToken cancellationToken)
@@ -76,6 +82,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         var kurinBox = ledger.KurinBox(accounts);
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var current = krai.QuarterOf(_time.GetUtcNow());
+        var isSenior = await _shape.IsSeniorAsync(kurinKey, cancellationToken);
+        var tags = await _rows.TagsAsync(kurinKey, cancellationToken);
 
         var transfers = entries
             .Where(e => e.GroupKey.HasValue && e.Kind == DuesEntryKind.TransferToKurin)
@@ -127,14 +135,17 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             NumberLocale = krai.NumberLocale,
             Upstream = krai.Dues.Upstream,
             CurrentQuarter = Quarter(current),
+            ChargeTiming = (await _dues.KurinDuesSettings.GetForKurinAsync(kurinKey, cancellationToken))?.ChargeTiming ?? DuesChargeTiming.InAdvance,
             Years = Years(DuesQuarter.FromIndex(first), current),
-            Rates = rates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
+            // With tags off, everyone pays the rate for everyone: the tags' rates stand idle and are not shown.
+            Rates = rates.Where(r => r.TagKey is null || tags.All.Count > 0).Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
             Box = new DuesBoxDto
             {
                 Cash = kurinBox.Box.Cash,
                 Card = kurinBox.Box.Card,
                 Total = kurinBox.Box.Total,
                 ToForward = kurinBox.Box.ToForward,
+                Ahead = kurinBox.Box.Ahead,
                 Own = kurinBox.Box.Own,
                 InTransit = groups.Sum(g => g.InTransit)
             },
@@ -143,7 +154,11 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             SentToStanytsia = ledger.Sent(DuesEntryKind.TransferToStanytsia),
             SentToKrai = ledger.Sent(DuesEntryKind.TransferToKrai),
             Groups = groups,
-            Quarters = Quarters(accounts, groupNames),
+            Quarters = Quarters(accounts.Where(a => a.GroupKey.HasValue).ToList(), groupNames),
+            IsSenior = isSenior,
+            Accounts = DuesAccountRows.Map(accounts, null, ledger, names, grants, current, tags),
+            Tags = tags.All,
+            KraiConcessions = krai.Dues.Concessions.Select(KraiConcessionDto.From).ToList(),
             Transfers = transfers,
             Entries = entries
                 .Where(e => e.GroupKey is null)
@@ -163,7 +178,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
     private static IReadOnlyList<KurinDuesQuarterDto> Quarters(IReadOnlyList<DuesAccount> accounts, IReadOnlyDictionary<Guid, string> groupNames)
     {
         var cells = accounts
-            .SelectMany(a => a.Quarters.Select(q => (a.GroupKey, q)))
+            .SelectMany(a => a.Quarters.Select(q => (GroupKey: a.GroupKey!.Value, q)))
             .GroupBy(x => x.q.Quarter.Index)
             .OrderBy(g => g.Key);
 

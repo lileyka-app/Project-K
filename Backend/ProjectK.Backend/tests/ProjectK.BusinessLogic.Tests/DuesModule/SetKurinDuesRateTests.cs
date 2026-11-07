@@ -24,7 +24,10 @@ public class SetKurinDuesRateTests
 
     private readonly List<KurinDuesRate> _rates = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
+    private readonly Mock<IDuesKurinShape> _shape = new();
+    private readonly Mock<ProjectK.Common.Interfaces.IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserContext> _user = new();
+    private readonly Mock<IDuesAccrual> _accrual = new();
     private string _upstream = KraiDues.Stanytsia;
 
     public SetKurinDuesRateTests()
@@ -40,7 +43,7 @@ public class SetKurinDuesRateTests
     }
 
     private Task<Common.Models.Records.ServiceResult<object>> Send(SetKurinDuesRateRequest request) =>
-        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream))
+        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object, _unitOfWork.Object, _accrual.Object)
             .Handle(new SetKurinDuesRateCommand(Kurin, request), CancellationToken.None);
 
     private static QuarterRequest From(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
@@ -178,5 +181,51 @@ public class SetKurinDuesRateTests
             FromQuarter = From(Q1),
             Articles = [Article(null!, DuesRecipient.Kurin, 15)]
         })).IsValid.Should().BeFalse();
+    }
+
+    private Guid SeniorWithTag(bool tagsOn)
+    {
+        var tag = Guid.NewGuid();
+        _shape.Setup(s => s.IsSeniorAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _shape.Setup(s => s.TagsOnAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(tagsOn);
+        var tags = new Mock<ProjectK.Common.Interfaces.Modules.KurinModule.IKurinTagRepository>();
+        tags.Setup(t => t.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new ProjectK.Common.Entities.KurinModule.Tags.KurinTag { KurinTagKey = tag, KurinKey = Kurin, Name = "УСП" }]);
+        _unitOfWork.SetupGet(u => u.KurinTags).Returns(tags.Object);
+        return tag;
+    }
+
+    [Fact]
+    public async Task ATagRate_IsTurnedDown_WhileTheKurinHasItsTagsOff()
+    {
+        var tag = SeniorWithTag(tagsOn: false);
+
+        var result = await Send(new SetKurinDuesRateRequest
+        {
+            FromQuarter = From(Q1),
+            TagKey = tag,
+            Articles = [Article("Курінна", DuesRecipient.Kurin, 150)]
+        });
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("TagsOff");
+        _rates.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ARate_RepricesTheKurinFromItsQuarter()
+    {
+        var tag = SeniorWithTag(tagsOn: true);
+
+        var result = await Send(new SetKurinDuesRateRequest
+        {
+            FromQuarter = From(Q2),
+            TagKey = tag,
+            Articles = [Article("Курінна", DuesRecipient.Kurin, 150)]
+        });
+
+        result.Type.Should().Be(ResultType.Success);
+        _rates.Single().TagKey.Should().Be(tag);
+        _accrual.Verify(a => a.RepriceKurinAsync(Kurin, Q2, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

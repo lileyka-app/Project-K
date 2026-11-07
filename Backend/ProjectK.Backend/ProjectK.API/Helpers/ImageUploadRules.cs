@@ -25,16 +25,19 @@ public static class ImageUploadRules
     /// <summary>
     /// The error to answer with, or <c>null</c> when the file is acceptable or absent.
     /// </summary>
-    public static (string Code, string Message)? Refusal(IFormFile? file)
+    public static (string Code, string Message)? Refusal(IFormFile? file) => Refusal(file, MaxImageBytes);
+
+    /// <summary>The same rules with a smaller size limit, for pictures that live inside a text.</summary>
+    public static (string Code, string Message)? Refusal(IFormFile? file, long maxBytes)
     {
         if (file is null || file.Length == 0)
         {
             return null;
         }
 
-        if (file.Length > MaxImageBytes)
+        if (file.Length > maxBytes)
         {
-            return ("ImageTooLarge", "Image file must be 5 MB or smaller.");
+            return ("ImageTooLarge", $"Image file must be {FormatMegabytes(maxBytes)} MB or smaller.");
         }
 
         if (!AllowedContentTypes.Contains(file.ContentType ?? string.Empty))
@@ -44,4 +47,7 @@ public static class ImageUploadRules
 
         return null;
     }
+
+    private static string FormatMegabytes(long bytes) =>
+        (bytes / (1024d * 1024d)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 }

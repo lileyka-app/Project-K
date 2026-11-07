@@ -21,11 +21,15 @@
             [disabled]="switchingTo() !== null"
             (click)="switchTo(option, switcher)">
             <span class="kurin-switcher-name">
-              {{ kurinLabel(option.kurinNumber) }}@if (option.namedAfter) { <span class="kurin-switcher-named">{{ option.namedAfter }}</span> }
+              @if (isSenior(option)) {
+                {{ headline(option) }}
+              } @else {
+                {{ kurinLabel(option.kurinNumber, option.branch) }}@if (option.namedAfter) { <span class="kurin-switcher-named">{{ option.namedAfter }}</span> }
+              }
             </span>
             <span class="kurin-switcher-meta">
-              <p-tag [value]="branchLabels[option.branch]" severity="secondary" />
-              <span class="kurin-switcher-kind">{{ kindLabels[option.kind] }}</span>
+              <p-tag [value]="subline(option)" severity="secondary" />
+              <span class="kurin-switcher-kind">{{ kindLabel(option.kind, option.branch) }}</span>
             </span>
             @if (isCurrent(option)) {
               <i class="pi pi-check kurin-switcher-mark" aria-label="Поточний курінь"></i>

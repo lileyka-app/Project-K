@@ -24,9 +24,16 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
     private readonly ScoreBookReader _books;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IKraiProfileProvider _profiles;
+    private readonly IKurinTagVisibility _tags;
 
-    public GetAttendanceSheetQueryHandler(ScoreAccess access, ScoreBookReader books, IUnitOfWork unitOfWork, IKraiProfileProvider profiles)
+    public GetAttendanceSheetQueryHandler(
+        ScoreAccess access,
+        ScoreBookReader books,
+        IUnitOfWork unitOfWork,
+        IKraiProfileProvider profiles,
+        IKurinTagVisibility tags)
     {
+        _tags = tags;
         _access = access;
         _books = books;
         _unitOfWork = unitOfWork;
@@ -72,6 +79,15 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         var aimedGroups = item.Assignments.Where(a => a.TargetType == AgendaTargetType.Group).Select(a => a.TargetKey).ToHashSet();
         var aimedMembers = item.Assignments.Where(a => a.TargetType == AgendaTargetType.Member).Select(a => a.TargetKey).ToHashSet();
 
+        // Whoever carries an aimed tag today is among those the event is for, like a гурток's members —
+        // but only where the caller may see tags, or the sheet would tell who carries what.
+        var tagCarriers = new HashSet<Guid>();
+        foreach (var tagKey in item.Assignments.Where(a => a.TargetType == AgendaTargetType.Tag).Select(a => a.TargetKey).Distinct())
+        {
+            tagCarriers.UnionWith(await _unitOfWork.KurinTags.GetMemberKeysAsync(tagKey, cancellationToken));
+        }
+        var showsTagsOf = tagCarriers.Count > 0 ? await _tags.ShowsTagsOfAsync(request.KurinKey, cancellationToken) : (_, _) => false;
+
         var people = book.CurrentYouths()
             .Select(y => new SheetPersonDto
             {
@@ -83,7 +99,8 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
                 Rsvp = y.Person.UserKey is { } user && responses.TryGetValue(user, out var status) ? status : null,
                 IsAssigned = aimedAtKurin
                     || (y.Membership.GroupKey is { } g && aimedGroups.Contains(g))
-                    || aimedMembers.Contains(y.Membership.MemberKey),
+                    || aimedMembers.Contains(y.Membership.MemberKey)
+                    || (tagCarriers.Contains(y.Membership.MemberKey) && showsTagsOf(y.Person.UserKey, y.Membership.GroupKey)),
                 Attendance = marks.TryGetValue(y.Membership.MembershipKey, out var mark)
                     ? new AttendanceMarkDto { MarkedByName = book.NameOfAccount(mark.MarkedByUserKey), MarkedAtUtc = DateTime.SpecifyKind(mark.MarkedAtUtc, DateTimeKind.Utc) }
                     : null,

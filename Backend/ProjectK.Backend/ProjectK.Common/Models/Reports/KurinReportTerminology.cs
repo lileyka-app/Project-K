@@ -24,6 +24,13 @@ public static class KurinReportTerminology
     public static string AwardLevel(MemberAwardLevel value)
         => AwardLevelLabels.GetValueOrDefault(value, value.ToString());
 
+    /// <summary>
+    /// An УПЮ відзначення by its level, a senior one by the catalogue's title — or its id while the
+    /// catalogue has not been read.
+    /// </summary>
+    public static string Award(MemberAwardLevel? level, string? catalogId, Func<string, string?> catalogTitle)
+        => level is { } value ? AwardLevel(value) : (catalogId is null ? "-" : catalogTitle(catalogId) ?? catalogId);
+
     public static string LeadershipType(LeadershipType value)
         => LeadershipTypeLabels.GetValueOrDefault(value, value.ToString());
 

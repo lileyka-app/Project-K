@@ -1,0 +1,16 @@
+.return-dialog {
+  display: grid;
+  gap: 1rem;
+}
+
+.return-dialog__name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.return-dialog__hint {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  margin: 0;
+}

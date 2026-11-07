@@ -113,4 +113,33 @@ describe('KurinRateDialogComponent', () => {
     dialog.removeArticle(first.id);
     expect(dialog.valid()).toBe(true);
   });
+
+  it('in a kurin with tags, sets a rate per tag', () => {
+    TestBed.configureTestingModule({ imports: [KurinRateDialogComponent], providers: [provideNoopAnimations()] });
+    const fixture = TestBed.createComponent(KurinRateDialogComponent);
+    const uspRate: KurinDuesRateDto = {
+      ...rate,
+      tagKey: 'usp',
+      articles: [{ name: 'Вкладка УСП', recipient: DuesRecipient.Krai, amount: 300, reducedAmount: 200 }]
+    };
+    fixture.componentRef.setInput('rates', [rate, uspRate]);
+    fixture.componentRef.setInput('years', years);
+    fixture.componentRef.setInput('currentQuarter', q(2026, 4));
+    fixture.componentRef.setInput('tags', [{ tagKey: 'usp', name: 'УСП', colorHex: '#2F855A' }]);
+    fixture.componentRef.setInput('upstream', DuesUpstream.Both);
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    const dialog = fixture.componentInstance;
+    let sent: SetKurinDuesRateRequest | undefined;
+    dialog.save.subscribe(r => (sent = r));
+
+    expect(dialog.articles().map(a => a.name)).toEqual(['Станиця', 'Табірний фонд']);
+    dialog.chooseTag('usp');
+    fixture.detectChanges();
+    expect(dialog.articles().map(a => [a.name, a.recipient])).toEqual([['Вкладка УСП', DuesRecipient.Krai]]);
+
+    dialog.submit();
+    expect(sent?.tagKey).toBe('usp');
+    expect(sent?.articles).toEqual([{ name: 'Вкладка УСП', recipient: DuesRecipient.Krai, amount: 300, reducedAmount: 200 }]);
+  });
 });

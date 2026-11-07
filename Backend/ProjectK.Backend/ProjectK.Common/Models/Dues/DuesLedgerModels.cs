@@ -18,6 +18,9 @@ public sealed record DuesAccountQuarter(
     DuesAmount Paid,
     bool IsConcession)
 {
+    /// <summary>The tag whose rate priced the quarter; null for the kurin's rate for everyone.</summary>
+    public Guid? RateTagKey { get; init; }
+
     /// <summary>The пільга of the край that set the quarter's amount; null when none of them did.</summary>
     public string? ConcessionName { get; init; }
 
@@ -31,7 +34,7 @@ public sealed record DuesAccountQuarter(
 /// </summary>
 public sealed record DuesAccount(
     Guid MembershipKey,
-    Guid GroupKey,
+    Guid? GroupKey,
     IReadOnlyList<DuesAccountQuarter> Quarters,
     decimal Payments)
 {
@@ -52,8 +55,14 @@ public sealed record DuesCashBox(decimal Cash, decimal Card, decimal ToForward)
 {
     public decimal Total => Cash + Card;
 
-    /// <summary>Total less what has to go up — the money the box may spend.</summary>
-    public decimal Own => Total - ToForward;
+    /// <summary>
+    /// What people have paid for quarters not charged yet, in a kurin's own box: it is theirs until the
+    /// quarters come, and then partly the станиця's and the край's.
+    /// </summary>
+    public decimal Ahead { get; init; }
+
+    /// <summary>Total less what has to go up and what is paid ahead — the money the box may spend.</summary>
+    public decimal Own => Total - ToForward - Ahead;
 }
 
 /// <summary>A гурток's box, and the transfers to the kurin that have not been confirmed yet.</summary>

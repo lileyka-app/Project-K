@@ -12,6 +12,11 @@
     font-weight: 700;
 }
 
+.kurin-branch-tag {
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
 .kurin-number-cell small {
     color: var(--p-text-muted-color);
 }

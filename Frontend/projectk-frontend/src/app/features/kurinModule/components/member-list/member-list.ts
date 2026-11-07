@@ -1,4 +1,6 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy, input } from '@angular/core';
+import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.service';
+import { KurinTagChipsComponent } from '../kurin-tag-chips/kurin-tag-chips';
+import { Component, inject, OnInit, ChangeDetectionStrategy, input, effect, untracked } from '@angular/core';
 import { MemberService } from '../../services/member-service/member.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
@@ -43,6 +45,7 @@ import { LeadershipRole } from '../../models/enums/leadership-role.enum';
     UpcomingBirthdaysTileComponent,
     ProfileVerificationBadgeComponent,
     EmptyStateComponent,
+    KurinTagChipsComponent,
     DatePipe,
     RouterLink
 ],
@@ -64,6 +67,19 @@ export class MemberListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
+  private readonly tagService = inject(KurinTagService);
+
+  constructor() {
+    // Теги лежать на людях: після зміни тегів склад перечитується, щоб плашки збіглися.
+    let seen = this.tagService.revision();
+    effect(() => {
+      const revision = this.tagService.revision();
+      if (revision !== seen && this.type() !== 'leadership') {
+        seen = revision;
+        untracked(() => this.loadMembers());
+      }
+    });
+  }
 
   get canSetupLeadership(): boolean {
     return this.permissionService.canSetupLeadership(this.leadershipType());
@@ -139,7 +155,8 @@ export class MemberListComponent implements OnInit {
           profileVerifiedAtUtc: m.profileVerifiedAtUtc,
           profileVerifiedByUserKey: m.profileVerifiedByUserKey,
           profileVerificationNote: m.profileVerificationNote,
-          warnings: m.warnings ?? []
+          warnings: m.warnings ?? [],
+          tagKeys: m.tagKeys ?? []
         }));
         this.hasUpcomingBirthdays = buildUpcomingBirthdays(this.membersLookup, this.upcomingBirthdaysWindowDays).length > 0;
       }
@@ -320,7 +337,8 @@ export class MemberListComponent implements OnInit {
   }
 
   private getMemberRoleLabel(history: LeadershipHistoryDto): string {
-    const roleName = this.getRoleDisplayName(history.role);
+    // Named by the kurin the office is in, not by the one the list is in.
+    const roleName = leadershipRoleDisplayName(history.role, history.kurinKey ?? undefined);
     const type = (history.leadershipType ?? '').toLowerCase();
     if (type === 'group' && history.groupName) {
       return `${roleName}: ${history.groupName}`;

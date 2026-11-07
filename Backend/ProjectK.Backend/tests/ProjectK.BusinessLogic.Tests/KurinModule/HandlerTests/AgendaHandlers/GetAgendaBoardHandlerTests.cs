@@ -42,6 +42,7 @@ public class GetAgendaBoardHandlerTests
         uow.SetupGet(u => u.AgendaItems).Returns(agenda.Object);
         uow.SetupGet(u => u.Groups).Returns(groups.Object);
         uow.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        uow.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
         uow.SetupGet(u => u.AgendaCategories).Returns(categories.Object);
 
         var members = new Mock<IMemberDirectory>();

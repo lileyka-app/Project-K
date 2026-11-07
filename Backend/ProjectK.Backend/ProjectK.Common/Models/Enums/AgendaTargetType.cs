@@ -12,5 +12,11 @@ public enum AgendaTargetType
     Member = 2,
 
     /// <summary>A провід/КВ — <c>TargetKey</c> is a <c>LeadershipKey</c> (Type KV/Kurin/Group).</summary>
-    Leadership = 3
+    Leadership = 3,
+
+    /// <summary>
+    /// Everyone carrying a kurin tag — <c>TargetKey</c> is a <c>KurinTagKey</c>. Read at the time it is
+    /// asked, like a гурток: whoever gets the tag later gets what was assigned to it.
+    /// </summary>
+    Tag = 4
 }

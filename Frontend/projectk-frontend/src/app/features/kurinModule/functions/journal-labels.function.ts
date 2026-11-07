@@ -3,6 +3,7 @@ import { AUDIENCE_LABELS, CAPABILITY_LABELS, labelOf, REACH_LABELS } from '../mo
 import { parseOfficeRole } from './system-role.function';
 import { leadershipRoleDisplayName } from './leadership-role-display.function';
 import { REGULAR_PROBE_LABEL } from '../models/group-probe-edition.dto';
+import { TAG_COLOR_NAMES } from '../models/kurin-tag.dto';
 
 /** The journal's sections, in the order the «Розділ» filter lists them. */
 export const JOURNAL_AREA_LABELS: Record<JournalArea, string> = {
@@ -14,7 +15,9 @@ export const JOURNAL_AREA_LABELS: Record<JournalArea, string> = {
   Member: 'Картки',
   Office: 'Ролі',
   Membership: 'Членство',
-  Settings: 'Налаштування куреня'
+  Settings: 'Налаштування куреня',
+  Tag: 'Теги',
+  Archive: 'Архів'
 };
 
 /**
@@ -29,6 +32,21 @@ const ACTION_LABELS: Record<string, string> = {
   'Probe.Completed': 'Пробу закрито',
   'Probe.Verified': 'Пробу підтверджено',
   'Probe.Unverified': 'Знято підтвердження проби',
+  'Probe.ProjectAdded': 'Додано проєкт проби',
+  'Probe.ProjectEdited': 'Змінено проєкт проби',
+  'Probe.ProjectRemoved': 'Видалено проєкт проби',
+  'Probe.ProjectApproved': 'Дано дозвіл на проєкт',
+  'Probe.ProjectApprovalRemoved': 'Знято дозвіл на проєкт',
+  'Probe.ProjectCompleted': 'Проєкт виконано',
+  'Probe.ProjectCompletionRemoved': 'Знято позначку «виконано»',
+  'Probe.ProjectsSwapped': 'Запасний проєкт поставлено замість основного',
+  'Probe.FileEdited': 'Змінено дані третьої проби',
+  'Probe.ConferenceConfirmed': 'Підтверджено конференцію третьої проби',
+  'Probe.ConferenceUnconfirmed': 'Знято підтвердження конференції',
+  'Probe.CampConfirmed': 'Зараховано табір третьої проби',
+  'Probe.CampUnconfirmed': 'Знято зарахування табору',
+  'Probe.CertificateAttached': 'Прикріплено посвідку табору',
+  'Probe.CertificateRemoved': 'Прибрано посвідку табору',
   'Badge.Submitted': 'Вмілість подано на підтвердження',
   'Badge.Resubmitted': 'Вмілість подано повторно',
   'Badge.Confirmed': 'Вмілість підтверджено',
@@ -63,11 +81,26 @@ const ACTION_LABELS: Record<string, string> = {
   'Membership.Joined': 'Прийнято до куреня',
   'Membership.Left': 'Виведено з куреня',
   'Membership.MovedToGroup': 'Переведено в інший гурток',
+  'Office.Corrected': 'Виправлено роль в архіві',
+  'Membership.Corrected': 'Виправлено членство в архіві',
   'Settings.KurinChanged': 'Змінено налаштування куреня',
   'Settings.AccessPolicyChanged': 'Змінено права й видимість',
   'Settings.CardFieldsChanged': 'Змінено поля картки',
   'Settings.ArchivePolicyChanged': 'Змінено строки архіву задач',
-  'Settings.GroupProbeEditionChanged': 'Змінено пробу гуртка'
+  'Settings.GroupProbeEditionChanged': 'Змінено пробу гуртка',
+  'Settings.TagSettingsChanged': 'Змінено налаштування тегів',
+  'Tag.Created': 'Заведено тег',
+  'Tag.Changed': 'Змінено тег',
+  'Tag.Deleted': 'Видалено тег',
+  'Tag.Put': 'Поставлено тег',
+  'Tag.TakenOff': 'Знято тег',
+  'Archive.GroupDissolved': 'Розформовано гурток',
+  'Archive.DangerZoneEntered': 'Увімкнено небезпечний режим',
+  'Archive.DangerZoneRefused': 'Невдала спроба увімкнути небезпечний режим',
+  'Archive.DangerZoneEnded': 'Вимкнено небезпечний режим',
+  'Archive.OfficeDeleted': 'Видалено запис ролі',
+  'Archive.MembershipDeleted': 'Видалено членство',
+  'Archive.GroupDeleted': 'Видалено гурток назавжди'
 };
 
 /** For an action this build does not know yet: what part of the kurin it touched. */
@@ -80,16 +113,22 @@ const AREA_FALLBACKS: Record<JournalArea, string> = {
   Member: 'Зміна картки',
   Office: 'Зміна ролей',
   Membership: 'Зміна членства',
-  Settings: 'Зміна налаштувань куреня'
+  Settings: 'Зміна налаштувань куреня',
+  Tag: 'Зміна тегів',
+  Archive: 'Зміна в архіві'
 };
 
 const FIELD_LABELS: Record<string, string> = {
   status: 'Стан',
   taskStatus: 'Стан задачі',
   level: 'Ступінь',
+  award: 'Відзначення',
   note: 'Примітка',
   dateAcquired: 'Дата здобуття',
   point: 'Точка',
+  project: 'Проєкт',
+  conference: 'Конференція',
+  camp: 'Табір',
   issuedAtUtc: 'Дано',
   expiresAtUtc: 'Діє до',
   title: 'Назва',
@@ -130,7 +169,20 @@ const FIELD_LABELS: Record<string, string> = {
   hidden: 'Приховані поля',
   purgeAfterDays: 'Видалення з архіву, днів',
   autoArchiveAfterDays: 'Перенесення в архів, днів',
-  probeEdition: 'Проба гуртка'
+  probeEdition: 'Проба гуртка',
+  name: 'Назва',
+  color: 'Колір',
+  carriedBy: 'Мали тег',
+  enabled: 'Теги ввімкнені',
+  ownTagsVisible: 'Кожен бачить свої теги',
+  startDate: 'Від',
+  endDate: 'До',
+  joinedOn: 'Від',
+  leftOn: 'До',
+  offices: 'Записів ролей',
+  dissolvedOn: 'Розформовано',
+  method: 'Чим',
+  reason: 'Як'
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -142,6 +194,13 @@ const STATUS_LABELS: Record<string, string> = {
   Submitted: 'Очікує підтвердження',
   Confirmed: 'Підтверджено',
   Rejected: 'Відхилено'
+};
+
+/** The archive's own values: how the danger zone was entered and how it ended, the kind of a membership. */
+const ARCHIVE_VALUE_LABELS: Record<string, Record<string, string>> = {
+  method: { password: 'пароль', code: 'код' },
+  reason: { manual: 'вручну', left: 'вихід зі сторінки', time: 'минув час', spent: 'вичерпано видалення' },
+  kind: { Youth: 'юнацтво', Staff: 'виховний склад' }
 };
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -214,8 +273,15 @@ export function journalValueLabel(field: string, value: string | null | undefine
   if (field === 'status' && STATUS_LABELS[value]) {
     return STATUS_LABELS[value];
   }
+  if (field === 'color' && TAG_COLOR_NAMES[value]) {
+    return TAG_COLOR_NAMES[value];
+  }
   if (field === 'level' && LEVEL_LABELS[value]) {
     return LEVEL_LABELS[value];
+  }
+  const archived = ARCHIVE_VALUE_LABELS[field]?.[value];
+  if (archived) {
+    return archived;
   }
   if (value === 'true' || value === 'false') {
     return value === 'true' ? 'так' : 'ні';

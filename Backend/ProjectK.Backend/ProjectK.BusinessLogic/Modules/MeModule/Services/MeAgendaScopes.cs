@@ -79,6 +79,11 @@ public sealed class MeAgendaScopes
                 ? (await _scopeReader.GetLedGroupKeysAsync(userKey, membership.KurinKey, cancellationToken)).ToHashSet()
                 : new HashSet<Guid>();
 
+            // An item aimed at a tag reaches whoever carries it in that kurin now.
+            var tagKeys = (await _unitOfWork.KurinTags.GetAssignmentsAsync(membership.KurinKey, [person.MemberKey], cancellationToken))
+                .Select(a => a.KurinTagKey)
+                .ToList();
+
             var groups = new HashSet<Guid>(led);
             if (membership.GroupKey is { } ownGroup)
             {
@@ -94,7 +99,8 @@ public sealed class MeAgendaScopes
                 ViewerLeadershipKeys: leadershipKeys,
                 CanSeeWholeKurin: canSeeWholeKurin,
                 IsLeadership: roles.Count > 0,
-                LedGroupKeysOrNull: led), roles, led));
+                LedGroupKeysOrNull: led,
+                ViewerTagKeysOrNull: tagKeys), roles, led));
         }
 
         return contexts;

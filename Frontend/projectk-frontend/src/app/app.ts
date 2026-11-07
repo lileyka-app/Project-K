@@ -55,7 +55,7 @@ export class App implements AfterViewInit {
       this.isPublicShellRoute.set(this.deepestRouteData()['shell'] !== 'app');
       return;
     }
-    const publicPrefixes = ['/welcome', '/login', '/join', '/activate'];
+    const publicPrefixes = ['/welcome', '/login', '/join', '/activate', '/v', '/c'];
     this.isPublicShellRoute.set(
       publicPrefixes.some(prefix => path === prefix || path.startsWith(`${prefix}/`))
     );

@@ -28,6 +28,7 @@ public sealed class FakeBlobReadLinks : IBlobReadLinks
         if (type == typeof(MemberLookupPhotoUrlResolver)) return new MemberLookupPhotoUrlResolver(Instance);
         if (type == typeof(MemberSummaryLookupPhotoUrlResolver)) return new MemberSummaryLookupPhotoUrlResolver(Instance);
         if (type == typeof(GroupSilhouetteUrlResolver)) return new GroupSilhouetteUrlResolver(Instance);
+        if (type == typeof(KurinEmblemUrlResolver)) return new KurinEmblemUrlResolver(Instance);
         return Activator.CreateInstance(type)!;
     }
 }

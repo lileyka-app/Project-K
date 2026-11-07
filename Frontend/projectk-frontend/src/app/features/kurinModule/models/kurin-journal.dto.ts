@@ -8,7 +8,9 @@ export type JournalArea =
   | 'Member'
   | 'Office'
   | 'Membership'
-  | 'Settings';
+  | 'Settings'
+  | 'Tag'
+  | 'Archive';
 
 /**
  * One field of an entry: what it was and what it became. A person's private data comes back

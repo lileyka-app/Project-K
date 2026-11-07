@@ -1,8 +1,8 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -20,14 +20,14 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAccessChangeSignal _accessChanges;
     private readonly IMemberDirectory _members;
-    private readonly IKurinAudit _audit;
+    private readonly MembershipMoves _moves;
 
-    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, IKurinAudit audit)
+    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, MembershipMoves moves)
     {
         _unitOfWork = unitOfWork;
         _accessChanges = accessChanges;
         _members = members;
-        _audit = audit;
+        _moves = moves;
     }
 
     public async Task<ServiceResult<object>> Handle(LeaveKurinCommand request, CancellationToken cancellationToken)
@@ -49,23 +49,16 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
                 ResultType.NotFound, "NotAMember", "They do not currently belong to this kurin.");
         }
 
-        membership.LeftAtUtc = DateTime.UtcNow;
+        if (await _moves.OwedToLeaveAsync(request.MemberKey, request.KurinKey, cancellationToken) > 0)
+        {
+            return ServiceResult<object>.Failure(
+                ResultType.Conflict,
+                "MemberOwesDues",
+                "They owe the kurin dues; a person is released only once paid in full.");
+        }
 
-        // Recorded before the save, while they are still placed in the kurin and their гурток is known.
-        var group = membership.GroupKey is { } groupKey
-            ? await _unitOfWork.Groups.GetByKeyAsync(groupKey, cancellationToken)
-            : null;
         var person = await _members.FindAsync(request.MemberKey, cancellationToken);
-        await _audit.RecordAsync(
-            new AuditRecord(
-                AuditArea.Membership,
-                AuditActions.Membership.Left,
-                membership.MembershipKey,
-                person?.FullName ?? string.Empty,
-                request.MemberKey,
-                AuditChanges.Removed(("kind", membership.Kind), ("group", group?.Name)),
-                KurinKey: request.KurinKey),
-            cancellationToken);
+        await _moves.CloseAsync(membership, person?.FullName ?? string.Empty, cancellationToken);
 
         // Offices are held by someone who belongs here; the access layer reads both together and
         // stops granting the office the moment the membership closes, so there is nothing else to

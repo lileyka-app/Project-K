@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Disable;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Get;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Issue;
@@ -143,6 +144,61 @@ public class MeController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    /// <summary>The person's shared card: what they may show, what they chose, the permanent link and a preview.</summary>
+    [HttpGet("card")]
+    [ProducesResponseType(typeof(MyCardDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCard()
+    {
+        var result = await _mediator.Send(new GetMyCardQuery());
+        return result.ToActionResult(this);
+    }
+
+    [HttpPut("card/fields")]
+    [ProducesResponseType(typeof(MyCardDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SetCardFields([FromBody] CardFieldsRequest request)
+    {
+        var result = await _mediator.Send(new SetMyCardFieldsCommand(request.Fields));
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Makes a permanent card link, replacing the old one.</summary>
+    [HttpPost("card/link")]
+    [EnableRateLimiting("AccountSecurityLimit")]
+    [ProducesResponseType(typeof(MyCardDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> IssueCardLink()
+    {
+        var result = await _mediator.Send(new IssueMyCardLinkCommand());
+        return result.ToActionResult(this);
+    }
+
+    [HttpDelete("card/link")]
+    [ProducesResponseType(typeof(MyCardDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DisableCardLink()
+    {
+        var result = await _mediator.Send(new DisableMyCardLinkCommand());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>A QR to check the card by, working for three minutes.</summary>
+    [HttpGet("card/check-code")]
+    [ProducesResponseType(typeof(CardCodeDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetCardCheckCode()
+    {
+        var result = await _mediator.Send(new GetMyCardCheckCodeQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>The transfer code as a QR that opens «Склад куреня» with the code typed in.</summary>
+    [HttpGet("transfer-code")]
+    [ProducesResponseType(typeof(CardCodeDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTransferCode()
+    {
+        var result = await _mediator.Send(new GetMyTransferCodeQuery());
+        return result.ToActionResult(this);
+    }
+
     /// <summary>Where the calendar link stands. The link itself is shown only once, when issued.</summary>
     [HttpGet("calendar-feed")]
     [ProducesResponseType(typeof(CalendarFeedStatusDto), StatusCodes.Status200OK)]
@@ -193,3 +249,6 @@ public sealed record CalendarFeedOptionsRequest(bool IncludeSchedules, bool Incl
 
 /// <summary>A just-issued calendar link: the only answer that ever carries it.</summary>
 public sealed record IssuedCalendarFeedResponse(string FeedUrl, CalendarFeedStatusDto Status);
+
+/// <summary>Body of <c>PUT api/me/card/fields</c>.</summary>
+public sealed record CardFieldsRequest(CardField Fields);

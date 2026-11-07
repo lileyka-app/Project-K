@@ -110,6 +110,18 @@ describe('PermissionService', () => {
     expect(service.canManageKurinSettings()).toBe(false);
   });
 
+  it('lets the КВ read the kurin settings, and only who may change the kurin edit them', () => {
+    setState([...vykhovnykPerms, 'KurinSettings:Read:KurinWide']);
+    expect(service.canReadKurinSettings()).toBe(true);
+    expect(service.canManageKurinSettings()).toBe(false);
+
+    setState(kurinnyyPerms);
+    expect(service.canReadKurinSettings()).toBe(false);
+
+    setState(memberPerms);
+    expect(service.canReadKurinSettings()).toBe(false);
+  });
+
   it('lets a провід office raise agenda and planning without touching groups', () => {
     setState(providPerms);
     expect(service.canManageWholeKurin()).toBe(false);

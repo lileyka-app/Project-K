@@ -5,6 +5,7 @@ import { AdminPanelComponent } from './admin-panel';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinDto } from '../../models/kurin.dto';
+import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { AuthState } from '../../../authModule/models/auth-state.model';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -86,6 +87,23 @@ describe('AdminPanelComponent', () => {
       expect(component.data.map(k => k.kurinKey)).toEqual(['a', 'b', 'c']);
       expect(component.kraiName('cz')).toBe('Чехія');
       expect(component.kurinCountInKrai('ua')).toBe(2);
+    });
+
+    it('keeps 5-й курінь УПЮ and 5-й курінь УСП apart: УПЮ first, each row tagged with its улади', () => {
+      const senior = { kurinKey: 'orden', number: 5, kraiCode: 'ua', branch: KurinBranch.USP, namedAfter: 'Орден Хрестоносців',
+        branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }] } as KurinDto;
+      const youth = { kurinKey: 'youth', number: 5, kraiCode: 'ua', branch: KurinBranch.UPYu, branches: [{ branch: KurinBranch.UPYu, number: 5 }] } as KurinDto;
+      kurinService.getKurins.mockReturnValue(of([senior, { kurinKey: 'seven', number: 7, kraiCode: 'ua' } as KurinDto, youth]));
+
+      component.ngOnInit();
+      fixture.detectChanges();
+
+      expect(component.data.map(k => k.kurinKey)).toEqual(['youth', 'seven', 'orden']);
+      const rows = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.admin-kurin-row')].map(row => row.textContent?.replace(/s+/g, ' ').trim());
+      expect(rows[0]).toContain('5 УПЮ');
+      expect(rows[2]).toContain('Орден Хрестоносців УСП · УПС');
+      expect(component.managePanelConfig.displayName!(youth)).toBe('Курінь ч. 5 УПЮ');
+      expect(component.managePanelConfig.displayName!(senior)).toBe('Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС');
     });
 
     it('offers the краї as choices in the kurin form', () => {

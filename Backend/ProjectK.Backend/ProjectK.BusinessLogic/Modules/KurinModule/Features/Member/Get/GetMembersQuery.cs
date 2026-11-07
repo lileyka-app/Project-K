@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
@@ -34,12 +35,18 @@ public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceRe
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IMemberFieldAccess _fieldAccess;
+    private readonly IKurinTagVisibility _tagVisibility;
 
-    public GetMembersQueryHandler(IMemberUnitOfWork unitOfWork, IMapper mapper, IMemberFieldAccess fieldAccess)
+    public GetMembersQueryHandler(
+        IMemberUnitOfWork unitOfWork,
+        IMapper mapper,
+        IMemberFieldAccess fieldAccess,
+        IKurinTagVisibility tagVisibility)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _fieldAccess = fieldAccess;
+        _tagVisibility = tagVisibility;
     }
 
     public async Task<ServiceResult<IEnumerable<MemberResponse>>> Handle(GetMembersQuery request, CancellationToken cancellationToken)
@@ -67,7 +74,8 @@ public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceRe
             mask.Apply(row, row.UserKey, row.GroupKey);
         }
 
-        var response = _mapper.Map<IEnumerable<MemberResponse>>(rows);
+        var response = _mapper.Map<List<MemberResponse>>(rows);
+        await _tagVisibility.FillAsync(request.KurinKey, response, cancellationToken);
         return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, response);
     }
 }

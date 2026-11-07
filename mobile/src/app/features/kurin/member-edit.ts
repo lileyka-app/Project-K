@@ -95,10 +95,11 @@ export function closeBranch(dates: RankDates, branch: RankBranch): RankDates {
  * The ступені to send: every achieved one, an existing row keeping its key so the server updates it
  * rather than adding another (web buildPlastLevelsPayload).
  */
-export function rankHistories(existing: PlastLevelHistoryDto[] | null | undefined, dates: RankDates): PlastLevelHistoryDto[] {
+export function rankHistories(existing: PlastLevelHistoryDto[] | null | undefined, dates: RankDates, isPlastunka = false): PlastLevelHistoryDto[] {
   return RANK_FIELDS.filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(dates[f.level] ?? '')).map((f) => {
     const row = (existing ?? []).find((h) => h.plastLevel === f.level);
-    return row ? { ...row, dateAchieved: dates[f.level] } : { plastLevel: f.level, dateAchieved: dates[f.level] };
+    const { catalogId: _readOnly, ...stored } = row ?? { plastLevel: f.level };
+    return { ...stored, dateAchieved: dates[f.level], isPlastunka };
   });
 }
 

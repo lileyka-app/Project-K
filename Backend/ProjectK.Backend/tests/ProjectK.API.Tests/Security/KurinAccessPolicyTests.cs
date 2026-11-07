@@ -72,7 +72,10 @@ public class KurinAccessPolicyTests
     {
         Assert.All(KurinCapabilities.All, descriptor =>
         {
-            Assert.Equal(descriptor.Group == CapabilityGroup.MemberData, descriptor.YouthConfigurable);
+            // Seeing tags is data about a person too: a kurin may show everyone the table with tags.
+            Assert.Equal(
+                descriptor.Group == CapabilityGroup.MemberData || descriptor.Key == KurinCapability.SeeTags,
+                descriptor.YouthConfigurable);
             if (!descriptor.YouthConfigurable)
             {
                 Assert.Equal(CapabilityReach.None, descriptor.Defaults[PolicyAudience.Youth]);

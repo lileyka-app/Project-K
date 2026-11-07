@@ -1,7 +1,7 @@
 <section class="kurin-tile kurins-tile">
   <div class="lil-tile-head">
     <div>
-      <h2>Мої курені та гуртки</h2>
+      <h2>{{ hasAnyGroups() ? 'Мої курені та гуртки' : 'Мої курені' }}</h2>
     </div>
   </div>
 
@@ -20,12 +20,12 @@
             [class.kurins-tile__row--current]="row.isCurrent"
             [disabled]="openingKey() !== null"
             (click)="open.emit(row.option)">
-            <app-kurin-number class="kurins-tile__plaque" [number]="row.option.kurinNumber" aria-hidden="true" />
+            <app-kurin-mark class="kurins-tile__plaque" [number]="row.option.kurinNumber" [branch]="row.option.branch" aria-hidden="true" />
             <span class="kurins-tile__body">
-              <span class="kurins-tile__name">{{ kurinLabel(row.option) }}</span>
+              <span class="kurins-tile__name">{{ headline(row.option) }}</span>
               <span class="kurins-tile__meta">
-                <p-tag [value]="branchLabels[row.option.branch]" severity="secondary" />
-                <span>{{ kindLabels[row.option.kind] }}</span>
+                <p-tag [value]="subline(row.option)" severity="secondary" />
+                <span>{{ kindLabel(row.option.kind, row.option.branch) }}</span>
               </span>
               @if (row.isCurrent && currentOffices().length) {
                 <span class="kurins-tile__offices">{{ currentOffices().join(' · ') }}</span>

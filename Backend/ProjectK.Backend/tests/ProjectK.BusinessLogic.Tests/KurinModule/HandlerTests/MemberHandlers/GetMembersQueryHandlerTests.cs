@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using System;
 using System.Collections.Generic;
@@ -54,7 +55,7 @@ public class GetMembersHandlerTests
         }, loggerFactory);
         _mapper = mapperConfig.CreateMapper();
 
-        _handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, FieldAccess.SeesEverything());
+        _handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, FieldAccess.SeesEverything(), Mock.Of<IKurinTagVisibility>());
     }
 
     private static MemberListItemDto MakeItem(Guid groupKey, Guid kurinKey, string first, string last,
@@ -242,7 +243,7 @@ public class GetMembersHandlerTests
                 [MemberDataGroup.Birthday] = CapabilityReach.Kurin
             },
             [ownGroup]);
-        var handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, FieldAccess.Of(mask));
+        var handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, FieldAccess.Of(mask), Mock.Of<IKurinTagVisibility>());
 
         var result = (await handler.Handle(new GetMembersQuery(Guid.Empty, kurinKey), CancellationToken.None)).Data!.ToList();
 

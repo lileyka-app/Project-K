@@ -38,8 +38,10 @@
       <tr>
         <th scope="col">Учасник</th>
         <th scope="col">Статус</th>
-        <th scope="col">Гуртки</th>
-        @if (canManageKv) {
+        @if (features.hasGroups()) {
+          <th scope="col">Гуртки</th>
+        }
+        @if (canManageKv && features.hasGroups()) {
           <th scope="col" class="kv-actions">Дії</th>
         }
       </tr>
@@ -58,6 +60,7 @@
         <td data-mobile-label="Статус">
           <p-tag [value]="getStatusLabel(row)" [severity]="getStatusSeverity(row)" [rounded]="true" />
         </td>
+        @if (features.hasGroups()) {
         <td data-mobile-label="Гуртки">
           @if (row.groups.length) {
             <div class="kv-group-tags">
@@ -69,7 +72,8 @@
             <span class="kv-muted">Без призначених гуртків</span>
           }
         </td>
-        @if (canManageKv) {
+        }
+        @if (canManageKv && features.hasGroups()) {
           <td class="kv-actions" data-mobile-label="Дії">
             <p-button
               icon="pi pi-pencil"
@@ -85,7 +89,7 @@
 
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td [attr.colspan]="canManageKv ? 4 : 3" class="lil-empty-cell">
+        <td [attr.colspan]="features.hasGroups() ? (canManageKv ? 4 : 3) : 2" class="lil-empty-cell">
           <app-empty-state
             art="list"
             title="У КВ поки нікого"

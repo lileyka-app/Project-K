@@ -33,6 +33,11 @@ describe('kurin profile', () => {
     });
   });
 
+  it('leaves the role names out, which a УПЮ kurin is refused', () => {
+    const request = kurinProfileRequest({ ...kurin, roleNames: {} }, kurinProfileDraft(kurin));
+    expect('roleNames' in request).toBe(false);
+  });
+
   it('sees no change when only spaces moved', () => {
     expect(kurinProfileChanged(kurin, kurinProfileDraft(kurin))).toBe(false);
     expect(kurinProfileChanged(kurin, { ...kurinProfileDraft(kurin), description: ' Курінь юнаків. ' })).toBe(false);

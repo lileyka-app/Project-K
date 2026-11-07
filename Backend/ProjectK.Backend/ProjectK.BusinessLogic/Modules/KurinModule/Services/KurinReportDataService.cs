@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
@@ -27,6 +28,9 @@ public sealed class KurinReportDataService
     private readonly IConfiguration _configuration;
     // What people have earned belongs to another module; the report asks for it, all at once.
     private readonly IMemberProgressDirectory _progress;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IKurinTagVisibility _tags;
+    private readonly IHonoursCatalog _honours;
 
     public KurinReportDataService(
         IKurinReportSource source,
@@ -36,8 +40,12 @@ public sealed class KurinReportDataService
         IProbesCatalogService probesCatalogService,
         IBadgesCatalogService badgesCatalogService,
         IConfiguration configuration,
-        IMemberProgressDirectory progress)
+        IMemberProgressDirectory progress,
+        IUnitOfWork unitOfWork,
+        IKurinTagVisibility tags,
+        IHonoursCatalog honours)
     {
+        _honours = honours;
         _source = source;
         _currentUser = currentUser;
         _links = links;
@@ -46,6 +54,8 @@ public sealed class KurinReportDataService
         _badgesCatalogService = badgesCatalogService;
         _configuration = configuration;
         _progress = progress;
+        _unitOfWork = unitOfWork;
+        _tags = tags;
     }
 
     public async Task<KurinReportData?> BuildAsync(Guid kurinKey, CancellationToken cancellationToken)
@@ -81,6 +91,13 @@ public sealed class KurinReportDataService
                     .OrderBy(name => name, StringComparer.CurrentCulture)
                     .ToArray());
 
+        // Tags go by the same rule as on the screen: only those of people whose tags the reader may see.
+        var showsTagsOf = await _tags.ShowsTagsOfAsync(kurinKey, cancellationToken);
+        var tagsShown = members.Any(member => showsTagsOf(member.UserKey, GroupOf(source, member.MemberKey)));
+        var tagNamesByMember = tagsShown ? await TagNamesByMemberAsync(kurinKey, cancellationToken) : new Dictionary<Guid, IReadOnlyList<string>>();
+
+        // A senior kurin's own names for its roles, as its screens show them: its Писар is its «Скриптор» here too.
+        var roleNames = KurinRoleNames.Read(kurin.RoleNames);
         var reportMembers = new List<KurinReportMember>(members.Count);
         foreach (var member in members)
         {
@@ -91,6 +108,8 @@ public sealed class KurinReportDataService
                 kurinKey,
                 groupNamesByKey,
                 mentoredGroupsByUserKey,
+                showsTagsOf(member.UserKey, GroupOf(source, member.MemberKey)) ? tagNamesByMember.GetValueOrDefault(member.MemberKey) ?? [] : [],
+                roleNames,
                 cancellationToken));
         }
 
@@ -162,12 +181,14 @@ public sealed class KurinReportDataService
                 kurin.Stanytsia,
                 kurin.RegionOrCountry,
                 kurin.NamedAfter,
-                kurin.Description),
+                kurin.Description,
+                KurinBranchSet.IsSenior(kurin.Branch) ? KurinBranchNames.DescribeSenior(kurin.Numbering) : null),
             reportGroups,
             staff,
             youth,
             BuildLevelTally(kurin.Branch, youth),
-            reportMembers);
+            reportMembers,
+            tagsShown);
     }
 
     /// <summary>
@@ -233,6 +254,8 @@ public sealed class KurinReportDataService
         Guid kurinKey,
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> mentoredGroupsByUserKey,
+        IReadOnlyList<string> tagNames,
+        IReadOnlyDictionary<LeadershipRole, string> roleNames,
         CancellationToken cancellationToken)
     {
         return new KurinReportMember(
@@ -321,7 +344,7 @@ public sealed class KurinReportDataService
                 .OrderByDescending(item => item.DateAcquired)
                 .Select(item => new KurinReportAward(
                     item.Level,
-                    KurinReportTerminology.AwardLevel(item.Level),
+                    KurinReportTerminology.Award(item.Level, item.CatalogId, id => _honours.GetById(id)?.Title),
                     item.DateAcquired,
                     item.Note,
                     item.Status,
@@ -334,11 +357,27 @@ public sealed class KurinReportDataService
                     item.Leadership.Type,
                     KurinReportTerminology.LeadershipType(item.Leadership.Type),
                     item.Role,
-                    KurinReportTerminology.LeadershipRole(item.Role),
+                    roleNames.GetValueOrDefault(item.Role) ?? KurinReportTerminology.LeadershipRole(item.Role),
                     ResolveLeadershipScopeName(item.Leadership, groupNamesByKey),
                     item.StartDate,
                     item.EndDate))
-                .ToArray());
+                .ToArray(),
+            tagNames);
+    }
+
+    // Every person's tags in the kurin by name, in one read of the tags and one of who carries them.
+    private async Task<Dictionary<Guid, IReadOnlyList<string>>> TagNamesByMemberAsync(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var names = (await _unitOfWork.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
+            .ToDictionary(tag => tag.KurinTagKey, tag => tag.Name);
+        return (await _unitOfWork.KurinTags.GetAssignmentsAsync(kurinKey, cancellationToken))
+            .Where(assignment => names.ContainsKey(assignment.KurinTagKey))
+            .GroupBy(assignment => assignment.MemberKey)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<string>)group.Select(assignment => names[assignment.KurinTagKey])
+                    .Order(StringComparer.CurrentCulture)
+                    .ToArray());
     }
 
     private static IReadOnlyList<string> ResolveMentorNames(

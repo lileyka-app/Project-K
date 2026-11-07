@@ -248,7 +248,7 @@ export class BreadcrumbService {
 
       switch (target.type) {
         case 'kurin':
-          this.publishLabel(token, cacheKey, this.kurinService.getByKey(target.key), kurin => formatKurinTitle(kurin.number));
+          this.publishLabel(token, cacheKey, this.kurinService.getByKey(target.key), kurin => formatKurinTitle(kurin.number, kurin.branch, kurin.namedAfter));
           break;
         case 'group':
           this.publishLabel(token, cacheKey, this.groupService.getByKey(target.key), group => formatGroupTitle(group.name));

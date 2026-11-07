@@ -13,7 +13,7 @@ public sealed record AgendaLookups(
     IReadOnlyDictionary<Guid, string> GroupNames,
     IReadOnlyDictionary<Guid, string> MemberNames,
     IReadOnlyDictionary<Guid, string> CreatorNames,
-    IReadOnlyDictionary<Guid, string> LeadershipLabels,
+    IReadOnlyDictionary<Guid, string> TargetLabels,
     IReadOnlyDictionary<Guid, AgendaCategory> Categories,
     IReadOnlyDictionary<Guid, Guid?> MemberGroups)
 {
@@ -21,6 +21,9 @@ public sealed record AgendaLookups(
     public const string KvLabel = "КВ";
     public const string KurinLeadershipLabel = "Курінний провід";
     public const string GroupLeadershipLabel = "Гуртковий провід";
+
+    /// <summary>What an item aimed at a tag says it is for: everyone carrying it.</summary>
+    public static string TagLabel(string? tagName) => tagName is null ? "Усі з тегом" : $"Усі з тегом «{tagName}»";
 
     public static async Task<AgendaLookups> LoadAsync(IUnitOfWork uow, IMemberDirectory directory, Guid kurinKey, IEnumerable<AgendaItem> items, CancellationToken cancellationToken)
     {
@@ -37,9 +40,14 @@ public sealed record AgendaLookups(
             .ToDictionary(g => g.Key, g => $"{g.First().FirstName} {g.First().LastName}".Trim());
 
         var leadershipRefs = await uow.Leaderships.GetLeadershipRefsForKurinAsync(kurinKey, cancellationToken);
-        var leadershipLabels = leadershipRefs.ToDictionary(
+        // Проводи and tags are named by the kurin, not by a person or a гурток; one table labels both.
+        var targetLabels = leadershipRefs.ToDictionary(
             r => r.LeadershipKey,
             r => LabelFor(r.Type, r.GroupKey, groupNames));
+        foreach (var tag in await uow.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
+        {
+            targetLabels[tag.KurinTagKey] = TagLabel(tag.Name);
+        }
 
         // Include archived groups so historical items still resolve their colour/icon.
         var categories = (await uow.AgendaCategories.GetForKurinAsync(kurinKey, includeArchived: true, cancellationToken))
@@ -47,7 +55,7 @@ public sealed record AgendaLookups(
 
         var memberGroups = members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey);
 
-        return new AgendaLookups(groupNames, memberNames, creatorNames, leadershipLabels, categories, memberGroups);
+        return new AgendaLookups(groupNames, memberNames, creatorNames, targetLabels, categories, memberGroups);
     }
 
     public static string LabelFor(LeadershipType type, Guid? groupKey, IReadOnlyDictionary<Guid, string> groupNames) =>

@@ -13,12 +13,14 @@ public sealed record GetKurinScopeOptionsQuery(Guid UserKey)
     : IRequest<ServiceResult<IReadOnlyCollection<KurinScopeOption>>>;
 
 /// <param name="Kind">Юнацьке членство чи виховний склад — the same person may be either, in different kurins.</param>
+/// <param name="Branches">Every гілка with the kurin's number there, main one first.</param>
 public sealed record KurinScopeOption(
     Guid KurinKey,
     int? KurinNumber,
     KurinBranch Branch,
     string? NamedAfter,
-    MembershipKind Kind);
+    MembershipKind Kind,
+    IReadOnlyList<KurinNumbering> Branches);
 
 public sealed class GetKurinScopeOptionsQueryHandler
     : IRequestHandler<GetKurinScopeOptionsQuery, ServiceResult<IReadOnlyCollection<KurinScopeOption>>>
@@ -44,7 +46,8 @@ public sealed class GetKurinScopeOptionsQueryHandler
             .. memberships
                 .OrderBy(m => m.KurinNumber)
                 .Select(m => new KurinScopeOption(
-                    m.KurinKey, m.KurinNumber, m.Branch, m.KurinNamedAfter, m.Kind))
+                    m.KurinKey, m.KurinNumber, m.Branch, m.KurinNamedAfter, m.Kind,
+                    [.. KurinBranchSet.Ordered(m.Numbering, n => n.Branch)]))
         ];
 
         return new ServiceResult<IReadOnlyCollection<KurinScopeOption>>(ResultType.Success, options);

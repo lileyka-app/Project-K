@@ -1,3 +1,4 @@
+import { inKurin, isSeniorBranch, kurinLabel as kurinNumberLabel } from '../../core/kurin-label';
 import { AuthState } from '../../auth/auth.models';
 import { amountFormat, currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import {
@@ -19,6 +20,8 @@ import {
   ProgressStatus,
   QuarterDto,
   WarningLevel,
+  CatalogHonour,
+  PlastLevelHistoryDto,
 } from './kurin.models';
 
 /*
@@ -157,8 +160,24 @@ const ROLE_ORDER = [
   'OtherGroup',
 ];
 
-export function roleName(role: string): string {
-  return ROLE_NAMES[role] ?? role;
+/**
+ * Kurins' own names for their roles, by kurin, and the kurin the person acts in (web
+ * leadership-role-display.function). KurinService remembers them as it reads a kurin; KurinRoleNames
+ * says which kurin is current. Rights stay with the role; only the word changes.
+ */
+const roleNamesByKurin = new Map<string, Record<string, string>>();
+let currentKurinKey: string | null = null;
+
+export function rememberKurinRoleNames(kurinKey: string, names: Record<string, string> | null | undefined): void {
+  roleNamesByKurin.set(kurinKey, { ...(names ?? {}) });
+}
+
+export function actInKurin(kurinKey: string | null): void {
+  currentKurinKey = kurinKey;
+}
+
+export function roleName(role: string, kurinKey: string | null = currentKurinKey): string {
+  return (kurinKey ? roleNamesByKurin.get(kurinKey)?.[role] : undefined) ?? ROLE_NAMES[role] ?? role;
 }
 
 export function roleWeight(role: string | null | undefined): number {
@@ -218,8 +237,18 @@ export function roleTone(role: string): TagTone {
 }
 
 /** An office as a tag; an ended one is grey whatever it was (web leadershipRoleSeverity). */
-export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate'>): RoleTag {
-  return { label: roleName(history.role), tone: history.endDate ? 'secondary' : roleTone(history.role) };
+export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate' | 'kurinKey'>): RoleTag {
+  return { label: officeName(history), tone: history.endDate ? 'secondary' : roleTone(history.role) };
+}
+
+/** Named by the kurin the office is in, not by the one being read (web officeLabel). */
+export function officeName(history: Pick<LeadershipHistoryDto, 'role' | 'kurinKey'>): string {
+  return history.kurinKey ? roleName(history.role, history.kurinKey) : roleName(history.role);
+}
+
+/** The current offices held in one kurin; an office with no kurin known counts (web inThisKurin). */
+export function officesIn(histories: LeadershipHistoryDto[] | null | undefined, kurinKey: string | null | undefined): LeadershipHistoryDto[] {
+  return currentOffices(histories).filter((h) => !h.kurinKey || !kurinKey || h.kurinKey === kurinKey);
 }
 
 /**
@@ -229,7 +258,7 @@ export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate'
 export function memberRoleTags(member: MemberLookupDto): RoleTag[] {
   const active = currentOffices(member.leadershipHistories);
   const tags = active.map((h) => ({
-    label: (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${roleName(h.role)}: ${h.groupName}` : roleName(h.role),
+    label: (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${officeName(h)}: ${h.groupName}` : officeName(h),
     tone: roleTone(h.role),
   }));
   const mentored = member.mentoredGroupNames ?? [];
@@ -436,6 +465,26 @@ export function activeWarning(warnings: MemberWarningDto[] | null | undefined, n
   return { level: WARNING_WEIGHT[top.level] ?? 0, daysLeft: Math.max(0, Math.ceil((expires - now) / 86_400_000)) };
 }
 
+/** A senior card's list of перестороги (web member-card warningRows): current first, then the latest past ones. */
+export function warningRows(
+  warnings: MemberWarningDto[] | null | undefined,
+  now = Date.now(),
+): { key: string; title: string; line: string; active: boolean }[] {
+  return [...(warnings ?? [])]
+    .map((w) => {
+      const expires = utcDate(w.expiresAtUtc)?.getTime() ?? 0;
+      const active = !w.revokedAtUtc && expires > now;
+      // Lifted by someone is «знято»; one the system closed when it ran out has no one behind it.
+      const state = w.revokedAtUtc && w.revokedByUserKey ? 'знято' : active ? `ще ${Math.max(0, Math.ceil((expires - now) / 86_400_000))} дн.` : 'минула';
+      const issued = utcDate(w.issuedAtUtc);
+      const date = issued ? issued.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+      return { key: w.memberWarningKey, title: `${WARNING_NAMES[WARNING_WEIGHT[w.level]] ?? 'Пересторога'} пересторога`, line: [date, state].filter(Boolean).join(' · '), active, at: issued?.getTime() ?? 0 };
+    })
+    .sort((a, b) => Number(b.active) - Number(a.active) || b.at - a.at)
+    .slice(0, 5)
+    .map(({ at, ...row }) => row);
+}
+
 /** «Поточна пересторога: Друга. Залишилось днів: 12.» */
 export function warningText(warning: { level: number; daysLeft: number }): string {
   return `Поточна пересторога: ${WARNING_NAMES[warning.level] ?? 'Пересторога'}. Залишилось днів: ${warning.daysLeft}.`;
@@ -573,10 +622,10 @@ export function probeRows(line: ProbeSummaryDto[], progresses: ProbeProgressDto[
       status,
       completedAtUtc: progress?.completedAtUtc ?? progress?.verifiedAtUtc ?? null,
       isCompleted: closed(status),
-      isDisabled: hasNoPoints,
+      isDisabled: false,
       lockedBehind: null,
       hasNoPoints,
-      canOpen: !hasNoPoints,
+      canOpen: true,
       pointsCount: probe.pointsCount,
       signedPoints,
       percent: probePercent(signedPoints, total, status),
@@ -599,7 +648,7 @@ const PROBE_STATUS_LABELS: Record<ProbeStatus, string> = {
 /** The line under a probe on the card (web getProbeSummaryMeta). */
 export function probeMeta(row: ProbeRow): string {
   if (row.lockedBehind) return `Відкриється після закриття: ${row.lockedBehind}`;
-  if (row.hasNoPoints) return 'Поточкове відстеження цієї проби буде окремим етапом';
+  if (row.hasNoPoints) return 'Складається з проєктів: опис і фото на сторінці проби';
   if (row.completedAtUtc) return `Завершено: ${shortDate(utcDate(row.completedAtUtc))}`;
   const status = PROBE_STATUS_LABELS[row.status];
   return row.pointsCount === null ? status : `${status} · ${row.pointsCount} точок`;
@@ -720,7 +769,8 @@ export function awardGroups(awards: MemberAwardDto[] | null | undefined): AwardG
   const groups = new Map<AwardLevel, AwardGroup>();
   for (const award of awards ?? []) {
     const status = progressStatus(award.status);
-    if (status !== 'Submitted' && status !== 'Confirmed') continue;
+    // A senior відзначення has no level; it is listed on its own (seniorAwardRows).
+    if ((status !== 'Submitted' && status !== 'Confirmed') || !award.level) continue;
     const existing = groups.get(award.level);
     if (!existing) groups.set(award.level, { level: award.level, count: 1, latest: award });
     else {
@@ -793,4 +843,159 @@ export function phoneHref(phone: string | null | undefined): string | null {
 export function emailHref(email: string | null | undefined): string | null {
   const address = (email ?? '').trim();
   return address.includes('@') ? `mailto:${address}` : null;
+}
+
+/** «Членство в курені ч. 47», or a senior kurin by its own name (web member-card membershipKurinLabel). */
+export function membershipOf(m: Pick<MembershipDto, 'branch' | 'kurinNumber' | 'kurinNamedAfter'>): string {
+  return isSeniorBranch(m.branch)
+    ? `Членство (${m.kurinNamedAfter || kurinNumberLabel(m.kurinNumber, m.branch)})`
+    : `Членство в ${inKurin(m.kurinNumber)}`;
+}
+
+// ── Ступені й старші відзначення з каталогу ──────────────────────────────────────────────────────
+
+/** The ступені of an УПЮ membership, and of a УСП or УПС one (web member-degrees YOUTH_LADDER, SENIOR_LADDER). */
+export const YOUTH_LADDER = ['Prykhylnyk', 'Uchasnyk', 'Rozviduvach', 'Skob', 'HetmanskiySkob'] as const;
+export const SENIOR_LADDER = ['Starshoplastun', 'Senior', 'SeniorPratsi', 'SeniorDovirja', 'SeniorKerivnytstva'] as const;
+
+/**
+ * The whole ladder, прихильник to сеніор керівництва (web DEGREE_LADDER). Ступені come one after
+ * another, so the highest here is the person's current one, whichever kurin the card is opened in.
+ */
+export const DEGREE_LADDER = [...YOUTH_LADDER, ...SENIOR_LADDER] as const;
+
+/** The person's current ступінь: the highest on the whole ladder, not on the kurin's (web currentDegree). */
+export function currentDegree(histories: PlastLevelHistoryDto[] | null | undefined, honours: readonly CatalogHonour[]): DegreeRow | null {
+  return degreeRows(histories, DEGREE_LADDER, honours).at(-1) ?? null;
+}
+
+/**
+ * A senior person (web isSeniorPerson): their current ступінь is старший пластун or a сеніор's, or they
+ * stand in a УСП or УПС kurin here. A сеніор who leads an УПЮ kurin is one, and keeps their own senior відзначення.
+ */
+export function isSeniorPerson(
+  member: Pick<MemberLookupDto, 'latestPlastLevel' | 'plastLevelHistories'> & { kurinKey?: string | null },
+  memberships: MembershipDto[],
+): boolean {
+  return isSeniorBranch(memberBranch(member, memberships));
+}
+
+export interface DegreeRow {
+  key: string;
+  title: string;
+  imageUrl: string;
+  date: Date | null;
+}
+
+/**
+ * The person's ступені on one ladder, named and drawn as the catalogue has them for a пластун or a
+ * пластунка (web degreeRows). Without the catalogue a ступінь keeps its own name and no picture.
+ */
+export function degreeRows(
+  histories: PlastLevelHistoryDto[] | null | undefined,
+  ladder: readonly string[],
+  honours: readonly CatalogHonour[],
+): DegreeRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  return ladder
+    .map((level) => (histories ?? []).find((history) => history.plastLevel === level))
+    .filter((history): history is PlastLevelHistoryDto => !!history)
+    .map((history) => {
+      const item = history.catalogId ? byId.get(history.catalogId) : undefined;
+      return {
+        key: history.plastLevelHistoryKey ?? history.plastLevel,
+        title: item?.title ?? (LEVEL_LABELS[history.plastLevel] || history.plastLevel),
+        imageUrl: item?.imageUrl ?? '',
+        date: dateOnly(history.dateAchieved),
+      };
+    });
+}
+
+export interface SeniorAwardRow {
+  award: MemberAwardDto;
+  title: string;
+  imageUrl: string;
+  /** «УСП», «УПС» or «Хрести»: the same грамота is in both улади (web honourSection). */
+  section: string;
+}
+
+/** Where a senior відзначення belongs: its улад, or the хрести, which are for everyone. */
+export function honourSection(item: CatalogHonour | undefined): string {
+  if (!item) return '';
+  if (item.group === 'khresty') return 'Хрести';
+  return item.ulad === 'ups' ? 'УПС' : item.ulad === 'usp' ? 'УСП' : '';
+}
+
+/** The senior відзначення, newest first, named and drawn from the catalogue (web seniorAwardRows). */
+export function seniorAwardRows(awards: MemberAwardDto[] | null | undefined, honours: readonly CatalogHonour[]): SeniorAwardRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  return (awards ?? [])
+    .filter((award) => !!award.catalogId)
+    .sort((a, b) => b.dateAcquired.localeCompare(a.dateAcquired))
+    .map((award) => {
+      const item = byId.get(award.catalogId!);
+      return { award, title: item?.title ?? award.catalogId!, imageUrl: item?.imageUrl ?? '', section: honourSection(item) };
+    });
+}
+
+// ── Відзначення блоками (web award-blocks) ───────────────────────────────────────────────────────
+
+export interface AwardGrantRow {
+  award: MemberAwardDto;
+  pending: boolean;
+  /** The viewer may open it: change, confirm or remove. */
+  canOpen: boolean;
+}
+
+/** A відзначення on the card: every grant of it under one block (web AwardBlock). */
+export interface AwardBlockRow {
+  key: string;
+  title: string;
+  imageUrl: string | null;
+  /** «УСП», «УПС», «Хрести»; empty for an УПЮ відзначення. */
+  section: string;
+  /** Newest first. */
+  grants: AwardGrantRow[];
+  pinned: boolean;
+  pending: boolean;
+  /** For `PUT me/awards/pin`: an УПЮ level or a senior catalogue id. */
+  pin: { level?: AwardLevel | null; catalogId?: string | null };
+}
+
+/** Grants under one key each, newest first inside (web groupGrants). */
+export function groupAwardGrants(awards: MemberAwardDto[], keyOf: (award: MemberAwardDto) => string): Map<string, MemberAwardDto[]> {
+  const groups = new Map<string, MemberAwardDto[]>();
+  const time = (award: MemberAwardDto) => dateOnly(award.dateAcquired)?.getTime() ?? 0;
+  for (const award of [...awards].sort((a, b) => time(b) - time(a))) {
+    const key = keyOf(award);
+    groups.set(key, [...(groups.get(key) ?? []), award]);
+  }
+  return groups;
+}
+
+/** Pinned first, then the most recently given (web orderBlocks). */
+export function orderAwardBlocks(blocks: AwardBlockRow[]): AwardBlockRow[] {
+  const latest = (block: AwardBlockRow) => dateOnly(block.grants[0]?.award.dateAcquired)?.getTime() ?? 0;
+  return [...blocks].sort((a, b) => Number(b.pinned) - Number(a.pinned) || latest(b) - latest(a));
+}
+
+/** The senior відзначення as blocks, named and drawn from the catalogue (web seniorAwardBlocks). */
+export function seniorAwardBlocks(awards: MemberAwardDto[] | null | undefined, honours: readonly CatalogHonour[], canOpen: boolean): AwardBlockRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  const groups = groupAwardGrants((awards ?? []).filter((award) => !!award.catalogId), (award) => award.catalogId!);
+  return orderAwardBlocks(
+    [...groups.entries()].map(([catalogId, grants]) => {
+      const item = byId.get(catalogId);
+      return {
+        key: catalogId,
+        title: item?.title ?? catalogId,
+        imageUrl: item?.imageUrl || null,
+        section: honourSection(item),
+        grants: grants.map((award) => ({ award, pending: false, canOpen })),
+        pinned: grants.some((award) => award.isPinned),
+        pending: false,
+        pin: { catalogId },
+      };
+    }),
+  );
 }

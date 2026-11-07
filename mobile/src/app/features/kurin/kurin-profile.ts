@@ -26,12 +26,15 @@ export function kurinProfileValid(draft: KurinProfileDraft): boolean {
 
 /**
  * `PUT kurin/{key}` rewrites the whole record, so the rest of it (number, verification) goes back
- * as it came, as the web sends it; empty fields go as null.
+ * as it came, as the web sends it; empty fields go as null. Role names stay out: they belong to the
+ * kurin's settings, and a УПЮ kurin is refused any.
  */
 export function kurinProfileRequest(kurin: KurinDto, draft: KurinProfileDraft): KurinDto {
   const text = (value: string) => value.trim() || null;
+  const record: KurinDto = { ...kurin };
+  delete record.roleNames;
   return {
-    ...kurin,
+    ...record,
     namedAfter: text(draft.namedAfter),
     stanytsia: text(draft.stanytsia),
     regionOrCountry: text(draft.regionOrCountry),

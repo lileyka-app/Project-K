@@ -17,15 +17,15 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.Grants;
 /// Gives a youth of the гурток one of the край's пільги. The край's rule is copied onto the grant,
 /// so editing the rule later leaves what was given alone.
 /// </summary>
-public sealed record GrantDuesConcessionCommand(Guid GroupKey, Guid MembershipKey, GrantDuesConcessionRequest Request)
+public sealed record GrantDuesConcessionCommand(Guid BoxKey, Guid MembershipKey, GrantDuesConcessionRequest Request)
     : IRequest<ServiceResult<Guid>>;
 
 /// <summary>Sets when a given пільга ends, or why it was given. Ending it is how it is taken away.</summary>
-public sealed record UpdateDuesConcessionGrantCommand(Guid GroupKey, Guid GrantKey, UpdateDuesConcessionGrantRequest Request)
+public sealed record UpdateDuesConcessionGrantCommand(Guid BoxKey, Guid GrantKey, UpdateDuesConcessionGrantRequest Request)
     : IRequest<ServiceResult<object>>;
 
 /// <summary>Removes a пільга given by mistake, with what it took off the quarters it covered.</summary>
-public sealed record DeleteDuesConcessionGrantCommand(Guid GroupKey, Guid GrantKey) : IRequest<ServiceResult<object>>;
+public sealed record DeleteDuesConcessionGrantCommand(Guid BoxKey, Guid GrantKey) : IRequest<ServiceResult<object>>;
 
 public sealed class GrantDuesConcessionCommandValidator : AbstractValidator<GrantDuesConcessionCommand>
 {
@@ -76,7 +76,7 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
 
     public async Task<ServiceResult<Guid>> Handle(GrantDuesConcessionCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<Guid>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenBoxAsync<Guid>(request.BoxKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -151,7 +151,7 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
 
     public async Task<ServiceResult<object>> Handle(UpdateDuesConcessionGrantCommand request, CancellationToken cancellationToken)
     {
-        var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.GroupKey, request.GrantKey, cancellationToken);
+        var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
         if (grant is null)
         {
             return failure!;
@@ -194,7 +194,7 @@ public sealed class DeleteDuesConcessionGrantCommandHandler : IRequestHandler<De
 
     public async Task<ServiceResult<object>> Handle(DeleteDuesConcessionGrantCommand request, CancellationToken cancellationToken)
     {
-        var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.GroupKey, request.GrantKey, cancellationToken);
+        var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
         if (grant is null)
         {
             return failure!;
@@ -234,11 +234,11 @@ internal static class DuesConcessionGrants
         GroupDuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
-        Guid groupKey,
+        Guid boxKey,
         Guid grantKey,
         CancellationToken cancellationToken)
     {
-        var (group, failure) = await access.OpenAsync<object>(groupKey, cancellationToken);
+        var (group, failure) = await access.OpenBoxAsync<object>(boxKey, cancellationToken);
         if (group is null)
         {
             return (null, failure);
@@ -248,7 +248,7 @@ internal static class DuesConcessionGrants
         var membership = grant is null || grant.KurinKey != group.KurinKey
             ? null
             : (await memberships.GetInKurinAsync(group.KurinKey, cancellationToken)).FirstOrDefault(m => m.MembershipKey == grant.MembershipKey);
-        if (grant is null || membership?.GroupKey != group.GroupKey)
+        if (grant is null || membership is null || membership.GroupKey != group.GroupKey)
         {
             return (null, ServiceResult<object>.Failure(ResultType.NotFound, "GrantNotFound", "There is no such пільга in this гурток."));
         }

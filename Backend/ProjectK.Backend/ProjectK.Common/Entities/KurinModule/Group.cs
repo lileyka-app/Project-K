@@ -21,6 +21,13 @@ public class Group : Entity
     /// first probe in another edition finishes that one — see <c>ProbeLine</c>.
     /// </summary>
     public string? ProbeEdition { get; set; }
+
+    /// <summary>
+    /// When the гурток was dissolved; null while it stands. A query filter hides a dissolved гурток
+    /// from every read but the kurin's archive. It keeps its провід and that провід's history: for a
+    /// kurin that keeps its record only here, deleting them would erase who led whom.
+    /// </summary>
+    public DateTime? DissolvedAtUtc { get; set; }
     public Kurin Kurin { get; set; }
     public ICollection<MentorAssignment> MentorAssignments { get; set; } = new List<MentorAssignment>();
     public Leadership Leadership { get; set; }

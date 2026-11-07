@@ -13,6 +13,9 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { MessageService } from '@openng/optimus-ui/api';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
+import { KurinService } from '../../services/kurin-service/kurin.service';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of, switchMap } from 'rxjs';
 import { AgendaAssignSelectComponent } from '../agenda-assign-select/agenda-assign-select';
 import { AgendaProgressComponent } from '../agenda-progress/agenda-progress';
 import {
@@ -52,6 +55,16 @@ export class AgendaItemDialogComponent {
 
   readonly visible = model<boolean>(false);
   readonly kurinKey = input.required<string>();
+
+  private readonly kurinService = inject(KurinService);
+
+  /** Whether the kurin keeps точкування: switched off, the dialog offers no sheet. */
+  private readonly scoreEnabled = toSignal(
+    toObservable(this.kurinKey).pipe(
+      switchMap(key => this.kurinService.getByKey(key).pipe(catchError(() => of(null))))
+    ),
+    { initialValue: null }
+  );
   readonly item = input<AgendaItemDto | null>(null);
   /** Preselected kind when creating: Event from the calendar, Task from the board. */
   readonly defaultKind = input<AgendaItemKind>('Event');
@@ -145,7 +158,8 @@ export class AgendaItemDialogComponent {
   /** The sheet of this occurrence, for those who score: a saved event with a day, never a task. */
   protected readonly canOpenSheet = computed(() => {
     const current = this.item();
-    return !!current && current.kind === 'Event' && !!current.startUtc && this.permissions.canScore();
+    return !!current && current.kind === 'Event' && !!current.startUtc && this.permissions.canScore()
+      && (this.scoreEnabled()?.scoreEnabled ?? true);
   });
 
   protected openSheet(): void {

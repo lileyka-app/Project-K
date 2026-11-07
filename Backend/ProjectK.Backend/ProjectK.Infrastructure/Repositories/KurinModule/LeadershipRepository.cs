@@ -85,9 +85,31 @@ public class LeadershipRepository : ILeadershipRepository
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<Guid>> CloseForGroupAsync(Guid groupKey, DateOnly on, CancellationToken cancellationToken = default)
+    {
+        var leaderships = await _context.Leaderships
+            .Where(leadership => leadership.GroupKey == groupKey)
+            .Include(leadership => leadership.LeadershipHistories.Where(history => history.EndDate == null))
+            .ToListAsync(cancellationToken);
+
+        foreach (var leadership in leaderships)
+        {
+            leadership.EndDate ??= on;
+            foreach (var history in leadership.LeadershipHistories)
+            {
+                history.EndDate = on;
+            }
+        }
+
+        return leaderships.Select(leadership => leadership.LeadershipKey).ToList();
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Guid>> DeleteForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
+        // Dissolved гуртки too: their провід is still there and would refuse the kurin's delete.
         var groupKeys = await _context.Groups
+            .IgnoreQueryFilters()
             .Where(group => group.KurinKey == kurinKey)
             .Select(group => group.GroupKey)
             .ToListAsync(cancellationToken);

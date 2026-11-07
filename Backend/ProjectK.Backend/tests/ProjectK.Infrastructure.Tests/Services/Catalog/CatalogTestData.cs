@@ -52,6 +52,27 @@ internal static class CatalogTestData
               "level": 1, "status": "approved",
               "images": { "color": "https://catalog.test/v1/images/a1.png?v=1", "bw": "https://catalog.test/v1/images/a1-bw.png?v=2" },
               "requirements": []
+            },
+            {
+              "id": "usp-hramota-zasluhy", "group": "usp-vidznachennia", "title": "Грамота заслуги", "ulad": "usp",
+              "images": { "color": "https://catalog.test/v1/images/hz.svg?v=1" }
+            },
+            {
+              "id": "lsh-absolvent", "group": "lsh", "title": "Лісова Школа — абсольвент", "ulad": "usp",
+              "images": { "bw": "https://catalog.test/v1/images/lsh-bw.svg?v=1" }
+            }
+          ],
+          "degrees": [
+            {
+              "id": "upyu-prykhylnyk", "family": "upyu-prykhylnyk", "title": "Пластун прихильник", "ulad": "upyu", "order": 1
+            },
+            {
+              "id": "ups-senior-pratsi", "family": "ups-senior-pratsi", "title": "Пластун сеніор праці", "ulad": "ups", "order": 2,
+              "images": { "color": "https://catalog.test/v1/images/sp.svg?v=1" }
+            },
+            {
+              "id": "usp-starshyi-plastun", "family": "usp-starshyi-plastun", "title": "Старший пластун", "ulad": "usp", "order": 1,
+              "images": { "color": "https://catalog.test/v1/images/sp1.svg?v=1" }
             }
           ]
         }

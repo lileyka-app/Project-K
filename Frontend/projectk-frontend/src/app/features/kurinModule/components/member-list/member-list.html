@@ -191,6 +191,9 @@
                 <a class="member-name-link" [routerLink]="['/member', member.memberKey]">{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</a>
                 <app-profile-verification-badge [status]="member.profileVerificationStatus" />
               </span>
+              <span class="member-tags-cell">
+                <app-kurin-tag-chips [keys]="member.tagKeys" [compact]="true" />
+              </span>
             </td>
             <td data-mobile-label="Статус">
               @if (getMemberRoleTags(member).length) {

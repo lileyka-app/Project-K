@@ -19,7 +19,7 @@ import {
   PERSONAL_DUES_KINDS
 } from '../../../../models/dues.enums';
 import { DuesAccountDto, DuesEntryDto, DuesPersonDto, UpsertDuesEntryRequest } from '../../../../models/group-dues.dto';
-import { DEFAULT_CURRENCY, currencySymbol } from '../../../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, money } from '../../../../functions/dues-format.function';
 
 /** The other side of an exchange: cash goes to the card, the card to cash. */
 export function oppositeMethod(method: DuesPaymentMethod): DuesPaymentMethod {
@@ -49,10 +49,12 @@ export class DuesEntryDialogComponent {
   readonly accounts = input<DuesAccountDto[]>([]);
   /** Who may have collected the money. */
   readonly people = input<DuesPersonDto[]>([]);
+  readonly personPlaceholder = input('Обери юнака');
   readonly entry = input<DuesEntryDto | null>(null);
   readonly saving = input(false);
   readonly errorMessage = input<string | null>(null);
   readonly currency = input(DEFAULT_CURRENCY);
+  readonly numberLocale = input(DEFAULT_NUMBER_LOCALE);
   readonly currencySymbol = computed(() => currencySymbol(this.currency()));
   readonly save = output<UpsertDuesEntryRequest>();
 
@@ -74,10 +76,30 @@ export class DuesEntryDialogComponent {
 
   readonly kind = signal<DuesEntryKind>(DuesEntryKind.Contribution);
   readonly method = signal<DuesPaymentMethod>(DuesPaymentMethod.Cash);
+  readonly person = signal<string | null>(null);
 
   readonly isPersonal = computed(() => PERSONAL_DUES_KINDS.has(this.kind()));
   readonly isExchange = computed(() => this.kind() === DuesEntryKind.Exchange);
   readonly isCorrection = computed(() => this.kind() === DuesEntryKind.Correction);
+
+  /**
+   * Ready amounts for a person's вкладка: one quarter at their rate, a year ahead (four quarters
+   * less what they already have over), and their debt. A surplus pays the quarters as they come.
+   */
+  readonly quickAmounts = computed(() => {
+    const account = this.accounts().find(a => a.membershipKey === this.person());
+    const rate = account?.rateNow ?? 0;
+    if (this.kind() !== DuesEntryKind.Contribution || !account || rate <= 0) {
+      return [];
+    }
+    const label = (name: string, amount: number) => `${name} · ${money(amount, this.currency(), this.numberLocale())}`;
+    const year = Math.max(0, 4 * rate - account.balance);
+    return [
+      { label: label('Квартал', rate), amount: rate },
+      { label: label('Рік', year), amount: year },
+      ...(account.balance < 0 ? [{ label: label('Борг', -account.balance), amount: -account.balance }] : [])
+    ];
+  });
   readonly exchangeHint = computed(() =>
     `З ${DUES_PAYMENT_METHOD_LABELS[this.method()].toLowerCase()} на ${DUES_PAYMENT_METHOD_LABELS[oppositeMethod(this.method())].toLowerCase()}`);
 
@@ -94,6 +116,7 @@ export class DuesEntryDialogComponent {
   constructor() {
     this.form.controls.kind.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(kind => this.kind.set(kind));
     this.form.controls.method.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(method => this.method.set(method));
+    this.form.controls.membershipKey.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(key => this.person.set(key));
 
     effect(() => {
       if (this.visible()) {
@@ -120,6 +143,11 @@ export class DuesEntryDialogComponent {
       collectedByMemberKey: value.collectedByMemberKey,
       note: value.note?.trim() || null
     });
+  }
+
+  useAmount(amount: number): void {
+    this.form.controls.amount.setValue(amount);
+    this.form.controls.amount.markAsDirty();
   }
 
   close(): void {
@@ -158,6 +186,7 @@ export class DuesEntryDialogComponent {
     });
     this.kind.set(this.form.controls.kind.value);
     this.method.set(this.form.controls.method.value);
+    this.person.set(this.form.controls.membershipKey.value);
   }
 
   /** The rules that need more than one field: a personal kind names a person, only a correction goes below zero. */

@@ -52,6 +52,6 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, [item], cancellationToken);
 
         return new ServiceResult<AgendaItemResponse>(ResultType.Success,
-            AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.LeadershipLabels, lookups.Categories, roster));
+            AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster));
     }
 }

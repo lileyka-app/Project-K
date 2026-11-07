@@ -9,7 +9,7 @@
 
     <section class="kurin-tile">
     <p-table #usersTable [value]="users" dataKey="userId" editMode="row" styleClass="project-table" [globalFilterFields]="['email', 'firstName', 'lastName']"
-             rowGroupMode="subheader" groupRowsBy="kurinNumber" [sortField]="'kurinNumber'" sortMode="single">
+             rowGroupMode="subheader" groupRowsBy="groupOrder" [sortField]="'groupOrder'" sortMode="single">
         <ng-template #caption>
             <div class="lil-tile-head">
                 <p-iconfield iconPosition="left" class="users-list-search">
@@ -34,15 +34,15 @@
             <tr pRowGroupHeader class="users-list-group-row">
                 <td colspan="5">
                     <button type="button" pButton pRipple class="p-button-text p-button-rounded p-button-plain mr-2" 
-                            [icon]="expandedRows[user.kurinNumber?.toString() ?? 'null'] ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" 
-                            (click)="toggleGroup(user.kurinNumber)"
+                            [icon]="expandedRows[user.group] ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" 
+                            (click)="toggleGroup(user.group)"
                             aria-label="Перемкнути групу користувачів"></button>
-                    <span class="font-bold ml-2">{{ getKurinGroupLabel(user.kurinNumber) }}</span>
+                    <span class="font-bold ml-2">{{ user.groupTitle }}</span>
                 </td>
             </tr>
         </ng-template>
         <ng-template #body let-user let-editing="editing" let-ri="rowIndex">
-            @if (expandedRows[user.kurinNumber?.toString() ?? 'null']) {
+            @if (expandedRows[user.group]) {
                 <tr [pEditableRow]="user" class="users-list-row">
                     <td data-mobile-label="Імʼя">
                         {{user.firstName}}

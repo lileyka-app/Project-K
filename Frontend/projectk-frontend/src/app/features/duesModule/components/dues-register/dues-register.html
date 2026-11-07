@@ -1,0 +1,194 @@
+<p-table
+  [value]="currentRows()"
+  styleClass="project-table dues-table"
+  [scrollable]="true"
+  stripedRows
+  [rowHover]="true">
+
+  <ng-template #caption>
+    <div class="lil-tile-head">
+      <div>
+        <h2>Реєстр</h2>
+        <span class="lil-count">{{ currentRows().length }}</span>
+      </div>
+      <div class="lil-tile-head__actions register-tools">
+        <p-selectbutton
+          [options]="viewOptions"
+          [ngModel]="view()"
+          (ngModelChange)="view.set($event)"
+          [allowEmpty]="false"
+          optionLabel="label"
+          optionValue="value"
+          ariaLabel="Вигляд реєстру" />
+        <p-multiselect
+          inputId="dues-register-filter"
+          [options]="filterOptions()"
+          [ngModel]="filter()"
+          (ngModelChange)="filter.set($event ?? [])"
+          optionLabel="label"
+          optionValue="value"
+          [showToggleAll]="false"
+          [showClear]="true"
+          [filter]="false"
+          placeholder="Фільтр"
+          selectedItemsLabel="Обрано: {0}"
+          [maxSelectedLabels]="1"
+          appendTo="body"
+          ariaLabel="Фільтр реєстру"
+          styleClass="register-filter">
+          <ng-template let-option #item>
+            <span class="register-option">
+              @if (option.colorHex) {
+                <span class="register-dot" [style.background]="option.colorHex" aria-hidden="true"></span>
+              } @else {
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              }
+              {{ option.label }}
+            </span>
+          </ng-template>
+        </p-multiselect>
+        <p-button
+          label="Вивантажити"
+          icon="pi pi-download"
+          severity="secondary"
+          [disabled]="!filtered().length"
+          (onClick)="download()" />
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #header>
+    <tr>
+      <th scope="col" pFrozenColumn class="dues-name-col">{{ nameHeader() }}</th>
+      @if (view() === 'summary') {
+        <th scope="col" class="dues-number">Ставка</th>
+        <th scope="col" class="dues-number">За рік</th>
+        <th scope="col" class="dues-number">Борг за минулі</th>
+        <th scope="col" class="dues-q-col">{{ currentLabel() }}</th>
+        <th scope="col">Сплачено до</th>
+      } @else {
+        @for (quarter of year()?.quarters ?? []; track quarter.number) {
+          <th scope="col" class="dues-q-col">{{ quarterShort(quarter) }}</th>
+        }
+      }
+      <th scope="col" class="dues-total-col">Баланс</th>
+      @if (canKeep()) {
+        <th scope="col" class="dues-actions-col"></th>
+      }
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-row>
+    <ng-container *ngTemplateOutlet="accountRow; context: { $implicit: row }" />
+  </ng-template>
+
+  <ng-template #emptymessage>
+    <tr>
+      <td [attr.colspan]="columnCount()">
+        @if (accounts().length) {
+          <app-empty-state art="trail" title="Нікого не знайшлось" body="Спробуй інший фільтр." />
+        } @else {
+          <app-empty-state art="list" title="Тут ще нікого немає" body="Людей буде видно, щойно курінь задасть ставки." />
+        }
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+@if (formerRows().length) {
+  <p class="dues-former-title">
+    Переведені й вибулі з боргом <span class="lil-count">{{ formerRows().length }}</span>
+  </p>
+  <p-table [value]="formerRows()" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
+    <ng-template #body let-row>
+      <ng-container *ngTemplateOutlet="accountRow; context: { $implicit: row }" />
+    </ng-template>
+  </p-table>
+}
+
+<ng-template #accountRow let-row>
+  <tr
+    class="dues-row dues-row--account"
+    [class.dues-row--selected]="selected() === row.account.membershipKey"
+    tabindex="0"
+    (click)="rowClick.emit(row.account)"
+    (keydown.enter)="rowClick.emit(row.account)">
+    <td pFrozenColumn class="dues-name-col" [attr.data-mobile-label]="nameHeader()">
+      <span class="dues-name">{{ row.account.fullName }}</span>
+      <span class="dues-name-meta">
+        @for (tag of tagsOf(row.account); track tag.tagKey) {
+          <span class="register-tag"><span class="register-dot" [style.background]="tag.colorHex" aria-hidden="true"></span>{{ tag.name }}</span>
+        }
+        @if (standingLabel(row.account); as label) {
+          <p-tag [value]="label" severity="secondary" />
+        }
+        @if (row.account.isConcessionNow) {
+          <p-tag value="пільгова" severity="info" />
+        }
+        @for (name of activeGrantNames(row.account); track name) {
+          <p-tag [value]="name" severity="info" />
+        }
+      </span>
+    </td>
+    @if (view() === 'summary') {
+      <td class="dues-number" data-mobile-label="Ставка">
+        @if (row.account.rateNow !== null && row.account.rateNow !== undefined) { {{ money(row.account.rateNow) }} } @else { <span class="dues-blank">—</span> }
+      </td>
+      <td class="dues-number" data-mobile-label="За рік">{{ money(row.paidThisYear) }}</td>
+      <td class="dues-number" data-mobile-label="Борг за минулі">
+        @if (row.debtPast > 0) {
+          <span class="dues-balance dues-balance--debt">{{ money(-row.debtPast) }}</span>
+        } @else {
+          <span class="dues-blank">—</span>
+        }
+      </td>
+      <td class="dues-q-col" [attr.data-mobile-label]="currentLabel()">
+        @if (row.current; as cell) {
+          <ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: cell }" />
+        } @else {
+          <span class="dues-blank">—</span>
+        }
+      </td>
+      <td data-mobile-label="Сплачено до">
+        @if (paidUntilLabel(row); as until) { {{ until }} } @else { <span class="dues-blank">—</span> }
+      </td>
+    } @else {
+      @for (quarter of year()?.quarters ?? []; track quarter.number) {
+        <td class="dues-q-col" [attr.data-mobile-label]="quarterShort(quarter)">
+          @if (cellFor(row, quarter); as cell) {
+            <ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: cell }" />
+          } @else {
+            <span class="dues-blank">—</span>
+          }
+        </td>
+      }
+    }
+    <td class="dues-total-col" data-mobile-label="Баланс">
+      <span class="dues-balance dues-balance--lg" [class.dues-balance--debt]="row.account.balance < 0" [class.dues-balance--ok]="row.account.balance === 0" [class.dues-balance--surplus]="row.account.balance > 0">
+        {{ row.account.balance > 0 ? '+' + money(row.account.balance) : row.account.balance === 0 ? 'сплачено' : money(row.account.balance) }}
+      </span>
+    </td>
+    @if (canKeep()) {
+      <td class="dues-actions-col">
+        @if (row.account.standing === 'Current') {
+          <p-button
+            icon="pi pi-ticket"
+            variant="text"
+            severity="secondary"
+            size="small"
+            ariaLabel="Пільга"
+            pTooltip="Пільга"
+            (onClick)="$event.stopPropagation(); concession.emit(row.account)" />
+        }
+      </td>
+    }
+  </tr>
+</ng-template>
+
+<ng-template #quarterCell let-cell>
+  <div class="dues-q">
+    <span class="dues-q__paid">{{ money(cell.paid.total) }}</span>
+    <span class="dues-q__of">/ {{ money(cell.charged.total) }}</span>
+  </div>
+  <span class="dues-balance" [class.dues-balance--debt]="cell.balance < 0" [class.dues-balance--ok]="cell.balance === 0" [class.dues-balance--surplus]="cell.balance > 0">{{ cell.balance === 0 ? 'сплачено' : money(cell.balance) }}</span>
+</ng-template>

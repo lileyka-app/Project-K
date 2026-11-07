@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BehaviorSubject, of } from 'rxjs';
-import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from '../../models/dues.enums';
+import { DuesChargeTiming, DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from '../../models/dues.enums';
 import { DuesEntryDto, DuesTransferDto, KurinDuesDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { KurinDuesComponent } from './kurin-dues';
@@ -59,6 +59,7 @@ describe('KurinDuesComponent', () => {
     numberLocale: 'uk-UA',
     upstream: DuesUpstream.Stanytsia,
     currentQuarter: q(2026, 4),
+    chargeTiming: DuesChargeTiming.InAdvance,
     years: [{ startYear: 2026, label: '26–27', quarters: [q(2026, 4), q(2027, 1), q(2027, 2), q(2027, 3)] }],
     rates: [{
       fromQuarter: q(2026, 4),
@@ -108,11 +109,13 @@ describe('KurinDuesComponent', () => {
       updateKurinEntry: vi.fn(),
       deleteKurinEntry: vi.fn(),
       setKurinEntryVerified: vi.fn(),
-      setKurinRate: vi.fn()
+      setKurinRate: vi.fn(),
+      setKurinChargeTiming: vi.fn()
     } as MockedObject<DuesService>;
     dues.getKurinDues.mockReturnValue(of(response));
     dues.setTransferReceived.mockReturnValue(of({}));
     dues.createKurinEntry.mockReturnValue(of({}));
+    dues.setKurinChargeTiming.mockReturnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [KurinDuesComponent],
@@ -179,6 +182,7 @@ describe('KurinDuesComponent', () => {
   });
 
   // Підтвердження — це слово скарбника, що гроші дійшли; після нього касу читаємо наново.
+it('показує, як курінь платить, і змінює це одним кліком', () => {    create();    expect(text()).toContain('Квартал нараховується, щойно почався.');    component.saveChargeTiming(DuesChargeTiming.InArrears);    expect(dues.setKurinChargeTiming).toHaveBeenCalledWith('k1', DuesChargeTiming.InArrears);    expect(dues.getKurinDues).toHaveBeenCalledTimes(2);  });  it('той самий вибір не йде на сервер удруге', () => {    create();    component.saveChargeTiming(DuesChargeTiming.InAdvance);    expect(dues.setKurinChargeTiming).not.toHaveBeenCalled();  });
   it('підтвердження передачі йде на сервер і перечитує касу', () => {
     create();
 

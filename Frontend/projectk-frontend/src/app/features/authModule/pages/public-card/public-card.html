@@ -1,0 +1,15 @@
+<main class="public-card">
+  <a class="public-card__brand" routerLink="/">Лілейка</a>
+
+  @if (card(); as value) {
+    <app-shared-card [card]="value" />
+  } @else if (missing()) {
+    <div class="public-card__missing" data-testid="card-missing">
+      <span class="pi pi-question-circle" aria-hidden="true"></span>
+      <h1>Картку не знайдено</h1>
+      <p>{{ mode === 'check' ? 'QR застарів.' : 'Посилання вимкнене.' }}</p>
+    </div>
+  } @else {
+    <span class="pi pi-spin pi-spinner public-card__loading" aria-label="Завантажую картку"></span>
+  }
+</main>

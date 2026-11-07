@@ -6,7 +6,7 @@ import { DialogModule } from '@openng/optimus-ui/dialog';
 import { SelectModule } from '@openng/optimus-ui/select';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
-import { MemberAwardDto } from '../../../../models/member-award.dto';
+import { YouthAwardDto } from '../../../../models/member-award.dto';
 import { MemberAwardLevel } from '../../../../models/enums/member-award-level.enum';
 import { BadgeProgressStatus } from '../../../../models/enums/badge-progress-status.enum';
 import { UpsertMemberAwardRequest } from '../../../../services/member-award-service/member-award.service';
@@ -29,8 +29,8 @@ import { parseDateOnlyString, toDateOnlyString } from '../../../../functions/to-
 })
 export class MemberAwardsDialogComponent implements OnChanges {
   readonly visible = model(false);
-  readonly awardToEdit = input<MemberAwardDto | null>(null);
-  readonly existingAwards = input<MemberAwardDto[]>([]);
+  readonly awardToEdit = input<YouthAwardDto | null>(null);
+  readonly existingAwards = input<YouthAwardDto[]>([]);
   /** Change the level, date and note and save; a confirmed award only for whoever may remove one. */
   readonly canEdit = input(false);
   /** Confirm this award: the kurin lets the viewer confirm its level. */
@@ -39,7 +39,7 @@ export class MemberAwardsDialogComponent implements OnChanges {
 
   readonly save = output<UpsertMemberAwardRequest>();
   readonly approve = output<string>();
-  readonly delete = output<MemberAwardDto>();
+  readonly delete = output<YouthAwardDto>();
 
   form: FormGroup;
 

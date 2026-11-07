@@ -89,6 +89,7 @@ public class CalendarFeedTests
             .ReturnsAsync([]);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
         unitOfWork.SetupGet(u => u.AgendaItems).Returns(agenda.Object);
         unitOfWork.SetupGet(u => u.AgendaCategories).Returns(categories.Object);
         unitOfWork.SetupGet(u => u.Groups).Returns(groups.Object);

@@ -283,9 +283,9 @@ export class KurinScoreSettingsComponent implements OnInit {
 
   confirmDeleteStage(stage: ScoreStageDto): void {
     this.confirmation.confirm({
-      header: 'Видалити етап',
+      header: 'Видалити етап?',
       message: `«${stage.name}» зникне з переліку періодів. Бали не зачіпає.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {

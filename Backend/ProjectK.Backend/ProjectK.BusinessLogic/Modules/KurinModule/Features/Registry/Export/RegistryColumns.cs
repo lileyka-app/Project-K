@@ -36,9 +36,17 @@ internal static class RegistryColumns
             ["school"] = new("Школа", m => SheetCell.Of(m.School))
         };
 
+    /// <summary>The kurin's tags on a person, by name, separated by commas. Its names come from the kurin.</summary>
+    public const string Tags = "tags";
+
     /// <summary>The column's heading, or null when nothing here answers to that id.</summary>
     public static string? HeaderFor(string columnId)
     {
+        if (columnId == Tags)
+        {
+            return "Теги";
+        }
+
         if (Named.TryGetValue(columnId, out var named))
         {
             return named.Header;
@@ -47,9 +55,19 @@ internal static class RegistryColumns
         return TryLevel(columnId, out var level) ? PlastLevelNames.Of(level) : null;
     }
 
-    /// <summary>This person's value in that column.</summary>
-    public static SheetCell Read(string columnId, MemberResponse member)
+    /// <summary>This person's value in that column. <paramref name="tagNames"/> names the kurin's tags.</summary>
+    public static SheetCell Read(string columnId, MemberResponse member, IReadOnlyDictionary<Guid, string> tagNames)
     {
+        if (columnId == Tags)
+        {
+            var names = member.TagKeys
+                .Where(tagNames.ContainsKey)
+                .Select(key => tagNames[key])
+                .Order(StringComparer.CurrentCulture)
+                .ToList();
+            return SheetCell.Of(names.Count == 0 ? null : string.Join(", ", names));
+        }
+
         if (Named.TryGetValue(columnId, out var named))
         {
             return named.ReadCell(member);

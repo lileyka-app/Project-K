@@ -6,6 +6,7 @@ import { UserService } from '../../../adminModule/services/user-service/user.ser
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { GroupService } from '../../services/group-service/group.service';
+import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 import { MemberService } from '../../services/member-service/member.service';
 import { KvPanelComponent } from './kv-panel';
 import { GroupDto } from '../../models/group.dto';
@@ -44,6 +45,7 @@ describe('KvPanelComponent', () => {
       imports: [KvPanelComponent],
       providers: [
         { provide: GroupService, useValue: groupService },
+        { provide: KurinFeaturesService, useValue: { hasGroups: () => true, isSenior: () => false } },
         { provide: MemberService, useValue: memberService },
         { provide: LeadershipService, useValue: leadershipService },
         {

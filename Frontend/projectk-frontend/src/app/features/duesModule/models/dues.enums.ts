@@ -91,9 +91,20 @@ export const KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.Exchange
 ];
 
-/** What the kurin's box offers under its край's setting: a transfer only where the край takes money. */
-export function kurinDuesKinds(upstream: DuesUpstream): DuesEntryKind[] {
-  return KURIN_DUES_KINDS.filter(kind =>
+/** What a senior kurin's box records besides: each person's own вкладка. */
+export const SENIOR_KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
+  DuesEntryKind.Contribution,
+  DuesEntryKind.Refund,
+  DuesEntryKind.Correction
+];
+
+/**
+ * What the kurin's box offers under its край's setting: a transfer only where the край takes money,
+ * and in a kurin without гуртки the people's own вкладка.
+ */
+export function kurinDuesKinds(upstream: DuesUpstream, isSenior = false): DuesEntryKind[] {
+  const kinds = isSenior ? [...SENIOR_KURIN_DUES_KINDS, ...KURIN_DUES_KINDS] : KURIN_DUES_KINDS;
+  return kinds.filter(kind =>
     (kind !== DuesEntryKind.TransferToStanytsia || paysStanytsia(upstream))
     && (kind !== DuesEntryKind.TransferToKrai || paysKrai(upstream)));
 }
@@ -117,3 +128,20 @@ export const INCOMING_DUES_KINDS: ReadonlySet<DuesEntryKind> = new Set([
   DuesEntryKind.Contribution,
   DuesEntryKind.OtherIncome
 ]);
+
+/** When a kurin's вкладка falls due (`DuesChargeTiming`): наперед, or за квартал, що минув. */
+export enum DuesChargeTiming {
+  InAdvance = 'InAdvance',
+  InArrears = 'InArrears'
+}
+
+export const DUES_CHARGE_TIMING_LABELS: Record<DuesChargeTiming, string> = {
+  [DuesChargeTiming.InAdvance]: 'Наперед',
+  [DuesChargeTiming.InArrears]: 'За пройдений квартал'
+};
+
+/** What the choice means, said once under it. */
+export const DUES_CHARGE_TIMING_HINTS: Record<DuesChargeTiming, string> = {
+  [DuesChargeTiming.InAdvance]: 'Квартал нараховується, щойно почався.',
+  [DuesChargeTiming.InArrears]: 'Квартал нараховується, коли минув: на початку IV кв. платять за III.'
+};

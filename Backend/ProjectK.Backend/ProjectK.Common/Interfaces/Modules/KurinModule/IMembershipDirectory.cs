@@ -18,6 +18,11 @@ public interface IMembershipDirectory
         CancellationToken cancellationToken = default);
 
     /// <summary>How many, without reading them.</summary>
+    /// <summary>The same for several people in one read, by member; someone with none is absent.</summary>
+    Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetForMembersAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default);
+
     Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>

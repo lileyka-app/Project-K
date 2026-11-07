@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { TreeSelectModule } from '@openng/optimus-ui/treeselect';
 import { TreeNode } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
-import { AgendaAssignTargets, AgendaLeadershipTarget, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
+import { AgendaAssignTargets, AgendaLeadershipTarget, AgendaMemberTarget, AgendaTagTarget, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
+import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 
 interface TargetNodeData {
   targetType: AgendaTargetType;
@@ -11,7 +12,7 @@ interface TargetNodeData {
 }
 
 /**
- * «Призначити для»: дерево Курінь → Гуртки → Учасники з пошуком (`filter`). Бекенд позначає кожну ціль
+ * «Призначити для»: дерево Курінь (КВ із його членами) → Гуртки → Учасники → Поза гуртками → Теги, з пошуком (`filter`). Бекенд позначає кожну ціль
  * тим, чи дає її поточному користувачу політика куреня, тож тут немає власної перевірки прав. Вузол,
  * який не можна обрати і під яким нема чого обрати, не малюється зовсім: Гуртковому нема чого
  * дивитись на «весь курінь», якого він не може вибрати.
@@ -24,6 +25,7 @@ interface TargetNodeData {
   styleUrl: './agenda-assign-select.css'
 })
 export class AgendaAssignSelectComponent implements OnInit {
+  protected readonly features = inject(KurinFeaturesService);
   private readonly agendaService = inject(AgendaService);
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -73,7 +75,11 @@ export class AgendaAssignSelectComponent implements OnInit {
       .map(node => node.data)
       .filter((data): data is TargetNodeData => !!data)
       .map(data => ({ targetType: data.targetType, targetKey: data.targetKey }));
-    this.targets.set(targets);
+    // A target this tree does not draw (tags off, or beyond what this editor may pick) cannot be
+    // unticked here, so it stays: the server keeps it too.
+    const drawn = this.nodeByKey();
+    const unseen = this.targets().filter(target => !drawn.has(`${target.targetType.toLowerCase()}:${target.targetKey}`));
+    this.targets.set([...unseen, ...targets]);
   }
 
   private buildNodes(tree: AgendaAssignTargets): TreeNode<TargetNodeData>[] {
@@ -98,13 +104,7 @@ export class AgendaAssignSelectComponent implements OnInit {
         children.push(this.leadershipNode(group.leadership));
       }
       for (const member of group.members) {
-        children.push({
-          key: `member:${member.memberKey}`,
-          label: member.fullName,
-          icon: 'pi pi-user',
-          selectable: member.canTarget,
-          data: { targetType: 'Member' as AgendaTargetType, targetKey: member.memberKey }
-        });
+        children.push(this.memberNode(member));
       }
 
       roots.push({
@@ -117,7 +117,41 @@ export class AgendaAssignSelectComponent implements OnInit {
       });
     }
 
+    // Люди поза гуртками — кожен окремо. У старшому курені гуртків немає, і це весь склад.
+    const unplaced = tree.unplacedMembers ?? [];
+    if (unplaced.length > 0) {
+      roots.push({
+        key: 'unplaced',
+        label: tree.groups.length > 0 ? 'Поза гуртками' : 'Люди куреня',
+        icon: 'pi pi-users',
+        selectable: false,
+        children: unplaced.map(member => this.memberNode(member))
+      });
+    }
+
+    // Теги — окремою гілкою після гуртків: «усі з тегом» поруч із гуртком, а не всередині нього.
+    const tags = tree.tags ?? [];
+    if (tags.length > 0) {
+      roots.push({
+        key: 'tags',
+        label: 'Теги',
+        icon: 'pi pi-tags',
+        selectable: false,
+        children: tags.map(tag => this.tagNode(tag))
+      });
+    }
+
     return this.prune(roots);
+  }
+
+  private tagNode(tag: AgendaTagTarget): TreeNode<TargetNodeData> {
+    return {
+      key: `tag:${tag.kurinTagKey}`,
+      label: `Усі з тегом «${tag.name}»`,
+      icon: 'pi pi-tag',
+      selectable: true,
+      data: { targetType: 'Tag' as AgendaTargetType, targetKey: tag.kurinTagKey }
+    };
   }
 
   /** Keeps a node when it can be picked itself or holds something that can; the rest is noise. */
@@ -132,13 +166,26 @@ export class AgendaAssignSelectComponent implements OnInit {
     return kept;
   }
 
+  /** Провід цілим, а під КВ — ще й кожен його член поза гуртками окремо. */
   private leadershipNode(office: AgendaLeadershipTarget): TreeNode<TargetNodeData> {
+    const members = (office.members ?? []).map(member => this.memberNode(member));
     return {
       key: `leadership:${office.leadershipKey}`,
       label: office.label,
       icon: 'pi pi-users',
       selectable: office.canTarget,
-      data: { targetType: 'Leadership' as AgendaTargetType, targetKey: office.leadershipKey }
+      data: { targetType: 'Leadership' as AgendaTargetType, targetKey: office.leadershipKey },
+      children: members.length > 0 ? members : undefined
+    };
+  }
+
+  private memberNode(member: AgendaMemberTarget): TreeNode<TargetNodeData> {
+    return {
+      key: `member:${member.memberKey}`,
+      label: member.fullName,
+      icon: 'pi pi-user',
+      selectable: member.canTarget,
+      data: { targetType: 'Member' as AgendaTargetType, targetKey: member.memberKey }
     };
   }
 

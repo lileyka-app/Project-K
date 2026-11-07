@@ -49,6 +49,7 @@ public class MeAgendaScopesTests
         leaderships.Setup(l => l.GetActiveLeadershipKeysForMemberAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
         return new MeAgendaScopes(user.Object, memberships.Object, members.Object, _offices.Object, _scopeReader.Object, unitOfWork.Object);
     }
 

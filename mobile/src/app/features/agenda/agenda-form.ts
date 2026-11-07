@@ -71,7 +71,7 @@ export interface TargetSection {
 
 /**
  * The web's agenda-assign-select tree, flattened for a phone list: the kurin and its offices, then
- * each гурток with itself, its провід and its people. The API sends only what this person may
+ * each гурток with itself, its провід and its people, then people in no гурток, then the kurin's tags. The API sends only what this person may
  * address; a heading with nothing to pick under it is left out.
  */
 export function targetSections(tree: AgendaAssignTargets): TargetSection[] {
@@ -80,6 +80,9 @@ export function targetSections(tree: AgendaAssignTargets): TargetSection[] {
   if (tree.canTargetKurin) kurin.push(row('Kurin', tree.kurinKey, 'Увесь курінь'));
   for (const office of tree.kurinLeaderships) {
     if (office.canTarget) kurin.push(row('Leadership', office.leadershipKey, office.label));
+    for (const member of office.members ?? []) {
+      if (member.canTarget) kurin.push(row('Member', member.memberKey, member.fullName));
+    }
   }
   if (kurin.length) sections.push({ title: tree.kurinLabel, rows: kurin });
   for (const group of tree.groups) {
@@ -91,19 +94,34 @@ export function targetSections(tree: AgendaAssignTargets): TargetSection[] {
     }
     if (rows.length) sections.push({ title: group.name, rows });
   }
+  const unplaced = (tree.unplacedMembers ?? []).filter((member) => member.canTarget)
+    .map((member) => row('Member', member.memberKey, member.fullName));
+  if (unplaced.length) sections.push({ title: tree.groups.length ? 'Поза гуртками' : 'Люди куреня', rows: unplaced });
+  const tags = (tree.tags ?? []).map((tag) => row('Tag', tag.kurinTagKey, tagLabel(tag.name)));
+  if (tags.length) sections.push({ title: 'Теги', rows: tags });
   return sections;
+}
+
+/** A tag as a target: everyone who carries it, now or later. */
+export function tagLabel(name: string): string {
+  return `Усі з тегом «${name}»`;
 }
 
 /** What a chosen target is called in the form's summary («Соколи», not «Увесь гурток»). */
 export function targetNames(tree: AgendaAssignTargets): Map<string, string> {
   const names = new Map<string, string>();
   names.set(targetId('Kurin', tree.kurinKey), tree.kurinLabel);
-  for (const office of tree.kurinLeaderships) names.set(targetId('Leadership', office.leadershipKey), office.label);
+  for (const office of tree.kurinLeaderships) {
+    names.set(targetId('Leadership', office.leadershipKey), office.label);
+    for (const member of office.members ?? []) names.set(targetId('Member', member.memberKey), member.fullName);
+  }
+  for (const member of tree.unplacedMembers ?? []) names.set(targetId('Member', member.memberKey), member.fullName);
   for (const group of tree.groups) {
     names.set(targetId('Group', group.groupKey), group.name);
     if (group.leadership) names.set(targetId('Leadership', group.leadership.leadershipKey), group.leadership.label);
     for (const member of group.members) names.set(targetId('Member', member.memberKey), member.fullName);
   }
+  for (const tag of tree.tags ?? []) names.set(targetId('Tag', tag.kurinTagKey), tagLabel(tag.name));
   return names;
 }
 
@@ -408,7 +426,7 @@ const ERRORS: Record<string, string> = {
           <ion-item [button]="true" [detail]="true" (click)="openPicker()" data-testid="targets">
             <ion-label class="ion-text-wrap">
               <h3>Для кого</h3>
-              <p [class.error]="tried() && !targets().length">{{ targetsSummary() || 'Обери курінь, гуртки або людей' }}</p>
+              <p [class.error]="tried() && !targets().length">{{ targetsSummary() || 'Обери курінь, гуртки, людей або теги' }}</p>
             </ion-label>
           </ion-item>
         </ion-item-group>

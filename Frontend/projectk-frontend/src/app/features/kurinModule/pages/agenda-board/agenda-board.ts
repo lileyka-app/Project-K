@@ -266,11 +266,11 @@ export class AgendaBoardComponent implements OnInit {
 
   remove(task: AgendaItemDto): void {
     this.confirm.confirm({
-      message: `Видалити задачу «${task.title}»? Її не можна буде повернути.`,
-      header: 'Підтвердження',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Видалити',
-      rejectLabel: 'Скасувати',
+      message: `«${task.title}» зникне з дошки, і повернути її не вийде.`,
+      header: 'Видалити задачу?',
+      icon: 'pi pi-trash',
+      acceptButtonProps: { label: 'Видалити', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.agendaService.delete(task.agendaItemKey).subscribe({
           next: () => this.onSaved(),

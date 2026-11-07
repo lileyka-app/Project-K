@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Services.Events;
@@ -276,5 +277,20 @@ public class MemberNotificationHandlersTests
                 && request.DeduplicationKey == $"skill-review-result:{memberKey}:badge-1"),
             It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task ABranchRequestDecision_StaysApplied_WhenTheRequesterCannotBeTold()
+    {
+        var notifications = new Mock<INotificationService>();
+        notifications.Setup(n => n.NotifyAsync(It.IsAny<NotificationRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("inbox down"));
+        var handler = new KurinBranchRequestReviewedEventHandler(notifications.Object, NullLogger<KurinBranchRequestReviewedEventHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new DomainEventNotification<KurinBranchRequestReviewed>(new KurinBranchRequestReviewed(Guid.NewGuid(), Guid.NewGuid(), true, "5-й курінь УСП", Guid.NewGuid(), Guid.NewGuid())),
+            CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
     }
 }

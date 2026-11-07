@@ -4,7 +4,7 @@
  */
 export type AgendaItemKind = 'Event' | 'Task';
 export type AgendaItemStatus = 'Todo' | 'InProgress' | 'Done';
-export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership';
+export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership' | 'Tag';
 export type AgendaRsvpStatus = 'Going' | 'NotGoing' | 'Maybe';
 export type RecurrenceFrequency = 'None' | 'Weekly' | 'Monthly' | 'Yearly';
 /** Once for all, closed by its провід (`Shared`) or by anyone in it, or by each person on their own. */
@@ -187,6 +187,8 @@ export interface AgendaLeadershipTarget {
   leadershipKey: string;
   label: string;
   canTarget: boolean;
+  /** The КВ's members in no гурток, to pick one by one; empty for other проводи. */
+  members?: AgendaMemberTarget[];
 }
 
 export interface AgendaGroupTarget {
@@ -195,7 +197,14 @@ export interface AgendaGroupTarget {
   canTargetGroup: boolean;
   leadership: AgendaLeadershipTarget | null;
   /** `canTarget` is false for a person listed only beside a гурток or провід the user may pick. */
-  members: { memberKey: string; fullName: string; canTarget: boolean }[];
+  members: AgendaMemberTarget[];
+}
+
+/** A person as a target; `canTarget` is false when they are only listed beside what may be picked. */
+export interface AgendaMemberTarget {
+  memberKey: string;
+  fullName: string;
+  canTarget: boolean;
 }
 
 export interface AgendaAssignTargets {
@@ -204,4 +213,15 @@ export interface AgendaAssignTargets {
   kurinLabel: string;
   kurinLeaderships: AgendaLeadershipTarget[];
   groups: AgendaGroupTarget[];
+  /** People in no гурток and not in the КВ; in a senior kurin, everyone. */
+  unplacedMembers?: AgendaMemberTarget[];
+  /** The kurin's tags, when it uses them and its policy lets this person aim at them. */
+  tags?: AgendaTagTarget[];
+}
+
+/** Everyone carrying a tag now or later, as one target. */
+export interface AgendaTagTarget {
+  kurinTagKey: string;
+  name: string;
+  colorHex: string;
 }

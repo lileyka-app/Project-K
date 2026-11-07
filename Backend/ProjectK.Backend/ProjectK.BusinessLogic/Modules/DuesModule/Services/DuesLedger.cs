@@ -11,7 +11,9 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// <item>a payment closes the oldest quarter first, and within a quarter the станиця, then the край,
 /// then the kurin, then the гурток: money owed to others before the kurin's own;</item>
 /// <item>a leftover is a surplus that pays the quarters still to come;</item>
-/// <item>money a гурток hands up pays the станиця's part, then the край's, before the kurin's.</item>
+/// <item>money a гурток hands up pays the станиця's part, then the край's, before the kurin's;</item>
+/// <item>an account with no гурток is the person's own in the kurin's box: what it collects for others
+/// is owed on at once.</item>
 /// </list>
 /// </summary>
 public sealed class DuesLedger
@@ -47,19 +49,40 @@ public sealed class DuesLedger
     public IReadOnlyList<DuesConcessionGrant> GrantsIn(Guid membershipKey, DuesQuarter quarter) =>
         _grants[membershipKey].Where(g => g.AppliesTo(quarter)).ToList();
 
-    /// <summary>What one quarter costs a membership in a гурток.</summary>
-    public DuesAmount AmountFor(Guid membershipKey, Guid groupKey, DuesQuarter quarter) =>
-        Priced(membershipKey, groupKey, quarter).Amount;
+    /// <summary>What one quarter costs a membership in a гурток, or in the kurin's box.</summary>
+    public DuesAmount AmountFor(Guid membershipKey, Guid? groupKey, DuesQuarter quarter, Guid? rateTagKey = null) =>
+        Priced(membershipKey, groupKey, quarter, rateTagKey).Amount;
+
+    /// <summary>
+    /// Which tag's rate a person with these tags pays in a quarter: the highest of those in force, or
+    /// null — the rate for everyone — when none of their tags has one.
+    /// </summary>
+    public static Guid? RateTagFor(IEnumerable<KurinDuesRate> rates, IReadOnlyCollection<Guid> tagKeys, DuesQuarter quarter)
+    {
+        if (tagKeys.Count == 0)
+        {
+            return null;
+        }
+
+        return rates
+            .Where(r => r.TagKey is { } tag && tagKeys.Contains(tag) && r.FromQuarter <= quarter.Index)
+            .GroupBy(r => r.TagKey!.Value)
+            .Select(g => g.OrderBy(r => r.FromQuarter).Last())
+            .OrderByDescending(r => r.TotalFull())
+            .ThenBy(r => r.TagKey)
+            .Select(r => r.TagKey)
+            .FirstOrDefault();
+    }
 
     /// <summary>
     /// The quarter's price, the пільга of the край behind it, and what it would cost without the
     /// край's пільги. The full вкладка, the kurin's пільга and each of the край's пільги the person
     /// holds are worked out apart; the cheapest counts, and on a tie the kurin's own price stands.
     /// </summary>
-    public DuesPrice Priced(Guid membershipKey, Guid groupKey, DuesQuarter quarter)
+    public DuesPrice Priced(Guid membershipKey, Guid? groupKey, DuesQuarter quarter, Guid? rateTagKey = null)
     {
-        var kurin = _kurinRates.LastOrDefault(r => r.FromQuarter <= quarter.Index);
-        var group = _groupRates[groupKey].LastOrDefault(r => r.FromQuarter <= quarter.Index);
+        var kurin = RateIn(quarter, rateTagKey);
+        var group = groupKey is { } key ? _groupRates[key].LastOrDefault(r => r.FromQuarter <= quarter.Index) : null;
         var groupShare = group?.GroupShare ?? 0;
 
         var full = kurin is null
@@ -84,12 +107,31 @@ public sealed class DuesLedger
         return new DuesPrice(price, applied, withoutGrants);
     }
 
-    /// <summary>Every account in the kurin, one per membership per гурток it was charged or paid in.</summary>
+    /// <summary>
+    /// The tag a membership's quarter is priced by: that of its charge for the quarter, or of the latest
+    /// one before it while the quarter is not charged yet. Null for the rate for everyone.
+    /// </summary>
+    public Guid? RateTagOf(Guid membershipKey, DuesQuarter quarter) => _charges
+        .Where(c => c.MembershipKey == membershipKey && c.Quarter <= quarter.Index)
+        .OrderBy(c => c.Quarter)
+        .LastOrDefault()?.RateTagKey;
+
+    /// <summary>The kurin's rate in force for a tag, falling back to the one for everyone while the tag has none.</summary>
+    private KurinDuesRate? RateIn(DuesQuarter quarter, Guid? tagKey)
+    {
+        var rate = _kurinRates.LastOrDefault(r => r.TagKey == tagKey && r.FromQuarter <= quarter.Index);
+        return rate is null && tagKey is not null ? RateIn(quarter, null) : rate;
+    }
+
+    /// <summary>
+    /// Every account in the kurin, one per membership per гурток it was charged or paid in — or per
+    /// membership in the kurin's box, for a kurin without гуртки.
+    /// </summary>
     public IReadOnlyList<DuesAccount> Accounts()
     {
         var payments = _entries
-            .Where(e => e.MembershipKey.HasValue && e.GroupKey.HasValue)
-            .GroupBy(e => (Membership: e.MembershipKey!.Value, Group: e.GroupKey!.Value))
+            .Where(e => e.MembershipKey.HasValue)
+            .GroupBy(e => (Membership: e.MembershipKey!.Value, Group: e.GroupKey))
             .ToDictionary(g => g.Key, g => g.Sum(BalanceEffect));
 
         var keys = _charges.Select(c => (Membership: c.MembershipKey, Group: c.GroupKey))
@@ -123,13 +165,15 @@ public sealed class DuesLedger
     {
         accounts ??= Accounts();
 
-        var groupKeys = accounts.Select(a => a.GroupKey)
+        var groupKeys = accounts.Where(a => a.GroupKey.HasValue).Select(a => a.GroupKey!.Value)
             .Concat(_entries.Where(e => e.GroupKey.HasValue).Select(e => e.GroupKey!.Value))
             .Distinct()
             .ToList();
 
         var handovers = new List<GroupHandover>();
-        decimal receivedForStanytsia = 0, receivedForKrai = 0;
+        // The kurin's own accounts are paid into its box: their share for others is owed on at once.
+        var direct = accounts.Where(a => a.GroupKey is null).Select(a => a.Allocated).ToList();
+        decimal receivedForStanytsia = direct.Sum(a => a.Stanytsia), receivedForKrai = direct.Sum(a => a.Krai);
         foreach (var groupKey in groupKeys)
         {
             var transfers = _entries
@@ -145,9 +189,9 @@ public sealed class DuesLedger
                 received));
 
             // What a гурток hands up pays the станиця's part, then the край's, before the kurin's.
-            var forStanytsia = Math.Min(received, allocated.Sum(a => a.Stanytsia));
-            receivedForStanytsia += forStanytsia;
-            receivedForKrai += Math.Min(received - forStanytsia, allocated.Sum(a => a.Krai));
+            var left = received;
+            receivedForStanytsia += Take(ref left, allocated.Sum(a => a.Stanytsia));
+            receivedForKrai += Take(ref left, allocated.Sum(a => a.Krai));
         }
 
         var moves = _entries
@@ -158,15 +202,15 @@ public sealed class DuesLedger
 
         var toStanytsia = receivedForStanytsia - Sent(DuesEntryKind.TransferToStanytsia);
         var toKrai = receivedForKrai - Sent(DuesEntryKind.TransferToKrai);
-
-        return new KurinDuesBox(new DuesCashBox(cash, card, toStanytsia + toKrai), handovers, toStanytsia, toKrai);
+        var ahead = accounts.Where(a => a.GroupKey is null).Sum(a => Math.Max(a.Balance, 0));
+        return new KurinDuesBox(new DuesCashBox(cash, card, toStanytsia + toKrai) { Ahead = ahead }, handovers, toStanytsia, toKrai);
     }
 
     /// <summary>What the kurin's own box has handed on with one kind of transfer.</summary>
     public decimal Sent(DuesEntryKind transfer) =>
         _entries.Where(e => e.GroupKey is null && e.Kind == transfer).Sum(e => e.Amount);
 
-    private DuesAccount Account(Guid membershipKey, Guid groupKey, decimal payments)
+    private DuesAccount Account(Guid membershipKey, Guid? groupKey, decimal payments)
     {
         var remaining = Math.Max(payments, 0);
         var quarters = new List<DuesAccountQuarter>();
@@ -175,7 +219,7 @@ public sealed class DuesLedger
             .OrderBy(c => c.Quarter))
         {
             var quarter = DuesQuarter.FromIndex(charge.Quarter);
-            var priced = Priced(membershipKey, groupKey, quarter);
+            var priced = Priced(membershipKey, groupKey, quarter, charge.RateTagKey);
             var due = priced.Amount;
             var stanytsia = Take(ref remaining, due.Stanytsia);
             var krai = Take(ref remaining, due.Krai);
@@ -187,7 +231,8 @@ public sealed class DuesLedger
                 new DuesAmount(stanytsia, kurin, group, krai),
                 IsConcession(membershipKey, quarter))
             {
-                ConcessionName = priced.Grant?.Name
+                ConcessionName = priced.Grant?.Name,
+                RateTagKey = charge.RateTagKey
             });
         }
 

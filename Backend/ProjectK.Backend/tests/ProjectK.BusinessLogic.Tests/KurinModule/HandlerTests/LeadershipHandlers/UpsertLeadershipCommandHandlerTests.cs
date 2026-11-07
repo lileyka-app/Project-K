@@ -28,6 +28,7 @@ public class UpsertLeadershipHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
+    private readonly Mock<IKurinRepository> _kurinsMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
     private readonly Mock<IMemberDirectory> _membersMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
@@ -38,6 +39,7 @@ public class UpsertLeadershipHandlerTests
     public UpsertLeadershipHandlerTests()
     {
         _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
+        _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinsMock.Object);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[]
         {
             ProjectK.Common.Models.Authorization.SystemRole.ForOffice(
@@ -522,6 +524,22 @@ public class UpsertLeadershipHandlerTests
         Assert.Equal("Писар", entry.SubjectLabel);
         Assert.Equal(memberKey, entry.SubjectMemberKey);
         Assert.Equal(new[] { new AuditChange("holder", "A B", null) }, entry.Changes);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRecordTheRole_AsTheKurinNamesIt()
+    {
+        var memberKey = Guid.NewGuid();
+        var existing = LeadershipHeldBy((LeadershipRole.Pysar, memberKey));
+        _kurinsMock.Setup(k => k.GetByKeyAsync(existing.KurinKey!.Value, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(5, KurinBranch.USP) { KurinKey = existing.KurinKey!.Value, RoleNames = """{"Pysar":"Скриптор"}""" });
+        var command = new UpsertLeadershipCommand(RequestSeating(existing), existing.LeadershipKey);
+        SetupUpdateMapping(command, existing);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal("Скриптор", Assert.Single(_journal.Entries).SubjectLabel);
     }
 
     [Fact]

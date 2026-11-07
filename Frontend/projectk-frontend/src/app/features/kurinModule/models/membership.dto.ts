@@ -1,4 +1,4 @@
-import { KurinBranch } from './enums/kurin-branch.enum';
+import { KurinBranch, KurinNumbering } from './enums/kurin-branch.enum';
 import { MembershipKind } from './enums/membership-kind.enum';
 
 /**
@@ -12,6 +12,8 @@ export interface MembershipDto {
   kurinNumber: number | null;
   branch: KurinBranch;
   kurinNamedAfter?: string | null;
+  /** Every гілка of the kurin with its number there, main one first. */
+  numbering?: KurinNumbering[];
   groupKey?: string | null;
   groupName?: string | null;
   kind: MembershipKind;

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.BackgroundServices;
@@ -150,7 +151,10 @@ public class AuditCleanupBackgroundService : BackgroundService
             _logger.LogInformation("Cleaned up {Count} old DismissedDuties.", deletedDismissals);
     }
 
-    /// <summary>Deletes journal entries older than <paramref name="cutoffUtc"/>, <paramref name="batchSize"/> per statement.</summary>
+    /// <summary>
+    /// Deletes journal entries older than <paramref name="cutoffUtc"/>, <paramref name="batchSize"/> per
+    /// statement. The archive's entries stay: a deletion from the danger zone leaves nothing else behind.
+    /// </summary>
     internal static async Task<int> DeleteExpiredJournalAsync(
         AppDbContext dbContext,
         DateTime cutoffUtc,
@@ -162,7 +166,7 @@ public class AuditCleanupBackgroundService : BackgroundService
         do
         {
             deleted = await dbContext.KurinAuditEvents
-                .Where(entry => entry.OccurredAtUtc < cutoffUtc)
+                .Where(entry => entry.OccurredAtUtc < cutoffUtc && entry.Area != AuditArea.Archive)
                 .Take(batchSize)
                 .ExecuteDeleteAsync(cancellationToken);
             total += deleted;

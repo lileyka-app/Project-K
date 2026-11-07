@@ -373,7 +373,18 @@ a.lil-sidebar-brand:hover {
   color: var(--p-navigation-item-icon-active-color);
 }
 
-/* Крапка «є що вирішити» (BRANDBOOK §сайдбар): 7px, терракота, без числа. */
+/* Крапка «є що вирішити» (BRANDBOOK §сайдбар): 7px, терракота, без числа. Заголовок пункту — блок
+   із посиланням на всю ширину, тож без flex крапка падає під посилання. */
+:root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-content {
+  align-items: center;
+  display: flex;
+}
+
+:root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-link {
+  flex: 1;
+  min-width: 0;
+}
+
 :root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-content::after {
   background: var(--lil-clay-500);
   border-radius: 50%;
@@ -526,6 +537,13 @@ a.lil-sidebar-brand:hover {
   gap: 0.75rem;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+/* Режим «Реєстру» (склад, переходи, архів, імпорт): його плитки стоять з тим самим кроком, що й на сторінці. */
+.registry-mode {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lil-page-gap);
 }
 
 /* Лічильник поруч із заголовком — плашка, а не частина тексту. */
@@ -854,4 +872,88 @@ a.lil-sidebar-brand:hover {
   .lil-empty__art .lil-empty__dash {
     animation: none;
   }
+}
+
+/* Вікно підтвердження: вузьке, текст переноситься, іконка — велика плитка над заголовком, а не
+   значок біля тексту. Вміст розгорнуто (`display: contents`), щоб іконка стала першою в колонці
+   вікна, над заголовком. Тінти — ті самі, що «сплачено» / «борг» вкладки: зелений для звичайного
+   питання, червоний, коли кнопка дії небезпечна. Нових кольорів немає. */
+.p-confirmdialog.p-dialog {
+  width: min(26rem, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.p-dialog.p-confirmdialog .p-dialog-content {
+  display: contents;
+}
+
+.p-dialog.p-confirmdialog .p-confirmdialog-icon {
+  order: 0;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-top: 1.75rem;
+  border-radius: var(--lil-radius-lg);
+  background: var(--lil-dues-paid-bg);
+  color: var(--lil-dues-paid-fg);
+  font-size: 1.5rem;
+}
+
+.p-dialog.p-confirmdialog:has(.p-button-danger) .p-confirmdialog-icon {
+  background: var(--lil-dues-debt-bg);
+  color: var(--lil-dues-debt-fg);
+}
+
+.p-dialog.p-confirmdialog .p-dialog-header {
+  order: 1;
+  position: relative;
+  justify-content: center;
+  padding-bottom: 0.5rem;
+}
+
+.p-dialog.p-confirmdialog .p-dialog-header-actions {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.p-dialog.p-confirmdialog:has(.p-confirmdialog-icon) .p-dialog-header-actions {
+  top: -3.75rem;
+}
+
+.p-dialog.p-confirmdialog .p-dialog-title {
+  text-align: center;
+  text-wrap: balance;
+}
+
+.p-dialog.p-confirmdialog .p-confirmdialog-message {
+  order: 2;
+  margin: 0;
+  padding: 0 1.5rem 1.25rem;
+  color: var(--p-text-muted-color);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.p-dialog.p-confirmdialog .p-dialog-footer {
+  order: 3;
+  justify-content: center;
+}
+
+/* Налаштування куреня для КВ (ACCESS-04): нічого не міняється, тож дій не видно, а поля притлумлені. */
+.settings-fieldset:disabled .p-button {
+  display: none;
+}
+
+.settings-fieldset:disabled .p-toggleswitch,
+.settings-fieldset:disabled .p-checkbox,
+.settings-fieldset:disabled .p-inputtext,
+.settings-fieldset:disabled .p-inputnumber,
+.settings-fieldset:disabled .p-select,
+.settings-fieldset:disabled .p-selectbutton {
+  opacity: 0.6;
 }

@@ -17,12 +17,17 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 /// Who to take in. May be empty when <paramref name="PublicId"/> names them instead — a провід
 /// taking in someone from another kurin has their code, not their key.
 /// </param>
+/// <param name="OnlyIfStandingNowhere">
+/// Set where a kurin's провід takes someone in by hand: a person who stands in another kurin is asked
+/// for through that kurin (a membership request), never taken straight from it.
+/// </param>
 public sealed record JoinKurinCommand(
     Guid MemberKey,
     Guid KurinKey,
     Guid? GroupKey,
     MembershipKind Kind = MembershipKind.Youth,
-    string? PublicId = null) : IRequest<ServiceResult<Guid>>;
+    string? PublicId = null,
+    bool OnlyIfStandingNowhere = false) : IRequest<ServiceResult<Guid>>;
 
 public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, ServiceResult<Guid>>
 {
@@ -96,6 +101,13 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         {
             return ServiceResult<Guid>.Failure(
                 ResultType.Conflict, "AlreadyAMember", "They already belong to this kurin.");
+        }
+
+        if (request.OnlyIfStandingNowhere
+            && (await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken)).Count > 0)
+        {
+            return ServiceResult<Guid>.Failure(
+                ResultType.Conflict, "StandsInAnotherKurin", "They stand in another kurin; ask that kurin with a membership request.");
         }
 
         var membership = new MembershipEntity

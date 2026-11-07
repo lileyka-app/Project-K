@@ -152,8 +152,8 @@ test('lets the Звʼязковий rename a гурток, drop its silhouette a
   // Deleting asks first, then leaves for the kurin, whose list no longer has it.
   await page.getByTestId('edit-group').click();
   await sheet.getByTestId('delete-group').click();
-  await expect(page.locator('ion-action-sheet')).toContainText('Видалити гурток «Соколи Чорні»?');
-  await page.locator('ion-action-sheet').getByRole('button', { name: 'Видалити', exact: true }).click();
+  await expect(page.locator('ion-action-sheet')).toContainText('Розформувати гурток «Соколи Чорні»?');
+  await page.locator('ion-action-sheet').getByRole('button', { name: 'Розформувати', exact: true }).click();
   await expect.poll(() => log.writes.some((w) => w.method === 'DELETE' && w.path === 'group/g1')).toBe(true);
   await expect(page).toHaveURL(/\/tabs\/kurin$/);
   await expect(page.getByTestId('groups')).not.toContainText('Соколи');

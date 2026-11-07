@@ -6,6 +6,16 @@ namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 public interface IJwtService
 {
     /// <summary>
+    /// What the kurin's archive holds while its danger zone is on: proof that this account proved
+    /// itself again, for this kurin, until <paramref name="expiresUtc"/>. Its own audience, so it is
+    /// never an access token, and it carries the security stamp so a password change voids it.
+    /// </summary>
+    string GenerateArchiveDangerTicket(Guid userId, Guid kurinKey, Guid ticketId, string securityStamp, DateTime expiresUtc);
+
+    /// <summary>The ticket read back, or <c>null</c> when it is not one, or expired.</summary>
+    ArchiveDangerTicket? ReadArchiveDangerTicket(string token);
+
+    /// <summary>
     /// The token a request carries. <paramref name="hasSecondFactor"/> is written into it as
     /// <c>amr</c>, so the privileged-MFA gate can answer from the token alone.
     /// </summary>

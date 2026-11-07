@@ -1,0 +1,47 @@
+.public-card {
+  display: grid;
+  gap: 1.25rem;
+  margin: 0 auto;
+  max-width: 34rem;
+  padding: 2rem 1rem 3rem;
+}
+
+.public-card__brand {
+  color: var(--p-primary-color);
+  font-family: var(--lil-font-display, inherit);
+  font-size: 1.5rem;
+  font-weight: 800;
+  justify-self: center;
+  text-decoration: none;
+}
+
+.public-card__missing {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.public-card__missing .pi {
+  color: var(--lil-faint);
+  font-size: 2.5rem;
+}
+
+.public-card__missing h1 {
+  font-size: 1.375rem;
+  margin: 0;
+}
+
+.public-card__missing p {
+  color: var(--p-text-muted-color);
+  margin: 0;
+  max-width: 26rem;
+}
+
+.public-card__loading {
+  color: var(--lil-faint);
+  font-size: 1.5rem;
+  justify-self: center;
+  padding: 3rem 0;
+}

@@ -1,6 +1,9 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 using ProjectK.Common.Entities;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Entities.AuthModule;
 
@@ -46,6 +49,26 @@ public class WaitlistEntry : Entity
     /// The applicant leads a підготовчий курінь, which has no number yet: approval opens it without one.
     /// </summary>
     public bool IsPreparatoryKurin { get; set; }
+
+    /// <summary>
+    /// The number of the applicant's senior kurin in УСП, when they lead one there. With
+    /// <see cref="ClaimedUpsNumber"/> as well it is one kurin in both гілки, not two.
+    /// A senior application leaves <see cref="ClaimedKurinNameOrNumber"/> empty.
+    /// </summary>
+    public int? ClaimedUspNumber { get; set; }
+
+    /// <summary>The number of the applicant's senior kurin in УПС; see <see cref="ClaimedUspNumber"/>.</summary>
+    public int? ClaimedUpsNumber { get; set; }
+
+    /// <summary>Whether the application opens a senior kurin — УСП, УПС or both — rather than a УПЮ one.</summary>
+    public bool IsSeniorKurin => ClaimedUspNumber.HasValue || ClaimedUpsNumber.HasValue;
+
+    /// <summary>The senior гілки applied for with their numbers, УСП first.</summary>
+    public IReadOnlyList<KurinNumbering> ClaimedSeniorBranches =>
+    [
+        .. ClaimedUspNumber is int usp ? [new KurinNumbering(KurinBranch.USP, usp)] : Array.Empty<KurinNumbering>(),
+        .. ClaimedUpsNumber is int ups ? [new KurinNumbering(KurinBranch.UPS, ups)] : Array.Empty<KurinNumbering>()
+    ];
 
     /// <summary>
     /// How the entry came to be: a зв'язковий applied through the form, or a провід added the person

@@ -13,7 +13,16 @@ internal sealed record CatalogDocument(
     [property: JsonPropertyName("awards")] IReadOnlyList<CatalogAward>? Awards)
 {
     [JsonPropertyName("editions")] public IReadOnlyList<CatalogEdition>? Editions { get; init; }
+    [JsonPropertyName("degrees")] public IReadOnlyList<CatalogDegree>? Degrees { get; init; }
 }
+
+/// <summary>A ступінь: one per улад and gender, in the order they are taken.</summary>
+internal sealed record CatalogDegree(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("ulad")] string? Ulad,
+    [property: JsonPropertyName("order")] int Order,
+    [property: JsonPropertyName("images")] CatalogImages? Images);
 
 /// <summary>An edition of the probes and the name the catalogue gives it for people.</summary>
 internal sealed record CatalogEdition(
@@ -68,4 +77,8 @@ internal sealed record CatalogAward(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("group")] string Group,
     [property: JsonPropertyName("level")] int? Level,
-    [property: JsonPropertyName("images")] CatalogImages? Images);
+    [property: JsonPropertyName("images")] CatalogImages? Images)
+{
+    [JsonPropertyName("title")] public string? Title { get; init; }
+    [JsonPropertyName("ulad")] public string? Ulad { get; init; }
+}

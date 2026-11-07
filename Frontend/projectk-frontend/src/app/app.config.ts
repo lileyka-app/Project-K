@@ -1,5 +1,6 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { NavigationEnd, Router, TitleStrategy, provideRouter, withNavigationErrorHandler } from '@angular/router';
+import { KurinFeaturesService } from './features/kurinModule/services/kurin-features-service/kurin-features.service';
 
 import { routes } from './app.routes';
 import { clearStaleAppShellMarker, recoverFromStaleAppShell } from './features/systemModule/functions/stale-app-shell.function';
@@ -167,6 +168,8 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAppInitializer(() => inject(HealthBannerService).startSessionCheck()),
     provideAppInitializer(() => inject(UserActionService).start()),
+    // Reads the current kurin from the start, so its own role names are there on any first page.
+    provideAppInitializer(() => void inject(KurinFeaturesService)),
     { provide: HTTP_INTERCEPTORS, useClass: RequestFeedbackInterceptor, multi: true },
     // The static demo has no API: recorded fixtures answer before any other interceptor runs.
     ...(environment.isStaticDemo ? [{ provide: HTTP_INTERCEPTORS, useClass: DemoApiInterceptor, multi: true }] : []),

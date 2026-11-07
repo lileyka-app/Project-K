@@ -2,7 +2,10 @@
   <header class="lil-page-head">
     <div>
       <p class="lil-page-head__eyebrow">Налаштування куреня</p>
-      <h1>{{ kurin ? (kurin.number ?? 'Підготовчий') : '-' }} курінь</h1>
+      <h1>{{ title }}</h1>
+      @if (readOnly) {
+        <p-tag value="Лише перегляд" severity="secondary" />
+      }
     </div>
     <div class="lil-page-head__actions">
       <p-button
@@ -18,6 +21,20 @@
     <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
   }
 
+  <fieldset class="settings-fieldset" [disabled]="readOnly">
+
+  @if (kurin && isSenior && kurinKey) {
+    <section class="kurin-tile" aria-labelledby="kurin-branches-title">
+      <div class="setting-copy">
+        <h2 id="kurin-branches-title">Улади й числа</h2>
+        <p>
+          Старший курінь може бути в УСП, в УПС або в обох — з окремим числом у кожному. Додати чи
+          прибрати улад або змінити число може адміністратор: подай йому запит, і рішення прийде сповіщенням.
+        </p>
+      </div>
+      <app-kurin-branch-request [kurinKey]="kurinKey" [branches]="kurin.branches ?? []" [numberRange]="numberRange" />
+    </section>
+  } @else {
   <section class="kurin-tile" aria-labelledby="kurin-number-title">
     <div class="setting-copy">
       <h2 id="kurin-number-title">Число куреня</h2>
@@ -52,6 +69,7 @@
       }
     </div>
   </section>
+  }
 
   <section class="kurin-tile" aria-labelledby="profile-verification-title">
     <div class="setting-row">
@@ -68,6 +86,48 @@
         inputId="profileVerificationEnabled" />
     </div>
   </section>
+
+  <section class="kurin-tile" aria-labelledby="kurin-features-title">
+    <div class="setting-copy">
+      <h2 id="kurin-features-title">Можливості куреня</h2>
+      <p>
+        Чим курінь користується. Вимкнене зникає з меню, плиток і сторінок, а вже записане
+        лишається: увімкнеш знову — усе на місці.
+      </p>
+    </div>
+    <div class="setting-row">
+      <div class="setting-copy">
+        <h3 id="score-enabled-title">Точкування</h3>
+        <p>{{ isSenior ? 'Бали людей за сходини й події.' : 'Бали гуртків і людей за сходини, проби й події.' }}</p>
+      </div>
+      <p-toggleswitch
+        [(ngModel)]="scoreEnabled"
+        [disabled]="loading || saving"
+        inputId="scoreEnabled"
+        ariaLabelledBy="score-enabled-title" />
+    </div>
+  </section>
+
+  @if (kurin?.canRenameRoles) {
+    <section class="kurin-tile" aria-labelledby="role-names-title">
+      <div class="setting-copy">
+        <h2 id="role-names-title">Назви ролей</h2>
+        <p>
+          Як курінь називає свої ролі. Змінюється лише назва: права ролі лишаються ті самі, тож
+          «Скриптор» може те саме, що й писар. Порожнє поле — звична назва.
+        </p>
+      </div>
+      <div class="role-names">
+        @for (row of renamableRoles; track row.role) {
+          <label class="role-names__row" [for]="'role-name-' + row.role">
+            <span class="role-names__usual">{{ row.usual }}</span>
+            <input pInputText [id]="'role-name-' + row.role" maxlength="60" [placeholder]="row.usual"
+              [(ngModel)]="roleNames[row.role]" [disabled]="loading || saving" />
+          </label>
+        }
+      </div>
+    </section>
+  }
 
   @if (kurinKey) {
     <section class="kurin-tile" aria-labelledby="event-groups-title">
@@ -118,18 +178,42 @@
       </section>
     }
 
+    <section class="kurin-tile" aria-labelledby="kurin-tags-title">
+      <div class="setting-copy">
+        <h2 id="kurin-tags-title">Теги</h2>
+        <p>
+          Курінь заводить свої теги й ставить їх людям: рівні, належність, власні ступені. Вимкнені
+          теги ніде не видно, але вони лишаються — увімкнеш, і все на місці. Хто бачить чужі теги й хто
+          їх ставить, — у «Правах і видимості» нижче. Самі теги заводять у реєстрі.
+        </p>
+      </div>
+      <app-kurin-tag-settings #tagSettings [kurinKey]="kurinKey" />
+    </section>
+
     <section class="kurin-tile" aria-labelledby="access-policy-title">
       <div class="setting-copy">
         <h2 id="access-policy-title">Права й видимість</h2>
         <p>
           Хто що бачить у картках юнаків і хто що може робити з пересторогами, відзначеннями, пробами
-          й вмілостями. «Свій гурток» — гурток, у якому людина є або який веде; «Увесь курінь» — усі.
+          й вмілостями, хто бачить теги людей і хто їх ставить. «Свій гурток» — гурток, у якому людина є
+          або який веде; «Увесь курінь» — усі.
         </p>
       </div>
-      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" />
+      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" [readOnly]="readOnly" />
+    </section>
+
+    <section class="kurin-tile" aria-labelledby="card-sharing-title">
+      <div class="setting-copy">
+        <h2 id="card-sharing-title">Картки до 18 років</h2>
+        <p>Що юнаки до 18 років можуть показувати на своїй картці.</p>
+      </div>
+      <app-kurin-card-sharing #cardSharing [kurinKey]="kurinKey" />
     </section>
   }
 
+  </fieldset>
+
+  @if (!readOnly) {
   <footer class="settings-actions">
     <p-button
       label="Скасувати"
@@ -144,4 +228,5 @@
       [disabled]="loading || saving || !kurin || !!numberProblem"
       (onClick)="save()" />
   </footer>
+  }
 </section>

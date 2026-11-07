@@ -40,6 +40,15 @@ public interface IMemberDirectory
     /// <summary>Every ступінь recorded for the person, in no particular order; empty for nobody.</summary>
     Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>The person's public code (<c>PL-…</c>); null when the person does not exist.</summary>
+    Task<string?> GetPublicIdAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>The person's date of birth; null when it was never written down or the person does not exist.</summary>
+    Task<DateOnly?> GetDateOfBirthAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>The person's confirmed відзначення, УПЮ and senior alike, newest first.</summary>
+    Task<IReadOnlyList<ConfirmedAward>> GetConfirmedAwardsAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
     /// <summary>Everyone in a kurin, in one read.</summary>
     Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
         Guid kurinKey,

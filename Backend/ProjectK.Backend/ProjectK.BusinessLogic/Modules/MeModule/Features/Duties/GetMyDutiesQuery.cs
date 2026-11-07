@@ -81,7 +81,11 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
 
             await AddBadgesAsync(duties, context, rights, kurin, cancellationToken);
             await AddDuesAsync(duties, context, rights, kurin, cancellationToken);
-            await AddAttendanceAsync(duties, context, rights, kurin, cancellationToken);
+            // A kurin that switched точкування off asks nobody to fill in attendance.
+            if ((await _unitOfWork.Kurins.GetByKeyAsync(context.Membership.KurinKey, cancellationToken))?.IsScoreEnabled ?? true)
+            {
+                await AddAttendanceAsync(duties, context, rights, kurin, cancellationToken);
+            }
         }
 
         foreach (var duty in duties)

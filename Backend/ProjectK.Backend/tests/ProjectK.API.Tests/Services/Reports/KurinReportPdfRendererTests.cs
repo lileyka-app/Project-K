@@ -20,7 +20,8 @@ public sealed class KurinReportPdfRendererTests
         string? photoBlobName = null,
         byte[]? photo = null,
         PlastLevel? level = null,
-        IReadOnlyList<string>? mentoredGroups = null)
+        IReadOnlyList<string>? mentoredGroups = null,
+        IReadOnlyList<string>? tags = null)
         => new(
             memberKey,
             null,
@@ -43,14 +44,16 @@ public sealed class KurinReportPdfRendererTests
             [],
             [],
             [],
-            []);
+            [],
+            tags ?? []);
 
     private static KurinReportData Report(
         IReadOnlyList<KurinReportGroup>? groups = null,
         IReadOnlyList<KurinReportMember>? staff = null,
         IReadOnlyList<KurinReportMember>? youth = null,
         IReadOnlyList<KurinReportLevelCount>? tally = null,
-        IReadOnlyList<KurinReportMember>? members = null)
+        IReadOnlyList<KurinReportMember>? members = null,
+        bool showsTags = false)
         => new(
             new KurinReportHeader(new DateTime(2026, 5, 28, 12, 0, 0, DateTimeKind.Utc), "Manager User", "manager@example.com", "v0.13.0-beta", "Stage8"),
             new KurinReportKurin(Guid.NewGuid(), 1, "Kyiv", "Ukraine", "Patron", "Description"),
@@ -58,7 +61,8 @@ public sealed class KurinReportPdfRendererTests
             staff ?? [],
             youth ?? [],
             tally ?? [],
-            members ?? []);
+            members ?? [],
+            showsTags);
 
     private static string RenderToText(KurinReportData report)
     {
@@ -88,6 +92,17 @@ public sealed class KurinReportPdfRendererTests
             staff: [Member(Guid.NewGuid(), "Виховна Тест", mentoredGroups: ["Gurtok 1", "Gurtok 2"])],
             youth: [Member(Guid.NewGuid(), "Юнак Тест", groupName: "Gurtok 1", level: PlastLevel.Uchasnyk)],
             tally: [new KurinReportLevelCount("пл. уч.", 1), new KurinReportLevelCount("Разом", 1)]));
+
+        Assert.StartsWith("%PDF-1.", body);
+        Assert.Contains("%%EOF", body);
+    }
+
+    /// <summary>A kurin with tags gets a column for them and a line on each картотека page.</summary>
+    [Fact]
+    public void Render_ShouldDrawTags_WhenTheKurinUsesThem()
+    {
+        var youth = Member(Guid.NewGuid(), "Юнак Тест", groupName: "Gurtok 1", tags: ["Новики", "Табір"]);
+        var body = RenderToText(Report(youth: [youth], members: [youth], showsTags: true));
 
         Assert.StartsWith("%PDF-1.", body);
         Assert.Contains("%%EOF", body);

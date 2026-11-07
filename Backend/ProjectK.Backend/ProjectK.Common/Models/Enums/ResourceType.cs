@@ -50,5 +50,21 @@ public enum ResourceType
     KurinJournal,
 
     /// <summary>Which edition of the probe programme a гурток walks. Keyed by the гурток.</summary>
-    GroupProbeEdition
+    GroupProbeEdition,
+
+    /// <summary>
+    /// The kurin's tags and who carries them. Read is seeing the tags on people; Update is defining
+    /// tags and putting them on. Keyed by the kurin or by the person; who gets it is the kurin's policy.
+    /// </summary>
+    MemberTag,
+
+    /// <summary>The kurin's settings page, read whole by its КВ. Keyed by the kurin; changing them stays <c>Kurin:Update</c>.</summary>
+    KurinSettings,
+
+    /// <summary>
+    /// The kurin's archive: former offices, memberships and dissolved гуртки. Read and Update are
+    /// seeing and correcting dates and roles; Delete is the danger zone and needs its ticket too.
+    /// Keyed by the kurin; a group-scoped grant reaches the records of the гуртки one leads.
+    /// </summary>
+    KurinArchive
 }

@@ -1,0 +1,64 @@
+.card-panel {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.card-panel__fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}
+
+.card-panel__field {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.card-panel__field label {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.card-panel__off {
+  color: var(--p-text-muted-color);
+  cursor: default;
+}
+
+.card-panel__hint {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.card-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.card-panel__link,
+.card-panel__preview {
+  border-top: 1px solid var(--p-content-border-color);
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1rem;
+}
+
+.card-panel__link h3,
+.card-panel__preview h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.card-panel__link-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.card-panel__link-row input {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  min-width: 0;
+}

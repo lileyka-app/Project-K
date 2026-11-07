@@ -185,12 +185,16 @@ public static class Program
         };
         builder.Services.AddScoped<MemberPhotoReferenceProvider>();
         builder.Services.AddScoped<GroupSilhouetteReferenceProvider>();
+        builder.Services.AddScoped<KurinEmblemReferenceProvider>();
+        builder.Services.AddScoped<ProbeProjectImageReferenceProvider>();
         builder.Services.AddScoped<IPhotoReferenceProvider>(sp =>
         {
             var providers = new IPhotoReferenceProvider[]
             {
                 sp.GetRequiredService<MemberPhotoReferenceProvider>(),
-                sp.GetRequiredService<GroupSilhouetteReferenceProvider>()
+                sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
+                sp.GetRequiredService<KurinEmblemReferenceProvider>(),
+                sp.GetRequiredService<ProbeProjectImageReferenceProvider>()
             };
 
             return new CompositePhotoReferenceProvider(providers);
@@ -634,6 +638,18 @@ public static class Program
                         PermitLimit = calendarFeedPermit,
                         QueueLimit = 0,
                         Window = calendarFeedWindow
+                    }));
+
+            // A card is opened by a person who scanned it, a few times at most; anything faster is guessing.
+            options.AddPolicy<string>("PublicCardLimit", httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "public-card",
+                    factory: partition => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = 30,
+                        QueueLimit = 0,
+                        Window = TimeSpan.FromMinutes(1)
                     }));
 
             options.OnRejected = async (context, token) =>

@@ -40,7 +40,13 @@ public class MockEmailService : IEmailService
 
     public Task SendWaitlistSubmittedEmailAsync(string to, string applicantName, string? claimedKurin, CancellationToken cancellationToken = default)
     {
-        var body = $"Нова заявка: {applicantName}, курінь {claimedKurin ?? "не вказано"}";
+        var body = $"Нова заявка: {applicantName}, {claimedKurin ?? "курінь не вказано"}";
         return SendEmailAsync(to, "Лілейка · нова заявка на розгляд", body, cancellationToken);
+    }
+
+    public Task SendKurinBranchRequestEmailAsync(string to, string kurin, string wanted, CancellationToken cancellationToken = default)
+    {
+        var body = $"Запит на зміну гілок: {kurin} → {wanted}";
+        return SendEmailAsync(to, "Лілейка · запит на зміну гілок куреня", body, cancellationToken);
     }
 }

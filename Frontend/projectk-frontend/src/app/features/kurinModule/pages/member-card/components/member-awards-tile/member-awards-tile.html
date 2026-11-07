@@ -6,48 +6,8 @@
         }
     </div>
 
-    @if (awards().length === 0) {
-        <div class="text-gray-500 italic">
-            Немає здобутих відзначень
-        </div>
-    }
-
-    @if (groupedAwards.length > 0) {
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @for (group of groupedAwards; track trackAwardGroup($index, group)) {
-                <button type="button" class="relative group cursor-pointer border-0 bg-transparent p-0 text-left" (click)="openDialog(group.latest)">
-                    <article class="award-preview-item" [class.award-preview-item--pending]="isPendingConfirmation(group.latest)">
-                        <div class="award-preview-image-wrap">
-                            @if (getAwardImageUrl(group.latest); as imageUrl) {
-                                <img
-                                    [src]="imageUrl"
-                                    [alt]="getAwardTitle(group.level)"
-                                    class="award-preview-image"
-                                    loading="lazy"
-                                />
-                            } @else {
-                                <span class="pi pi-star-fill award-preview-fallback"></span>
-                            }
-                        </div>
-
-                        <p class="award-preview-title">
-                            {{ getAwardTitle(group.level) + (group.count > 1 ? ' x' + group.count : '') }}
-                        </p>
-
-                        @if (awardStamp(group.latest); as stamp) {
-                            <p class="award-preview-stamp">{{ stamp }}</p>
-                        }
-
-                        @if (isPendingConfirmation(group.latest)) {
-                            <div class="award-preview-pending">
-                                Очікує
-                            </div>
-                        }
-                    </article>
-                </button>
-            }
-        </div>
-    }
+    <app-award-blocks [blocks]="blocks" [ownCard]="ownCard()" emptyText="Немає здобутих відзначень"
+        (openGrant)="openGrant($event)" (togglePin)="pinAward.emit($event)" />
 </div>
 
 <app-member-awards-dialog [(visible)]="dialogVisible"

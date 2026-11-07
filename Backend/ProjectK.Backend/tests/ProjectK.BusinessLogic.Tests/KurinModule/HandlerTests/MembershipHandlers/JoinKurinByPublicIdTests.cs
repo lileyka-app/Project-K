@@ -127,15 +127,24 @@ public class JoinKurinByPublicIdTests
     }
 
     [Fact]
-    public async Task TheCard_ShouldSayHowManyKurinsButNotWhich()
+    public async Task TheLookup_ShouldNameTheKurinsTheyStandInNow_ByNumberOnly()
     {
+        // Since requests between kurins (JOIN-01) the asking kurin has to know whom it asks — the
+        // request names that kurin anyway. Still only the number: the card itself carries no kurin,
+        // no contacts, and nothing about kurins they once left.
+        var elsewhere = new Kurin(7);
+        _kurins.Setup(r => r.GetByKeyAsync(elsewhere.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(elsewhere);
+        _memberships
+            .Setup(r => r.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = elsewhere.KurinKey }]);
+
         var result = await _lookup.Handle(
             new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.Member.FullName.Should().Be("Оксана Тестова");
-        result.Data.Member.CurrentMembershipCount.Should().Be(1);
         result.Data.AlreadyInThisKurin.Should().BeFalse();
+        result.Data.CurrentKurins.Should().ContainSingle().Which.Number.Should().Be(7);
 
         // The card is a record with a fixed shape; this pins that nothing kurin-shaped crept into it.
         typeof(MemberCard).GetProperties().Select(p => p.Name)
@@ -146,8 +155,8 @@ public class JoinKurinByPublicIdTests
     public async Task TheCard_ShouldSayWhenTheyAreAlreadyHere()
     {
         _memberships
-            .Setup(r => r.GetActiveAsync(_memberKey, _kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Membership { MemberKey = _memberKey, KurinKey = _kurinKey });
+            .Setup(r => r.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = _kurinKey }]);
 
         var result = await _lookup.Handle(
             new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);

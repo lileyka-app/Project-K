@@ -203,6 +203,23 @@ public class KurinJournalStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task TheSweep_KeepsTheArchivesEntries_TheOnlyTraceOfWhatWasDeleted()
+    {
+        var now = DateTime.UtcNow;
+        var deletion = Entry(now.AddDays(-800), area: AuditArea.Archive);
+        await SeedAsync(deletion, Entry(now.AddDays(-800)));
+
+        var sweep = typeof(AuditCleanupBackgroundService).GetMethod("DeleteExpiredJournalAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
+        await using (var context = new AppDbContext(_options))
+        {
+            await (Task<int>)sweep.Invoke(null, [context, now.AddDays(-365), 100, CancellationToken.None])!;
+        }
+
+        await using var check = new AppDbContext(_options);
+        Assert.Equal([deletion.KurinAuditEventKey], await check.KurinAuditEvents.Select(e => e.KurinAuditEventKey).ToListAsync());
+    }
+
+    [Fact]
     public async Task TheDailyCleanup_KeepsTheJournalForAYear()
     {
         var now = DateTime.UtcNow;

@@ -1,0 +1,38 @@
+.transfer-code {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+.transfer-code__value {
+  background: var(--lil-surface);
+  border: 1px solid var(--p-surface-border);
+  border-radius: var(--lil-radius-lg);
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.75rem 1.25rem;
+  user-select: all;
+}
+
+.transfer-code__fallback {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.transfer-code__loading {
+  color: var(--lil-faint);
+  font-size: 1.5rem;
+}
+
+.transfer-code__qr {
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: var(--lil-radius-lg);
+  max-width: 13rem;
+  padding: 0.5rem;
+  width: 100%;
+}

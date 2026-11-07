@@ -280,6 +280,45 @@ public class UpsertKurinHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldRenameASeniorKurinsRoles_ButKeepTheUsualNamesInUpyu()
+    {
+        var senior = new Kurin(5, KurinBranch.USP);
+        var youth = new Kurin(47);
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(senior.KurinKey, default)).ReturnsAsync(senior);
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(youth.KurinKey, default)).ReturnsAsync(youth);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        var names = new Dictionary<string, string?> { ["Pysar"] = "  Скриптор ", ["Skarbnyk"] = "" };
+
+        var renamed = await _handler.Handle(new UpsertKurinCommand(senior.KurinKey, 5) { RoleNames = names }, default);
+        var refused = await _handler.Handle(new UpsertKurinCommand(youth.KurinKey, 47) { RoleNames = names }, default);
+        var unknown = await _handler.Handle(new UpsertKurinCommand(senior.KurinKey, 5) { RoleNames = new Dictionary<string, string?> { ["Hurtkoviy"] = "Ватажок" } }, default);
+
+        renamed.Data!.RoleNames.Should().Equal(new Dictionary<string, string> { ["Pysar"] = "Скриптор" });
+        refused.ErrorCode.Should().Be(KurinRoleNames.NotAvailableCode);
+        unknown.ErrorCode.Should().Be(KurinRoleNames.InvalidCode);
+        youth.RoleNames.Should().BeNull();
+
+        var wholeRecord = await _handler.Handle(new UpsertKurinCommand(youth.KurinKey, 47, "Lviv") { RoleNames = new Dictionary<string, string?>() }, default);
+        wholeRecord.Type.Should().Be(ResultType.Success, "an empty map from a client that sends the whole record is no change");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSwitchScoreOff_AndLeaveItAlone_WhenNotAsked()
+    {
+        var kurinKey = Guid.NewGuid();
+        var kurin = new Kurin(47) { KurinKey = kurinKey };
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default)).ReturnsAsync(kurin);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        var off = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47) { ScoreEnabled = false }, default);
+        off.Data!.ScoreEnabled.Should().BeFalse();
+
+        var untouched = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47, "Lviv"), default);
+        untouched.Data!.ScoreEnabled.Should().BeFalse();
+        kurin.ScoreEnabled.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Handle_WhenPreparatoryKurinTakesAFreeNumber_ShouldStopBeingPreparatory()
     {
         var kurinKey = Guid.NewGuid();

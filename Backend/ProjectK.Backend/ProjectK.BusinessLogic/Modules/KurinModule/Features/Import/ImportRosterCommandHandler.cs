@@ -20,6 +20,8 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 /// </summary>
 public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCommand, ServiceResult<RosterImportReport>>
 {
+    public const string NotForSeniorKurinCode = "RosterImportNotForSeniorKurin";
+
     private readonly IUnitOfWork _kurinData;
     private readonly IMemberUnitOfWork _memberData;
     private readonly IMediator _mediator;
@@ -44,6 +46,13 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
             return new ServiceResult<RosterImportReport>(ResultType.NotFound);
         }
 
+        // The roster places every row in a гурток, and a senior kurin has none: it is refused there
+        // rather than opening гуртки the kurin cannot have.
+        if (KurinBranchSet.IsSenior(kurin.Branch))
+        {
+            return ServiceResult<RosterImportReport>.Failure(ResultType.BadRequest, NotForSeniorKurinCode, "A УСП or УПС kurin has no гуртки to import a roster into.");
+        }
+
         var rows = request.Rows.Select(row => RosterRow.From(row, request.Mapping)).ToList();
 
         var groups = (await _kurinData.Groups.GetAllAsync(request.KurinKey, cancellationToken)).ToList();
@@ -61,7 +70,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
             .ToList();
 
         var foreignKurinRows = usable
-            .Where(row => row.KurinNumber is not null && row.KurinNumber != kurin.Number)
+            .Where(row => row.KurinNumber is not null && kurin.Numbering.All(numbering => numbering.Number != row.KurinNumber))
             .Select(row => row.Number)
             .ToList();
 

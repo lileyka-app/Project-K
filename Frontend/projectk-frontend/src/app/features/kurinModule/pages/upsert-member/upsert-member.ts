@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild, HostList
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormGroup, FormsModule, NgForm } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { MemberService } from '../../services/member-service/member.service';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -35,7 +36,7 @@ import { LeavesWithUnsavedChanges } from '../../../../shared/guards/unsaved-chan
 
 @Component({
   selector: 'app-upsert-member',
-  imports: [FormsModule, InputTextModule, PhoneInputComponent, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, ImageCropperComponent, DialogModule, TagModule, ProfileVerificationBadgeComponent],
+  imports: [SelectButtonModule, FormsModule, InputTextModule, PhoneInputComponent, DatePickerModule, ButtonModule, ConfirmDialogModule, MinAgeValidatorDirective, ImageCropperComponent, DialogModule, TagModule, ProfileVerificationBadgeComponent],
   providers: [ConfirmationService],
   templateUrl: './upsert-member.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -344,7 +345,7 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
       header: 'Вийти без збереження?',
       message: 'Зміни в цій формі пропадуть.',
       icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Лишитися', severity: 'secondary', variant: 'text' },
+      rejectButtonProps: { label: 'Лишитися', severity: 'secondary', outlined: true },
       acceptButtonProps: { label: 'Вийти', severity: 'danger' },
       accept: () => resolve(true),
       reject: () => resolve(false)
@@ -461,7 +462,12 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
     return !this.isCreate && (this.permissionService.isAdmin() || this.permissionService.canManageWholeKurin());
   }
 
+  /** Пластун or пластунка: the ступені are drawn and named for one or the other, and every row says which. */
+  isPlastunka = false;
+  readonly plastunOptions = [{ label: 'Пластун', value: false }, { label: 'Пластунка', value: true }];
+
   private ensurePlastLevelMap() {
+    this.isPlastunka = this.member.plastLevelHistories.some(x => x.isPlastunka);
     this.levelGroups.flatMap(group => group.levels).forEach(config => {
       let rec = this.member.plastLevelHistories.find(x => x.plastLevel === config.level);
       if (!rec) {
@@ -475,7 +481,10 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
   private buildPlastLevelsPayload() {
     const history = this.member?.plastLevelHistories ?? [];
     const filteredHistory = history.filter(x => x.dateAchieved != null);
-    filteredHistory.forEach(x => x.dateAchieved = toDateOnlyString(x.dateAchieved));
+    filteredHistory.forEach(x => {
+      x.dateAchieved = toDateOnlyString(x.dateAchieved);
+      x.isPlastunka = this.isPlastunka;
+    });
     return filteredHistory;
   }
 
@@ -557,8 +566,8 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
           // Not «Вивести»: this removes the person from Лілейка in every kurin, so it says so and points at the gentler way.
           message: 'Людину буде видалено з Лілейки назавжди — разом із пробами, вмілостями, відзначеннями й членствами в усіх куренях. '
             + 'Якщо людина просто пішла з куреня, закрий її членство кнопкою «Вивести» на картці.',
-          header: 'Видалити профіль',
-          icon: 'pi pi-exclamation-triangle',
+          header: 'Видалити профіль?',
+          icon: 'pi pi-trash',
           rejectLabel: 'Скасувати',
           rejectButtonProps: {
               label: 'Скасувати',

@@ -197,4 +197,71 @@ public class AzureBlobPhotoServiceTests
                 BlobUploadContext.GroupSilhouette,
                 CancellationToken.None));
     }
+
+    [Fact]
+    public async Task LoadBoundedAsync_ShouldRefuse_APictureWithTooManyPixels_BeforeDecodingIt()
+    {
+        await using var stream = new MemoryStream(PngHeader(20_000, 20_000));
+
+        var refusal = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => AzureBlobPhotoService.LoadBoundedAsync(stream, CancellationToken.None));
+
+        Assert.Contains("pixels", refusal.Message);
+    }
+
+    [Fact]
+    public async Task LoadBoundedAsync_ShouldDecode_APictureWithinTheLimit()
+    {
+        using var source = new Image<Rgba32>(40, 30);
+        await using var stream = new MemoryStream();
+        await source.SaveAsPngAsync(stream);
+        stream.Position = 0;
+
+        using var image = await AzureBlobPhotoService.LoadBoundedAsync(stream, CancellationToken.None);
+
+        Assert.Equal((40, 30), (image.Width, image.Height));
+    }
+
+    /// <summary>A PNG signature, IHDR and IEND: enough for the header to be read, nothing to decode.</summary>
+    private static byte[] PngHeader(int width, int height)
+    {
+        using var png = new MemoryStream();
+        png.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+        var ihdr = new byte[13];
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(ihdr, width);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(ihdr.AsSpan(4), height);
+        ihdr[8] = 8;
+        Chunk(png, "IHDR", ihdr);
+        Chunk(png, "IEND", []);
+        return png.ToArray();
+    }
+
+    private static void Chunk(Stream png, string type, byte[] data)
+    {
+        var length = new byte[4];
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(length, data.Length);
+        png.Write(length);
+        var body = new byte[4 + data.Length];
+        System.Text.Encoding.ASCII.GetBytes(type).CopyTo(body, 0);
+        data.CopyTo(body, 4);
+        png.Write(body);
+        var crc = new byte[4];
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(crc, Crc32(body));
+        png.Write(crc);
+    }
+
+    private static uint Crc32(byte[] bytes)
+    {
+        var crc = 0xFFFFFFFFu;
+        foreach (var b in bytes)
+        {
+            crc ^= b;
+            for (var bit = 0; bit < 8; bit++)
+            {
+                crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xEDB88320u : crc >> 1;
+            }
+        }
+
+        return ~crc;
+    }
 }

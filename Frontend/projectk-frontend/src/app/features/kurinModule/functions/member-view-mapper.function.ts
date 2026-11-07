@@ -3,7 +3,7 @@ import { PlastLevel } from '../models/enums/plast-level.enum';
 import { PlastLevelHistoryDto } from '../models/plast-level-history.dto';
 import { parseDateOnlyString } from './to-date-only-string.function';
 
-const PLAST_LEVEL_DISPLAY_MAP: Record<PlastLevel, string> = {
+export const PLAST_LEVEL_DISPLAY_MAP: Record<PlastLevel, string> = {
   // Joining is a date, not a title: someone who has only just come has nothing to put before their
   // name yet. Empty here means "print no prefix", which localizeLatestPlastLevel turns into null.
   [PlastLevel.Entry]: '',

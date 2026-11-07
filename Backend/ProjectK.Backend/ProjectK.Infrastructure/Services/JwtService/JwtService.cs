@@ -27,6 +27,10 @@ public class JwtService : IJwtService
     private const string SecurityStampClaim = "stamp";
     private const int DefaultMfaTrustDays = 7;
 
+    private const string ArchiveDangerPurpose = "archive-danger";
+    private const string KurinClaim = "kurin";
+    private const string TicketClaim = "ticket";
+
     private readonly IConfiguration _config;
     private readonly TimeProvider _timeProvider;
 
@@ -98,6 +102,32 @@ public class JwtService : IJwtService
 
     /// <inheritdoc />
     public Guid? ReadDevReturnTicket(string token) => ReadPurposeToken(token, DevReturnPurpose);
+
+    public string GenerateArchiveDangerTicket(Guid userId, Guid kurinKey, Guid ticketId, string securityStamp, DateTime expiresUtc) =>
+        GeneratePurposeToken(
+            userId,
+            ArchiveDangerPurpose,
+            expiresUtc - _timeProvider.GetUtcNow().UtcDateTime,
+            [
+                new Claim(KurinClaim, kurinKey.ToString()),
+                new Claim(TicketClaim, ticketId.ToString()),
+                new Claim(SecurityStampClaim, securityStamp)
+            ]);
+
+    public ArchiveDangerTicket? ReadArchiveDangerTicket(string token)
+    {
+        var principal = ReadPurposePrincipal(token, ArchiveDangerPurpose);
+        if (principal is null
+            || !Guid.TryParse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId)
+            || !Guid.TryParse(principal.FindFirst(KurinClaim)?.Value, out var kurinKey)
+            || !Guid.TryParse(principal.FindFirst(TicketClaim)?.Value, out var ticketId)
+            || principal.FindFirst(SecurityStampClaim)?.Value is not { } stamp)
+        {
+            return null;
+        }
+
+        return new ArchiveDangerTicket(userId, kurinKey, ticketId, stamp);
+    }
 
     public MfaTrustGrant GenerateMfaTrustToken(Guid userId, string securityStamp)
     {

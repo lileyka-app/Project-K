@@ -104,6 +104,60 @@ public class GetAllUsersQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldNameTheKurinsUlad_SoTheSameNumberInAnotherUladIsAnotherKurin()
+    {
+        var userId = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        SetupUserManagerUsers(new List<AppUser> { new() { Id = userId, Email = "orden@example.com", FirstName = "Остап", LastName = "Гнатюк" } }.AsQueryable());
+        _membershipsMock
+            .Setup(x => x.GetCurrentForAccountsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, IReadOnlyCollection<MembershipRecord>>
+            {
+                [userId] =
+                [
+                    new MembershipRecord(
+                        Guid.NewGuid(), kurinKey, 5, KurinBranch.USP, "Орден Хрестоносців",
+                        null, null, MembershipKind.Staff, DateTime.UtcNow, null,
+                        [new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)])
+                ]
+            });
+
+        var userDto = (await _handler.Handle(new GetAllUsersQuery(), CancellationToken.None)).Data!.Single();
+
+        Assert.Equal(kurinKey, userDto.KurinKey);
+        Assert.Equal(KurinBranch.USP, userDto.KurinBranch);
+        Assert.Equal("Орден Хрестоносців", userDto.KurinNamedAfter);
+        Assert.Equal([new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)], userDto.KurinBranches);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldGiveAYouthKurinItsOneUlad_WhenTheRecordCarriesNoBranches()
+    {
+        var userId = Guid.NewGuid();
+        SetupUserManagerUsers(new List<AppUser> { new() { Id = userId, Email = "kurin5@example.com", FirstName = "Соломія", LastName = "Дмитрук" } }.AsQueryable());
+        Standing(userId, Guid.NewGuid(), 5);
+
+        var userDto = (await _handler.Handle(new GetAllUsersQuery(), CancellationToken.None)).Data!.Single();
+
+        Assert.Equal(KurinBranch.UPYu, userDto.KurinBranch);
+        Assert.Equal([new KurinNumbering(KurinBranch.UPYu, 5)], userDto.KurinBranches);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNameTheKurinsKrai_SinceTwoKraiCanEachHaveAKurin5()
+    {
+        var userId = Guid.NewGuid();
+        var kurin = new Kurin(5) { KraiCode = "cz" };
+        _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Kurin> { kurin });
+        SetupUserManagerUsers(new List<AppUser> { new() { Id = userId, Email = "cz5@example.com", FirstName = "Ян", LastName = "Новак" } }.AsQueryable());
+        Standing(userId, kurin.KurinKey, 5);
+
+        var userDto = (await _handler.Handle(new GetAllUsersQuery(), CancellationToken.None)).Data!.Single();
+
+        Assert.Equal("cz", userDto.KurinKraiCode);
+    }
+
+    [Fact]
     public async Task Handle_ShouldReturnSuccessWithEmptyList_WhenNoUsersExist()
     {
         // Arrange

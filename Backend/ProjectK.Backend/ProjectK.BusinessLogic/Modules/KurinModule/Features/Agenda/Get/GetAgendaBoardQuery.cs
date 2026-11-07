@@ -92,7 +92,7 @@ public sealed class GetAgendaBoardQueryHandler
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var all = items
-            .Select(item => (Item: item, Response: AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.LeadershipLabels, lookups.Categories, roster)))
+            .Select(item => (Item: item, Response: AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster)))
             .ToList();
 
         // The filter offers what is on the board, not every target in the kurin.

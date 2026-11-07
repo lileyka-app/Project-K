@@ -32,6 +32,9 @@ public sealed class GroupDuesResponse
     public IReadOnlyList<GroupDuesRateDto> GroupRates { get; init; } = [];
 
     public IReadOnlyList<DuesAccountDto> Accounts { get; init; } = [];
+
+    /// <summary>The kurin's tags, for naming and filtering the register by them.</summary>
+    public IReadOnlyList<DuesTagDto> Tags { get; init; } = [];
     public IReadOnlyList<DuesEntryDto> Entries { get; init; } = [];
 
     public DuesBoxDto Box { get; init; } = new();
@@ -60,6 +63,9 @@ public sealed class KurinDuesRateDto
 {
     public QuarterDto FromQuarter { get; init; } = new();
 
+    /// <summary>The tag the rate is for, in a kurin without гуртки; null for everyone else.</summary>
+    public Guid? TagKey { get; init; }
+
     /// <summary>The kurin's статті, in the order it set them. The amounts below are their totals.</summary>
     public IReadOnlyList<DuesArticleDto> Articles { get; init; } = [];
 
@@ -73,6 +79,7 @@ public sealed class KurinDuesRateDto
     public static KurinDuesRateDto From(KurinDuesRate rate, QuarterDto fromQuarter) => new()
     {
         FromQuarter = fromQuarter,
+        TagKey = rate.TagKey,
         Articles = (rate.Articles.Count > 0
                 ? rate.Articles
                 : KurinDuesArticles.Standard(rate.StanytsiaFull, rate.StanytsiaReduced, rate.KurinShare))
@@ -224,6 +231,15 @@ public sealed class DuesAccountDto
     public DuesAccountStanding Standing { get; init; }
     public bool IsConcessionNow { get; init; }
 
+    /// <summary>The kurin's tags on the person that the viewer may see.</summary>
+    public IReadOnlyList<Guid> TagKeys { get; init; } = [];
+
+    /// <summary>What the running quarter costs the person where they stand now; null once they left.</summary>
+    public decimal? RateNow { get; init; }
+
+    /// <summary>The tag whose rate the person pays now, in a kurin without гуртки; null for the rate for everyone.</summary>
+    public Guid? RateTagKey { get; init; }
+
     /// <summary>The пільги of the край given to the person, newest first.</summary>
     public IReadOnlyList<DuesConcessionGrantDto> Grants { get; init; } = [];
 
@@ -243,6 +259,7 @@ public sealed class DuesEntryDto
     public DateOnly OccurredOn { get; init; }
     public Guid? MembershipKey { get; init; }
     public string? MemberName { get; init; }
+
     public Guid? CollectedByMemberKey { get; init; }
     public string? CollectedByName { get; init; }
     public string? Note { get; init; }
@@ -259,6 +276,8 @@ public sealed class DuesBoxDto
     public decimal Card { get; init; }
     public decimal Total { get; init; }
     public decimal ToForward { get; init; }
+    /// <summary>Paid for quarters not charged yet; kept out of <see cref="Own"/>.</summary>
+    public decimal Ahead { get; init; }
     public decimal Own { get; init; }
     public decimal InTransit { get; init; }
 }
@@ -269,6 +288,14 @@ public sealed class DuesHandoverDto
     public decimal Transferred { get; init; }
     public decimal Received { get; init; }
     public decimal Outstanding { get; init; }
+}
+
+/// <summary>A tag of the kurin, as the dues screens name and colour it.</summary>
+public sealed class DuesTagDto
+{
+    public Guid TagKey { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string ColorHex { get; init; } = string.Empty;
 }
 
 public sealed class DuesPersonDto

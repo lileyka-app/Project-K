@@ -99,7 +99,7 @@ public class AgendaController : ControllerBase
     /// <summary>How long done tasks stay on the board and the archive is kept, for the kurin's settings.</summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/archive-policy")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(AgendaArchivePolicyDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetArchivePolicy(Guid kurinKey)
     {
@@ -256,7 +256,7 @@ public class AgendaController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/categories/manage")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<AgendaCategoryResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategoriesForManagement(Guid kurinKey)
     {

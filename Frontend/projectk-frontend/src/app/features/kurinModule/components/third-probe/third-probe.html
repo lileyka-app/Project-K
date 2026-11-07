@@ -1,0 +1,304 @@
+@if (isLoading() && !tab()) {
+<section class="kurin-tile">
+    <p-skeleton width="100%" height="8rem" borderRadius="0.75rem" />
+</section>
+} @else if (loadFailed()) {
+<section class="kurin-tile">
+    <p class="tp-muted text-sm">Не вдалося завантажити третю пробу. Спробуй оновити сторінку.</p>
+</section>
+} @else if (tab()?.isProjectProbe && tab(); as t) {
+
+<app-third-probe-countdown [dateOfBirth]="member()?.dateOfBirth ?? null" [age]="t.limits.youthEndsAtAge" />
+
+@if (errorMessage(); as message) {
+<p class="tp-error" role="alert">{{ message }}</p>
+}
+
+<section class="kurin-tile" data-testid="third-probe-checklist">
+    <div class="tp-head">
+        <h2 class="tp-title">Що вже є</h2>
+        <span class="tp-muted text-xs">{{ doneCount() }} з {{ checklist().length }}</span>
+    </div>
+    <ul class="tp-checklist">
+        @for (item of checklist(); track item.key) {
+        <li class="tp-check" [class.tp-check--done]="item.done">
+            <span class="tp-check__icon pi" [class.pi-check]="item.done" [class.pi-minus]="!item.done" aria-hidden="true"></span>
+            <span class="tp-check__label">{{ item.label }}</span>
+            <span class="tp-muted text-xs">{{ item.detail }}</span>
+        </li>
+        }
+    </ul>
+</section>
+
+<section class="kurin-tile" data-testid="third-probe-stages">
+    <div class="tp-head">
+        <div>
+            <h2 class="tp-title">Відкриття й закриття проби</h2>
+            <p class="tp-muted text-xs">Етапи, які веде референт ІІІ проби@if (t.file?.stages.updatedByName) { · востаннє {{ t.file.stages.updatedByName }} }</p>
+        </div>
+        @if (canSign()) {
+        <p-button label="Змінити етапи" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openStagesDialog()" />
+        }
+    </div>
+    @for (part of stageParts(); track part.title) {
+    <p class="tp-stages__part">{{ part.title }}</p>
+    <ol class="tp-stages" [style.--tp-stage-columns]="part.stages.length">
+        @for (stage of part.stages; track stage.key) {
+        <li class="tp-stage" [class.tp-stage--done]="stage.day">
+            <span class="tp-stage__dot pi" [class.pi-check]="stage.day" [class.pi-circle]="!stage.day" aria-hidden="true"></span>
+            <span class="tp-stage__label">{{ stage.label }}</span>
+            <span class="tp-muted text-xs">
+                @if (stage.day) { {{ stage.day }} } @else if (stage.hint) { {{ stage.hint }} } @else { — }
+                @if (stage.key === 'openedOn' && t.file?.openedOnIsDerived) { · коли закрили другу пробу }
+            </span>
+        </li>
+        }
+    </ol>
+    }
+</section>
+
+<div class="tp-grid">
+    <section class="kurin-tile tp-section" data-testid="third-probe-mentors">
+        <div class="tp-head">
+            <h2 class="tp-title">Ментори й рефлексія</h2>
+            @if (canEdit()) {
+            <p-button label="Редагувати" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openFileDialog()" />
+            }
+        </div>
+        <ul class="tp-mentors">
+            @for (mentor of mentors(); track mentor.role) {
+            <li><span class="tp-muted">{{ mentor.role }}:</span> {{ mentor.name || '—' }}</li>
+            }
+        </ul>
+
+        <h3 class="tp-subtitle">Рефлексія зі звʼязковим</h3>
+        <p class="tp-line">
+            @if (reflectionLabel()) { {{ reflectionLabel() }}@if (t.file?.reflectionWith) { · з {{ t.file.reflectionWith }} } } @else { ще не відбулася }
+        </p>
+        <p class="tp-muted text-xs">«Що для мене означає бути пластуном»</p>
+        @if (t.file?.reflectionConfirmedAtUtc) {
+        <p class="tp-confirmed"><span class="pi pi-check" aria-hidden="true"></span> Підтвердив {{ t.file.reflectionConfirmedByName || 'провід' }}
+            @if (canUnsign()) { <p-button label="Зняти" size="small" severity="secondary" variant="text" (onClick)="confirmReflection(false)" /> }
+        </p>
+        } @else if (canSign() && t.file?.reflectionOn) {
+        <p-button label="Підтвердити рефлексію" icon="pi pi-check" size="small" severity="secondary" [outlined]="true" [disabled]="busy()" (onClick)="confirmReflection(true)" />
+        }
+
+        <h3 class="tp-subtitle">Діловодства під час проби</h3>
+        @for (office of offices(); track $index) {
+        <p class="tp-line">{{ office.role }}@if (office.where) { · {{ office.where }} } <span class="tp-muted">· {{ office.dates }}</span></p>
+        } @empty {
+        <p class="tp-muted text-xs">Ролей у курені за цей час немає. Їх додає провід у «Діловодстві».</p>
+        }
+    </section>
+
+    <section class="kurin-tile tp-section" data-testid="third-probe-camp">
+        <div class="tp-head">
+            <h2 class="tp-title">Табір</h2>
+            @if (canEdit()) {
+            <p-button label="Редагувати" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openFileDialog()" />
+            }
+        </div>
+        @if (t.file?.campName) {
+        <p class="tp-line"><strong>{{ t.file.campName }}</strong>@if (campKindLabel()) { <span class="tp-muted"> · {{ campKindLabel() }}</span> }</p>
+        @if (campDates()) { <p class="tp-muted text-xs">{{ campDates() }}</p> }
+        } @else {
+        <p class="tp-muted text-sm">Ще не вказано. Потрібен один пластовий табір, який край зараховує на третю пробу: КВТ або інший.</p>
+        }
+        <p class="tp-muted text-xs tp-note">Зараховує табір край; Лілейка лише зберігає, що це був за табір.</p>
+
+        <h3 class="tp-subtitle">Посвідка</h3>
+        @if (t.file?.campCertificate; as cert) {
+        @if (isPdf()) {
+        <a class="tp-pdf" [href]="cert.url" target="_blank" rel="noopener noreferrer">
+            <span class="pi pi-file-pdf" aria-hidden="true"></span> {{ cert.fileName || 'посвідка.pdf' }}
+        </a>
+        } @else {
+        <a [href]="cert.url" target="_blank" rel="noopener noreferrer"><img class="tp-certificate" [src]="cert.url" alt="Посвідка табору" /></a>
+        }
+        } @else {
+        <p class="tp-muted text-xs">Ще не прикріплено. Фото чи скан (PNG, JPEG, WebP) або PDF, до 2 МБ.</p>
+        }
+        @if (canEdit()) {
+        <div class="tp-actions">
+            <label class="tp-upload" [class.tp-upload--busy]="busy()">
+                <span class="pi pi-paperclip" aria-hidden="true"></span>
+                {{ t.file?.campCertificate ? 'Замінити посвідку' : 'Прикріпити посвідку' }}
+                <input type="file" [accept]="certificateAccept" [disabled]="busy()" (change)="onCertificatePicked($event)" />
+            </label>
+            @if (t.file?.campCertificate) {
+            <p-button label="Прибрати" icon="pi pi-trash" size="small" severity="danger" variant="text" (onClick)="removeCertificate()" />
+            }
+        </div>
+        }
+        @if (storage(); as used) {
+        <p class="tp-muted text-xs">Файли третьої проби: {{ used }}</p>
+        }
+    </section>
+</div>
+
+<section class="kurin-tile" data-testid="third-probe-badges">
+    <div class="tp-head">
+        <h2 class="tp-title">Вмілості</h2>
+        <span class="tp-muted text-xs">під час проби {{ duringBadges().length }} з {{ t.limits.requiredBadges }}, одна — з тіловиховання</span>
+    </div>
+    @if (duringBadges().length) {
+    <ul class="tp-badges">
+        @for (badge of duringBadges(); track badge.badgeId) {
+        <li class="tp-badge">
+            @if (badgeImage(badge); as src) { <img class="tp-badge__image" [src]="src" alt="" loading="lazy" /> } @else { <span class="tp-badge__image pi pi-star" aria-hidden="true"></span> }
+            <div class="min-w-0">
+                <p class="tp-line"><strong>{{ badge.title }}</strong></p>
+                <p class="tp-muted text-xs">{{ badge.specialization || 'вмілість' }} · {{ badgeDate(badge) }}</p>
+            </div>
+            @if (badge.badgeId === t.file?.physicalBadgeId) {
+            <p-tag value="Тіловиховання" severity="success" styleClass="!rounded-full !text-[10px] !font-semibold" />
+            } @else if (canEdit()) {
+            <p-button label="Це тіловиховання" size="small" severity="secondary" variant="text" [disabled]="busy()" (onClick)="choosePhysical(badge.badgeId)" />
+            }
+        </li>
+        }
+    </ul>
+    } @else {
+    <p class="tp-muted text-sm">З відкриття проби ще немає підтверджених вмілостей. Потрібно чотири, одна з них — з фізичної вправности чи тіловиховання.</p>
+    }
+
+    @if (earlierBadges().length) {
+    <p-button [label]="showAllBadges() ? 'Сховати вмілості до проби' : 'Усі вмілості юнацтва (' + t.badges.length + ')'" size="small" severity="secondary" variant="text"
+        [icon]="showAllBadges() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" (onClick)="showAllBadges.set(!showAllBadges())" />
+    @if (showAllBadges()) {
+    <ul class="tp-badges tp-badges--earlier">
+        @for (badge of earlierBadges(); track badge.badgeId) {
+        <li class="tp-badge">
+            @if (badgeImage(badge); as src) { <img class="tp-badge__image" [src]="src" alt="" loading="lazy" /> } @else { <span class="tp-badge__image pi pi-star" aria-hidden="true"></span> }
+            <div class="min-w-0">
+                <p class="tp-line">{{ badge.title }}</p>
+                <p class="tp-muted text-xs">{{ badge.specialization || 'вмілість' }} · {{ badgeDate(badge) }}</p>
+            </div>
+        </li>
+        }
+    </ul>
+    }
+    }
+</section>
+
+<app-probe-projects [memberKey]="memberKey()" [probeId]="probeId()" [tab]="t" [readOnly]="readOnly()" (tabChange)="onTabChange($event)" />
+
+<section class="kurin-tile" data-testid="third-probe-resume">
+    <div class="tp-head">
+        <h2 class="tp-title">Пластове резюме</h2>
+        @if (canEdit()) {
+        <p-button [label]="hasResume() ? 'Редагувати' : 'Написати'" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openResume()" />
+        }
+    </div>
+    @if (hasResume()) {
+    <app-markdown-view [blocks]="resumeBlocks()" />
+    } @else {
+    <p class="tp-muted text-sm">Життєпис у Пласті: коли вступив, які проби, табори, вмілості й ролі мав, чим займаєшся поза Пластом.</p>
+    }
+</section>
+
+<p-dialog header="Ментори, рефлексія й табір" [visible]="fileDialogVisible()" (visibleChange)="fileDialogVisible.set($event)"
+    [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 40rem)' }" styleClass="third-probe-dialog">
+    <fieldset class="tp-fieldset">
+        <legend class="tp-legend">Ментори</legend>
+        <div class="tp-field">
+            <label for="tp-mentor-zv">Звʼязковий</label>
+            <input pInputText id="tp-mentor-zv" class="w-full" maxlength="200" [ngModel]="mentorZvyazkovyi()" (ngModelChange)="mentorZvyazkovyi.set($event)" />
+        </div>
+        <div class="tp-field">
+            <label for="tp-mentor-vp">Впорядник</label>
+            <input pInputText id="tp-mentor-vp" class="w-full" maxlength="200" [ngModel]="mentorVporiadnyk()" (ngModelChange)="mentorVporiadnyk.set($event)" />
+        </div>
+        <div class="tp-field">
+            <label for="tp-mentor-ref">Референт ІІІ проби</label>
+            <input pInputText id="tp-mentor-ref" class="w-full" maxlength="200" [ngModel]="mentorReferent()" (ngModelChange)="mentorReferent.set($event)" />
+        </div>
+    </fieldset>
+    <div class="tp-field-row">
+        <div class="tp-field">
+            <label for="tp-reflection">Рефлексія відбулася</label>
+            <p-datepicker inputId="tp-reflection" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+                [ngModel]="reflectionOn()" (ngModelChange)="reflectionOn.set($event)" />
+        </div>
+        <div class="tp-field">
+            <label for="tp-reflection-with">З ким</label>
+            <input pInputText id="tp-reflection-with" class="w-full" maxlength="200" placeholder="Звʼязковий чи референт"
+                [ngModel]="reflectionWith()" (ngModelChange)="reflectionWith.set($event)" />
+        </div>
+    </div>
+    <div class="tp-field-row">
+        <div class="tp-field">
+            <label for="tp-camp-kind">Табір</label>
+            <p-select inputId="tp-camp-kind" [options]="campKinds" optionValue="value" optionLabel="label" appendTo="body"
+                placeholder="КВТ чи інший" [showClear]="true" styleClass="w-full"
+                [ngModel]="campKind()" (ngModelChange)="campKind.set($event)" />
+        </div>
+        <div class="tp-field">
+            <label for="tp-camp-name">Назва табору</label>
+            <input pInputText id="tp-camp-name" class="w-full" maxlength="200"
+                [ngModel]="campName()" (ngModelChange)="campName.set($event)" />
+        </div>
+    </div>
+    <div class="tp-field-row">
+        <div class="tp-field">
+            <label for="tp-camp-from">Від</label>
+            <p-datepicker inputId="tp-camp-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+                [ngModel]="campFrom()" (ngModelChange)="campFrom.set($event)" />
+        </div>
+        <div class="tp-field">
+            <label for="tp-camp-to">До</label>
+            <p-datepicker inputId="tp-camp-to" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+                [minDate]="campFrom()" [ngModel]="campTo()" (ngModelChange)="campTo.set($event)" />
+        </div>
+    </div>
+    <p class="tp-muted tp-hint">Якщо змінити дату чи співрозмовника рефлексії, її підтвердження знімається.</p>
+    @if (dialogError(); as message) { <p class="tp-error" role="alert">{{ message }}</p> }
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="fileDialogVisible.set(false)" />
+        <p-button label="Зберегти" icon="pi pi-check" [loading]="busy()" (onClick)="saveFileDialog()" />
+    </ng-template>
+</p-dialog>
+
+<p-dialog header="Етапи проби" [visible]="stagesDialogVisible()" (visibleChange)="stagesDialogVisible.set($event)"
+    [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 34rem)' }" styleClass="third-probe-dialog">
+    <p class="tp-muted tp-hint">День, коли етап відбувся. Порожньо — ще не було. Ці етапи бачить і інструмент референта.</p>
+    @for (stage of stageList; track stage.key) {
+    @if (stage.key === 'completedOn') { <p class="tp-legend">Закриття</p> } @else if ($first) { <p class="tp-legend">Відкриття</p> }
+    <div class="tp-field">
+        <label [for]="'stage-' + stage.key">{{ stage.label }}@if (stage.hint) { <span class="tp-muted"> · {{ stage.hint }}</span> }</label>
+        <p-datepicker [inputId]="'stage-' + stage.key" dateFormat="dd.mm.yy" [showIcon]="true" [showClear]="true" appendTo="body" styleClass="w-full"
+            [ngModel]="stageDates()[stage.key]" (ngModelChange)="setStage(stage.key, $event)" />
+    </div>
+    }
+    @if (dialogError(); as message) { <p class="tp-error" role="alert">{{ message }}</p> }
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="stagesDialogVisible.set(false)" />
+        <p-button label="Зберегти" icon="pi pi-check" [loading]="busy()" (onClick)="saveStages()" />
+    </ng-template>
+</p-dialog>
+
+<p-dialog header="Пластове резюме" [visible]="resumeDialogVisible()" (visibleChange)="resumeDialogVisible.set($event)"
+    [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 46rem)' }" styleClass="third-probe-dialog">
+    <p-editor [formats]="resumeFormats" [style]="{ height: '18rem' }" (onInit)="onResumeInit($any($event))"
+        placeholder="Коли вступив до Пласту, які проби, табори, вмілості й ролі мав, чим живеш поза Пластом">
+        <ng-template #header>
+            <span class="ql-formats">
+                <button class="ql-header" value="2" type="button" aria-label="Заголовок"></button>
+                <button class="ql-bold" type="button" aria-label="Жирний"></button>
+                <button class="ql-italic" type="button" aria-label="Курсив"></button>
+            </span>
+            <span class="ql-formats">
+                <button class="ql-list" value="ordered" type="button" aria-label="Нумерований список"></button>
+                <button class="ql-list" value="bullet" type="button" aria-label="Список"></button>
+                <button class="ql-link" type="button" aria-label="Посилання"></button>
+            </span>
+        </ng-template>
+    </p-editor>
+    @if (dialogError(); as message) { <p class="tp-error" role="alert">{{ message }}</p> }
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="resumeDialogVisible.set(false)" />
+        <p-button label="Зберегти" icon="pi pi-check" [loading]="busy()" (onClick)="saveResume()" />
+    </ng-template>
+</p-dialog>
+}

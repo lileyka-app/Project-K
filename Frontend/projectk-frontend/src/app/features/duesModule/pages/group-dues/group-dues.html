@@ -140,74 +140,18 @@
     </section>
 
     <section class="kurin-tile">
-      <p-table
-        [value]="currentRows()"
-        styleClass="project-table dues-table"
-        [scrollable]="true"
-        stripedRows
-        [rowHover]="true">
-
-        <ng-template #caption>
-          <div class="lil-tile-head">
-            <div>
-              <h2>По кварталах</h2>
-              <span class="lil-count">{{ currentRows().length }}</span>
-              <p>Сплачено / до оплати. Натисни на рядок — історія покаже операції цієї людини.</p>
-            </div>
-          </div>
-        </ng-template>
-
-        <ng-template #header>
-          <tr>
-            <th scope="col" pFrozenColumn class="dues-name-col">Юнак</th>
-            @for (quarter of year()?.quarters ?? []; track quarter.number) {
-              <th scope="col" class="dues-q-col">{{ quarterShort(quarter) }}</th>
-            }
-            <th scope="col" class="dues-total-col">Разом</th>
-            @if (d.viewer.canKeep) {
-              <th scope="col" class="dues-actions-col"></th>
-            }
-          </tr>
-        </ng-template>
-
-        <ng-template #body let-row>
-          <ng-container *ngTemplateOutlet="accountRow; context: { $implicit: row }" />
-        </ng-template>
-
-        <ng-template #emptymessage>
-          <tr>
-            <td [attr.colspan]="(year()?.quarters?.length ?? 4) + 3">
-              <app-empty-state
-                art="list"
-                title="Тут ще нікого немає"
-                body="Юнаки гуртка зʼявляться тут, щойно курінь задасть ставки вкладки." />
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-
-      @if (formerRows().length) {
-        <p class="dues-former-title">
-          Переведені й вибулі з боргом <span class="lil-count">{{ formerRows().length }}</span>
-        </p>
-        <p-table [value]="formerRows()" styleClass="project-table dues-table" [scrollable]="true" stripedRows [rowHover]="true">
-          <ng-template #header>
-            <tr>
-              <th scope="col" pFrozenColumn class="dues-name-col">Юнак</th>
-              @for (quarter of year()?.quarters ?? []; track quarter.number) {
-                <th scope="col" class="dues-q-col">{{ quarterShort(quarter) }}</th>
-              }
-              <th scope="col" class="dues-total-col">Разом</th>
-              @if (d.viewer.canKeep) {
-                <th scope="col" class="dues-actions-col"></th>
-              }
-            </tr>
-          </ng-template>
-          <ng-template #body let-row>
-            <ng-container *ngTemplateOutlet="accountRow; context: { $implicit: row }" />
-          </ng-template>
-        </p-table>
-      }
+      <app-dues-register
+        [accounts]="d.accounts"
+        [year]="year()"
+        [currentQuarter]="d.currentQuarter"
+        [tags]="d.tags ?? []"
+        [currency]="currency()"
+        [numberLocale]="numberLocale()"
+        [canKeep]="d.viewer.canKeep"
+        [selected]="personFilter()"
+        [fileName]="'vkladka-' + d.groupName"
+        (rowClick)="togglePerson($event)"
+        (concession)="openConcessionDialog($event)" />
     </section>
 
     <section class="kurin-tile">
@@ -419,7 +363,7 @@
         </div>
         @if (data(); as d) {
           <app-krai-concession-grants
-            [groupKey]="groupKey"
+            [box]="{ groupKey }"
             [membershipKey]="target.membershipKey"
             [grants]="target.grants"
             [concessions]="d.kraiConcessions"
@@ -436,60 +380,3 @@
   }
 </section>
 
-<ng-template #accountRow let-row>
-  @if (data(); as d) {
-    <tr
-      class="dues-row dues-row--account"
-      [class.dues-row--selected]="personFilter() === row.account.membershipKey"
-      tabindex="0"
-      (click)="togglePerson(row.account)"
-      (keydown.enter)="togglePerson(row.account)">
-      <td pFrozenColumn class="dues-name-col" data-mobile-label="Юнак">
-        <span class="dues-name">{{ row.account.fullName }}</span>
-        <span class="dues-name-meta">
-          @if (standingLabel(row.account); as label) {
-            <p-tag [value]="label" severity="secondary" />
-          }
-          @if (row.account.isConcessionNow) {
-            <p-tag value="пільгова" severity="info" />
-          }
-          @for (name of activeGrantNames(row.account); track name) {
-            <p-tag [value]="name" severity="info" />
-          }
-        </span>
-      </td>
-      @for (cell of row.cells; track $index) {
-        <td class="dues-q-col" [attr.data-mobile-label]="quarterShort(year()!.quarters[$index])">
-          @if (cell) {
-            <div class="dues-q">
-              <span class="dues-q__paid">{{ money(cell.paid.total) }}</span>
-              <span class="dues-q__of">/ {{ money(cell.charged.total) }}</span>
-            </div>
-            <span class="dues-balance" [class.dues-balance--debt]="cell.balance < 0" [class.dues-balance--ok]="cell.balance === 0" [class.dues-balance--surplus]="cell.balance > 0">{{ cell.balance === 0 ? 'сплачено' : money(cell.balance) }}</span>
-          } @else {
-            <span class="dues-blank">—</span>
-          }
-        </td>
-      }
-      <td class="dues-total-col" data-mobile-label="Разом">
-        <span class="dues-balance dues-balance--lg" [class.dues-balance--debt]="row.account.balance < 0" [class.dues-balance--ok]="row.account.balance === 0" [class.dues-balance--surplus]="row.account.balance > 0">
-          {{ row.account.balance > 0 ? '+' + money(row.account.balance) : row.account.balance === 0 ? 'сплачено' : money(row.account.balance) }}
-        </span>
-      </td>
-      @if (d.viewer.canKeep) {
-        <td class="dues-actions-col">
-          @if (row.account.standing === 'Current') {
-            <p-button
-              icon="pi pi-ticket"
-              variant="text"
-              severity="secondary"
-              size="small"
-              ariaLabel="Пільга"
-              pTooltip="Пільга"
-              (onClick)="$event.stopPropagation(); openConcessionDialog(row.account)" />
-          }
-        </td>
-      }
-    </tr>
-  }
-</ng-template>

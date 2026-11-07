@@ -29,6 +29,11 @@ describe('journal labels', () => {
     expect(journalValueLabel('note', 'як є')).toBe('як є');
   });
 
+  it('names a senior відзначення field and keeps the catalogue title as the value', () => {
+    expect(journalFieldLabel('award')).toBe('Відзначення');
+    expect(journalValueLabel('award', 'Грамота заслуги')).toBe('Грамота заслуги');
+  });
+
   it('reads a policy cell as the capability and the audience, and its values as reaches', () => {
     expect(journalFieldLabel('SeeContacts/Youth')).toBe('Пошта й телефон · Юнаки');
     expect(journalValueLabel('SeeContacts/Youth', 'OwnGroup')).toBe('Свій гурток');

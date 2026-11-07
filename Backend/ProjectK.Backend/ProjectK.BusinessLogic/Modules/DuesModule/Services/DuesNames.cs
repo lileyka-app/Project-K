@@ -15,18 +15,24 @@ public sealed class DuesNames
     private readonly IReadOnlyDictionary<Guid, KurinMembershipRecord> _memberships;
     private readonly IReadOnlyDictionary<Guid, string> _byMember;
     private readonly IReadOnlyDictionary<Guid, string> _byAccount;
+    private readonly IReadOnlyDictionary<Guid, Guid> _accountOfMember;
 
     private DuesNames(
         IReadOnlyDictionary<Guid, KurinMembershipRecord> memberships,
         IReadOnlyDictionary<Guid, string> byMember,
         IReadOnlyDictionary<Guid, string> byAccount,
+        IReadOnlyDictionary<Guid, Guid> accountOfMember,
         IReadOnlyList<DuesPersonDto> people)
     {
         _memberships = memberships;
         _byMember = byMember;
         _byAccount = byAccount;
+        _accountOfMember = accountOfMember;
         People = people;
     }
+
+    /// <summary>What a personal account in the kurin's own box is called where a гурток's name would stand.</summary>
+    public const string KurinBox = "Каса куреня";
 
     /// <summary>Everyone in the kurin, for pickers.</summary>
     public IReadOnlyList<DuesPersonDto> People { get; }
@@ -55,6 +61,7 @@ public sealed class DuesNames
             inKurin,
             named.GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().FullName),
             named.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
+            named.Where(p => p.UserKey.HasValue).GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().UserKey!.Value),
             people.OrderBy(p => p.FullName).Select(p => new DuesPersonDto { MemberKey = p.MemberKey, FullName = p.FullName }).ToList());
     }
 
@@ -62,6 +69,9 @@ public sealed class DuesNames
         _memberships.TryGetValue(membershipKey, out var m) && _byMember.TryGetValue(m.MemberKey, out var name) ? name : "—";
 
     public string? OfMember(Guid? memberKey) => memberKey is { } key ? _byMember.GetValueOrDefault(key) : null;
+
+    /// <summary>The account a person signs in with, if they have one — what tag visibility is decided by.</summary>
+    public Guid? AccountOf(Guid memberKey) => _accountOfMember.TryGetValue(memberKey, out var key) ? key : null;
 
     public string? OfAccount(Guid? userKey) => userKey is { } key ? _byAccount.GetValueOrDefault(key) : null;
 

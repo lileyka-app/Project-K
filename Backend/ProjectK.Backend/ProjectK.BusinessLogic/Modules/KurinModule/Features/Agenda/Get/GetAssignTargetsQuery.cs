@@ -20,12 +20,14 @@ public sealed class GetAssignTargetsQueryHandler
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
+    private readonly IKurinTagVisibility _tags;
 
-    public GetAssignTargetsQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access)
+    public GetAssignTargetsQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, IKurinTagVisibility tags)
     {
         _uow = uow;
         _members = members;
         _access = access;
+        _tags = tags;
     }
 
     public async Task<ServiceResult<AgendaAssignTargetsResponse>> Handle(GetAssignTargetsQuery request, CancellationToken cancellationToken)
@@ -49,6 +51,20 @@ public sealed class GetAssignTargetsQueryHandler
             .GroupBy(l => l.GroupKey!.Value)
             .ToDictionary(g => g.Key, g => g.First());
 
+        // People in no гурток are picked one by one: the КВ's under the КВ, everyone else on their own.
+        // In a senior kurin, with no гуртки at all, that is the whole kurin.
+        AgendaMemberTargetDto Person(MemberSummary m) => new()
+        {
+            MemberKey = m.MemberKey,
+            FullName = $"{m.FirstName} {m.LastName}".Trim(),
+            CanTarget = reach.ReachesMember(m.GroupKey, m.UserKey)
+        };
+        var unplaced = members.Where(m => m.GroupKey is null).OrderBy(m => m.LastName).ToList();
+        var kv = leaderships.FirstOrDefault(l => l.Type == LeadershipType.KV);
+        var kvMembers = kv is null
+            ? new HashSet<Guid>()
+            : (await _uow.Leaderships.GetActiveMemberKeysForLeadershipAsync(kv.LeadershipKey, cancellationToken)).ToHashSet();
+
         var kurinLeaderships = leaderships
             .Where(l => l.Type is LeadershipType.KV or LeadershipType.Kurin)
             .OrderBy(l => l.Type)
@@ -56,7 +72,10 @@ public sealed class GetAssignTargetsQueryHandler
             {
                 LeadershipKey = l.LeadershipKey,
                 Label = AgendaLookups.LabelFor(l.Type, l.GroupKey, groupNames),
-                CanTarget = reach.ReachesProvid(null)
+                CanTarget = reach.ReachesProvid(null),
+                Members = l.Type == LeadershipType.KV
+                    ? unplaced.Where(m => kvMembers.Contains(m.MemberKey)).Select(Person).ToList()
+                    : []
             })
             .ToList();
 
@@ -89,13 +108,24 @@ public sealed class GetAssignTargetsQueryHandler
             .Where(g => g.CanTargetGroup || g.Leadership?.CanTarget == true || g.Members.Any(m => m.CanTarget))
             .ToList();
 
+        // Tags are offered only while the kurin uses them; an item aimed at one earlier keeps it.
+        var tagTargets = new List<AgendaTagTargetDto>();
+        if (reach.ReachesTags && (await _tags.SettingsAsync(request.KurinKey, cancellationToken))?.Enabled == true)
+        {
+            tagTargets = (await _uow.KurinTags.GetForKurinAsync(request.KurinKey, cancellationToken))
+                .Select(tag => new AgendaTagTargetDto { KurinTagKey = tag.KurinTagKey, Name = tag.Name, ColorHex = tag.ColorHex })
+                .ToList();
+        }
+
         var response = new AgendaAssignTargetsResponse
         {
             CanTargetKurin = reach.ReachesKurin,
             KurinKey = request.KurinKey,
             KurinLabel = AgendaLookups.KurinLabel,
             KurinLeaderships = kurinLeaderships,
-            Groups = groupTargets
+            Groups = groupTargets,
+            UnplacedMembers = unplaced.Where(m => !kvMembers.Contains(m.MemberKey)).Select(Person).Where(p => p.CanTarget).ToList(),
+            Tags = tagTargets
         };
 
         return new ServiceResult<AgendaAssignTargetsResponse>(ResultType.Success, response);

@@ -1,4 +1,5 @@
 using MediatR;
+using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces;
@@ -62,12 +63,12 @@ public sealed class GetKraiConcessionReportQueryHandler
             var ledger = await _ledgers.OpenAsync(kurin.KurinKey, cancellationToken);
             foreach (var account in ledger.Accounts())
             {
-                if (!account.Quarters.Any(q => q.Quarter == quarter))
+                if (account.Quarters.FirstOrDefault(q => q.Quarter == quarter) is not { } charged)
                 {
                     continue;
                 }
 
-                var price = ledger.Priced(account.MembershipKey, account.GroupKey, quarter);
+                var price = ledger.Priced(account.MembershipKey, account.GroupKey, quarter, charged.RateTagKey);
                 if (price.Grant is not { } grant)
                 {
                     continue;
@@ -80,7 +81,7 @@ public sealed class GetKraiConcessionReportQueryHandler
                 }
 
                 row.Name ??= grant.Name;
-                row.Add(kurin.KurinKey, kurin.Number, account.MembershipKey, price.WithoutGrants, price.Amount);
+                row.Add(kurin, account.MembershipKey, price.WithoutGrants, price.Amount);
             }
         }
 
@@ -111,13 +112,13 @@ public sealed class GetKraiConcessionReportQueryHandler
     private sealed class ReportRow(string key)
     {
         private readonly HashSet<Guid> _people = [];
-        private readonly Dictionary<Guid, (int? Number, HashSet<Guid> People, decimal Off)> _kurins = [];
+        private readonly Dictionary<Guid, (KurinEntity Kurin, HashSet<Guid> People, decimal Off)> _kurins = [];
         private decimal _stanytsia, _krai, _kurin, _group;
 
         public string Key { get; } = key;
         public string? Name { get; set; }
 
-        public void Add(Guid kurinKey, int? number, Guid membershipKey, DuesAmount without, DuesAmount with)
+        public void Add(KurinEntity where, Guid membershipKey, DuesAmount without, DuesAmount with)
         {
             _people.Add(membershipKey);
             _stanytsia += without.Stanytsia - with.Stanytsia;
@@ -125,13 +126,13 @@ public sealed class GetKraiConcessionReportQueryHandler
             _kurin += without.Kurin - with.Kurin;
             _group += without.Group - with.Group;
 
-            if (!_kurins.TryGetValue(kurinKey, out var kurin))
+            if (!_kurins.TryGetValue(where.KurinKey, out var kurin))
             {
-                kurin = (number, [], 0);
+                kurin = (where, [], 0);
             }
 
             kurin.People.Add(membershipKey);
-            _kurins[kurinKey] = (kurin.Number, kurin.People, kurin.Off + without.Total - with.Total);
+            _kurins[where.KurinKey] = (kurin.Kurin, kurin.People, kurin.Off + without.Total - with.Total);
         }
 
         public KraiConcessionReportRowDto ToDto() => new()
@@ -148,11 +149,15 @@ public sealed class GetKraiConcessionReportQueryHandler
                 Total = _stanytsia + _krai + _kurin + _group
             },
             Kurins = _kurins
-                .OrderBy(k => k.Value.Number ?? int.MaxValue)
+                .OrderBy(k => KurinBranchSet.IsSenior(k.Value.Kurin.Branch))
+                .ThenBy(k => k.Value.Kurin.Number ?? int.MaxValue)
                 .Select(k => new KraiConcessionReportKurinDto
                 {
                     KurinKey = k.Key,
-                    Number = k.Value.Number,
+                    Number = k.Value.Kurin.Number,
+                    Branch = k.Value.Kurin.Branch,
+                    Branches = k.Value.Kurin.Numbering,
+                    NamedAfter = k.Value.Kurin.NamedAfter,
                     People = k.Value.People.Count,
                     Reduction = k.Value.Off
                 })

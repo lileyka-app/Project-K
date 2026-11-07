@@ -10,7 +10,7 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { quarterKey, quarterLabel } from '../../functions/dues-format.function';
 import { QuarterOption } from '../../functions/from-quarter-options.function';
 import { DuesConcessionGrantDto, KraiConcessionDto, describeConcession } from '../../models/concession.dto';
-import { QuarterDto } from '../../models/group-dues.dto';
+import { DuesBoxRef, QuarterDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 
 /** How far ahead an end can be picked: three пластові роки. */
@@ -31,7 +31,8 @@ export class KraiConcessionGrantsComponent {
   private readonly dues = inject(DuesService);
   private readonly confirmation = inject(ConfirmationService);
 
-  readonly groupKey = input.required<string>();
+  /** The box the person's account is kept in: a гурток's, or a senior kurin's own. */
+  readonly box = input.required<DuesBoxRef>();
   readonly membershipKey = input.required<string>();
   readonly grants = input<DuesConcessionGrantDto[]>([]);
   readonly concessions = input<KraiConcessionDto[]>([]);
@@ -85,7 +86,7 @@ export class KraiConcessionGrantsComponent {
       return;
     }
     const to = this.toOptions().find(o => o.value === this.toQuarter())?.quarter ?? null;
-    this.run(this.dues.grantConcession(this.groupKey(), this.membershipKey(), {
+    this.run(this.dues.grantConcession(this.box(), this.membershipKey(), {
       concessionKey: key,
       fromQuarter: from,
       toQuarter: to,
@@ -109,7 +110,7 @@ export class KraiConcessionGrantsComponent {
 
   saveEdit(grant: DuesConcessionGrantDto): void {
     const to = this.editOptions(grant).find(o => o.value === this.editTo())?.quarter ?? null;
-    this.run(this.dues.updateConcessionGrant(this.groupKey(), grant.grantKey, {
+    this.run(this.dues.updateConcessionGrant(this.box(), grant.grantKey, {
       toQuarter: to,
       reason: this.editReason().trim() || null
     }), () => this.editingKey.set(null));
@@ -119,10 +120,10 @@ export class KraiConcessionGrantsComponent {
     this.confirmation.confirm({
       header: 'Видалити пільгу?',
       message: `«${grant.name}» зникне з усіх кварталів, які вона знижувала. Щоб пільга просто перестала діяти, задай їй останній квартал.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
-      accept: () => this.run(this.dues.deleteConcessionGrant(this.groupKey(), grant.grantKey), () => this.editingKey.set(null))
+      accept: () => this.run(this.dues.deleteConcessionGrant(this.box(), grant.grantKey), () => this.editingKey.set(null))
     });
   }
 

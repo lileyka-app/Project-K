@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, model, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
@@ -7,7 +7,7 @@ import { SelectModule } from '@openng/optimus-ui/select';
 import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, money, quarterKey } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { DUES_RECIPIENT_LABELS, DuesRecipient, DuesUpstream, duesRecipients } from '../../models/dues.enums';
-import { KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
+import { DuesTagDto, KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
 
 /** One row of the dialog: a стаття as it is being typed. */
 interface ArticleRow {
@@ -45,9 +45,18 @@ export class KurinRateDialogComponent {
   readonly numberLocale = input(DEFAULT_NUMBER_LOCALE);
   /** Where the край takes the вкладка; a стаття may send its money only there or to the kurin. */
   readonly upstream = input(DuesUpstream.Stanytsia);
+  /** The kurin's tags; a kurin without гуртки sets a rate per tag. Given none, the dialog sets one for everyone. */
+  readonly tags = input<DuesTagDto[]>([]);
   readonly save = output<SetKurinDuesRateRequest>();
 
   readonly fromQuarter = signal('');
+  /** The tag the rate is for; null for everyone without a tag of their own. */
+  readonly tagKey = signal<string | null>(null);
+
+  readonly tagOptions = computed(() => [
+    { value: null as string | null, label: 'Усім іншим' },
+    ...this.tags().map(tag => ({ value: tag.tagKey as string | null, label: tag.name }))
+  ]);
   readonly articles = signal<ArticleRow[]>([]);
 
   readonly maxArticles = MAX_DUES_ARTICLES;
@@ -107,7 +116,8 @@ export class KurinRateDialogComponent {
   constructor() {
     effect(() => {
       if (this.visible()) {
-        this.reset();
+        // Only opening resets: the signals reset reads, the chosen tag among them, must not re-run it.
+        untracked(() => this.reset());
       }
     });
   }
@@ -127,6 +137,12 @@ export class KurinRateDialogComponent {
     this.articles.update(rows => rows.map(a => (a.id === id ? { ...a, ...change } : a)));
   }
 
+  /** Another tag's rate: its статті in force now, or a blank start. */
+  chooseTag(tagKey: string | null): void {
+    this.tagKey.set(tagKey);
+    this.fillFromRateInForce();
+  }
+
   submit(): void {
     const from = this.fromQuarterOptions().find(o => o.value === this.fromQuarter())?.quarter;
     if (!from || !this.valid()) {
@@ -134,6 +150,7 @@ export class KurinRateDialogComponent {
     }
     this.save.emit({
       fromQuarter: from,
+      tagKey: this.tagKey(),
       articles: this.articles().map(a => ({
         name: a.name.trim(),
         recipient: a.recipient,
@@ -149,12 +166,18 @@ export class KurinRateDialogComponent {
 
   /** Starts from the rate in force now, so a change is an edit of what is, not a blank form. */
   private reset(): void {
+    this.fromQuarter.set(quarterKey(this.currentQuarter()));
+    this.tagKey.set(null);
+    this.fillFromRateInForce();
+  }
+
+  private fillFromRateInForce(): void {
     const current = this.currentQuarter();
+    const tagKey = this.tagKey();
     const index = (q: QuarterDto) => q.year * 4 + q.number;
     const now = this.rates()
-      .filter(r => index(r.fromQuarter) <= index(current))
+      .filter(r => (r.tagKey ?? null) === tagKey && index(r.fromQuarter) <= index(current))
       .sort((a, b) => index(b.fromQuarter) - index(a.fromQuarter))[0] ?? null;
-    this.fromQuarter.set(quarterKey(current));
     this.articles.set(now
       ? now.articles.map(a => this.row(a.name, a.recipient, a.amount, a.reducedAmount === a.amount ? null : a.reducedAmount))
       : [

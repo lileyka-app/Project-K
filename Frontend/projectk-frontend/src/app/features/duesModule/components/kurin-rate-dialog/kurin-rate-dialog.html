@@ -8,11 +8,27 @@
   [dismissableMask]="!saving()"
   [closable]="!saving()"
   [style]="{ width: 'min(94vw, 44rem)' }">
-  <p class="lil-dialog-hint">
-    Статті квартальної вкладки, однакові для всіх гуртків куреня. Для кожної вкажи, куди йдуть гроші,
-    і скільки платить юнак з пільгою. Гурткову частину кожен гурток задає собі.
-  </p>
+  @if (!tags().length) {
+    <p class="lil-dialog-hint">
+      Статті квартальної вкладки, однакові для всіх гуртків куреня. Для кожної вкажи, куди йдуть гроші,
+      і скільки платить юнак з пільгою. Гурткову частину кожен гурток задає собі.
+    </p>
+  }
   <div class="lil-dialog-form">
+    @if (tags().length) {
+      <div class="lil-dialog-field">
+        <label for="kurin-rate-tag">Для кого</label>
+        <p-select
+          inputId="kurin-rate-tag"
+          [options]="tagOptions()"
+          [ngModel]="tagKey()"
+          (ngModelChange)="chooseTag($event)"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+          styleClass="w-full" />
+      </div>
+    }
     <div class="lil-dialog-field">
       <label for="kurin-rate-from">З кварталу</label>
       <p-select

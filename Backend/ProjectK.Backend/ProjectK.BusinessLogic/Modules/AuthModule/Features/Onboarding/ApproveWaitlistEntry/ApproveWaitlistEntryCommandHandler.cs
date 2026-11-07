@@ -86,6 +86,18 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
             }
         }
 
+        // A senior kurin opens in every гілка it applied for, one kurin with a number in each.
+        if (entry.IsKurinLeaderCandidate && entry.IsSeniorKurin)
+        {
+            foreach (var numbering in entry.ClaimedSeniorBranches)
+            {
+                if (await _unitOfWork.Kurins.IsNumberTakenAsync(kraiCode, numbering.Branch, numbering.Number!.Value, null, cancellationToken))
+                {
+                    return ServiceResult<Guid>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this krai.");
+                }
+            }
+        }
+
         // 2. Create the inactive account and its invitation
         var provisioned = await _accountProvisioning.ProvisionAsync(
             new AccountProvisioningRequest(
@@ -106,7 +118,10 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         // 3. Create Kurin Placeholder if leader candidate
         if (entry.IsKurinLeaderCandidate)
         {
-            var kurin = new Kurin(kurinNumber) { KraiCode = kraiCode };
+            var kurin = entry.IsSeniorKurin
+                ? Kurin.InBranches(entry.ClaimedSeniorBranches)
+                : new Kurin(kurinNumber);
+            kurin.KraiCode = kraiCode;
             _unitOfWork.Kurins.Create(kurin, cancellationToken);
 
             // The entry remembers which kurin it opened, so activation can seat the founder in it.

@@ -44,10 +44,14 @@ public sealed class SetKurinKraiCommandHandler : IRequestHandler<SetKurinKraiCom
             return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "UnknownKrai", $"There is no край '{kraiCode}'.");
         }
 
-        // The number travels with the kurin, so it has to be free in the край it moves to.
-        if (kurin.Number is int number && await _unitOfWork.Kurins.ExistsAsync(kraiCode, number, cancellationToken))
+        // The numbers travel with the kurin, so each has to be free in its гілка of the край it moves to.
+        foreach (var numbering in kurin.Numbering)
         {
-            return ServiceResult<KurinResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in that край.");
+            if (numbering.Number is int number
+                && await _unitOfWork.Kurins.IsNumberTakenAsync(kraiCode, numbering.Branch, number, kurin.KurinKey, cancellationToken))
+            {
+                return ServiceResult<KurinResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in that край.");
+            }
         }
 
         kurin.KraiCode = kraiCode;

@@ -162,7 +162,7 @@ public class MemberReadsFollowMembershipTests
     }
 
     [Fact]
-    public async Task Placing_SomeoneInAnotherKurin_ShouldCloseTheOneTheyWereIn()
+    public async Task Placing_SomeoneInAnotherKurin_ShouldKeepTheOneTheyWereIn()
     {
         await using var context = NewContext();
         var uow = new InfraUnitOfWork(context);
@@ -179,12 +179,9 @@ public class MemberReadsFollowMembershipTests
         await uow.SaveChangesAsync();
 
         var current = await uow.Memberships.GetActiveForMemberAsync(person.MemberKey);
-        var only = Assert.Single(current);
-        Assert.Equal(movesTo, only.KurinKey);
-        Assert.Equal(newGroup, only.GroupKey);
-
-        var closed = context.Memberships.Single(ms => ms.KurinKey == wasIn);
-        Assert.NotNull(closed.LeftAtUtc);
+        Assert.Equal(2, current.Count);
+        Assert.Equal(newGroup, current.Single(ms => ms.KurinKey == movesTo).GroupKey);
+        Assert.Null(context.Memberships.Single(ms => ms.KurinKey == wasIn).LeftAtUtc);
     }
 
     [Fact]

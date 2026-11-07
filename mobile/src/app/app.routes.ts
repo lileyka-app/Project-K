@@ -85,6 +85,7 @@ export const routes: Routes = [
           },
           { path: 'leadership', loadComponent: () => import('./features/kurin/leadership.page').then((m) => m.LeadershipPage) },
           { path: 'kv', loadComponent: () => import('./features/kurin/kv.page').then((m) => m.KvPage) },
+          { path: 'transfers', loadComponent: () => import('./features/kurin/transfers.page').then((m) => m.TransfersPage) },
           { path: 'member/:memberKey', loadComponent: () => import('./features/kurin/member.page').then((m) => m.MemberPage) },
           {
             path: 'member/:memberKey/probe',
@@ -112,6 +113,8 @@ export const routes: Routes = [
           { path: 'kurins', loadComponent: () => import('./features/account/kurins.page').then((m) => m.KurinsPage) },
           { path: 'privacy', loadComponent: () => import('./features/account/privacy.page').then((m) => m.PrivacyPage) },
           { path: 'report', loadComponent: () => import('./features/account/report.page').then((m) => m.ReportPage) },
+          { path: 'card', loadComponent: () => import('./features/account/card.page').then((m) => m.CardPage) },
+          { path: 'scan', loadComponent: () => import('./features/account/scan.page').then((m) => m.ScanPage) },
           { path: 'waitlist', loadComponent: () => import('./features/admin/waitlist.page').then((m) => m.WaitlistPage) },
         ],
       },

@@ -31,6 +31,12 @@ public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
     public string? Description { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
 
+    /// <summary>Точкування on or off; null leaves the kurin as it is.</summary>
+    public bool? ScoreEnabled { get; set; }
+
+    /// <summary>The kurin's own names for its roles, by role name; null leaves them as they are, a blank name restores the usual one.</summary>
+    public IReadOnlyDictionary<string, string?>? RoleNames { get; set; }
+
     /// <summary>
     /// The край a new kurin joins; null takes the instance default. An existing kurin keeps its
     /// край here and moves only through <c>SetKurinKraiCommand</c>, which only an admin may send.
@@ -116,12 +122,36 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             // Update existing Kurin
             var before = Snapshot(existing);
             _mapper.Map(request, existing);
-            existing.Number = request.Number;
+            existing.SetNumber(request.Number);
             existing.Stanytsia = stanytsia;
             existing.RegionOrCountry = regionOrCountry;
             existing.NamedAfter = namedAfter;
             existing.Description = description;
             existing.ProfileVerificationEnabled = request.ProfileVerificationEnabled;
+            if (request.ScoreEnabled is bool scoreEnabled)
+            {
+                existing.ScoreEnabled = scoreEnabled;
+            }
+
+            // A УПЮ kurin keeps the usual names: an empty map from a client that sends the whole
+            // record is no change, and only an actual name is refused.
+            if (request.RoleNames is { } refusedNames && !KurinRoleNames.IsAvailableFor(existing.Branch)
+                && refusedNames.Values.Any(name => !string.IsNullOrWhiteSpace(name)))
+            {
+                return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, KurinRoleNames.NotAvailableCode, "This kurin keeps the usual role names.");
+            }
+
+            if (request.RoleNames is { } roleNames && KurinRoleNames.IsAvailableFor(existing.Branch))
+            {
+                var stored = KurinRoleNames.Normalize(roleNames, out var valid);
+                if (!valid)
+                {
+                    return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, KurinRoleNames.InvalidCode, $"A role name is one of the kurin's roles and up to {KurinRoleNames.MaxLength} characters.");
+                }
+
+                existing.RoleNames = stored;
+            }
+
             _unitOfWork.Kurins.Update(existing, cancellationToken);
 
             var recorded = AuditChanges.Of(before.Zip(Snapshot(existing), (was, now) => (was.Field, was.Value, now.Value)).ToArray());
@@ -182,7 +212,18 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
     private async Task<ServiceResult<KurinResponse>?> NumberRefusalAsync(Common.Entities.KurinModule.Kurin? existing, int? requestedNumber, string kraiCode, CancellationToken cancellationToken)
     {
         var numberChanges = existing is null || existing.Number != requestedNumber;
-        if (!numberChanges || requestedNumber is not int number)
+        if (!numberChanges)
+        {
+            return null;
+        }
+
+        // A senior kurin's numbers are the administrators' to hand out: it asks through a request.
+        if (existing is not null && KurinBranchSet.IsSenior(existing.Branch))
+        {
+            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "SeniorNumberByRequest", "A senior kurin changes its numbers by request to an administrator.");
+        }
+
+        if (requestedNumber is not int number)
         {
             return null;
         }
@@ -195,7 +236,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
                 $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
         }
 
-        var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken);
+        var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken, existing?.Branch ?? KurinBranch.UPYu);
         if (existingByNumber is not null)
         {
             return existing is null
@@ -214,7 +255,9 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         ("regionOrCountry", kurin.RegionOrCountry),
         ("namedAfter", kurin.NamedAfter),
         ("description", kurin.Description),
-        ("profileVerificationEnabled", kurin.ProfileVerificationEnabled)
+        ("profileVerificationEnabled", kurin.ProfileVerificationEnabled),
+        ("scoreEnabled", kurin.IsScoreEnabled),
+        ("roleNames", kurin.RoleNames)
     ];
 
     private static string? NormalizeOptionalText(string? value)

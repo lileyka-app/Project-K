@@ -266,9 +266,9 @@ export class AttendanceSheetComponent implements OnInit {
 
   confirmDelete(entry: ScoreEntryDto): void {
     this.confirmation.confirm({
-      header: 'Видалити бал',
+      header: 'Видалити бал?',
       message: `${points(entry.points)} · ${entry.itemName ?? entry.reason} зникне з балів. Слід у історії змін лишиться.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {

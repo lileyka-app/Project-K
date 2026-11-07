@@ -1,0 +1,76 @@
+.transfers__find {
+  display: grid;
+  gap: 0.375rem;
+  max-width: 28rem;
+}
+
+.transfers__find-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.transfers__find-row input {
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.transfers__candidate {
+  border-top: 1px solid var(--p-content-border-color);
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.transfers__name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.transfers__hint,
+.transfers__meta {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  margin: 0;
+}
+
+.transfers__meta {
+  display: block;
+  margin-top: 0.125rem;
+}
+
+.transfers__owes {
+  color: var(--lil-dues-debt-fg);
+  display: block;
+  font-size: var(--lil-text-caption);
+  margin-top: 0.25rem;
+}
+
+.transfers__send {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.transfers__person {
+  font-weight: 600;
+}
+
+.transfers__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.transfers__actions p-button + p-button {
+  margin-left: 0.25rem;
+}
+
+.transfers__dialog {
+  display: grid;
+  gap: 1rem;
+}

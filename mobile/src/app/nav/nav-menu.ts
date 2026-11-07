@@ -28,6 +28,7 @@ import {
   flag,
   grid,
   home,
+  idCard,
   informationCircle,
   key,
   notifications,
@@ -183,6 +184,20 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
               }
             </ion-item>
           }
+          @if (me.memberKey) {
+            <ion-item [button]="true" [detail]="true" (click)="openCard('check')" data-testid="show-card">
+              <ion-icon class="lk-tile" slot="start" name="qr-code" aria-hidden="true" style="--lk-tile: #0e6e4e" />
+              <ion-label>Показати картку</ion-label>
+            </ion-item>
+            <ion-item [button]="true" [detail]="true" (click)="openCard('transfer')" data-testid="transfer-code">
+              <ion-icon class="lk-tile" slot="start" name="id-card" aria-hidden="true" style="--lk-tile: #8e8e93" />
+              <ion-label>Мій код для переходу</ion-label>
+            </ion-item>
+          }
+          <ion-item [button]="true" [detail]="true" (click)="openScan()" data-testid="scan">
+            <ion-icon class="lk-tile" slot="start" name="scan" aria-hidden="true" style="--lk-tile: #5e5ce6" />
+            <ion-label>Сканувати QR</ion-label>
+          </ion-item>
           <ion-item [button]="true" [detail]="false" (click)="addAccount()" data-testid="add-account">
             <ion-icon class="lk-tile" slot="start" name="person-add" aria-hidden="true" style="--lk-tile: #8e8e93" />
             <ion-label>Додати акаунт</ion-label>
@@ -368,6 +383,7 @@ export class NavMenu implements OnInit {
       flag,
       grid,
       home,
+      idCard,
       informationCircle,
       key,
       notifications,
@@ -463,6 +479,20 @@ export class NavMenu implements OnInit {
         () => undefined,
       );
     }
+  }
+
+  /**
+   * «Моя картка» (web card-check-dialog and transfer-code-dialog): the QR to be checked by, or the
+   * transfer code the person hands to the Звʼязковий of the kurin that takes them in.
+   */
+  protected async openCard(part: 'check' | 'transfer'): Promise<void> {
+    if (this.drawer()) await this.menus.close();
+    await this.router.navigate(['/tabs/more/card'], { queryParams: { part } });
+  }
+
+  protected async openScan(): Promise<void> {
+    if (this.drawer()) await this.menus.close();
+    await this.router.navigateByUrl('/tabs/more/scan');
   }
 
   protected async addAccount(): Promise<void> {

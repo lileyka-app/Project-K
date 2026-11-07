@@ -1,0 +1,267 @@
+<p-confirmdialog />
+
+<div class="registry-mode">
+
+  <div class="registry__toolbar">
+    <app-registry-search inputId="registry-search" label="Пошук по складу куреня" [(value)]="search"
+      [placeholder]="hasGroups() ? 'Пошук за прізвищем, поштою, гуртком…' : 'Пошук за прізвищем чи поштою…'" />
+
+    <p-multiselect
+      [options]="allColumns()"
+      [ngModel]="selectedColumnIds()"
+      (ngModelChange)="onColumnsChange($event)"
+      optionLabel="header"
+      optionValue="id"
+      group="false"
+      display="chip"
+      [showToggleAll]="true"
+      placeholder="Колонки"
+      selectedItemsLabel="Колонок: {0}"
+      [maxSelectedLabels]="0"
+      styleClass="registry__columns" />
+
+    @if (tagService.enabled() && tagService.current().tags.length) {
+      <label for="registry-tag-filter" class="registry__label-hidden">Фільтр за тегами</label>
+      <p-multiselect
+        inputId="registry-tag-filter"
+        [options]="tagService.current().tags"
+        [ngModel]="tagFilter()"
+        (ngModelChange)="tagFilter.set($event ?? [])"
+        optionLabel="name"
+        optionValue="kurinTagKey"
+        [showToggleAll]="false"
+        [showClear]="true"
+        placeholder="Теги"
+        selectedItemsLabel="Тегів: {0}"
+        [maxSelectedLabels]="1"
+        appendTo="body"
+        styleClass="registry__tags">
+        <ng-template let-tag #item>
+          <span class="registry__tag-option">
+            <span class="registry__tag-dot" [style.background]="tag.colorHex" aria-hidden="true"></span>{{ tag.name }}
+          </span>
+        </ng-template>
+      </p-multiselect>
+    }
+
+    <p-button
+      label="За замовчуванням"
+      icon="pi pi-replay"
+      severity="secondary"
+      [text]="true"
+      (onClick)="resetColumns()" />
+
+    @if (tagService.canManage()) {
+      <p-button
+        label="Теги куреня"
+        icon="pi pi-tags"
+        severity="secondary"
+        [text]="true"
+        [attr.aria-expanded]="tagsOpen()"
+        (onClick)="tagsOpen.set(!tagsOpen())" />
+    }
+
+    <p-button
+      label="Вивантажити"
+      icon="pi pi-download"
+      severity="secondary"
+      [loading]="exporting()"
+      [disabled]="!members().length"
+      (onClick)="exportToExcel()"
+      styleClass="registry__export" />
+  </div>
+
+  @if (tagsOpen() && tagService.canManage()) {
+    <section class="kurin-tile" aria-labelledby="registry-tags-title">
+      <div class="lil-tile-head">
+        <div>
+          <h2 id="registry-tags-title">Теги куреня</h2>
+          <span class="lil-count">{{ tagService.current().tags.length }}</span>
+        </div>
+      </div>
+      <app-kurin-tag-manager [kurinKey]="kurinKeyValue()" [candidates]="tagCandidates()" />
+    </section>
+  }
+
+  <section class="kurin-tile">
+  <p-table
+    [value]="youth()"
+    [loading]="loading()"
+    styleClass="project-table registry__table"
+    [scrollable]="true"
+    stripedRows
+    [rowHover]="true">
+
+    <ng-template #caption>
+      <div class="lil-tile-head">
+        <div>
+          <h2>Юнаки</h2>
+          <span class="lil-count">{{ youth().length }}</span>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th scope="col" pFrozenColumn pSortableColumn="lastName" class="registry__name-col">
+          Прізвище та ім'я <p-sortIcon field="lastName" />
+        </th>
+        @for (column of visibleColumns(); track column.id) {
+          @if (column.kind === 'tags') {
+            <th scope="col" pSortableColumn="tagSort">{{ column.header }} <p-sortIcon field="tagSort" /></th>
+          } @else {
+            <th scope="col">{{ column.header }}</th>
+          }
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-member>
+      <tr class="registry__row" (click)="openCard($event, member)" (keydown.enter)="openCard($event, member)">
+        <td pFrozenColumn class="registry__name-col" data-mobile-label="Прізвище та ім'я">
+          <a class="registry__name-link" [routerLink]="['/member', member.memberKey]">{{ fullName(member) }}</a>
+        </td>
+        @for (column of visibleColumns(); track column.id) {
+          <td [attr.data-mobile-label]="column.header">
+            @if (column.kind === 'tags') {
+              <app-kurin-tag-chips [keys]="member.tagKeys" [compact]="true" />
+            } @else if (column.kind === 'date') {
+              @if (asDate(cell(member, column)); as date) {
+                {{ date | date:'dd.MM.yyyy' }}
+              } @else {
+                <span class="registry__blank">—</span>
+              }
+            } @else if (contactHref(member, column); as href) {
+              <a [href]="href">{{ cell(member, column) }}</a>
+            } @else {
+              @if (cell(member, column)) {
+                {{ cell(member, column) }}
+              } @else {
+                <span class="registry__blank">—</span>
+              }
+            }
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td [attr.colspan]="visibleColumns().length + 1">
+          @if (members().length) {
+            <app-empty-state
+              art="trail"
+              title="Нічого не знайшлось"
+              [body]="hasGroups() ? 'Спробуй коротший запит — або перевір гурток.' : 'Спробуй коротший запит.'" />
+          } @else {
+            <app-empty-state
+              art="list"
+              title="Тут ще нікого немає"
+              body="Додай першого юнака — і реєстр почне жити." />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+  </section>
+
+  <section class="kurin-tile">
+  <p-table
+    [value]="staff()"
+    [loading]="loading()"
+    styleClass="project-table registry__table"
+    [scrollable]="true"
+    stripedRows
+    [rowHover]="true">
+
+    <ng-template #caption>
+      <div class="lil-tile-head">
+        <div>
+          <h2>Впорядники</h2>
+          <span class="lil-count">{{ staff().length }}</span>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th scope="col" pFrozenColumn pSortableColumn="lastName" class="registry__name-col">
+          Прізвище та ім'я <p-sortIcon field="lastName" />
+        </th>
+        @for (column of staffColumns(); track column.id) {
+          @if (column.kind === 'tags') {
+            <th scope="col" pSortableColumn="tagSort">{{ column.header }} <p-sortIcon field="tagSort" /></th>
+          } @else {
+            <th scope="col">{{ column.header }}</th>
+          }
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-member>
+      <tr class="registry__row" (click)="openCard($event, member)" (keydown.enter)="openCard($event, member)">
+        <td pFrozenColumn class="registry__name-col" data-mobile-label="Прізвище та ім'я">
+          <a class="registry__name-link" [routerLink]="['/member', member.memberKey]">{{ fullName(member) }}</a>
+        </td>
+        @for (column of staffColumns(); track column.id) {
+          <td [attr.data-mobile-label]="column.header">
+            @if (column.kind === 'tags') {
+              <app-kurin-tag-chips [keys]="member.tagKeys" [compact]="true" />
+            } @else if (column.kind === 'date') {
+              @if (asDate(cell(member, column)); as date) {
+                {{ date | date:'dd.MM.yyyy' }}
+              } @else {
+                <span class="registry__blank">—</span>
+              }
+            } @else if (contactHref(member, column); as href) {
+              <a [href]="href">{{ cell(member, column) }}</a>
+            } @else {
+              @if (cell(member, column)) {
+                {{ cell(member, column) }}
+              } @else {
+                <span class="registry__blank">—</span>
+              }
+            }
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td [attr.colspan]="staffColumns().length + 1">
+          <app-empty-state
+            art="list"
+            title="Кадри виховників ще немає"
+            body="Впорядник з'являється тут, щойно отримує діловодство в КВ куреня." />
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+  </section>
+
+  <section class="kurin-tile">
+  <p-table [value]="tally()" styleClass="project-table registry__tally" stripedRows>
+    <ng-template #caption>
+      <div class="lil-tile-head">
+        <div>
+          <h2>Чисельність за ступенями</h2>
+          <p>Юнацтво куреня. Кожен рахується раз — за ступенем, який має зараз.</p>
+        </div>
+      </div>
+    </ng-template>
+    <ng-template #header>
+      <tr>
+        <th scope="col">Ступінь</th>
+        <th scope="col" class="registry__number">Кількість</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-row>
+      <tr [class.registry__tally-total]="row.kind === 'total'">
+        <td data-mobile-label="Ступінь">{{ row.label }}</td>
+        <td data-mobile-label="Кількість" class="registry__number">{{ row.count }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+  </section>
+</div>

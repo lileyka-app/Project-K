@@ -1,0 +1,88 @@
+.award-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.award-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.award-row:hover:not(:disabled) {
+  background: var(--p-content-hover-background);
+}
+
+.award-row:disabled {
+  cursor: default;
+}
+
+.award-image {
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  object-fit: contain;
+}
+
+.award-image--empty {
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+}
+
+.award-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.award-title {
+  font-weight: 600;
+}
+
+.award-line,
+.award-empty {
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}
+
+.award-note {
+  overflow-wrap: anywhere;
+}
+
+.award-empty {
+  margin: 0;
+}
+
+.award-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.award-option-image {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
+.award-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

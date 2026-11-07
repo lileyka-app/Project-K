@@ -19,5 +19,8 @@ public enum CapabilityGroup
     Agenda,
 
     /// <summary>Журнал дій.</summary>
-    Journal
+    Journal,
+
+    /// <summary>Теги: who sees them and who defines and puts them on.</summary>
+    Tags
 }

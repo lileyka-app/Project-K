@@ -200,6 +200,8 @@
             <section class="kurin-tile member-form__tile">
                 <div class="lil-tile-head">
                     <div><h2>Пластові ступені</h2><p>Дата здобуття кожного ступеня. Порожня дата означає «ще не здобуто».</p></div>
+                    <p-selectbutton [options]="plastunOptions" [(ngModel)]="isPlastunka" name="isPlastunka" optionLabel="label" optionValue="value"
+                        [allowEmpty]="false" (ngModelChange)="markFormDirty()" size="small" data-testid="plastunka-switch" />
                 </div>
                 <div class="member-form__levels">
                     @for (group of visibleLevelGroups; track group.title) {

@@ -22,5 +22,11 @@ public class PlastLevelHistory
 
     public PlastLevel PlastLevel { get; set; }
 
+    /// <summary>
+    /// A пластунка's ступінь rather than a пластун's: the same step, its own name and відзнака in the
+    /// catalogue. Chosen when the ступінь is recorded; the card keeps no sex of its own.
+    /// </summary>
+    public bool IsPlastunka { get; set; }
+
     public DateOnly DateAchieved { get; set; }
 }

@@ -9,6 +9,7 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { PasswordModule } from '@openng/optimus-ui/password';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { CalendarFeedSectionComponent } from '../../components/calendar-feed-section/calendar-feed-section';
+import { CardSectionComponent } from '../../components/card-section/card-section';
 import { MfaSetupDialogComponent } from '../../components/mfa-setup-dialog/mfa-setup-dialog';
 import { AccountSettings, AccountSettingsService } from '../../services/account-settings-service/account-settings.service';
 import { AuthService } from '../../services/auth-service/auth.service';
@@ -30,6 +31,7 @@ import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/
     TagModule,
     MfaSetupDialogComponent,
     CalendarFeedSectionComponent,
+    CardSectionComponent,
     PasswordRulesComponent,
     PhoneInputComponent
   ],

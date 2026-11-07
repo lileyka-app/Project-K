@@ -11,6 +11,7 @@ import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { SelectModule } from '@openng/optimus-ui/select';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
@@ -23,6 +24,10 @@ import {
 } from '../../functions/waitlist-status.function';
 import { LocalUtcDatePipe } from '../../../../shared/pipes/local-utc-date.pipe';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { KurinBranchRequestService } from '../../../kurinModule/services/kurin-branch-request-service/kurin-branch-request.service';
+import { KurinBranchRequestDto } from '../../../kurinModule/models/kurin-branch-request.dto';
+import { KurinBranch, KurinNumbering } from '../../../kurinModule/models/enums/kurin-branch.enum';
+import { kurinBranchesName, kurinGroupTitle } from '../../../../shared/functions/kurin-label.function';
 
 @Component({
   selector: 'app-waitlist-management',
@@ -93,6 +98,43 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
         </ng-template>
     </p-dialog>
 
+    <section class="card p-4 mb-6 branch-requests" aria-labelledby="branch-requests-title">
+      <h2 id="branch-requests-title" class="text-xl font-bold mb-1">Запити куренів</h2>
+      <p class="m-0 mb-4 text-sm text-muted-color">Старші курені просять додати чи прибрати улад або змінити число в ньому.</p>
+      @if (branchRequests.length) {
+        <ul class="branch-requests__list">
+          @for (request of branchRequests; track request.kurinBranchRequestKey) {
+            <li class="branch-requests__item">
+              <div class="branch-requests__body">
+                <strong>{{ request.kurinNamedAfter || branchesName(request.currentBranches) }}</strong>
+                @if (request.kurinNamedAfter) {
+                  <small class="text-muted-color">{{ branchesName(request.currentBranches) }}</small>
+                }
+                <span class="branch-requests__change">
+                  <i class="pi pi-arrow-right" aria-hidden="true"></i>
+                  {{ branchesName(request.wantedBranches) }}
+                </span>
+                <small class="text-muted-color">
+                  {{ request.requestedByName || 'Хтось із проводу' }} · {{ request.requestedAtUtc | localUtcDate:'short' }}
+                </small>
+                @if (request.note) {
+                  <p class="m-0 text-sm">«{{ request.note }}»</p>
+                }
+              </div>
+              <div class="flex gap-2">
+                <p-button icon="pi pi-check" severity="success" rounded text [loading]="decidingKey === request.kurinBranchRequestKey"
+                          (onClick)="decideBranchRequest(request, true)" pTooltip="Схвалити: курінь отримає ці улади й числа" ariaLabel="Схвалити запит" />
+                <p-button icon="pi pi-times" severity="danger" rounded text [disabled]="decidingKey !== null"
+                          (onClick)="decideBranchRequest(request, false)" pTooltip="Відхилити" ariaLabel="Відхилити запит" />
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="m-0 text-sm text-muted-color">Запитів від куренів немає.</p>
+      }
+    </section>
+
     <div class="card p-4">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Заявки на приєднання</h2>
@@ -127,10 +169,12 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
             <td>
               @if (isDirectAdd(entry)) {
                 <span class="text-gray-400 text-sm italic">Доданий проводом</span>
+              } @else if (entry.isSeniorKurin) {
+                <p-tag severity="info" [value]="seniorClaim(entry)" pTooltip="Старший курінь: один курінь з числом у кожному уладі" />
               } @else if (entry.isPreparatoryKurin) {
                 <p-tag severity="warn" value="Підготовчий курінь" pTooltip="Курінь ще без числа: його задають у налаштуваннях куреня" />
               } @else if (entry.isKurinLeaderCandidate) {
-                <p-tag severity="info" [value]="'Курінь ' + entry.claimedKurinNameOrNumber" />
+                <p-tag severity="info" [value]="youthClaim(entry)" />
               } @else {
                 <span class="text-gray-400 text-sm italic">Звичайний учасник</span>
               }
@@ -172,6 +216,34 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .branch-requests__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .branch-requests__item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--p-content-border-color);
+      border-radius: 12px;
+    }
+    .branch-requests__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+    .branch-requests__change {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
     .waitlist-empty-cell {
       border: 0 !important;
       padding: 1.25rem 0 0 !important;
@@ -214,6 +286,10 @@ export class WaitlistManagementComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly waitlistAttention = inject(WaitlistAttentionService);
 
+  private readonly branchRequestService = inject(KurinBranchRequestService);
+  branchRequests: KurinBranchRequestDto[] = [];
+  decidingKey: string | null = null;
+
   krais: KraiOption[] = [];
   approvalDialogVisible = false;
   approvalEntry: WaitlistEntry | null = null;
@@ -222,6 +298,7 @@ export class WaitlistManagementComponent implements OnInit {
 
   ngOnInit() {
     this.loadEntries();
+    this.loadBranchRequests();
     this.onboardingService.getKrais().subscribe({
       next: krais => this.krais = krais,
       // Without the list the column shows what the applicant wrote, and approval keeps their край.
@@ -247,6 +324,61 @@ export class WaitlistManagementComponent implements OnInit {
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося завантажити заявки' });
         this.loading = false;
+      }
+    });
+  }
+
+  loadBranchRequests(): void {
+    this.branchRequestService.getPending().subscribe({
+      next: requests => {
+        this.branchRequests = requests;
+        this.waitlistAttention.countRequests(requests.length);
+      },
+      error: () => undefined
+    });
+  }
+
+  branchesName(branches: KurinNumbering[]): string {
+    return kurinBranchesName(branches);
+  }
+
+  /** «Курінь ч. 5 УПЮ», from what the applicant claimed: the number alone would read the same in every улад. */
+  youthClaim(entry: WaitlistEntry): string {
+    const claimed = (entry.claimedKurinNameOrNumber ?? '').trim();
+    return /^\d+$/.test(claimed) ? kurinGroupTitle({ number: Number(claimed) }) : `Курінь ${claimed} УПЮ`;
+  }
+
+  /** «5-й курінь УСП · 20-й курінь УПС», from what the applicant claimed. */
+  seniorClaim(entry: WaitlistEntry): string {
+    const branches: KurinNumbering[] = [];
+    if (entry.claimedUspNumber != null) branches.push({ branch: KurinBranch.USP, number: entry.claimedUspNumber });
+    if (entry.claimedUpsNumber != null) branches.push({ branch: KurinBranch.UPS, number: entry.claimedUpsNumber });
+    return kurinBranchesName(branches);
+  }
+
+  decideBranchRequest(request: KurinBranchRequestDto, approve: boolean): void {
+    this.decidingKey = request.kurinBranchRequestKey;
+    const decision = approve
+      ? this.branchRequestService.approve(request.kurinBranchRequestKey)
+      : this.branchRequestService.reject(request.kurinBranchRequestKey);
+    decision.subscribe({
+      next: () => {
+        this.decidingKey = null;
+        this.messageService.add(approve
+          ? { severity: 'success', summary: 'Схвалено', detail: `Тепер це ${kurinBranchesName(request.wantedBranches)}.` }
+          : { severity: 'info', summary: 'Відхилено', detail: 'Курінь отримає сповіщення.' });
+        this.loadBranchRequests();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.decidingKey = null;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Не вдалося',
+          detail: error.error?.error === 'KurinNumberTaken'
+            ? 'Це число в цьому уладі вже має інший курінь краю. Відхили запит або домовся з куренем про інше.'
+            : 'Запит не вирішено. Спробуй ще раз.'
+        });
+        this.loadBranchRequests();
       }
     });
   }
@@ -301,9 +433,11 @@ export class WaitlistManagementComponent implements OnInit {
 
   resend(entry: WaitlistEntry) {
     this.confirmationService.confirm({
-        message: `Надіслати запрошення на ${entry.email} ще раз?`,
+        message: `Запрошення піде на ${entry.email} ще раз.`,
         header: 'Надіслати ще раз?',
-        icon: 'pi pi-refresh',
+        icon: 'pi pi-envelope',
+        acceptButtonProps: { label: 'Надіслати' },
+        rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
         accept: () => {
             this.onboardingService.resendInvitation(entry.waitlistEntryKey).subscribe({
                 next: () => {

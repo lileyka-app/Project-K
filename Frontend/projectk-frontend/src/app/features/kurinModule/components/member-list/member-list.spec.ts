@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { MemberDto } from '../../models/member.dto';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { AuthState } from '../../../authModule/models/auth-state.model';
@@ -295,6 +296,15 @@ describe('MemberListComponent', () => {
     it('getRoleDisplayName should return role name', () => {
         const role = LeadershipRole.Kurinnuy;
         expect(component.getRoleDisplayName(role)).toBeTruthy();
+    });
+
+    it('getMemberRoleTags names an office by the kurin it is in', () => {
+      rememberKurinRoleNames('orden', { Pysar: 'Скриптор' });
+      const history = { leadershipHistoryKey: 'lh', leadershipKey: 'l', role: LeadershipRole.Pysar, leadershipType: 'Kurin', kurinKey: 'orden', startDate: '2025-01-01', endDate: null } as LeadershipHistoryDto;
+      const tags = (h: LeadershipHistoryDto) =>
+        component.getMemberRoleTags({ memberKey: 'm', firstName: 'A', lastName: 'B', leadershipHistories: [h] } as MemberLookupDto).map(t => t.label);
+      expect(tags(history)).toEqual(['Скриптор']);
+      expect(tags({ ...history, kurinKey: 'other' })).toEqual(['Писар']);
     });
 
     it('getMemberRoleTags should name the office once, from the leadership history', () => {

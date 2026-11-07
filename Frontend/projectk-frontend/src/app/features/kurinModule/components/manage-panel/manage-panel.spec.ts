@@ -445,8 +445,18 @@ describe('ManagePanelComponent', () => {
     });
 
     it('should return "Видалити" for delete action', () => {
+      fixture.componentRef.setInput('config', mockConfig);
       fixture.componentRef.setInput('parameter', 'delete');
       expect(component.actionLabel()).toBe('Видалити');
+    });
+
+    it('names the delete action as the config does, where it is no plain delete', () => {
+      fixture.componentRef.setInput('config', {
+        ...mockConfig,
+        deleteAction: { verb: 'Розформувати', question: 'Розформувати гурток', note: 'Лишиться в архіві.' }
+      });
+      fixture.componentRef.setInput('parameter', 'delete');
+      expect(component.actionLabel()).toBe('Розформувати');
     });
 
     it('should return "OK" for undefined action', () => {

@@ -91,6 +91,20 @@ public class CatalogMapperTests
     }
 
     [Fact]
+    public void Honours_AreTheDegreesByUladThenOrder_ThenSeniorAwards_WithoutYouthAwardsOrTrainings()
+    {
+        var items = Map().Honours;
+
+        Assert.Equal(["usp-starshyi-plastun", "ups-senior-pratsi", "upyu-prykhylnyk", "usp-hramota-zasluhy"], items.Select(i => i.Id));
+        Assert.Equal(
+            [HonourKind.Degree, HonourKind.Degree, HonourKind.Degree, HonourKind.Award],
+            items.Select(i => i.Kind));
+        Assert.Equal(new CatalogHonour("ups-senior-pratsi", HonourKind.Degree, "Пластун сеніор праці", "ups", "ups", 2,
+            "https://catalog.test/v1/images/sp.svg?v=1"), Map().HonoursById["ups-senior-pratsi"]);
+        Assert.False(Map().HonoursById.ContainsKey("lsh-absolvent"));
+    }
+
+    [Fact]
     public void Metadata_And_AwardImages()
     {
         var state = Map();

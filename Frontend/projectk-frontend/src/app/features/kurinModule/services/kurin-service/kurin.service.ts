@@ -7,7 +7,7 @@ import { KurinDto } from '../../models/kurin.dto';
 import { KraiDto } from '../../models/krai.dto';
 import { InviteKurinFounderRequest, KurinFounderInvitationDto } from '../../models/kurin-founder-invitation.dto';
 import { CardFieldsDto, DEFAULT_CARD_FIELDS, KurinCardFieldDto } from '../../models/card-fields.dto';
-import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/import/import-model';
+import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/registry/modes/import/import-model';
 import { Observable } from 'rxjs/internal/Observable';
 import { catchError, map, of, tap } from 'rxjs';
 import { ClientCacheService } from '../client-cache/client-cache.service';
@@ -15,6 +15,7 @@ import { browserTimeZone } from '../../functions/browser-time-zone.function';
 import { ACCESS_CACHE_PREFIX, ENTITY_CACHE_TTL_MS, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
 import { KurinAccessPolicyDto, SetKurinAccessPolicyRequest } from '../../models/kurin-access-policy.dto';
 import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
+import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,7 @@ export class KurinService {
       `${KURIN_CACHE_PREFIX}by-key:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
       () => this.http.get<KurinDto>(`${this.apiUrl}/${kurinKey}`)
-    );
+    ).pipe(tap(kurin => rememberKurinRoleNames(kurin.kurinKey, kurin.roleNames)));
   }
 
   getKurins(): Observable<KurinDto[]> {
@@ -173,6 +174,19 @@ export class KurinService {
     );
   }
 
+  /** A senior kurin's emblem; the server keeps it as PNG and refuses it for УПЮ. */
+  uploadEmblem(kurinKey: string, file: File | Blob): Observable<KurinDto> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<KurinDto>(`${this.apiUrl}/${kurinKey}/emblem`, formData, { context: requestFeedback('silent') })
+      .pipe(tap(() => this.cache.invalidateByPrefix(KURIN_CACHE_PREFIX)));
+  }
+
+  deleteEmblem(kurinKey: string): Observable<KurinDto> {
+    return this.http.delete<KurinDto>(`${this.apiUrl}/${kurinKey}/emblem`)
+      .pipe(tap(() => this.cache.invalidateByPrefix(KURIN_CACHE_PREFIX)));
+  }
+
   updateKurin(kurin: KurinDto): Observable<KurinDto> {
     return this.http.put<KurinDto>(
       `${this.apiUrl}/${kurin.kurinKey}`,
@@ -182,7 +196,9 @@ export class KurinService {
         regionOrCountry: kurin.regionOrCountry,
         namedAfter: kurin.namedAfter,
         description: kurin.description,
-        profileVerificationEnabled: kurin.profileVerificationEnabled ?? false
+        profileVerificationEnabled: kurin.profileVerificationEnabled ?? false,
+        scoreEnabled: kurin.scoreEnabled,
+        roleNames: kurin.canRenameRoles ? kurin.roleNames ?? {} : undefined
       },
       {
         headers: {

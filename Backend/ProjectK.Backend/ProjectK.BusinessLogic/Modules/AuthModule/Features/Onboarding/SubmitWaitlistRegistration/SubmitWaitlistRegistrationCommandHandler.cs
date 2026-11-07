@@ -49,7 +49,8 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         var stanytsia = request.Stanytsia?.Trim();
         var regionOrCountry = string.IsNullOrWhiteSpace(request.RegionOrCountry) ? null : request.RegionOrCountry.Trim();
         var kraiCode = Krai.NormalizeCode(request.KraiCode);
-        var claimedKurinNumber = request.IsPreparatoryKurin ? null : request.ClaimedKurinNameOrNumber?.Trim();
+        var isSenior = request.UspNumber.HasValue || request.UpsNumber.HasValue;
+        var claimedKurinNumber = request.IsPreparatoryKurin || isSenior ? null : request.ClaimedKurinNameOrNumber?.Trim();
 
         // A rejected entry does not hold the address: the applicant may come back with a corrected
         // application, which then takes the old entry's place instead of waiting out its cleanup.
@@ -76,7 +77,9 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         entry.KraiCode = kraiCode;
         entry.IsKurinLeaderCandidate = request.IsKurinLeaderCandidate;
         entry.ClaimedKurinNameOrNumber = claimedKurinNumber;
-        entry.IsPreparatoryKurin = request.IsPreparatoryKurin;
+        entry.IsPreparatoryKurin = request.IsPreparatoryKurin && !isSenior;
+        entry.ClaimedUspNumber = request.UspNumber;
+        entry.ClaimedUpsNumber = request.UpsNumber;
         entry.Source = WaitlistEntrySource.Application;
         entry.VerificationStatus = WaitlistVerificationStatus.Submitted;
         entry.VerificationChannel = null;
@@ -112,7 +115,10 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         {
             var admins = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
             var applicant = $"{entry.FirstName} {entry.LastName}";
-            var kurin = entry.IsPreparatoryKurin ? "підготовчий" : entry.ClaimedKurinNameOrNumber;
+            var kurin = entry.IsSeniorKurin
+                ? KurinBranchNames.DescribeSenior(entry.ClaimedSeniorBranches)
+                : entry.IsPreparatoryKurin ? "підготовчий курінь"
+                : string.IsNullOrWhiteSpace(entry.ClaimedKurinNameOrNumber) ? null : $"курінь {entry.ClaimedKurinNameOrNumber}";
 
             await _notifications.NotifyManyAsync(
                 admins.Select(admin => new NotificationRequest
@@ -120,7 +126,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
                     RecipientUserKey = admin.Id,
                     Type = AppNotificationType.WaitlistEntrySubmitted,
                     Title = "Нова заявка на розгляд",
-                    Body = string.IsNullOrWhiteSpace(kurin) ? applicant : $"{applicant} · курінь {kurin}",
+                    Body = kurin is null ? applicant : $"{applicant} · {kurin}",
                     EntityType = "WaitlistEntry",
                     EntityKey = entry.WaitlistEntryKey,
                     Route = "/waitlist",

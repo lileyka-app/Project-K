@@ -69,12 +69,19 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
 });
 
 describeRole('mentor', 'Mentor role UI controls', ({ user }) => {
-  test('mentor can review skills but does not see member edit controls', async ({ page, request }) => {
+  test('mentor edits a youth of his гурток from one main button and reviews skills', async ({ page, request }) => {
     const kurinKey = await getSeededKurinKey(request, user);
     const memberKey = await getFirstSeededGroupMemberKey(request, user);
 
     await page.goto(`/member/${memberKey}`);
-    await expect(page.locator('.member-actions')).toBeHidden();
+    const head = page.locator('.member-actions');
+    await expect(head.getByRole('button', { name: 'Редагувати' })).toBeVisible();
+    await expect(head.getByRole('button', { name: 'Перестороги' })).toHaveCount(0);
+    await expect(head.getByRole('button', { name: 'Журнал' })).toHaveCount(0);
+    await head.getByRole('button', { name: 'Ще' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Перестороги' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('member-life')).toBeVisible();
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));
@@ -84,12 +91,16 @@ describeRole('mentor', 'Mentor role UI controls', ({ user }) => {
 });
 
 describeRole('member', 'Member role UI controls', ({ user }) => {
-  test('member is restricted from skill moderation controls', async ({ page, request }) => {
+  test('member edits only their own card and is restricted from skill moderation controls', async ({ page, request }) => {
     const kurinKey = await getSeededKurinKey(request, user);
+    // The first seeded member of Gurtok 1 is this member: their own card.
     const memberKey = await getFirstSeededGroupMemberKey(request, user);
 
     await page.goto(`/member/${memberKey}`);
-    await expect(page.locator('.member-actions')).toBeHidden();
+    await expect(page.getByTestId('member-life')).toBeVisible();
+    const head = page.locator('.member-actions');
+    await expect(head.getByRole('button', { name: 'Редагувати' })).toBeVisible();
+    await expect(head.getByRole('button')).toHaveCount(1);
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));

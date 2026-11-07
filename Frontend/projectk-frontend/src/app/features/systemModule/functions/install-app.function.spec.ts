@@ -54,6 +54,8 @@ describe('pwaPathFor', () => {
     expect(pwaPathFor('/tasks/k1')).toBe('/m/tabs/tasks');
     expect(pwaPathFor('/planning/k1')).toBe('/m/tabs/calendar/planning');
     expect(pwaPathFor('/kurin')).toBe('/m/tabs/kurin');
+    expect(pwaPathFor('/kurin/transfers?code=PL-1')).toBe('/m/tabs/kurin/transfers');
+    expect(pwaPathFor('/kurin/registry/transfers')).toBe('/m/tabs/kurin/transfers');
     expect(pwaPathFor('/group/g1')).toBe('/m/tabs/kurin/group/g1');
     expect(pwaPathFor('/member/m1#probe')).toBe('/m/tabs/kurin/member/m1');
     expect(pwaPathFor('/settings/account')).toBe('/m/tabs/more/account');

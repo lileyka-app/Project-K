@@ -30,6 +30,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 public class UpsertMemberProfileCommandHandlerTests
 {
     private readonly Mock<IMemberUnitOfWork> _uowMock;
+    private readonly Mock<IResourceAccessService> _access = new();
     private readonly Mock<IUnitOfWork> _kurinDataMock;
     private readonly Mock<IMemberRepository> _memberRepoMock;
     private readonly Mock<IGroupRepository> _groupRepoMock;
@@ -69,6 +70,8 @@ public class UpsertMemberProfileCommandHandlerTests
 
         _mapper = mapperConfig.CreateMapper();
         _journal = new JournalRecorder(_currentUserContextMock.Object);
+        _access.Setup(a => a.CheckSeniorYouthRecordAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
         _handler = Handler(FieldAccess.SeesEverything());
     }
 
@@ -81,7 +84,8 @@ public class UpsertMemberProfileCommandHandlerTests
         _accountsMock.Object,
         _profilesMock.Object,
         fieldAccess,
-        _journal.Audit);
+        _journal.Audit,
+        _access.Object);
 
     private void AccountIs(Guid userKey, OnboardingStatus status) =>
         _accountsMock.Setup(a => a.FindAsync(userKey, It.IsAny<CancellationToken>()))
@@ -321,6 +325,48 @@ public class UpsertMemberProfileCommandHandlerTests
         created.PlastLevelHistory.Select(entry => entry.PlastLevel)
             .Should().BeEquivalentTo([PlastLevel.Uchasnyk, PlastLevel.Skob]);
         created.LatestPlastLevel.Should().Be(PlastLevel.Skob);
+    }
+
+    [Fact]
+    public async Task Handle_Update_ShouldRefuseASeniorsStupeni_WhenTheSeniorGuardRefuses()
+    {
+        // LIFE-01: skipped quietly, the save answered 200 and still marked the profile stale.
+        var group = MakeGroup();
+        _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+        var memberKey = Guid.NewGuid();
+        var existing = new Member
+        {
+            MemberKey = memberKey,
+            FirstName = "Andrii",
+            LastName = "Kozak",
+            Email = "kozak@example.com",
+            PhoneNumber = "+380501234567",
+            DateOfBirth = new DateOnly(2004, 5, 14),
+            PlastLevelHistory = [new PlastLevelHistory { MemberKey = memberKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2022, 10, 1) }],
+            ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent
+        };
+        ExistingMemberIs(existing, memberKey);
+        GroupIs(group);
+        _access.Setup(a => a.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, memberKey, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("kurin-wide only"));
+
+        var result = await _handler.Handle(new UpsertMemberProfileCommand
+        {
+            MemberKey = memberKey,
+            GroupKey = group.GroupKey,
+            FirstName = "Andrii",
+            LastName = "Kozak",
+            Email = "kozak@example.com",
+            PhoneNumber = "+380501234567",
+            DateOfBirth = new DateOnly(2004, 5, 14),
+            PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2020, 7, 18) }]
+        }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        result.ErrorCode.Should().Be(UpsertMemberProfileCommandHandler.SeniorYouthRecord);
+        existing.PlastLevelHistory.Select(entry => entry.PlastLevel).Should().Equal(PlastLevel.Starshoplastun);
+        existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
+        _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -688,12 +734,50 @@ public class UpsertMemberProfileCommandHandlerTests
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
+        result.Data!.GroupKey.Should().Be(here.GroupKey);
         _eventsMock.Verify(
-            e => e.PublishAsync(
-                It.Is<MemberPlaced>(placed =>
-                    placed.KurinKey == here.KurinKey && placed.GroupKey == here.GroupKey),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            e => e.PublishAsync(It.IsAny<MemberPlaced>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Handle_Update_OfSomeoneInTwoKurins_ShouldKeepBothMemberships(bool editedFromSecondKurin)
+    {
+        var first = MakeGroup();
+        var second = MakeGroup();
+        var existing = MakeExistingMember(first.GroupKey, first.KurinKey);
+        existing.UserKey = Guid.NewGuid();
+        var cmd = ProfileCommandFor(existing, second, firstName: "Changed");
+
+        ExistingMemberIs(existing, existing.MemberKey);
+        _membershipsMock
+            .Setup(m => m.GetActiveForMemberAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([
+                new Membership { MemberKey = existing.MemberKey, KurinKey = first.KurinKey, GroupKey = first.GroupKey },
+                new Membership { MemberKey = existing.MemberKey, KurinKey = second.KurinKey, GroupKey = second.GroupKey }
+            ]);
+        GroupIs(first);
+        GroupIs(second);
+        if (editedFromSecondKurin)
+        {
+            _currentUserContextMock.SetupGet(c => c.KurinKey).Returns(second.KurinKey);
+            _currentUserContextMock.Setup(c => c.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+        }
+        else
+        {
+            // The person edits their own profile.
+            _currentUserContextMock.SetupGet(c => c.UserId).Returns(existing.UserKey);
+        }
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.GroupKey.Should().Be(editedFromSecondKurin ? second.GroupKey : first.GroupKey);
+        _eventsMock.Verify(
+            e => e.PublishAsync(It.IsAny<MemberPlaced>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private static UpsertMemberProfileCommand ProfileCommandFor(

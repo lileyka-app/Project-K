@@ -217,4 +217,24 @@ public class OfficesAreKurinScopedTests
         Assert.Empty(await new LeadershipRepository(context)
             .GetActiveOfficesForAccountInKurinAsync(person.UserKey, kurinKey));
     }
+
+    [Fact]
+    public async Task TheKurinsMemberList_ShouldShowOnlyOfficesHeldInThatKurin()
+    {
+        await using var context = NewContext();
+        var whereTheyLead = Guid.NewGuid();
+        var whereTheyJustBelong = Guid.NewGuid();
+
+        var person = Belonging(context, whereTheyLead);
+        Belonging(context, whereTheyJustBelong, who: person);
+        context.Members.Add(new Member { MemberKey = person.MemberKey, UserKey = person.UserKey, FirstName = "Ірина", LastName = "Федорів", Email = "iryna@projectk.com", PhoneNumber = "0500000000" });
+        Seats(context, person, LeadershipType.Kurin, LeadershipRole.Pysar, kurinKey: whereTheyLead);
+        await context.SaveChangesAsync();
+
+        var repository = new MemberRepository(context);
+
+        var here = Assert.Single(Assert.Single(await repository.GetListItemsByKurinKeyAsync(whereTheyLead)).LeadershipHistories);
+        Assert.Equal(whereTheyLead, here.KurinKey);
+        Assert.Empty(Assert.Single(await repository.GetListItemsByKurinKeyAsync(whereTheyJustBelong)).LeadershipHistories);
+    }
 }

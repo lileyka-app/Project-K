@@ -39,7 +39,7 @@ const entry = (duesEntryKey: string, kind: string, method: string, amount: numbe
 
 function kurinDues(viewer = ZVYAZKOVYI) {
   return {
-    kurinKey: 'k1', currentQuarter: q(2026, 4),
+    kurinKey: 'k1', currentQuarter: q(2026, 4), chargeTiming: 'InAdvance',
     years: [{ startYear: 2026, label: '2026/27', quarters: [q(2026, 3), q(2026, 4), q(2027, 1), q(2027, 2)] }],
     rates: [{ fromQuarter: q(2026, 3), articles: [{ name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 }, { name: 'Курінь', recipient: 'Kurin', amount: 30, reducedAmount: 30 }], stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30, kurinReduced: 30, kraiFull: 0, kraiReduced: 0 }],
     box: { cash: 520, card: 180, total: 700, toForward: 400, own: 300, inTransit: 130 },
@@ -75,6 +75,7 @@ function kurinDues(viewer = ZVYAZKOVYI) {
 /** The kurin's box; `viewer` is what the server says the caller may do, `denied` a youth's 403. */
 function kurinDuesApi(options: { viewer?: typeof ZVYAZKOVYI; denied?: boolean; rates?: unknown[]; extra?: Record<string, unknown> } = {}): ExtraApi {
   return ({ method, path }) => {
+    if (method === 'PUT' && path === 'kurin/k1/dues/settings') return ok({});
     if (method === 'GET' && path === 'kurin/k1/dues') return options.denied ? refuse(403) : ok({ ...kurinDues(options.viewer), ...(options.rates ? { rates: options.rates } : {}), ...options.extra });
     if (method === 'GET' && path === 'kurin/k1/dues/groups') return ok([]);
     if (method === 'GET' && path === 'group/g1/dues') return refuse(403);
@@ -264,6 +265,18 @@ test('confirms a transfer, records and checks operations and sets the kurin’s 
     stanytsiaReduced: 150,
     kurinShare: 40,
   });
+});
+
+test('lets the Звʼязковий choose whether the kurin pays наперед or за пройдений квартал', async ({ page }, info) => {
+  const log = await signIn(page, undefined, kurinDuesApi(), TREASURER);
+  await page.goto('./tabs/kurin/dues');
+  const timing = page.getByTestId('charge-timing');
+  await expect(timing).toBeVisible();
+  await expect(page.getByText('Квартал нараховується, щойно почався.')).toBeVisible();
+  await timing.locator('ion-select').click();
+  await choose(page, 'За пройдений квартал');
+  await expect.poll(() => log.writes.find((w) => w.path === 'kurin/k1/dues/settings')?.body).toEqual({ chargeTiming: 'InArrears' });
+  await shot(page, info.project.name, 'kurin-dues-timing');
 });
 
 test('sends a kurin with its own статті to the web for its rates', async ({ page }) => {

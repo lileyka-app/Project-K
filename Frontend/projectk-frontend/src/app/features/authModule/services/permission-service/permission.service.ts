@@ -86,6 +86,11 @@ export class PermissionService {
     return this.isAdmin() || this.has('KurinJournal:Read');
   }
 
+  /** Reads the kurin's archive: the Звʼязковий all of it, a гурток's провід its own гуртки. */
+  canReadArchive(): boolean {
+    return this.isAdmin() || this.has('KurinArchive:Read');
+  }
+
   /** Opening a planning session: the whole провід, each within their own scope. */
   canCreatePlanning(): boolean {
     return this.isAdmin() || this.has('PlanningSession:Create');
@@ -99,6 +104,11 @@ export class PermissionService {
 
   canManageKurinSettings(): boolean {
     return this.isAdmin() || this.has('Kurin:Update:KurinWide');
+  }
+
+  /** Opens the kurin's settings: the whole КВ reads them; only who may change the kurin edits them. */
+  canReadKurinSettings(): boolean {
+    return this.canManageKurinSettings() || this.has('KurinSettings:Read');
   }
 
   /**

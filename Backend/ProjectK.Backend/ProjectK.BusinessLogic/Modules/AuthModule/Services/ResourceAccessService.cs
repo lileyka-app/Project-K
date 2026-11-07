@@ -60,8 +60,59 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny($"No permission for {action} on {resourceType}.");
         }
 
-        return await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+        if (SignsOff(resourceType, action) && await IsCallersOwnAsync(scopeResourceType, scopeResourceKey, cancellationToken))
+        {
+            return ResourceAccessDecision.Deny(OwnSignOff);
+        }
+
+        var decision = await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+        if (decision.IsAllowed && ChangesYouthRecord(resourceType, action))
+        {
+            return await SeniorYouthRecordAsync(resourceType, grantedScope.Value, scopeResourceType, scopeResourceKey, ownerMayChange: false, cancellationToken)
+                   ?? decision;
+        }
+
+        if (decision.IsAllowed || action != ResourceAction.Read)
+        {
+            return decision;
+        }
+
+        // A person released from their kurin, or not yet taken into the next one, stands nowhere —
+        // and every scope above is a kurin's. Their own record they still read: the history is
+        // theirs, not the kurin's. Reading only; changing it is the kurin's again once they stand in one.
+        return await IsCallersOwnAsync(scopeResourceType, scopeResourceKey, cancellationToken)
+            ? ResourceAccessDecision.Allow("Own record, read outside any kurin scope.")
+            : decision;
     }
+
+    private async Task<bool> IsCallersOwnAsync(ResourceType resourceType, Guid resourceKey, CancellationToken cancellationToken)
+    {
+        if (_currentUserContext.UserId is not { } userKey)
+        {
+            return false;
+        }
+
+        return await _scopeReader.GetPersonAccountKeyAsync(resourceType, resourceKey, cancellationToken) == userKey;
+    }
+
+    private const string OwnSignOff = "Nobody signs off their own probe or badge.";
+
+    /// <summary>
+    /// Signing a probe and confirming a badge vouch for someone else's work. A leader is a member
+    /// too, and a group-scoped grant always reaches one's own record, so without this a впорядник
+    /// or a Звʼязковий would sign their own probe.
+    /// </summary>
+    private static readonly IReadOnlySet<KurinCapability> SignOffCapabilities = new HashSet<KurinCapability>
+    {
+        KurinCapability.SignProbe,
+        KurinCapability.UnsignProbe,
+        KurinCapability.ReviewBadge
+    };
+
+    private static bool SignsOff(ResourceType resourceType, ResourceAction action) =>
+        KurinCapabilities.All.Any(descriptor => SignOffCapabilities.Contains(descriptor.Key)
+                                                && descriptor.Resource == resourceType
+                                                && descriptor.Action == action);
 
     public async Task<ResourceAccessDecision> CheckCapabilityAsync(
         KurinCapability capability,
@@ -80,7 +131,80 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny($"The kurin's policy does not give {capability}.");
         }
 
-        return await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+        if (SignOffCapabilities.Contains(capability) && await IsCallersOwnAsync(scopeResourceType, scopeResourceKey, cancellationToken))
+        {
+            return ResourceAccessDecision.Deny(OwnSignOff);
+        }
+
+        var decision = await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+        var descriptor = KurinCapabilities.All.First(candidate => candidate.Key == capability);
+        if (decision.IsAllowed && ChangesYouthRecord(descriptor.Resource, descriptor.Action))
+        {
+            return await SeniorYouthRecordAsync(descriptor.Resource, grantedScope.Value, scopeResourceType, scopeResourceKey, ownerMayChange: false, cancellationToken)
+                   ?? decision;
+        }
+
+        return decision;
+    }
+
+    public async Task<ResourceAccessDecision> CheckSeniorYouthRecordAsync(
+        ResourceType resourceType,
+        ResourceAction action,
+        Guid memberKey,
+        bool ownerMayChange = false,
+        CancellationToken cancellationToken = default,
+        KurinCapability? capability = null)
+    {
+        if (Precheck() is { } early)
+        {
+            return early;
+        }
+
+        // A guard on top of the endpoint's own check, not instead of it: it only ever refuses.
+        var grantedScope = capability is { } named
+            ? (await _permissions.ReachAsync(named, cancellationToken)).ToScope()
+            : await _permissions.WidestScopeAsync(resourceType, action, cancellationToken);
+        return await SeniorYouthRecordAsync(resourceType, grantedScope ?? AccessScope.Own, ResourceType.Member, memberKey, ownerMayChange, cancellationToken)
+               ?? ResourceAccessDecision.Allow("Not a senior's youth record, or a change it allows.");
+    }
+
+    private const string SeniorProbe = "A senior's probes are an archive: nobody signs or changes them.";
+    private const string SeniorOwnYouthRecord = "A senior does not enter their own youth record.";
+    private const string SeniorYouthRecordKurinWide = "A senior's youth record is changed only by who holds the kurin-wide right where they stand now.";
+
+    /// <summary>Probes and вмілості: the youth record the guard covers through ordinary permissions.</summary>
+    private static bool ChangesYouthRecord(ResourceType resourceType, ResourceAction action) =>
+        action != ResourceAction.Read && resourceType is ResourceType.ProbeProgress or ResourceType.BadgeProgress;
+
+    /// <summary>
+    /// The refusal for a change to the youth record of someone who stands in a УСП or УПС kurin, or
+    /// null when the change may go ahead. Former kurins never get this far: the scope check already
+    /// holds them to the kurin the person stands in.
+    /// </summary>
+    private async Task<ResourceAccessDecision?> SeniorYouthRecordAsync(
+        ResourceType resourceType,
+        AccessScope grantedScope,
+        ResourceType scopeResourceType,
+        Guid scopeResourceKey,
+        bool ownerMayChange,
+        CancellationToken cancellationToken)
+    {
+        if (!await _scopeReader.StandsInSeniorKurinAsync(scopeResourceType, scopeResourceKey, cancellationToken))
+        {
+            return null;
+        }
+
+        if (resourceType == ResourceType.ProbeProgress)
+        {
+            return ResourceAccessDecision.Deny(SeniorProbe);
+        }
+
+        if (await IsCallersOwnAsync(scopeResourceType, scopeResourceKey, cancellationToken))
+        {
+            return ownerMayChange ? null : ResourceAccessDecision.Deny(SeniorOwnYouthRecord);
+        }
+
+        return grantedScope == AccessScope.KurinWide ? null : ResourceAccessDecision.Deny(SeniorYouthRecordKurinWide);
     }
 
     public async Task<IReadOnlySet<KurinCapability>> ReachableCapabilitiesAsync(
@@ -110,10 +234,19 @@ public class ResourceAccessService : IResourceAccessService
             return reachable;
         }
 
+        var isOwn = _currentUserContext.UserId is { } userKey && scope.MemberUserKey == userKey;
+        var senior = await _scopeReader.StandsInSeniorKurinAsync(scopeResourceType, scopeResourceKey, cancellationToken);
         foreach (var descriptor in KurinCapabilities.All)
         {
+            if (isOwn && SignOffCapabilities.Contains(descriptor.Key))
+            {
+                continue;
+            }
+
             var grantedScope = (await _permissions.ReachAsync(descriptor.Key, cancellationToken)).ToScope();
-            if (grantedScope is not null
+            var seniorRefuses = senior && ChangesYouthRecord(descriptor.Resource, descriptor.Action)
+                && (descriptor.Resource == ResourceType.ProbeProgress || isOwn || grantedScope != AccessScope.KurinWide);
+            if (grantedScope is not null && !seniorRefuses
                 && (await EvaluateScopeAsync(grantedScope.Value, scope, currentKurinKey, cancellationToken)).IsAllowed)
             {
                 reachable.Add(descriptor.Key);

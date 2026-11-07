@@ -1,0 +1,38 @@
+<p-dialog [visible]="!!person()" (visibleChange)="!$event && close()" [modal]="true" [closable]="!sending()"
+  [style]="{ width: 'min(92vw, 30rem)' }" [header]="person()?.standsIn?.length ? 'Попросити назад' : 'Повернути до куреня'">
+  @if (person(); as p) {
+    <div class="return-dialog">
+      <p class="return-dialog__name">{{ name(p) }}</p>
+      @if (p.standsIn.length === 0) {
+        <p class="return-dialog__hint">Ніде не стоїть</p>
+      } @else {
+        <p class="return-dialog__hint">Зараз у {{ standsIn(p.standsIn) }}</p>
+
+        <div class="lil-dialog-field">
+          <span class="lil-dialog-label" id="return-kind">Що просимо</span>
+          <p-selectbutton [options]="kindOptions" [ngModel]="kind()" (ngModelChange)="kind.set($event)"
+            [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="return-kind" />
+        </div>
+
+        @if (p.standsIn.length > 1) {
+          <div class="lil-dialog-field">
+            <label class="lil-dialog-label" for="return-from">Кого питати</label>
+            <p-select inputId="return-from" [options]="kurinOptions()" [ngModel]="from()" (ngModelChange)="from.set($event)"
+              optionLabel="label" optionValue="value" placeholder="Вибери курінь" appendTo="body" />
+          </div>
+        }
+      }
+
+      <div class="lil-dialog-field">
+        <span class="lil-dialog-label" id="return-as">У вашому курені як</span>
+        <p-selectbutton [options]="membershipKindOptions" [ngModel]="membershipKind()" (ngModelChange)="membershipKind.set($event)"
+          [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="return-as" />
+      </div>
+    </div>
+  }
+  <ng-template #footer>
+    <p-button label="Скасувати" severity="secondary" [outlined]="true" [disabled]="sending()" (onClick)="close()" />
+    <p-button [label]="person()?.standsIn?.length ? 'Надіслати запит' : 'Повернути'" [icon]="person()?.standsIn?.length ? 'pi pi-send' : 'pi pi-user-plus'"
+      [loading]="sending()" [disabled]="!canSend()" (onClick)="send()" />
+  </ng-template>
+</p-dialog>

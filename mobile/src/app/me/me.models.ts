@@ -119,4 +119,6 @@ export interface MemberDto {
   school?: string | null;
   latestPlastLevelDisplay?: string | null;
   profilePhotoUrl: string | null;
+  /** «Мій код для переходу»: sent only to the person themself (web member.dto publicId). */
+  publicId?: string | null;
 }

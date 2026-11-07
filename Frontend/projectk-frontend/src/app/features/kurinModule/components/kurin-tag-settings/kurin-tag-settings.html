@@ -1,0 +1,21 @@
+@if (settings(); as current) {
+  <div class="archive-policy">
+    <div class="archive-policy__row">
+      <label class="archive-policy__switch" for="tags-enabled">
+        <p-toggleswitch inputId="tags-enabled" [ngModel]="current.enabled" (ngModelChange)="set({ enabled: $event })" />
+        <span>Курінь користується тегами</span>
+      </label>
+      <span class="archive-policy__days">
+        {{ current.enabledByDefault ? 'У старшому курені теги ввімкнені від початку' : 'У юнацькому курені теги доповнюють гуртки' }}
+      </span>
+    </div>
+    @if (current.enabled) {
+      <div class="archive-policy__row">
+        <label class="archive-policy__switch" for="tags-own-visible">
+          <p-toggleswitch inputId="tags-own-visible" [ngModel]="current.ownTagsVisible" (ngModelChange)="set({ ownTagsVisible: $event })" />
+          <span>Кожен бачить свої теги</span>
+        </label>
+      </div>
+    }
+  </div>
+}

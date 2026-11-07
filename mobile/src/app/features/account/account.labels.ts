@@ -1,19 +1,31 @@
 import { AuthState, KurinBranch, KurinScopeOption, MembershipKind, SavedAccount } from '../../auth/auth.models';
 import { RoleTag, roleName, roleTone, roleWeight } from '../kurin/kurin.labels';
 import { MyGroupDto } from './account.models';
-import { compareKurinNumbers, kurinLabel as kurinNumberLabel } from '../../core/kurin-label';
+import { compareKurinNumbers, isSeniorBranch, kurinBranchesName, kurinLabel as kurinNumberLabel } from '../../core/kurin-label';
 
 /** The web's KURIN_BRANCH_LABELS and MEMBERSHIP_KIND_LABELS. */
 export const BRANCH_LABELS: Record<KurinBranch, string> = { UPYu: 'УПЮ', USP: 'УСП', UPS: 'УПС' };
 export const KIND_LABELS: Record<MembershipKind, string> = { Youth: 'Юнацтво', Staff: 'Виховний склад' };
 
-/** «к. ч. 7», «підг. курінь» */
-export function kurinShortLabel(option: Pick<KurinScopeOption, 'kurinNumber'>): string {
-  return kurinNumberLabel(option.kurinNumber);
+/** The same in the kurin's own words (web membershipKindLabel): a УСП or УПС kurin has members, not юнацтво. */
+export function kindLabel(kind: MembershipKind, branch?: KurinBranch | null): string {
+  return kind === 'Youth' && isSeniorBranch(branch) ? 'Член куреня' : KIND_LABELS[kind];
 }
 
-/** «к. ч. 7 ім. Сірого Лева», as the web's my-kurins tile names a kurin. */
-export function kurinLabel(option: Pick<KurinScopeOption, 'kurinNumber' | 'namedAfter'>): string {
+/** «к. ч. 7», «підг. курінь», «5-й курінь УСП» */
+export function kurinShortLabel(option: Pick<KurinScopeOption, 'kurinNumber'> & Partial<Pick<KurinScopeOption, 'branch'>>): string {
+  return kurinNumberLabel(option.kurinNumber, option.branch);
+}
+
+/**
+ * «к. ч. 7 ім. Сірого Лева», as the web's my-kurins tile names a kurin; a senior kurin by all its
+ * гілки after its own name, «Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС».
+ */
+export function kurinLabel(option: Pick<KurinScopeOption, 'kurinNumber' | 'namedAfter'> & Partial<Pick<KurinScopeOption, 'branch' | 'branches'>>): string {
+  if (isSeniorBranch(option.branch)) {
+    const numbers = option.branches?.length ? kurinBranchesName(option.branches) : kurinShortLabel(option);
+    return option.namedAfter ? `${option.namedAfter} · ${numbers}` : numbers;
+  }
   return option.namedAfter ? `${kurinShortLabel(option)} ім. ${option.namedAfter}` : kurinShortLabel(option);
 }
 

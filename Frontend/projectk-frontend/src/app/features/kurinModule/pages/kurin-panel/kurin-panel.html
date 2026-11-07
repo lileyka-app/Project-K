@@ -2,19 +2,29 @@
 <section class="kurin-tile kurin-header">
     <div class="kurin-header-main">
         <div class="kurin-number-slot">
-            <app-kurin-number [number]="kurinNumber" />
+            <app-kurin-mark [number]="kurinNumber" [branch]="kurinData?.branch" [emblemUrl]="kurinData?.emblemUrl" [name]="kurinData?.namedAfter" />
+            <input #emblemInput type="file" class="kurin-emblem-input" accept="image/png,image/jpeg,image/webp"
+                (change)="onEmblemPicked($event)" aria-label="Файл емблеми куреня" />
         </div>
 
         <div class="kurin-identity">
             <div class="kurin-identity__top">
                 <div class="kurin-title-block">
                     <h1 class="kurin-title">
-                        <span>{{ kurinData ? (kurinNumber === null ? 'Підготовчий' : kurinNumber) : '-' }} курінь</span>
-                        @if (kurinData?.namedAfter) {
-                            <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
+                        @if (isSenior) {
+                            <span>{{ kurinData?.namedAfter || seniorTitle }}</span>
+                        } @else {
+                            <span>{{ kurinData ? (kurinNumber === null ? 'Підготовчий' : kurinNumber) : '-' }} курінь</span>
+                            @if (kurinData?.namedAfter) {
+                                <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
+                            }
                         }
                     </h1>
-                    <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />
+                    @if (isSenior && kurinData?.namedAfter) {
+                        <p class="kurin-title__branches">{{ seniorTitle }}</p>
+                    } @else {
+                        <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />
+                    }
                 </div>
 
                 @if (hasKurinEditActions && !profileEditMode) {
@@ -92,6 +102,7 @@
 </section>
 
 <div class="group-panel">
+    @if (!isSenior) {
     <section class="kurin-tile">
         <p-table [value]="groups" styleClass="project-table">
             <ng-template #caption>
@@ -150,6 +161,7 @@
             </div>
         }
     </section>
+    }
 
     <div class="kurin-side-tiles">
         <section class="kurin-tile">

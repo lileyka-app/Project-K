@@ -2,6 +2,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -52,6 +53,17 @@ public static class AgendaNotificationRecipients
                 case AgendaTargetType.Member:
                     var target = members.FirstOrDefault(m => m.MemberKey == assignment.TargetKey);
                     AddIfLinked(recipients, target?.UserKey);
+                    break;
+
+                case AgendaTargetType.Tag:
+                    var carriers = await uow.KurinTags.GetMemberKeysAsync(assignment.TargetKey, cancellationToken);
+                    IReadOnlyCollection<MemberSummary> carrierAccounts = carriers.Count == 0
+                        ? []
+                        : await directory.GetByKurinAsync(item.KurinKey, new MemberSelection(carriers.ToList(), [], []), cancellationToken);
+                    foreach (var carrier in carrierAccounts)
+                    {
+                        AddIfLinked(recipients, carrier.UserKey);
+                    }
                     break;
 
                 case AgendaTargetType.Leadership:

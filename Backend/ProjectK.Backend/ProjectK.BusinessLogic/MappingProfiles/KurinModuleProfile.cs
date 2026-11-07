@@ -26,10 +26,20 @@ public class KurinModuleProfile : Profile
     {
         // Kurin Mapping
         CreateMap<Kurin, KurinResponse>()
-            .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Memberships.Count(ms => ms.LeftAtUtc == null)));
+            .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Memberships.Count(ms => ms.LeftAtUtc == null)))
+            .ForMember(dest => dest.Branches, opt => opt.MapFrom(src => src.Numbering))
+            .ForMember(dest => dest.ScoreEnabled, opt => opt.MapFrom(src => src.IsScoreEnabled))
+            .ForMember(dest => dest.RoleNames, opt => opt.MapFrom(src => KurinRoleNames.Read(src.RoleNames).ToDictionary(pair => pair.Key.ToString(), pair => pair.Value)))
+            .ForMember(dest => dest.CanRenameRoles, opt => opt.MapFrom(src => KurinRoleNames.IsAvailableFor(src.Branch)))
+            .ForMember(dest => dest.EmblemUrl, opt => opt.MapFrom<KurinEmblemUrlResolver>());
         CreateMap<UpsertKurinCommand, Kurin>(MemberList.None)
             .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
             .ForMember(dest => dest.Number, opt => opt.Ignore())
+            .ForMember(dest => dest.Branch, opt => opt.Ignore())
+            .ForMember(dest => dest.Branches, opt => opt.Ignore())
+            .ForMember(dest => dest.ScoreEnabled, opt => opt.Ignore())
+            .ForMember(dest => dest.RoleNames, opt => opt.Ignore())
+            .ForMember(dest => dest.EmblemBlobName, opt => opt.Ignore())
             .ForMember(dest => dest.KraiCode, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
@@ -79,6 +89,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             // The account belongs to another module; the read of one person asks it.
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            // Tags are the kurin's, filled by KurinTagVisibility for whoever is looking.
+            .ForMember(dest => dest.TagKeys, opt => opt.Ignore())
             .ForMember(dest => dest.InvitationSent, opt => opt.Ignore())
             // Filled by MemberFieldMask, which knows who is looking.
             .ForMember(dest => dest.Birthday, opt => opt.Ignore())
@@ -102,6 +114,7 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.TagKeys, opt => opt.Ignore())
             .ForMember(dest => dest.InvitationSent, opt => opt.Ignore())
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 
@@ -122,7 +135,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberSummaryLookupPhotoUrlResolver>());
 
         // Plast Level History Mapping
-        CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
+        CreateMap<PlastLevelHistory, PlastLevelHistoryDto>()
+            .ForMember(dest => dest.CatalogId, opt => opt.MapFrom(src => PlastLevelDegrees.CatalogId(src.PlastLevel, src.IsPlastunka)));
 
         // Member Warning Mapping
         CreateMap<MemberWarning, MemberWarningDto>();
@@ -133,12 +147,13 @@ public class KurinModuleProfile : Profile
         // Member Award Mapping
         CreateMap<MemberAward, MemberAwardDto>()
             .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src =>
-                $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
+                src.Level == null ? null : $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
 
         // Leadership History Mapping
         CreateMap<LeadershipHistory, LeadershipHistoryDto>()
             .ForMember(dest => dest.LeadershipType, opt => opt.MapFrom(src => src.Leadership.Type))
-            .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Leadership.Group != null ? src.Leadership.Group.Name : null));
+            .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Leadership.Group != null ? src.Leadership.Group.Name : null))
+            .ForMember(dest => dest.KurinKey, opt => opt.MapFrom(src => src.Leadership.KurinKey ?? (src.Leadership.Group != null ? src.Leadership.Group.KurinKey : (Guid?)null)));
 
         CreateMap<LeadershipHistory, LeadershipHistoryMemberDto>()
             .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore());

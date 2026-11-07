@@ -19,6 +19,11 @@ public sealed class MembershipDirectory : IMembershipDirectory
         CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.GetRecordsForMemberAsync(memberKey, cancellationToken);
 
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetForMembersAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.GetRecordsForMembersAsync(memberKeys, cancellationToken);
+
     public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.CountForMemberAsync(memberKey, cancellationToken);
 

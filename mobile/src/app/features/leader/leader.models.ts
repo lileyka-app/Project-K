@@ -82,6 +82,9 @@ export type DuesPaymentMethod = 'Cash' | 'Card';
 /** Through the станиця, straight to the край, or both, by стаття (the web's DuesUpstream). */
 export type DuesUpstream = 'stanytsia' | 'krai' | 'both';
 
+/** When a kurin's вкладка falls due (web DuesChargeTiming). */
+export type DuesChargeTiming = 'InAdvance' | 'InArrears';
+
 export type DuesAccountStanding = 'Current' | 'Moved' | 'Left';
 
 export interface QuarterDto {
@@ -303,6 +306,8 @@ export interface KurinDuesDto {
   /** Where the край's kurins hand the вкладка up. */
   upstream: DuesUpstream;
   currentQuarter: QuarterDto;
+  /** When the вкладка falls due; the quarter a person leaves in is never charged. */
+  chargeTiming: DuesChargeTiming;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
   /** `toForward` is what still goes to the станиця and the край; `inTransit` — handed over by гуртки, not confirmed yet. */

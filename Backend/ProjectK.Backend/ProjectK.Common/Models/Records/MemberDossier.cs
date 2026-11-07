@@ -43,9 +43,13 @@ public sealed record MembershipRecord(
     string? GroupName,
     MembershipKind Kind,
     DateTime JoinedAtUtc,
-    DateTime? LeftAtUtc)
+    DateTime? LeftAtUtc,
+    IReadOnlyList<KurinNumbering>? KurinBranches = null)
 {
     public bool IsCurrent => LeftAtUtc is null;
+
+    /// <summary>Every гілка of the kurin with its number there; the main one alone when only that was read.</summary>
+    public IReadOnlyList<KurinNumbering> Numbering => KurinBranches ?? [new KurinNumbering(Branch, KurinNumber)];
 }
 
 /// <summary>One probe, as far as a person has taken it.</summary>

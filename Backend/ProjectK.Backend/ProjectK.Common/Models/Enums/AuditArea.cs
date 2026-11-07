@@ -14,5 +14,7 @@ public enum AuditArea
     Member = 6,
     Office = 7,
     Membership = 8,
-    Settings = 9
+    Settings = 9,
+    Tag = 10,
+    Archive = 11
 }

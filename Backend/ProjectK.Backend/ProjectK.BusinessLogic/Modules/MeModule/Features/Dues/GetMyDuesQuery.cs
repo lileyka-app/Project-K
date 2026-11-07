@@ -55,6 +55,12 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
                 continue;
             }
 
+            // In a kurin without гуртки the person's account is in the kurin's own box, priced by their tags.
+            var inKurinBox = membership.GroupKey is null && accounts.Any(a => a.GroupKey is null);
+            var rate = membership.GroupKey.HasValue || inKurinBox
+                ? ledger.AmountFor(membership.MembershipKey, membership.GroupKey, quarter, ledger.RateTagOf(membership.MembershipKey, quarter)).Total
+                : (decimal?)null;
+
             rows.Add(new MyDuesDto
             {
                 Kurin = MeKurins.Ref(membership, _currentUser.KurinKey),
@@ -64,7 +70,7 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
                 QuarterYear = quarter.Year,
                 QuarterNumber = quarter.Number,
                 Balance = accounts.Sum(a => a.Balance),
-                QuarterRate = membership.GroupKey is { } group ? ledger.AmountFor(membership.MembershipKey, group, quarter).Total : null,
+                QuarterRate = rate,
                 IsConcession = ledger.IsConcession(membership.MembershipKey, quarter),
                 ConcessionNames = ledger.GrantsIn(membership.MembershipKey, quarter).Select(g => g.Name).ToList()
             });

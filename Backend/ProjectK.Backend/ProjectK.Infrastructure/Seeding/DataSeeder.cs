@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -10,7 +11,9 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Services.Catalog;
 
 namespace ProjectK.Infrastructure.Seeding;
 
@@ -69,7 +72,14 @@ public static class DataSeeder
 
         await ResetKurin1DataAsync(dbContext, userManager);
 
-        // 4. Seed comprehensive demo data (kurin, groups, mentors, members)
+        // 4. Seed comprehensive demo data (kurin, groups, mentors, members). The catalogue service
+        // starts after this, so without the built-in copy nobody would get a probe or a вмілість.
+        var catalog = scope.ServiceProvider.GetRequiredService<CatalogStore>();
+        if (!catalog.IsLoaded)
+        {
+            CatalogSyncBackgroundService.LoadBuiltIn(catalog, scope.ServiceProvider.GetRequiredService<IOptions<CatalogOptions>>().Value.BaseUrl);
+        }
+
         var demoSeeder = scope.ServiceProvider.GetRequiredService<IDemoDataSeeder>();
         await demoSeeder.SeedAsync();
 
@@ -137,15 +147,21 @@ public static class DataSeeder
             .LogWarning("No administrator account exists yet; the first visitor is sent to the setup wizard to create one.");
     }
 
-    private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
-    {
-        // The seeder's kurin is number 1 of Україна. One moved to another край by hand on a dev
-        // database still holds the seeded accounts, and left alone it made the next run reuse them
-        // on top of the old rows; with no Ukrainian kurin 1, that one is the seeder's.
-        var kurin1 = await dbContext.Kurins
-            .Where(k => k.Number == 1)
+    /// <summary>
+    /// The kurin the reset wipes: УПЮ kurin 1 of Україна. One moved to another край by hand on a dev
+    /// database still holds the seeded accounts, and left alone it made the next run reuse them on
+    /// top of the old rows; with no Ukrainian kurin 1, that one is the seeder's. A УСП or УПС kurin 1
+    /// is someone else's and never matches: numbers are counted apart in each гілка.
+    /// </summary>
+    internal static Task<Kurin?> FindSeederKurinAsync(AppDbContext dbContext)
+        => dbContext.Kurins
+            .Where(k => k.Branch == KurinBranch.UPYu && k.Number == 1)
             .OrderBy(k => k.KraiCode == Krai.Ukraine ? 0 : 1)
             .FirstOrDefaultAsync();
+
+    private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
+    {
+        var kurin1 = await FindSeederKurinAsync(dbContext);
         if (kurin1 == null)
         {
             return;
@@ -153,6 +169,7 @@ public static class DataSeeder
 
         var kurinKey = kurin1.KurinKey;
         var groupKeys = await dbContext.Groups
+            .IgnoreQueryFilters()
             .Where(g => g.KurinKey == kurinKey)
             .Select(g => g.GroupKey)
             .ToListAsync();
@@ -267,8 +284,9 @@ public static class DataSeeder
 
         // The seeder wipes its own demo kurin outright, people included — the reset exists to
         // give every run the same starting point, and these are not real people.
+        // Their memberships in other kurins too: the person goes, and one left behind shows up nameless there.
         var memberships = await dbContext.Memberships
-            .Where(ms => ms.KurinKey == kurinKey)
+            .Where(ms => ms.KurinKey == kurinKey || memberKeys.Contains(ms.MemberKey))
             .ToListAsync();
         dbContext.Memberships.RemoveRange(memberships);
 
@@ -278,6 +296,7 @@ public static class DataSeeder
         dbContext.Members.RemoveRange(members);
 
         var groups = await dbContext.Groups
+            .IgnoreQueryFilters()
             .Where(g => g.KurinKey == kurinKey)
             .ToListAsync();
         dbContext.Groups.RemoveRange(groups);

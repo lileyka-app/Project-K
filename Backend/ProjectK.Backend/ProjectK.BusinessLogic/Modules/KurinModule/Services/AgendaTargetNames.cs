@@ -18,15 +18,18 @@ public sealed class AgendaTargetNames
     private readonly IReadOnlyDictionary<Guid, string> _groups;
     private readonly IReadOnlyDictionary<Guid, string> _members;
     private readonly IReadOnlyDictionary<Guid, string> _leaderships;
+    private readonly IReadOnlyDictionary<Guid, string> _tags;
 
     private AgendaTargetNames(
         IReadOnlyDictionary<Guid, string> groups,
         IReadOnlyDictionary<Guid, string> members,
-        IReadOnlyDictionary<Guid, string> leaderships)
+        IReadOnlyDictionary<Guid, string> leaderships,
+        IReadOnlyDictionary<Guid, string> tags)
     {
         _groups = groups;
         _members = members;
         _leaderships = leaderships;
+        _tags = tags;
     }
 
     /// <summary>Reads the names <paramref name="targets"/> need, all of them at once.</summary>
@@ -62,11 +65,18 @@ public sealed class AgendaTargetNames
                 .ToDictionary(found => found.LeadershipKey, found => AgendaLookups.LabelFor(found.Type, found.GroupKey, groups));
         }
 
-        return new AgendaTargetNames(groups, members, leaderships);
+        IReadOnlyDictionary<Guid, string> tags = new Dictionary<Guid, string>();
+        if (list.Any(target => target.Type == AgendaTargetType.Tag))
+        {
+            tags = (await uow.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
+                .ToDictionary(tag => tag.KurinTagKey, tag => AgendaLookups.TagLabel(tag.Name));
+        }
+
+        return new AgendaTargetNames(groups, members, leaderships, tags);
     }
 
     /// <summary>
-    /// The targets as one line — the kurin first, then проводи, гуртки and people, each by name —
+    /// The targets as one line — the kurin first, then проводи, tags, гуртки and people, each by name —
     /// or null when there are none.
     /// </summary>
     public string? Describe(IEnumerable<(AgendaTargetType Type, Guid Key)> targets)
@@ -88,6 +98,7 @@ public sealed class AgendaTargetNames
         AgendaTargetType.Group => _groups.GetValueOrDefault(key, UnknownGroup),
         AgendaTargetType.Member => _members.GetValueOrDefault(key, UnknownMember),
         AgendaTargetType.Leadership => _leaderships.GetValueOrDefault(key, AgendaLookups.GroupLeadershipLabel),
+        AgendaTargetType.Tag => _tags.GetValueOrDefault(key, AgendaLookups.TagLabel(null)),
         _ => type.ToString()
     };
 
@@ -95,7 +106,8 @@ public sealed class AgendaTargetNames
     {
         AgendaTargetType.Kurin => 0,
         AgendaTargetType.Leadership => 1,
-        AgendaTargetType.Group => 2,
-        _ => 3
+        AgendaTargetType.Tag => 2,
+        AgendaTargetType.Group => 3,
+        _ => 4
     };
 }

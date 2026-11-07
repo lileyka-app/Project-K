@@ -183,9 +183,9 @@ export class GroupScoreComponent implements OnInit {
 
   confirmDelete(entry: ScoreEntryDto): void {
     this.confirmation.confirm({
-      header: 'Видалити запис',
+      header: 'Видалити запис?',
       message: `${points(entry.points)} · ${this.whatLabel(entry)} зникне з балів. Слід у історії змін лишиться.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {

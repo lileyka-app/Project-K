@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -277,5 +278,6 @@ public class GetMemberByKeyHandlerTests
         fieldAccess,
         _accessMock.Object,
         _kurinDataMock.Object,
-        _accountsMock.Object);
+        _accountsMock.Object,
+        Mock.Of<IKurinTagVisibility>());
 }

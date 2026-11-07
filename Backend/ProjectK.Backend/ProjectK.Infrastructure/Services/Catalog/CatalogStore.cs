@@ -37,6 +37,22 @@ internal sealed class CatalogState
     public IReadOnlyDictionary<int, CatalogImages> AwardImages { get; }
     public IReadOnlyDictionary<string, Badge> BadgesById { get; }
     public IReadOnlyDictionary<string, Probe> ProbesById { get; }
+
+    /// <summary>The ступені and senior відзначення, ступені first.</summary>
+    public IReadOnlyList<CatalogHonour> Honours
+    {
+        get => _honours;
+        init
+        {
+            _honours = value;
+            HonoursById = value.GroupBy(item => item.Id).ToDictionary(g => g.Key, g => g.First());
+        }
+    }
+
+    public IReadOnlyDictionary<string, CatalogHonour> HonoursById { get; private init; } =
+        new Dictionary<string, CatalogHonour>();
+
+    private readonly IReadOnlyList<CatalogHonour> _honours = [];
 }
 
 /// <summary>
@@ -48,7 +64,7 @@ internal sealed class CatalogState
 /// fetch, and the fetch arrives without the table. Each of the two rebuilds what readers see.
 /// </para>
 /// </summary>
-internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKraiNames
+internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKraiNames, IHonoursCatalog
 {
     private readonly object _gate = new();
     private CatalogState _fetched = CatalogState.Empty;
@@ -113,7 +129,10 @@ internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKra
             .Select(badge => _kraiNames.TryGetValue(badge.KraiCode, out var name) && name != badge.Country ? badge with { Country = name } : badge)
             .ToList();
 
-        Volatile.Write(ref _state, new CatalogState(fetched.Revision, fetched.Metadata, badges, fetched.Probes, fetched.AwardImages));
+        Volatile.Write(ref _state, new CatalogState(fetched.Revision, fetched.Metadata, badges, fetched.Probes, fetched.AwardImages)
+        {
+            Honours = fetched.Honours
+        });
         Interlocked.Increment(ref _version);
     }
 
@@ -126,4 +145,8 @@ internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKra
     IReadOnlyList<Probe> IProbesCatalog.GetAll() => State.Probes;
 
     Probe? IProbesCatalog.GetById(string id) => State.ProbesById.GetValueOrDefault(id);
+
+    IReadOnlyList<CatalogHonour> IHonoursCatalog.GetAll() => State.Honours;
+
+    CatalogHonour? IHonoursCatalog.GetById(string id) => State.HonoursById.GetValueOrDefault(id);
 }

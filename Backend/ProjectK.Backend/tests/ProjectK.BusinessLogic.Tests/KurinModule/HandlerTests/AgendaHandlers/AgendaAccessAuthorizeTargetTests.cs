@@ -54,6 +54,8 @@ public class AgendaAccessAuthorizeTargetTests
             .ReturnsAsync(new[] { _ledGroup });
     }
 
+    private readonly Mock<IKurinTagVisibility> _tagVisibility = new();
+
     private void Scope(ResourceType type, Guid key, ResourceScope scope) =>
         _scopes.Setup(x => x.GetScopeAsync(type, key, It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(scope);
 
@@ -69,7 +71,7 @@ public class AgendaAccessAuthorizeTargetTests
 
         var permissions = new CurrentPermissions(user.Object, _policies);
         var resourceAccess = new ResourceAccessService(_scopes.Object, user.Object, new PassThroughBackendCache(), permissions);
-        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), Mock.Of<IMemberDirectory>(), _scopes.Object, resourceAccess, permissions);
+        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), Mock.Of<IMemberDirectory>(), _scopes.Object, resourceAccess, permissions, _tagVisibility.Object);
     }
 
     private static AgendaTargetInput Target(AgendaTargetType type, Guid key) => new() { TargetType = type, TargetKey = key };
@@ -114,6 +116,22 @@ public class AgendaAccessAuthorizeTargetTests
         }
 
         new string(actual.ToArray()).Should().Be(expected, $"{role} under the default policy");
+    }
+
+    /// <summary>A kurin with tags off takes no new tag target, even from someone the policy lets aim at tags.</summary>
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task ATagTarget_IsTakenOnlyWhileTheKurinUsesTags(bool tagsOn, bool allowed)
+    {
+        var tagKey = Guid.NewGuid();
+        Scope(ResourceType.MemberTag, tagKey, new ResourceScope(_kurinKey, null, null));
+        _tagVisibility.Setup(v => v.SettingsAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KurinTagSettingsState(tagsOn, EnabledByDefault: false, OwnTagsVisible: true));
+
+        var decision = await AccessFor("KV.Zvyazkovyi").AuthorizeTargetAsync(Target(AgendaTargetType.Tag, tagKey));
+
+        decision.IsAllowed.Should().Be(allowed);
     }
 
     // The picker decides the same many targets from one reach; it must never disagree with the save.

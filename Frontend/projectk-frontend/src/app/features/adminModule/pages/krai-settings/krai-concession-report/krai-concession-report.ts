@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from '@openng/optimus-ui/select';
-import { KraiConcessionReportDto } from '../../../../duesModule/models/concession.dto';
+import { KraiConcessionReportDto, KraiConcessionReportKurinDto } from '../../../../duesModule/models/concession.dto';
+import { kurinGroupTitle } from '../../../../../shared/functions/kurin-label.function';
 import { QuarterDto } from '../../../../duesModule/models/group-dues.dto';
 import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, money, quarterKey, quarterLabel } from '../../../../duesModule/functions/dues-format.function';
 import { KraiProfileService } from '../../../services/krai-profile-service/krai-profile.service';
@@ -63,8 +64,8 @@ export class KraiConcessionReportComponent {
     });
   }
 
-  kurinLabel(number: number | null): string {
-    return number === null ? 'Підготовчий курінь' : `Курінь ${number}`;
+  kurinLabel(kurin: KraiConcessionReportKurinDto): string {
+    return kurinGroupTitle(kurin);
   }
 
   private load(code: string, quarter: QuarterDto | null): void {

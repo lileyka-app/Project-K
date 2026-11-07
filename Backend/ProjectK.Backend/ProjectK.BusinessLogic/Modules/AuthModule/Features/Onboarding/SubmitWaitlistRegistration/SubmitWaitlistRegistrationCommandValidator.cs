@@ -48,8 +48,18 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
         RuleFor(command => command.IsKurinLeaderCandidate)
             .Equal(true).WithMessage("Kurin leader confirmation is required.");
 
+        // A senior kurin names its number in each гілка it belongs to instead of the one УПЮ number.
+        RuleFor(command => command.UspNumber)
+            .Must(value => range.IsAllowed(value!.Value))
+            .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.")
+            .When(command => command.UspNumber.HasValue);
+        RuleFor(command => command.UpsNumber)
+            .Must(value => range.IsAllowed(value!.Value))
+            .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.")
+            .When(command => command.UpsNumber.HasValue);
+
         // A підготовчий курінь has no number yet, so the box stands in for it.
-        When(command => !command.IsPreparatoryKurin, () =>
+        When(command => !command.IsPreparatoryKurin && !command.UspNumber.HasValue && !command.UpsNumber.HasValue, () =>
         {
             RuleFor(command => command.ClaimedKurinNameOrNumber)
                 .NotEmpty().WithMessage("Kurin number is required.")

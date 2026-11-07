@@ -65,6 +65,12 @@ describe('WaitlistManagementComponent', () => {
     fixture.detectChanges();
   });
 
+  it('names a claimed УПЮ kurin with its улад, as a senior claim names its own', () => {
+    expect(component.youthClaim({ claimedKurinNameOrNumber: '5' } as never)).toBe('Курінь ч. 5 УПЮ');
+    expect(component.youthClaim({ claimedKurinNameOrNumber: 'Лісові' } as never)).toBe('Курінь Лісові УПЮ');
+    expect(component.seniorClaim({ claimedUspNumber: 5 } as never)).toBe('5-й курінь УСП');
+  });
+
   it('names the край, or shows what an older application wrote instead', () => {
     expect(component.kraiName(component.entries[0])).toBe('Польща');
     expect(component.kraiName(component.entries[1])).toBe('Польща, Варшава');

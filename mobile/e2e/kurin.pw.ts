@@ -364,7 +364,8 @@ test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
   await expect.poll(() => log.writes.find((w) => w.path === 'member/m2/badges/b-plav/review')?.body).toEqual({ isApproved: false, note: null });
   await page.getByRole('button', { name: 'Готово' }).click();
 
-  await page.getByTestId('award').filter({ hasText: 'Друге відзначення' }).click();
+  await page.getByTestId('award-block').filter({ hasText: 'Друге відзначення' }).click();
+  await page.getByTestId('award-grant').click();
   await expect(page.getByText('Очікує підтвердження')).toBeVisible();
   await shot(page, info.project.name, 'kurin-award');
   await page.getByTestId('approve-award').click();

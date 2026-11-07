@@ -1,0 +1,76 @@
+<article class="shared-card" data-testid="shared-card">
+  <header class="shared-card__head">
+    @if (card().photoUrl; as photo) {
+      <img class="shared-card__photo" [src]="photo" alt="" />
+    } @else {
+      <span class="shared-card__photo shared-card__photo--empty" aria-hidden="true">{{ initials() }}</span>
+    }
+    <div class="shared-card__who">
+      <h2 class="shared-card__name">{{ card().fullName }}</h2>
+      @if (card().level; as level) {
+        <span class="shared-card__level">{{ level }}</span>
+      }
+      @if (kurinLine()) {
+        <span class="shared-card__kurin">{{ kurinLine() }}</span>
+      }
+    </div>
+  </header>
+
+  @if (card().awards; as awards) {
+    <section class="shared-card__part">
+      <h3>Відзначення</h3>
+      @if (awards.length) {
+        <ul class="shared-card__awards">
+          @for (award of awards; track $index) {
+            <li>
+              @if (awardImage(award); as src) {
+                <img [src]="src" alt="" />
+              }
+              <span>{{ awardName(award) }}</span>
+              <small>{{ award.dateAcquired | date:'dd.MM.yyyy' }}</small>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="shared-card__none">Ще немає.</p>
+      }
+    </section>
+  }
+
+  @if (card().badges; as badges) {
+    <section class="shared-card__part">
+      <h3>Вмілості</h3>
+      @if (badges.length) {
+        <ul class="shared-card__chips">
+          @for (badge of badges; track $index) {
+            <li>{{ badge.title }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="shared-card__none">Ще немає.</p>
+      }
+    </section>
+  }
+
+  @if (card().probes; as probes) {
+    <section class="shared-card__part">
+      <h3>Проби</h3>
+      @if (probes.length) {
+        <ul class="shared-card__chips">
+          @for (probe of probes; track $index) {
+            <li>{{ probe.title }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="shared-card__none">Ще немає.</p>
+      }
+    </section>
+  }
+
+  @if (card().checkedAtUtc; as checked) {
+    <footer class="shared-card__checked" data-testid="checked">
+      <span class="pi pi-verified" aria-hidden="true"></span>
+      Перевірено Лілейкою о {{ checked | date:'HH:mm, dd.MM.yyyy' }}
+    </footer>
+  }
+</article>

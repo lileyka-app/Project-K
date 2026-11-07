@@ -27,6 +27,8 @@ interface World {
   /** Marta's memberships: here (with her гурток) and another kurin she is also in. */
   martaGroup: { groupKey: string | null; groupName: string | null };
   martaLeft: boolean;
+  /** What Marta owes the kurin, if anything: debt does not leave with her. */
+  martaOwes?: number;
 }
 
 function membershipApi(world: World): ExtraApi {
@@ -52,7 +54,12 @@ function membershipApi(world: World): ExtraApi {
             { membershipKey: 'ms3', kurinKey: 'k5', kurinNumber: 12, branch: 'UPYu', kurinNamedAfter: null, groupKey: 'g9', groupName: 'Лелеки',
               kind: 'Youth', joinedAtUtc: '2024-09-01T00:00:00Z', leftAtUtc: null, isCurrent: true },
           ]);
-        case 'member/m2/dues': return refuse(403);
+        case 'member/m2/dues':
+          return world.martaOwes
+            ? ok({ hasAccount: true, kurinKey: 'k1', currency: 'UAH', numberLocale: 'uk-UA', currentQuarter: { year: 2026, number: 4 },
+              balance: -world.martaOwes, owedToLeave: world.martaOwes, quarterRate: null, isConcessionNow: false, currentGroupKey: 'g1', currentGroupName: 'Соколи',
+              canOpenGroupDues: false, accounts: [], entries: [] })
+            : refuse(403);
       }
       return null;
     }
@@ -128,6 +135,18 @@ test('lets the Звʼязковий change a member’s гурток and take th
   // The membership goes to «Раніше»; nothing is left to act on.
   await expect(page.getByTestId('membership-leave')).toHaveCount(0);
   await expect(page.getByTestId('member-memberships-past')).toContainText('к. ч. 7');
+});
+
+test('does not offer to take out someone who owes the kurin', async ({ page }, info) => {
+  const world = { ...newWorld(), martaOwes: 300 };
+  const log = await signIn(page, member, membershipApi(world), ZVYAZKOVYI);
+  await openMarta(page);
+  await page.getByTestId('membership-leave').scrollIntoViewIfNeeded();
+  await page.getByTestId('membership-leave').click();
+  await expect(page.locator('ion-toast').last()).toContainText(/винна куреню 300.*сплачено повністю/);
+  await shot(page, info.project.name, 'member-leave-owes');
+  await expect(page.locator('ion-action-sheet:not(.overlay-hidden)')).toHaveCount(0);
+  expect(log.writes.some((w) => w.method === 'DELETE')).toBe(false);
 });
 
 test('keeps the Звʼязковий’s membership controls from a Виховник', async ({ page }) => {

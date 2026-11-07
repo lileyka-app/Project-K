@@ -92,7 +92,7 @@ describe('memberProbeRowsViewMapper', () => {
     expect(first.signedPointsCount).toBe(10);
   });
 
-  it('should return rows in the catalogue order and keep a probe without points disabled', () => {
+  it('should return rows in the catalogue order and hold a probe without points behind the previous one', () => {
     const probes = [
       createProbeSummary({ id: 'probe-1', title: 'Перша проба', pointsCount: 11, sectionsCount: 3, order: 1 }),
       createProbeSummary({ id: 'probe-2', title: 'Друга проба', pointsCount: 12, sectionsCount: 2, order: 2 }),
@@ -113,8 +113,24 @@ describe('memberProbeRowsViewMapper', () => {
 
     expect(rows[2].isDisabled).toBe(true);
     expect(rows[2].hasNoPoints).toBe(true);
-    expect(rows[2].lockedBehindTitle).toBeNull();
+    expect(rows[2].lockedBehindTitle).toBe('Друга проба');
     expect(rows[2].canOpenDetails).toBe(false);
+  });
+
+  it('should open a probe without points once the previous one is closed: its projects live there', () => {
+    const probes = [
+      createProbeSummary({ id: 'probe-2', title: 'Друга проба', pointsCount: 12, sectionsCount: 2, order: 2 }),
+      createProbeSummary({ id: 'probe-3', title: 'Третя проба', pointsCount: 0, sectionsCount: 0, order: 3 })
+    ];
+
+    const rows = buildMemberProbeRows(probes, [
+      createProbeProgress({ probeId: 'probe-2', status: ProbeProgressStatus.Completed, completedAtUtc: '2026-10-30T00:00:00Z' })
+    ]);
+
+    expect(rows[1].hasNoPoints).toBe(true);
+    expect(rows[1].isDisabled).toBe(false);
+    expect(rows[1].canOpenDetails).toBe(true);
+    expect(rows[1].completionPercent).toBeNull();
   });
 
   it('should show no rows rather than made-up ones when the catalogue is missing', () => {

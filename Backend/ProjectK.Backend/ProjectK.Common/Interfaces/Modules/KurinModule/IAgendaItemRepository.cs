@@ -28,7 +28,7 @@ public interface IAgendaItemRepository : IBaseEntityRepository<AgendaItem>
     /// Drops every assignment pointing at one of <paramref name="targetKeys"/> — run before deleting
     /// the гурток, member or провід they name.
     /// <para>
-    /// <c>AgendaAssignment.TargetKey</c> is polymorphic across four tables, so no foreign key can
+    /// <c>AgendaAssignment.TargetKey</c> is polymorphic across five tables, so no foreign key can
     /// clean up after a delete. Left behind, the row names something that no longer exists: it
     /// reaches nobody, yet still counts as the item's assignment, so an item assigned only to a
     /// deleted гурток quietly stops appearing for everyone below whole-kurin scope.

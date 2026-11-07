@@ -29,6 +29,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
     private readonly IResourceAccessService _resourceAccess;
     private readonly TimeProvider _time;
     private readonly IKraiProfileProvider _profiles;
+    private readonly DuesAccountRows _rows;
 
     public GetGroupDuesQueryHandler(
         GroupDuesAccess access,
@@ -38,7 +39,8 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
         TimeProvider time,
-        IKraiProfileProvider profiles)
+        IKraiProfileProvider profiles,
+        DuesAccountRows rows)
     {
         _access = access;
         _dues = dues;
@@ -48,6 +50,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         _resourceAccess = resourceAccess;
         _time = time;
         _profiles = profiles;
+        _rows = rows;
     }
 
     public async Task<ServiceResult<GroupDuesResponse>> Handle(GetGroupDuesQuery request, CancellationToken cancellationToken)
@@ -74,45 +77,8 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var current = krai.QuarterOf(_time.GetUtcNow());
 
-        // A membership the kurin no longer has is a removed person, not someone who left: their rows
-        // were closed on removal, and older leftovers must not show as a nameless line.
-        var accountDtos = accounts
-            .Where(a => a.GroupKey == group.GroupKey && names.Memberships.ContainsKey(a.MembershipKey))
-            .Select(a =>
-            {
-                names.Memberships.TryGetValue(a.MembershipKey, out var membership);
-                var standing = DuesAccountStandings.Of(
-                    hasLeft: membership is null || membership.LeftAtUtc.HasValue,
-                    standsInThisGroup: membership?.GroupKey == group.GroupKey);
-                return new DuesAccountDto
-                {
-                    MembershipKey = a.MembershipKey,
-                    MemberKey = membership?.MemberKey ?? Guid.Empty,
-                    FullName = names.OfMembership(a.MembershipKey),
-                    Standing = standing,
-                    IsConcessionNow = ledger.IsConcession(a.MembershipKey, current),
-                    Grants = grants
-                        .Where(g => g.MembershipKey == a.MembershipKey)
-                        .OrderByDescending(g => g.FromQuarter)
-                        .Select(g => DuesConcessionGrantDto.From(g, current))
-                        .ToList(),
-                    Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
-                    {
-                        Quarter = Quarter(q.Quarter),
-                        Charged = Amount(q.Charged),
-                        Paid = Amount(q.Paid),
-                        Balance = q.Balance,
-                        IsConcession = q.IsConcession,
-                        ConcessionName = q.ConcessionName
-                    }).ToList(),
-                    Charged = a.Charged,
-                    Payments = a.Payments,
-                    Balance = a.Balance
-                };
-            })
-            .OrderBy(a => a.Standing)
-            .ThenBy(a => a.FullName)
-            .ToList();
+        var tags = await _rows.TagsAsync(kurinKey, cancellationToken);
+        var accountDtos = DuesAccountRows.Map(accounts, group.GroupKey, ledger, names, grants, current, tags);
 
         var entryDtos = entries
             .Where(e => e.GroupKey == group.GroupKey)
@@ -147,6 +113,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
                 GroupShare = r.GroupShare
             }).ToList(),
             Accounts = accountDtos,
+            Tags = tags.All,
             Entries = entryDtos,
             Box = new DuesBoxDto
             {
@@ -189,6 +156,4 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
 
     private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
 
-    private static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }

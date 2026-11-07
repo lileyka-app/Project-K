@@ -1,3 +1,4 @@
+import { KurinNumbering } from '../../core/kurin-label';
 /**
  * The kurin, its groups and member cards as the API sends them. Kept in step with the web's
  * kurinModule/models (kurin.dto, group.dto, member.dto, membership.dto, member-award.dto,
@@ -12,11 +13,19 @@ export interface KurinDto {
   /** Null for a підготовчий курінь. */
   number: number | null;
   branch?: KurinBranch;
+  /** Every гілка with the kurin's number there, main one first. */
+  branches?: KurinNumbering[];
   stanytsia?: string | null;
   regionOrCountry?: string | null;
   namedAfter?: string | null;
   description?: string | null;
   profileVerificationEnabled?: boolean;
+  /** Whether the kurin keeps точкування now (web kurin.dto). */
+  scoreEnabled?: boolean;
+  /** The kurin's own role names: «Pysar» → «Скриптор» (web kurin.dto). */
+  roleNames?: Record<string, string>;
+  /** A senior kurin's emblem, shown instead of the УПЮ plate (web kurin.dto). */
+  emblemUrl?: string | null;
 }
 
 export interface GroupDto {
@@ -41,6 +50,8 @@ export interface MemberWarningDto {
   expiresAtUtc: string;
   /** Who gave it: only they lift it (web canClearWarning). */
   issuedByUserKey?: string | null;
+  /** Who lifted it; empty when the system closed it once it ran out. */
+  revokedByUserKey?: string | null;
   revokedAtUtc?: string | null;
 }
 
@@ -50,6 +61,8 @@ export interface LeadershipHistoryDto {
   role: string;
   leadershipType?: string | null;
   groupName?: string | null;
+  /** The kurin the office is in; a card carries offices from every kurin the person stands in. */
+  kurinKey?: string | null;
   startDate: string;
   endDate: string | null;
   member: MemberLookupDto;
@@ -93,6 +106,8 @@ export interface MemberLookupDto {
   groupName?: string | null;
   /** В кадрі виховників of that kurin (list reads only). */
   isStaff?: boolean;
+  /** The kurin's tags on them that the viewer may see; names come from the kurin's tag list. */
+  tagKeys?: string[];
 }
 
 export interface PlastLevelHistoryDto {
@@ -100,6 +115,22 @@ export interface PlastLevelHistoryDto {
   plastLevelHistoryKey?: string;
   plastLevel: string;
   dateAchieved?: string | null;
+  /** A пластунка's ступінь rather than a пластун's: its own name and відзнака in the catalogue. */
+  isPlastunka?: boolean;
+  /** The ступінь in the catalogue (web PlastLevelHistoryDto.catalogId). Read only. */
+  catalogId?: string | null;
+}
+
+/** A ступінь or a senior відзначення from the catalogue, with its picture (`GET api/catalog/honours`). */
+export interface CatalogHonour {
+  id: string;
+  kind: 'Degree' | 'Award';
+  title: string;
+  group: string;
+  ulad: string;
+  order: number;
+  /** Empty when the catalogue has no picture. */
+  imageUrl: string;
 }
 
 export type AwardLevel = 'First' | 'Second' | 'Third' | 'Fourth';
@@ -109,9 +140,15 @@ export interface MemberAwardDto {
   memberAwardKey: string;
   memberKey: string;
   kurinKey: string;
-  level: AwardLevel;
+  /** An УПЮ відзначення's level; null for a senior one. */
+  level?: AwardLevel | null;
+  /** A senior відзначення's catalogue id; null for an УПЮ one. */
+  catalogId?: string | null;
   dateAcquired: string;
+  /** What it was given for. */
   note?: string | null;
+  /** The person pinned it to the front of their card. */
+  isPinned?: boolean;
   status: ProgressStatus | number;
   imageUrl?: string | null;
   /** Who put it forward; they may withdraw it while it waits. */
@@ -152,6 +189,8 @@ export interface MembershipDto {
   groupName?: string | null;
   kind: 'Youth' | 'Staff';
   joinedAtUtc: string;
+  /** Every гілка of the kurin with its number there (API MembershipRecord.Numbering). */
+  numbering?: KurinNumbering[];
   leftAtUtc?: string | null;
   isCurrent: boolean;
 }
@@ -270,6 +309,8 @@ export interface MemberDuesDto {
   numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
+  /** Unpaid quarters already behind them — what keeps them in the kurin (web MemberDuesDto). */
+  owedToLeave: number;
   quarterRate: { total: number } | null;
   isConcessionNow: boolean;
   currentGroupKey: string | null;
@@ -283,7 +324,9 @@ export interface MemberDuesDto {
 
 export interface UpsertAwardRequest {
   memberAwardKey?: string;
-  level: AwardLevel;
+  level?: AwardLevel;
+  /** A senior відзначення from the catalogue, instead of a level. */
+  catalogId?: string;
   dateAcquired: string;
   note?: string;
 }
@@ -306,4 +349,193 @@ export interface UpsertLeadershipRequest {
 export interface GroupRequest {
   name: string;
   description: string | null;
+}
+
+/** A picture of a project's texts; the link expires, the key stays in the Markdown. */
+export interface ProbeProjectImageDto {
+  imageKey: string;
+  url: string;
+}
+
+export type ProbeProjectArea = 'OathAndIdea' | 'Community' | 'PlastActivities' | 'Nature' | 'Leadership';
+export type ProbeProjectReach = 'GroupOrKurin' | 'Stanytsia' | 'UkrainianCommunity' | 'WiderSociety';
+
+/** One project of the third probe, as the УПЮ template lays it out (web probe-project.dto.ts). */
+export interface ProbeProjectDto {
+  projectKey: string;
+  title: string;
+  area: ProbeProjectArea | null;
+  reach: ProbeProjectReach[];
+  isShared: boolean;
+  sharedWith: string | null;
+  isSpare: boolean;
+  startsOn: string | null;
+  endsOn: string | null;
+  location: string | null;
+  eventLeads: string | null;
+  coordinatorName: string | null;
+  coordinatorContact: string | null;
+  /** Markdown, like goal, plan and results; pictures are written as `project-image:{imageKey}`. */
+  description: string;
+  goal: string;
+  plan: string;
+  results: string;
+  approvedAtUtc: string | null;
+  approvedByName: string | null;
+  completedAtUtc: string | null;
+  completedByName: string | null;
+  coordinatorComment: string | null;
+  updatedAtUtc: string;
+  updatedByName: string | null;
+  images: ProbeProjectImageDto[];
+}
+
+/** The stages the referent of the third probe tracks, each the day it happened. */
+export interface ThirdProbeStagesDto {
+  motivationLetterOn: string | null;
+  selfReflectionOn: string | null;
+  applicationSubmittedOn: string | null;
+  openedOn: string | null;
+  completedOn: string | null;
+  namedOn: string | null;
+  archivedOn: string | null;
+  updatedAtUtc: string | null;
+  updatedByName: string | null;
+}
+
+export type ThirdProbeStagesRequest = Omit<ThirdProbeStagesDto, 'updatedAtUtc' | 'updatedByName'>;
+
+export interface ThirdProbeFileDto {
+  openedOn: string | null;
+  openedOnIsDerived: boolean;
+  mentorZvyazkovyi: string | null;
+  mentorVporiadnyk: string | null;
+  mentorReferent: string | null;
+  reflectionOn: string | null;
+  reflectionWith: string | null;
+  reflectionConfirmedAtUtc: string | null;
+  reflectionConfirmedByName: string | null;
+  campKind: 'Kvt' | 'Alternative' | null;
+  campName: string | null;
+  campFrom: string | null;
+  campTo: string | null;
+  campCertificate: { url: string; contentType: string; fileName: string | null } | null;
+  physicalBadgeId: string | null;
+  resume: string;
+  stages: ThirdProbeStagesDto;
+  storedBytes: number;
+}
+
+/** `PUT …/third-probe`: what the person writes; confirmations and stages go their own way. */
+export interface ThirdProbeFileRequest {
+  mentorZvyazkovyi: string | null;
+  mentorVporiadnyk: string | null;
+  mentorReferent: string | null;
+  reflectionOn: string | null;
+  reflectionWith: string | null;
+  campKind: 'Kvt' | 'Alternative' | null;
+  campName: string | null;
+  campFrom: string | null;
+  campTo: string | null;
+  physicalBadgeId: string | null;
+  resume: string;
+}
+
+/** `POST|PUT …/projects`: a project as the template lays it out. */
+export interface ProbeProjectRequest {
+  title: string;
+  area: ProbeProjectArea | null;
+  reach: ProbeProjectReach[];
+  isShared: boolean;
+  sharedWith: string | null;
+  startsOn: string | null;
+  endsOn: string | null;
+  location: string | null;
+  eventLeads: string | null;
+  coordinatorName: string | null;
+  coordinatorContact: string | null;
+  description: string;
+  goal: string;
+  plan: string;
+  results: string;
+}
+
+export interface ThirdProbeBadgeDto {
+  badgeId: string;
+  title: string;
+  imagePath: string | null;
+  specialization: string | null;
+  confirmedAtUtc: string | null;
+  duringProbe: boolean;
+}
+
+/** `GET member/{key}/probes/{probeId}/third-probe`: only the probe at the third place of the line has one. */
+export interface ThirdProbeDto {
+  isProjectProbe: boolean;
+  canEdit: boolean;
+  canSign: boolean;
+  canUnsign: boolean;
+  file: ThirdProbeFileDto | null;
+  projects: ProbeProjectDto[];
+  badges: ThirdProbeBadgeDto[];
+  limits: {
+    maxMainProjects: number;
+    maxSpareProjects: number;
+    maxSharedMainProjects: number;
+    maxImagesPerProject: number;
+    maxImageBytes: number;
+    maxCertificateBytes: number;
+    maxStoredBytes: number;
+    maxTextLength: number;
+    requiredBadges: number;
+    youthEndsAtAge: number;
+  };
+}
+
+// ── Requests between kurins (web membership.service) ────────────────────────────────────────────
+
+export type MembershipRequestKind = 'Transfer' | 'AlsoJoin';
+export type MembershipRequestStatus = 'Pending' | 'Approved' | 'Declined' | 'Cancelled' | 'Expired';
+
+export interface MembershipRequestKurinDto {
+  kurinKey: string;
+  number: number | null;
+  namedAfter: string | null;
+  branches: KurinNumbering[];
+}
+
+/** `owedToLeave`: for the answering kurin on a pending «перевести» — above zero, it cannot be approved. */
+export interface MembershipRequestDto {
+  membershipRequestKey: string;
+  kind: MembershipRequestKind;
+  status: MembershipRequestStatus;
+  memberKey: string;
+  memberName: string;
+  fromKurin: MembershipRequestKurinDto;
+  toKurin: MembershipRequestKurinDto;
+  membershipKind: 'Youth' | 'Staff';
+  createdAtUtc: string;
+  expiresAtUtc: string;
+  decidedAtUtc: string | null;
+  owedToLeave: number;
+}
+
+export interface MembershipCandidateDto {
+  member: { memberKey: string; publicId: string; fullName: string };
+  alreadyInThisKurin: boolean;
+  currentKurins: MembershipRequestKurinDto[];
+}
+
+/** A former member and the kurins they stand in now (web FormerMemberStandingDto); empty — nowhere, taken back at once. */
+export interface FormerMemberStandingDto {
+  former: {
+    memberKey: string;
+    firstName: string;
+    middleName?: string | null;
+    lastName: string;
+    groupName?: string | null;
+    joinedAtUtc: string;
+    leftAtUtc: string;
+  };
+  standsIn: MembershipRequestKurinDto[];
 }

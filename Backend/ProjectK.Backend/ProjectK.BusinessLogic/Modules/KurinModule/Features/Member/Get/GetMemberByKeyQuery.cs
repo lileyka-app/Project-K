@@ -1,4 +1,3 @@
-using ProjectK.Common.Models.Members;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,12 +6,14 @@ using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
@@ -36,6 +37,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
     private readonly IMembershipRepository _memberships;
     private readonly IMentorAssignmentRepository _mentorAssignments;
     private readonly IAccountProvisioningService _accounts;
+    private readonly IKurinTagVisibility _tagVisibility;
 
     public GetMemberByKeyQueryHandler(
         IMemberUnitOfWork unitOfWork,
@@ -44,9 +46,11 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         IMemberFieldAccess fieldAccess,
         IResourceAccessService resourceAccess,
         IUnitOfWork kurinData,
-        IAccountProvisioningService accounts)
+        IAccountProvisioningService accounts,
+        IKurinTagVisibility tagVisibility)
     {
         _accounts = accounts;
+        _tagVisibility = tagVisibility;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserContext = currentUserContext;
@@ -81,6 +85,10 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         }
 
         memberResponse.MaskFor(await _fieldAccess.ForViewerAsync(cancellationToken), here?.GroupKey);
+        if (here is not null)
+        {
+            await _tagVisibility.FillAsync(here.KurinKey, [memberResponse], cancellationToken);
+        }
 
         // Whether the invitation is still waiting is for whoever may act on it: the people who may edit them.
         if (member.UserKey.HasValue

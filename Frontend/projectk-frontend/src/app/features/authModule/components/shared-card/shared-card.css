@@ -1,0 +1,119 @@
+.shared-card {
+  background: var(--lil-surface);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius-lg);
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.shared-card__head {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.shared-card__photo {
+  border-radius: 50%;
+  flex: none;
+  height: 4.5rem;
+  object-fit: cover;
+  width: 4.5rem;
+}
+
+.shared-card__photo--empty {
+  align-items: center;
+  background: var(--lil-dues-paid-bg);
+  color: var(--lil-dues-paid-fg);
+  display: inline-flex;
+  font-size: 1.375rem;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.shared-card__who {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.shared-card__name {
+  font-size: 1.375rem;
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.shared-card__level {
+  font-weight: 600;
+}
+
+.shared-card__kurin {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.shared-card__part {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.shared-card__part h3 {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.shared-card__awards,
+.shared-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.shared-card__awards li {
+  align-items: center;
+  display: grid;
+  gap: 0.125rem;
+  justify-items: center;
+  text-align: center;
+  width: 6.5rem;
+}
+
+.shared-card__awards img {
+  height: 3rem;
+  object-fit: contain;
+  width: 3rem;
+}
+
+.shared-card__awards small,
+.shared-card__none {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  margin: 0;
+}
+
+.shared-card__chips li {
+  background: var(--p-content-hover-background);
+  border-radius: 999px;
+  font-size: var(--lil-text-caption);
+  padding: 0.25rem 0.75rem;
+}
+
+.shared-card__checked {
+  align-items: center;
+  background: var(--lil-dues-paid-bg);
+  border-radius: var(--lil-radius-lg);
+  color: var(--lil-dues-paid-fg);
+  display: flex;
+  font-weight: 700;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+}

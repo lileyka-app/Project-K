@@ -13,7 +13,7 @@
                     @if (isArchive) {
                     <p class="probe-page-subtitle">Архів юнацтва · тільки перегляд</p>
                     }
-                    @if (groupedProbe) {
+                    @if (groupedProbe?.pointsCount) {
                     <p class="probe-page-subtitle">
                         Розділів: {{ groupedProbe.sectionsCount }} · Точок: {{ groupedProbe.pointsCount }}
                     </p>
@@ -38,6 +38,11 @@
             </div>
         </section>
 
+        @if (memberKey && probeId) {
+        <app-third-probe [memberKey]="memberKey" [probeId]="probeId" [member]="member" [readOnly]="isArchive" />
+        }
+
+        @if (!hasNoPoints) {
         <section class="kurin-tile">
             @if (isLoading) {
             <div class="space-y-3">
@@ -163,5 +168,6 @@
             }
             }
         </section>
+        }
     </div>
 </div>

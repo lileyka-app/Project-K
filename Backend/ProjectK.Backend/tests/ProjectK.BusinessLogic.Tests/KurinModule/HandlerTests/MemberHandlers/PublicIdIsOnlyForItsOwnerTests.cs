@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using AutoMapper;
 using FluentAssertions;
 using Moq;
@@ -111,6 +112,7 @@ public class PublicIdIsOnlyForItsOwnerTests
             FieldAccess.SeesEverything(_currentUser.Object.UserId),
             access.Object,
             _kurinData.Object,
-            new Mock<ProjectK.Common.Interfaces.Modules.AuthModule.IAccountProvisioningService>().Object);
+            new Mock<ProjectK.Common.Interfaces.Modules.AuthModule.IAccountProvisioningService>().Object,
+            Mock.Of<IKurinTagVisibility>());
     }
 }

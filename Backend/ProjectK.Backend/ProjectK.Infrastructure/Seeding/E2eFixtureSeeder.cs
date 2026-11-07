@@ -38,7 +38,7 @@ public static class E2eFixtureSeeder
         var dbContext = services.GetRequiredService<AppDbContext>();
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
 
-        var kurin = await dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == KurinNumber, cancellationToken);
+        var kurin = await dbContext.Kurins.FirstOrDefaultAsync(k => k.Branch == KurinBranch.UPYu && k.Number == KurinNumber, cancellationToken);
         if (kurin == null)
         {
             kurin = new Kurin(KurinNumber);
@@ -98,7 +98,7 @@ public static class E2eFixtureSeeder
         CancellationToken cancellationToken)
     {
         var secondKurin = await dbContext.Kurins
-            .FirstOrDefaultAsync(k => k.Number == SecondKurinNumber, cancellationToken);
+            .FirstOrDefaultAsync(k => k.Branch == KurinBranch.UPYu && k.Number == SecondKurinNumber, cancellationToken);
         if (secondKurin == null)
         {
             secondKurin = new Kurin(SecondKurinNumber);

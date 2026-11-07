@@ -10,6 +10,10 @@
     align-items: flex-start;
 }
 
+.kurin-emblem-input {
+    display: none;
+}
+
 .kurin-identity {
     min-width: 0;
 }
@@ -25,6 +29,7 @@
     display: grid;
     gap: 0.5rem;
     min-width: 0;
+    justify-items: start;
 }
 
 .kurin-title {
@@ -39,6 +44,13 @@
     color: var(--p-text-muted-color);
     font-size: 1.05rem;
     font-weight: 650;
+}
+
+.kurin-title__branches {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .group-panel {
@@ -172,8 +184,8 @@
         justify-content: flex-start;
     }
 
-    .kurin-number-slot app-kurin-number {
-        --kurin-number-size: 6.5rem;
+    .kurin-number-slot app-kurin-mark {
+        --kurin-mark-size: 6.5rem;
     }
 
     /* Поруч стоїть число куреня 6.5rem; повний h1 із ним у рядок не вміщається. */

@@ -9,15 +9,20 @@
 
   @if (isDeleteMode()) {
     <div class="delete-confirm">
-      <p>
-        Ви впевнені, що хочете видалити
-        <strong>{{ config().entityType | titlecase }}</strong>
-        @if (entityDisplayName()) {
-          <strong>"{{ entityDisplayName() }}"</strong>
-        }
-        ?
-      </p>
-      <p class="delete-confirm__warning">Цю дію неможливо скасувати.</p>
+      @if (config().deleteAction; as custom) {
+        <p>{{ custom.question }} <strong>«{{ entityDisplayName() }}»</strong>?</p>
+        <p>{{ custom.note }}</p>
+      } @else {
+        <p>
+          Ви впевнені, що хочете видалити
+          <strong>{{ config().entityType | titlecase }}</strong>
+          @if (entityDisplayName()) {
+            <strong>"{{ entityDisplayName() }}"</strong>
+          }
+          ?
+        </p>
+        <p class="delete-confirm__warning">Цю дію неможливо скасувати.</p>
+      }
     </div>
     <div class="actions">
       <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="hide()" />

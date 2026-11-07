@@ -1,0 +1,93 @@
+@if (ordered().length) {
+    <div class="award-blocks">
+        @for (block of shown(); track block.key) {
+            <ng-container [ngTemplateOutlet]="blockTpl" [ngTemplateOutletContext]="{ $implicit: block }" />
+        }
+    </div>
+    @if (ordered().length > shown().length) {
+        <div class="award-blocks-more">
+            <p-button [label]="'Переглянути всі (' + ordered().length + ')'" icon="pi pi-arrow-right" iconPos="right"
+                [text]="true" size="small" (onClick)="allVisible = true" data-testid="awards-all" />
+        </div>
+    }
+} @else {
+    <p class="award-blocks-empty">{{ emptyText() }}</p>
+}
+
+<ng-template #blockTpl let-block>
+    <button type="button" class="award-block" [class.award-block--pending]="block.pending" (click)="openDetails(block)" data-testid="award-block">
+        @if (block.pinned) {
+            <span class="award-block-pin pi pi-thumbtack" aria-label="Закріплене"></span>
+        }
+        @if (block.grants.length > 1) {
+            <span class="award-block-count">×{{ block.grants.length }}</span>
+        }
+        <span class="award-block-image">
+            @if (block.imageUrl) {
+                <img [src]="block.imageUrl" [alt]="block.title" loading="lazy" />
+            } @else {
+                <span class="pi pi-star-fill" aria-hidden="true"></span>
+            }
+        </span>
+        <span class="award-block-title">{{ block.title }}</span>
+        <span class="award-block-date">
+            @if (block.section) { {{ block.section }} · }{{ block.grants[0].award.dateAcquired | date: 'dd.MM.yyyy' }}
+        </span>
+        @if (block.pending) {
+            <span class="award-block-pending">Очікує</span>
+        }
+    </button>
+</ng-template>
+
+<p-dialog [(visible)]="allVisible" header="Усі відзначення" [modal]="true" [draggable]="false" [resizable]="false"
+    [dismissableMask]="true" [style]="{ width: 'min(94vw, 44rem)' }" [focusOnShow]="false">
+    <div class="award-blocks award-blocks--all">
+        @for (block of ordered(); track block.key) {
+            <ng-container [ngTemplateOutlet]="blockTpl" [ngTemplateOutletContext]="{ $implicit: block }" />
+        }
+    </div>
+</p-dialog>
+
+<p-dialog [(visible)]="detailsVisible" [header]="selected?.title ?? ''" [modal]="true" [draggable]="false" [resizable]="false"
+    [dismissableMask]="true" [style]="{ width: 'min(94vw, 30rem)' }" [focusOnShow]="false">
+    @if (selected; as block) {
+        <div class="award-details">
+            <div class="award-details-head">
+                <span class="award-details-image">
+                    @if (block.imageUrl) {
+                        <img [src]="block.imageUrl" [alt]="block.title" />
+                    } @else {
+                        <span class="pi pi-star-fill" aria-hidden="true"></span>
+                    }
+                </span>
+                <div class="award-details-summary">
+                    @if (block.section) { <span>{{ block.section }}</span> }
+                    <span>{{ block.grants.length > 1 ? 'Надано ' + block.grants.length + ' рази' : 'Надано один раз' }}</span>
+                    @if (ownCard()) {
+                        <p-button [label]="block.pinned ? 'Відкріпити' : 'Закріпити'" icon="pi pi-thumbtack" size="small"
+                            [outlined]="!block.pinned" severity="secondary" (onClick)="pin(block)" data-testid="award-pin" />
+                    }
+                </div>
+            </div>
+
+            <ul class="award-grants">
+                @for (grant of block.grants; track grant.award.memberAwardKey) {
+                    <li class="award-grant" data-testid="award-grant">
+                        <div class="award-grant-head">
+                            <span class="award-grant-date">{{ grant.award.dateAcquired | date: 'dd.MM.yyyy' }}</span>
+                            @if (grant.stamp) { <span class="award-grant-stamp">{{ grant.stamp }}</span> }
+                            @if (grant.pending) { <p-tag value="Очікує" severity="warn" [rounded]="true" /> }
+                            @if (grant.canOpen) {
+                                <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" size="small"
+                                    ariaLabel="Відкрити це надання" (onClick)="open(grant.award)" data-testid="award-grant-open" />
+                            }
+                        </div>
+                        <p class="award-grant-note">
+                            <span class="award-grant-label">За що:</span> {{ grant.award.note || '—' }}
+                        </p>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</p-dialog>

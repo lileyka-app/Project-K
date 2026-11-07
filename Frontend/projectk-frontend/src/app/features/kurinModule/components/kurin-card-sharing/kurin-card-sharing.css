@@ -1,0 +1,49 @@
+.card-sharing {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.card-sharing__switch {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.card-sharing__switch label {
+  cursor: pointer;
+  display: grid;
+  font-weight: 600;
+  gap: 0.15rem;
+}
+
+.card-sharing__switch small {
+  color: var(--p-text-muted-color);
+  font-weight: 400;
+}
+
+.card-sharing__fields {
+  border: 0;
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  margin: 0;
+  padding: 0;
+}
+
+.card-sharing__fields legend {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  margin-bottom: 0.5rem;
+  padding: 0;
+}
+
+.card-sharing__field {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.card-sharing__field label {
+  cursor: pointer;
+}

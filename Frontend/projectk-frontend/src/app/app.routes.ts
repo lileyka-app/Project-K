@@ -3,7 +3,9 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { setupGuard } from './features/authModule/guards/setup.guard';
 import { capabilityGuard } from './features/authModule/guards/capability.guard';
+import { formerMembersRedirect, legacyArchiveRedirect, registryModeGuard, toRegistryMode } from './features/kurinModule/pages/registry/registry-modes';
 import { youthProgramGuard } from './features/kurinModule/guards/youth-program.guard';
+import { kurinFeatureGuard } from './features/kurinModule/guards/kurin-feature.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
@@ -48,6 +50,22 @@ export const routes: Routes = [
       .then(m => m.AboutPageComponent),
     title: 'Про Лілейку',
     data: { breadcrumb: 'Про Лілейку' }
+  },
+  {
+    // A shared card: `v` behind the three-minute «перевірити» QR, `c` behind a permanent link. Open to
+    // anyone, signed in or not, without the app's chrome.
+    path: 'v/:token',
+    loadComponent: () => import('./features/authModule/pages/public-card/public-card')
+      .then(m => m.PublicCardComponent),
+    title: 'Картка',
+    data: { mode: 'check' }
+  },
+  {
+    path: 'c/:token',
+    loadComponent: () => import('./features/authModule/pages/public-card/public-card')
+      .then(m => m.PublicCardComponent),
+    title: 'Картка',
+    data: { mode: 'link' }
   },
   {
     path: 'privacy',
@@ -125,6 +143,14 @@ export const routes: Routes = [
     data: { breadcrumb: 'Тут такого немає', reason: 'youthProgram' }
   },
   {
+    path: 'feature-off/:feature',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/authModule/pages/forbidden/forbidden')
+      .then(m => m.ForbiddenComponent),
+    title: 'Тут такого немає',
+    data: { breadcrumb: 'Тут такого немає', reason: 'featureOff' }
+  },
+  {
     path: 'users',
     canActivate: [authGuard, kurinAccessGuard('panel'), capabilityGuard('admin')],
     loadComponent: () => import('./features/adminModule/pages/users-list/users-list')
@@ -173,21 +199,51 @@ export const routes: Routes = [
     data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin', breadcrumbEntity: 'kurin' },
   },
   {
-    path: 'kurin/import',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement')],
-    loadComponent: () => import('./features/kurinModule/pages/import/import')
-      .then(m => m.RosterImportComponent),
-    title: 'Імпорт складу',
-    data: { breadcrumb: 'Імпорт складу', parent: '/kurin', titleContext: 'kurin' }
-  },
-  {
+    // «Реєстр»: one page for what the four kurin pages did apart — склад, переходи, архів, імпорт.
     path: 'kurin/registry',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement', 'groupLeadership')],
+    canActivate: [authGuard, kurinAccessGuard('kurin')],
     loadComponent: () => import('./features/kurinModule/pages/registry/registry')
       .then(m => m.RegistryComponent),
     title: 'Реєстр',
-    data: { breadcrumb: 'Реєстр', parent: '/kurin', titleContext: 'kurin' }
+    data: { breadcrumb: 'Реєстр', parent: '/kurin', titleContext: 'kurin' },
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        canActivate: [formerMembersRedirect, registryModeGuard('roster')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/roster/roster')
+          .then(m => m.RosterComponent)
+      },
+      {
+        path: 'transfers',
+        canActivate: [registryModeGuard('transfers')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/transfers/transfers')
+          .then(m => m.TransfersComponent),
+        title: 'Переходи',
+        data: { breadcrumb: 'Переходи', parent: '/kurin/registry', titleContext: 'kurin' }
+      },
+      {
+        path: 'archive',
+        canActivate: [registryModeGuard('archive')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/archive/archive')
+          .then(m => m.KurinArchiveComponent),
+        title: 'Архів',
+        data: { breadcrumb: 'Архів', parent: '/kurin/registry', titleContext: 'kurin' }
+      },
+      {
+        path: 'import',
+        canActivate: [registryModeGuard('import')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/import/import')
+          .then(m => m.RosterImportComponent),
+        title: 'Імпорт',
+        data: { breadcrumb: 'Імпорт', parent: '/kurin/registry', titleContext: 'kurin' }
+      }
+    ]
   },
+  // The addresses before the «Реєстр» became one page. QR codes on printed cards, letters and links
+  // in the phone app still lead here; each opens its mode.
+  { path: 'kurin/transfers', redirectTo: toRegistryMode('transfers') },
+  { path: 'kurin/import', redirectTo: toRegistryMode('import') },
   { 
     path: 'group/:groupKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
@@ -265,7 +321,16 @@ export const routes: Routes = [
     data: { breadcrumb: 'Проба', parent: '/member/:memberKey', entityType: 'member', titleContext: 'member' }
   },
   {
-    path: 'member/:memberKey', 
+    // The same card, about the person's whole history; opened from the card's «Пластовий життєпис».
+    path: 'member/:memberKey/life',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/kurinModule/pages/member-card/member-card')
+      .then(m => m.MemberCardComponent),
+    title: 'Пластовий життєпис',
+    data: { breadcrumb: 'Пластовий життєпис', parent: '/member/:memberKey', entityType: 'member', titleContext: 'member', view: 'life' }
+  },
+  {
+    path: 'member/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/member-card/member-card')
       .then(m => m.MemberCardComponent),
@@ -323,6 +388,7 @@ export const routes: Routes = [
     title: 'Журнал дій',
     data: { breadcrumb: 'Журнал дій', parent: '/kurin', titleContext: 'kurin' }
   },
+  { path: 'kurin/:kurinKey/archive', canActivate: [authGuard, legacyArchiveRedirect], children: [] },
   {
     path: 'kurin/:kurinKey/dues',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
@@ -333,7 +399,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/kurin-score/kurin-score')
       .then(m => m.KurinScoreComponent),
     title: 'Точкування',
@@ -341,7 +407,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score/settings',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/kurin-score-settings/kurin-score-settings')
       .then(m => m.KurinScoreSettingsComponent),
     title: 'Налаштування точкування',
@@ -349,7 +415,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score/private',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/private-score/private-score')
       .then(m => m.PrivateScoreComponent),
     title: 'Точкування КВ',
@@ -357,7 +423,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score/events/:itemKey/:occurrence',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/attendance-sheet/attendance-sheet')
       .then(m => m.AttendanceSheetComponent),
     title: 'Точкування події',
@@ -365,11 +431,11 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/settings',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinSettings'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/kurin-settings/kurin-settings')
       .then(m => m.KurinSettingsComponent),
     title: 'Налаштування куреня',
-    data: { breadcrumb: 'Налаштування куреня', parent: '/kurin', entityType: 'kurin', entityAction: 'Update', titleContext: 'kurin' }
+    data: { breadcrumb: 'Налаштування куреня', parent: '/kurin', entityType: 'KurinSettings', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
   },
   {
     path: 'planning/create/:kurinKey',

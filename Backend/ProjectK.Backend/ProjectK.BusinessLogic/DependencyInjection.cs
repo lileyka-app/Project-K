@@ -1,29 +1,30 @@
-using ProjectK.BusinessLogic.Modules.KraiModule.Services;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Services;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
 namespace ProjectK.BusinessLogic;
 
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
         services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
         services.AddSingleton<ILoginThrottle, LoginThrottle>();
+        services.AddScoped<IReauthentication, Reauthentication>();
         services.AddScoped<ISavedSessionList, SavedSessionList>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
@@ -44,6 +46,7 @@ public static class DependencyInjection
         services.AddSingleton<IAccessChangeSignal, AccessChangeSignal>();
         services.AddScoped<ICurrentPermissions, CurrentPermissions>();
         services.AddScoped<IMemberFieldAccess, MemberFieldAccess>();
+        services.AddScoped<IKurinTagVisibility, KurinTagVisibility>();
         services.AddScoped<KraiProfileEditor>();
         services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
         services.AddScoped<ResourceAccessService>();
@@ -66,8 +69,13 @@ public static class DependencyInjection
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MePerson>();
+        services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
+        services.AddScoped<ArchiveReach>();
+        services.AddSingleton<ArchiveDangerZoneRegistry>();
+        services.AddScoped<ArchiveDangerZone>();
+        services.AddScoped<ArchiveDeletionGate>();
         services.AddScoped<KurinReportDataService>();
 
         services.AddScoped<INotificationService, NotificationService>();
@@ -83,6 +91,8 @@ public static class DependencyInjection
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
+        services.AddScoped<IProbeProjectAccess, ProbeProjectAccess>();
+        services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
 
@@ -92,6 +102,8 @@ public static class DependencyInjection
     private static void AddDuesModule(this IServiceCollection services)
     {
         services.AddScoped<IDuesAccrual, DuesAccrual>();
+        services.AddScoped<IDuesKurinShape, DuesKurinShape>();
+        services.AddScoped<DuesAccountRows>();
         services.AddScoped<DuesLedgerReader>();
         services.AddScoped<IDuesDirectory, DuesDirectory>();
         services.AddScoped<GroupDuesAccess>();
@@ -115,6 +127,7 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<MembershipMoves>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
     }
 }

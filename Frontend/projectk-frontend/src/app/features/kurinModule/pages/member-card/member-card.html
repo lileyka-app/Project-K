@@ -1,7 +1,57 @@
 <p-confirmdialog />
 <div class="lil-page">
     @if (member) {
-    <app-tile-board boardKey="member-card" class="member-tiles block">
+    <app-tile-board [boardKey]="isLifeView ? 'member-life' : 'member-card'" class="member-tiles block">
+        @if (isLifeView) {
+        <ng-template [appTileDef]="{ key: 'life-head', span: 'full', pinned: true, label: 'Пластовий життєпис' }">
+        <section class="member-tile rounded-2xl p-4 md:p-5" data-testid="life-head">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h1 class="member-section-title">Пластовий життєпис</h1>
+                    <p class="member-section-subtitle text-sm">{{ member.firstName }} {{ member.lastName }}</p>
+                </div>
+                <p-button (onClick)="openCard()" label="Картка" icon="pi pi-arrow-left" severity="secondary" size="small" />
+            </div>
+        </section>
+        </ng-template>
+
+        <ng-template [appTileDef]="{ key: 'life-levels', span: 'full', label: 'Ступені' }">
+        <section class="member-tile rounded-2xl p-4 md:p-5" data-testid="life-levels">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h2 class="member-section-title">Ступені</h2>
+                @if (canCorrectLevels) {
+                <p-button (onClick)="onEditMember()" label="Виправити" icon="pi pi-pencil" severity="secondary" variant="text" size="small" />
+                }
+            </div>
+            <div class="life-stages">
+                @for (stage of lifeStages; track stage.branch) {
+                <div class="life-stage">
+                    <p-tag [value]="stage.branch" severity="secondary" />
+                    @if (stage.levels.length) {
+                    <ul class="life-stage__levels">
+                        @for (level of stage.levels; track level.key) {
+                        <li>
+                            @if (level.imageUrl) {
+                            <img class="life-stage__image" [src]="level.imageUrl" [alt]="level.title" loading="lazy" />
+                            } @else {
+                            <span class="life-stage__image life-stage__image--empty pi pi-flag" aria-hidden="true"></span>
+                            }
+                            <span class="life-stage__level">{{ level.title }}</span>
+                            <span class="life-stage__date">{{ level.date ? (level.date | date: 'dd.MM.yyyy') : 'без дати' }}</span>
+                        </li>
+                        }
+                    </ul>
+                    } @else {
+                    <p class="member-section-subtitle text-sm">Ступенів не внесено</p>
+                    }
+                </div>
+                }
+            </div>
+        </section>
+        </ng-template>
+        }
+
+        @if (!isLifeView) {
         <ng-template [appTileDef]="{ key: 'profile', span: 'full', pinned: true, label: 'Профіль учасника' }">
         <section class="member-tile member-profile-tile rounded-2xl p-4 md:p-5">
             <div class="grid gap-4 md:grid-cols-[210px_1fr_auto] md:items-start">
@@ -28,6 +78,21 @@
                             [status]="member.profileVerificationStatus" />
 
                         @if (hasActiveWarnings) {
+                        @if (canManageWarnings) {
+                        <button type="button"
+                            class="member-warning-indicator member-warning-indicator--action"
+                            aria-label="Перестороги"
+                            pTooltip="{{ warningTooltip }}"
+                            tooltipPosition="top"
+                            (click)="openWarnings()">
+                            @for (level of warningLevels; track level) {
+                            <span
+                                class="member-warning-dot"
+                                [class.member-warning-dot--active]="getWarningDotActive(level)"
+                            ></span>
+                            }
+                        </button>
+                        } @else {
                         <div
                             class="member-warning-indicator"
                             pTooltip="{{ warningTooltip }}"
@@ -41,6 +106,7 @@
                             }
                         </div>
                         }
+                        }
 
                         <p-tag [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"
                             severity="info"
@@ -48,6 +114,15 @@
                          />
 
                     </div>
+
+                    <app-member-tags-editor class="member-tags-row"
+                        [memberKey]="member.memberKey"
+                        [tagKeys]="member.tagKeys ?? []"
+                        (changed)="onTagsChanged($event)" />
+
+                    <a class="member-life-link" [href]="'/member/' + member.memberKey + '/life'" (click)="openLife($event)" data-testid="member-life">
+                        Пластовий життєпис <i class="pi pi-arrow-right" aria-hidden="true"></i>
+                    </a>
 
                     @if (showsField('middleName')) {
                     <p class="member-middle-name mt-1 text-sm">
@@ -121,43 +196,33 @@
 
                 </div>
 
-                @if (canEditMember || canManageWarnings || journalKurinKey) {
+                @if (hasHeadActions) {
                 <div class="member-actions md:justify-self-end">
                     @if (canEditMember) {
                     <p-button (onClick)="onEditMember()"
                         label="Редагувати"
                         icon="pi pi-pencil"
-                        severity="secondary"
-                        styleClass="!rounded-lg !px-4 !py-2 !text-sm !font-semibold"
+                        [fluid]="true"
                      />
                     }
-                    @if (canManageProfileVerification) {
+                    @if (needsProfileVerification) {
                     <p-button (onClick)="onProfileVerificationAction()"
-                        [label]="isProfileVerified ? 'Зняти верифікацію' : 'Верифікувати'"
-                        [icon]="isProfileVerified ? 'pi pi-undo' : 'pi pi-verified'"
+                        label="Верифікувати"
+                        icon="pi pi-verified"
                         severity="secondary"
-                        variant="text"
-                        size="small"
                         [loading]="profileVerificationSubmitting"
                      />
                     }
-                    @if (canManageWarnings) {
-                    <p-button (onClick)="isWarningsDialogVisible = true"
-                        label="Перестороги"
-                        icon="pi pi-exclamation-triangle"
+                    @if (moreMenuItems.length) {
+                    <p-menu #moreMenu [model]="moreMenuItems" [popup]="true" appendTo="body" />
+                    <p-button (onClick)="moreMenu.toggle($event)"
+                        icon="pi pi-ellipsis-v"
                         severity="secondary"
-                        variant="text"
-                        size="small"
-                     />
-                    }
-                    @if (journalKurinKey) {
-                    <p-button (onClick)="openJournal()"
-                        label="Журнал"
-                        icon="pi pi-history"
-                        severity="secondary"
-                        variant="text"
-                        size="small"
-                        data-testid="member-journal"
+                        [outlined]="true"
+                        ariaLabel="Ще"
+                        pTooltip="Ще"
+                        tooltipPosition="top"
+                        data-testid="member-more"
                      />
                     }
                 </div>
@@ -165,8 +230,9 @@
             </div>
         </section>
         </ng-template>
+        }
 
-        @if (hasYouthProgram) {
+        @if (showsYouthRecord) {
         <ng-template [appTileDef]="{ key: 'skills', span: 'half', label: 'Здобуті вмілості' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -286,21 +352,100 @@
 
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
-            <app-member-awards-tile [awards]="member.awards || []"
+            <app-member-awards-tile [awards]="youthAwards"
                 [kurinStamps]="kurinStamps"
-                [canEdit]="canEditMember"
-                [confirmLevels]="abilities.awards.confirm"
-                [canRemove]="abilities.awards.remove"
+                [canEdit]="canEditYouthAwards"
+                [confirmLevels]="youthRecordLocked ? [] : abilities.awards.confirm"
+                [canRemove]="abilities.awards.remove && !youthRecordLocked"
                 [viewerUserKey]="currentUserKey"
                 [ownCard]="isOwnCard"
                 (saveAward)="onSaveAward($event)"
                 (deleteAward)="onDeleteAward($event)"
-                (reviewAward)="onReviewAward($event)" />
+                (reviewAward)="onReviewAward($event)"
+                (pinAward)="onPinAward($event)" />
         </section>
         </ng-template>
         }
 
-        @if (staffOffices.length || mentoredGroupNames.length) {
+        @if (!isLifeView) {
+        <ng-template [appTileDef]="{ key: 'degrees', span: 'half', label: 'Ступені' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+            <app-member-degrees-tile
+                [histories]="member.plastLevelHistories"
+                [canEdit]="canEditMember"
+                (edit)="onEditMember()" />
+            </section>
+        </ng-template>
+
+        }
+
+        @if (isSeniorKurinCard && !isLifeView) {
+        <ng-template [appTileDef]="{ key: 'senior-kurin', span: 'half', label: 'У курені' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-kurin-tile">
+                <div class="mb-4">
+                    <h2 class="member-section-title">{{ seniorKurinName }}</h2>
+                    @if (seniorKurinBranches; as branches) {
+                    <p class="member-section-subtitle text-sm">{{ branches }}</p>
+                    }
+                </div>
+                <dl class="senior-facts">
+                    <div>
+                        <dt>У курені з</dt>
+                        <dd>{{ (membershipHere?.joinedAtUtc | date:'dd.MM.yyyy') || '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Роль</dt>
+                        <dd>
+                            @for (office of currentOffices; track office.leadershipHistoryKey) {
+                            <p-tag [value]="officeLabel(office)" [severity]="officeSeverity(office.role)" />
+                            } @empty {
+                            <span class="member-section-subtitle">—</span>
+                            }
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+        </ng-template>
+        }
+
+        @if (showsSeniorAwards) {
+        <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Відзначення' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+            <app-member-senior-awards-tile
+                [awards]="member.awards ?? []"
+                [canAdd]="canAddSeniorAwards"
+                [ownCard]="isOwnCard"
+                [canRemove]="isSeniorKurinCard && abilities.awards.remove"
+                (saveAward)="onSaveAward($event)"
+                (deleteAward)="onDeleteAward($event)"
+                (pinAward)="onPinAward($event)" />
+            </section>
+        </ng-template>
+        }
+
+        @if (isSeniorKurinCard && !isLifeView) {
+        <ng-template [appTileDef]="{ key: 'senior-warnings', span: 'half', label: 'Перестороги' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-warnings-tile">
+                <div class="mb-4">
+                    <h2 class="member-section-title">Перестороги</h2>
+                </div>
+                @if (warningRows.length) {
+                <ul class="senior-warnings">
+                    @for (row of warningRows; track row.key) {
+                    <li [class.senior-warnings__row--past]="!row.active">
+                        <p-tag [value]="row.level" [severity]="row.active ? 'warn' : 'secondary'" />
+                        <span class="member-section-subtitle text-sm">{{ row.issued | date:'dd.MM.yyyy' }} · {{ row.state }}</span>
+                    </li>
+                    }
+                </ul>
+                } @else {
+                <div class="member-empty-state rounded-xl p-4 text-sm">Пересторог немає.</div>
+                }
+            </section>
+        </ng-template>
+        }
+
+        @if (!isLifeView && !isSeniorKurinCard && (staffOffices.length || mentoredGroupNames.length)) {
         <ng-template [appTileDef]="{ key: 'staff', span: 'half', label: 'Впорядництво' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4">
@@ -311,7 +456,7 @@
                 <ul class="space-y-2.5">
                     @for (office of staffOffices; track office.leadershipHistoryKey) {
                     <li class="flex flex-wrap items-center gap-2">
-                        <p-tag [value]="officeLabel(office.role)" [severity]="officeSeverity(office.role)" />
+                        <p-tag [value]="officeLabel(office)" [severity]="officeSeverity(office.role)" />
                         <span class="member-section-subtitle text-sm">з {{ office.startDate | date: 'yyyy' }}</span>
                     </li>
                     }
@@ -334,7 +479,7 @@
         </ng-template>
         }
 
-        @if (dues; as d) {
+        @if (!isLifeView && dues; as d) {
         <ng-template [appTileDef]="{ key: 'dues', span: 'half', label: 'Вкладка' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="dues-tile">
                 <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -360,7 +505,7 @@
                         <span class="dues-tile-balance__sub">боргу немає</span>
                     } @else if (d.balance < 0) {
                         <span class="dues-tile-balance__value">{{ money(d.balance) }}</span>
-                        <span class="dues-tile-balance__sub">борг — віддай скарбникові гуртка</span>
+                        <span class="dues-tile-balance__sub">борг — віддай скарбникові</span>
                     } @else {
                         <span class="dues-tile-balance__value">+{{ money(d.balance) }}</span>
                         <span class="dues-tile-balance__sub">надлишок — піде на наступний квартал</span>
@@ -416,7 +561,7 @@
                     [isLoading]="isMembershipsLoading"
                     [loadFailed]="membershipsLoadFailed"
                     [scopedKurinKey]="scopedKurinKey"
-                    [canManage]="canManagePlacement"
+                    [canManage]="canManagePlacement && !isLifeView"
                     [reachableKurinKeys]="reachableKurinKeys"
                     [switchingTo]="switchingKurinTo"
                     (openKurin)="openMembershipKurin($event)"
@@ -424,6 +569,46 @@
                     (leaveKurin)="confirmLeaveKurin($event)" />
             </section>
         </ng-template>
+
+        @if (isLifeView && !hasYouthProgram) {
+        <ng-template [appTileDef]="{ key: 'life-senior-awards', span: 'half', label: 'Відзначення УСП/УПС' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="life-senior-awards">
+            <app-member-senior-awards-tile
+                [awards]="member.awards ?? []"
+                [canAdd]="canEditMember"
+                [ownCard]="isOwnCard"
+                [canRemove]="abilities.awards.remove"
+                (saveAward)="onSaveAward($event)"
+                (deleteAward)="onDeleteAward($event)"
+                (pinAward)="onPinAward($event)" />
+            </section>
+        </ng-template>
+        }
+
+        @if (isLifeView) {
+        <ng-template [appTileDef]="{ key: 'life-roles', span: 'half', label: 'Ролі' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="life-roles">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="member-section-title">Ролі</h2>
+                    @if (archiveKurinKey) {
+                    <p-button (onClick)="openArchive()" label="Архів куреня" icon="pi pi-box" severity="secondary" variant="text" size="small" />
+                    }
+                </div>
+                @if (lifeOffices.length) {
+                <ul class="life-roles">
+                    @for (office of lifeOffices; track office.key) {
+                    <li>
+                        <span class="life-roles__role">{{ office.label }}</span>
+                        <span class="life-roles__meta">@if (office.kurin) { {{ office.kurin }} · }{{ office.period }}</span>
+                    </li>
+                    }
+                </ul>
+                } @else {
+                <app-empty-state art="list" title="Ролей ще не було" />
+                }
+            </section>
+        </ng-template>
+        }
     </app-tile-board>
 <p-dialog
         header="Усі вмілості"
@@ -478,7 +663,7 @@
                                     [text]="true"
                                     styleClass="!rounded-lg !px-2 !py-1.5 !text-xs"
                                  />
-                                @if (canInlineModerateSkills) {
+                                @if (canInlineModerateSkills && !youthRecordLocked) {
                                 <p-button (onClick)="removeConfirmedSkill(skill)"
                                     icon="pi pi-times"
                                     severity="danger"
@@ -532,7 +717,7 @@
                                     [text]="true"
                                     styleClass="!rounded-lg !px-2 !py-1.5 !text-xs"
                                  />
-                                @if (canInlineModerateSkills) {
+                                @if (canInlineModerateSkills && !youthRecordLocked) {
                                 <p-button (onClick)="approvePendingSkill(skill)"
                                     icon="pi pi-check"
                                     severity="success"
@@ -574,7 +759,7 @@
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm"
                      />
                     }
-                    @if (canEditMember) {
+                    @if (canEditMember && !youthRecordLocked) {
                     <p-button (onClick)="openAddSkillDialog()"
                         label="Додати вмілість"
                         icon="pi pi-plus"

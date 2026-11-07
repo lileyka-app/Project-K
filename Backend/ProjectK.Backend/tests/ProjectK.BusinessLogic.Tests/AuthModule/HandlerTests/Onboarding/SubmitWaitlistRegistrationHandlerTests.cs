@@ -68,7 +68,7 @@ public class SubmitWaitlistRegistrationHandlerTests
                 && requests.Single().Route == "/waitlist"
                 && requests.Single().Body == "Ihor Kovalenko · курінь 97"),
             It.IsAny<CancellationToken>()), Times.Once);
-        _emailService.Verify(x => x.SendWaitlistSubmittedEmailAsync("admin@example.com", "Ihor Kovalenko", "97", It.IsAny<CancellationToken>()), Times.Once);
+        _emailService.Verify(x => x.SendWaitlistSubmittedEmailAsync("admin@example.com", "Ihor Kovalenko", "курінь 97", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -173,7 +173,24 @@ public class SubmitWaitlistRegistrationHandlerTests
 
         result.Type.Should().Be(ResultType.Created);
         _notifications.Verify(x => x.NotifyManyAsync(
-            It.Is<IEnumerable<NotificationRequest>>(requests => requests.Single().Body == "Ihor Kovalenko · курінь підготовчий"),
+            It.Is<IEnumerable<NotificationRequest>>(requests => requests.Single().Body == "Ihor Kovalenko · підготовчий курінь"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldKeepBothNumbers_WhenASeniorKurinAppliesInTwoBranches()
+    {
+        var command = CreateCommand(claimedKurinNumber: null) with { UspNumber = 5, UpsNumber = 20 };
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Created);
+        _waitlistRepository.Verify(x => x.Create(
+            It.Is<WaitlistEntry>(entry => entry.ClaimedUspNumber == 5 && entry.ClaimedUpsNumber == 20
+                && entry.IsSeniorKurin && entry.ClaimedKurinNameOrNumber == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _notifications.Verify(x => x.NotifyManyAsync(
+            It.Is<IEnumerable<NotificationRequest>>(requests => requests.Single().Body == "Ihor Kovalenko · 5-й курінь УСП · 20-й курінь УПС"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

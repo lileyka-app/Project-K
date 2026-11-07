@@ -25,13 +25,16 @@ public class DuesDirectoryTests
     private readonly FixedTimeProvider _time = new(new DateTimeOffset(2026, 10, 7, 12, 0, 0, TimeSpan.Zero));
     private readonly List<DuesEntry> _entries = [];
 
+    // A senior kurin keeps the account in its own box, with no гурток.
+    private Guid? _group = Group;
+
     private DuesDirectory Directory()
     {
         IReadOnlyList<KurinDuesRate> kurinRates = [new KurinDuesRate { KurinKey = Kurin, FromQuarter = Q1.Index, StanytsiaFull = 240, StanytsiaReduced = 180, KurinShare = 15 }];
         IReadOnlyList<GroupDuesRate> groupRates = [new GroupDuesRate { KurinKey = Kurin, GroupKey = Group, FromQuarter = Q1.Index, GroupShare = 45 }];
         IReadOnlyList<DuesConcession> concessions = [];
         IReadOnlyList<DuesCharge> charges = new[] { Q1, Q2, Q3, new DuesQuarter(2026, 4) }
-            .Select(q => new DuesCharge { KurinKey = Kurin, GroupKey = Group, MembershipKey = Youth, Quarter = q.Index })
+            .Select(q => new DuesCharge { KurinKey = Kurin, GroupKey = _group, MembershipKey = Youth, Quarter = q.Index })
             .ToList();
         IReadOnlyList<DuesEntry> entries = _entries;
 
@@ -43,12 +46,12 @@ public class DuesDirectoryTests
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
         IReadOnlyList<DuesConcessionGrant> grants = [];
         dues.SetupGet(d => d.DuesConcessionGrants).Returns(Mock.Of<IDuesConcessionGrantRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(grants)));
-        return new DuesDirectory(new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), _time, Mock.Of<IKraiProfileProvider>());
+        return new DuesDirectory(new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), _time, Mock.Of<IKraiProfileProvider>(), Mock.Of<IDuesAccrual>());
     }
 
     private void Pay(decimal amount) => _entries.Add(new DuesEntry
     {
-        KurinKey = Kurin, GroupKey = Group, MembershipKey = Youth, Kind = DuesEntryKind.Contribution,
+        KurinKey = Kurin, GroupKey = _group, MembershipKey = Youth, Kind = DuesEntryKind.Contribution,
         Method = DuesPaymentMethod.Cash, Amount = amount, OccurredOn = new DateOnly(2026, 2, 1)
     });
 
@@ -73,8 +76,70 @@ public class DuesDirectoryTests
     }
 
     [Fact]
+    public async Task InASeniorKurin_TheDebtForPastQuarters_IsOwedFromThePersonalAccount()
+    {
+        _group = null;
+        Pay(255);
+
+        var owed = await Directory().GetOwedAsync(Kurin, [Youth]);
+
+        // Q1 is paid; Q2 and Q3 are over and owed; the running Q4 is not counted.
+        owed.Should().Be(510);
+    }
+
+    [Fact]
     public async Task NothingPaid_NothingCounts()
     {
         (await Directory().GetPaidQuartersAsync(Kurin)).Should().BeEmpty();
+    }
+
+    // Charged Q1–Q4 at 300 each (240 + 15 + 45); the running Q4 is not a debt that keeps someone.
+    [Fact]
+    public async Task Owed_CountsOnlyQuartersAlreadyBehind()
+    {
+        Pay(450);
+
+        var owed = await Directory().GetOwedAsync(Kurin, [Youth]);
+
+        owed.Should().Be(450);
+    }
+
+    [Fact]
+    public async Task Owed_IsZero_WhenOnlyTheRunningQuarterIsUnpaid()
+    {
+        Pay(900);
+
+        (await Directory().GetOwedAsync(Kurin, [Youth])).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Owed_IgnoresOtherMemberships()
+    {
+        (await Directory().GetOwedAsync(Kurin, [Guid.NewGuid()])).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task HasLedger_OnlyForAMembershipWithChargesOrPayments()
+    {
+        var directory = Directory();
+
+        (await directory.HasLedgerAsync(Kurin, [Youth])).Should().BeTrue();
+        (await directory.HasLedgerAsync(Kurin, [Guid.NewGuid()])).Should().BeFalse();
+        (await directory.HasLedgerAsync(Kurin, [])).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AGroupBox_WithADebtOrMoneyInIt_IsNotSettled()
+    {
+        (await Directory().GroupBoxSettledAsync(Kurin, Group)).Should().BeFalse();
+
+        Pay(1200);
+        (await Directory().GroupBoxSettledAsync(Kurin, Group)).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AGroupBox_NobodyEverPaidInto_IsSettled()
+    {
+        (await Directory().GroupBoxSettledAsync(Kurin, Guid.NewGuid())).Should().BeTrue();
     }
 }

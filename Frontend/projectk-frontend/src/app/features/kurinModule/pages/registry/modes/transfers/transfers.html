@@ -1,0 +1,142 @@
+<p-confirmdialog />
+
+<div class="registry-mode">
+
+  <section class="kurin-tile">
+    <p-table [value]="incoming()" styleClass="project-table" [loading]="loading()">
+      <ng-template #caption>
+        <div class="lil-tile-head">
+          <div>
+            <h2>Чекають вашої відповіді <span class="lil-count">{{ pendingIncoming() }}</span></h2>
+          </div>
+        </div>
+      </ng-template>
+      <ng-template #body let-r>
+        <tr>
+          <td data-mobile-label="Людина" class="transfers__person">{{ r.memberName }}</td>
+          <td data-mobile-label="Запит">
+            {{ kindLine(r, true) }}
+            <span class="transfers__meta">як {{ r.membershipKind === 'Staff' ? 'впорядника' : 'юнака' }} · до {{ r.expiresAtUtc | date:'dd.MM.yyyy' }}</span>
+            @if (r.status === 'Pending' && r.owedToLeave > 0) {
+              <span class="transfers__owes">Борг за минулі квартали</span>
+            }
+          </td>
+          <td data-mobile-label="Стан"><p-tag [value]="statusLabel(r)" [severity]="statusSeverity(r)" /></td>
+          <td class="transfers__actions">
+            @if (r.status === 'Pending') {
+              <p-button label="Підтвердити" icon="pi pi-check" severity="secondary" [outlined]="true"
+                [disabled]="r.kind === 'Transfer' && r.owedToLeave > 0" (onClick)="confirmApprove(r)" />
+              <p-button label="Відхилити" severity="secondary" variant="text" (onClick)="confirmDecline(r)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="4" class="lil-empty-cell">
+          <app-empty-state art="list" title="Запитів немає" />
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+
+  <section class="kurin-tile">
+    <div class="lil-tile-head">
+      <div>
+        <h2>Прийняти людину за кодом</h2>
+      </div>
+    </div>
+
+    <form class="transfers__find" (ngSubmit)="find()">
+      <label class="lil-dialog-label" for="transfer-code">Код людини</label>
+      <div class="transfers__find-row">
+        <input
+          pInputText
+          id="transfer-code"
+          name="code"
+          autocomplete="off"
+          placeholder="PL-XXXXX-XXXXX"
+          [ngModel]="code()"
+          (ngModelChange)="code.set($event)" />
+        <p-button type="submit" label="Знайти" icon="pi pi-search" severity="secondary" [loading]="looking()" [disabled]="!code().trim()" />
+      </div>
+      @if (lookupError(); as error) {
+        <p class="lil-dialog-error">{{ error }}</p>
+      }
+    </form>
+
+    @if (candidate(); as c) {
+      <div class="transfers__candidate">
+        <p class="transfers__name">{{ c.member.fullName }}</p>
+        @if (c.alreadyInThisKurin) {
+          <p class="transfers__hint">Уже у вашому курені.</p>
+        } @else if (standsNowhere()) {
+          <p class="transfers__hint">Ніде не стоїть</p>
+        } @else {
+          <p class="transfers__hint">
+            Зараз у
+            @for (k of c.currentKurins; track k.kurinKey; let last = $last) { {{ kurinName(k) }}@if (!last) {, } }
+          </p>
+
+          <div class="lil-dialog-field">
+            <span class="lil-dialog-label" id="transfer-kind">Що просимо</span>
+            <p-selectbutton [options]="kindOptions" [ngModel]="kind()" (ngModelChange)="kind.set($event)"
+              [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="transfer-kind" />
+          </div>
+
+          @if (c.currentKurins.length > 1) {
+            <div class="lil-dialog-field">
+              <label class="lil-dialog-label" for="transfer-from">Кого питати</label>
+              <p-select inputId="transfer-from" [options]="kurinOptions()" [ngModel]="fromKurinKey()" (ngModelChange)="fromKurinKey.set($event)"
+                optionLabel="label" optionValue="value" placeholder="Вибери курінь" appendTo="body" />
+            </div>
+          }
+        }
+
+        @if (!c.alreadyInThisKurin) {
+          <div class="lil-dialog-field">
+            <span class="lil-dialog-label" id="transfer-as">У вашому курені як</span>
+            <p-selectbutton [options]="membershipKindOptions" [ngModel]="membershipKind()" (ngModelChange)="membershipKind.set($event)"
+              [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="transfer-as" />
+          </div>
+
+          <div class="transfers__send">
+            <p-button [label]="standsNowhere() ? 'Прийняти до куреня' : 'Надіслати запит'" icon="pi pi-send"
+              [loading]="sending()" [disabled]="!canSend()" (onClick)="send()" />
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="kurin-tile">
+    <p-table [value]="outgoing()" styleClass="project-table" [loading]="loading()">
+      <ng-template #caption>
+        <div class="lil-tile-head">
+          <div>
+            <h2>Надіслані <span class="lil-count">{{ outgoing().length }}</span></h2>
+          </div>
+        </div>
+      </ng-template>
+      <ng-template #body let-r>
+        <tr>
+          <td data-mobile-label="Людина" class="transfers__person">{{ r.memberName }}</td>
+          <td data-mobile-label="Запит">
+            {{ kindLine(r, false) }}
+            <span class="transfers__meta">надіслано {{ r.createdAtUtc | date:'dd.MM.yyyy' }}</span>
+          </td>
+          <td data-mobile-label="Стан"><p-tag [value]="statusLabel(r)" [severity]="statusSeverity(r)" /></td>
+          <td class="transfers__actions">
+            @if (r.status === 'Pending') {
+              <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="confirmCancel(r)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="4" class="lil-empty-cell">
+          <app-empty-state art="trail" title="Ще нікого не просили" />
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+</div>

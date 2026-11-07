@@ -146,16 +146,15 @@ describe('GroupDuesComponent', () => {
 
   const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-  it('показує квартали поточного пластового року й ділить людей на теперішніх і колишніх', () => {
+  it('показує поточний пластовий рік і віддає людей у спільний реєстр', () => {
     create();
 
     expect(component.year()?.label).toBe('25–26');
-    expect(component.currentRows().map(r => r.account.fullName)).toEqual(['Оксана Паливода', 'Тарас Борг']);
-    expect(component.formerRows().map(r => r.account.fullName)).toEqual(['Переведений']);
-    // Перший квартал року — IV 2025: сплачений у Оксани, ще не нарахований у Тараса.
-    expect(component.currentRows()[0].cells[0]?.balance).toBe(0);
-    expect(component.currentRows()[1].cells[0]).toBeNull();
+    expect(component.currentRows().map(a => a.fullName)).toEqual(['Оксана Паливода', 'Тарас Борг']);
     expect(component.debtors()).toBe(2);
+    // Реєстр сам ділить на теперішніх і колишніх.
+    expect(text()).toContain('Переведений');
+    expect(text()).toContain('Переведені й вибулі з боргом');
   });
 
   it('рахує квартальну вкладку зі ставок, що діють зараз', () => {

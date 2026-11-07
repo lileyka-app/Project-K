@@ -8,8 +8,7 @@ import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directi
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MemberDto } from '../../../kurinModule/models/member.dto';
-import { ROLE_DISPLAY_NAMES } from '../../../kurinModule/models/role-display-name.model';
-import { LeadershipRole } from '../../../kurinModule/models/enums/leadership-role.enum';
+import { leadershipRoleDisplayName } from '../../../kurinModule/functions/leadership-role-display.function';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
 import { MyDuesTileComponent } from '../../components/my-dues-tile/my-dues-tile';
 import { MyDutiesTileComponent, dutyRowKey } from '../../components/my-duties-tile/my-duties-tile';
@@ -107,7 +106,7 @@ export class DashboardComponent implements OnInit {
     (this.member()?.leadershipHistories ?? [])
       .filter(history => !history.endDate)
       .map(history => {
-        const role = ROLE_DISPLAY_NAMES[history.role as LeadershipRole] ?? history.role;
+        const role = leadershipRoleDisplayName(history.role);
         return history.groupName ? `${role} · ${history.groupName}` : role;
       })
   );

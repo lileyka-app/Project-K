@@ -62,7 +62,7 @@ public class DuesEntryHandlerTests
         groups.Setup(g => g.GetByKeyAsync(_group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_group);
         var uow = new Mock<IUnitOfWork>();
         uow.SetupGet(u => u.Groups).Returns(groups.Object);
-        return new GroupDuesAccess(uow.Object, _user.Object);
+        return new GroupDuesAccess(uow.Object, _user.Object, Mock.Of<IDuesKurinShape>());
     }
 
     private DuesEntryWriter Writer()
@@ -72,7 +72,7 @@ public class DuesEntryHandlerTests
             .ReturnsAsync([_youth, _moved]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(_kurin.KurinKey);
-        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Interfaces.Modules.KraiModule.IKraiProfileProvider>());
+        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Interfaces.Modules.KraiModule.IKraiProfileProvider>(), Mock.Of<IDuesKurinShape>());
     }
 
     private static UpsertDuesEntryRequest Contribution(Guid membershipKey, decimal amount = 300) => new()
@@ -247,11 +247,12 @@ public class DuesEntryHandlerTests
         new UpsertDuesEntryRequestValidator(_time).Validate(request).IsValid.Should().Be(valid);
     }
 
-    // The kurin's box takes no personal operations and no transfers to itself; the станиця is its own to hand to.
+    // The kurin's box takes no transfers to itself; the станиця is its own to hand to. A personal
+    // operation passes the rules and is then checked against the kurin: only one without гуртки takes it.
     [Theory]
     [InlineData(DuesEntryKind.TransferToStanytsia, true)]
     [InlineData(DuesEntryKind.Expense, true)]
-    [InlineData(DuesEntryKind.Contribution, false)]
+    [InlineData(DuesEntryKind.Contribution, true)]
     [InlineData(DuesEntryKind.TransferToKurin, false)]
     public void KurinRules_HoldTheirOwnLine(DuesEntryKind kind, bool valid)
     {

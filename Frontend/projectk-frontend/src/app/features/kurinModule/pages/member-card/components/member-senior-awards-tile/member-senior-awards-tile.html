@@ -1,0 +1,71 @@
+<div class="flex flex-col gap-4" data-testid="senior-awards-tile">
+    <div class="lil-tile-head">
+        <h2>Відзначення</h2>
+        @if (canAdd()) {
+            <p-button icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Додати відзначення" (onClick)="open(null)" data-testid="senior-award-add" />
+        }
+    </div>
+
+    <app-award-blocks [blocks]="blocks()" [ownCard]="ownCard()"
+        (openGrant)="open($event)" (togglePin)="pinAward.emit($event)" />
+</div>
+
+<p-dialog
+    [(visible)]="dialogVisible"
+    [header]="editing ? 'Відзначення' : 'Нове відзначення'"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: 'min(94vw, 30rem)' }"
+    [focusOnShow]="false"
+>
+    <div class="flex flex-col gap-4 mt-2">
+        <div class="flex flex-col gap-2">
+            <label for="senior-award-item">Відзначення</label>
+            <p-select
+                inputId="senior-award-item"
+                [options]="options()"
+                [(ngModel)]="catalogId"
+                [group]="true"
+                optionGroupLabel="label"
+                optionGroupChildren="items"
+                optionLabel="title"
+                optionValue="id"
+                [filter]="true"
+                filterBy="title"
+                placeholder="Обери"
+                appendTo="body"
+                styleClass="w-full"
+            >
+                <ng-template #item let-option>
+                    <span class="award-option">
+                        @if (option.imageUrl) {
+                            <img class="award-option-image" [src]="option.imageUrl" alt="" loading="lazy" />
+                        }
+                        <span>{{ option.title }}</span>
+                    </span>
+                </ng-template>
+            </p-select>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="senior-award-date">Дата здобуття</label>
+            <p-datepicker inputId="senior-award-date" [(ngModel)]="dateAcquired" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" [maxDate]="today" />
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="senior-award-note">За що</label>
+            <textarea id="senior-award-note" pTextarea [(ngModel)]="note" rows="2" maxlength="2000" class="w-full"></textarea>
+        </div>
+    </div>
+
+    <ng-template #footer>
+        <div class="award-dialog-footer">
+            @if (editing) {
+                <p-button icon="pi pi-trash" ariaLabel="Видалити відзначення" severity="danger" [outlined]="true" (click)="remove()" />
+            }
+            <p-button label="Зберегти" icon="pi pi-save" [disabled]="!catalogId || !dateAcquired" (click)="save()" data-testid="senior-award-save" />
+        </div>
+    </ng-template>
+</p-dialog>

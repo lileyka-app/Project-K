@@ -1,3 +1,4 @@
+import { KurinBranch } from '../../../../kurinModule/models/enums/kurin-branch.enum';
 import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
@@ -22,7 +23,11 @@ describe('KraiConcessionReportComponent', () => {
       name: 'Брат чи сестра',
       people: 3,
       reduction: { stanytsia: 120, krai: 0, kurin: 30, group: 0, total: 150 },
-      kurins: [{ kurinKey: 'k1', number: 12, people: 2, reduction: 100 }, { kurinKey: 'k2', number: null, people: 1, reduction: 50 }]
+      kurins: [
+        { kurinKey: 'k1', number: 12, people: 2, reduction: 100 },
+        { kurinKey: 'k2', number: null, people: 1, reduction: 50 },
+        { kurinKey: 'k3', number: 12, branch: KurinBranch.USP, branches: [{ branch: KurinBranch.USP, number: 12 }], namedAfter: 'Чорногора', people: 1, reduction: 40 }
+      ]
     }]
   };
 
@@ -53,8 +58,10 @@ describe('KraiConcessionReportComponent', () => {
     expect(component.quarterOptions()[0].value).toBe('2026-4');
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Брат чи сестра');
-    expect(text).toContain('Курінь 12: 2');
-    expect(text).toContain('Підготовчий курінь: 1');
+    expect(text).toContain('Курінь ч. 12 УПЮ: 2');
+    expect(text).toContain('Підготовчий курінь УПЮ: 1');
+    // The same number in УСП is another kurin, named as one.
+    expect(text).toContain('Чорногора · 12-й курінь УСП: 1');
     expect(component.totalPeople()).toBe(3);
   });
 

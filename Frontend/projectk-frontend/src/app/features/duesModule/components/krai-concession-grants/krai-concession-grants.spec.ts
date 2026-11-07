@@ -44,7 +44,7 @@ describe('KraiConcessionGrantsComponent', () => {
     component = fixture.componentInstance;
     confirmation = TestBed.inject(ConfirmationService);
     const current = { year: 2026, number: 2 };
-    fixture.componentRef.setInput('groupKey', 'grp');
+    fixture.componentRef.setInput('box', { groupKey: 'grp' });
     fixture.componentRef.setInput('membershipKey', 'm1');
     fixture.componentRef.setInput('grants', [grant]);
     fixture.componentRef.setInput('concessions', [sibling]);
@@ -72,7 +72,7 @@ describe('KraiConcessionGrantsComponent', () => {
     component.reason.set('  двоє дітей  ');
     component.grant();
 
-    expect(dues.grantConcession).toHaveBeenCalledWith('grp', 'm1', {
+    expect(dues.grantConcession).toHaveBeenCalledWith({ groupKey: 'grp' }, 'm1', {
       concessionKey: 'sibling',
       fromQuarter: { year: 2026, number: 2 },
       toQuarter: { year: 2026, number: 4 },
@@ -87,7 +87,7 @@ describe('KraiConcessionGrantsComponent', () => {
     component.editTo.set('2026-3');
     component.saveEdit(grant);
 
-    expect(dues.updateConcessionGrant).toHaveBeenCalledWith('grp', 'g1', { toQuarter: { year: 2026, number: 3 }, reason: 'брат у курені' });
+    expect(dues.updateConcessionGrant).toHaveBeenCalledWith({ groupKey: 'grp' }, 'g1', { toQuarter: { year: 2026, number: 3 }, reason: 'брат у курені' });
     expect(component.editingKey()).toBeNull();
   });
 
@@ -96,7 +96,7 @@ describe('KraiConcessionGrantsComponent', () => {
 
     component.remove(grant);
 
-    expect(dues.deleteConcessionGrant).toHaveBeenCalledWith('grp', 'g1');
+    expect(dues.deleteConcessionGrant).toHaveBeenCalledWith({ groupKey: 'grp' }, 'g1');
   });
 
   it('shows why the server refused', () => {

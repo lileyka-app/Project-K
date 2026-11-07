@@ -27,6 +27,7 @@ import { LeadershipService } from '../../services/leadership-service/leadership.
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { memberDisplayName } from '../../functions/leadership-role-display.function';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
+import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -56,6 +57,7 @@ interface MentorAssignmentRow {
 export class KvPanelComponent implements OnChanges {
   readonly kurinKey = input('');
 
+  protected readonly features = inject(KurinFeaturesService);
   private readonly groupService = inject(GroupService);
   private readonly memberService = inject(MemberService);
   private readonly permissionService = inject(PermissionService);

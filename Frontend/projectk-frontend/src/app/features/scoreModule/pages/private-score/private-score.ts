@@ -173,9 +173,9 @@ export class PrivateScoreComponent implements OnInit {
 
   confirmDelete(entry: PrivateScoreEntryDto): void {
     this.confirmation.confirm({
-      header: 'Видалити запис',
+      header: 'Видалити запис?',
       message: `${points(entry.points)} · ${entry.criterionName ?? entry.note} для ${entry.memberName} зникне з книги. Слід у історії змін лишиться.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {

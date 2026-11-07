@@ -66,7 +66,7 @@ export function awardRights(
   const withdraws = !confirmed && (ownCard || (!!viewer && award.submittedByUserKey?.toLowerCase() === viewer));
   return {
     edit: canEditCard && (!confirmed || abilities.awards.remove),
-    confirm: status === 'Submitted' && abilities.awards.confirm.includes(awardWeight(award.level)),
+    confirm: status === 'Submitted' && !!award.level && abilities.awards.confirm.includes(awardWeight(award.level)),
     remove: abilities.awards.remove || withdraws,
   };
 }

@@ -22,7 +22,8 @@ public static class AgendaPeople
         var list = items as IReadOnlyCollection<AgendaItem> ?? items.ToList();
         var assignments = list.SelectMany(item => item.Assignments).ToList();
 
-        if (assignments.Any(a => a.TargetType == AgendaTargetType.Kurin && a.CompletionMode == AgendaCompletionMode.PerMember))
+        // A tag's carriers are read at the time, so like the whole kurin they need every member's row.
+        if (assignments.Any(a => a.TargetType is AgendaTargetType.Kurin or AgendaTargetType.Tag && a.CompletionMode == AgendaCompletionMode.PerMember))
         {
             return null;
         }

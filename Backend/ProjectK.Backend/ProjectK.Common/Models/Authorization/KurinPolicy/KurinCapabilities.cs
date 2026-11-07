@@ -52,8 +52,18 @@ public static class KurinCapabilities
         Act(KurinCapability.AssignGroups, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, G, G, K, K, G, G),
         Act(KurinCapability.AssignMembers, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, G, G, K, K, G, G),
         Act(KurinCapability.AssignProvid, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, G, G, K, K, G, G),
+        // Tags are the kurin's, with no гурток to bound them; by default whoever may address the whole kurin.
+        Act(KurinCapability.AssignTags, CapabilityGroup.Agenda, ResourceType.AgendaItem, ResourceAction.Create, K, N, N, K, K, N, N)
+            with { Reaches = NobodyOrKurin },
 
-        Act(KurinCapability.ReadJournal, CapabilityGroup.Journal, ResourceType.KurinJournal, ResourceAction.Read, K, K, K, N, N, N, N)
+        Act(KurinCapability.ReadJournal, CapabilityGroup.Journal, ResourceType.KurinJournal, ResourceAction.Read, K, K, K, N, N, N, N),
+
+        // Seeing tags is data, so youths may be given it: a kurin can show everyone the table with tags.
+        new(KurinCapability.SeeTags, CapabilityGroup.Tags, ResourceType.MemberTag, ResourceAction.Read,
+            Defaults([K, K, K, K, K, G, G, N]), YouthConfigurable: true, AnyReach),
+        // Tags are the kurin's own, with no гурток to bound them: the kurin or nobody.
+        Act(KurinCapability.ManageTags, CapabilityGroup.Tags, ResourceType.MemberTag, ResourceAction.Update, K, N, N, N, N, N, N)
+            with { Reaches = NobodyOrKurin }
     ];
 
     private static readonly Dictionary<KurinCapability, CapabilityDescriptor> ByKey =

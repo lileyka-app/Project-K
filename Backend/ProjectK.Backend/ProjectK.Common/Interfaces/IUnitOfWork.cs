@@ -15,18 +15,25 @@ public interface IUnitOfWork
 {
     IKraiRepository Krais { get; }
     IKurinRepository Kurins { get; }
+    IKurinBranchRequestRepository KurinBranchRequests { get; }
     IGroupRepository Groups { get; }
     IMembershipRepository Memberships { get; }
+    IMembershipRequestRepository MembershipRequests { get; }
+    IMemberCardShareRepository MemberCardShares { get; }
+    IKurinCardSharingRepository KurinCardSharing { get; }
     // Members, MemberAwards and MemberWarnings are deliberately absent: it lives on IMemberUnitOfWork so that reaching a person
     // from another module is a contract call (IMemberDirectory) rather than a property access.
     ILeadershipRepository Leaderships { get; }
+    IKurinArchiveRepository Archive { get; }
     IPlanningSessionRepository PlanningSessions { get; }
     IAgendaItemRepository AgendaItems { get; }
     IAgendaCategoryRepository AgendaCategories { get; }
+    IKurinTagRepository KurinTags { get; }
     IAgendaResponseRepository AgendaResponses { get; }
     IBadgeProgressRepository BadgeProgresses { get; }
     IProbeProgressRepository ProbeProgresses { get; }
     IProbePointProgressRepository ProbePointProgresses { get; }
+    IProbeProjectRepository ProbeProjects { get; }
     IMentorAssignmentRepository MentorAssignments { get; }
     IWaitlistRepository WaitlistEntries { get; }
     IInvitationRepository Invitations { get; }

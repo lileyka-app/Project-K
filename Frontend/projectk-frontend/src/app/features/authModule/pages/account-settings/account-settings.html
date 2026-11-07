@@ -3,7 +3,7 @@
     <header class="settings-header">
       <div>
         <h1>Налаштування акаунта</h1>
-        <p>Контактні дані, пароль, двофакторна автентифікація і календар.</p>
+        <p>Контактні дані, пароль, двофакторна автентифікація, картка і календар.</p>
       </div>
       @if (settings) {
         <p-tag [value]="roleTag.label" [severity]="roleTag.severity" />
@@ -255,6 +255,19 @@
       </section>
 
       <p-divider />
+
+      @if (settings.memberKey) {
+      <section class="settings-section" id="card">
+        <div class="section-copy">
+          <h2>Моя картка</h2>
+          <p>QR для перевірки й постійне посилання.</p>
+        </div>
+
+        <app-card-section />
+      </section>
+
+      <p-divider />
+      }
 
       <section class="settings-section" id="calendar">
         <div class="section-copy">

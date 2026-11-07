@@ -1,0 +1,250 @@
+<p-confirmdialog />
+
+<div class="registry-mode" data-testid="kurin-archive">
+  @if (zone()) {
+    <div class="archive-danger" data-testid="archive-danger-banner">
+      <p-message severity="error" icon="pi pi-exclamation-triangle">
+        <div class="archive-danger__row">
+          <span class="archive-danger__title">Небезпечний режим</span>
+          <span class="archive-danger__clock" aria-label="Лишилось часу">{{ clock() }}</span>
+          <span class="archive-danger__left">{{ deletionsLeftLabel() }}</span>
+          <p-button label="Вимкнути" icon="pi pi-power-off" severity="danger" size="small" (onClick)="end()" data-testid="archive-danger-end" />
+        </div>
+      </p-message>
+    </div>
+  }
+
+  @if (canDelete() && !zone()) {
+    <div class="archive-bar">
+      <p-button label="Небезпечний режим" icon="pi pi-lock-open" severity="danger" [outlined]="true" (onClick)="openEnter()" data-testid="archive-danger-open" />
+    </div>
+  }
+
+  @if (loadFailed()) {
+    <p-message severity="error" icon="pi pi-exclamation-triangle">Не вдалося завантажити архів. Спробуй оновити сторінку.</p-message>
+  }
+
+  <section class="kurin-tile">
+    <p-table [value]="offices()" styleClass="project-table" [loading]="loading()" dataKey="historyKey">
+      <ng-template #caption>
+        <div class="lil-tile-head archive-head">
+          <div>
+            <h2>Ролі й діловодства <span class="lil-count">{{ offices().length }}</span></h2>
+          </div>
+          <div class="archive-head__tools">
+            <app-registry-search inputId="archive-search" label="Пошук у ролях і членствах" [(value)]="search" />
+            <p-selectbutton [options]="officeFilterOptions" [ngModel]="officeFilter()" (ngModelChange)="officeFilter.set($event)"
+              [allowEmpty]="false" optionLabel="label" optionValue="value" />
+          </div>
+        </div>
+      </ng-template>
+      <ng-template #header>
+        <tr>
+          <th>Роль</th>
+          <th>Людина</th>
+          <th>Від</th>
+          <th>До</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-o>
+        <tr data-testid="archive-office">
+          <td data-mobile-label="Роль">
+            {{ roleLabel(o) }}
+            @if (o.groupDissolved) {
+              <p-tag value="розформовано" severity="secondary" />
+            }
+          </td>
+          <td data-mobile-label="Людина"><a [routerLink]="['/member', o.memberKey]">{{ o.memberName }}</a></td>
+          <td data-mobile-label="Від" class="archive-date">{{ date(o.startDate) }}</td>
+          <td data-mobile-label="До" class="archive-date">{{ o.endDate ? date(o.endDate) : 'зараз' }}</td>
+          <td class="archive-actions">
+            @if (o.isOwn) {
+              <p-tag value="своє" severity="secondary" />
+            }
+            @if (o.canCorrect) {
+              <p-button icon="pi pi-pencil" severity="secondary" variant="text" ariaLabel="Виправити" (onClick)="openOffice(o)" />
+            }
+            @if (canDeleteOffice(o)) {
+              <p-button icon="pi pi-trash" severity="danger" variant="text" ariaLabel="Видалити" (onClick)="confirmDeleteOffice(o)" data-testid="archive-delete" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="5" class="lil-empty-cell">
+          <app-empty-state art="list" title="Тут поки порожньо" />
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+
+  <section class="kurin-tile" id="former">
+    <p-table [value]="memberships()" styleClass="project-table" [loading]="loading()" dataKey="membershipKey">
+      <ng-template #caption>
+        <div class="lil-tile-head">
+          <div>
+            <h2>Колишні членства <span class="lil-count">{{ memberships().length }}</span></h2>
+          </div>
+        </div>
+      </ng-template>
+      <ng-template #header>
+        <tr>
+          <th>Людина</th>
+          <th>Вид</th>
+          @if (hasGroups()) {
+            <th>Гуртки</th>
+          }
+          <th>Від</th>
+          <th>До</th>
+          @if (canReturn) {
+            <th>Зараз</th>
+          }
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-m>
+        <tr data-testid="archive-membership">
+          <td data-mobile-label="Людина"><a [routerLink]="['/member', m.memberKey]">{{ m.memberName }}</a></td>
+          <td data-mobile-label="Вид">{{ kindLabel(m.kind) }}</td>
+          @if (hasGroups()) {
+            <td data-mobile-label="Гуртки">{{ stintsLine(m) }}</td>
+          }
+          <td data-mobile-label="Від" class="archive-date">{{ date(m.joinedOn) }}</td>
+          <td data-mobile-label="До" class="archive-date">{{ date(m.leftOn) }}</td>
+          @if (canReturn) {
+            <td data-mobile-label="Зараз">{{ standingLine(m) }}</td>
+          }
+          <td class="archive-actions">
+            @if (m.isOwn) {
+              <p-tag value="своє" severity="secondary" />
+            }
+            @if (!zone() && returnFor(m); as person) {
+              @if (asked().has(m.memberKey)) {
+                <p-tag value="Запит чекає" severity="secondary" />
+              } @else {
+                <p-button [label]="person.standsIn.length ? 'Попросити' : 'Повернути'" icon="pi pi-user-plus" severity="secondary"
+                  variant="text" (onClick)="returning.set(person)" />
+              }
+            }
+            @if (m.canCorrect) {
+              <p-button icon="pi pi-pencil" severity="secondary" variant="text" ariaLabel="Виправити" (onClick)="openMembership(m)" />
+            }
+            @if (canDeleteMembership(m)) {
+              <p-button icon="pi pi-trash" severity="danger" variant="text" ariaLabel="Видалити" (onClick)="confirmDeleteMembership(m)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td [attr.colspan]="(hasGroups() ? 6 : 5) + (canReturn ? 1 : 0)" class="lil-empty-cell">
+          <app-empty-state art="trail" title="Ніхто не йшов" />
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+
+  @if (hasGroups()) {
+    <section class="kurin-tile">
+      <p-table [value]="dissolvedGroups()" styleClass="project-table" [loading]="loading()" dataKey="groupKey">
+        <ng-template #caption>
+          <div class="lil-tile-head">
+            <div>
+              <h2>Розформовані гуртки <span class="lil-count">{{ dissolvedGroups().length }}</span></h2>
+            </div>
+          </div>
+        </ng-template>
+        <ng-template #header>
+          <tr>
+            <th>Гурток</th>
+            <th>Розформовано</th>
+            <th>Провід</th>
+            <th></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-g>
+          <tr data-testid="archive-group">
+            <td data-mobile-label="Гурток" class="archive-name">{{ g.name }}</td>
+            <td data-mobile-label="Розформовано" class="archive-date">{{ date(g.dissolvedOn) }}</td>
+            <td data-mobile-label="Провід" class="archive-leaders">{{ groupLeaders(g) }}</td>
+            <td class="archive-actions">
+              @if (zone()) {
+                <p-button icon="pi pi-trash" severity="danger" variant="text" ariaLabel="Видалити" (onClick)="confirmDeleteGroup(g)" />
+              }
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr><td colspan="4" class="lil-empty-cell">
+            <app-empty-state art="list" title="Усі гуртки на місці" />
+          </td></tr>
+        </ng-template>
+      </p-table>
+    </section>
+  }
+</div>
+
+<app-return-dialog [kurinKey]="kurinKey" [person]="returning()" (closed)="returning.set(null)" (sent)="reloadAfterReturn()" />
+
+<p-dialog [visible]="!!editingOffice() || !!editingMembership()" (visibleChange)="!$event && closeEdit()" [modal]="true"
+  [closable]="!saving()" [style]="{ width: 'min(92vw, 26rem)' }" [header]="editingOffice() ? 'Виправити роль' : 'Виправити членство'">
+  <div class="archive-form">
+    <p class="archive-form__who">{{ editingOffice()?.memberName ?? editingMembership()?.memberName }}</p>
+    @if (editingOffice()) {
+      <div class="lil-dialog-field">
+        <label class="lil-dialog-label" for="archive-role">Роль</label>
+        <p-select inputId="archive-role" [options]="roleOptions()" optionLabel="label" optionValue="value"
+          [ngModel]="editRole()" (ngModelChange)="editRole.set($event)" appendTo="body" />
+      </div>
+    } @else {
+      <div class="lil-dialog-field">
+        <span class="lil-dialog-label" id="archive-kind">Вид</span>
+        <p-selectbutton [options]="kindOptions()" optionLabel="label" optionValue="value" [allowEmpty]="false"
+          [ngModel]="editKind()" (ngModelChange)="editKind.set($event)" ariaLabelledBy="archive-kind" />
+      </div>
+    }
+    <div class="archive-form__dates">
+      <div class="lil-dialog-field">
+        <label class="lil-dialog-label" for="archive-from">Від</label>
+        <p-datepicker inputId="archive-from" dateFormat="dd.mm.yy" [showIcon]="true" [showOnFocus]="false" appendTo="body" styleClass="w-full"
+          [maxDate]="editTo() ?? today" [ngModel]="editFrom()" (ngModelChange)="editFrom.set($event)" />
+      </div>
+      <div class="lil-dialog-field">
+        <label class="lil-dialog-label" for="archive-to">До</label>
+        <p-datepicker inputId="archive-to" dateFormat="dd.mm.yy" [showIcon]="true" [showOnFocus]="false" appendTo="body" styleClass="w-full"
+          [minDate]="editFrom()" [maxDate]="today" [ngModel]="editTo()" (ngModelChange)="editTo.set($event)" />
+      </div>
+    </div>
+  </div>
+  <ng-template #footer>
+    <p-button label="Скасувати" severity="secondary" [outlined]="true" [disabled]="saving()" (onClick)="closeEdit()" />
+    <p-button label="Зберегти" icon="pi pi-check" [loading]="saving()" [disabled]="!canSaveEdit()" (onClick)="saveEdit()" />
+  </ng-template>
+</p-dialog>
+
+<p-dialog [visible]="entering()" (visibleChange)="entering.set($event)" [modal]="true" [closable]="!sendingProof()"
+  [style]="{ width: 'min(92vw, 26rem)' }" header="Небезпечний режим">
+  <form class="archive-form" (ngSubmit)="enter()" data-testid="archive-danger-form">
+    <p-selectbutton [options]="proofOptions" optionLabel="label" optionValue="value" [allowEmpty]="false"
+      [ngModel]="proofMethod()" (ngModelChange)="setProofMethod($event)" name="method" ariaLabelledBy="archive-proof" />
+    <div class="lil-dialog-field">
+      @if (proofMethod() === 'password') {
+        <label class="lil-dialog-label" id="archive-proof" for="archive-proof-input">Пароль акаунта</label>
+        <input pInputText id="archive-proof-input" name="proof" type="password" autocomplete="current-password"
+          [ngModel]="proof()" (ngModelChange)="proof.set($event)" />
+      } @else {
+        <label class="lil-dialog-label" id="archive-proof" for="archive-proof-input">Код з автентифікатора</label>
+        <input pInputText id="archive-proof-input" name="proof" type="text" inputmode="numeric" autocomplete="one-time-code"
+          [ngModel]="proof()" (ngModelChange)="proof.set($event)" />
+      }
+    </div>
+    @if (proofError()) {
+      <p-message severity="error" size="small" variant="simple">{{ proofError() }}</p-message>
+    }
+  </form>
+  <ng-template #footer>
+    <p-button label="Скасувати" severity="secondary" [outlined]="true" [disabled]="sendingProof()" (onClick)="entering.set(false)" />
+    <p-button label="Увімкнути" icon="pi pi-lock-open" severity="danger" [loading]="sendingProof()" [disabled]="!proof().trim()"
+      (onClick)="enter()" data-testid="archive-danger-submit" />
+  </ng-template>
+</p-dialog>

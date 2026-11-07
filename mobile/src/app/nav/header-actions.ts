@@ -130,7 +130,7 @@ export class HeaderActions implements OnInit {
       await this.scopes.switchTo(data.kurinKey, 'tabs/home');
     } catch (error) {
       this.switching.set(false);
-      await this.toasts.show(apiErrorText(error, `${kurinName(data.kurinNumber)} лишився недосяжним. Спробуй ще раз.`), 'danger');
+      await this.toasts.show(apiErrorText(error, `${kurinName(data.kurinNumber, data.branch)} лишився недосяжним. Спробуй ще раз.`), 'danger');
     }
   }
 }

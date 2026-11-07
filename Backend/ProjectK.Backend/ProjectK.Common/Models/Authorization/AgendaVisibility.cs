@@ -30,11 +30,13 @@ public static class AgendaVisibility
         var groupKeys = viewer.ViewerGroupKeys;
         var leadershipKeys = viewer.ViewerLeadershipKeys;
         var memberKey = viewer.ViewerMemberKey;
+        var tagKeys = viewer.ViewerTagKeys ?? Array.Empty<Guid>();
 
         return item => item.Assignments.Any(assignment =>
             assignment.TargetType == AgendaTargetType.Kurin ||
             (assignment.TargetType == AgendaTargetType.Group && groupKeys.Contains(assignment.TargetKey)) ||
             (assignment.TargetType == AgendaTargetType.Leadership && leadershipKeys.Contains(assignment.TargetKey)) ||
+            (assignment.TargetType == AgendaTargetType.Tag && tagKeys.Contains(assignment.TargetKey)) ||
             (assignment.TargetType == AgendaTargetType.Member && memberKey != null && assignment.TargetKey == memberKey));
     }
 

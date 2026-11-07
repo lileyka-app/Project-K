@@ -40,6 +40,23 @@ public interface IResourceAccessService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The guard on a senior's youth record, for what one endpoint shares with other records: an
+    /// УПЮ відзначення beside a senior one, ступені beside the rest of the profile. Allowed when the
+    /// person stands in no УСП or УПС kurin. Otherwise only who holds the kurin-wide right in the kurin
+    /// they stand in now, and the person themself only where <paramref name="ownerMayChange"/>.
+    /// Probes, signed or not, nobody changes. Where the change is a capability the kurin sets level
+    /// by level — confirming an award of one level — <paramref name="capability"/> names it, and its
+    /// reach counts rather than the widest of the permission it shares.
+    /// </summary>
+    Task<ResourceAccessDecision> CheckSeniorYouthRecordAsync(
+        ResourceType resourceType,
+        ResourceAction action,
+        Guid memberKey,
+        bool ownerMayChange = false,
+        CancellationToken cancellationToken = default,
+        KurinCapability? capability = null);
+
+    /// <summary>
     /// Every capability the caller may exercise on the resource, worked out from one read of its
     /// scope. Empty when the resource is out of reach altogether.
     /// </summary>

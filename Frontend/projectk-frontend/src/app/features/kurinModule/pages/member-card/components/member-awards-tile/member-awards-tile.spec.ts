@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberAwardsTileComponent } from './member-awards-tile';
 import { BadgeImageBlobService } from '../../../../services/probes-and-badges/badge-image-blob.service';
-import { MemberAwardDto } from '../../../../models/member-award.dto';
+import { YouthAwardDto } from '../../../../models/member-award.dto';
 import { MemberAwardLevel } from '../../../../models/enums/member-award-level.enum';
 import { BadgeProgressStatus } from '../../../../models/enums/badge-progress-status.enum';
 
@@ -9,7 +9,7 @@ describe('MemberAwardsTileComponent', () => {
   let fixture: ComponentFixture<MemberAwardsTileComponent>;
   let component: MemberAwardsTileComponent;
 
-  function award(level: MemberAwardLevel, status: BadgeProgressStatus, submittedBy = 'someone'): MemberAwardDto {
+  function award(level: MemberAwardLevel, status: BadgeProgressStatus, submittedBy = 'someone'): YouthAwardDto {
     return {
       memberAwardKey: `a-${level}-${status}`,
       memberKey: 'm1',

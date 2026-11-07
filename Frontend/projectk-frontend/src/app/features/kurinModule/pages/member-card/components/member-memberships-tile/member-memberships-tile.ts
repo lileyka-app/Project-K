@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { TagModule } from '@openng/optimus-ui/tag';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { MembershipDto } from '../../../../models/membership.dto';
-import { KURIN_BRANCH_LABELS } from '../../../../models/enums/kurin-branch.enum';
-import { MEMBERSHIP_KIND_LABELS } from '../../../../models/enums/membership-kind.enum';
+import { KURIN_BRANCH_LABELS, hasGroups, isSeniorBranch } from '../../../../models/enums/kurin-branch.enum';
+import { membershipKindLabel } from '../../../../models/enums/membership-kind.enum';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { RouterLink } from '@angular/router';
 import { kurinLabel } from '../../../../../../shared/functions/kurin-label.function';
@@ -47,7 +47,7 @@ export class MemberMembershipsTileComponent {
   readonly openKurin = output<MembershipDto>();
 
   readonly branchLabels = KURIN_BRANCH_LABELS;
-  readonly kindLabels = MEMBERSHIP_KIND_LABELS;
+  readonly kindLabel = membershipKindLabel;
 
   readonly current = computed(() => this.memberships().filter(m => m.isCurrent));
   readonly past = computed(() => this.memberships().filter(m => !m.isCurrent));
@@ -64,8 +64,21 @@ export class MemberMembershipsTileComponent {
     return this.canManage() && membership.isCurrent && membership.kurinKey === this.scopedKurinKey();
   }
 
+  /** «к. ч. 47»; a senior kurin by its own name, else «5-й курінь УСП». */
   kurinTitle(membership: MembershipDto): string {
-    return kurinLabel(membership.kurinNumber);
+    return isSeniorBranch(membership.branch) && membership.kurinNamedAfter
+      ? membership.kurinNamedAfter
+      : kurinLabel(membership.kurinNumber, membership.branch);
+  }
+
+  /** A senior kurin has no гуртки, so there is nowhere to move anyone. */
+  hasGroups(membership: MembershipDto): boolean {
+    return hasGroups(membership.branch);
+  }
+
+  /** The name line under the title: a УПЮ kurin's patron; a senior kurin's name is already the title. */
+  namedLine(membership: MembershipDto): string | null {
+    return isSeniorBranch(membership.branch) ? null : membership.kurinNamedAfter ?? null;
   }
 
   period(membership: MembershipDto): string {

@@ -1,0 +1,60 @@
+@if (enabled() && (tagKeys().length || canManage())) {
+  <div class="member-tags">
+    <app-kurin-tag-chips [keys]="tagKeys()" />
+    @if (!tagKeys().length) {
+      <span class="member-tags__none">Тегів ще немає</span>
+    }
+    @if (canManage()) {
+      <p-button
+        label="Змінити теги"
+        icon="pi pi-tags"
+        severity="secondary"
+        variant="text"
+        size="small"
+        (onClick)="open()" />
+    }
+  </div>
+
+  <p-dialog
+    [visible]="dialogVisible()"
+    (visibleChange)="dialogVisible.set($event)"
+    [modal]="true"
+    [draggable]="false"
+    [style]="{ width: 'min(92vw, 28rem)' }"
+    header="Теги людини">
+    <div class="member-tags__form">
+      @if (options().length) {
+        <label for="member-tags-select" class="member-tags__label">Теги, до {{ max() }} на людину</label>
+        <p-multiselect
+          inputId="member-tags-select"
+          [options]="options()"
+          [(ngModel)]="selected"
+          optionLabel="name"
+          optionValue="kurinTagKey"
+          display="chip"
+          [selectionLimit]="max()"
+          [maxSelectedLabels]="max()"
+          [showToggleAll]="false"
+          [filter]="options().length > 8"
+          placeholder="Обери теги"
+          appendTo="body"
+          styleClass="member-tags__select">
+          <ng-template let-tag #item>
+            <span class="member-tags__option">
+              <span class="member-tags__dot" [style.background]="tag.colorHex" aria-hidden="true"></span>{{ tag.name }}
+            </span>
+          </ng-template>
+        </p-multiselect>
+      } @else {
+        <p class="member-tags__none">У курені ще немає тегів. Заведи їх у реєстрі, кнопкою «Теги куреня».</p>
+      }
+      @if (error(); as message) {
+        <p-message severity="error" size="small">{{ message }}</p-message>
+      }
+    </div>
+    <ng-template #footer>
+      <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="dialogVisible.set(false)" />
+      <p-button label="Зберегти" icon="pi pi-check" [loading]="saving()" [disabled]="!options().length" (onClick)="save()" />
+    </ng-template>
+  </p-dialog>
+}

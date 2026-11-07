@@ -30,5 +30,6 @@ public sealed class ProgressCleanupEventHandler : INotificationHandler<DomainEve
         await _unitOfWork.ProbeProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
         await _unitOfWork.ProbePointProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
         await _unitOfWork.BadgeProgresses.DeleteForMembersAsync(memberKeys, cancellationToken);
+        await _unitOfWork.ProbeProjects.DeleteForMembersAsync(memberKeys, cancellationToken);
     }
 }

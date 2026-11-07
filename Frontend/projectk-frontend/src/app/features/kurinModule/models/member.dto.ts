@@ -19,6 +19,8 @@ export interface MemberDto {
     userKey?: string | null;
     /** Чи прийнято запрошення. Приходить лише з картки однієї людини і лише тому, хто бачить її приватні дані. */
     accountStatus?: AccountStatus | null;
+    /** Теги куреня на людині, які бачить той, хто дивиться. */
+    tagKeys?: string[];
     /** Чи пішов лист-запрошення, який мав піти після цього збереження. Null — лист не мав іти. */
     invitationSent?: boolean | null;
     userRole?: string | null;

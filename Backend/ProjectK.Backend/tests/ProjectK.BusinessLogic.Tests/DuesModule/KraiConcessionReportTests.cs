@@ -97,6 +97,9 @@ public class KraiConcessionReportTests
         free.People.Should().Be(1);
         free.Reduction.Total.Should().Be(300);
         free.Kurins.Single().Number.Should().Be(12);
+        // The number is the kurin's own in its улад: the row says which улад, so 12 УПЮ and 12 УСП stay apart.
+        free.Kurins.Single().Branch.Should().Be(KurinBranch.UPYu);
+        free.Kurins.Single().Branches.Should().Equal(new ProjectK.Common.Models.Records.KurinNumbering(KurinBranch.UPYu, 12));
     }
 
     [Fact]

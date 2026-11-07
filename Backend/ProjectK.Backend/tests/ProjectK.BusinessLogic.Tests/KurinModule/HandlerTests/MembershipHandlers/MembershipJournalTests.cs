@@ -1,11 +1,13 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -41,8 +43,10 @@ public class MembershipJournalTests
 
         _unitOfWork.SetupGet(u => u.Memberships).Returns(_memberships.Object);
         _unitOfWork.SetupGet(u => u.Groups).Returns(_groups.Object);
+        _unitOfWork.SetupGet(u => u.MembershipRequests).Returns(NoMembershipRequests.Repository());
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _memberships.Setup(r => r.GetActiveAsync(_membership.MemberKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_membership);
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(_membership.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _groups.Setup(r => r.GetByKeyAsync(_sokoly.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_sokoly);
         _groups.Setup(r => r.GetByKeyAsync(_orly.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_orly);
         _members.Setup(d => d.FindAsync(_membership.MemberKey, It.IsAny<CancellationToken>()))
@@ -56,7 +60,7 @@ public class MembershipJournalTests
     [Fact]
     public async Task Leaving_IsRecordedWithTheGroupTheyLeftFrom()
     {
-        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit);
+        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, new MembershipMoves(_unitOfWork.Object, _journal.Audit, Mock.Of<IDomainEventPublisher>(), Mock.Of<IDuesDirectory>(), TimeProvider.System));
 
         await handler.Handle(new LeaveKurinCommand(_membership.MemberKey, _kurinKey), default);
 

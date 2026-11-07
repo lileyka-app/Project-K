@@ -55,6 +55,12 @@ public class MemberResponse : IHasParentContacts, IMemberPersonalData, IHasCardE
     public OnboardingStatus? AccountStatus { get; set; }
 
     /// <summary>
+    /// The kurin's tags on this person that the viewer may see. Empty when the kurin has tags off.
+    /// The tags themselves come from <c>GET api/kurin/{kurinKey}/tags</c>.
+    /// </summary>
+    public ICollection<Guid> TagKeys { get; set; } = [];
+
+    /// <summary>
     /// Whether the invitation letter this write was due to send went out. Null when the write sent
     /// none; false means the account stands but the letter has to be sent again.
     /// </summary>

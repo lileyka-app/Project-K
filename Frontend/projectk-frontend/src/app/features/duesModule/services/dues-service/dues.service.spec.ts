@@ -73,7 +73,7 @@ describe('DuesService', () => {
     service.setGroupRate('g1', { fromQuarter: { year: 2026, number: 2 }, groupShare: 45 }).subscribe();
     http.expectOne(`${baseUrl}/rate`).flush({});
 
-    service.setConcession('g1', 'm1', { fromQuarter: { year: 2026, number: 3 }, isConcession: true }).subscribe();
+    service.setConcession({ groupKey: 'g1' }, 'm1', { fromQuarter: { year: 2026, number: 3 }, isConcession: true }).subscribe();
     const put = http.expectOne(`${baseUrl}/members/m1/concession`);
     expect(put.request.body.fromQuarter).toEqual({ year: 2026, number: 3 });
     put.flush({});
@@ -81,16 +81,24 @@ describe('DuesService', () => {
 
   it('пільги краю надаються людині, а змінюються й видаляються за ключем наданої', () => {
     const request = { concessionKey: 'sibling', fromQuarter: { year: 2026, number: 3 }, toQuarter: null, reason: null };
-    service.grantConcession('g1', 'm1', request).subscribe();
+    service.grantConcession({ groupKey: 'g1' }, 'm1', request).subscribe();
     const post = http.expectOne(`${baseUrl}/members/m1/concessions`);
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toEqual(request);
     post.flush('k1');
 
-    service.updateConcessionGrant('g1', 'k1', { toQuarter: { year: 2026, number: 4 }, reason: 'брат' }).subscribe();
+    service.updateConcessionGrant({ groupKey: 'g1' }, 'k1', { toQuarter: { year: 2026, number: 4 }, reason: 'брат' }).subscribe();
     expect(http.expectOne(`${baseUrl}/concessions/k1`).request.method).toBe('PUT');
 
-    service.deleteConcessionGrant('g1', 'k1').subscribe();
+    service.deleteConcessionGrant({ groupKey: 'g1' }, 'k1').subscribe();
     expect(http.expectOne(`${baseUrl}/concessions/k1`).request.method).toBe('DELETE');
+  });
+
+  it('пільга в касі старшого куреня іде маршрутом куреня', () => {
+    const kurinUrl = `${environment.apiUrl}/kurin/k1/dues`;
+    service.setConcession({ kurinKey: 'k1' }, 'm1', { fromQuarter: { year: 2026, number: 4 }, isConcession: true }).subscribe();
+    const put = http.expectOne(`${kurinUrl}/members/m1/concession`);
+    expect(put.request.method).toBe('PUT');
+    put.flush({});
   });
 });

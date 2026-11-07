@@ -10,15 +10,17 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
+using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Tags;
 
 namespace ProjectK.Infrastructure.DbContexts;
 
@@ -27,9 +29,14 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Krai> Krais { get; set; }
     public DbSet<KraiProfileRevision> KraiProfileRevisions { get; set; }
     public DbSet<Kurin> Kurins { get; set; }
+    public DbSet<KurinBranchRequest> KurinBranchRequests { get; set; }
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
     public DbSet<Membership> Memberships { get; set; }
+    public DbSet<MembershipGroupStint> MembershipGroupStints { get; set; }
+    public DbSet<MembershipRequest> MembershipRequests { get; set; }
+    public DbSet<MemberCardShare> MemberCardShares { get; set; }
+    public DbSet<KurinCardSharing> KurinCardSharing { get; set; }
     public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
     public DbSet<Leadership> Leaderships { get; set; }
     public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
@@ -41,9 +48,15 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<AgendaAssignmentProgress> AgendaAssignmentProgress { get; set; }
     public DbSet<AgendaCategory> AgendaCategories { get; set; }
     public DbSet<AgendaResponse> AgendaResponses { get; set; }
+    public DbSet<KurinTag> KurinTags { get; set; }
+    public DbSet<MemberTag> MemberTags { get; set; }
+    public DbSet<KurinTagSettings> KurinTagSettings { get; set; }
     public DbSet<BadgeProgress> BadgeProgresses { get; set; }
     public DbSet<ProbeProgress> ProbeProgresses { get; set; }
     public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
+    public DbSet<ProbeProject> ProbeProjects { get; set; }
+    public DbSet<ProbeProjectImage> ProbeProjectImages { get; set; }
+    public DbSet<ThirdProbeFile> ThirdProbeFiles { get; set; }
     public DbSet<MentorAssignment> MentorAssignments { get; set; }
     public DbSet<MemberWarning> MemberWarnings { get; set; }
     public DbSet<MemberAward> MemberAwards { get; set; }
@@ -55,6 +68,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<DuesCharge> DuesCharges { get; set; }
     public DbSet<DuesEntry> DuesEntries { get; set; }
     public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
+    public DbSet<KurinDuesSettings> KurinDuesSettings { get; set; }
 
     public DbSet<KurinScoreSettings> KurinScoreSettings { get; set; }
     public DbSet<ScoreRule> ScoreRules { get; set; }
@@ -89,18 +103,107 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     /// Stamps a new member's public code before it is written. It sits here rather than in a use
     /// case because a member is also opened by the seeders and by account activation, and a person
     /// without a code cannot be found by the one thing another kurin can ask for.
+    /// <para>
+    /// The гурток stints of memberships are kept here for the same reason: a person changes гурток
+    /// on joining, moving, leaving, a transfer, an import and a dissolved гурток, and a path that
+    /// forgot to write the stint would leave a hole in the archive nobody notices.
+    /// </para>
     /// </summary>
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        StampNewMembers();
+        var moves = GroupMoves();
+        var keys = moves.Where(move => move.WasIn is not null).Select(move => move.Membership.MembershipKey).ToList();
+        ApplyGroupMoves(moves, keys.Count == 0 ? [] : MembershipGroupStints.Where(stint => keys.Contains(stint.MembershipKey) && stint.ToUtc == null).ToList());
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        StampNewMembers();
+        var moves = GroupMoves();
+        var keys = moves.Where(move => move.WasIn is not null).Select(move => move.Membership.MembershipKey).ToList();
+        ApplyGroupMoves(moves, keys.Count == 0 ? [] : await MembershipGroupStints.Where(stint => keys.Contains(stint.MembershipKey) && stint.ToUtc == null).ToListAsync(cancellationToken));
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void StampNewMembers()
     {
         foreach (var entry in ChangeTracker.Entries<Member>())
         {
             if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.PublicId))
             {
-                entry.Entity.PublicId = MemberPublicId.For(entry.Entity.MemberKey);
+                entry.Entity.PublicId = MemberPublicId.New();
+            }
+        }
+    }
+
+    /// <summary>A membership whose гурток changed: where it stood before this save and where it stands after.</summary>
+    private sealed record GroupMove(Membership Membership, bool Added, Guid? WasIn, Guid? IsIn);
+
+    private List<GroupMove> GroupMoves()
+    {
+        var moves = new List<GroupMove>();
+        foreach (var entry in ChangeTracker.Entries<Membership>())
+        {
+            var membership = entry.Entity;
+            if (entry.State == EntityState.Added && membership.GroupKey is not null)
+            {
+                moves.Add(new GroupMove(membership, true, null, membership.GroupKey));
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                var wasIn = entry.Property(e => e.LeftAtUtc).OriginalValue is null ? entry.Property(e => e.GroupKey).OriginalValue : null;
+                var isIn = membership.LeftAtUtc is null ? membership.GroupKey : null;
+                if (wasIn != isIn)
+                {
+                    moves.Add(new GroupMove(membership, false, wasIn, isIn));
+                }
             }
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        return moves;
+    }
+
+    private void ApplyGroupMoves(List<GroupMove> moves, List<MembershipGroupStint> openInStore)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var move in moves)
+        {
+            var membershipKey = move.Membership.MembershipKey;
+            if (move.Added)
+            {
+                // Joined straight into a гурток — or seeded as a membership that has already ended.
+                MembershipGroupStints.Add(new MembershipGroupStint
+                {
+                    MembershipKey = membershipKey,
+                    GroupKey = move.IsIn!.Value,
+                    FromUtc = move.Membership.JoinedAtUtc == default ? now : move.Membership.JoinedAtUtc,
+                    ToUtc = move.Membership.LeftAtUtc
+                });
+                continue;
+            }
+
+            if (move.WasIn is { } leftGroup)
+            {
+                var until = move.Membership.LeftAtUtc ?? now;
+                var open = MembershipGroupStints.Local.Concat(openInStore)
+                    .FirstOrDefault(stint => stint.MembershipKey == membershipKey && stint.GroupKey == leftGroup && stint.ToUtc == null);
+                if (open is null)
+                {
+                    MembershipGroupStints.Add(new MembershipGroupStint { MembershipKey = membershipKey, GroupKey = leftGroup, ToUtc = until });
+                }
+                else
+                {
+                    open.ToUtc = until;
+                }
+            }
+
+            if (move.IsIn is { } enteredGroup)
+            {
+                MembershipGroupStints.Add(new MembershipGroupStint { MembershipKey = membershipKey, GroupKey = enteredGroup, FromUtc = now });
+            }
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -146,8 +249,19 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany()
                   .HasForeignKey(e => e.KraiCode)
                   .OnDelete(DeleteBehavior.Restrict);
-            // A number is the kurin's within its край: two краї can each have a kurin 12.
-            entity.HasIndex(e => new { e.KraiCode, e.Number }).IsUnique();
+            // A number is the kurin's within its край and гілка: two краї can each have a kurin 12,
+            // and a УПЮ kurin 5 stands beside a УСП kurin 5. This guards the main гілка; a second
+            // гілка's number is checked by the handlers that set it (IKurinRepository.IsNumberTakenAsync).
+            entity.HasIndex(e => new { e.KraiCode, e.Branch, e.Number }).IsUnique();
+            entity.HasMany(e => e.Branches)
+                  .WithOne()
+                  .HasForeignKey(b => b.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Navigation(e => e.Branches).AutoInclude();
+            entity.Ignore(e => e.Numbering);
+            entity.Ignore(e => e.IsScoreEnabled);
+            entity.Property(e => e.RoleNames).HasMaxLength(2000);
+            entity.Property(e => e.EmblemBlobName).HasMaxLength(512);
             entity.Property(e => e.Stanytsia)
                 .HasMaxLength(120);
             entity.Property(e => e.RegionOrCountry)
@@ -156,6 +270,35 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasMaxLength(200);
             entity.Property(e => e.Description)
                 .HasMaxLength(4000);
+        });
+
+        builder.Entity<KurinBranchNumber>(entity =>
+        {
+            entity.ToTable("KurinBranches");
+            entity.HasKey(e => new { e.KurinKey, e.Branch });
+            entity.Property(e => e.Branch).HasConversion<int>();
+            entity.Property(e => e.KraiCode).HasMaxLength(8);
+            // Every number of every гілка is the kurin's alone in its край, the second гілка too:
+            // two approvals at once cannot both take УПС 12.
+            entity.HasIndex(e => new { e.KraiCode, e.Branch, e.Number }).IsUnique();
+        });
+
+        builder.Entity<KurinBranchRequest>(entity =>
+        {
+            entity.HasKey(e => e.KurinBranchRequestKey);
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.Note).HasMaxLength(KurinBranchRequest.NoteMaxLength);
+            entity.Ignore(e => e.WantedBranches);
+            entity.HasIndex(e => new { e.KurinKey, e.Status });
+            // A kurin keeps one request open: the submit replaces it, and this stops two at once.
+            entity.HasIndex(e => e.KurinKey)
+                  .IsUnique()
+                  .HasFilter($"[Status] = {(int)KurinBranchRequestStatus.Pending}")
+                  .HasDatabaseName("IX_KurinBranchRequests_KurinKey_Pending");
+            entity.HasOne<Kurin>()
+                  .WithMany()
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<Group>(entity =>
@@ -171,6 +314,20 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany(k => k.Groups)
                   .HasForeignKey(e => e.KurinKey)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            // A dissolved гурток is gone everywhere but the archive, which reads past this filter.
+            entity.HasQueryFilter(e => e.DissolvedAtUtc == null);
+        });
+
+        builder.Entity<MembershipGroupStint>(entity =>
+        {
+            entity.HasKey(e => e.MembershipGroupStintKey);
+            entity.HasOne(e => e.Membership)
+                  .WithMany()
+                  .HasForeignKey(e => e.MembershipKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.MembershipKey, e.ToUtc });
+            entity.HasIndex(e => e.GroupKey);
         });
 
         builder.Entity<Member>(entity =>
@@ -185,6 +342,20 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithOne()
                   .HasForeignKey<Member>(e => e.UserKey)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Requests between kurins hold the person and both kurins by key: the record of who asked whom
+        // outlives either side changing.
+        builder.Entity<MembershipRequest>(entity =>
+        {
+            entity.HasKey(e => e.MembershipRequestKey);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.MembershipKind).HasConversion<int>();
+            entity.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
+            entity.HasIndex(e => e.FromKurinKey);
+            entity.HasIndex(e => e.ToKurinKey);
+            entity.HasIndex(e => e.MemberKey);
         });
 
         builder.Entity<Membership>(entity =>
@@ -248,7 +419,9 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                           (a, b) => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(b, (JsonSerializerOptions?)null),
                           a => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null).GetHashCode(),
                           a => JsonSerializer.Deserialize<List<KurinDuesArticle>>(JsonSerializer.Serialize(a, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!));
-            entity.HasIndex(e => new { e.KurinKey, e.FromQuarter }).IsUnique();
+            // One rate per tag per quarter, and one for everyone: the null tag is a value here, so the
+            // index must not get EF's default IS NOT NULL filter.
+            entity.HasIndex(e => new { e.KurinKey, e.TagKey, e.FromQuarter }).IsUnique().HasFilter(null);
         });
 
         builder.Entity<GroupDuesRate>(entity =>
@@ -277,6 +450,29 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.Value).HasPrecision(18, 2);
             entity.Property(e => e.Parts).HasConversion<int>();
             entity.Property(e => e.Reason).HasMaxLength(500);
+        });
+
+        builder.Entity<MemberCardShare>(entity =>
+        {
+            entity.HasKey(e => e.MemberCardShareKey);
+            entity.Property(e => e.Fields).HasConversion<int>();
+            entity.Property(e => e.LinkToken).HasMaxLength(64);
+            entity.HasIndex(e => e.MemberKey).IsUnique();
+            entity.HasIndex(e => e.LinkToken).IsUnique().HasFilter("[LinkToken] IS NOT NULL");
+        });
+
+        builder.Entity<KurinCardSharing>(entity =>
+        {
+            entity.HasKey(e => e.KurinCardSharingKey);
+            entity.Property(e => e.MinorFields).HasConversion<int>();
+            entity.HasIndex(e => e.KurinKey).IsUnique();
+        });
+
+        builder.Entity<KurinDuesSettings>(entity =>
+        {
+            entity.HasKey(e => e.KurinDuesSettingsKey);
+            entity.Property(e => e.ChargeTiming).HasConversion<int>();
+            entity.HasIndex(e => e.KurinKey).IsUnique();
         });
 
         builder.Entity<DuesCharge>(entity =>
@@ -457,7 +653,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         {
             entity.HasKey(e => e.MemberAwardKey);
             entity.Property(e => e.Level)
-                .HasConversion<int>();
+                .HasConversion<int?>();
+            entity.Property(e => e.CatalogId).HasMaxLength(MemberAward.CatalogIdMaxLength);
             entity.Property(e => e.Status)
                 .HasConversion<int>();
             entity.HasIndex(e => new { e.MemberKey, e.Level });
@@ -581,6 +778,42 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasIndex(e => new { e.KurinKey, e.IsArchived });
         });
 
+        builder.Entity<KurinTag>(entity =>
+        {
+            entity.HasKey(e => e.KurinTagKey);
+            entity.Property(e => e.Name).HasMaxLength(KurinTagRules.MaxNameLength).IsRequired();
+            entity.Property(e => e.ColorHex).HasMaxLength(16).IsRequired();
+            entity.HasOne(e => e.Kurin)
+                  .WithMany()
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.KurinKey, e.Name }).IsUnique();
+        });
+
+        builder.Entity<MemberTag>(entity =>
+        {
+            entity.HasKey(e => new { e.KurinTagKey, e.MemberKey });
+            entity.HasOne(e => e.Tag)
+                  .WithMany(t => t.Members)
+                  .HasForeignKey(e => e.KurinTagKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            // A deleted card takes its tags with it.
+            entity.HasOne<Member>()
+                  .WithMany()
+                  .HasForeignKey(e => e.MemberKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.MemberKey);
+        });
+
+        builder.Entity<KurinTagSettings>(entity =>
+        {
+            entity.HasKey(e => e.KurinKey);
+            entity.HasOne<Kurin>()
+                  .WithOne()
+                  .HasForeignKey<KurinTagSettings>(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
         builder.Entity<AgendaResponse>(entity =>
         {
             entity.HasKey(e => e.AgendaResponseKey);
@@ -662,6 +895,64 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .IsUnique();
         });
 
+        builder.Entity<ProbeProject>(entity =>
+        {
+            const int shortText = ProbeProjectRules.MaxShortTextLength;
+            entity.HasKey(e => e.ProbeProjectKey);
+            entity.Property(e => e.ProbeId).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Title).HasMaxLength(shortText).IsRequired();
+            entity.Property(e => e.Area).HasConversion<int?>();
+            entity.Property(e => e.Reach).HasConversion<int>();
+            entity.Property(e => e.SharedWith).HasMaxLength(shortText);
+            entity.Property(e => e.Location).HasMaxLength(shortText);
+            entity.Property(e => e.EventLeads).HasMaxLength(shortText);
+            entity.Property(e => e.CoordinatorName).HasMaxLength(shortText);
+            entity.Property(e => e.CoordinatorContact).HasMaxLength(shortText);
+            entity.Property(e => e.Description).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
+            entity.Property(e => e.Goal).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
+            entity.Property(e => e.Plan).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
+            entity.Property(e => e.Results).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
+            entity.Property(e => e.CoordinatorComment).HasMaxLength(ProbeProjectRules.MaxCommentLength);
+            entity.Property(e => e.ApprovedByName).HasMaxLength(200);
+            entity.Property(e => e.CompletedByName).HasMaxLength(200);
+            entity.Property(e => e.UpdatedByName).HasMaxLength(200);
+            entity.HasIndex(e => new { e.MemberKey, e.ProbeId });
+            entity.HasMany(e => e.Images)
+                .WithOne(i => i.Project)
+                .HasForeignKey(i => i.ProbeProjectKey)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ThirdProbeFile>(entity =>
+        {
+            const int shortText = ProbeProjectRules.MaxShortTextLength;
+            entity.HasKey(e => e.ThirdProbeFileKey);
+            entity.Property(e => e.ProbeId).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.MentorZvyazkovyi).HasMaxLength(shortText);
+            entity.Property(e => e.MentorVporiadnyk).HasMaxLength(shortText);
+            entity.Property(e => e.MentorReferent).HasMaxLength(shortText);
+            entity.Property(e => e.ReflectionWith).HasMaxLength(shortText);
+            entity.Property(e => e.ReflectionConfirmedByName).HasMaxLength(200);
+            entity.Property(e => e.StagesUpdatedByName).HasMaxLength(200);
+            entity.Property(e => e.CampKind).HasConversion<int?>();
+            entity.Property(e => e.CampName).HasMaxLength(shortText);
+            entity.Property(e => e.CampCertificateBlobName).HasMaxLength(300);
+            entity.Property(e => e.CampCertificateContentType).HasMaxLength(100);
+            entity.Property(e => e.CampCertificateFileName).HasMaxLength(shortText);
+            entity.Property(e => e.PhysicalBadgeId).HasMaxLength(200);
+            entity.Property(e => e.Resume).HasMaxLength(ProbeProjectRules.MaxResumeLength).IsRequired();
+            entity.Property(e => e.UpdatedByName).HasMaxLength(200);
+            entity.HasIndex(e => new { e.MemberKey, e.ProbeId }).IsUnique();
+        });
+
+        builder.Entity<ProbeProjectImage>(entity =>
+        {
+            entity.HasKey(e => e.ProbeProjectImageKey);
+            entity.Property(e => e.BlobName)
+                .HasMaxLength(300)
+                .IsRequired();
+        });
+
         builder.Entity<MentorAssignment>(entity =>
         {
             entity.HasKey(e => e.MentorAssignmentKey);
@@ -669,6 +960,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .WithMany(g => g.MentorAssignments)
                 .HasForeignKey(e => e.GroupKey)
                 .OnDelete(DeleteBehavior.Cascade);
+            // Follows the гурток's filter: a впорядник of a dissolved гурток leads nothing.
+            entity.HasQueryFilter(e => e.Group.DissolvedAtUtc == null);
             // Revoking keeps the row as history, so the pair may repeat: one active assignment at a
             // time, any number of revoked ones. Unfiltered, re-assigning a mentor to a group they
             // had been removed from failed on this index with a 500.
@@ -715,6 +1008,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         builder.Entity<WaitlistEntry>(entity =>
         {
             entity.HasKey(e => e.WaitlistEntryKey);
+            entity.Ignore(e => e.ClaimedSeniorBranches);
             entity.Property(e => e.Stanytsia)
                 .HasMaxLength(120);
             entity.Property(e => e.RegionOrCountry)

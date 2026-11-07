@@ -73,7 +73,42 @@ public class RolePermissionMapGoldenTests
         new(ChangeKind.Added, "AgendaItem:Create:OwnGroups",
             "Whom an item is assigned to became the kurin's policy (Assign*); a впорядник and a гурток's провід reach their own гурток by default.",
             [Vykhovnyk, Instruktor, .. GroupOffices]),
-        .. AdminCoversTheNewResources()
+        .. AdminCoversTheNewResources(),
+        .. new[] { "Create", "Delete", "Manage" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"MemberTag:{action}:KurinWide",
+            "New resource MemberTag (TAG-01); the admin holds every action on every resource.",
+            [SystemRole.Admin])),
+        new(ChangeKind.Added, "MemberTag:Read:KurinWide",
+            "New right SeeTags (TAG-01): by default the КВ and the kurin's провід see everyone's tags.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin, .. KurinOffices]),
+        new(ChangeKind.Added, "MemberTag:Read:OwnGroups",
+            "New right SeeTags (TAG-01): by default a гурток's провід sees the tags in its own гурток.",
+            [.. GroupOffices]),
+        new(ChangeKind.Added, "MemberTag:Update:KurinWide",
+            "New right ManageTags (TAG-01): by default the Звʼязковий defines tags and puts them on people.",
+            [Zvyazkovyi, SystemRole.Admin]),
+        new(ChangeKind.Added, "KurinSettings:Read:KurinWide",
+            "ACCESS-04 (owner, 2026-10-30): the whole КВ reads the kurin's settings; only the Звʼязковий changes them.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin]),
+        .. new[] { "Create", "Update", "Delete", "Manage" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinSettings:{action}:KurinWide",
+            "The administrator holds every action on every resource.",
+            [SystemRole.Admin])),
+        .. new[] { "Read", "Update" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinArchive:{action}:KurinWide",
+            "ARCH-01 (owner, 2026-10-30): the Звʼязковий reads and corrects the kurin's whole archive.",
+            [Zvyazkovyi, SystemRole.Admin])),
+        new(ChangeKind.Added, "KurinArchive:Delete:KurinWide",
+            "ARCH-01 (owner, 2026-11-01): only the Звʼязковий deletes from the archive, in the danger zone.",
+            [Zvyazkovyi, SystemRole.Admin]),
+        .. new[] { "Read", "Update" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinArchive:{action}:OwnGroups",
+            "ARCH-01 (owner, 2026-10-30): a гурток's провід corrects its own гурток's archive.",
+            ["Group.Hurtkoviy", Vykhovnyk, Instruktor])),
+        .. new[] { "Create", "Manage" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinArchive:{action}:KurinWide",
+            "The administrator holds every action on every resource.",
+            [SystemRole.Admin]))
     ];
 
     private const string Zvyazkovyi = "KV.Zvyazkovyi";

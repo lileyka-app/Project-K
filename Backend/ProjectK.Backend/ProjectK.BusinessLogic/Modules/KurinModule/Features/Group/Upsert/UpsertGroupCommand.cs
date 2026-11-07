@@ -65,6 +65,13 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
             {
                 return new ServiceResult<GroupResponse>(ResultType.NotFound);
             }
+
+            // A senior kurin has no гуртки at all: its people are told apart by tags.
+            if (KurinBranchSet.IsSenior(kurin.Branch))
+            {
+                return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, "NoGroupsInSeniorKurin", "A УСП or УПС kurin has no гуртки.");
+            }
+
             // Create new Group
             existing = new(request.Name, request.KurinKey, description);
             _unitOfWork.Groups.Create(existing, cancellationToken);
