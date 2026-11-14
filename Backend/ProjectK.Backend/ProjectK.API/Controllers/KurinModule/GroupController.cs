@@ -12,7 +12,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Revoke;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;

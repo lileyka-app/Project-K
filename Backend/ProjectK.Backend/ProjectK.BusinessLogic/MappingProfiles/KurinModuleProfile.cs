@@ -3,11 +3,9 @@ using AutoMapper.EquivalencyExpression;
 using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
@@ -148,19 +146,5 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.Type, opt => opt.Ignore())
             .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
             .ForMember(dest => dest.LeadershipHistories, opt => opt.MapFrom(src => src.LeadershipHistoryMembers));
-
-        // Planning Mapping
-        CreateMap<CreatePlanningSessionCommand, PlanningSession>(MemberList.None);
-
-        CreateMap<ParticipantInputDto, PlanningParticipant>(MemberList.None);
-
-        CreateMap<DateRangeDto, ParticipantBusyRange>(MemberList.None);
-
-        // Entity -> Response DTO
-        // CanDelete is about the caller, not the record, so the handlers set it after mapping.
-        CreateMap<PlanningSession, PlanningSessionResponse>()
-            .ForMember(response => response.CanDelete, options => options.Ignore());
-        CreateMap<PlanningParticipant, PlanningParticipantDto>();
-        CreateMap<ParticipantBusyRange, DateRangeDto>();
     }
 }

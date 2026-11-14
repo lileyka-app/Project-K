@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
@@ -25,19 +24,17 @@ public class CreatePlanningSessionCommandHandler : IRequestHandler<CreatePlannin
 {
     private readonly IUnitOfWork _uow;
     private readonly IOptimizer _optimizer;
-    private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
-    public CreatePlanningSessionCommandHandler(IUnitOfWork uow, IOptimizer optimizer, IMapper mapper, ICurrentUserContext currentUserContext)
+    public CreatePlanningSessionCommandHandler(IUnitOfWork uow, IOptimizer optimizer, ICurrentUserContext currentUserContext)
     {
         _uow = uow;
         _optimizer = optimizer;
-        _mapper = mapper;
         _currentUserContext = currentUserContext;
     }
 
     public async Task<ServiceResult<Guid>> Handle(CreatePlanningSessionCommand request, CancellationToken cancellationToken)
     {
-        var session = _mapper.Map<PlanningSessionEntity>(request);
+        var session = request.ToEntity();
         session.CreatedByUserKey = _currentUserContext.UserId;
 
         var problem = new CampDateSolver(
