@@ -8,7 +8,7 @@ using ProjectK.Common.Rules.Shared;
 namespace ProjectK.Common.Dtos.MemberModule;
 
 /// <summary>
-/// One stretch of belonging, as the kurin module reports it. Carries the kurin's own details so the
+/// One stretch of belonging, as the member module reports it. Carries the kurin's own details so the
 /// reader does not have to go and look them up — this crosses a module boundary, and one day a
 /// network with it.
 /// </summary>

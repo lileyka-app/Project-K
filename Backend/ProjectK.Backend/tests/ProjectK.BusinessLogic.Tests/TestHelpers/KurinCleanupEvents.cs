@@ -11,11 +11,11 @@ namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 /// </summary>
 public sealed class KurinCleanupEvents : IDomainEventPublisher
 {
-    private readonly KurinCleanupEventHandler _handler;
+    private readonly MembershipCleanupEventHandler _handler;
 
     public KurinCleanupEvents(IUnitOfWork unitOfWork)
     {
-        _handler = new KurinCleanupEventHandler(unitOfWork);
+        _handler = new MembershipCleanupEventHandler(unitOfWork, this);
     }
 
     public List<IDomainEvent> Published { get; } = [];
