@@ -1,8 +1,10 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.API.Extensions;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.Common.Models.Catalog;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
@@ -16,11 +18,11 @@ namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 [ApiController]
 public class BadgesCatalogController : ControllerBase
 {
-    private readonly IBadgesCatalogService _badgesCatalogService;
+    private readonly IMediator _mediator;
 
-    public BadgesCatalogController(IBadgesCatalogService badgesCatalogService)
+    public BadgesCatalogController(IMediator mediator)
     {
-        _badgesCatalogService = badgesCatalogService;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -28,9 +30,10 @@ public class BadgesCatalogController : ControllerBase
     /// </summary>
     [HttpGet("meta")]
     [ProducesResponseType(typeof(BadgesMetadata), StatusCodes.Status200OK)]
-    public IActionResult GetMetadata()
+    public async Task<IActionResult> GetMetadata()
     {
-        return Ok(_badgesCatalogService.GetBadgesMetadata());
+        var response = await _mediator.Send(new GetBadgesMetadataQuery());
+        return response.ToActionResult(this);
     }
 
     /// <summary>
@@ -38,12 +41,10 @@ public class BadgesCatalogController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<Badge>), StatusCodes.Status200OK)]
-    public IActionResult GetAll([FromQuery] int take = 200)
+    public async Task<IActionResult> GetAll([FromQuery] int take = GetBadgesQueryHandler.DefaultPage)
     {
-        // The catalog is a few hundred entries; a page past that is the whole thing, and a
-        // non-positive request is a mistake answered with the default rather than nothing.
-        var page = take <= 0 ? 200 : Math.Min(take, 500);
-        return Ok(_badgesCatalogService.GetBadges(page));
+        var response = await _mediator.Send(new GetBadgesQuery(take));
+        return response.ToActionResult(this);
     }
 
     /// <summary>
@@ -52,9 +53,9 @@ public class BadgesCatalogController : ControllerBase
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(Badge), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetById(string id)
+    public async Task<IActionResult> GetById(string id)
     {
-        var badge = _badgesCatalogService.GetBadgeById(id);
-        return badge is null ? NotFound() : Ok(badge);
+        var response = await _mediator.Send(new GetBadgeQuery(id));
+        return response.ToActionResult(this);
     }
 }

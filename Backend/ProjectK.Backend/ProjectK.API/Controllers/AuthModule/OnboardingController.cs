@@ -1,12 +1,12 @@
 using System.Threading.Tasks;
 using MediatR;
-using ProjectK.API.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
+using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetWaitlistEntries;
@@ -65,8 +65,11 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [HttpGet("kurin-numbers")]
     [ProducesResponseType(typeof(KurinNumberRange), StatusCodes.Status200OK)]
-    public IActionResult GetKurinNumberRange([FromServices] IOptions<KurinNumberOptions> numbers)
-        => Ok(new KurinNumberRange(KurinNumberOptions.MinNumber, numbers.Value.MaxNumber));
+    public async Task<IActionResult> GetKurinNumberRange()
+    {
+        var response = await _mediator.Send(new GetKurinNumberRangeQuery());
+        return response.ToActionResult(this);
+    }
 
     /// <summary>
     /// The краї the form offers, by code and name only. Open to anyone, like the form itself.
