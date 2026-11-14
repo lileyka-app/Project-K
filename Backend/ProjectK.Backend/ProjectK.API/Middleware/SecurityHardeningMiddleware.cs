@@ -43,7 +43,11 @@ public sealed class SecurityHardeningMiddleware
             {
                 activityLogger.ReportGeoBlocked(remoteIp, countryCode);
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsync("Access from your region is restricted.", context.RequestAborted);
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = "RegionRestricted",
+                    message = "Access from your region is restricted."
+                }, context.RequestAborted);
                 return;
             }
         }
