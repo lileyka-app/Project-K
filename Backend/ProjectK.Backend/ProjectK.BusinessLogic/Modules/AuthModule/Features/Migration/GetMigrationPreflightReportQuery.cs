@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.AuthModule;

@@ -7,7 +7,6 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.Common.Entities.AuthModule;

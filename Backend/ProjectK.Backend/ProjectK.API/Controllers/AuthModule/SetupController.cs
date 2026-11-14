@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.API.Controllers.AuthModule;

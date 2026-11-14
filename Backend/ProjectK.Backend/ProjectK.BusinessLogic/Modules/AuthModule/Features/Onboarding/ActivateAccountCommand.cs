@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.AuthModule;
 

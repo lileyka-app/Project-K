@@ -7,7 +7,6 @@ using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
 using ProjectK.API.Hosting;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Demo;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;

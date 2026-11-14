@@ -2,7 +2,6 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;

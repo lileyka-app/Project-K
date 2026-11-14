@@ -18,7 +18,6 @@ using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;

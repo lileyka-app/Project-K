@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
