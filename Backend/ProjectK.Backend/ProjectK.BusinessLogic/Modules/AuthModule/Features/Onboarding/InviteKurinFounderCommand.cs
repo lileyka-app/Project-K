@@ -50,7 +50,7 @@ public sealed class InviteKurinFounderCommandValidator : AbstractValidator<Invit
         // No number opens a підготовчий курінь, as an approved application without one does.
         RuleFor(command => command.KurinNumber)
             .Must(number => range.IsAllowed(number!.Value))
-            .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.")
+            .WithMessage(range.OutOfRangeMessage)
             .When(command => command.KurinNumber.HasValue);
     }
 }

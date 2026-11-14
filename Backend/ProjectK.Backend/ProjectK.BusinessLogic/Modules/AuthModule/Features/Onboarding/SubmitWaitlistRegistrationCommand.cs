@@ -84,11 +84,11 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
         // A senior kurin names its number in each гілка it belongs to instead of the one УПЮ number.
         RuleFor(command => command.UspNumber)
             .Must(value => range.IsAllowed(value!.Value))
-            .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.")
+            .WithMessage(range.OutOfRangeMessage)
             .When(command => command.UspNumber.HasValue);
         RuleFor(command => command.UpsNumber)
             .Must(value => range.IsAllowed(value!.Value))
-            .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.")
+            .WithMessage(range.OutOfRangeMessage)
             .When(command => command.UpsNumber.HasValue);
 
         // A підготовчий курінь has no number yet, so the box stands in for it.
@@ -98,7 +98,7 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
                 .NotEmpty().WithMessage("Kurin number is required.")
                 .Must(BeNumeric).WithMessage("Kurin number must contain only digits.")
                 .Must(value => range.IsAllowed(int.Parse(value!.Trim())))
-                .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.");
+                .WithMessage(range.OutOfRangeMessage);
         });
     }
 

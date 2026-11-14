@@ -7,6 +7,7 @@ using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
@@ -100,7 +101,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
 
         return new ServiceResult<RegistryFile>(
             ResultType.Success,
-            new RegistryFile(content, $"reyestr-kurin-{kurin.Number?.ToString() ?? "pidhotovchyi"}-{stamp}.xlsx"));
+            new RegistryFile(content, $"reyestr-kurin-{KurinBranchNames.InFileName(kurin.Number)}-{stamp}.xlsx"));
     }
 
     /// <summary>One sheet of people, in the columns asked for, name first.</summary>

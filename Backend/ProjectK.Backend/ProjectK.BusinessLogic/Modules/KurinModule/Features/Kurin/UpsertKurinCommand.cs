@@ -220,7 +220,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             return ServiceResult<KurinDto>.Failure(
                 ResultType.BadRequest,
                 KurinErrors.KurinNumberOutOfRange,
-                $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
+                _numbers.OutOfRangeMessage);
         }
 
         var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken, existing?.Branch ?? KurinBranch.UPYu);

@@ -42,4 +42,7 @@ public static class KurinBranchNames
 
         return branches.FirstOrDefault()?.Number is int number ? $"к. ч. {number}" : "підг. курінь";
     }
+
+    /// <summary>The kurin's number in a downloaded file's name, or <c>pidhotovchyi</c> for a підготовчий курінь.</summary>
+    public static string InFileName(int? number) => number?.ToString() ?? "pidhotovchyi";
 }

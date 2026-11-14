@@ -131,7 +131,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
             return ServiceResult<KurinBranchRequestDto>.Failure(
                 ResultType.BadRequest,
                 MemberErrors.KurinNumberOutOfRange,
-                $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
+                _numbers.OutOfRangeMessage);
         }
 
         if (branches.SequenceEqual(kurin.Numbering))
