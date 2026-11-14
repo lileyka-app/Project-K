@@ -143,8 +143,6 @@ public static class Program
             };
         });
 
-        builder.Services.AddHttpContextAccessor();
-
         // The body UseExceptionHandler writes for an unhandled exception.
         builder.Services.AddProblemDetails();
 
@@ -233,11 +231,10 @@ public static class Program
         builder.Services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(GetKurinByKeyQuery).Assembly);
-            // Outer -> inner. Timing wraps everything; Validation fails fast; Caching
-            // returns hits before a transaction is opened; Transaction sits around the handler.
+            // Outer -> inner. Timing wraps everything; Validation fails fast; Transaction sits
+            // around the handler.
             cfg.AddOpenBehavior(typeof(RequestTimingBehavior<,>));
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            cfg.AddOpenBehavior(typeof(CachingBehavior<,>));
             cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
         });
         builder.Services.AddValidatorsFromAssembly(typeof(GetKurinByKeyQuery).Assembly);
