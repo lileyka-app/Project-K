@@ -1,4 +1,5 @@
 using Moq;
+using ProjectK.BusinessLogic.Modules.DuesModule.Events;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Entities.DuesModule;
@@ -53,8 +54,13 @@ public class DuesLeavingQuarterHandlerTests
 
     private void Pay(decimal amount) => _entries.Add(new DuesEntry
     {
-        KurinKey = Kurin, GroupKey = Group, MembershipKey = Youth, Kind = DuesEntryKind.Contribution,
-        Method = DuesPaymentMethod.Cash, Amount = amount, OccurredOn = new DateOnly(2026, 9, 1)
+        KurinKey = Kurin,
+        GroupKey = Group,
+        MembershipKey = Youth,
+        Kind = DuesEntryKind.Contribution,
+        Method = DuesPaymentMethod.Cash,
+        Amount = amount,
+        OccurredOn = new DateOnly(2026, 9, 1)
     });
 
     private Task Leave() => Handler().Handle(

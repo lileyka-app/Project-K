@@ -121,7 +121,11 @@ public class PrivateScoreTests
         new CreatePrivateScoreEntryCommandHandler(Access(), Books(), _score.Object, User(), _time).Handle(
             new CreatePrivateScoreEntryCommand(Kurin, new UpsertPrivateScoreEntryRequest
             {
-                MembershipKey = _oksana, PrivateScoreCriterionKey = criterion, Points = points, Note = note, OccurredOn = new DateOnly(2026, 10, 6)
+                MembershipKey = _oksana,
+                PrivateScoreCriterionKey = criterion,
+                Points = points,
+                Note = note,
+                OccurredOn = new DateOnly(2026, 10, 6)
             }),
             CancellationToken.None);
 

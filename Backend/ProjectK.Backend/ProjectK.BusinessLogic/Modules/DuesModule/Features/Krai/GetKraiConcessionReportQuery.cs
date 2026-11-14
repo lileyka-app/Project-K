@@ -1,5 +1,4 @@
 using MediatR;
-using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces;
@@ -7,6 +6,7 @@ using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
 

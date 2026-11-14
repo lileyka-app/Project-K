@@ -1,8 +1,8 @@
-using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Models;
 

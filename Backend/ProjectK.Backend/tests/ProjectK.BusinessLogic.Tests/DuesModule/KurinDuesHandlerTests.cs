@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Entry;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Receive;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.DuesModule;
@@ -54,8 +53,12 @@ public class KurinDuesHandlerTests
     {
         var transfer = new DuesEntry
         {
-            KurinKey = Kurin, GroupKey = GroupA, Kind = DuesEntryKind.TransferToKurin,
-            Method = DuesPaymentMethod.Cash, Amount = amount, OccurredOn = new DateOnly(2026, 10, 1)
+            KurinKey = Kurin,
+            GroupKey = GroupA,
+            Kind = DuesEntryKind.TransferToKurin,
+            Method = DuesPaymentMethod.Cash,
+            Amount = amount,
+            OccurredOn = new DateOnly(2026, 10, 1)
         };
         _entries.Add(transfer);
         return transfer;
@@ -109,7 +112,10 @@ public class KurinDuesHandlerTests
     {
         var request = new UpsertDuesEntryRequest
         {
-            Kind = DuesEntryKind.TransferToStanytsia, Method = DuesPaymentMethod.Card, Amount = 240, OccurredOn = new DateOnly(2026, 10, 5)
+            Kind = DuesEntryKind.TransferToStanytsia,
+            Method = DuesPaymentMethod.Card,
+            Amount = 240,
+            OccurredOn = new DateOnly(2026, 10, 5)
         };
 
         var created = await new CreateKurinDuesEntryCommandHandler(Access(), Writer(), _dues.Object, _user.Object, _time)

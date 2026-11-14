@@ -1,0 +1,38 @@
+using FluentValidation;
+using MediatR;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
+using ProjectK.Common.Entities.ScoreModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+
+namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+
+// The КВ's own book. The endpoint lets in only those with KurinScorePrivate; here it is checked once
+// more against the kurin the caller acts in, as every score handler does.
+
+/// <summary>Who stands in the book — the Звʼязковий and the впорядники — and that this is their kurin.</summary>
+public sealed class PrivateScoreAccess
+{
+    private readonly ScoreAccess _access;
+    private readonly IResourceAccessService _resourceAccess;
+
+    public PrivateScoreAccess(ScoreAccess access, IResourceAccessService resourceAccess)
+    {
+        _access = access;
+        _resourceAccess = resourceAccess;
+    }
+
+    public async Task<ServiceResult<T>?> RefuseAsync<T>(Guid kurinKey, ResourceAction action, CancellationToken cancellationToken)
+    {
+        if (_access.Refuse<T>(kurinKey) is { } refused)
+        {
+            return refused;
+        }
+
+        var decision = await _resourceAccess.CheckAccessAsync(ResourceType.KurinScorePrivate, action, kurinKey, cancellationToken);
+        return decision.IsAllowed ? null : ScoreAccess.Forbidden<T>();
+    }
+}

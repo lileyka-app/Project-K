@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.DuesModule.Events;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
@@ -8,8 +9,8 @@ using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Models;
 
