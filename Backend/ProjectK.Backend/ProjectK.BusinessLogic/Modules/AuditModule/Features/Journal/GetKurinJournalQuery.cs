@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AuditModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Interfaces.Modules.AuditModule;
@@ -7,10 +6,11 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.AuditModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.Get;
+namespace ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
 
 /// <summary>
 /// A page of the kurin's journal, as far as the kurin lets the caller read it, newest first. The
@@ -24,13 +24,13 @@ public sealed record GetKurinJournalQuery(
     DateTime? FromUtc,
     DateTime? ToUtc,
     int Skip,
-    int Take) : IRequest<ServiceResult<KurinJournalPageResponse>>
+    int Take) : IRequest<ServiceResult<KurinJournalPageDto>>
 {
     /// <summary>The largest page.</summary>
     public const int MaxTake = 50;
 }
 
-public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJournalQuery, ServiceResult<KurinJournalPageResponse>>
+public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJournalQuery, ServiceResult<KurinJournalPageDto>>
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
@@ -58,23 +58,23 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
         _badges = badges;
     }
 
-    public async Task<ServiceResult<KurinJournalPageResponse>> Handle(GetKurinJournalQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<KurinJournalPageDto>> Handle(GetKurinJournalQuery request, CancellationToken cancellationToken)
     {
         // The reach is the policy of the kurin the token acts in; it says nothing about another one.
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return ServiceResult<KurinJournalPageResponse>.Failure(
+            return ServiceResult<KurinJournalPageDto>.Failure(
                 ResultType.Forbidden,
-                "JournalOutsideKurin",
+                AuditErrors.JournalOutsideKurin,
                 "The journal can only be read in the kurin the session acts in.");
         }
 
         var reach = await _permissions.ReachAsync(KurinCapability.ReadJournal, cancellationToken);
         if (reach == CapabilityReach.None)
         {
-            return ServiceResult<KurinJournalPageResponse>.Failure(
+            return ServiceResult<KurinJournalPageDto>.Failure(
                 ResultType.Forbidden,
-                "JournalReadNotAllowed",
+                AuditErrors.JournalReadNotAllowed,
                 "The kurin's policy does not let you read the journal.");
         }
 
@@ -83,7 +83,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
         {
             if (_currentUser.UserId is not { } userKey)
             {
-                return new ServiceResult<KurinJournalPageResponse>(ResultType.Unauthorized);
+                return ServiceResult<KurinJournalPageDto>.Failure(ResultType.Unauthorized, AuditErrors.Unauthorized, "The session has no user.");
             }
 
             var ledGroups = await _scopeReader.GetLedGroupKeysAsync(userKey, request.KurinKey, cancellationToken);
@@ -104,10 +104,10 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
         // One more than the page, to learn whether another follows without counting them all.
         var entries = await _journal.ReadAsync(filter, Math.Max(0, request.Skip), take + 1, cancellationToken);
 
-        return new ServiceResult<KurinJournalPageResponse>(
+        return new ServiceResult<KurinJournalPageDto>(
             ResultType.Success,
-            new KurinJournalPageResponse(
-                entries.Take(take).Select(entry => KurinJournalEntryResponse.FromEntity(entry) with { SubjectLabel = Label(entry) }).ToList(),
+            new KurinJournalPageDto(
+                entries.Take(take).Select(entry => entry.ToDto(Label(entry))).ToList(),
                 entries.Count > take));
     }
 

@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.Get;
+using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -43,7 +43,7 @@ public class GetKurinJournalQueryTests
             .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, _access.KurinKey, _access.GroupKey, "Марта", "Впорядниця", "m@example.com", null));
     }
 
-    private Task<ServiceResult<Modules.AuditModule.Models.KurinJournalPageResponse>> ReadAsync(
+    private Task<ServiceResult<ProjectK.Common.Models.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(
         ICurrentUserContext user,
         GetKurinJournalQuery? query = null)
     {
