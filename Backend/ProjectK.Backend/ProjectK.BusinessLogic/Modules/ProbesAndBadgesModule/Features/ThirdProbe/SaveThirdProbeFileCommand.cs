@@ -41,7 +41,7 @@ public sealed record SaveThirdProbeFileCommand(Guid MemberKey, string ProbeId, T
 public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThirdProbeFileCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
@@ -49,7 +49,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
 
     public SaveThirdProbeFileCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         AuditActorResolver actors,
         IKurinAudit audit,
         IProbesCatalogReader probes,

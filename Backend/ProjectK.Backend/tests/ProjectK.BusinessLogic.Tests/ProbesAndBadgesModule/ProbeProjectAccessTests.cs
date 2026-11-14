@@ -21,7 +21,7 @@ public class ProbeProjectAccessTests
     private readonly Mock<IResourceAccessService> _rights = new();
     private readonly Guid _memberKey = Guid.NewGuid();
     private readonly Guid _userKey = Guid.NewGuid();
-    private readonly ProbeProjectAccess _access;
+    private readonly ProbesAndBadgesAccess _access;
 
     public ProbeProjectAccessTests()
     {
@@ -35,7 +35,7 @@ public class ProbeProjectAccessTests
             new ProbeSummaryDto("upyu-2026-2", "Друга", 10, 2, "upyu-2026", 2, "", ""),
             new ProbeSummaryDto("upyu-2026-3", "Третя", 0, 0, "upyu-2026", 3, "", "")
         ]);
-        _access = new ProbeProjectAccess(_line.Object, _members.Object, _user.Object, _rights.Object);
+        _access = new ProbesAndBadgesAccess(_line.Object, _members.Object, _user.Object, _rights.Object);
     }
 
     [Theory]

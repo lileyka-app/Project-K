@@ -66,7 +66,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         // An item without targets has no parts; its author and the whole kurin move it as one.
         if (item.Assignments.Count == 0)
         {
-            if (!AgendaPermissions.CanManage(item, viewer))
+            if (!AgendaAccess.CanManage(item, viewer))
             {
                 return Forbidden();
             }

@@ -29,7 +29,7 @@ public sealed class UploadCampCertificateCommandHandler
 {
     public UploadCampCertificateCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         IKurinAudit audit,
         IProbesCatalogReader probes,

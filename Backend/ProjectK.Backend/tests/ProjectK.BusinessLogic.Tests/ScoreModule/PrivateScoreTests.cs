@@ -90,12 +90,12 @@ public class PrivateScoreTests
         return membership;
     }
 
-    private PrivateScoreAccess Access()
+    private ScoreAccess Access()
     {
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(u => u.UserId).Returns(Actor);
         user.SetupGet(u => u.KurinKey).Returns(Kurin);
-        return new PrivateScoreAccess(new ScoreAccess(user.Object, _resourceAccess.Object), _resourceAccess.Object);
+        return new ScoreAccess(user.Object, _resourceAccess.Object);
     }
 
     private ICurrentUserContext User()

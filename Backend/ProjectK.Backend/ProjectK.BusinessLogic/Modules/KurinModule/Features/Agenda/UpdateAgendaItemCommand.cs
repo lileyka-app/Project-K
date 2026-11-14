@@ -75,7 +75,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             return AgendaErrors.OtherKurin<Unit>();
         }
 
-        if (!AgendaPermissions.CanManage(item, viewer))
+        if (!AgendaAccess.CanManage(item, viewer))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaEditForbidden, "Only the creator or leadership may edit this item.");
         }

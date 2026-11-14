@@ -42,7 +42,7 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         // Not found rather than forbidden: an item one may not see is not confirmed to exist.
-        if (!AgendaPermissions.IsVisibleTo(item, viewer))
+        if (!AgendaAccess.IsVisibleTo(item, viewer))
         {
             return AgendaErrors.NotFound<AgendaItemDto>();
         }

@@ -12,12 +12,12 @@ public sealed record DeletePrivateScoreEntryCommand(Guid KurinKey, Guid EntryKey
 
 public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<DeletePrivateScoreEntryCommand, ServiceResult<Unit>>
 {
-    private readonly PrivateScoreAccess _access;
+    private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public DeletePrivateScoreEntryCommandHandler(PrivateScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public DeletePrivateScoreEntryCommandHandler(ScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
@@ -27,7 +27,7 @@ public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<Dele
 
     public async Task<ServiceResult<Unit>> Handle(DeletePrivateScoreEntryCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Unit>(request.KurinKey, ResourceAction.Delete, cancellationToken) is { } refused)
+        if (await _access.RefusePrivateAsync<Unit>(request.KurinKey, ResourceAction.Delete, cancellationToken) is { } refused)
         {
             return refused;
         }

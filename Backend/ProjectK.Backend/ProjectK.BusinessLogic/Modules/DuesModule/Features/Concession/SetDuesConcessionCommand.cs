@@ -28,13 +28,13 @@ public sealed class SetDuesConcessionCommandValidator : AbstractValidator<SetDue
 
 public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesConcessionCommand, ServiceResult<Unit>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
     private readonly ICurrentUserContext _currentUser;
 
     public SetDuesConcessionCommandHandler(
-        GroupDuesAccess access,
+        DuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
         ICurrentUserContext currentUser)

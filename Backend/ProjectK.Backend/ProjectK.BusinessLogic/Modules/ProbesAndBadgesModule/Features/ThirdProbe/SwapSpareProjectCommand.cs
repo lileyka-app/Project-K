@@ -22,14 +22,14 @@ public sealed record SwapSpareProjectCommand(Guid MemberKey, string ProbeId, Gui
 public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSpareProjectCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public SwapSpareProjectCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IKurinAudit audit,
         IProbesCatalogReader probes,
         IThirdProbeReader reader)

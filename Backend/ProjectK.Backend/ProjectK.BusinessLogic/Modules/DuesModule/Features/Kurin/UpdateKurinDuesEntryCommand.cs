@@ -23,13 +23,13 @@ public sealed class UpdateKurinDuesEntryCommandValidator : AbstractValidator<Upd
 
 public sealed class UpdateKurinDuesEntryCommandHandler : IRequestHandler<UpdateKurinDuesEntryCommand, ServiceResult<Unit>>
 {
-    private readonly KurinDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly DuesEntryWriter _writer;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public UpdateKurinDuesEntryCommandHandler(KurinDuesAccess access, DuesEntryWriter writer, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
+    public UpdateKurinDuesEntryCommandHandler(DuesAccess access, DuesEntryWriter writer, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _writer = writer;

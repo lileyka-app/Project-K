@@ -27,13 +27,13 @@ public sealed class UploadProbeProjectImageCommandHandler
     : IRequestHandler<UploadProbeProjectImageCommand, ServiceResult<ProbeProjectImageDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly IPhotoService _photos;
     private readonly IBlobReadLinks _links;
 
     public UploadProbeProjectImageCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         IBlobReadLinks links)
     {

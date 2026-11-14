@@ -24,7 +24,7 @@ public class GetThirdProbersQueryTests
     private readonly Mock<IBadgeProgressRepository> _badges = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IMemberProbeLine> _line = new();
-    private readonly Mock<IProbeProjectAccess> _access = new();
+    private readonly Mock<IProbesAndBadgesAccess> _access = new();
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly MemberSummary _withFile;
     private readonly MemberSummary _justClosed;

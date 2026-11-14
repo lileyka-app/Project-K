@@ -30,7 +30,7 @@ public class GetPlanningSessionByKeyQueryHandler : IRequestHandler<GetPlanningSe
             return ServiceResult<PlanningSessionDto>.Failure(ResultType.NotFound, KurinErrors.PlanningSessionNotFound, "Planning session was not found.");
         }
 
-        var dto = entity.ToDto(PlanningSessionAccess.CanDelete(_currentUser, entity.CreatedByUserKey));
+        var dto = entity.ToDto(KurinAccess.CanDeletePlanningSession(_currentUser, entity.CreatedByUserKey));
         return new ServiceResult<PlanningSessionDto>(ResultType.Success, dto);
     }
 }

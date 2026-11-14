@@ -20,7 +20,7 @@ public sealed record GetKurinDuesQuery(Guid KurinKey) : IRequest<ServiceResult<K
 /// <summary>The kurin's box in one read, charges brought up to date first.</summary>
 public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery, ServiceResult<KurinDuesDto>>
 {
-    private readonly KurinDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDuesAccrual _accrual;
@@ -33,7 +33,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
     private readonly DuesAccountRows _rows;
 
     public GetKurinDuesQueryHandler(
-        KurinDuesAccess access,
+        DuesAccess access,
         IDuesUnitOfWork dues,
         IUnitOfWork unitOfWork,
         IDuesAccrual accrual,

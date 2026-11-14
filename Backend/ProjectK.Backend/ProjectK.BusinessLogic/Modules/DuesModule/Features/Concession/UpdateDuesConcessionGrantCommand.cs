@@ -27,13 +27,13 @@ public sealed class UpdateDuesConcessionGrantCommandValidator : AbstractValidato
 
 public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<UpdateDuesConcessionGrantCommand, ServiceResult<Unit>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
     private readonly ICurrentUserContext _currentUser;
 
     public UpdateDuesConcessionGrantCommandHandler(
-        GroupDuesAccess access,
+        DuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
         ICurrentUserContext currentUser)

@@ -7,11 +7,11 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 internal static class ProbeProjectGuard
 {
     public static async Task<ServiceResult<T>?> RefuseAsync<T>(
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         Guid memberKey,
         string probeId,
         CancellationToken cancellationToken,
-        Func<IProbeProjectAccess, Task<bool>>? right = null)
+        Func<IProbesAndBadgesAccess, Task<bool>>? right = null)
     {
         if (!await access.IsProjectProbeAsync(memberKey, probeId, cancellationToken))
         {

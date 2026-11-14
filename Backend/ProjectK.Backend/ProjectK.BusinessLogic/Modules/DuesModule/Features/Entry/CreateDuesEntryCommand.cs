@@ -24,14 +24,14 @@ public sealed class CreateDuesEntryCommandValidator : AbstractValidator<CreateDu
 
 public sealed class CreateDuesEntryCommandHandler : IRequestHandler<CreateDuesEntryCommand, ServiceResult<Guid>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly DuesEntryWriter _writer;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
     public CreateDuesEntryCommandHandler(
-        GroupDuesAccess access,
+        DuesAccess access,
         DuesEntryWriter writer,
         IDuesUnitOfWork dues,
         ICurrentUserContext currentUser,
@@ -46,7 +46,7 @@ public sealed class CreateDuesEntryCommandHandler : IRequestHandler<CreateDuesEn
 
     public async Task<ServiceResult<Guid>> Handle(CreateDuesEntryCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<Guid>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenGroupAsync<Guid>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;

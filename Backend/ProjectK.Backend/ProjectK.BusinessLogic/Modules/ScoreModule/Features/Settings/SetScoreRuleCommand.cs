@@ -35,12 +35,12 @@ public sealed class SetScoreRuleCommandValidator : AbstractValidator<SetScoreRul
 
 public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCommand, ServiceResult<Unit>>
 {
-    private readonly ScoreSettingsAccess _access;
+    private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public SetScoreRuleCommandHandler(ScoreSettingsAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public SetScoreRuleCommandHandler(ScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
@@ -50,7 +50,7 @@ public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCom
 
     public async Task<ServiceResult<Unit>> Handle(SetScoreRuleCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseSettingsAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }

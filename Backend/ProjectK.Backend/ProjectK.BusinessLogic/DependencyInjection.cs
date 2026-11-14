@@ -121,7 +121,7 @@ public static class DependencyInjection
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
-        services.AddScoped<IProbeProjectAccess, ProbeProjectAccess>();
+        services.AddScoped<IProbesAndBadgesAccess, ProbesAndBadgesAccess>();
         services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
@@ -136,16 +136,13 @@ public static class DependencyInjection
         services.AddScoped<DuesAccountRows>();
         services.AddScoped<DuesLedgerReader>();
         services.AddScoped<IDuesDirectory, DuesDirectory>();
-        services.AddScoped<GroupDuesAccess>();
-        services.AddScoped<KurinDuesAccess>();
+        services.AddScoped<DuesAccess>();
         services.AddScoped<DuesEntryWriter>();
     }
 
     private static void AddScoreModule(this IServiceCollection services)
     {
         services.AddScoped<ScoreAccess>();
-        services.AddScoped<ScoreSettingsAccess>();
-        services.AddScoped<PrivateScoreAccess>();
         services.AddScoped<ScoreBookReader>();
         services.AddScoped<IScoreFactReader, ScoreFactReader>();
     }

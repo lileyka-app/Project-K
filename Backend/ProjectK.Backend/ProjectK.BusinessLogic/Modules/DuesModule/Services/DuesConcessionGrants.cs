@@ -34,7 +34,7 @@ internal static class DuesConcessionGrants
 
     /// <summary>The grant, when it belongs to someone who stands in the гурток the caller keeps.</summary>
     public static async Task<(DuesConcessionGrant? Grant, ServiceResult<Unit>? Failure)> OpenAsync(
-        GroupDuesAccess access,
+        DuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
         Guid boxKey,

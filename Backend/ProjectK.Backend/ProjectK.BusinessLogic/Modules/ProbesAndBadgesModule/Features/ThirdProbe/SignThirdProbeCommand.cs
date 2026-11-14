@@ -43,7 +43,7 @@ public sealed record SignThirdProbeCommand(
 public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProbeCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
@@ -51,7 +51,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
 
     public SignThirdProbeCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         AuditActorResolver actors,
         IKurinAudit audit,
         IProbesCatalogReader probes,

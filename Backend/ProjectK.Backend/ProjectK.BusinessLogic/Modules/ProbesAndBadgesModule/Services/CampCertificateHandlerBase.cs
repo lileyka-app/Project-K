@@ -19,7 +19,7 @@ public abstract class CampCertificateHandlerBase
 
     protected CampCertificateHandlerBase(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         IKurinAudit audit,
         IProbesCatalogReader probes,
@@ -34,7 +34,7 @@ public abstract class CampCertificateHandlerBase
     }
 
     protected IUnitOfWork UnitOfWork { get; }
-    protected IProbeProjectAccess Access { get; }
+    protected IProbesAndBadgesAccess Access { get; }
     protected IPhotoService Photos { get; }
     protected IKurinAudit Audit { get; }
     protected IProbesCatalogReader Probes { get; }

@@ -12,11 +12,11 @@ public sealed record DeleteDuesConcessionGrantCommand(Guid BoxKey, Guid GrantKey
 
 public sealed class DeleteDuesConcessionGrantCommandHandler : IRequestHandler<DeleteDuesConcessionGrantCommand, ServiceResult<Unit>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
 
-    public DeleteDuesConcessionGrantCommandHandler(GroupDuesAccess access, IDuesUnitOfWork dues, IMembershipDirectory memberships)
+    public DeleteDuesConcessionGrantCommandHandler(DuesAccess access, IDuesUnitOfWork dues, IMembershipDirectory memberships)
     {
         _access = access;
         _dues = dues;

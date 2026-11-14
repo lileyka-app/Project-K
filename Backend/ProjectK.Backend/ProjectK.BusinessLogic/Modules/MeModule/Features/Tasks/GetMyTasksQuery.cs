@@ -79,6 +79,6 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
         Status = status,
         StartUtc = item.StartUtc is { } start ? DateTime.SpecifyKind(start, DateTimeKind.Utc) : null,
         EndUtc = item.EndUtc is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null,
-        CanChangeStatus = kurin.IsCurrent && AgendaPermissions.CanChangeStatus(item, viewer)
+        CanChangeStatus = kurin.IsCurrent && AgendaAccess.CanChangeStatus(item, viewer)
     };
 }

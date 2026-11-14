@@ -29,7 +29,7 @@ public class ProbeProjectHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IProbeProjectRepository> _projects = new();
     private readonly Mock<IBadgeProgressRepository> _badges = new();
-    private readonly Mock<IProbeProjectAccess> _access = new();
+    private readonly Mock<IProbesAndBadgesAccess> _access = new();
     private readonly Mock<IBlobReadLinks> _links = new();
     private readonly Mock<IPhotoService> _photos = new();
     private readonly Mock<IProbesCatalogReader> _probes = new();

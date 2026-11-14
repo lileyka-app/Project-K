@@ -32,12 +32,12 @@ public sealed class UpsertPrivateScoreCriterionRequestValidator : AbstractValida
 
 public sealed class UpsertPrivateScoreCriterionCommandHandler : IRequestHandler<UpsertPrivateScoreCriterionCommand, ServiceResult<Guid>>
 {
-    private readonly PrivateScoreAccess _access;
+    private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public UpsertPrivateScoreCriterionCommandHandler(PrivateScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public UpsertPrivateScoreCriterionCommandHandler(ScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
@@ -47,7 +47,7 @@ public sealed class UpsertPrivateScoreCriterionCommandHandler : IRequestHandler<
 
     public async Task<ServiceResult<Guid>> Handle(UpsertPrivateScoreCriterionCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Guid>(request.KurinKey, ResourceAction.Update, cancellationToken) is { } refused)
+        if (await _access.RefusePrivateAsync<Guid>(request.KurinKey, ResourceAction.Update, cancellationToken) is { } refused)
         {
             return refused;
         }

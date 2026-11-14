@@ -11,11 +11,11 @@ public sealed record GetKurinScoreSettingsQuery(Guid KurinKey) : IRequest<Servic
 
 public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurinScoreSettingsQuery, ServiceResult<KurinScoreSettingsDto>>
 {
-    private readonly ScoreSettingsAccess _access;
+    private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IUnitOfWork _unitOfWork;
 
-    public GetKurinScoreSettingsQueryHandler(ScoreSettingsAccess access, ScoreBookReader books, IUnitOfWork unitOfWork)
+    public GetKurinScoreSettingsQueryHandler(ScoreAccess access, ScoreBookReader books, IUnitOfWork unitOfWork)
     {
         _access = access;
         _books = books;
@@ -24,7 +24,7 @@ public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurin
 
     public async Task<ServiceResult<KurinScoreSettingsDto>> Handle(GetKurinScoreSettingsQuery request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<KurinScoreSettingsDto>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseSettingsAsync<KurinScoreSettingsDto>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }

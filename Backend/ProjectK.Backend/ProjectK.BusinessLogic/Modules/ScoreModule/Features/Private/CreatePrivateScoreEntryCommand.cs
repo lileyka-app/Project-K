@@ -37,13 +37,13 @@ public sealed class UpsertPrivateScoreEntryRequestValidator : AbstractValidator<
 
 public sealed class CreatePrivateScoreEntryCommandHandler : IRequestHandler<CreatePrivateScoreEntryCommand, ServiceResult<Guid>>
 {
-    private readonly PrivateScoreAccess _access;
+    private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public CreatePrivateScoreEntryCommandHandler(PrivateScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public CreatePrivateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _books = books;
@@ -54,7 +54,7 @@ public sealed class CreatePrivateScoreEntryCommandHandler : IRequestHandler<Crea
 
     public async Task<ServiceResult<Guid>> Handle(CreatePrivateScoreEntryCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Guid>(request.KurinKey, ResourceAction.Create, cancellationToken) is { } refused)
+        if (await _access.RefusePrivateAsync<Guid>(request.KurinKey, ResourceAction.Create, cancellationToken) is { } refused)
         {
             return refused;
         }

@@ -14,11 +14,11 @@ public sealed record GetPrivateScoreQuery(Guid KurinKey, ScorePeriodQuery Period
 
 public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScoreQuery, ServiceResult<PrivateScoreDto>>
 {
-    private readonly PrivateScoreAccess _access;
+    private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IScoreUnitOfWork _score;
 
-    public GetPrivateScoreQueryHandler(PrivateScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score)
+    public GetPrivateScoreQueryHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score)
     {
         _access = access;
         _books = books;
@@ -27,7 +27,7 @@ public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScor
 
     public async Task<ServiceResult<PrivateScoreDto>> Handle(GetPrivateScoreQuery request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<PrivateScoreDto>(request.KurinKey, ResourceAction.Read, cancellationToken) is { } refused)
+        if (await _access.RefusePrivateAsync<PrivateScoreDto>(request.KurinKey, ResourceAction.Read, cancellationToken) is { } refused)
         {
             return refused;
         }

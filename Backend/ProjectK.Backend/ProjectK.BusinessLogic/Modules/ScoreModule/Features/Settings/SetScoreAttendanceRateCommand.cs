@@ -29,13 +29,13 @@ public sealed class SetScoreAttendanceRateCommandValidator : AbstractValidator<S
 
 public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetScoreAttendanceRateCommand, ServiceResult<Unit>>
 {
-    private readonly ScoreSettingsAccess _access;
+    private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public SetScoreAttendanceRateCommandHandler(ScoreSettingsAccess access, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time)
+    public SetScoreAttendanceRateCommandHandler(ScoreAccess access, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
@@ -46,7 +46,7 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
 
     public async Task<ServiceResult<Unit>> Handle(SetScoreAttendanceRateCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseSettingsAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }

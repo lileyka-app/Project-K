@@ -22,7 +22,7 @@ public sealed record GetGroupDuesQuery(Guid GroupKey) : IRequest<ServiceResult<G
 /// </summary>
 public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery, ServiceResult<GroupDuesDto>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IDuesAccrual _accrual;
     private readonly IMembershipDirectory _memberships;
@@ -33,7 +33,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
     private readonly DuesAccountRows _rows;
 
     public GetGroupDuesQueryHandler(
-        GroupDuesAccess access,
+        DuesAccess access,
         IDuesUnitOfWork dues,
         IDuesAccrual accrual,
         IMembershipDirectory memberships,
@@ -56,7 +56,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
 
     public async Task<ServiceResult<GroupDuesDto>> Handle(GetGroupDuesQuery request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<GroupDuesDto>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenGroupAsync<GroupDuesDto>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;

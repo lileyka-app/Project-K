@@ -23,7 +23,7 @@ public sealed record DeleteProbeProjectCommand(Guid MemberKey, string ProbeId, G
 public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeleteProbeProjectCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly IPhotoService _photos;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
@@ -31,7 +31,7 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
 
     public DeleteProbeProjectCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         IKurinAudit audit,
         IProbesCatalogReader probes,

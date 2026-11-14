@@ -55,13 +55,13 @@ public class DuesEntryHandlerTests
         _user.SetupGet(u => u.KurinKey).Returns(_kurin.KurinKey);
     }
 
-    private GroupDuesAccess Access()
+    private DuesAccess Access()
     {
         var groups = new Mock<IGroupRepository>();
         groups.Setup(g => g.GetByKeyAsync(_group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_group);
         var uow = new Mock<IUnitOfWork>();
         uow.SetupGet(u => u.Groups).Returns(groups.Object);
-        return new GroupDuesAccess(uow.Object, _user.Object, Mock.Of<IDuesKurinShape>());
+        return new DuesAccess(uow.Object, _dues.Object, _user.Object, Mock.Of<IDuesKurinShape>());
     }
 
     private DuesEntryWriter Writer()

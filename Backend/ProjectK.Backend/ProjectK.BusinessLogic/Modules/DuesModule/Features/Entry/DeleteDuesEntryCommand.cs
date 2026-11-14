@@ -12,12 +12,12 @@ public sealed record DeleteDuesEntryCommand(Guid GroupKey, Guid EntryKey) : IReq
 
 public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEntryCommand, ServiceResult<Unit>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public DeleteDuesEntryCommandHandler(GroupDuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
+    public DeleteDuesEntryCommandHandler(DuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _dues = dues;
@@ -27,7 +27,7 @@ public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEn
 
     public async Task<ServiceResult<Unit>> Handle(DeleteDuesEntryCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<Unit>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenGroupAsync<Unit>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;

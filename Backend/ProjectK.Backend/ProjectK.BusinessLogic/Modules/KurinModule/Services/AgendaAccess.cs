@@ -279,15 +279,12 @@ public sealed class AgendaAccess : IAgendaAccess
 
         return new AgendaAssignReach(kurin, groups, members, provid, ledGroups, userKey, tags);
     }
-}
 
-/// <summary>
-/// Per-item permission checks shared by the update, delete and status handlers. Kept as pure functions
-/// over an already-loaded item so no extra queries run.
-/// </summary>
-public static class AgendaPermissions
-{
-    /// <summary>Creator or leadership may edit/delete an item.</summary>
+    /// <summary>
+    /// Creator or leadership may edit/delete an item. This and the two checks below are pure functions
+    /// over an already-loaded item, shared by the update, delete and status handlers, so no extra
+    /// queries run.
+    /// </summary>
     public static bool CanManage(AgendaItem item, AgendaViewerContext viewer)
     {
         if (viewer.CanSeeWholeKurin)

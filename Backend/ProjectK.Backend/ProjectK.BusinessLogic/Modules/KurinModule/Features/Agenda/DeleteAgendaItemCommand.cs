@@ -54,7 +54,7 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
             return AgendaErrors.OtherKurin<Unit>();
         }
 
-        if (!AgendaPermissions.CanManage(item, viewer))
+        if (!AgendaAccess.CanManage(item, viewer))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaDeleteForbidden, "Only the creator or leadership may delete this item.");
         }

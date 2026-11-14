@@ -23,7 +23,7 @@ public interface IThirdProbeReader
 public sealed class ThirdProbeReader : IThirdProbeReader
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly IMemberProbeLine _line;
     private readonly IBadgesCatalogReader _badges;
     private readonly IBlobReadLinks _links;
@@ -31,7 +31,7 @@ public sealed class ThirdProbeReader : IThirdProbeReader
 
     public ThirdProbeReader(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IMemberProbeLine line,
         IBadgesCatalogReader badges,
         IBlobReadLinks links,

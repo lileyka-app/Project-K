@@ -24,7 +24,7 @@ public class GetPlanningSessionsQueryHandler : IRequestHandler<GetPlanningSessio
     {
         var entities = (await _uow.PlanningSessions.GetAllByKurinKeyAsync(request.kurinKey, cancellationToken)).ToList();
         var dtos = entities
-            .Select(entity => entity.ToDto(PlanningSessionAccess.CanDelete(_currentUser, entity.CreatedByUserKey)))
+            .Select(entity => entity.ToDto(KurinAccess.CanDeletePlanningSession(_currentUser, entity.CreatedByUserKey)))
             .ToList();
 
         return new ServiceResult<IEnumerable<PlanningSessionDto>>(ResultType.Success, dtos);

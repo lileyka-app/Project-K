@@ -18,7 +18,7 @@ public sealed class DeleteCampCertificateCommandHandler
 {
     public DeleteCampCertificateCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         IKurinAudit audit,
         IProbesCatalogReader probes,

@@ -49,7 +49,7 @@ public sealed record SaveProbeProjectCommand(
 public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbeProjectCommand, ServiceResult<ProbeProjectSavedDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly IPhotoService _photos;
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
@@ -58,7 +58,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
 
     public SaveProbeProjectCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         AuditActorResolver actors,
         IKurinAudit audit,

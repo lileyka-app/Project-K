@@ -6,7 +6,8 @@ using ProjectK.Common.Rules.ProbesAndBadgesModule;
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
 /// <summary>
-/// Who may write a third-probe project, and which probe has projects at all.
+/// The probes and вмілості module's rights: who may write a third-probe project, and which probe has
+/// projects at all.
 /// <para>
 /// Writing is for the person themself — it is their project — and for whoever the kurin's
 /// «Права й видимість» lets sign that person's probe (<see cref="KurinCapability.SignProbe"/>):
@@ -14,7 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 /// who may only read the probe reads the projects too, and nothing more.
 /// </para>
 /// </summary>
-public interface IProbeProjectAccess
+public interface IProbesAndBadgesAccess
 {
     /// <summary>Whether <paramref name="probeId"/> stands at the third place of the person's line.</summary>
     Task<bool> IsProjectProbeAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
@@ -31,14 +32,14 @@ public interface IProbeProjectAccess
     Task<bool> CanUnsignAsync(Guid memberKey, CancellationToken cancellationToken = default);
 }
 
-public sealed class ProbeProjectAccess : IProbeProjectAccess
+public sealed class ProbesAndBadgesAccess : IProbesAndBadgesAccess
 {
     private readonly IMemberProbeLine _line;
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUser;
     private readonly IResourceAccessService _access;
 
-    public ProbeProjectAccess(
+    public ProbesAndBadgesAccess(
         IMemberProbeLine line,
         IMemberDirectory members,
         ICurrentUserContext currentUser,

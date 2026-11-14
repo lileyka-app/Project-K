@@ -24,13 +24,13 @@ public sealed class UpdatePrivateScoreEntryCommandValidator : AbstractValidator<
 
 public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<UpdatePrivateScoreEntryCommand, ServiceResult<Unit>>
 {
-    private readonly PrivateScoreAccess _access;
+    private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public UpdatePrivateScoreEntryCommandHandler(PrivateScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public UpdatePrivateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _books = books;
@@ -41,7 +41,7 @@ public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<Upda
 
     public async Task<ServiceResult<Unit>> Handle(UpdatePrivateScoreEntryCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Unit>(request.KurinKey, ResourceAction.Update, cancellationToken) is { } refused)
+        if (await _access.RefusePrivateAsync<Unit>(request.KurinKey, ResourceAction.Update, cancellationToken) is { } refused)
         {
             return refused;
         }

@@ -63,7 +63,7 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
         }
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
-        if (!AgendaPermissions.IsVisibleTo(item, viewer))
+        if (!AgendaAccess.IsVisibleTo(item, viewer))
         {
             return ServiceResult<AgendaResponsesDto>.Failure(ResultType.Forbidden, AgendaErrors.AgendaNotVisible, "You cannot respond to this event.");
         }

@@ -36,14 +36,14 @@ public sealed class GrantDuesConcessionCommandValidator : AbstractValidator<Gran
 
 public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDuesConcessionCommand, ServiceResult<Guid>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
     private readonly IKraiProfileDirectory _profiles;
     private readonly ICurrentUserContext _currentUser;
 
     public GrantDuesConcessionCommandHandler(
-        GroupDuesAccess access,
+        DuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
         IKraiProfileDirectory profiles,

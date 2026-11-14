@@ -50,7 +50,7 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
         }
 
         var context = (await _scopes.BuildAsync(cancellationToken)).FirstOrDefault(c => c.Membership.KurinKey == item.KurinKey);
-        if (context is null || !AgendaPermissions.IsVisibleTo(item, context.Viewer))
+        if (context is null || !AgendaAccess.IsVisibleTo(item, context.Viewer))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, MeErrors.AgendaNotVisible, "You cannot respond to this event.");
         }

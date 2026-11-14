@@ -33,7 +33,7 @@ public sealed record SetThirdProbeStagesCommand(Guid MemberKey, string ProbeId, 
 public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThirdProbeStagesCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
@@ -41,7 +41,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
 
     public SetThirdProbeStagesCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         AuditActorResolver actors,
         IKurinAudit audit,
         IProbesCatalogReader probes,
