@@ -12,7 +12,7 @@ namespace ProjectK.API.Hosting;
 /// <c>PublicCardLimit</c>). A request carrying the configured <c>X-RateLimit-Bypass</c> key skips all
 /// but the calendar and card limits.
 /// </summary>
-public static class RateLimiting
+public static class RateLimitingExtensions
 {
     /// <summary>Registers the limiter with the global limit and every named policy.</summary>
     public static IServiceCollection AddLileykaRateLimiting(this IServiceCollection services, IConfiguration configuration)

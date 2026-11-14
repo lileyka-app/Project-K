@@ -6,7 +6,7 @@ using Spectre.Console;
 namespace ProjectK.API.Hosting;
 
 /// <summary>What runs once before the host starts serving: migrations, seeding, the photo container.</summary>
-public static class StartupTasks
+public static class StartupTaskExtensions
 {
     /// <summary>
     /// Migrates the database (unless <c>Database:RunMigrationsOnStartup</c> is off), seeds it and
@@ -53,7 +53,7 @@ public static class StartupTasks
 
         AnsiConsole.MarkupLine("[green]✔ Startup successful![/]");
 
-        var pause = StartupConsole.BannerPauseMs(app.Configuration, app.Environment);
+        var pause = StartupConsoleRules.BannerPauseMs(app.Configuration, app.Environment);
         if (pause > 0)
         {
             await Task.Delay(pause);

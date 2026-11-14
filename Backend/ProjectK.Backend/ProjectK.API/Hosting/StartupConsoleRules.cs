@@ -4,7 +4,7 @@ using Spectre.Console;
 namespace ProjectK.API.Hosting;
 
 /// <summary>The boot banner a developer sees in the local console.</summary>
-internal static class StartupConsole
+internal static class StartupConsoleRules
 {
     private const int DefaultDevBannerPauseMs = 2000;
 
@@ -22,11 +22,11 @@ internal static class StartupConsole
 
     public static void PrintTitle(IConfiguration config, IHostEnvironment env)
     {
-        var version = config[ReleaseStamp.VersionKey] ?? "v0.0.0";
+        var version = config[ReleaseStampRules.VersionKey] ?? "v0.0.0";
 
         AnsiConsole.Write(new FigletText("Project K").Color(Color.Green));
 
-        AnsiConsole.Write(new Rule($"[yellow]{ReleaseDisplayRules.Label(version, ReleaseStamp.CodeName(config))}[/]")
+        AnsiConsole.Write(new Rule($"[yellow]{ReleaseDisplayRules.Label(version, ReleaseStampRules.CodeName(config))}[/]")
         {
             Justification = Justify.Left
         });

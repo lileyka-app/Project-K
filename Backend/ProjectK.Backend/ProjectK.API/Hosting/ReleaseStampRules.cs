@@ -3,7 +3,7 @@ using ProjectK.Common.Rules.Shared;
 namespace ProjectK.API.Hosting;
 
 /// <summary>The release this build was stamped with, as CI writes it into <c>ReleaseInfo:*</c>.</summary>
-internal static class ReleaseStamp
+internal static class ReleaseStampRules
 {
     public const string VersionKey = "ReleaseInfo:Version";
     public const string Unknown = "unknown";

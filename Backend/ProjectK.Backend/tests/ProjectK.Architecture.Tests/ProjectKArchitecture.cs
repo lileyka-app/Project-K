@@ -15,7 +15,7 @@ public static class ProjectKArchitecture
             typeof(ProjectK.Common.Entities.KurinModule.Member).Assembly,
             typeof(ProjectK.Infrastructure.DbContexts.AppDbContext).Assembly,
             typeof(ProjectK.BusinessLogic.DependencyInjection).Assembly,
-            typeof(ProjectK.API.ServiceCollectionExtension).Assembly)
+            typeof(ProjectK.API.ServiceCollectionExtensions).Assembly)
         .Build();
 
     /// <summary>

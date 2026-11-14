@@ -9,7 +9,7 @@ namespace ProjectK.API;
 /// Host-level wiring only: request context, the clock, and the two calls that let each layer
 /// register what it owns.
 /// </summary>
-public static class ServiceCollectionExtension
+public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the host's own services, then <c>AddInfrastructure</c> and <c>AddBusinessLogic</c>.
