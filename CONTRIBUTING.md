@@ -76,6 +76,8 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Таблиця | сутність `Common/Entities/<Module>/`, конфіг `Infrastructure/Persistence/Configurations/<Module>/` | `<Entity>`, `<Entity>Configuration` |
 | Доступ до таблиці | `Infrastructure/Repositories/<Module>/`, лише через UoW | `<Entity>Repository` |
 | Сховище не-таблиці (сесії, кеш, файли) | `Infrastructure/Stores/` | `…Store` |
+| Стан у памʼяті процесу, який тримає модуль (позначки, відкриті зони) | `BusinessLogic/Modules/<M>/Services/`, singleton | `…Store` |
+| Нащадок типу бібліотеки чи фреймворку | де його шукає бібліотека | суфікс базового типу: `…Problem`, `…ControllerFeatureProvider`, `…DbContextFactory`, `…ValueResolver` |
 | Зовнішня система | контракт у `Common/Contracts/`, реалізація в `Infrastructure/Services/<Concept>/` | тека за поняттям: `Email/`, не `EmailService/` |
 | Фонова служба | `Infrastructure/BackgroundServices/` | `…BackgroundService` |
 | Middleware, фільтр, кукі | `API/Middleware/`, `API/Filters/`, `API/Cookies/` | `…Middleware`, `…Filter`, `…Cookie` |
