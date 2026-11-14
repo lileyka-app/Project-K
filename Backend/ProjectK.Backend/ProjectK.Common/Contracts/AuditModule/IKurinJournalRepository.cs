@@ -4,7 +4,7 @@ using ProjectK.Common.Records.AuditModule;
 namespace ProjectK.Common.Contracts.AuditModule;
 
 /// <summary>Reads a kurin's journal. Filtering and paging happen in the database.</summary>
-public interface IKurinJournalReader
+public interface IKurinJournalRepository
 {
     /// <summary>The entries <paramref name="filter"/> selects, newest first, one page of them.</summary>
     Task<IReadOnlyList<KurinAuditEvent>> ReadAsync(

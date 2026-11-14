@@ -22,7 +22,7 @@ public sealed record GetMyGroupsQuery : IRequest<ServiceResult<IReadOnlyList<MyG
 public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, ServiceResult<IReadOnlyList<MyGroupDto>>>
 {
     private readonly ICurrentMember _me;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;
     private readonly ICurrentUserContext _currentUser;
@@ -31,14 +31,13 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
     public GetMyGroupsQueryHandler(
         ICurrentMember me,
         IOfficeDirectory offices,
-        IResourceScopeReader scopeReader,
         IUnitOfWork unitOfWork,
         IBlobReadLinks links,
         ICurrentUserContext currentUser)
     {
         _me = me;
         _offices = offices;
-        _scopeReader = scopeReader;
+        _scopeReader = unitOfWork.ResourceScopes;
         _unitOfWork = unitOfWork;
         _links = links;
         _currentUser = currentUser;

@@ -4,7 +4,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories.AuthModule;
+namespace ProjectK.Infrastructure.Stores;
 
 /// <inheritdoc />
 public sealed class CalendarFeedStore : ICalendarFeedStore

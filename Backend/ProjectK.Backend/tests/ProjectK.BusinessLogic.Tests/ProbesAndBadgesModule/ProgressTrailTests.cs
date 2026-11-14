@@ -181,7 +181,7 @@ public class ProgressTrailTests
             .ReturnsAsync(CapabilityReach.Kurin);
 
         var result = await new GetBadgeReviewQueueQueryHandler(
-                unitOfWork.Object, members.Object, user.Object, Mock.Of<IResourceScopeReader>(), FakeBlobReadLinks.Instance,
+                UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), unitOfWork), members.Object, user.Object, FakeBlobReadLinks.Instance,
                 permissions.Object, journal.Reader)
             .Handle(new GetBadgeReviewQueueQuery(_kurinKey), CancellationToken.None);
 

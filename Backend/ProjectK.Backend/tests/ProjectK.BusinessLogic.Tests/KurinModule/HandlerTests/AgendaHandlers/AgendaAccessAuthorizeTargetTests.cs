@@ -36,7 +36,7 @@ public class AgendaAccessAuthorizeTargetTests
     private readonly Guid _otherUserKey = Guid.NewGuid();
 
     private readonly FixedKurinAccessPolicyProvider _policies = new();
-    private readonly Mock<IResourceScopeReader> _scopes = new();
+    private readonly Mock<IResourceScopeRepository> _scopes = new();
 
     public AgendaAccessAuthorizeTargetTests()
     {
@@ -70,8 +70,8 @@ public class AgendaAccessAuthorizeTargetTests
         user.Setup(x => x.IsInRole(It.IsAny<string>())).Returns((string r) => roles.Contains(r, StringComparer.OrdinalIgnoreCase));
 
         var permissions = new CurrentPermissions(user.Object, _policies);
-        var resourceAccess = new ResourceAccessService(_scopes.Object, user.Object, new PassThroughBackendCache(), permissions);
-        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), new CurrentMember(user.Object, Mock.Of<IMemberDirectory>(), Mock.Of<IMembershipDirectory>()), _scopes.Object, resourceAccess, permissions, _tagVisibility.Object);
+        var resourceAccess = new ResourceAccessService(UnitOfWorks.WithScopes(_scopes.Object), user.Object, new PassThroughBackendCache(), permissions);
+        return new AgendaAccess(user.Object, UnitOfWorks.WithScopes(_scopes.Object), new CurrentMember(user.Object, Mock.Of<IMemberDirectory>(), Mock.Of<IMembershipDirectory>()), resourceAccess, permissions, _tagVisibility.Object);
     }
 
     private static AgendaTargetInput Target(AgendaTargetType type, Guid key) => new() { TargetType = type, TargetKey = key };

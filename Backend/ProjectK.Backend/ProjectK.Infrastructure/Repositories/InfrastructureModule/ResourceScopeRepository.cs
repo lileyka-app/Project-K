@@ -9,11 +9,11 @@ using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.InfrastructureModule;
 
-public class ResourceScopeReader : IResourceScopeReader
+public class ResourceScopeRepository : IResourceScopeRepository
 {
     private readonly AppDbContext _context;
 
-    public ResourceScopeReader(AppDbContext context)
+    public ResourceScopeRepository(AppDbContext context)
     {
         _context = context;
     }

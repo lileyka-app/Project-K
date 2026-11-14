@@ -39,7 +39,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     private readonly IDomainEventPublisher _events;
     private readonly IKurinCatalog _kurinCatalog;
     private readonly IKurinAudit _audit;
-    private readonly IKurinJournalReader _journal;
+    private readonly IKurinJournalRepository _journal;
     private readonly IBadgesCatalogReader _badges;
 
     public SubmitBadgeProgressCommandHandler(
@@ -49,7 +49,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         IDomainEventPublisher events,
         IKurinCatalog kurinCatalog,
         IKurinAudit audit,
-        IKurinJournalReader journal,
+        IAuditUnitOfWork journal,
         IBadgesCatalogReader badges)
     {
         _unitOfWork = unitOfWork;
@@ -58,7 +58,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         _events = events;
         _kurinCatalog = kurinCatalog;
         _audit = audit;
-        _journal = journal;
+        _journal = journal.KurinJournal;
         _badges = badges;
     }
 

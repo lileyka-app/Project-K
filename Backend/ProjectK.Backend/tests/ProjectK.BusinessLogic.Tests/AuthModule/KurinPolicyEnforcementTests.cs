@@ -317,12 +317,12 @@ public class KurinPolicyEnforcementTests
                 .ToList());
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(x => x.BadgeProgresses).Returns(progresses.Object);
-        var scopes = new Mock<IResourceScopeReader>();
+        var scopes = new Mock<IResourceScopeRepository>();
         scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), _access.KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _access.LedGroups.ToArray());
 
         var handler = new GetBadgeReviewQueueQueryHandler(
-            unitOfWork.Object, members.Object, actor, scopes.Object, FakeBlobReadLinks.Instance, _access.PermissionsFor(actor),
+            UnitOfWorks.WithScopes(scopes.Object, unitOfWork), members.Object, actor, FakeBlobReadLinks.Instance, _access.PermissionsFor(actor),
             new JournalRecorder(actor).Reader);
         return await handler.Handle(new GetBadgeReviewQueueQuery(_access.KurinKey), CancellationToken.None);
     }

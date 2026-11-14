@@ -42,7 +42,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
     private readonly IDomainEventPublisher _events;
     private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IKurinJournalReader _journal;
+    private readonly IKurinJournalRepository _journal;
     private readonly IBadgesCatalogReader _badges;
 
     public ReviewBadgeProgressCommandHandler(
@@ -52,7 +52,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         IDomainEventPublisher events,
         ICurrentMember actors,
         IKurinAudit audit,
-        IKurinJournalReader journal,
+        IAuditUnitOfWork journal,
         IBadgesCatalogReader badges)
     {
         _unitOfWork = unitOfWork;
@@ -61,7 +61,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         _events = events;
         _actors = actors;
         _audit = audit;
-        _journal = journal;
+        _journal = journal.KurinJournal;
         _badges = badges;
     }
 

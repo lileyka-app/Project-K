@@ -17,7 +17,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 public sealed class KurinReportDataService
 {
-    private readonly IKurinReportSource _source;
+    private readonly IKurinReportRepository _source;
     private readonly ICurrentUserContext _currentUser;
     private readonly IBlobReadLinks _links;
     private readonly IKurinReportMedia _media;
@@ -31,7 +31,6 @@ public sealed class KurinReportDataService
     private readonly IHonoursCatalog _honours;
 
     public KurinReportDataService(
-        IKurinReportSource source,
         ICurrentUserContext currentUser,
         IBlobReadLinks links,
         IKurinReportMedia media,
@@ -44,7 +43,7 @@ public sealed class KurinReportDataService
         IHonoursCatalog honours)
     {
         _honours = honours;
-        _source = source;
+        _source = unitOfWork.KurinReports;
         _currentUser = currentUser;
         _links = links;
         _media = media;

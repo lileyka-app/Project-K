@@ -1,6 +1,7 @@
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.KurinModule;
@@ -18,7 +19,7 @@ public sealed class MemberFieldAccess : IMemberFieldAccess
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IBackendCache _cache;
 
     private MemberFieldMask? _mask;
@@ -26,12 +27,12 @@ public sealed class MemberFieldAccess : IMemberFieldAccess
     public MemberFieldAccess(
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
-        IResourceScopeReader scopeReader,
+        IUnitOfWork unitOfWork,
         IBackendCache cache)
     {
         _currentUser = currentUser;
         _permissions = permissions;
-        _scopeReader = scopeReader;
+        _scopeReader = unitOfWork.ResourceScopes;
         _cache = cache;
     }
 

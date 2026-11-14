@@ -6,11 +6,11 @@ using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.AuditModule;
 
-public sealed class KurinJournalReader : IKurinJournalReader
+public sealed class KurinJournalRepository : IKurinJournalRepository
 {
     private readonly AppDbContext _context;
 
-    public KurinJournalReader(AppDbContext context)
+    public KurinJournalRepository(AppDbContext context)
     {
         _context = context;
     }

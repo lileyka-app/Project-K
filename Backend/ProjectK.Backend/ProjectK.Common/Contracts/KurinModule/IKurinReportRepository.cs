@@ -7,7 +7,7 @@ namespace ProjectK.Common.Contracts.KurinModule;
 /// project: the queries are eager-loaded and report-shaped, so they belong with the database, while
 /// the assembly needs the probe and badge catalogues, which live in the business layer.
 /// </summary>
-public interface IKurinReportSource
+public interface IKurinReportRepository
 {
     /// <summary>
     /// Loads the kurin and everyone in it, or <c>null</c> when the kurin does not exist.

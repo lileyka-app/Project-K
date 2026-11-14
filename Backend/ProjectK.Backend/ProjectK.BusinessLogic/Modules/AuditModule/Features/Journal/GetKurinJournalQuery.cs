@@ -4,6 +4,7 @@ using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -36,26 +37,26 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly ICurrentMember _currentMember;
-    private readonly IKurinJournalReader _journal;
+    private readonly IKurinJournalRepository _journal;
     private readonly IProbesCatalogReader _probes;
     private readonly IBadgesCatalogReader _badges;
 
     public GetKurinJournalQueryHandler(
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
-        IResourceScopeReader scopeReader,
+        IUnitOfWork unitOfWork,
         ICurrentMember currentMember,
-        IKurinJournalReader journal,
+        IAuditUnitOfWork audit,
         IProbesCatalogReader probes,
         IBadgesCatalogReader badges)
     {
         _currentUser = currentUser;
         _permissions = permissions;
-        _scopeReader = scopeReader;
+        _scopeReader = unitOfWork.ResourceScopes;
         _currentMember = currentMember;
-        _journal = journal;
+        _journal = audit.KurinJournal;
         _probes = probes;
         _badges = badges;
     }

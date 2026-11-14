@@ -8,7 +8,7 @@ namespace ProjectK.Common.Contracts.InfrastructureModule;
 /// full graph for editing; ResourceAuthorizeFilter runs on nearly every request, so it
 /// gets its own projection instead.
 /// </summary>
-public interface IResourceScopeReader
+public interface IResourceScopeRepository
 {
     /// <summary>
     /// The scope of a resource <b>as seen from</b> <paramref name="inKurinKey"/>. The caller's

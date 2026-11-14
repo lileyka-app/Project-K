@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -27,7 +28,7 @@ public class MeAgendaScopesTests
     private static readonly Guid LedInB = Guid.NewGuid();
 
     private readonly Mock<IOfficeDirectory> _offices = new();
-    private readonly Mock<IResourceScopeReader> _scopeReader = new();
+    private readonly Mock<IResourceScopeRepository> _scopeReader = new();
     private readonly List<MembershipRecord> _memberships = [];
 
     // The fallbacks go first so a test's own setup for one kurin wins over them.
@@ -51,7 +52,7 @@ public class MeAgendaScopesTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
         unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
-        return new MeAgendaScopes(new CurrentMember(user.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, _scopeReader.Object, unitOfWork.Object);
+        return new MeAgendaScopes(new CurrentMember(user.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, UnitOfWorks.WithScopes(_scopeReader.Object, unitOfWork));
     }
 
     private void StandIn(Guid kurin, int number, Guid? group, MembershipKind kind = MembershipKind.Youth) =>

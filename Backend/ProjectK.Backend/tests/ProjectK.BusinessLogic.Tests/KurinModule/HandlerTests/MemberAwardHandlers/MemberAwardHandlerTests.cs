@@ -75,11 +75,10 @@ public class MemberAwardHandlerTests
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _kurinDataMock.Object,
+            UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), _kurinDataMock),
             _access.Object,
             _journal.Audit,
-            _honours.Object,
-            Mock.Of<IResourceScopeReader>());
+            _honours.Object);
         _reviewHandler = new ReviewMemberAwardCommandHandler(
             _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,

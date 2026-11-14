@@ -72,7 +72,7 @@ public class MemberBoundaryRules
     {
         var rule = Types()
             .That().ImplementInterface(typeof(IResourceAccessService))
-            .Or().ImplementInterface(typeof(IResourceScopeReader))
+            .Or().ImplementInterface(typeof(IResourceScopeRepository))
             .Or().ImplementInterface(typeof(ILoginResponseService))
             .Should().NotDependOnAny(typeof(Member), typeof(IMemberRepository));
 

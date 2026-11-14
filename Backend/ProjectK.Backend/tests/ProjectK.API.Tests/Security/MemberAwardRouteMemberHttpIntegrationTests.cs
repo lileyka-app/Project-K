@@ -133,7 +133,7 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                 .AddScheme<AuthenticationSchemeOptions, AwardAuthHandler>(AwardAuthHandler.SchemeName, _ => { });
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeReader>();
+            var scopeReader = new Mock<IResourceScopeRepository>();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, routeMemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(kurinKey, groupKey, routeMemberUserKey));
@@ -177,7 +177,7 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                 return mediator.Object;
             });
 
-            builder.Services.AddScoped(_ => scopeReader.Object);
+            builder.Services.AddScoped(_ => Mock.Of<ProjectK.Common.Contracts.Shared.IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object));
             builder.Services.AddSingleton(Mock.Of<IAwardImagesCatalog>());
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();

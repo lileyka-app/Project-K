@@ -130,7 +130,7 @@ public class ProgressTrailFoldTests : IDisposable
         await FoldAsync();
 
         await using var context = new AppDbContext(_options);
-        var entries = await new KurinJournalReader(context).GetForSubjectsAsync([probe.ProbeProgressKey]);
+        var entries = await new KurinJournalRepository(context).GetForSubjectsAsync([probe.ProbeProgressKey]);
         Assert.Equal([AuditActions.Probe.Started, AuditActions.Probe.Completed], entries.Select(e => e.Action));
 
         var first = entries[0];
@@ -164,7 +164,7 @@ public class ProgressTrailFoldTests : IDisposable
         await FoldAsync();
 
         await using var context = new AppDbContext(_options);
-        var entry = Assert.Single(await new KurinJournalReader(context).GetForSubjectsAsync([probe.ProbeProgressKey]));
+        var entry = Assert.Single(await new KurinJournalRepository(context).GetForSubjectsAsync([probe.ProbeProgressKey]));
         Assert.Equal(action, entry.Action);
         var item = Assert.Single(ProgressTrail.ForProbe(probe.ProbeProgressKey, [entry]));
         Assert.Equal((ProbeProgressStatus)from, item.FromStatus);
@@ -186,7 +186,7 @@ public class ProgressTrailFoldTests : IDisposable
         await FoldAsync();
 
         await using var context = new AppDbContext(_options);
-        var entry = Assert.Single(await new KurinJournalReader(context).GetForSubjectsAsync([badge.BadgeProgressKey]));
+        var entry = Assert.Single(await new KurinJournalRepository(context).GetForSubjectsAsync([badge.BadgeProgressKey]));
         Assert.Equal(action, entry.Action);
         Assert.Equal(AuditArea.Badge, entry.Area);
         Assert.Equal("badge-1", entry.SubjectLabel);

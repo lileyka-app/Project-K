@@ -134,7 +134,7 @@ public sealed class AgendaAccess : IAgendaAccess
     private readonly ICurrentUserContext _currentUser;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentMember _currentMember;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentPermissions _permissions;
     private readonly IKurinTagVisibility _tags;
@@ -143,7 +143,6 @@ public sealed class AgendaAccess : IAgendaAccess
         ICurrentUserContext currentUser,
         IUnitOfWork uow,
         ICurrentMember currentMember,
-        IResourceScopeReader scopeReader,
         IResourceAccessService resourceAccess,
         ICurrentPermissions permissions,
         IKurinTagVisibility tags)
@@ -152,7 +151,7 @@ public sealed class AgendaAccess : IAgendaAccess
         _currentUser = currentUser;
         _uow = uow;
         _currentMember = currentMember;
-        _scopeReader = scopeReader;
+        _scopeReader = uow.ResourceScopes;
         _resourceAccess = resourceAccess;
         _permissions = permissions;
     }

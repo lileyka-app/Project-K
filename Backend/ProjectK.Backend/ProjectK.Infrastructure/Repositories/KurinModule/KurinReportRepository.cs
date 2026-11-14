@@ -6,11 +6,11 @@ using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
 
-public sealed class KurinReportSource : IKurinReportSource
+public sealed class KurinReportRepository : IKurinReportRepository
 {
     private readonly AppDbContext _context;
 
-    public KurinReportSource(AppDbContext context)
+    public KurinReportRepository(AppDbContext context)
     {
         _context = context;
     }

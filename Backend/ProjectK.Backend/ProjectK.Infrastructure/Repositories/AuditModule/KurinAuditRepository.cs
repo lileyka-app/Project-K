@@ -8,11 +8,11 @@ namespace ProjectK.Infrastructure.Repositories.AuditModule;
 /// Tracks an entry on the request's <see cref="AppDbContext"/> — the same instance every unit of
 /// work of the request saves through — and leaves the saving to the handler.
 /// </summary>
-public sealed class KurinAuditWriter : IKurinAuditWriter
+public sealed class KurinAuditRepository : IKurinAuditRepository
 {
     private readonly AppDbContext _context;
 
-    public KurinAuditWriter(AppDbContext context)
+    public KurinAuditRepository(AppDbContext context)
     {
         _context = context;
     }

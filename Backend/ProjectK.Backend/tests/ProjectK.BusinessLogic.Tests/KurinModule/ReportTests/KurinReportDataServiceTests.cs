@@ -25,7 +25,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
 /// </summary>
 public sealed class KurinReportDataServiceTests
 {
-    private readonly Mock<IKurinReportSource> _source = new();
+    private readonly Mock<IKurinReportRepository> _source = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IKurinReportMedia> _media = new();
     private readonly Mock<IMemberProgressDirectory> _progress = new();
@@ -63,7 +63,6 @@ public sealed class KurinReportDataServiceTests
         TagsOn(false);
 
         _service = new KurinReportDataService(
-            _source.Object,
             _currentUser.Object,
             FakeBlobReadLinks.Instance,
             _media.Object,
@@ -71,7 +70,7 @@ public sealed class KurinReportDataServiceTests
             Mock.Of<IBadgesCatalogReader>(),
             new ConfigurationBuilder().Build(),
             _progress.Object,
-            _uow.Object,
+            UnitOfWorks.WithReports(_source.Object, _uow),
             _tagVisibility.Object,
             Mock.Of<ProjectK.Common.Contracts.ProbesAndBadgesModule.IHonoursCatalog>());
     }

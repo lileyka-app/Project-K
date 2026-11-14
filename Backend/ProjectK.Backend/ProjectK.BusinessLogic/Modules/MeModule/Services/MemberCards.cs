@@ -36,7 +36,7 @@ public sealed class MemberCards
     private readonly IProbesCatalogReader _probes;
     private readonly IBadgesCatalogReader _badges;
     private readonly IBlobReadLinks _links;
-    private readonly IResourceScopeReader _scope;
+    private readonly IResourceScopeRepository _scope;
     private readonly IHonoursCatalog _honours;
     private readonly EmailOptions _site;
     private readonly TimeProvider _time;
@@ -48,12 +48,11 @@ public sealed class MemberCards
         IProbesCatalogReader probes,
         IBadgesCatalogReader badges,
         IBlobReadLinks links,
-        IResourceScopeReader scope,
         IHonoursCatalog honours,
         IOptions<EmailOptions> site,
         TimeProvider time)
     {
-        _scope = scope;
+        _scope = unitOfWork.ResourceScopes;
         _honours = honours;
         _time = time;
         _unitOfWork = unitOfWork;

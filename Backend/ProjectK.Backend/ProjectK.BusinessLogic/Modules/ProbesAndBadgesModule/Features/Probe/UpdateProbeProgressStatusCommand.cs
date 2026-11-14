@@ -38,7 +38,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
     private readonly IMemberDirectory _members;
     private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IKurinJournalReader _journal;
+    private readonly IKurinJournalRepository _journal;
     private readonly IProbesCatalogReader _probesCatalogReader;
     private readonly IResourceAccessService _access;
     private readonly IMemberProbeLine _line;
@@ -48,7 +48,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         IMemberDirectory members,
         ICurrentMember actors,
         IKurinAudit audit,
-        IKurinJournalReader journal,
+        IAuditUnitOfWork journal,
         IProbesCatalogReader probesCatalogReader,
         IResourceAccessService access,
         IMemberProbeLine line)
@@ -58,7 +58,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         _members = members;
         _actors = actors;
         _audit = audit;
-        _journal = journal;
+        _journal = journal.KurinJournal;
         _probesCatalogReader = probesCatalogReader;
         _access = access;
     }

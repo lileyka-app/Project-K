@@ -15,7 +15,7 @@ namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 /// The real journal — actor, subject and redaction worked out by <see cref="KurinAudit"/> — with the
 /// write caught in a list instead of a database, and the people it names held here.
 /// </summary>
-internal sealed class JournalRecorder : IKurinAuditWriter
+internal sealed class JournalRecorder : IKurinAuditRepository, IAuditUnitOfWork
 {
     private readonly List<MemberSummary> _people = [];
 
@@ -55,10 +55,15 @@ internal sealed class JournalRecorder : IKurinAuditWriter
     /// <summary>Every key set a handler asked the journal about, one per read.</summary>
     public List<IReadOnlyCollection<Guid>> SubjectReads { get; } = [];
 
-    /// <summary>The journal read back: what was recorded, as the database would return it.</summary>
-    public IKurinJournalReader Reader => new RecordedJournal(this);
+    /// <summary>The journal's unit of work: writes land in <see cref="Entries"/>, reads come back from them.</summary>
+    public IAuditUnitOfWork Reader => this;
 
-    private sealed class RecordedJournal(JournalRecorder recorder) : IKurinJournalReader
+    public IKurinAuditRepository KurinAudit => this;
+
+    /// <summary>The journal read back: what was recorded, as the database would return it.</summary>
+    public IKurinJournalRepository KurinJournal => new RecordedJournal(this);
+
+    private sealed class RecordedJournal(JournalRecorder recorder) : IKurinJournalRepository
     {
         public Task<IReadOnlyList<KurinAuditEvent>> ReadAsync(
             KurinJournalFilter filter, int skip, int take, CancellationToken cancellationToken = default) =>

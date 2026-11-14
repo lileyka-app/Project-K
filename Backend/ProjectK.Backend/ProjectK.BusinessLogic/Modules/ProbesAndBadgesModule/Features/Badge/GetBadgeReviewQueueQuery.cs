@@ -19,27 +19,26 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IBlobReadLinks _links;
     private readonly ICurrentPermissions _permissions;
-    private readonly IKurinJournalReader _journal;
+    private readonly IKurinJournalRepository _journal;
 
     public GetBadgeReviewQueueQueryHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
-        IResourceScopeReader scopeReader,
         IBlobReadLinks links,
         ICurrentPermissions permissions,
-        IKurinJournalReader journal)
+        IAuditUnitOfWork audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
-        _scopeReader = scopeReader;
+        _scopeReader = unitOfWork.ResourceScopes;
         _links = links;
         _permissions = permissions;
-        _journal = journal;
+        _journal = audit.KurinJournal;
     }
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressDto>>> Handle(GetBadgeReviewQueueQuery request, CancellationToken cancellationToken)

@@ -45,7 +45,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 
 `Infrastructure` і `BusinessLogic` не знають одне про одного. Коли бізнес-логіці потрібен
 зовнішній світ, інтерфейс оголошується в `Common`, а реалізується в `Infrastructure`:
-`IKurinReportSource`, `ISpreadsheetWriter`, `ISpreadsheetReader`, `IAppUserRepository`, `IUnitOfWork`.
+`IKurinReportRepository`, `ISpreadsheetWriter`, `ISpreadsheetReader`, `IAppUserRepository`, `IUnitOfWork`.
 
 Розподіл відповідальності — у таблиці в [CONTRIBUTING.md](CONTRIBUTING.md#шари).
 
@@ -64,7 +64,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | `ScoreModule` | точкування: присутність на подіях, бали вручну й автоматично, таблиця гуртків |
 | `KraiModule` | краї й профілі країв: які вмілості бачать курені, валюта, часовий пояс, формат чисел, поля картки, куди курені передають вкладку і які пільги дає край; ревізії профілю й відновлення давнішої; які поля прибирає зі своєї картки курінь. Додати й перейменувати край (`KraiCommands`), публічний список для форми заявки (`GetKraiNamesQuery`); 28 країв засіває міграція |
 | `MeModule` | `api/me` для головної: людина з усіх поточних куренів — події, задачі, проба й вмілості, вкладка, бали, справи проводу. Тільки читає інші модулі через їхні контракти; права в кожному курені рахує з ролей у ньому, а не з токена |
-| `AuditModule` | журнал дій куреня: хто, що й коли змінив (`KurinAuditEvent`). Інші модулі пишуть у нього через `IKurinAudit` перед своїм `SaveChanges`, читають — через `IKurinJournalReader`; таблицю бачить лише цей модуль |
+| `AuditModule` | журнал дій куреня: хто, що й коли змінив (`KurinAuditEvent`). Інші модулі пишуть у нього через `IKurinAudit` перед своїм `SaveChanges`, читають — через `IAuditUnitOfWork.KurinJournal`; таблицю бачить лише цей модуль |
 
 **Член ≠ користувач.** Член — це людина; користувач — спосіб увійти. Одне може існувати без
 іншого: людину заводять до того, як вона отримає акаунт, і не кожна його отримує.
@@ -88,7 +88,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | `IMemberProgressDirectory` | проби й вмілості | як далеко людина зайшла, підписані точки проби; що в курені підтверджено й підписано (для точкування) |
 | `IDuesDirectory` | вкладка | які квартали закриті без боргу (для точкування) |
 | `IKraiProfileDirectory` | край | профіль краю чи куреня з усіма значеннями: вмілості, валюта, пояс, формат чисел, поля картки, вкладка (куди передають, пільги) |
-| `IKurinJournalReader` | журнал | записи журналу дій за предметами (історія на картці проби й вмілості) і сторінка журналу з фільтрами |
+| `IKurinJournalRepository` | журнал | записи журналу дій за предметами (історія на картці проби й вмілості) і сторінка журналу з фільтрами |
 
 Межі тримає не домовленість, а `ProjectK.Architecture.Tests`: правила читають IL, тож звернення до
 чужого репозиторію чи чужої сутності валить тест навіть тоді, коли воно сховане всередині методу й
@@ -187,7 +187,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 Один виняток з «усе в межах куреня»: **свій запис людина читає завжди**. Виведена з останнього
 куреня, вона не стоїть ніде, і жоден курінний обсяг до неї не дотягується — але картка, ступені,
 відзначення й проби її, а не куреня. Тож читання (`Read`, і тільки воно) власного запису проходить
-і без куреня в токені: `ResourceAccessService` питає `IResourceScopeReader.GetPersonAccountKeyAsync`,
+і без куреня в токені: `ResourceAccessService` питає `IResourceScopeRepository.GetPersonAccountKeyAsync`,
 чий це акаунт, — за членствами, закритими теж. Змінювати свій запис людина знову може, коли її
 прийме курінь.
 
@@ -197,7 +197,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 `ProbeProgress:Update/Delete`, `BadgeProgress:Update`), коли запис — того, хто питає. Ці права
 зникають і з `ReachableCapabilitiesAsync`, тож кнопок на своїй картці немає.
 
-Юнацьке **старшого** — того, хто зараз стоїть у курені УСП чи УПС (`IResourceScopeReader.StandsInSeniorKurinAsync`),
+Юнацьке **старшого** — того, хто зараз стоїть у курені УСП чи УПС (`IResourceScopeRepository.StandsInSeniorKurinAsync`),
 — закритий запис. Проби не змінює ніхто. Вмілості й відзначення УПЮ змінює лише той, хто має право на весь
 курінь там, де людина стоїть зараз (Звʼязковий), і ніколи сама людина. Ступені — він і сама людина. Для проб і
 вмілостей це робить сам `ResourceAccessService`; відзначення УПЮ й ступені ділять ендпоінт зі старшими
@@ -233,12 +233,12 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 | Що | Чим | Де код |
 |---|---|---|
 | База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
-| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі. Зміна безпеки (`RefreshTokenInvalidation`) вимикає й посилання на календар (`ICalendarFeedStore`, лише хеш токена) і кладе сповіщення в дзвіночок | `Infrastructure/Repositories/AuthModule` |
+| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі. Зміна безпеки (`RefreshTokenInvalidation`) вимикає й посилання на календар (`ICalendarFeedStore`, лише хеш токена) і кладе сповіщення в дзвіночок | `Infrastructure/Stores` |
 | Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsWriter`), повтори розгорнуті на сервері (`AgendaRecurrence`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/Blobs` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
-| PDF | QuestPDF; звіт куреня збирається з `IKurinReportSource` | `Infrastructure`, `BusinessLogic` |
+| PDF | QuestPDF; звіт куреня збирається з `IKurinReportRepository` | `Infrastructure`, `BusinessLogic` |
 | Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів (події безпеки й помилки; читабельний HTML, однотипні за 5 хв — одним зведенням, черга замість відкидання) | `API/Program.cs`, `Infrastructure/Logging/TelegramDevAlerts` |
 | Зворотний звʼязок | «Повідомити про проблему» → GitHub issue токеном сервера (`Feedback:GitHub`), без токена — в лог; скриншоти в `feedback-screenshots` того ж контейнера | `Infrastructure/Services/Feedback`, `API/Controllers/InfrastructureModule/FeedbackController` |
 | Каталог | вмілості, проби й відзначення з сервісу каталогу (`GET /v1/catalog`, секція `Catalog`); тримаються в памʼяті, остання вдала відповідь — на диску, без мережі — копія, вбудована в збірку | `Infrastructure/Services/Catalog` |

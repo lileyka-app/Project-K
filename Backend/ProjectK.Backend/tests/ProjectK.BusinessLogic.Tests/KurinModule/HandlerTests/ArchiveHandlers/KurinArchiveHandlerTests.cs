@@ -40,7 +40,7 @@ public class KurinArchiveHandlerTests
     private readonly FixedTimeProvider _time = new(Now);
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly Mock<ICurrentPermissions> _permissions = new();
-    private readonly Mock<IResourceScopeReader> _scopes = new();
+    private readonly Mock<IResourceScopeRepository> _scopes = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IJwtService> _jwt = new();
     private readonly Mock<IReauthentication> _reauth = new();
@@ -89,7 +89,7 @@ public class KurinArchiveHandlerTests
         }
     }
 
-    private ArchiveReach Reach() => new(_user.Object, _permissions.Object, _scopes.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()));
+    private ArchiveReach Reach() => new(_user.Object, _permissions.Object, UnitOfWorks.WithScopes(_scopes.Object), new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()));
     private ArchiveDangerZoneService Zone() => new(_zones, _jwt.Object, _reauth.Object, _user.Object, _time);
     private ArchiveDeletionService Gate() => new(Reach(), Zone(), _user.Object, _audit.Object);
 

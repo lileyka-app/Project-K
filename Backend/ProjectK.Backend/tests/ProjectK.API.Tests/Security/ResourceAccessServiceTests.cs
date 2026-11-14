@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.API.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.InfrastructureModule;
@@ -467,7 +468,7 @@ public class ResourceAccessServiceTests
             Times.Exactly(2));
     }
 
-    private static (ResourceAccessService Service, Mock<IResourceScopeReader> ScopeReader, IBackendCache Cache) CreateCachingFixture(
+    private static (ResourceAccessService Service, Mock<IResourceScopeRepository> ScopeReader, IBackendCache Cache) CreateCachingFixture(
         Guid kurinKey,
         Guid groupKey,
         Guid mentorUserId)
@@ -483,13 +484,13 @@ public class ResourceAccessServiceTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
 
-        var scopeReader = new Mock<IResourceScopeReader>();
+        var scopeReader = new Mock<IResourceScopeRepository>();
         scopeReader
             .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { groupKey });
 
         var cache = new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), NullLogger<MemoryBackendCache>.Instance);
-        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, cache, new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
+        var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object), currentUserContext.Object, cache, new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
         return (service, scopeReader, cache);
     }
 
@@ -520,7 +521,7 @@ public class ResourceAccessServiceTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
 
-        var scopeReader = new Mock<IResourceScopeReader>();
+        var scopeReader = new Mock<IResourceScopeRepository>();
         scopeReader
             .Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ResourceScope?)null);
@@ -530,7 +531,7 @@ public class ResourceAccessServiceTests
             .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>());
 
-        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, new PassThroughBackendCache(), new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
+        var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object), currentUserContext.Object, new PassThroughBackendCache(), new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
         return new ResourceAccessFixture(service, scopeReader);
     }
 
@@ -548,7 +549,7 @@ public class ResourceAccessServiceTests
 
     private sealed record ResourceAccessFixture(
         ResourceAccessService Service,
-        Mock<IResourceScopeReader> ScopeReader)
+        Mock<IResourceScopeRepository> ScopeReader)
     {
         public void Scope(ResourceType resourceType, Guid resourceKey, ResourceScope? scope)
         {

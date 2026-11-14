@@ -38,7 +38,7 @@ public class SeniorAwardHandlerTests
     private readonly Mock<IHonoursCatalog> _honours = new();
     private readonly Mock<IMemberDirectory> _directory = new();
     private readonly Mock<IResourceAccessService> _access = new();
-    private readonly Mock<IResourceScopeReader> _scope = new();
+    private readonly Mock<IResourceScopeRepository> _scope = new();
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _ownerUserKey = Guid.NewGuid();
     private readonly Member _member;
@@ -81,8 +81,8 @@ public class SeniorAwardHandlerTests
             .ReturnsAsync(ResourceAccessDecision.Deny("Refused by the test."));
 
     private UpsertMemberAwardCommandHandler Upsert() => new(
-        _unitOfWork.Object, _currentUser.Object, _events.Object, _kurinData.Object, _access.Object,
-        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, _scope.Object);
+        _unitOfWork.Object, _currentUser.Object, _events.Object, UnitOfWorks.WithScopes(_scope.Object, _kurinData), _access.Object,
+        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object);
 
     private DeleteMemberAwardCommandHandler Delete() => new(
         _unitOfWork.Object, _currentUser.Object, _directory.Object, _access.Object,

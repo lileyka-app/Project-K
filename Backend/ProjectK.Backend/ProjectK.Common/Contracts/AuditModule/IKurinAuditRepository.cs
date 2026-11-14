@@ -6,7 +6,7 @@ namespace ProjectK.Common.Contracts.AuditModule;
 /// Puts a journal entry on the request's unit of work without saving it, so it commits with the
 /// handler's own save. Used only by the journal itself; handlers go through <see cref="IKurinAudit"/>.
 /// </summary>
-public interface IKurinAuditWriter
+public interface IKurinAuditRepository
 {
     void Add(KurinAuditEvent entry);
 }

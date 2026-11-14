@@ -30,7 +30,7 @@ public sealed class MeAgendaScopes
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IUnitOfWork _unitOfWork;
 
     public MeAgendaScopes(
@@ -38,14 +38,13 @@ public sealed class MeAgendaScopes
         IMembershipDirectory memberships,
         IMemberDirectory members,
         IOfficeDirectory offices,
-        IResourceScopeReader scopeReader,
         IUnitOfWork unitOfWork)
     {
         _currentMember = currentMember;
         _memberships = memberships;
         _members = members;
         _offices = offices;
-        _scopeReader = scopeReader;
+        _scopeReader = unitOfWork.ResourceScopes;
         _unitOfWork = unitOfWork;
     }
 

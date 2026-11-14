@@ -22,19 +22,19 @@ public sealed class KurinAudit : IKurinAudit
     private readonly ICurrentMember _actors;
     private readonly ICurrentUserContext _currentUser;
     private readonly IMemberDirectory _members;
-    private readonly IKurinAuditWriter _writer;
+    private readonly IKurinAuditRepository _writer;
     private readonly Dictionary<(Guid? KurinKey, Guid MemberKey), Subject> _subjects = new();
 
     public KurinAudit(
         ICurrentMember actors,
         ICurrentUserContext currentUser,
         IMemberDirectory members,
-        IKurinAuditWriter writer)
+        IAuditUnitOfWork audit)
     {
         _actors = actors;
         _currentUser = currentUser;
         _members = members;
-        _writer = writer;
+        _writer = audit.KurinAudit;
     }
 
     public async Task RecordAsync(AuditRecord record, CancellationToken cancellationToken = default)

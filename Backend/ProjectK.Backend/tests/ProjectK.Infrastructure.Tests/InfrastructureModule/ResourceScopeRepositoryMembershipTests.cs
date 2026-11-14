@@ -13,7 +13,7 @@ namespace ProjectK.Infrastructure.Tests.InfrastructureModule;
 /// membership in the asking kurin, and by nothing else. Being in the system — even being someone's
 /// виховник elsewhere — does not put them in scope here.
 /// </summary>
-public class ResourceScopeReaderMembershipTests
+public class ResourceScopeRepositoryMembershipTests
 {
     private static AppDbContext NewContext() =>
         new(new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
@@ -43,7 +43,7 @@ public class ResourceScopeReaderMembershipTests
         context.Memberships.Add(Joining(memberKey, kurinKey, groupKey, userKey));
         await context.SaveChangesAsync();
 
-        var scope = await new ResourceScopeReader(context)
+        var scope = await new ResourceScopeRepository(context)
             .GetScopeAsync(ResourceType.Member, memberKey, kurinKey);
 
         Assert.NotNull(scope);
@@ -62,7 +62,7 @@ public class ResourceScopeReaderMembershipTests
         context.Memberships.Add(Joining(memberKey, theirKurin, null, Guid.NewGuid()));
         await context.SaveChangesAsync();
 
-        var scope = await new ResourceScopeReader(context)
+        var scope = await new ResourceScopeRepository(context)
             .GetScopeAsync(ResourceType.Member, memberKey, anotherKurin);
 
         Assert.Null(scope);
@@ -79,7 +79,7 @@ public class ResourceScopeReaderMembershipTests
         context.Memberships.Add(left);
         await context.SaveChangesAsync();
 
-        var scope = await new ResourceScopeReader(context)
+        var scope = await new ResourceScopeRepository(context)
             .GetScopeAsync(ResourceType.Member, memberKey, kurinKey);
 
         Assert.Null(scope);
@@ -100,7 +100,7 @@ public class ResourceScopeReaderMembershipTests
             Joining(memberKey, seniorKurin, null, userKey));
         await context.SaveChangesAsync();
 
-        var reader = new ResourceScopeReader(context);
+        var reader = new ResourceScopeRepository(context);
 
         var fromYouth = await reader.GetScopeAsync(ResourceType.Member, memberKey, youthKurin);
         var fromSenior = await reader.GetScopeAsync(ResourceType.Member, memberKey, seniorKurin);
@@ -124,7 +124,7 @@ public class ResourceScopeReaderMembershipTests
         context.Memberships.Add(left);
         await context.SaveChangesAsync();
 
-        var reader = new ResourceScopeReader(context);
+        var reader = new ResourceScopeRepository(context);
 
         Assert.Equal(userKey, await reader.GetPersonAccountKeyAsync(ResourceType.Member, memberKey));
         Assert.Equal(userKey, await reader.GetPersonAccountKeyAsync(ResourceType.MemberContacts, memberKey));
@@ -142,7 +142,7 @@ public class ResourceScopeReaderMembershipTests
         context.Memberships.Add(Joining(Guid.NewGuid(), ledKurin, Guid.NewGuid(), userKey));
         await context.SaveChangesAsync();
 
-        var ledElsewhere = await new ResourceScopeReader(context)
+        var ledElsewhere = await new ResourceScopeRepository(context)
             .GetLedGroupKeysAsync(userKey, otherKurin);
 
         Assert.Empty(ledElsewhere);
@@ -163,7 +163,7 @@ public class ResourceScopeReaderMembershipTests
         context.Groups.AddRange(first, second, new Group("Чужі", Guid.NewGuid()));
         await context.SaveChangesAsync();
 
-        var reader = new ResourceScopeReader(context);
+        var reader = new ResourceScopeRepository(context);
         var scope = await reader.GetScopeAsync(ResourceType.KurinJournal, kurin.KurinKey, kurin.KurinKey);
         var missing = await reader.GetScopeAsync(ResourceType.KurinJournal, Guid.NewGuid(), kurin.KurinKey);
 
@@ -215,7 +215,7 @@ public class ResourceScopeReaderSeniorTests
         Join(staffInUpyu, upyu);
         await _context.SaveChangesAsync();
 
-        var reader = new ResourceScopeReader(_context);
+        var reader = new ResourceScopeRepository(_context);
 
         Assert.True(await reader.StandsInSeniorKurinAsync(ResourceType.Member, senior));
         Assert.False(await reader.StandsInSeniorKurinAsync(ResourceType.Member, formerSenior));
@@ -247,7 +247,7 @@ public class ResourceScopeReaderTwoMembershipsTests
         }
 
         await context.SaveChangesAsync();
-        var reader = new ResourceScopeReader(context);
+        var reader = new ResourceScopeRepository(context);
 
         Assert.False(await reader.StandsInSeniorKurinAsync(ResourceType.Member, youth));
         Assert.True(await reader.StandsInSeniorKurinAsync(ResourceType.Member, staff));
