@@ -147,29 +147,11 @@ public class GroupController : ControllerBase
     [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken)
-    {
-        var file = form.File;
-        if (file == null || file.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        if (ImageUploadRules.Refusal(file) is { } refusal)
-        {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
-        }
-
-        var bytes = await file.ToByteArrayAsync(cancellationToken);
-        if (bytes == null || bytes.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        var command = new UploadGroupSilhouetteCommand(groupKey, bytes, file.FileName);
-        var response = await _mediator.Send(command, cancellationToken);
-        return response.ToActionResult(this);
-    }
+    public Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken) =>
+        this.SendImageAsync(
+            form.File,
+            (bytes, fileName) => _mediator.Send(new UploadGroupSilhouetteCommand(groupKey, bytes, fileName), cancellationToken),
+            cancellationToken);
 
     /// <summary>
     /// Removes the group's silhouette image.

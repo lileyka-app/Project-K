@@ -180,9 +180,9 @@ public class MemberController : ControllerBase
             return this.Failure(ResultType.BadRequest, "GroupKeyRequired", "groupKey is required.");
         }
 
-        if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+        if (this.RefuseImage(request.Blob) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            return refusal;
         }
 
         var command = new UpsertMemberCommand
@@ -224,9 +224,9 @@ public class MemberController : ControllerBase
         [FromForm] UpsertMemberRequest request,
         CancellationToken cancellationToken)
     {
-        if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+        if (this.RefuseImage(request.Blob) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            return refusal;
         }
 
         var command = new UpsertMemberCommand
@@ -273,9 +273,9 @@ public class MemberController : ControllerBase
                                             [FromForm] UpsertMemberRequest request,
                                             CancellationToken cancellationToken)
     {
-        if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+        if (this.RefuseImage(request.Blob) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            return refusal;
         }
 
         var command = new UpsertMemberCommand

@@ -71,17 +71,12 @@ public class FeedbackController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> UploadScreenshot(IFormFile? file, CancellationToken cancellationToken)
     {
-        if (file is null || file.Length == 0)
+        if (this.RefuseRequiredImage(file, "FileRequired", "Attach an image.") is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, "FileRequired", "Attach an image.");
+            return refusal;
         }
 
-        if (ImageUploadRules.Refusal(file) is { } refusal)
-        {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
-        }
-
-        await using var content = file.OpenReadStream();
+        await using var content = file!.OpenReadStream();
         var response = await _mediator.Send(new UploadFeedbackScreenshotCommand(content, file.FileName), cancellationToken);
         if (response.Type != ResultType.Success || response.Data is null)
         {

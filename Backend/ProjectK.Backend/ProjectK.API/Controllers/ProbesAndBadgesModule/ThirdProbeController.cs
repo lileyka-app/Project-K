@@ -306,33 +306,18 @@ public class ThirdProbeController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadImage(
+    public Task<IActionResult> UploadImage(
         Guid memberKey,
         string probeId,
         Guid projectKey,
         [FromForm] UploadImageRequest form,
-        CancellationToken cancellationToken)
-    {
-        var file = form.File;
-        if (file == null || file.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        if (ImageUploadRules.Refusal(file, ProbeProjectRules.MaxImageBytes) is { } refusal)
-        {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
-        }
-
-        var bytes = await file.ToByteArrayAsync(cancellationToken);
-        if (bytes == null || bytes.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        var command = new UploadProbeProjectImageCommand(memberKey, probeId, projectKey, bytes, file.FileName);
-        return (await _mediator.Send(command, cancellationToken)).ToActionResult(this);
-    }
+        CancellationToken cancellationToken) =>
+        this.SendImageAsync(
+            form.File,
+            (bytes, fileName) => _mediator.Send(
+                new UploadProbeProjectImageCommand(memberKey, probeId, projectKey, bytes, fileName), cancellationToken),
+            cancellationToken,
+            ProbeProjectRules.MaxImageBytes);
 
     private async Task<IActionResult> SignAsync(
         Guid memberKey,
