@@ -15,14 +15,14 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;
-    private readonly ILoginResponseFactory _loginResponses;
+    private readonly ILoginResponseService _loginResponses;
     private readonly IActivityLogger _activityLogger;
 
     public EnableMfaCommandHandler(
         UserManager<AppUser> userManager,
         IActivityLogger activityLogger,
         RefreshTokenInvalidation sessions,
-        ILoginResponseFactory loginResponses)
+        ILoginResponseService loginResponses)
     {
         _userManager = userManager;
         _activityLogger = activityLogger;

@@ -24,7 +24,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 
 `Infrastructure` і `BusinessLogic` **не знають одне про одного**. Коли бізнес-логіці треба щось із
 зовнішнього світу — інтерфейс оголошується в `Common`, а реалізується в `Infrastructure`
-(наприклад `IKurinReportSource`, `ISpreadsheetWriter`, `IAppUserRepository`).
+(наприклад `IKurinReportRepository`, `ISpreadsheetWriter`, `IAppUserRepository`).
 
 Що де лежить:
 
@@ -73,9 +73,12 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Фіксований довідник із файлів (проби, вмілості, відзначення) | контракт у `Common/Contracts/<Module>/` | `I…Catalog` |
 | Чисте правило без стану | `Common/Rules/<Module>/` | `…Rules`, static |
 | Підписи для людей | `Common/Rules/<Module>/` | `…Names`, static |
+| Правило чи підписи, яких Infrastructure не потребує | `BusinessLogic/Modules/<M>/Services/` | `…Rules` / `…Names`, static |
 | Таблиця | сутність `Common/Entities/<Module>/`, конфіг `Infrastructure/Persistence/Configurations/<Module>/` | `<Entity>`, `<Entity>Configuration` |
 | Доступ до таблиці | `Infrastructure/Repositories/<Module>/`, лише через UoW | `<Entity>Repository` |
 | Сховище не-таблиці (сесії, кеш, файли) | `Infrastructure/Stores/` | `…Store` |
+| Стан у памʼяті процесу, який тримає модуль (позначки, відкриті зони) | `BusinessLogic/Modules/<M>/Services/`, singleton | `…Store` |
+| Нащадок типу бібліотеки чи фреймворку | де його шукає бібліотека | суфікс базового типу: `…Problem`, `…ControllerFeatureProvider`, `…DbContextFactory`, `…ValueResolver` |
 | Зовнішня система | контракт у `Common/Contracts/`, реалізація в `Infrastructure/Services/<Concept>/` | тека за поняттям: `Email/`, не `EmailService/` |
 | Фонова служба | `Infrastructure/BackgroundServices/` | `…BackgroundService` |
 | Middleware, фільтр, кукі | `API/Middleware/`, `API/Filters/`, `API/Cookies/` | `…Middleware`, `…Filter`, `…Cookie` |
@@ -155,7 +158,8 @@ Modules/<Module>/Features/<Area>/
   `AccessContextResolver`, `AccessSnapshotFactory`, `CurrentPermissions`) — не права модуля, а сам
   механізм, і живе під своїми іменами.
 - **Журнал змін сутності — `…Trail`**, не `…AuditFields`.
-- **«Поточна людина» — один клас** на весь бекенд; нових «хто я» поруч не заводимо.
+- **«Поточна людина» — один клас** на весь бекенд, `ICurrentMember`: людину читає раз на запит; нових «хто я»
+  поруч не заводимо. Чужого за ключем акаунта питають `IMemberDirectory.FindByAccountAsync`.
 - **Доменні іменники** (`DuesLedger`, `ScoreBook`, `AgendaRecurrence`) лишаються, якщо клас моделює
   саме це поняття. Це не суфікс ролі.
 - **Static-клас** — або `…Rules` (рішення без стану), або `…Names` (підписи для людей).
@@ -396,17 +400,17 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 ### Налаштування краю
 
 Те, чим один край відрізняється від іншого (вмілості, валюта, пояс, поля картки), живе в профілі
-краю, а не в перевірках `if (kraiCode == "cz")`. Читати профіль — лише через `IKraiProfileProvider`.
+краю, а не в перевірках `if (kraiCode == "cz")`. Читати профіль — лише через `IKraiProfileDirectory`.
 Нове налаштування додається в три кроки:
 
 1. необовʼязкове (nullable) поле в `KraiProfileDocument` (`ProjectK.Common/Dtos/KraiModule`) —
    так профіль, збережений раніше, читається й далі;
-2. значення за замовчуванням у `KraiProfileProvider.Resolve` — те, як Лілейка працювала без
+2. значення за замовчуванням у `KraiProfileDirectory.Resolve` — те, як Лілейка працювала без
    налаштування, тож порожній профіль нічого не змінює;
 3. місце в `KraiProfile` (уже з заповненим значенням) — це читає решта коду.
 
-Перевірка значення при збереженні — у `KraiProfileJson`. Поле, яке змінює зміст чи назву
-наявного, — нова `SchemaVersion` і перетворення в `KraiProfileProvider.Read`.
+Перевірка значення при збереженні — у `KraiProfileJsonRules`. Поле, яке змінює зміст чи назву
+наявного, — нова `SchemaVersion` і перетворення в `KraiProfileDirectory.Read`.
 
 ### Мапінг
 

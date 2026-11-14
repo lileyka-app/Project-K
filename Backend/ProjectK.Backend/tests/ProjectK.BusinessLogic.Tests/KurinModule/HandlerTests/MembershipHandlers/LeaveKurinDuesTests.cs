@@ -56,7 +56,7 @@ public class LeaveKurinDuesTests
         new(key, kurinKey, 1, KurinBranch.UPYu, null, null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-3), leftAtUtc);
 
     private LeaveKurinCommandHandler Handler() =>
-        new(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), Mock.Of<IMemberDirectory>(), new MembershipMoves(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, TimeProvider.System), Mock.Of<ICurrentUserContext>());
+        new(_unitOfWork.Object, Mock.Of<IAccessChangeStore>(), Mock.Of<IMemberDirectory>(), new MembershipMoves(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, TimeProvider.System), Mock.Of<ICurrentUserContext>());
 
     private void Owes(decimal amount) =>
         _dues.Setup(d => d.GetOwedAsync(_kurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))

@@ -15,12 +15,12 @@ public sealed record SetDuesTransferReceivedCommand(Guid KurinKey, Guid EntryKey
 
 public sealed class SetDuesTransferReceivedCommandHandler : IRequestHandler<SetDuesTransferReceivedCommand, ServiceResult<Unit>>
 {
-    private readonly KurinDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public SetDuesTransferReceivedCommandHandler(KurinDuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
+    public SetDuesTransferReceivedCommandHandler(DuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _dues = dues;

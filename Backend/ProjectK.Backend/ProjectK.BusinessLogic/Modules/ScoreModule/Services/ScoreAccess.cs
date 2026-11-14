@@ -5,9 +5,10 @@ using ProjectK.Common.Records.Shared;
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
 /// <summary>
-/// The two questions every score write asks: is this the kurin the caller acts in, and may they score
-/// this гурток. A youth in no гурток can be scored only by someone who scores the whole kurin, so the
-/// check for them runs against the kurin itself.
+/// The score module's rights. The two questions every score write asks: is this the kurin the caller
+/// acts in, and may they score this гурток. A youth in no гурток can be scored only by someone who
+/// scores the whole kurin, so the check for them runs against the kurin itself. Settings and the КВ's
+/// own book ask the same first question and then their own second one.
 /// </summary>
 public sealed class ScoreAccess
 {
@@ -56,4 +57,31 @@ public sealed class ScoreAccess
 
     public async Task<bool> MayManageAsync(Guid kurinKey, CancellationToken cancellationToken) =>
         (await _resourceAccess.CheckAccessAsync(ResourceType.KurinScore, ResourceAction.Manage, kurinKey, cancellationToken)).IsAllowed;
+
+    /// <summary>What every settings write shares: it is the caller's kurin, and they manage its score.</summary>
+    public async Task<ServiceResult<T>?> RefuseSettingsAsync<T>(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        if (Refuse<T>(kurinKey) is { } refused)
+        {
+            return refused;
+        }
+
+        return await MayManageAsync(kurinKey, cancellationToken) ? null : ScoreErrors.Refused<T>();
+    }
+
+    /// <summary>
+    /// Who stands in the КВ's own book — the Звʼязковий and the впорядники — and that this is their kurin.
+    /// The endpoint lets in only those with KurinScorePrivate; here it is checked once more against the
+    /// kurin the caller acts in, as every score handler does.
+    /// </summary>
+    public async Task<ServiceResult<T>?> RefusePrivateAsync<T>(Guid kurinKey, ResourceAction action, CancellationToken cancellationToken)
+    {
+        if (Refuse<T>(kurinKey) is { } refused)
+        {
+            return refused;
+        }
+
+        var decision = await _resourceAccess.CheckAccessAsync(ResourceType.KurinScorePrivate, action, kurinKey, cancellationToken);
+        return decision.IsAllowed ? null : ScoreErrors.Refused<T>();
+    }
 }

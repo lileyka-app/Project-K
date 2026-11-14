@@ -18,9 +18,9 @@ public sealed class DuesLeavingQuarterEventHandler : INotificationHandler<Domain
 {
     private readonly IDuesUnitOfWork _dues;
     private readonly DuesLedgerReader _ledgers;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public DuesLeavingQuarterEventHandler(IDuesUnitOfWork dues, DuesLedgerReader ledgers, IKraiProfileProvider profiles)
+    public DuesLeavingQuarterEventHandler(IDuesUnitOfWork dues, DuesLedgerReader ledgers, IKraiProfileDirectory profiles)
     {
         _dues = dues;
         _ledgers = ledgers;

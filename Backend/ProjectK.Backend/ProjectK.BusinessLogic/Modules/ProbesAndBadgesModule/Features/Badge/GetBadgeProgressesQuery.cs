@@ -22,13 +22,13 @@ public sealed class GetBadgeProgressesQueryHandler : IRequestHandler<GetBadgePro
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly IKurinJournalReader _journal;
+    private readonly IKurinJournalRepository _journal;
 
-    public GetBadgeProgressesQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IKurinJournalReader journal)
+    public GetBadgeProgressesQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAuditUnitOfWork audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
-        _journal = journal;
+        _journal = audit.KurinJournal;
     }
 
     public async Task<ServiceResult<IEnumerable<BadgeProgressDto>>> Handle(GetBadgeProgressesQuery request, CancellationToken cancellationToken)

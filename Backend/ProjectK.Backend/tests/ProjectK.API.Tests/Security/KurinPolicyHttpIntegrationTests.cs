@@ -126,8 +126,8 @@ public class KurinPolicyHttpIntegrationTests
             using var scope = _app.Services.CreateScope();
             var handler = new SetKurinAccessPolicyCommandHandler(
                 scope.ServiceProvider.GetRequiredService<IUnitOfWork>(),
-                scope.ServiceProvider.GetRequiredService<IKurinAccessPolicyProvider>(),
-                new Mock<IAccessChangeSignal>().Object,
+                scope.ServiceProvider.GetRequiredService<IKurinAccessPolicyReader>(),
+                new Mock<IAccessChangeStore>().Object,
                 new Mock<IKurinAudit>().Object);
             var result = await handler.Handle(
                 new SetKurinAccessPolicyCommand(Kurin.KurinKey, Matrix(capability, audience, reach)), CancellationToken.None);
@@ -154,7 +154,7 @@ public class KurinPolicyHttpIntegrationTests
                 .AddScheme<AuthenticationSchemeOptions, PolicyAuthHandler>(PolicyAuthHandler.SchemeName, _ => { });
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeReader>();
+            var scopeReader = new Mock<IResourceScopeRepository>();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(kurin.KurinKey, groupKey, Guid.NewGuid()));
@@ -175,13 +175,13 @@ public class KurinPolicyHttpIntegrationTests
                     ResultType.Success,
                     ProgressDtos.Probe(memberKey, kurin.KurinKey, "probe-1")));
 
+            unitOfWork.SetupGet(x => x.ResourceScopes).Returns(scopeReader.Object);
             builder.Services.AddSingleton(unitOfWork.Object);
-            builder.Services.AddScoped(_ => scopeReader.Object);
             builder.Services.AddSingleton(mediator.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
             builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
-            builder.Services.AddScoped<IKurinAccessPolicyProvider, KurinAccessPolicyProvider>();
+            builder.Services.AddScoped<IKurinAccessPolicyReader, KurinAccessPolicyReader>();
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
             builder.Services.AddControllers().AddApplicationPart(typeof(MemberProgressController).Assembly);

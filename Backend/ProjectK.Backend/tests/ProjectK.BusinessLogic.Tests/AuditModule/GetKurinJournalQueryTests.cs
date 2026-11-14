@@ -1,10 +1,12 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
@@ -25,10 +27,10 @@ namespace ProjectK.BusinessLogic.Tests.AuditModule;
 public class GetKurinJournalQueryTests
 {
     private readonly PolicyAccess _access = new();
-    private readonly Mock<IKurinJournalReader> _reader = new();
+    private readonly Mock<IKurinJournalRepository> _reader = new();
     private readonly Mock<IMemberDirectory> _members = new();
-    private readonly Mock<IProbesCatalogService> _probes = new();
-    private readonly Mock<IBadgesCatalogService> _badges = new();
+    private readonly Mock<IProbesCatalogReader> _probes = new();
+    private readonly Mock<IBadgesCatalogReader> _badges = new();
     private readonly Guid _ownMemberKey = Guid.NewGuid();
     private KurinJournalFilter? _filter;
     private (int Skip, int Take) _page;
@@ -50,11 +52,11 @@ public class GetKurinJournalQueryTests
         ICurrentUserContext user,
         GetKurinJournalQuery? query = null)
     {
-        var scopes = new Mock<IResourceScopeReader>();
+        var scopes = new Mock<IResourceScopeRepository>();
         scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _access.LedGroups.ToArray());
 
-        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), scopes.Object, _members.Object, _reader.Object, _probes.Object, _badges.Object);
+        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), UnitOfWorks.WithScopes(scopes.Object), new CurrentMember(user, _members.Object, Mock.Of<IMembershipDirectory>()), UnitOfWorks.WithJournal(_reader.Object), _probes.Object, _badges.Object);
         return handler.Handle(query ?? Query(), CancellationToken.None);
     }
 

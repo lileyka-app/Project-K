@@ -54,19 +54,19 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
             return AgendaErrors.OtherKurin<Unit>();
         }
 
-        if (!AgendaPermissions.CanManage(item, viewer))
+        if (!AgendaAccess.CanManage(item, viewer))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaDeleteForbidden, "Only the creator or leadership may delete this item.");
         }
 
         // Resolve who was assigned before the row (and its assignments) are gone.
         var actorUserKey = viewer.ViewerUserKey ?? Guid.Empty;
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
         var title = item.Title;
         var kind = item.Kind;
         var kurinKey = item.KurinKey;
 
-        var targets = AgendaAuditFields.TargetsOf(item);
+        var targets = AgendaTrail.TargetsOf(item);
         var names = await AgendaTargetNames.LoadAsync(_uow, _members, kurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
@@ -74,7 +74,7 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
                 AuditActions.Agenda.Deleted,
                 item.AgendaItemKey,
                 title,
-                Changes: AuditChanges.Removed([.. AgendaAuditFields.Of(item), (AgendaAuditFields.Targets, names.Describe(targets))]),
+                Changes: AuditChanges.Removed([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
                 KurinKey: kurinKey),
             cancellationToken);
 

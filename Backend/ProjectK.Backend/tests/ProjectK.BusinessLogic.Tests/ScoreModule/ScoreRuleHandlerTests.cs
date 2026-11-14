@@ -57,7 +57,7 @@ public sealed class ScoreRuleHandlerTests
             .ReturnsAsync(ResourceAccessDecision.Allow());
 
         _handler = new SetScoreRuleCommandHandler(
-            new ScoreSettingsAccess(new ScoreAccess(user.Object, resourceAccess.Object)),
+            new ScoreAccess(user.Object, resourceAccess.Object),
             score.Object,
             user.Object,
             new FixedTimeProvider(new DateTimeOffset(2026, 10, 9, 12, 0, 0, TimeSpan.Zero)));

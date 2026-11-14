@@ -30,11 +30,11 @@ public sealed class GetAgendaItemsQueryHandler
     private readonly IAgendaAccess _access;
     private readonly UserManager<AppUser> _userManager;
     private readonly TimeProvider _timeProvider;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
     public GetAgendaItemsQueryHandler(IUnitOfWork uow,
         IMemberDirectory members, IAgendaAccess access, UserManager<AppUser> userManager, TimeProvider timeProvider,
-        IKraiProfileProvider profiles)
+        IKraiProfileDirectory profiles)
     {
         _uow = uow;
         _members = members;
@@ -57,7 +57,7 @@ public sealed class GetAgendaItemsQueryHandler
             cancellationToken,
             includeKurinSchedules: request.IncludeKurinSchedules)).ToList();
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, items, cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _members, request.KurinKey, items, cancellationToken);
         var creatorNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
         var roster = await AgendaRoster.LoadAsync(_uow, lookups.MemberGroups, items, cancellationToken);
 
@@ -70,9 +70,9 @@ public sealed class GetAgendaItemsQueryHandler
 
         var responses = items
             .SelectMany(item => item.RecurrenceFrequency == RecurrenceFrequency.None
-                ? new[] { AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster) }
+                ? new[] { AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster) }
                 : AgendaRecurrence.Expand(item, windowFrom, windowTo, zone)
-                    .Select(occ => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster, occ.StartUtc, occ.EndUtc)))
+                    .Select(occ => AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster, occ.StartUtc, occ.EndUtc)))
             .Where(r => request.IncludeKurinSchedules || r.Audience != AgendaAudience.Schedule)
             .OrderBy(r => r.StartUtc)
             .ToList();

@@ -32,9 +32,9 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public UpdateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
+    public UpdateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _access = access;
         _books = books;
@@ -64,16 +64,16 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await ScoreEntryWriter.CheckAsync<Unit>(_access, _unitOfWork, _profiles, book, request.Request, entry.ScoreEntryKey, cancellationToken) is { } problem)
+        if (await ScoreEntryRules.CheckAsync<Unit>(_access, _unitOfWork, _profiles, book, request.Request, entry.ScoreEntryKey, cancellationToken) is { } problem)
         {
             return problem;
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
-        ScoreEntryWriter.Apply(entry, request.Request, book);
+        ScoreEntryRules.Apply(entry, request.Request, book);
         entry.UpdatedDate = now;
         _score.ScoreEntries.Update(entry, cancellationToken);
-        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Updated, ScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
+        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Updated, ScoreEntryRules.Snapshot(entry), _currentUser.UserId, now);
 
         try
         {
@@ -81,7 +81,7 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
         }
         catch (DuplicateRowException)
         {
-            return ScoreEntryWriter.GivenMeanwhile<Unit>();
+            return ScoreEntryRules.GivenMeanwhile<Unit>();
         }
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

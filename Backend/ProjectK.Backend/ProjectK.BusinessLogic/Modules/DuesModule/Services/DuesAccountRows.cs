@@ -62,7 +62,7 @@ public sealed class DuesAccountRows
             .Select(a =>
             {
                 var membership = names.Memberships[a.MembershipKey];
-                var standing = DuesAccountStandings.Of(
+                var standing = DuesAccountStandingRules.Of(
                     hasLeft: membership.LeftAtUtc.HasValue,
                     standsInThisGroup: membership.GroupKey == groupKey);
                 var rateTag = ledger.RateTagOf(a.MembershipKey, current);

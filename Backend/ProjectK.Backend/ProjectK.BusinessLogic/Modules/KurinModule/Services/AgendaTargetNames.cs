@@ -62,14 +62,14 @@ public sealed class AgendaTargetNames
         if (list.Any(target => target.Type == AgendaTargetType.Leadership))
         {
             leaderships = (await uow.Leaderships.GetLeadershipRefsForKurinAsync(kurinKey, cancellationToken))
-                .ToDictionary(found => found.LeadershipKey, found => AgendaLookups.LabelFor(found.Type, found.GroupKey, groups));
+                .ToDictionary(found => found.LeadershipKey, found => AgendaNames.LabelFor(found.Type, found.GroupKey, groups));
         }
 
         IReadOnlyDictionary<Guid, string> tags = new Dictionary<Guid, string>();
         if (list.Any(target => target.Type == AgendaTargetType.Tag))
         {
             tags = (await uow.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
-                .ToDictionary(tag => tag.KurinTagKey, tag => AgendaLookups.TagLabel(tag.Name));
+                .ToDictionary(tag => tag.KurinTagKey, tag => AgendaNames.TagLabel(tag.Name));
         }
 
         return new AgendaTargetNames(groups, members, leaderships, tags);
@@ -94,11 +94,11 @@ public sealed class AgendaTargetNames
 
     private string NameOf(AgendaTargetType type, Guid key) => type switch
     {
-        AgendaTargetType.Kurin => AgendaLookups.KurinLabel,
+        AgendaTargetType.Kurin => AgendaNames.KurinLabel,
         AgendaTargetType.Group => _groups.GetValueOrDefault(key, UnknownGroup),
         AgendaTargetType.Member => _members.GetValueOrDefault(key, UnknownMember),
-        AgendaTargetType.Leadership => _leaderships.GetValueOrDefault(key, AgendaLookups.GroupLeadershipLabel),
-        AgendaTargetType.Tag => _tags.GetValueOrDefault(key, AgendaLookups.TagLabel(null)),
+        AgendaTargetType.Leadership => _leaderships.GetValueOrDefault(key, AgendaNames.GroupLeadershipLabel),
+        AgendaTargetType.Tag => _tags.GetValueOrDefault(key, AgendaNames.TagLabel(null)),
         _ => type.ToString()
     };
 

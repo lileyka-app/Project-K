@@ -18,7 +18,7 @@ public class ChangeUserRoleCommandHandlerTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IActivityLogger> _activityLoggerMock;
-    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
+    private readonly Mock<IAccessChangeStore> _accessChanges = new();
     private readonly ChangeUserRoleCommandHandler _handler;
 
     public ChangeUserRoleCommandHandlerTests()

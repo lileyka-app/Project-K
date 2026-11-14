@@ -7,7 +7,7 @@ using ProjectK.Common.Records.KurinModule;
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>Navigation targets for agenda notifications, matched to the frontend routes.</summary>
-public static class AgendaRoutes
+public static class AgendaRouteRules
 {
     public static string For(AgendaItem item) =>
         item.Kind == AgendaItemKind.Task ? $"/tasks/{item.KurinKey}" : $"/calendar/{item.KurinKey}";
@@ -18,7 +18,7 @@ public static class AgendaRoutes
 /// linked user account is skipped (per the notification-events policy), and the actor never notifies
 /// themselves.
 /// </summary>
-public static class AgendaNotificationRecipients
+public static class AgendaNotificationRecipientRules
 {
     public static async Task<IReadOnlyCollection<Guid>> ResolveAsync(
         IUnitOfWork uow,
@@ -29,7 +29,7 @@ public static class AgendaNotificationRecipients
     {
         // This runs on every agenda write: only the people the targets reach are read, and the
         // whole kurin only when the kurin itself is a target.
-        var members = await AgendaPeople.ReadAsync(directory, item.KurinKey, AgendaPeople.ToNotify(item), cancellationToken);
+        var members = await AgendaPeopleRules.ReadAsync(directory, item.KurinKey, AgendaPeopleRules.ToNotify(item), cancellationToken);
         var recipients = new HashSet<Guid>();
 
         foreach (var assignment in item.Assignments)

@@ -24,7 +24,7 @@ public enum ProbeStart
 }
 
 /// <summary>
-/// A person's <see cref="ProbeLine"/>, read from their progress, their гурток's edition and the
+/// A person's <see cref="ProbeLineRules"/>, read from their progress, their гурток's edition and the
 /// catalogue. The one place clients, the dashboard and the guards on signing take it from.
 /// </summary>
 public interface IMemberProbeLine
@@ -39,13 +39,13 @@ public interface IMemberProbeLine
 public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbesCatalogService _catalog;
+    private readonly IProbesCatalogReader _catalog;
     private readonly IMemberDirectory _members;
     private readonly IGroupProbeEditions _groupEditions;
 
     public MemberProbeLine(
         IUnitOfWork unitOfWork,
-        IProbesCatalogService catalog,
+        IProbesCatalogReader catalog,
         IMemberDirectory members,
         IGroupProbeEditions groupEditions)
     {
@@ -78,7 +78,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
             return ProbeStart.Allowed;
         }
 
-        return read.Progress.TryGetValue(read.Line[place - 1].Id, out var previous) && ProbeLine.IsClosed(previous)
+        return read.Progress.TryGetValue(read.Line[place - 1].Id, out var previous) && ProbeLineRules.IsClosed(previous)
             ? ProbeStart.Allowed
             : ProbeStart.WaitsForPrevious;
     }
@@ -99,7 +99,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         foreach (var person in rows.GroupBy(row => row.MemberKey))
         {
             var statuses = Statuses(person);
-            if (ProbeLine.HeldBy(catalog, statuses) is { } held)
+            if (ProbeLineRules.HeldBy(catalog, statuses) is { } held)
             {
                 standings[person.Key] = new ProbeEditionHold(person.Key, held.Edition, held.Title, IsHeld: true);
                 continue;
@@ -130,7 +130,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         var progress = Statuses(await _unitOfWork.ProbeProgresses.GetByMemberKeyAsync(memberKey, cancellationToken));
         var groupEdition = await _groupEditions.ForMemberAsync(memberKey, kurinKey, cancellationToken);
 
-        return (ProbeLine.Of(_catalog.GetProbes(), progress, groupEdition), progress);
+        return (ProbeLineRules.Of(_catalog.GetProbes(), progress, groupEdition), progress);
     }
 
     // One row per probe is the rule; should a duplicate slip in, the furthest status counts.
@@ -140,7 +140,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
 }
 
 /// <summary>What signing or moving a probe answers when <see cref="IMemberProbeLine.CanStartAsync"/> says no.</summary>
-public static class ProbeStartRefusal
+public static class ProbeStartRules
 {
     public static ServiceResult<T>? Of<T>(ProbeStart start) => start switch
     {

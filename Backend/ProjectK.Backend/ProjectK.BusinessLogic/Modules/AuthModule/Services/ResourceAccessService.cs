@@ -1,6 +1,7 @@
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
@@ -17,18 +18,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 /// </summary>
 public class ResourceAccessService : IResourceAccessService
 {
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IBackendCache _cache;
     private readonly ICurrentPermissions _permissions;
 
     public ResourceAccessService(
-        IResourceScopeReader scopeReader,
+        IUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IBackendCache cache,
         ICurrentPermissions permissions)
     {
-        _scopeReader = scopeReader;
+        _scopeReader = unitOfWork.ResourceScopes;
         _currentUserContext = currentUserContext;
         _cache = cache;
         _permissions = permissions;

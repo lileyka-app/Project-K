@@ -220,7 +220,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeReader>();
+            var scopeReader = new Mock<IResourceScopeRepository>();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, targetMemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(targetMemberKurinKey, targetMemberGroupKey, Guid.NewGuid()));
@@ -258,12 +258,12 @@ public class MemberProgressAuthorizationHttpIntegrationTests
                     ResultType.Success,
                     ProgressDtos.Probe(targetMemberKey, targetMemberKurinKey, "probe-1", ProbeProgressStatus.Completed)));
 
-            builder.Services.AddScoped(_ => scopeReader.Object);
+            builder.Services.AddScoped(_ => Mock.Of<ProjectK.Common.Contracts.Shared.IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object));
             builder.Services.AddSingleton(mediator.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
             builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
-            builder.Services.AddSingleton<IKurinAccessPolicyProvider>(new FixedKurinAccessPolicyProvider());
+            builder.Services.AddSingleton<IKurinAccessPolicyReader>(new FixedKurinAccessPolicyProvider());
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
 

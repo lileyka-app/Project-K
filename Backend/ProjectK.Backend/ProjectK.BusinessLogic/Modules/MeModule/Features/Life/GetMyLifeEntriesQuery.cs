@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
@@ -12,10 +13,10 @@ public sealed record GetMyLifeEntriesQuery : IRequest<ServiceResult<IReadOnlyLis
 
 public sealed class GetMyLifeEntriesQueryHandler : IRequestHandler<GetMyLifeEntriesQuery, ServiceResult<IReadOnlyList<MemberLifeEntryDto>>>
 {
-    private readonly LifeStoryOwner _owner;
+    private readonly ICurrentMember _owner;
     private readonly IMemberUnitOfWork _unitOfWork;
 
-    public GetMyLifeEntriesQueryHandler(LifeStoryOwner owner, IMemberUnitOfWork unitOfWork)
+    public GetMyLifeEntriesQueryHandler(ICurrentMember owner, IMemberUnitOfWork unitOfWork)
     {
         _owner = owner;
         _unitOfWork = unitOfWork;
@@ -29,6 +30,6 @@ public sealed class GetMyLifeEntriesQueryHandler : IRequestHandler<GetMyLifeEntr
         }
 
         var entries = await _unitOfWork.MemberLifeEntries.GetForMemberAsync(memberKey, cancellationToken);
-        return new ServiceResult<IReadOnlyList<MemberLifeEntryDto>>(ResultType.Success, entries.Select(LifeEntries.ToDto).ToList());
+        return new ServiceResult<IReadOnlyList<MemberLifeEntryDto>>(ResultType.Success, entries.Select(LifeMapping.ToDto).ToList());
     }
 }

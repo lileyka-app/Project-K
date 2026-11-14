@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Enums.Shared;
@@ -12,11 +13,11 @@ public sealed record DisableMyCardLinkCommand : IRequest<ServiceResult<MyCardDto
 
 public sealed class DisableMyCardLinkCommandHandler : IRequestHandler<DisableMyCardLinkCommand, ServiceResult<MyCardDto>>
 {
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly MemberCards _cards;
     private readonly IUnitOfWork _unitOfWork;
 
-    public DisableMyCardLinkCommandHandler(MePerson me, MemberCards cards, IUnitOfWork unitOfWork)
+    public DisableMyCardLinkCommandHandler(ICurrentMember me, MemberCards cards, IUnitOfWork unitOfWork)
     {
         _me = me;
         _cards = cards;
@@ -25,7 +26,7 @@ public sealed class DisableMyCardLinkCommandHandler : IRequestHandler<DisableMyC
 
     public async Task<ServiceResult<MyCardDto>> Handle(DisableMyCardLinkCommand request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<MyCardDto>();

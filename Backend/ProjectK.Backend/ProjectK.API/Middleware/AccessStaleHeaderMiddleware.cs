@@ -21,7 +21,7 @@ public sealed class AccessStaleHeaderMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IAccessChangeSignal signal)
+    public async Task InvokeAsync(HttpContext context, IAccessChangeStore signal)
     {
         if (context.User.GetUserKey() is { } userKey && IssuedAt(context) is { } issuedAt)
         {

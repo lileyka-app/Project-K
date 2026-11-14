@@ -46,7 +46,7 @@ internal static class AgendaStatusWriter
             part.Status = status;
             part.ChangedByUserKey = actorUserKey;
             part.ChangedAtUtc = nowUtc;
-            assignment.Status = AgendaCompletion.TargetStatus(assignment, roster);
+            assignment.Status = AgendaCompletionRules.TargetStatus(assignment, roster);
         }
         else
         {
@@ -55,7 +55,7 @@ internal static class AgendaStatusWriter
 
         assignment.StatusChangedByUserKey = actorUserKey;
         assignment.StatusChangedAtUtc = nowUtc;
-        AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), nowUtc);
+        AgendaCompletionRules.SetItemStatus(item, AgendaCompletionRules.ItemStatus(item, roster), nowUtc);
         item.UpdatedDate = nowUtc;
     }
 

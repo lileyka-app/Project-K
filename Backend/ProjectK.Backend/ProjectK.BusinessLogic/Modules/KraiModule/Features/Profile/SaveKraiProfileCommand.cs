@@ -11,9 +11,9 @@ public sealed record SaveKraiProfileCommand(string KraiCode, int BaseRevision, K
 
 public sealed class SaveKraiProfileCommandHandler : IRequestHandler<SaveKraiProfileCommand, ServiceResult<KraiProfileEditorDto>>
 {
-    private readonly KraiProfileEditor _editor;
+    private readonly KraiProfileWriter _editor;
 
-    public SaveKraiProfileCommandHandler(KraiProfileEditor editor)
+    public SaveKraiProfileCommandHandler(KraiProfileWriter editor)
     {
         _editor = editor;
     }

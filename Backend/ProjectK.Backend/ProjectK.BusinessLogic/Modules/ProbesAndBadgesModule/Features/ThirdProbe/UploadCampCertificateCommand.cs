@@ -29,10 +29,10 @@ public sealed class UploadCampCertificateCommandHandler
 {
     public UploadCampCertificateCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
         : base(unitOfWork, access, photos, audit, probes, reader)
     {
@@ -41,14 +41,14 @@ public sealed class UploadCampCertificateCommandHandler
     public async Task<ServiceResult<ThirdProbeDto>> Handle(UploadCampCertificateCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(Access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(Access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }
 
         if (request.Content.LongLength > ProbeProjectRules.MaxCertificateBytes)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.CertificateTooLarge, "The посвідка must be 2 MB or smaller.");
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.CertificateTooLarge, "The посвідка must be 2 MB or smaller.");
         }
 
         await UnitOfWork.ProbeProjects.LockAsync(request.MemberKey, probeId, cancellationToken);
@@ -68,7 +68,7 @@ public sealed class UploadCampCertificateCommandHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(
                 ProbesAndBadgesErrors.InvalidCertificate, "The посвідка must be a picture (PNG, JPEG, WebP) or a PDF.");
         }
 
@@ -78,7 +78,7 @@ public sealed class UploadCampCertificateCommandHandler
             return StorageFull();
         }
 
-        var file = await ThirdProbeFiles.GetOrAddAsync(UnitOfWork, request.MemberKey, probeId, cancellationToken);
+        var file = await ThirdProbeFileWriter.GetOrAddAsync(UnitOfWork, request.MemberKey, probeId, cancellationToken);
         var previous = file.CampCertificateBlobName;
         file.CampCertificateBlobName = upload.BlobName;
         file.CampCertificateContentType = context.ContentType;

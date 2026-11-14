@@ -36,6 +36,7 @@ using ProjectK.Infrastructure.Services.Reports;
 using ProjectK.Infrastructure.Services.Spreadsheets;
 using ProjectK.Infrastructure.Services.Telemetry;
 using ProjectK.Infrastructure.Services.WebPush;
+using ProjectK.Infrastructure.Stores;
 using Resend;
 
 namespace ProjectK.Infrastructure;
@@ -71,10 +72,8 @@ public static class DependencyInjection
         // The same for money: only the dues module can reach its tables.
         services.AddScoped<IDuesUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IScoreUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
-        services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
         // The journal writes on the request context and is saved by whoever saves the request.
-        services.AddScoped<IKurinAuditWriter, KurinAuditWriter>();
-        services.AddScoped<IKurinJournalReader, KurinJournalReader>();
+        services.AddScoped<IAuditUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
 
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
@@ -87,7 +86,6 @@ public static class DependencyInjection
         services.AddHostedService<AgendaArchiveBackgroundService>();
         services.AddHostedService<DemoResetBackgroundService>();
 
-        services.AddScoped<IKurinReportSource, KurinReportSource>();
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
         services.AddSingleton<IKurinReportPdfRenderer, KurinReportPdfRenderer>();
         services.AddSingleton<ILifeStoryPdfRenderer, LifeStoryPdfRenderer>();
@@ -147,21 +145,21 @@ public static class DependencyInjection
             ContainerName = configuration["BlobStorage:ContainerName"] ?? "photos",
             PublicBaseUrl = configuration["BlobStorage:PublicBaseUrl"]
         };
-        services.AddScoped<MemberPhotoReferenceProvider>();
-        services.AddScoped<GroupSilhouetteReferenceProvider>();
-        services.AddScoped<KurinEmblemReferenceProvider>();
-        services.AddScoped<ProbeProjectImageReferenceProvider>();
-        services.AddScoped<IPhotoReferenceProvider>(sp =>
+        services.AddScoped<MemberPhotoReferenceReader>();
+        services.AddScoped<GroupSilhouetteReferenceReader>();
+        services.AddScoped<KurinEmblemReferenceReader>();
+        services.AddScoped<ProbeProjectImageReferenceReader>();
+        services.AddScoped<IPhotoReferenceReader>(sp =>
         {
-            var providers = new IPhotoReferenceProvider[]
+            var providers = new IPhotoReferenceReader[]
             {
-                sp.GetRequiredService<MemberPhotoReferenceProvider>(),
-                sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
-                sp.GetRequiredService<KurinEmblemReferenceProvider>(),
-                sp.GetRequiredService<ProbeProjectImageReferenceProvider>()
+                sp.GetRequiredService<MemberPhotoReferenceReader>(),
+                sp.GetRequiredService<GroupSilhouetteReferenceReader>(),
+                sp.GetRequiredService<KurinEmblemReferenceReader>(),
+                sp.GetRequiredService<ProbeProjectImageReferenceReader>()
             };
 
-            return new CompositePhotoReferenceProvider(providers);
+            return new CompositePhotoReferenceReader(providers);
         });
 
         services.AddSingleton(blobOptions);

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -37,7 +38,7 @@ public class SeniorAwardHandlerTests
     private readonly Mock<IHonoursCatalog> _honours = new();
     private readonly Mock<IMemberDirectory> _directory = new();
     private readonly Mock<IResourceAccessService> _access = new();
-    private readonly Mock<IResourceScopeReader> _scope = new();
+    private readonly Mock<IResourceScopeRepository> _scope = new();
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _ownerUserKey = Guid.NewGuid();
     private readonly Member _member;
@@ -80,8 +81,8 @@ public class SeniorAwardHandlerTests
             .ReturnsAsync(ResourceAccessDecision.Deny("Refused by the test."));
 
     private UpsertMemberAwardCommandHandler Upsert() => new(
-        _unitOfWork.Object, _currentUser.Object, _events.Object, _kurinData.Object, _access.Object,
-        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, _scope.Object);
+        _unitOfWork.Object, _currentUser.Object, _events.Object, UnitOfWorks.WithScopes(_scope.Object, _kurinData), _access.Object,
+        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object);
 
     private DeleteMemberAwardCommandHandler Delete() => new(
         _unitOfWork.Object, _currentUser.Object, _directory.Object, _access.Object,
@@ -288,7 +289,7 @@ public class SeniorAwardHandlerTests
         _directory.Setup(m => m.FindByAccountAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, _kurinKey, null, "Ірина", "Федорів", "i@example.com", null));
         _awards.Setup(a => a.GetByMemberKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
-        var pin = new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommandHandler(_unitOfWork.Object, _directory.Object, _currentUser.Object);
+        var pin = new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommandHandler(_unitOfWork.Object, new CurrentMember(_currentUser.Object, _directory.Object, Mock.Of<IMembershipDirectory>()));
 
         var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
 

@@ -39,10 +39,10 @@ public sealed record AgendaBoardFilter
     public AgendaBoardSort Sort { get; init; } = AgendaBoardSort.Due;
     public AgendaItemStatus? Status { get; init; }
     public int Skip { get; init; }
-    public int Take { get; init; } = AgendaBoardPaging.DefaultTake;
+    public int Take { get; init; } = AgendaBoardPagingRules.DefaultTake;
 }
 
-public static class AgendaBoardPaging
+public static class AgendaBoardPagingRules
 {
     public const int DefaultTake = 20;
     public const int MaxTake = 100;
@@ -50,7 +50,7 @@ public static class AgendaBoardPaging
 
 /// <summary>
 /// The live tasks the viewer may see, filtered, sorted and paged per column. Columns follow the
-/// viewer's own state (<see cref="AgendaCompletion.ViewerStatus"/>), which only exists once the item is
+/// viewer's own state (<see cref="AgendaCompletionRules.ViewerStatus"/>), which only exists once the item is
 /// read, so narrowing happens in memory over the live set — kept small by the archive.
 /// </summary>
 public sealed record GetAgendaBoardQuery(Guid KurinKey, AgendaBoardFilter? Filter = null)
@@ -78,7 +78,7 @@ public sealed class GetAgendaBoardQueryHandler
     public async Task<ServiceResult<AgendaBoardDto>> Handle(GetAgendaBoardQuery request, CancellationToken cancellationToken)
     {
         var filter = request.Filter ?? new AgendaBoardFilter();
-        var take = PagingRules.Take(filter.Take, AgendaBoardPaging.MaxTake);
+        var take = PagingRules.Take(filter.Take, AgendaBoardPagingRules.MaxTake);
         var skip = PagingRules.Skip(filter.Skip);
         var viewer = await _access.BuildViewerAsync(request.KurinKey, cancellationToken);
 
@@ -90,12 +90,12 @@ public sealed class GetAgendaBoardQueryHandler
             kind: AgendaItemKind.Task,
             cancellationToken)).ToList();
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, items, cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _members, request.KurinKey, items, cancellationToken);
         var roster = await AgendaRoster.LoadAsync(_uow, lookups.MemberGroups, items, cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var all = items
-            .Select(item => (Item: item, Response: AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster)))
+            .Select(item => (Item: item, Response: AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster)))
             .ToList();
 
         // The filter offers what is on the board, not every target in the kurin.
@@ -108,9 +108,9 @@ public sealed class GetAgendaBoardQueryHandler
             .ToList();
 
         var narrowed = all
-            .Where(row => AgendaSearch.Matches(row.Response, filter.Search))
+            .Where(row => AgendaSearchRules.Matches(row.Response, filter.Search))
             .Where(row => filter.TargetKey is not { } key || row.Item.Assignments.Any(a => a.TargetKey == key && (filter.TargetType is null || a.TargetType == filter.TargetType)))
-            .Where(row => !filter.OnlyMine || AgendaCompletion.StakeOf(row.Item, viewer) is not null)
+            .Where(row => !filter.OnlyMine || AgendaCompletionRules.StakeOf(row.Item, viewer) is not null)
             .Select(row => row.Response)
             .ToList();
 

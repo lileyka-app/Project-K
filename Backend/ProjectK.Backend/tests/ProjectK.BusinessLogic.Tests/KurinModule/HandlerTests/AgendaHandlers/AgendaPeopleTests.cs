@@ -37,7 +37,7 @@ public sealed class AgendaPeopleTests
         var shared = Target(AgendaTargetType.Group, groupShared);
         shared.StatusChangedByUserKey = mover;
 
-        var selection = AgendaPeople.ToLabel([
+        var selection = AgendaPeopleRules.ToLabel([
             Item(author, Target(AgendaTargetType.Member, member), shared, Target(AgendaTargetType.Group, groupPerMember, AgendaCompletionMode.PerMember))
         ]);
 
@@ -50,7 +50,7 @@ public sealed class AgendaPeopleTests
     [Fact]
     public void ToLabel_NeedsEveryone_WhenTheWholeKurinIsDoneEachOnTheirOwn()
     {
-        var selection = AgendaPeople.ToLabel([Item(Guid.NewGuid(), Target(AgendaTargetType.Kurin, Kurin, AgendaCompletionMode.PerMember))]);
+        var selection = AgendaPeopleRules.ToLabel([Item(Guid.NewGuid(), Target(AgendaTargetType.Kurin, Kurin, AgendaCompletionMode.PerMember))]);
 
         selection.Should().BeNull();
     }
@@ -60,7 +60,7 @@ public sealed class AgendaPeopleTests
     {
         var author = Guid.NewGuid();
 
-        var selection = AgendaPeople.ToLabel([Item(author, Target(AgendaTargetType.Kurin, Kurin))]);
+        var selection = AgendaPeopleRules.ToLabel([Item(author, Target(AgendaTargetType.Kurin, Kurin))]);
 
         selection.Should().NotBeNull();
         selection!.MemberKeys.Should().BeEmpty();
@@ -74,8 +74,8 @@ public sealed class AgendaPeopleTests
         var member = Guid.NewGuid();
         var group = Guid.NewGuid();
 
-        var some = AgendaPeople.ToNotify(Item(Guid.NewGuid(), Target(AgendaTargetType.Member, member), Target(AgendaTargetType.Group, group)));
-        var everyone = AgendaPeople.ToNotify(Item(Guid.NewGuid(), Target(AgendaTargetType.Group, group), Target(AgendaTargetType.Kurin, Kurin)));
+        var some = AgendaPeopleRules.ToNotify(Item(Guid.NewGuid(), Target(AgendaTargetType.Member, member), Target(AgendaTargetType.Group, group)));
+        var everyone = AgendaPeopleRules.ToNotify(Item(Guid.NewGuid(), Target(AgendaTargetType.Group, group), Target(AgendaTargetType.Kurin, Kurin)));
 
         some.Should().NotBeNull();
         some!.MemberKeys.Should().Equal(member);
@@ -92,11 +92,11 @@ public sealed class AgendaPeopleTests
         directory.Setup(d => d.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         var selection = new MemberSelection([Guid.NewGuid()], [], []);
 
-        await AgendaPeople.ReadAsync(directory.Object, Kurin, selection, CancellationToken.None);
+        await AgendaPeopleRules.ReadAsync(directory.Object, Kurin, selection, CancellationToken.None);
         directory.Verify(d => d.GetByKurinAsync(Kurin, selection, It.IsAny<CancellationToken>()), Times.Once);
         directory.Verify(d => d.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>()), Times.Never);
 
-        await AgendaPeople.ReadAsync(directory.Object, Kurin, null, CancellationToken.None);
+        await AgendaPeopleRules.ReadAsync(directory.Object, Kurin, null, CancellationToken.None);
         directory.Verify(d => d.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

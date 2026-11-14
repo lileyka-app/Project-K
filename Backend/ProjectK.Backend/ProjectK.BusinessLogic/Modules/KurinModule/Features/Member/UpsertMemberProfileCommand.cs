@@ -73,7 +73,7 @@ public class UpsertMemberProfileCommandHandler
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IAccountProvisioningService _accounts;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly IKurinAudit _audit;
     private readonly IResourceAccessService _access;
@@ -84,7 +84,7 @@ public class UpsertMemberProfileCommandHandler
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IAccountProvisioningService accounts,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IMemberFieldAccess fieldAccess,
         IKurinAudit audit,
         IResourceAccessService access)
@@ -106,7 +106,7 @@ public class UpsertMemberProfileCommandHandler
         CancellationToken cancellationToken)
     {
         var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
-        var before = existing is null ? null : MemberAuditFields.Of(existing);
+        var before = existing is null ? null : MemberTrail.Of(existing);
 
         // Where they already stand. The record does not say any more, so it is read from the
         // membership — and it is what the request is measured against. Someone in two kurins is
@@ -132,7 +132,7 @@ public class UpsertMemberProfileCommandHandler
             : (await _fieldAccess.ForViewerAsync(cancellationToken)).HiddenFrom(existing.UserKey, current?.GroupKey);
         if (existing is not null)
         {
-            HiddenDataOnWrite.KeepStored(hiddenFromWriter, request, existing);
+            HiddenDataOnWriteRules.KeepStored(hiddenFromWriter, request, existing);
         }
 
         if (string.IsNullOrWhiteSpace(request.Email))
@@ -158,7 +158,7 @@ public class UpsertMemberProfileCommandHandler
         var cardExtras = existing?.CardExtras;
         if (request.ApplyCardFields && await _profiles.GetForKurinAsync(kurinKey, cancellationToken) is { } profile)
         {
-            var card = MemberCardFields.Apply(profile.CardFields, request, existing, hiddenFromWriter);
+            var card = MemberCardFieldRules.Apply(profile.CardFields, request, existing, hiddenFromWriter);
             if (card.Error is not null)
             {
                 return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberErrors.CardFieldRequired, card.Error);
@@ -353,8 +353,8 @@ public class UpsertMemberProfileCommandHandler
         CancellationToken cancellationToken)
     {
         var changes = before is null
-            ? MemberAuditFields.Added(member)
-            : MemberAuditFields.Between(before, MemberAuditFields.Of(member));
+            ? MemberTrail.Added(member)
+            : MemberTrail.Between(before, MemberTrail.Of(member));
         if (changes.Count == 0)
         {
             return;
@@ -365,7 +365,7 @@ public class UpsertMemberProfileCommandHandler
                 AuditArea.Member,
                 before is null ? AuditActions.Member.Added : AuditActions.Member.Changed,
                 member.MemberKey,
-                MemberAuditFields.LabelOf(member),
+                MemberTrail.LabelOf(member),
                 member.MemberKey,
                 changes,
                 KurinKey: before is null ? kurinKey : _currentUserContext.KurinKey ?? kurinKey),

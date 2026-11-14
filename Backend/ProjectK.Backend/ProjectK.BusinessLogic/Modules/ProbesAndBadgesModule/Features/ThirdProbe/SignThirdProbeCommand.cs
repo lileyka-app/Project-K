@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -44,18 +44,18 @@ public sealed record SignThirdProbeCommand(
 public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProbeCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
-    private readonly AuditActorResolver _actors;
+    private readonly IProbesAndBadgesAccess _access;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public SignThirdProbeCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
-        AuditActorResolver actors,
+        IProbesAndBadgesAccess access,
+        ICurrentMember actors,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;
@@ -70,7 +70,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
     {
         var probeId = request.ProbeId.Trim();
         var memberKey = request.MemberKey;
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(
                 _access, memberKey, probeId, cancellationToken,
                 access => request.Sign ? access.CanSignAsync(memberKey, cancellationToken) : access.CanUnsignAsync(memberKey, cancellationToken))
             is { } refused)
@@ -81,10 +81,10 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
         var comment = TextRules.TrimOrNull(request.Comment);
         if (comment?.Length > ProbeProjectRules.MaxCommentLength)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.FieldTooLong, $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.FieldTooLong, $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         var at = request.Sign ? DateTime.UtcNow : (DateTime?)null;
         var by = request.Sign ? actor.UserKey : null;
         var name = request.Sign ? actor.Name : null;
@@ -96,7 +96,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
             var file = await _unitOfWork.ProbeProjects.GetFileAsync(memberKey, probeId, cancellationToken);
             if (request.Sign && file?.ReflectionOn is null)
             {
-                return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.NothingToConfirm, "Write down when the reflection took place first.");
+                return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.NothingToConfirm, "Write down when the reflection took place first.");
             }
 
             if (file is not null)
@@ -134,7 +134,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
                 AuditArea.Probe,
                 AuditActions.Probe.ThirdProbe(request.Part.ToString(), request.Sign),
                 subjectKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 memberKey,
                 request.Sign ? AuditChanges.Added((Field(request.Part), subject)) : AuditChanges.Removed((Field(request.Part), subject)),
                 comment),

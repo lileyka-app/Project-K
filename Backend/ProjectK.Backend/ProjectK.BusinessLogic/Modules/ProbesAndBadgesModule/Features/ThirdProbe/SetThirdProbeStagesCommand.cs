@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -33,18 +33,18 @@ public sealed record SetThirdProbeStagesCommand(Guid MemberKey, string ProbeId, 
 public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThirdProbeStagesCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
-    private readonly AuditActorResolver _actors;
+    private readonly IProbesAndBadgesAccess _access;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public SetThirdProbeStagesCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
-        AuditActorResolver actors,
+        IProbesAndBadgesAccess access,
+        ICurrentMember actors,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;
@@ -59,7 +59,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
     {
         var probeId = request.ProbeId.Trim();
         var memberKey = request.MemberKey;
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(
                 _access, memberKey, probeId, cancellationToken, access => access.CanSignAsync(memberKey, cancellationToken))
             is { } refused)
         {
@@ -69,12 +69,12 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         var stages = request.Stages;
         if (OutOfOrder(stages) is { } message)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.StagesOutOfOrder, message);
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.StagesOutOfOrder, message);
         }
 
-        var file = await ThirdProbeFiles.GetOrAddAsync(_unitOfWork, memberKey, probeId, cancellationToken);
+        var file = await ThirdProbeFileWriter.GetOrAddAsync(_unitOfWork, memberKey, probeId, cancellationToken);
         var before = ThirdProbeReader.Stages(file);
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         file.MotivationLetterOn = stages.MotivationLetterOn;
         file.SelfReflectionOn = stages.SelfReflectionOn;
         file.ApplicationSubmittedOn = stages.ApplicationSubmittedOn;
@@ -90,7 +90,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
                 AuditArea.Probe,
                 AuditActions.Probe.StagesChanged,
                 file.ThirdProbeFileKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 memberKey,
                 AuditChanges.Of(
                     ("motivationLetter", before.MotivationLetterOn, stages.MotivationLetterOn),

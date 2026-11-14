@@ -80,7 +80,7 @@ public class SetKurinDuesRateTests
         await Send(new SetKurinDuesRateRequest { FromQuarter = From(Q1), StanytsiaFull = 240, StanytsiaReduced = 180, KurinShare = 15 });
 
         var rate = _rates.Single();
-        KurinDuesArticles.AreStandard(rate.Articles).Should().BeTrue();
+        KurinDuesArticleRules.AreStandard(rate.Articles).Should().BeTrue();
         rate.StanytsiaReduced.Should().Be(180);
         rate.KurinReduced.Should().Be(15);
     }
@@ -97,7 +97,7 @@ public class SetKurinDuesRateTests
         rate.KraiFull.Should().Be(600);
         rate.KraiReduced.Should().Be(300);
         rate.StanytsiaFull.Should().Be(0);
-        KurinDuesArticles.AreStandard(rate.Articles).Should().BeTrue();
+        KurinDuesArticleRules.AreStandard(rate.Articles).Should().BeTrue();
     }
 
     [Theory]

@@ -61,7 +61,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
             return AgendaErrors.OtherKurin<Unit>();
         }
 
-        var perMember = AgendaCompletion.ModeOf(assignment) == AgendaCompletionMode.PerMember;
+        var perMember = AgendaCompletionRules.ModeOf(assignment) == AgendaCompletionMode.PerMember;
         if (perMember != request.MemberKey.HasValue)
         {
             return ServiceResult<Unit>.Failure(ResultType.BadRequest, AgendaErrors.AgendaPartMismatch,
@@ -76,12 +76,12 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
                 return ServiceResult<Unit>.Failure(ResultType.BadRequest, AgendaErrors.AgendaNotInTarget, "That person is not in this target.");
             }
 
-            if (!AgendaCompletion.CanMovePart(item, assignment, viewer, memberKey))
+            if (!AgendaCompletionRules.CanMovePart(item, assignment, viewer, memberKey))
             {
                 return Forbidden();
             }
         }
-        else if (!AgendaCompletion.CanMoveTarget(item, assignment, viewer))
+        else if (!AgendaCompletionRules.CanMoveTarget(item, assignment, viewer))
         {
             return Forbidden();
         }
@@ -89,7 +89,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         var before = item.Status;
         var actor = viewer.ViewerUserKey ?? Guid.Empty;
         var stake = new AgendaStake(assignment, request.MemberKey);
-        var movedFrom = AgendaCompletion.StatusOf(stake);
+        var movedFrom = AgendaCompletionRules.StatusOf(stake);
         AgendaStatusWriter.Apply(_uow, item, stake, request.Status, actor, roster, _time.GetUtcNow().UtcDateTime);
 
         // A person's part names the person; a shared target is named in the label instead.

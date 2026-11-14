@@ -41,7 +41,7 @@ public class MemberCardsTests
     private readonly Mock<IMemberCardShareRepository> _shares = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<ICardTokenSigner> _signer = new();
-    private readonly Mock<IResourceScopeReader> _scope = new();
+    private readonly Mock<IResourceScopeRepository> _scope = new();
     private readonly Mock<IHonoursCatalog> _honours = new();
     private readonly List<KurinCardSharing> _settings = [];
     private readonly List<Membership> _standing = [];
@@ -73,13 +73,12 @@ public class MemberCardsTests
         _settings.Add(new KurinCardSharing { KurinKey = kurinKey, MinorsMayShare = true, MinorFields = fields, MinorsMayLink = link });
 
     private MemberCards Cards() => new(
-        _unitOfWork.Object,
+        UnitOfWorks.WithScopes(_scope.Object, _unitOfWork),
         _members.Object,
         Mock.Of<IMemberProgressDirectory>(p => p.GetForMemberAsync(_person, It.IsAny<CancellationToken>()) == Task.FromResult(MemberProgress.Empty)),
-        Mock.Of<IProbesCatalogService>(),
-        Mock.Of<IBadgesCatalogService>(),
+        Mock.Of<IProbesCatalogReader>(),
+        Mock.Of<IBadgesCatalogReader>(),
         new FakeBlobReadLinks(),
-        _scope.Object,
         _honours.Object,
         Options.Create(new EmailOptions { BaseUrl = "https://lileyka.test" }),
         new FixedTimeProvider(Now));

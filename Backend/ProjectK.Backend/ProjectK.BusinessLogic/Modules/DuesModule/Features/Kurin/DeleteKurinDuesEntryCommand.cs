@@ -11,12 +11,12 @@ public sealed record DeleteKurinDuesEntryCommand(Guid KurinKey, Guid EntryKey) :
 
 public sealed class DeleteKurinDuesEntryCommandHandler : IRequestHandler<DeleteKurinDuesEntryCommand, ServiceResult<Unit>>
 {
-    private readonly KurinDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public DeleteKurinDuesEntryCommandHandler(KurinDuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
+    public DeleteKurinDuesEntryCommandHandler(DuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _dues = dues;

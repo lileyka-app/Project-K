@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
@@ -37,19 +36,19 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IKurinJournalReader _journal;
-    private readonly IProbesCatalogService _probes;
+    private readonly IKurinJournalRepository _journal;
+    private readonly IProbesCatalogReader _probes;
     private readonly IMemberProbeLine _line;
 
     public UpdateProbePointSignatureCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
-        IKurinJournalReader journal,
-        IProbesCatalogService probes,
+        IAuditUnitOfWork journal,
+        IProbesCatalogReader probes,
         IMemberProbeLine line)
     {
         _line = line;
@@ -57,7 +56,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         _members = members;
         _actors = actors;
         _audit = audit;
-        _journal = journal;
+        _journal = journal.KurinJournal;
         _probes = probes;
     }
 
@@ -86,13 +85,13 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         // The first signature starts a probe, and a probe starts only in its turn.
         if (request.IsSigned
             && (probeProgress is null || probeProgress.Status == ProbeProgressStatus.NotStarted)
-            && ProbeStartRefusal.Of<ProbeProgressDto>(
+            && ProbeStartRules.Of<ProbeProgressDto>(
                 await _line.CanStartAsync(request.MemberKey, normalizedProbeId, cancellationToken)) is { } refusal)
         {
             return refusal;
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         var actorName = actor.Name;
         var now = DateTime.UtcNow;
         var pointUpdateContext = new PointSignatureUpdateContext(
@@ -177,11 +176,11 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         var probeId = request.ProbeId.Trim();
         var pointId = request.PointId.Trim();
         var subjectKey = probeProgress?.ProbeProgressKey ?? pointProgress?.ProbePointProgressKey ?? Guid.Empty;
-        var probeLabel = ProgressAuditLabels.Probe(_probes, probeId);
+        var probeLabel = ProgressAuditNames.Probe(_probes, probeId);
 
         if (pointChanged)
         {
-            var pointLabel = ProgressAuditLabels.ProbePoint(_probes, probeId, pointId);
+            var pointLabel = ProgressAuditNames.ProbePoint(_probes, probeId, pointId);
             await _audit.RecordAsync(
                 new AuditRecord(
                     AuditArea.Probe,

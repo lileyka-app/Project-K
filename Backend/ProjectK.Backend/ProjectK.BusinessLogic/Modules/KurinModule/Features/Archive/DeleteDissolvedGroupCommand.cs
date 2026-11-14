@@ -20,10 +20,10 @@ public sealed record DeleteDissolvedGroupCommand(Guid KurinKey, Guid GroupKey, s
 public sealed class DeleteDissolvedGroupCommandHandler : IRequestHandler<DeleteDissolvedGroupCommand, ServiceResult<ArchiveDeletionDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ArchiveDeletionGate _gate;
+    private readonly ArchiveDeletionService _gate;
     private readonly IKurinAudit _audit;
 
-    public DeleteDissolvedGroupCommandHandler(IUnitOfWork unitOfWork, ArchiveDeletionGate gate, IKurinAudit audit)
+    public DeleteDissolvedGroupCommandHandler(IUnitOfWork unitOfWork, ArchiveDeletionService gate, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _gate = gate;
@@ -46,7 +46,7 @@ public sealed class DeleteDissolvedGroupCommandHandler : IRequestHandler<DeleteD
 
         if (await _gate.SpendAsync(pass, request.KurinKey, cancellationToken) is not { } left)
         {
-            return ArchiveDeletionGate.Closed();
+            return ArchiveDeletionService.Closed();
         }
 
         var holdings = await _unitOfWork.Archive.RemoveDissolvedGroupAsync(group, cancellationToken);

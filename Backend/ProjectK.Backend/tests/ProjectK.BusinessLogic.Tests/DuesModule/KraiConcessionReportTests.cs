@@ -60,7 +60,7 @@ public class KraiConcessionReportTests
             new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
             KraiCardFieldsSettings.Default,
             new KraiDuesSettings(KraiDues.Stanytsia) { Concessions = [new DuesConcessionRule("sibling", "Брат чи сестра", KraiDues.Percent, 50, DuesParts.Stanytsia)] });
-        var profiles = new Mock<IKraiProfileProvider>();
+        var profiles = new Mock<IKraiProfileDirectory>();
         profiles.Setup(p => p.GetForKraiAsync("cz", It.IsAny<CancellationToken>())).ReturnsAsync(profile);
 
         return new GetKraiConcessionReportQueryHandler(unitOfWork.Object, new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), profiles.Object, new FixedTimeProvider(now));

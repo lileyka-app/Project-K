@@ -177,9 +177,9 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         return context;
     }
 
-    private static Mock<IMfaEnforcementPolicy> CreatePolicy(bool required)
+    private static Mock<IMfaEnforcementReader> CreatePolicy(bool required)
     {
-        var mock = new Mock<IMfaEnforcementPolicy>();
+        var mock = new Mock<IMfaEnforcementReader>();
         mock.Setup(x => x.IsPrivilegedMfaRequiredAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(required);
         return mock;

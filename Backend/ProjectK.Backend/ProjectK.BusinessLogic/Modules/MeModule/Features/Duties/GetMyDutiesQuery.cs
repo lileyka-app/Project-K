@@ -41,7 +41,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IPermissionResolver _permissions;
 
     public GetMyDutiesQueryHandler(
@@ -53,7 +53,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         ScoreBookReader books,
         ICurrentUserContext currentUser,
         TimeProvider time,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IPermissionResolver permissions)
     {
         _scopes = scopes;
@@ -81,7 +81,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
 
             var permissions = await _permissions.ResolveAsync(context.Roles, context.Membership.KurinKey, cancellationToken);
             var rights = new DutyRights(permissions, context.LedGroupKeys);
-            var kurin = MeKurins.Ref(context.Membership, _currentUser.KurinKey);
+            var kurin = MeKurinMapping.Ref(context.Membership, _currentUser.KurinKey);
 
             await AddBadgesAsync(duties, context, rights, kurin, cancellationToken);
             await AddDuesAsync(duties, context, rights, kurin, cancellationToken);
@@ -94,13 +94,13 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
 
         for (var i = 0; i < duties.Count; i++)
         {
-            duties[i] = duties[i] with { Key = DutyDismissals.KeyOf(duties[i]), Fingerprint = DutyDismissals.FingerprintOf(duties[i]) };
+            duties[i] = duties[i] with { Key = DutyDismissalRules.KeyOf(duties[i]), Fingerprint = DutyDismissalRules.FingerprintOf(duties[i]) };
         }
 
         var dismissed = _currentUser.UserId is { } userKey && duties.Count > 0
             ? (await _unitOfWork.DismissedDuties.GetForUserAsync(userKey, cancellationToken)).ToDictionary(d => d.DutyKey, StringComparer.Ordinal)
             : new Dictionary<string, DismissedDuty>(StringComparer.Ordinal);
-        bool Hidden(MyDutyDto duty) => dismissed.TryGetValue(duty.Key, out var dismissal) && DutyDismissals.StillHidden(duty, dismissal);
+        bool Hidden(MyDutyDto duty) => dismissed.TryGetValue(duty.Key, out var dismissal) && DutyDismissalRules.StillHidden(duty, dismissal);
 
         return new ServiceResult<MyDutiesDto>(ResultType.Success, new MyDutiesDto
         {

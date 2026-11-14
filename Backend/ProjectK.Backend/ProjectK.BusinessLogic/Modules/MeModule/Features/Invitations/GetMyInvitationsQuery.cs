@@ -1,7 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
@@ -20,21 +19,19 @@ public sealed class GetMyInvitationsQueryHandler
     : IRequestHandler<GetMyInvitationsQuery, ServiceResult<IReadOnlyList<MembershipInvitationDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
-    private readonly ICurrentUserContext _currentUser;
+    private readonly ICurrentMember _currentMember;
     private readonly TimeProvider _time;
 
-    public GetMyInvitationsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ICurrentUserContext currentUser, TimeProvider time)
+    public GetMyInvitationsQueryHandler(IUnitOfWork unitOfWork, ICurrentMember currentMember, TimeProvider time)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
-        _currentUser = currentUser;
+        _currentMember = currentMember;
         _time = time;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MembershipInvitationDto>>> Handle(GetMyInvitationsQuery request, CancellationToken cancellationToken)
     {
-        var me = _currentUser.UserId is { } userKey ? await _members.FindByAccountAsync(userKey, cancellationToken) : null;
+        var me = await _currentMember.FindAsync(cancellationToken);
         if (me is null)
         {
             return new ServiceResult<IReadOnlyList<MembershipInvitationDto>>(ResultType.Success, []);

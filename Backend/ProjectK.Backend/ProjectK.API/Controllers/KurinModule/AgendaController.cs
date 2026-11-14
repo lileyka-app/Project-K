@@ -63,7 +63,7 @@ public class AgendaController : ControllerBase
         [FromQuery] AgendaBoardSort sort = AgendaBoardSort.Due,
         [FromQuery] AgendaItemStatus? status = null,
         [FromQuery] int skip = 0,
-        [FromQuery] int take = AgendaBoardPaging.DefaultTake)
+        [FromQuery] int take = AgendaBoardPagingRules.DefaultTake)
     {
         var response = await _mediator.Send(new GetAgendaBoardQuery(kurinKey, new AgendaBoardFilter
         {
@@ -84,7 +84,7 @@ public class AgendaController : ControllerBase
     [HttpGet("{kurinKey:guid}/archive")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(AgendaArchivePageDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetArchive(Guid kurinKey, [FromQuery] string? search, [FromQuery] int skip = 0, [FromQuery] int take = AgendaBoardPaging.DefaultTake)
+    public async Task<IActionResult> GetArchive(Guid kurinKey, [FromQuery] string? search, [FromQuery] int skip = 0, [FromQuery] int take = AgendaBoardPagingRules.DefaultTake)
     {
         var response = await _mediator.Send(new GetAgendaArchiveQuery(kurinKey, search, skip, take));
         return response.ToActionResult(this);

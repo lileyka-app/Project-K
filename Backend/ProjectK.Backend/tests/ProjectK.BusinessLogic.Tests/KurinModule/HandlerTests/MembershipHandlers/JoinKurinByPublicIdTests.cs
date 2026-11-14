@@ -32,7 +32,7 @@ public class JoinKurinByPublicIdTests
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IGroupRepository> _groups = new();
-    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
+    private readonly Mock<IAccessChangeStore> _accessChanges = new();
     private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     private readonly Guid _memberKey = Guid.NewGuid();

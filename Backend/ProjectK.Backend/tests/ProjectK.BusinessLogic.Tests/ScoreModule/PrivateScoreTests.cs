@@ -90,12 +90,12 @@ public class PrivateScoreTests
         return membership;
     }
 
-    private PrivateScoreAccess Access()
+    private ScoreAccess Access()
     {
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(u => u.UserId).Returns(Actor);
         user.SetupGet(u => u.KurinKey).Returns(Kurin);
-        return new PrivateScoreAccess(new ScoreAccess(user.Object, _resourceAccess.Object), _resourceAccess.Object);
+        return new ScoreAccess(user.Object, _resourceAccess.Object);
     }
 
     private ICurrentUserContext User()
@@ -117,7 +117,7 @@ public class PrivateScoreTests
             g.GetAllAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult<IEnumerable<Group>>(new[] { new Group("Соколи", Kurin, null) { GroupKey = Sokoly } })));
         unitOfWork.SetupGet(u => u.AgendaItems).Returns(new Mock<IAgendaItemRepository>().Object);
         IReadOnlyList<ScoreFact> none = [];
-        var facts = Mock.Of<IScoreFactSource>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
+        var facts = Mock.Of<IScoreFactReader>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
         return new ScoreBookReader(_score.Object, unitOfWork.Object, memberships.Object, members.Object, facts, _time);
     }
 

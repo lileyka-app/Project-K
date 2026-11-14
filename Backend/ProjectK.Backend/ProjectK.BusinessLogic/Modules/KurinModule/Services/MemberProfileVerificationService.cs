@@ -25,7 +25,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IBlobReadLinks _links;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IUnitOfWork _kurinData;
     private readonly IMembershipRepository _memberships;
     private readonly IMemberFieldAccess _fieldAccess;
@@ -36,7 +36,6 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IBlobReadLinks links,
-        IResourceScopeReader scopeReader,
         IUnitOfWork kurinData,
         IMemberFieldAccess fieldAccess,
         IKurinAudit audit)
@@ -47,7 +46,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         _currentUserContext = currentUserContext;
         _events = events;
         _links = links;
-        _scopeReader = scopeReader;
+        _scopeReader = kurinData.ResourceScopes;
         _kurinData = kurinData;
         _memberships = kurinData.Memberships;
     }
@@ -212,9 +211,9 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
                 AuditArea.Member,
                 action,
                 member.MemberKey,
-                MemberAuditFields.LabelOf(member),
+                MemberTrail.LabelOf(member),
                 member.MemberKey,
-                AuditChanges.Of((MemberAuditFields.ProfileVerification, statusBefore, member.ProfileVerificationStatus)),
+                AuditChanges.Of((MemberTrail.ProfileVerification, statusBefore, member.ProfileVerificationStatus)),
                 note),
             cancellationToken);
 

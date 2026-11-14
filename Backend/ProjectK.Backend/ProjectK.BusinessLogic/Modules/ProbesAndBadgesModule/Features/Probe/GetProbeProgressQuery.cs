@@ -24,13 +24,13 @@ public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgr
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly IKurinJournalReader _journal;
+    private readonly IKurinJournalRepository _journal;
 
-    public GetProbeProgressQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IKurinJournalReader journal)
+    public GetProbeProgressQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAuditUnitOfWork audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
-        _journal = journal;
+        _journal = audit.KurinJournal;
     }
 
     public async Task<ServiceResult<ProbeProgressDto>> Handle(GetProbeProgressQuery request, CancellationToken cancellationToken)

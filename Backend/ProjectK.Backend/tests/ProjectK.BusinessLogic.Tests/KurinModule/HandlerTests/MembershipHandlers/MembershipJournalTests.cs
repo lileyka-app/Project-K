@@ -56,10 +56,10 @@ public class MembershipJournalTests
     }
 
     private MoveToGroupCommandHandler Move() =>
-        new(_unitOfWork.Object, Mock.Of<IDomainEventPublisher>(), Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit, _currentUser.Object);
+        new(_unitOfWork.Object, Mock.Of<IDomainEventPublisher>(), Mock.Of<IAccessChangeStore>(), _members.Object, _journal.Audit, _currentUser.Object);
 
     private LeaveKurinCommandHandler Leave() =>
-        new(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, new MembershipMoves(_unitOfWork.Object, _journal.Audit, Mock.Of<IDomainEventPublisher>(), Mock.Of<IDuesDirectory>(), TimeProvider.System), _currentUser.Object);
+        new(_unitOfWork.Object, Mock.Of<IAccessChangeStore>(), _members.Object, new MembershipMoves(_unitOfWork.Object, _journal.Audit, Mock.Of<IDomainEventPublisher>(), Mock.Of<IDuesDirectory>(), TimeProvider.System), _currentUser.Object);
 
     private void SignedInAsThem()
     {

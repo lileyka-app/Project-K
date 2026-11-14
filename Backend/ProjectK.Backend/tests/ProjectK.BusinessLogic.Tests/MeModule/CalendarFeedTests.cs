@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -75,7 +76,7 @@ public class CalendarFeedTests
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(Person, User, Kurin, Sokoly, "Оксана", "Паливода", "o@x", null));
-        var scopeReader = new Mock<IResourceScopeReader>();
+        var scopeReader = new Mock<IResourceScopeRepository>();
         scopeReader.Setup(r => r.GetLedGroupKeysAsync(User, Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var leaderships = new Mock<ILeadershipRepository>();
@@ -101,14 +102,14 @@ public class CalendarFeedTests
         unitOfWork.SetupGet(u => u.Groups).Returns(groups.Object);
         unitOfWork.SetupGet(u => u.AgendaResponses).Returns(responses.Object);
 
-        var scopes = new MeAgendaScopes(currentUser.Object, memberships.Object, members.Object, _offices.Object, scopeReader.Object, unitOfWork.Object);
+        var scopes = new MeAgendaScopes(new CurrentMember(currentUser.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, UnitOfWorks.WithScopes(scopeReader.Object, unitOfWork));
 
         var userManager = new Mock<UserManager<AppUser>>(new Mock<IUserStore<AppUser>>().Object, null!, null!, null!, null!, null!, null!, null!, null!);
         userManager.Setup(m => m.FindByIdAsync(User.ToString())).ReturnsAsync(() => new AppUser { Id = User, OnboardingStatus = _status });
 
         return new RenderCalendarFeedQueryHandler(
             _feeds.Object, userManager.Object, scopes, unitOfWork.Object, members.Object,
-            new Mock<IKraiProfileProvider>().Object, new FixedTimeProvider(Now),
+            new Mock<IKraiProfileDirectory>().Object, new FixedTimeProvider(Now),
             Options.Create(new EmailOptions { BaseUrl = "https://lileyka.app" }));
     }
 

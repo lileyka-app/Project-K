@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
@@ -17,13 +18,13 @@ public sealed record GetMyDuesQuery : IRequest<ServiceResult<IReadOnlyList<MyDue
 
 public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, ServiceResult<IReadOnlyList<MyDuesDto>>>
 {
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly DuesLedgerReader _ledgers;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public GetMyDuesQueryHandler(MePerson me, DuesLedgerReader ledgers, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
+    public GetMyDuesQueryHandler(ICurrentMember me, DuesLedgerReader ledgers, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _me = me;
         _ledgers = ledgers;
@@ -34,7 +35,7 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
 
     public async Task<ServiceResult<IReadOnlyList<MyDuesDto>>> Handle(GetMyDuesQuery request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<IReadOnlyList<MyDuesDto>>();
@@ -61,7 +62,7 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
 
             rows.Add(new MyDuesDto
             {
-                Kurin = MeKurins.Ref(membership, _currentUser.KurinKey),
+                Kurin = MeKurinMapping.Ref(membership, _currentUser.KurinKey),
                 GroupName = membership.GroupName,
                 Currency = krai.Currency,
                 NumberLocale = krai.NumberLocale,

@@ -1,9 +1,9 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -50,20 +50,20 @@ public sealed record SaveProbeProjectCommand(
 public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbeProjectCommand, ServiceResult<ProbeProjectSavedDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
     private readonly IPhotoService _photos;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public SaveProbeProjectCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;
@@ -78,7 +78,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     public async Task<ServiceResult<ProbeProjectSavedDto>> Handle(SaveProbeProjectCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ProbeProjectSavedDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ProbeProjectSavedDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -86,10 +86,10 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         var input = Normalize(request.Input);
         if (Invalid(input) is { } invalid)
         {
-            return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(invalid.Code, invalid.Message);
+            return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(invalid.Code, invalid.Message);
         }
 
-        var imageKeys = ProbeProjectMarkdown.ImageKeys(input.Description!, input.Goal!, input.Plan!, input.Results!);
+        var imageKeys = ProbeProjectMarkdownRules.ImageKeys(input.Description!, input.Goal!, input.Plan!, input.Results!);
         if (imageKeys is null)
         {
             return ForeignImage();
@@ -97,7 +97,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
 
         if (imageKeys.Distinct().Count() > ProbeProjectRules.MaxImagesPerProject)
         {
-            return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
+            return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(
                 ProbesAndBadgesErrors.TooManyImages, $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
         }
 
@@ -112,7 +112,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             var spares = all.Count(p => p.IsSpare);
             if (mains >= ProbeProjectRules.MaxMainProjects && spares >= ProbeProjectRules.MaxSpareProjects)
             {
-                return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
+                return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(
                     ProbesAndBadgesErrors.TooManyProjects, $"The probe holds {ProbeProjectRules.MaxMainProjects} projects and {ProbeProjectRules.MaxSpareProjects} spare.");
             }
 
@@ -150,11 +150,11 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         if (input.IsShared && !project.IsSpare
             && all.Count(p => p != project && p.IsShared && !p.IsSpare) >= ProbeProjectRules.MaxSharedMainProjects)
         {
-            return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
+            return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(
                 ProbesAndBadgesErrors.TooManyShared, $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         Apply(project, input);
         project.UpdatedDate = DateTime.UtcNow;
         project.UpdatedByUserKey = actor.UserKey;
@@ -173,7 +173,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
                 AuditArea.Probe,
                 isNew ? AuditActions.Probe.ProjectAdded : AuditActions.Probe.ProjectEdited,
                 project.ProbeProjectKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey,
                 isNew ? AuditChanges.Added(("project", project.Title)) : AuditChanges.Of(("project", titleBefore, project.Title))),
             cancellationToken);
@@ -226,7 +226,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     };
 
     private static ServiceResult<ProbeProjectSavedDto> ForeignImage() =>
-        ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(ProbesAndBadgesErrors.ForeignImage, "Pictures must be uploaded into the project.");
+        ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(ProbesAndBadgesErrors.ForeignImage, "Pictures must be uploaded into the project.");
 
     private static (string Code, string Message)? Invalid(ProbeProjectInput input)
     {

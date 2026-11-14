@@ -11,9 +11,9 @@ public sealed record GetProbesQuery : IRequest<ServiceResult<IReadOnlyList<Probe
 
 public sealed class GetProbesQueryHandler : IRequestHandler<GetProbesQuery, ServiceResult<IReadOnlyList<ProbeSummaryDto>>>
 {
-    private readonly IProbesCatalogService _catalog;
+    private readonly IProbesCatalogReader _catalog;
 
-    public GetProbesQueryHandler(IProbesCatalogService catalog)
+    public GetProbesQueryHandler(IProbesCatalogReader catalog)
     {
         _catalog = catalog;
     }

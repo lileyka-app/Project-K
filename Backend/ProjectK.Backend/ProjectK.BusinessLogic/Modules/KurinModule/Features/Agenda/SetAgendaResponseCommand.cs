@@ -25,9 +25,9 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
     private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileProvider profiles)
+    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileDirectory profiles)
     {
         _uow = uow;
         _members = members;
@@ -63,13 +63,13 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
         }
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
-        if (!AgendaPermissions.IsVisibleTo(item, viewer))
+        if (!AgendaAccess.IsVisibleTo(item, viewer))
         {
             return ServiceResult<AgendaResponsesDto>.Failure(ResultType.Forbidden, AgendaErrors.AgendaNotVisible, "You cannot respond to this event.");
         }
 
         var zone = await _profiles.ForKurinAsync(item.KurinKey, cancellationToken);
-        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
+        if (!AgendaOccurrenceRules.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
         {
             return ServiceResult<AgendaResponsesDto>.Failure(ResultType.BadRequest, AgendaErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }
@@ -89,7 +89,7 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
             waitlistEnabled = category?.WaitlistEnabled ?? false;
         }
 
-        var picture = AgendaRsvpProjector.Project(item.AgendaItemKey, occurrenceKey, responses, capacity, waitlistEnabled, names, userKey);
+        var picture = AgendaRsvpRules.Project(item.AgendaItemKey, occurrenceKey, responses, capacity, waitlistEnabled, names, userKey);
         return new ServiceResult<AgendaResponsesDto>(ResultType.Success, picture);
     }
 }

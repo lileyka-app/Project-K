@@ -48,7 +48,7 @@ public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGrou
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(group.KurinKey, cancellationToken);
-        var offered = OfferedProbeEditions.OfferedTo(_catalog, kurin?.KraiCode ?? string.Empty);
+        var offered = OfferedProbeEditionRules.OfferedTo(_catalog, kurin?.KraiCode ?? string.Empty);
         if (!offered.Any(offer => offer.Id == edition))
         {
             return ServiceResult<Unit>.Failure(

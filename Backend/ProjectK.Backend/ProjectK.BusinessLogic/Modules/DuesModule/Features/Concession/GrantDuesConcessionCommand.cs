@@ -37,17 +37,17 @@ public sealed class GrantDuesConcessionCommandValidator : AbstractValidator<Gran
 
 public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDuesConcessionCommand, ServiceResult<Guid>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly ICurrentUserContext _currentUser;
 
     public GrantDuesConcessionCommandHandler(
-        GroupDuesAccess access,
+        DuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         ICurrentUserContext currentUser)
     {
         _access = access;
@@ -80,14 +80,14 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
         }
 
         var from = new DuesQuarter(request.Request.FromQuarter.Year, request.Request.FromQuarter.Number).Index;
-        var to = DuesConcessionGrants.Index(request.Request.ToQuarter);
+        var to = DuesConcessionGrantRules.Index(request.Request.ToQuarter);
         if (to < from)
         {
             return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "Пільга не може закінчитися раніше, ніж почнеться.");
         }
 
         // The same пільга twice over the same quarters would only hide which one counts.
-        if (await DuesConcessionGrants.OverlapsAsync(_dues, group.KurinKey, request.MembershipKey, rule.Key, from, to, null, cancellationToken))
+        if (await DuesConcessionGrantRules.OverlapsAsync(_dues, group.KurinKey, request.MembershipKey, rule.Key, from, to, null, cancellationToken))
         {
             return ServiceResult<Guid>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "Ця пільга вже діє в цих кварталах.");
         }

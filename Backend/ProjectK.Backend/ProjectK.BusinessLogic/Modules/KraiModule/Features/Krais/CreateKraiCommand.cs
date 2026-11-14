@@ -35,7 +35,7 @@ public sealed class CreateKraiCommandHandler : IRequestHandler<CreateKraiCommand
     public async Task<ServiceResult<KraiDto>> Handle(CreateKraiCommand request, CancellationToken cancellationToken)
     {
         var code = Krai.NormalizeCode(request.Code) ?? string.Empty;
-        if (!KraiProfileJson.IsKraiCode(code))
+        if (!KraiProfileJsonRules.IsKraiCode(code))
         {
             return ServiceResult<KraiDto>.Failure(ResultType.BadRequest, KraiErrors.InvalidKraiCode, "A krai code is 2 to 8 lowercase latin letters, like pl or sk.");
         }
@@ -57,16 +57,16 @@ public sealed class CreateKraiCommandHandler : IRequestHandler<CreateKraiCommand
 
         // Left to the defaults, a край offers the вмілості marked with its own code, and the
         // catalogue marks only ua and pl: a new край would see none.
-        var document = KraiProfileJson.Normalize(request.Document
+        var document = KraiProfileJsonRules.Normalize(request.Document
             ?? new KraiProfileDocument { Catalog = new KraiCatalogDocument { BadgeSources = [Krai.Ukraine] } });
-        var errors = KraiProfileJson.Validate(document);
+        var errors = KraiProfileJsonRules.Validate(document);
         if (errors.Count > 0)
         {
             return ServiceResult<KraiDto>.Failure(ResultType.BadRequest, KraiErrors.InvalidProfile, string.Join(" ", errors));
         }
 
-        var json = KraiProfileJson.Serialize(document);
-        if (json.Length > KraiProfileJson.MaxLength)
+        var json = KraiProfileJsonRules.Serialize(document);
+        if (json.Length > KraiProfileJsonRules.MaxLength)
         {
             return ServiceResult<KraiDto>.Failure(ResultType.BadRequest, KraiErrors.ProfileTooLarge, "The profile is too large.");
         }

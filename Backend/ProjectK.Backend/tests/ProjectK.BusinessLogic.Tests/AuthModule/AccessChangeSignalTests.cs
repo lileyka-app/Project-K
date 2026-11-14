@@ -14,11 +14,11 @@ public class AccessChangeSignalTests
     private static readonly DateTimeOffset Start = new(2026, 10, 23, 12, 0, 0, 400, TimeSpan.Zero);
 
     private readonly FixedTimeProvider _clock = new(Start);
-    private readonly AccessChangeSignal _signal;
+    private readonly AccessChangeStore _signal;
 
     public AccessChangeSignalTests()
     {
-        _signal = new AccessChangeSignal(
+        _signal = new AccessChangeStore(
             _clock,
             new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Jwt:ExpiresInMinutes"] = "10" }).Build());
     }

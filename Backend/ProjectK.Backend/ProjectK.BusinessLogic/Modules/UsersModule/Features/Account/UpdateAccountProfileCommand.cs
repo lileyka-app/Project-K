@@ -7,9 +7,11 @@ using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.UsersModule;
 using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.Shared;
@@ -22,7 +24,7 @@ public record UpdateAccountProfileCommand(Guid UserKey, string Email, string? Ph
 public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountProfileCommand, ServiceResult<AccountSettingsDto>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IMemberDirectory _members;
+    private readonly IDomainEventPublisher _events;
     private readonly IMediator _mediator;
     private readonly IEmailService _emailService;
     private readonly EmailOptions _emailSettings;
@@ -30,14 +32,14 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
 
     public UpdateAccountProfileCommandHandler(
         UserManager<AppUser> userManager,
-        IMemberDirectory members,
+        IDomainEventPublisher events,
         IMediator mediator,
         IEmailService emailService,
         IOptions<EmailOptions> emailSettings,
         IActivityLogger activityLogger)
     {
         _userManager = userManager;
-        _members = members;
+        _events = events;
         _mediator = mediator;
         _emailService = emailService;
         _emailSettings = emailSettings.Value;
@@ -94,7 +96,7 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
             return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, UsersErrors.UpdateFailed, "Failed to update profile.");
         }
 
-        await _members.SetPhoneFromAccountAsync(user.Id, user.PhoneNumber ?? string.Empty, cancellationToken);
+        await _events.PublishAsync(new AccountPhoneChanged(user.Id, user.PhoneNumber ?? string.Empty), cancellationToken);
 
         var settingsResult = await _mediator.Send(new GetAccountSettingsQuery(user.Id), cancellationToken);
         if (!emailChanged || settingsResult.Data == null)

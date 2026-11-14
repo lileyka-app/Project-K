@@ -4,6 +4,7 @@ using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
@@ -21,13 +22,13 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
 {
     private readonly IUnitOfWork _uow;
     private readonly IKurinAudit _audit;
-    private readonly IDuesDirectory _dues;
+    private readonly IDomainEventPublisher _events;
 
-    public DeleteKurinTagCommandHandler(IUnitOfWork uow, IKurinAudit audit, IDuesDirectory dues)
+    public DeleteKurinTagCommandHandler(IUnitOfWork uow, IKurinAudit audit, IDomainEventPublisher events)
     {
         _uow = uow;
         _audit = audit;
-        _dues = dues;
+        _events = events;
     }
 
     public async Task<ServiceResult<Unit>> Handle(DeleteKurinTagCommand request, CancellationToken cancellationToken)
@@ -49,8 +50,7 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
         _uow.KurinTags.Delete(tag, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // A rate by this tag can no longer be seen or changed: nobody's debt may stay on it.
-        await _dues.RepriceUnpaidAsync(request.KurinKey, cancellationToken);
+        await _events.PublishAsync(new KurinTagDeleted(request.KurinKey, tag.KurinTagKey), cancellationToken);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }

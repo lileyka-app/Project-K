@@ -133,8 +133,8 @@ public sealed class AgendaAccess : IAgendaAccess
 
     private readonly ICurrentUserContext _currentUser;
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly ICurrentMember _currentMember;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentPermissions _permissions;
     private readonly IKurinTagVisibility _tags;
@@ -142,8 +142,7 @@ public sealed class AgendaAccess : IAgendaAccess
     public AgendaAccess(
         ICurrentUserContext currentUser,
         IUnitOfWork uow,
-        IMemberDirectory members,
-        IResourceScopeReader scopeReader,
+        ICurrentMember currentMember,
         IResourceAccessService resourceAccess,
         ICurrentPermissions permissions,
         IKurinTagVisibility tags)
@@ -151,8 +150,8 @@ public sealed class AgendaAccess : IAgendaAccess
         _tags = tags;
         _currentUser = currentUser;
         _uow = uow;
-        _members = members;
-        _scopeReader = scopeReader;
+        _currentMember = currentMember;
+        _scopeReader = uow.ResourceScopes;
         _resourceAccess = resourceAccess;
         _permissions = permissions;
     }
@@ -170,7 +169,7 @@ public sealed class AgendaAccess : IAgendaAccess
         Guid? ownGroupKey = null;
         if (userKey.HasValue)
         {
-            var member = await _members.FindByAccountAsync(userKey.Value, cancellationToken);
+            var member = await _currentMember.FindAsync(cancellationToken);
             if (member is not null && member.KurinKey == kurinKey)
             {
                 memberKey = member.MemberKey;
@@ -279,15 +278,12 @@ public sealed class AgendaAccess : IAgendaAccess
 
         return new AgendaAssignReach(kurin, groups, members, provid, ledGroups, userKey, tags);
     }
-}
 
-/// <summary>
-/// Per-item permission checks shared by the update, delete and status handlers. Kept as pure functions
-/// over an already-loaded item so no extra queries run.
-/// </summary>
-public static class AgendaPermissions
-{
-    /// <summary>Creator or leadership may edit/delete an item.</summary>
+    /// <summary>
+    /// Creator or leadership may edit/delete an item. This and the two checks below are pure functions
+    /// over an already-loaded item, shared by the update, delete and status handlers, so no extra
+    /// queries run.
+    /// </summary>
     public static bool CanManage(AgendaItem item, AgendaViewerContext viewer)
     {
         if (viewer.CanSeeWholeKurin)
@@ -319,8 +315,8 @@ public static class AgendaPermissions
     /// <summary>
     /// Whether a drag on the board moves anything for this viewer: their own part, or the shared
     /// targets they answer for. Seeing a task is not enough — a youth whose гурток was handed a task
-    /// to be closed by its провід sees it without being able to close it. See <see cref="AgendaCompletion"/>.
+    /// to be closed by its провід sees it without being able to close it. See <see cref="AgendaCompletionRules"/>.
     /// </summary>
     public static bool CanChangeStatus(AgendaItem item, AgendaViewerContext viewer)
-        => AgendaCompletion.BoardMove(item, viewer).Count > 0;
+        => AgendaCompletionRules.BoardMove(item, viewer).Count > 0;
 }

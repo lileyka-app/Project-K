@@ -25,14 +25,14 @@ public sealed class UpdateDuesEntryCommandValidator : AbstractValidator<UpdateDu
 
 public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEntryCommand, ServiceResult<Unit>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly DuesEntryWriter _writer;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
     public UpdateDuesEntryCommandHandler(
-        GroupDuesAccess access,
+        DuesAccess access,
         DuesEntryWriter writer,
         IDuesUnitOfWork dues,
         ICurrentUserContext currentUser,
@@ -47,7 +47,7 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
 
     public async Task<ServiceResult<Unit>> Handle(UpdateDuesEntryCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<Unit>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenGroupAsync<Unit>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -59,7 +59,7 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
             return DuesErrors.NoEntry<Unit>();
         }
 
-        if (DuesEntryLock.Check(entry) is { } locked)
+        if (DuesEntryLockRules.Check(entry) is { } locked)
         {
             return locked;
         }

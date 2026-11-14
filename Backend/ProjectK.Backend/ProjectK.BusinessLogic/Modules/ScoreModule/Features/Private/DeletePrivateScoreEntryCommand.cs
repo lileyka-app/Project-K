@@ -12,12 +12,12 @@ public sealed record DeletePrivateScoreEntryCommand(Guid KurinKey, Guid EntryKey
 
 public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<DeletePrivateScoreEntryCommand, ServiceResult<Unit>>
 {
-    private readonly PrivateScoreAccess _access;
+    private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public DeletePrivateScoreEntryCommandHandler(PrivateScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public DeletePrivateScoreEntryCommandHandler(ScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
@@ -27,7 +27,7 @@ public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<Dele
 
     public async Task<ServiceResult<Unit>> Handle(DeletePrivateScoreEntryCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Unit>(request.KurinKey, ResourceAction.Delete, cancellationToken) is { } refused)
+        if (await _access.RefusePrivateAsync<Unit>(request.KurinKey, ResourceAction.Delete, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -43,7 +43,7 @@ public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<Dele
         entry.DeletedByUserKey = _currentUser.UserId;
         entry.UpdatedDate = now;
         _score.PrivateScoreEntries.Update(entry, cancellationToken);
-        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Deleted, PrivateScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
+        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Deleted, PrivateScoreEntryRules.Snapshot(entry), _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

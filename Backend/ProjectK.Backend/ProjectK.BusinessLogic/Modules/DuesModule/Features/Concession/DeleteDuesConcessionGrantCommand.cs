@@ -12,11 +12,11 @@ public sealed record DeleteDuesConcessionGrantCommand(Guid BoxKey, Guid GrantKey
 
 public sealed class DeleteDuesConcessionGrantCommandHandler : IRequestHandler<DeleteDuesConcessionGrantCommand, ServiceResult<Unit>>
 {
-    private readonly GroupDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
 
-    public DeleteDuesConcessionGrantCommandHandler(GroupDuesAccess access, IDuesUnitOfWork dues, IMembershipDirectory memberships)
+    public DeleteDuesConcessionGrantCommandHandler(DuesAccess access, IDuesUnitOfWork dues, IMembershipDirectory memberships)
     {
         _access = access;
         _dues = dues;
@@ -25,7 +25,7 @@ public sealed class DeleteDuesConcessionGrantCommandHandler : IRequestHandler<De
 
     public async Task<ServiceResult<Unit>> Handle(DeleteDuesConcessionGrantCommand request, CancellationToken cancellationToken)
     {
-        var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
+        var (grant, failure) = await DuesConcessionGrantRules.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
         if (grant is null)
         {
             return failure!;

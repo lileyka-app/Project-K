@@ -76,7 +76,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             return AgendaErrors.OtherKurin<Unit>();
         }
 
-        if (!AgendaPermissions.CanManage(item, viewer))
+        if (!AgendaAccess.CanManage(item, viewer))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaEditForbidden, "Only the creator or leadership may edit this item.");
         }
@@ -100,19 +100,19 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             .GroupBy(t => (t.TargetType, t.TargetKey))
             .ToDictionary(
                 g => g.Key,
-                g => AgendaTargetModes.For(g.First(), request.Kind, currentModes.TryGetValue(g.Key, out var current) ? current : null));
+                g => AgendaTargetModeRules.For(g.First(), request.Kind, currentModes.TryGetValue(g.Key, out var current) ? current : null));
         var reshaped = item.Assignments.FirstOrDefault(a =>
             requestedModes.TryGetValue((a.TargetType, a.TargetKey), out var mode)
             && mode != a.CompletionMode
-            && AgendaCompletion.HasMoved(a));
+            && AgendaCompletionRules.HasMoved(a));
         if (reshaped is not null)
         {
             return ServiceResult<Unit>.Failure(ResultType.Conflict, AgendaErrors.AgendaModeLocked,
                 "The way this target is done cannot change once someone has moved it; create a new task instead.");
         }
 
-        var before = AgendaAuditFields.Of(item);
-        var targetsBefore = AgendaAuditFields.TargetsOf(item);
+        var before = AgendaTrail.Of(item);
+        var targetsBefore = AgendaTrail.TargetsOf(item);
         var statusBefore = item.Status;
 
         item.Kind = request.Kind;
@@ -138,7 +138,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
 
         // Targets came and went, so what the task adds up to may have changed with them.
         var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
-        AgendaCompletion.SetItemStatus(item, AgendaCompletion.ItemStatus(item, roster), DateTime.UtcNow);
+        AgendaCompletionRules.SetItemStatus(item, AgendaCompletionRules.ItemStatus(item, roster), DateTime.UtcNow);
 
         await RecordChangesAsync(item, before, targetsBefore, statusBefore, cancellationToken);
 
@@ -157,12 +157,12 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         AgendaItemStatus statusBefore,
         CancellationToken cancellationToken)
     {
-        var targetsAfter = AgendaAuditFields.TargetsOf(item);
-        var changes = AgendaAuditFields.Between(before, AgendaAuditFields.Of(item)).ToList();
+        var targetsAfter = AgendaTrail.TargetsOf(item);
+        var changes = AgendaTrail.Between(before, AgendaTrail.Of(item)).ToList();
         if (!targetsBefore.ToHashSet().SetEquals(targetsAfter))
         {
             var names = await AgendaTargetNames.LoadAsync(_uow, _members, item.KurinKey, targetsBefore.Concat(targetsAfter), cancellationToken);
-            changes.AddRange(AuditChanges.Of((AgendaAuditFields.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
+            changes.AddRange(AuditChanges.Of((AgendaTrail.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
         }
 
         changes.AddRange(AuditChanges.Of(("status", statusBefore, item.Status)));
@@ -220,7 +220,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
 
     private async Task PublishChangedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
 
         await _events.PublishAsync(
             new AgendaItemChanged(

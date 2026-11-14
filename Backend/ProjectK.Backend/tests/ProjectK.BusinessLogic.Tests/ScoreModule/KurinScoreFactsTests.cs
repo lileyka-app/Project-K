@@ -36,7 +36,7 @@ public class KurinScoreFactsTests
     private readonly List<WarningRecord> _warnings = [];
     private readonly List<PaidQuarterRecord> _paid = [];
 
-    private KurinScoreFacts Facts()
+    private ScoreFactReader Facts()
     {
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
@@ -46,7 +46,7 @@ public class KurinScoreFactsTests
         members.Setup(m => m.GetActiveWarningsInKurinAsync(Kurin, Now, It.IsAny<CancellationToken>())).ReturnsAsync(() => _warnings);
         var dues = new Mock<IDuesDirectory>();
         dues.Setup(d => d.GetPaidQuartersAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _paid);
-        return new KurinScoreFacts(memberships.Object, progress.Object, members.Object, dues.Object, new FixedTimeProvider(new DateTimeOffset(Now)));
+        return new ScoreFactReader(memberships.Object, progress.Object, members.Object, dues.Object, new FixedTimeProvider(new DateTimeOffset(Now)));
     }
 
     [Fact]

@@ -72,7 +72,7 @@ public class RefreshTokenCommandHandlerTests
         var access = FakeAccessContext.With(SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy));
         var snapshots = new AccessSnapshotFactory(new PermissionResolver(new FixedKurinAccessPolicyProvider()));
         var members = new Mock<IMemberDirectory>();
-        var login = new LoginResponseFactory(access, _jwtServiceMock.Object, members.Object, _refreshTokensMock.Object, snapshots);
+        var login = new LoginResponseService(access, _jwtServiceMock.Object, members.Object, _refreshTokensMock.Object, snapshots);
         GivenActiveSession("session", user);
         GivenIssuedTokens(user, "access", "rotated");
 

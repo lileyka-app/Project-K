@@ -17,13 +17,13 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IActivityLogger _activityLogger;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
 
     public ChangeUserRoleCommandHandler(
         UserManager<AppUser> userManager,
         ICurrentUserContext currentUserContext,
         IActivityLogger activityLogger,
-        IAccessChangeSignal accessChanges)
+        IAccessChangeStore accessChanges)
     {
         _userManager = userManager;
         _currentUserContext = currentUserContext;

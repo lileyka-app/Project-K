@@ -39,7 +39,7 @@ public class GetAgendaResponsesHandlerTests
         _memberDirectory.Setup(m => m.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<MemberSummary>());
         _memberDirectory.Setup(m => m.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<MemberSummary>());
         _responses.Setup(r => r.GetForItemAsync(It.IsAny<Guid>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<AgendaResponse>());
-        _handler = new GetAgendaResponsesQueryHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, Mock.Of<IKraiProfileProvider>());
+        _handler = new GetAgendaResponsesQueryHandler(_uow.Object, _memberDirectory.Object, _access.Object, _currentUser.Object, Mock.Of<IKraiProfileDirectory>());
     }
 
     private AgendaItem Event(Guid? kurin = null) => new()

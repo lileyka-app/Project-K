@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
@@ -102,11 +103,11 @@ internal sealed class RosterRow
             LastName = Of(RosterField.LastName),
             FirstName = Of(RosterField.FirstName),
             MiddleName = Of(RosterField.MiddleName),
-            DateOfBirth = RosterValues.Date(Of(RosterField.DateOfBirth)),
-            Level = RosterValues.Level(Of(RosterField.PlastLevel)),
-            LevelDate = RosterValues.Date(Of(RosterField.PlastLevelDate)),
+            DateOfBirth = RosterValueRules.Date(Of(RosterField.DateOfBirth)),
+            Level = RosterValueRules.Level(Of(RosterField.PlastLevel)),
+            LevelDate = RosterValueRules.Date(Of(RosterField.PlastLevelDate)),
             GroupName = Of(RosterField.GroupName),
-            KurinNumber = RosterValues.KurinNumber(Of(RosterField.KurinNumber)),
+            KurinNumber = RosterValueRules.KurinNumber(Of(RosterField.KurinNumber)),
             // A number that is not one (or not one the file says plainly) is left out, not the row.
             PhoneNumber = PhoneNumbers.NormalizeLegacy(Of(RosterField.PhoneNumber)) is { Length: > 0 } phone ? phone : null,
             Email = Of(RosterField.Email),
@@ -116,7 +117,7 @@ internal sealed class RosterRow
 
         foreach (var column in mapping.Where(c => c.Field == RosterField.LevelDate && c.Level.HasValue))
         {
-            if (RosterValues.Date(At(column.Index)) is { } date)
+            if (RosterValueRules.Date(At(column.Index)) is { } date)
             {
                 parsed.LevelDates[column.Level!.Value] = date;
             }

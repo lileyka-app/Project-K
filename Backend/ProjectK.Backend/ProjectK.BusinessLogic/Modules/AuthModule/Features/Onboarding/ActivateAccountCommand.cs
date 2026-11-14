@@ -13,6 +13,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.AuthModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
@@ -42,11 +43,13 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
     private readonly UserManager<AppUser> _userManager;
     private readonly IMediator _mediator;
     private readonly TimeProvider _timeProvider;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
+    private readonly IDomainEventPublisher _events;
 
-    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider, ILoginResponseFactory loginResponseFactory)
+    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider, ILoginResponseService loginResponseService, IDomainEventPublisher events)
     {
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
+        _events = events;
         _unitOfWork = unitOfWork;
         _members = members;
         _userManager = userManager;
@@ -116,18 +119,20 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
 
         // 5. Make sure the account has a member, linking an existing one when the address is known.
         // The member module owns that decision — this handler no longer writes Member rows itself.
-        var memberKey = await _members.EnsureForAccountAsync(
-            new MemberForAccount(
+        // Published before the save, so the person commits with the activation.
+        await _events.PublishAsync(
+            new AccountActivated(new MemberForAccount(
                 user.Id,
                 user.Email!,
                 user.FirstName,
                 user.LastName,
                 entry?.PhoneNumber ?? string.Empty,
                 entry != null ? DateOnly.FromDateTime(entry.DateOfBirth) : new DateOnly(2000, 1, 1),
-                KurinKey: Guid.Empty),
+                KurinKey: Guid.Empty)),
             cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        var memberKey = (await _members.FindByAccountAsync(user.Id, cancellationToken))!.MemberKey;
 
         // 5.5. A founder is taken into the kurin their approval opened for them. The queue entry
         // is what remembers that kurin, and here it is the only thing that can: the kurin was
@@ -166,7 +171,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         }
 
         // Signed in on the spot: the password was just chosen, asking for it again is a wall.
-        var session = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+        var session = await _loginResponseService.CreateAsync(user, cancellationToken);
         return new ServiceResult<LoginUserDto>(ResultType.Success, session);
     }
 }

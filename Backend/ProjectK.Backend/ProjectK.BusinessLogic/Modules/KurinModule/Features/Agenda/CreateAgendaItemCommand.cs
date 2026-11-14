@@ -105,13 +105,13 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
             RecurrenceCount = request.RecurrenceCount,
             CreatedByUserKey = actorUserKey.Value,
             Assignments = request.Targets
-                .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey, CompletionMode = AgendaTargetModes.For(t, request.Kind) })
+                .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey, CompletionMode = AgendaTargetModeRules.For(t, request.Kind) })
                 .ToList()
         };
 
         _uow.AgendaItems.Create(item, cancellationToken);
 
-        var targets = AgendaAuditFields.TargetsOf(item);
+        var targets = AgendaTrail.TargetsOf(item);
         var names = await AgendaTargetNames.LoadAsync(_uow, _members, item.KurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
@@ -119,7 +119,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
                 AuditActions.Agenda.Created,
                 item.AgendaItemKey,
                 item.Title,
-                Changes: AuditChanges.Added([.. AgendaAuditFields.Of(item), (AgendaAuditFields.Targets, names.Describe(targets))]),
+                Changes: AuditChanges.Added([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
                 KurinKey: item.KurinKey),
             cancellationToken);
 
@@ -132,7 +132,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
 
     private async Task PublishAssignedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
 
         await _events.PublishAsync(
             new AgendaItemAssigned(

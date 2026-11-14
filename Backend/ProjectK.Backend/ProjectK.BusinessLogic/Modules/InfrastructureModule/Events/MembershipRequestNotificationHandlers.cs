@@ -15,7 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 /// Who hears about a request between kurins. It goes to the Звʼязковий of a kurin and nobody else in
 /// its провід: only that office answers or sends requests, and a kurin always has one.
 /// </summary>
-internal static class MembershipRequestNotices
+internal static class MembershipRequestNoticeRules
 {
     public const string Route = "/kurin/registry/transfers";
 
@@ -54,7 +54,7 @@ public sealed class MembershipRequestedEventHandler : INotificationHandler<Domai
     public async Task Handle(DomainEventNotification<MembershipRequested> notification, CancellationToken cancellationToken)
     {
         var raised = notification.Event;
-        var asking = await MembershipRequestNotices.KurinAsync(_unitOfWork, raised.ToKurinKey, cancellationToken);
+        var asking = await MembershipRequestNoticeRules.KurinAsync(_unitOfWork, raised.ToKurinKey, cancellationToken);
         if (raised.FromKurinKey is not { } fromKurinKey)
         {
             if (raised.MemberUserKey is { } person)
@@ -68,7 +68,7 @@ public sealed class MembershipRequestedEventHandler : INotificationHandler<Domai
                     Body = $"{asking} запрошує тебе до себе.",
                     EntityType = "MembershipRequest",
                     EntityKey = raised.MembershipRequestKey,
-                    Route = MembershipRequestNotices.PersonRoute,
+                    Route = MembershipRequestNoticeRules.PersonRoute,
                     ActorUserKey = raised.ActorUserKey,
                     DeduplicationKey = $"membership-request:{raised.MembershipRequestKey}"
                 }, cancellationToken);
@@ -82,7 +82,7 @@ public sealed class MembershipRequestedEventHandler : INotificationHandler<Domai
             : $"{asking} просить прийняти ще й до себе: {raised.MemberName}.";
 
         await _notifications.NotifyManyAsync(
-            (await MembershipRequestNotices.ZvyazkoviAsync(_unitOfWork, fromKurinKey, cancellationToken))
+            (await MembershipRequestNoticeRules.ZvyazkoviAsync(_unitOfWork, fromKurinKey, cancellationToken))
             .Select(userKey => new NotificationRequest
             {
                 RecipientUserKey = userKey,
@@ -92,7 +92,7 @@ public sealed class MembershipRequestedEventHandler : INotificationHandler<Domai
                 Body = body,
                 EntityType = "MembershipRequest",
                 EntityKey = raised.MembershipRequestKey,
-                Route = MembershipRequestNotices.Route,
+                Route = MembershipRequestNoticeRules.Route,
                 ActorUserKey = raised.ActorUserKey,
                 DeduplicationKey = $"membership-request:{raised.MembershipRequestKey}"
             }),
@@ -120,11 +120,11 @@ public sealed class MembershipRequestDecidedEventHandler : INotificationHandler<
         var raised = notification.Event;
         var answeredByPerson = raised.FromKurinKey is null;
         var from = raised.FromKurinKey is { } fromKurinKey
-            ? await MembershipRequestNotices.KurinAsync(_unitOfWork, fromKurinKey, cancellationToken)
+            ? await MembershipRequestNoticeRules.KurinAsync(_unitOfWork, fromKurinKey, cancellationToken)
             : raised.MemberName;
-        var to = await MembershipRequestNotices.KurinAsync(_unitOfWork, raised.ToKurinKey, cancellationToken);
+        var to = await MembershipRequestNoticeRules.KurinAsync(_unitOfWork, raised.ToKurinKey, cancellationToken);
 
-        var requests = (await MembershipRequestNotices.ZvyazkoviAsync(_unitOfWork, raised.ToKurinKey, cancellationToken))
+        var requests = (await MembershipRequestNoticeRules.ZvyazkoviAsync(_unitOfWork, raised.ToKurinKey, cancellationToken))
             .Select(userKey => new NotificationRequest
             {
                 RecipientUserKey = userKey,
@@ -140,7 +140,7 @@ public sealed class MembershipRequestDecidedEventHandler : INotificationHandler<
                         : $"{from} відхилив запит: {raised.MemberName} лишається там.",
                 EntityType = "MembershipRequest",
                 EntityKey = raised.MembershipRequestKey,
-                Route = MembershipRequestNotices.Route,
+                Route = MembershipRequestNoticeRules.Route,
                 ActorUserKey = raised.ActorUserKey,
                 DeduplicationKey = $"membership-request-decided:{raised.MembershipRequestKey}"
             })

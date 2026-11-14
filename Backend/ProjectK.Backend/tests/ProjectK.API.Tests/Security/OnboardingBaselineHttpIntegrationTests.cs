@@ -32,6 +32,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -249,6 +250,14 @@ public class OnboardingBaselineHttpIntegrationTests
 
             mockMemberRepo.Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((Member?)null);
             mockMemberRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Member>().AsEnumerable());
+            // The person activation opens is read back by account, as the database would answer.
+            Member? opened = null;
+            mockMemberRepo.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
+                .Callback<Member, CancellationToken>((member, _) => opened = member);
+            mockMemberRepo.Setup(r => r.GetSummaryByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Guid userKey, CancellationToken _) => opened is { } m && m.UserKey == userKey
+                    ? new MemberSummary(m.MemberKey, m.UserKey, Guid.Empty, null, m.FirstName, m.LastName, m.Email, null)
+                    : null);
 
             mockInvitationRepo.Setup(r => r.GetByTokenAsync("valid-token-123", It.IsAny<CancellationToken>())).ReturnsAsync(dummyInvitation);
             mockInvitationRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Invitation> { dummyInvitation }.AsEnumerable());
@@ -288,7 +297,7 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(new Mock<INotificationService>().Object);
             mockUserManager.Setup(m => m.GetUsersInRoleAsync(It.IsAny<string>())).ReturnsAsync(new List<AppUser>());
             // Activation answers with a session now; the factory is the part of sign-in the host does not build.
-            var mockLoginResponses = new Mock<ILoginResponseFactory>();
+            var mockLoginResponses = new Mock<ILoginResponseService>();
             mockLoginResponses
                 .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with { UserKey = user.Id, Email = user.Email ?? string.Empty });

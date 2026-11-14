@@ -23,9 +23,9 @@ public sealed class GetThirdProbersQueryHandler
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly IMemberProbeLine _line;
-    private readonly IProbeProjectAccess _access;
+    private readonly IProbesAndBadgesAccess _access;
 
-    public GetThirdProbersQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IMemberProbeLine line, IProbeProjectAccess access)
+    public GetThirdProbersQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IMemberProbeLine line, IProbesAndBadgesAccess access)
     {
         _unitOfWork = unitOfWork;
         _members = members;

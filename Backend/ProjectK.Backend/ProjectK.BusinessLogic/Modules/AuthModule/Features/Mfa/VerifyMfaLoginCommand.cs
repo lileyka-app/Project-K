@@ -24,20 +24,20 @@ public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginComman
     private const string InvalidCredentialsMessage = "Invalid verification code or recovery code.";
 
     private readonly UserManager<AppUser> _userManager;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly ILogger<VerifyMfaLoginCommandHandler> _logger;
     private readonly IActivityLogger _activityLogger;
     private readonly IJwtService _jwtService;
 
     public VerifyMfaLoginCommandHandler(
         UserManager<AppUser> userManager,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         ILogger<VerifyMfaLoginCommandHandler> logger,
         IActivityLogger activityLogger,
         IJwtService jwtService)
     {
         _userManager = userManager;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _logger = logger;
         _activityLogger = activityLogger;
         _jwtService = jwtService;
@@ -84,7 +84,7 @@ public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginComman
             _logger.LogInformation("Audit: User {UserId} successfully logged in using a recovery code.", user.Id);
         }
 
-        var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+        var response = await _loginResponseService.CreateAsync(user, cancellationToken);
 
         // The code was right once on this device; the browser keeps that, so the next sign-ins
         // here skip the second factor until the trust runs out or the account's stamp changes.

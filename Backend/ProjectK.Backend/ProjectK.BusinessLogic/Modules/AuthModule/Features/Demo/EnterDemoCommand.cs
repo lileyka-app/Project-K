@@ -36,7 +36,7 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly IMembershipDirectory _memberships;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly IActivityLogger _activityLogger;
 
     public EnterDemoCommandHandler(
@@ -45,7 +45,7 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         IMembershipDirectory memberships,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         IActivityLogger activityLogger)
     {
         _environment = environment;
@@ -53,7 +53,7 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
         _unitOfWork = unitOfWork;
         _members = members;
         _memberships = memberships;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _activityLogger = activityLogger;
     }
 
@@ -80,7 +80,7 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
             _ => throw new ArgumentOutOfRangeException(nameof(request))
         };
 
-        var locator = new DemoSeatLocator(_userManager, _unitOfWork, _members, _memberships);
+        var locator = new DemoSeatReader(_userManager, _unitOfWork, _members, _memberships);
         var account = await locator.FindAsync(role, kurin.KurinKey, excludeAccountKey: null, cancellationToken);
         if (account is null)
         {
@@ -90,7 +90,7 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
         account.ActiveKurinKey = kurin.KurinKey;
         await _userManager.UpdateAsync(account);
 
-        var login = await _loginResponseFactory.CreateAsync(account, cancellationToken);
+        var login = await _loginResponseService.CreateAsync(account, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Demo.Enter",

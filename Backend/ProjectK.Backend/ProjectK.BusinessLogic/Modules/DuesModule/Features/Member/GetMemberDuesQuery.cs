@@ -33,7 +33,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
     public GetMemberDuesQueryHandler(
         IDuesUnitOfWork dues,
@@ -44,7 +44,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         IResourceAccessService resourceAccess,
         ICurrentUserContext currentUser,
         TimeProvider time,
-        IKraiProfileProvider profiles)
+        IKraiProfileDirectory profiles)
     {
         _dues = dues;
         _ledgers = ledgers;
@@ -121,7 +121,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
                 {
                     GroupKey = a.GroupKey,
                     GroupName = a.GroupKey is { } ak ? groupNames.GetValueOrDefault(ak, "—") : DuesNames.KurinBox,
-                    Standing = DuesAccountStandings.Of(hasLeft: standing is null, standsInThisGroup: a.GroupKey == currentGroup),
+                    Standing = DuesAccountStandingRules.Of(hasLeft: standing is null, standsInThisGroup: a.GroupKey == currentGroup),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
                         Quarter = q.Quarter.ToDto(),

@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
@@ -9,6 +10,7 @@ using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.DuesModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
@@ -19,7 +21,7 @@ using ProjectK.Infrastructure.Repositories.ScoreModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork
+public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork, IAuditUnitOfWork
 {
     private readonly AppDbContext _context;
 
@@ -77,6 +79,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IPrivateScoreCriterionRepository _privateScoreCriteria;
     private IPrivateScoreEntryRepository _privateScoreEntries;
 
+    private IResourceScopeRepository? _resourceScopes;
+    private IKurinReportRepository? _kurinReports;
+    private IKurinAuditRepository? _kurinAudit;
+    private IKurinJournalRepository? _kurinJournal;
     private IKraiRepository _krais;
 
     public IKraiRepository Krais => _krais ??= new KraiRepository(_context);
@@ -130,6 +136,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IScoreTrailEventRepository ScoreTrailEvents => _scoreTrailEvents ??= new ScoreTrailEventRepository(_context);
     public IPrivateScoreCriterionRepository PrivateScoreCriteria => _privateScoreCriteria ??= new PrivateScoreCriterionRepository(_context);
     public IPrivateScoreEntryRepository PrivateScoreEntries => _privateScoreEntries ??= new PrivateScoreEntryRepository(_context);
+    public IResourceScopeRepository ResourceScopes => _resourceScopes ??= new ResourceScopeRepository(_context);
+    public IKurinReportRepository KurinReports => _kurinReports ??= new KurinReportRepository(_context);
+    public IKurinAuditRepository KurinAudit => _kurinAudit ??= new KurinAuditRepository(_context);
+    public IKurinJournalRepository KurinJournal => _kurinJournal ??= new KurinJournalRepository(_context);
 
     public UnitOfWork(AppDbContext context)
     {

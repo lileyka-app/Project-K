@@ -12,12 +12,12 @@ public sealed record DeleteScoreStageCommand(Guid KurinKey, Guid ScoreStageKey) 
 
 public sealed class DeleteScoreStageCommandHandler : IRequestHandler<DeleteScoreStageCommand, ServiceResult<Unit>>
 {
-    private readonly ScoreSettingsAccess _access;
+    private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public DeleteScoreStageCommandHandler(ScoreSettingsAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public DeleteScoreStageCommandHandler(ScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
@@ -27,7 +27,7 @@ public sealed class DeleteScoreStageCommandHandler : IRequestHandler<DeleteScore
 
     public async Task<ServiceResult<Unit>> Handle(DeleteScoreStageCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseSettingsAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }

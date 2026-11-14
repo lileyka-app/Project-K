@@ -55,13 +55,13 @@ public class DuesEntryHandlerTests
         _user.SetupGet(u => u.KurinKey).Returns(_kurin.KurinKey);
     }
 
-    private GroupDuesAccess Access()
+    private DuesAccess Access()
     {
         var groups = new Mock<IGroupRepository>();
         groups.Setup(g => g.GetByKeyAsync(_group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_group);
         var uow = new Mock<IUnitOfWork>();
         uow.SetupGet(u => u.Groups).Returns(groups.Object);
-        return new GroupDuesAccess(uow.Object, _user.Object, Mock.Of<IDuesKurinShape>());
+        return new DuesAccess(uow.Object, _dues.Object, _user.Object, Mock.Of<IDuesKurinShape>());
     }
 
     private DuesEntryWriter Writer()
@@ -71,7 +71,7 @@ public class DuesEntryHandlerTests
             .ReturnsAsync([_youth, _moved]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(_kurin.KurinKey);
-        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Contracts.KraiModule.IKraiProfileProvider>(), Mock.Of<IDuesKurinShape>());
+        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Contracts.KraiModule.IKraiProfileDirectory>(), Mock.Of<IDuesKurinShape>());
     }
 
     private static UpsertDuesEntryRequest Contribution(Guid membershipKey, decimal amount = 300) => new()

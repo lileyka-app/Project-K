@@ -12,9 +12,9 @@ public class KurinLocaleTests
 {
     private static readonly Guid Kurin = Guid.NewGuid();
 
-    private static Mock<IKraiProfileProvider> Profile(string timeZone)
+    private static Mock<IKraiProfileDirectory> Profile(string timeZone)
     {
-        var profiles = new Mock<IKraiProfileProvider>();
+        var profiles = new Mock<IKraiProfileDirectory>();
         profiles.Setup(p => p.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(
             "cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", timeZone, "cs-CZ"), KraiCardFieldsSettings.Default, KraiDuesSettings.Default));
         return profiles;
@@ -31,7 +31,7 @@ public class KurinLocaleTests
     [Fact]
     public async Task AnUnknownKurin_UsesTheInstanceZone_AndHryvnias()
     {
-        var profiles = new Mock<IKraiProfileProvider>().Object;
+        var profiles = new Mock<IKraiProfileDirectory>().Object;
 
         (await profiles.ForKurinAsync(Kurin, default)).Should().Be(AgendaRecurrence.DefaultZone);
         (await profiles.DuesKraiForKurinAsync(Kurin, default)).Should().Be(DuesKrai.Default);

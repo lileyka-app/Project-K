@@ -51,13 +51,13 @@ internal sealed class PolicyAccess
 
     public IResourceAccessService ServiceFor(ICurrentUserContext user)
     {
-        var scopes = new Mock<IResourceScopeReader>();
+        var scopes = new Mock<IResourceScopeRepository>();
         scopes.Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), MemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResourceScope(KurinKey, GroupKey, MemberUserKey));
         scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => LedGroups.ToArray());
 
-        return new ResourceAccessService(scopes.Object, user, new PassThroughBackendCache(), new CurrentPermissions(user, Policies));
+        return new ResourceAccessService(UnitOfWorks.WithScopes(scopes.Object), user, new PassThroughBackendCache(), new CurrentPermissions(user, Policies));
     }
 
     public ICurrentPermissions PermissionsFor(ICurrentUserContext user) => new CurrentPermissions(user, Policies);
@@ -81,7 +81,7 @@ internal sealed class PolicyAccess
 }
 
 /// <summary>A policy provider holding whatever policy the test last set.</summary>
-internal sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyProvider
+internal sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyReader
 {
     public KurinAccessPolicy Policy { get; set; } = KurinAccessPolicy.Default;
 

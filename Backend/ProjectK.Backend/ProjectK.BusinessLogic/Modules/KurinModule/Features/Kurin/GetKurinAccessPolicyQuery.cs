@@ -13,9 +13,9 @@ public sealed record GetKurinAccessPolicyQuery(Guid KurinKey) : IRequest<Service
 public sealed class GetKurinAccessPolicyQueryHandler : IRequestHandler<GetKurinAccessPolicyQuery, ServiceResult<KurinAccessPolicyDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IKurinAccessPolicyProvider _policies;
+    private readonly IKurinAccessPolicyReader _policies;
 
-    public GetKurinAccessPolicyQueryHandler(IUnitOfWork unitOfWork, IKurinAccessPolicyProvider policies)
+    public GetKurinAccessPolicyQueryHandler(IUnitOfWork unitOfWork, IKurinAccessPolicyReader policies)
     {
         _unitOfWork = unitOfWork;
         _policies = policies;

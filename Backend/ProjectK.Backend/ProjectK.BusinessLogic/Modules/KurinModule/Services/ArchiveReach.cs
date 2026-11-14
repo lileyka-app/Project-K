@@ -1,6 +1,7 @@
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -27,19 +28,19 @@ public sealed class ArchiveReach
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeReader _scopeReader;
-    private readonly IMemberDirectory _members;
+    private readonly IResourceScopeRepository _scopeReader;
+    private readonly ICurrentMember _currentMember;
 
     public ArchiveReach(
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
-        IResourceScopeReader scopeReader,
-        IMemberDirectory members)
+        IUnitOfWork unitOfWork,
+        ICurrentMember currentMember)
     {
         _currentUser = currentUser;
         _permissions = permissions;
-        _scopeReader = scopeReader;
-        _members = members;
+        _scopeReader = unitOfWork.ResourceScopes;
+        _currentMember = currentMember;
     }
 
     public async Task<ArchiveReachResult?> ResolveAsync(Guid kurinKey, ResourceAction action, CancellationToken cancellationToken)
@@ -55,7 +56,7 @@ public sealed class ArchiveReach
             return null;
         }
 
-        var self = (await _members.FindByAccountAsync(userKey, cancellationToken))?.MemberKey;
+        var self = (await _currentMember.FindAsync(cancellationToken))?.MemberKey;
         if (scope == AccessScope.KurinWide)
         {
             return new ArchiveReachResult(true, new HashSet<Guid>(), self);

@@ -13,9 +13,9 @@ public sealed record GetKurinCardFieldsQuery(Guid KurinKey) : IRequest<ServiceRe
 public sealed class GetKurinCardFieldsQueryHandler : IRequestHandler<GetKurinCardFieldsQuery, ServiceResult<IReadOnlyList<KurinCardFieldDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public GetKurinCardFieldsQueryHandler(IUnitOfWork unitOfWork, IKraiProfileProvider profiles)
+    public GetKurinCardFieldsQueryHandler(IUnitOfWork unitOfWork, IKraiProfileDirectory profiles)
     {
         _unitOfWork = unitOfWork;
         _profiles = profiles;

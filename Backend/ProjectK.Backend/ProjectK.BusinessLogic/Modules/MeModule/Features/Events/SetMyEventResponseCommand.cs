@@ -31,9 +31,9 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
     private readonly MeAgendaScopes _scopes;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileProvider profiles)
+    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
@@ -50,13 +50,13 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
         }
 
         var context = (await _scopes.BuildAsync(cancellationToken)).FirstOrDefault(c => c.Membership.KurinKey == item.KurinKey);
-        if (context is null || !AgendaPermissions.IsVisibleTo(item, context.Viewer))
+        if (context is null || !AgendaAccess.IsVisibleTo(item, context.Viewer))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, MeErrors.AgendaNotVisible, "You cannot respond to this event.");
         }
 
         var zone = await _profiles.ForKurinAsync(item.KurinKey, cancellationToken);
-        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
+        if (!AgendaOccurrenceRules.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
         {
             return ServiceResult<Unit>.Failure(ResultType.BadRequest, MeErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }

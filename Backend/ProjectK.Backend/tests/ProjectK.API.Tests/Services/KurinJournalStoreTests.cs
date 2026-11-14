@@ -73,7 +73,7 @@ public class KurinJournalStoreTests : IDisposable
     private async Task<IReadOnlyList<KurinAuditEvent>> ReadAsync(KurinJournalFilter filter, int skip = 0, int take = 50)
     {
         await using var context = new AppDbContext(_options);
-        return await new KurinJournalReader(context).ReadAsync(filter, skip, take);
+        return await new KurinJournalRepository(context).ReadAsync(filter, skip, take);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class KurinJournalStoreTests : IDisposable
     {
         await using (var context = new AppDbContext(_options))
         {
-            new KurinAuditWriter(context).Add(Entry(DateTime.UtcNow));
+            new KurinAuditRepository(context).Add(Entry(DateTime.UtcNow));
             context.WaitlistEntries.Add(Waitlisted(Guid.NewGuid()));
 
             await new InfraUnitOfWork(context).SaveChangesAsync();
@@ -107,7 +107,7 @@ public class KurinJournalStoreTests : IDisposable
 
         await using (var context = new AppDbContext(_options))
         {
-            new KurinAuditWriter(context).Add(Entry(DateTime.UtcNow));
+            new KurinAuditRepository(context).Add(Entry(DateTime.UtcNow));
             context.WaitlistEntries.Add(Waitlisted(takenKey));
 
             await Assert.ThrowsAsync<DbUpdateException>(() => new InfraUnitOfWork(context).SaveChangesAsync());
@@ -246,7 +246,7 @@ public class KurinJournalStoreTests : IDisposable
         await SeedAsync(first, second, sameRecord, Entry(now));
 
         await using var context = new AppDbContext(_options);
-        var reader = new KurinJournalReader(context);
+        var reader = new KurinJournalRepository(context);
         var read = await reader.GetForSubjectsAsync([first.SubjectKey, second.SubjectKey]);
 
         Assert.Equal(

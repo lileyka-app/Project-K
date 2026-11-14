@@ -28,14 +28,14 @@ public sealed class SetKurinAccessPolicyCommandHandler : IRequestHandler<SetKuri
     public const string Label = "Права й видимість";
 
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IKurinAccessPolicyProvider _policies;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IKurinAccessPolicyReader _policies;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly IKurinAudit _audit;
 
     public SetKurinAccessPolicyCommandHandler(
         IUnitOfWork unitOfWork,
-        IKurinAccessPolicyProvider policies,
-        IAccessChangeSignal accessChanges,
+        IKurinAccessPolicyReader policies,
+        IAccessChangeStore accessChanges,
         IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;

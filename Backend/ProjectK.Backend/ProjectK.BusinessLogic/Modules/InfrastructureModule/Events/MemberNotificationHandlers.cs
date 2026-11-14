@@ -24,12 +24,12 @@ public sealed class MemberProfileWentStaleEventHandler
     : INotificationHandler<DomainEventNotification<MemberProfileWentStale>>
 {
     private readonly INotificationService _notifications;
-    private readonly IReviewNotificationRecipientResolver _recipients;
+    private readonly IReviewNotificationRecipientReader _recipients;
     private readonly IUnitOfWork _unitOfWork;
 
     public MemberProfileWentStaleEventHandler(
         INotificationService notifications,
-        IReviewNotificationRecipientResolver recipients,
+        IReviewNotificationRecipientReader recipients,
         IUnitOfWork unitOfWork)
     {
         _notifications = notifications;
@@ -118,11 +118,11 @@ public sealed class MemberAwardSubmittedEventHandler
     : INotificationHandler<DomainEventNotification<MemberAwardSubmitted>>
 {
     private readonly INotificationService _notifications;
-    private readonly IReviewNotificationRecipientResolver _recipients;
+    private readonly IReviewNotificationRecipientReader _recipients;
 
     public MemberAwardSubmittedEventHandler(
         INotificationService notifications,
-        IReviewNotificationRecipientResolver recipients)
+        IReviewNotificationRecipientReader recipients)
     {
         _notifications = notifications;
         _recipients = recipients;
@@ -240,11 +240,11 @@ public sealed class BadgeProgressSubmittedEventHandler
     : INotificationHandler<DomainEventNotification<BadgeProgressSubmitted>>
 {
     private readonly INotificationService _notifications;
-    private readonly IReviewNotificationRecipientResolver _recipients;
+    private readonly IReviewNotificationRecipientReader _recipients;
 
     public BadgeProgressSubmittedEventHandler(
         INotificationService notifications,
-        IReviewNotificationRecipientResolver recipients)
+        IReviewNotificationRecipientReader recipients)
     {
         _notifications = notifications;
         _recipients = recipients;

@@ -75,8 +75,8 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
         public static async Task<CatalogSecurityTestHost> StartAsync(string? roleClaim)
         {
-            var badgesCatalogService = new Mock<IBadgesCatalogService>();
-            var probesCatalogService = new Mock<IProbesCatalogService>();
+            var badgesCatalogReader = new Mock<IBadgesCatalogReader>();
+            var probesCatalogReader = new Mock<IProbesCatalogReader>();
 
             var testBadge = new Badge(
                 Id: "badge-1",
@@ -94,7 +94,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                 Author: string.Empty,
                 Ulady: ["УПЮ"]);
 
-            badgesCatalogService.Setup(x => x.GetBadgesMetadata())
+            badgesCatalogReader.Setup(x => x.GetBadgesMetadata())
                 .Returns(new BadgesMetadata(
                     ParserVersion: "1.0",
                     ToolAuthor: "tests",
@@ -105,13 +105,13 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                     FixerMode: "none",
                     TotalBadges: 1));
 
-            badgesCatalogService.Setup(x => x.GetBadges(It.IsAny<int>()))
+            badgesCatalogReader.Setup(x => x.GetBadges(It.IsAny<int>()))
                 .Returns([testBadge]);
 
-            badgesCatalogService.Setup(x => x.GetBadgeById(It.IsAny<string>()))
+            badgesCatalogReader.Setup(x => x.GetBadgeById(It.IsAny<string>()))
                 .Returns(testBadge);
 
-            probesCatalogService.Setup(x => x.GetProbes())
+            probesCatalogReader.Setup(x => x.GetProbes())
                 .Returns([
                     new ProbeSummaryDto(
                         Id: "probe-1",
@@ -124,7 +124,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                         StatusCode: "")
                 ]);
 
-            probesCatalogService.Setup(x => x.GetGroupedProbeById(It.IsAny<string>()))
+            probesCatalogReader.Setup(x => x.GetGroupedProbeById(It.IsAny<string>()))
                 .Returns(new GroupedProbeDto(
                     Id: "probe-1",
                     Title: "Probe 1",
@@ -150,8 +150,8 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            builder.Services.AddSingleton(badgesCatalogService.Object);
-            builder.Services.AddSingleton(probesCatalogService.Object);
+            builder.Services.AddSingleton(badgesCatalogReader.Object);
+            builder.Services.AddSingleton(probesCatalogReader.Object);
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetBadgesQuery).Assembly));
 
             builder.Services.AddControllers()

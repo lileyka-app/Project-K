@@ -94,7 +94,7 @@ public sealed class OrphanPhotoCleanupBackgroundService : BackgroundService
             _logger.LogInformation("Starting orphan photo check...");
 
             using var scope = _scopeFactory.CreateScope();
-            var referenceProvider = scope.ServiceProvider.GetRequiredService<IPhotoReferenceProvider>();
+            var referenceProvider = scope.ServiceProvider.GetRequiredService<IPhotoReferenceReader>();
 
             var referencedBlobNames = await GetReferencedBlobNamesAsync(referenceProvider, ct);
             var container = await GetBlobContainerAsync(ct);
@@ -116,7 +116,7 @@ public sealed class OrphanPhotoCleanupBackgroundService : BackgroundService
         }
     }
 
-    private static async Task<HashSet<string>> GetReferencedBlobNamesAsync(IPhotoReferenceProvider referenceProvider, CancellationToken ct)
+    private static async Task<HashSet<string>> GetReferencedBlobNamesAsync(IPhotoReferenceReader referenceProvider, CancellationToken ct)
     {
         var referencedBlobNames = await referenceProvider.GetAllReferencedBlobNamesAsync(ct)
             .ConfigureAwait(false);

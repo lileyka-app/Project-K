@@ -39,8 +39,8 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     private readonly IDomainEventPublisher _events;
     private readonly IKurinCatalog _kurinCatalog;
     private readonly IKurinAudit _audit;
-    private readonly IKurinJournalReader _journal;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IKurinJournalRepository _journal;
+    private readonly IBadgesCatalogReader _badges;
 
     public SubmitBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
@@ -49,8 +49,8 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         IDomainEventPublisher events,
         IKurinCatalog kurinCatalog,
         IKurinAudit audit,
-        IKurinJournalReader journal,
-        IBadgesCatalogService badges)
+        IAuditUnitOfWork journal,
+        IBadgesCatalogReader badges)
     {
         _unitOfWork = unitOfWork;
         _members = members;
@@ -58,7 +58,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         _events = events;
         _kurinCatalog = kurinCatalog;
         _audit = audit;
-        _journal = journal;
+        _journal = journal.KurinJournal;
         _badges = badges;
     }
 
@@ -128,7 +128,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
                 AuditArea.Badge,
                 previousStatus is null ? AuditActions.Badge.Submitted : AuditActions.Badge.Resubmitted,
                 progress.BadgeProgressKey,
-                ProgressAuditLabels.Badge(_badges, progress.BadgeId),
+                ProgressAuditNames.Badge(_badges, progress.BadgeId),
                 request.MemberKey,
                 AuditChanges.Of(("status", previousStatus, progress.Status)),
                 request.Note),

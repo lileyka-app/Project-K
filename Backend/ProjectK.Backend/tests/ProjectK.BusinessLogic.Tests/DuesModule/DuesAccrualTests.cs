@@ -76,7 +76,7 @@ public class DuesAccrualTests
         directory.Setup(d => d.GetForMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) =>
                 keys.ToDictionary(key => key, key => (IReadOnlyCollection<MembershipRecord>)_history));
-        var profiles = new Mock<IKraiProfileProvider>();
+        var profiles = new Mock<IKraiProfileDirectory>();
         if (_zone is not null)
         {
             profiles.Setup(p => p.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(

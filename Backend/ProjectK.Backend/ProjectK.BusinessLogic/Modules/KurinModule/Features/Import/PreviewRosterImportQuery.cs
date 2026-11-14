@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
@@ -70,7 +71,7 @@ public sealed class PreviewRosterImportQueryHandler
         var columns = header.Cells
             .Select((text, index) =>
             {
-                var (field, level) = RosterHeaders.Guess(text);
+                var (field, level) = RosterHeaderRules.Guess(text);
                 return new RosterColumnPreview(
                     index,
                     text,

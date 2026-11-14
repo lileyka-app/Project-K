@@ -14,7 +14,6 @@ using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.AuditModule;
@@ -62,22 +61,22 @@ public static class DependencyInjection
         AgendaRecurrence.DefaultZone = AgendaRecurrence.ResolveZone(configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");
 
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
-        services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+        services.AddScoped<ILoginResponseService, LoginResponseService>();
         services.AddSingleton<ILoginThrottle, LoginThrottle>();
         services.AddScoped<IReauthentication, Reauthentication>();
         services.AddScoped<ISavedSessionList, SavedSessionList>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
-        services.AddScoped<IKraiProfileProvider, KraiProfileProvider>();
-        services.AddScoped<IKurinAccessPolicyProvider, KurinAccessPolicyProvider>();
+        services.AddScoped<IKraiProfileDirectory, KraiProfileDirectory>();
+        services.AddScoped<IKurinAccessPolicyReader, KurinAccessPolicyReader>();
         services.AddScoped<IPermissionResolver, PermissionResolver>();
         services.AddScoped<IAccessSnapshotFactory, AccessSnapshotFactory>();
-        services.AddSingleton<IAccessChangeSignal, AccessChangeSignal>();
+        services.AddSingleton<IAccessChangeStore, AccessChangeStore>();
         services.AddScoped<ICurrentPermissions, CurrentPermissions>();
         services.AddScoped<IMemberFieldAccess, MemberFieldAccess>();
         services.AddScoped<IKurinTagVisibility, KurinTagVisibility>();
-        services.AddScoped<KraiProfileEditor>();
-        services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
+        services.AddScoped<KraiProfileWriter>();
+        services.AddScoped<IMfaEnforcementReader, MfaEnforcementReader>();
         services.AddScoped<ResourceAccessService>();
         services.AddScoped<IResourceAccessService>(sp =>
             new ResourceAccessServiceInstrumentationDecorator(
@@ -89,7 +88,6 @@ public static class DependencyInjection
         // Domain events. The in-process delivery is the only thing a broker would replace.
         services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
 
-        services.AddScoped<AuditActorResolver>();
         services.AddScoped<IKurinAudit, KurinAudit>();
 
         services.AddMemberModule();
@@ -97,22 +95,20 @@ public static class DependencyInjection
         services.AddScoreModule();
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
-        services.AddScoped<MePerson>();
-        services.AddScoped<ProjectK.BusinessLogic.Modules.MeModule.Features.Life.LifeStoryOwner>();
         services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
         services.AddScoped<ArchiveReach>();
-        services.AddSingleton<ArchiveDangerZoneRegistry>();
-        services.AddScoped<ArchiveDangerZone>();
-        services.AddScoped<ArchiveDeletionGate>();
+        services.AddSingleton<ArchiveDangerZoneStore>();
+        services.AddScoped<ArchiveDangerZoneService>();
+        services.AddScoped<ArchiveDeletionService>();
         services.AddScoped<KurinReportDataService>();
 
         services.AddScoped<INotificationService, NotificationService>();
-        services.AddScoped<IReviewNotificationRecipientResolver, ReviewNotificationRecipientResolver>();
+        services.AddScoped<IReviewNotificationRecipientReader, ReviewNotificationRecipientReader>();
 
-        services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
-        services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
+        services.AddScoped<IBadgesCatalogReader, BadgesCatalogReader>();
+        services.AddScoped<IProbesCatalogReader, ProbesCatalogReader>();
         services.AddScoped<IProgressCatalogReader, ProgressCatalogReader>();
         services.AddScoped<IKurinCatalog, KurinCatalog>();
 
@@ -121,7 +117,7 @@ public static class DependencyInjection
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
-        services.AddScoped<IProbeProjectAccess, ProbeProjectAccess>();
+        services.AddScoped<IProbesAndBadgesAccess, ProbesAndBadgesAccess>();
         services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
@@ -136,18 +132,15 @@ public static class DependencyInjection
         services.AddScoped<DuesAccountRows>();
         services.AddScoped<DuesLedgerReader>();
         services.AddScoped<IDuesDirectory, DuesDirectory>();
-        services.AddScoped<GroupDuesAccess>();
-        services.AddScoped<KurinDuesAccess>();
+        services.AddScoped<DuesAccess>();
         services.AddScoped<DuesEntryWriter>();
     }
 
     private static void AddScoreModule(this IServiceCollection services)
     {
         services.AddScoped<ScoreAccess>();
-        services.AddScoped<ScoreSettingsAccess>();
-        services.AddScoped<PrivateScoreAccess>();
         services.AddScoped<ScoreBookReader>();
-        services.AddScoped<IScoreFactSource, KurinScoreFacts>();
+        services.AddScoped<IScoreFactReader, ScoreFactReader>();
     }
 
     /// <summary>
@@ -157,6 +150,7 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<MembershipMoves>();
         services.AddScoped<MembershipAskRouting>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();

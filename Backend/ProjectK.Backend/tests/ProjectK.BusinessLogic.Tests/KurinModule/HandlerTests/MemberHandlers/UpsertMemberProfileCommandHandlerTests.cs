@@ -37,7 +37,7 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
-    private readonly Mock<IKraiProfileProvider> _profilesMock = new();
+    private readonly Mock<IKraiProfileDirectory> _profilesMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
     private readonly JournalRecorder _journal;
 

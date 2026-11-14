@@ -18,12 +18,12 @@ public sealed class GetMyTransferCodeQueryHandler : IRequestHandler<GetMyTransfe
 {
     public const string TransferPath = "/kurin/transfers?code=";
 
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly MemberCards _cards;
     private readonly IMemberDirectory _members;
     private readonly IQrCodeService _qrCodes;
 
-    public GetMyTransferCodeQueryHandler(MePerson me, MemberCards cards, IMemberDirectory members, IQrCodeService qrCodes)
+    public GetMyTransferCodeQueryHandler(ICurrentMember me, MemberCards cards, IMemberDirectory members, IQrCodeService qrCodes)
     {
         _me = me;
         _cards = cards;
@@ -33,7 +33,7 @@ public sealed class GetMyTransferCodeQueryHandler : IRequestHandler<GetMyTransfe
 
     public async Task<ServiceResult<CardCodeDto>> Handle(GetMyTransferCodeQuery request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<CardCodeDto>();

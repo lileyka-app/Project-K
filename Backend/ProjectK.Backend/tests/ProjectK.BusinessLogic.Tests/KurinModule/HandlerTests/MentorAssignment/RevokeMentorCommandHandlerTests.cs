@@ -52,7 +52,7 @@ public class RevokeMentorCommandHandlerTests
         _members.Setup(d => d.FindByAccountAsync(_mentorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(_mentorMemberKey, _mentorUserKey, _kurinKey, null, "Марта", "Впорядниця", "m@x", null));
 
-        _handler = new RevokeMentorCommandHandler(_uow.Object, Mock.Of<IBackendCache>(), Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit);
+        _handler = new RevokeMentorCommandHandler(_uow.Object, Mock.Of<IBackendCache>(), Mock.Of<IAccessChangeStore>(), _members.Object, _journal.Audit);
     }
 
     [Fact]

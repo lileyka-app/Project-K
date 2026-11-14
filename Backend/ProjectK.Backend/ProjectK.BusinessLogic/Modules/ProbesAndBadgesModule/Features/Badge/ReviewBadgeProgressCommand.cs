@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -41,20 +40,20 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IKurinJournalReader _journal;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IKurinJournalRepository _journal;
+    private readonly IBadgesCatalogReader _badges;
 
     public ReviewBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
-        IKurinJournalReader journal,
-        IBadgesCatalogService badges)
+        IAuditUnitOfWork journal,
+        IBadgesCatalogReader badges)
     {
         _unitOfWork = unitOfWork;
         _members = members;
@@ -62,7 +61,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         _events = events;
         _actors = actors;
         _audit = audit;
-        _journal = journal;
+        _journal = journal.KurinJournal;
         _badges = badges;
     }
 
@@ -93,7 +92,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         }
 
         var now = DateTime.UtcNow;
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         var targetStatus = approved ? BadgeProgressStatus.Confirmed : BadgeProgressStatus.Rejected;
 
         progress.Status = targetStatus;
@@ -110,7 +109,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
                     : canRemoveConfirmed ? AuditActions.Badge.ConfirmationRemoved
                     : AuditActions.Badge.Rejected,
                 progress.BadgeProgressKey,
-                ProgressAuditLabels.Badge(_badges, progress.BadgeId),
+                ProgressAuditNames.Badge(_badges, progress.BadgeId),
                 progress.MemberKey,
                 AuditChanges.Of(("status", fromStatus, targetStatus)),
                 request.Note),

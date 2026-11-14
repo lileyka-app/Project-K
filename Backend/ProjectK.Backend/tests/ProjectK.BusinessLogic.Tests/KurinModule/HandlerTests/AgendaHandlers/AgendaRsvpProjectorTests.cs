@@ -21,7 +21,7 @@ public class AgendaRsvpProjectorTests
     {
         var rows = new List<AgendaResponse> { Going(1), Going(2) };
 
-        var result = AgendaRsvpProjector.Project(_item, null, rows, capacity: 5, waitlistEnabled: true, new Dictionary<Guid, string>(), null);
+        var result = AgendaRsvpRules.Project(_item, null, rows, capacity: 5, waitlistEnabled: true, new Dictionary<Guid, string>(), null);
 
         result.GoingConfirmedCount.Should().Be(2);
         result.GoingWaitlistCount.Should().Be(0);
@@ -36,7 +36,7 @@ public class AgendaRsvpProjectorTests
         var third = Going(3);
         var rows = new List<AgendaResponse> { third, first, second }; // unordered on purpose
 
-        var result = AgendaRsvpProjector.Project(_item, null, rows, capacity: 2, waitlistEnabled: true, new Dictionary<Guid, string>(), null);
+        var result = AgendaRsvpRules.Project(_item, null, rows, capacity: 2, waitlistEnabled: true, new Dictionary<Guid, string>(), null);
 
         result.GoingConfirmedCount.Should().Be(2);
         result.GoingWaitlistCount.Should().Be(1);
@@ -49,7 +49,7 @@ public class AgendaRsvpProjectorTests
     {
         var rows = new List<AgendaResponse> { Going(1), Going(2), Going(3) };
 
-        var result = AgendaRsvpProjector.Project(_item, null, rows, capacity: 2, waitlistEnabled: false, new Dictionary<Guid, string>(), null);
+        var result = AgendaRsvpRules.Project(_item, null, rows, capacity: 2, waitlistEnabled: false, new Dictionary<Guid, string>(), null);
 
         // Capacity without a waitlist is advisory: everyone is confirmed and the queue count stays 0.
         result.GoingConfirmedCount.Should().Be(3);
@@ -62,7 +62,7 @@ public class AgendaRsvpProjectorTests
     {
         var rows = new List<AgendaResponse> { Going(1), Going(2), Going(3) };
 
-        var result = AgendaRsvpProjector.Project(_item, null, rows, capacity: null, waitlistEnabled: true, new Dictionary<Guid, string>(), null);
+        var result = AgendaRsvpRules.Project(_item, null, rows, capacity: null, waitlistEnabled: true, new Dictionary<Guid, string>(), null);
 
         result.GoingConfirmedCount.Should().Be(3);
         result.GoingWaitlistCount.Should().Be(0);
@@ -80,7 +80,7 @@ public class AgendaRsvpProjectorTests
             With(AgendaRsvpStatus.Maybe, 4)
         };
 
-        var result = AgendaRsvpProjector.Project(_item, null, rows, capacity: null, waitlistEnabled: false, new Dictionary<Guid, string>(), me);
+        var result = AgendaRsvpRules.Project(_item, null, rows, capacity: null, waitlistEnabled: false, new Dictionary<Guid, string>(), me);
 
         result.NotGoingCount.Should().Be(1);
         result.MaybeCount.Should().Be(2);

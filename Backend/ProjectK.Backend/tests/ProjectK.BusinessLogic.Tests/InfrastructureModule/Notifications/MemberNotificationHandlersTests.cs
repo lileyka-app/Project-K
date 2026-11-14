@@ -22,7 +22,7 @@ namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
 public class MemberNotificationHandlersTests
 {
     private readonly Mock<INotificationService> _notifications = new();
-    private readonly Mock<IReviewNotificationRecipientResolver> _recipients = new();
+    private readonly Mock<IReviewNotificationRecipientReader> _recipients = new();
 
     private static DomainEventNotification<TEvent> Raised<TEvent>(TEvent domainEvent)
         where TEvent : ProjectK.Common.Contracts.Shared.IDomainEvent

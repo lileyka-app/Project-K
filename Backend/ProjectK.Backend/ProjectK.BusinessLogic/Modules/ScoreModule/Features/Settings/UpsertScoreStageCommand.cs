@@ -32,12 +32,12 @@ public sealed class UpsertScoreStageRequestValidator : AbstractValidator<UpsertS
 
 public sealed class UpsertScoreStageCommandHandler : IRequestHandler<UpsertScoreStageCommand, ServiceResult<Guid>>
 {
-    private readonly ScoreSettingsAccess _access;
+    private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public UpsertScoreStageCommandHandler(ScoreSettingsAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
+    public UpsertScoreStageCommandHandler(ScoreAccess access, IScoreUnitOfWork score, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
@@ -47,7 +47,7 @@ public sealed class UpsertScoreStageCommandHandler : IRequestHandler<UpsertScore
 
     public async Task<ServiceResult<Guid>> Handle(UpsertScoreStageCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<Guid>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseSettingsAsync<Guid>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }

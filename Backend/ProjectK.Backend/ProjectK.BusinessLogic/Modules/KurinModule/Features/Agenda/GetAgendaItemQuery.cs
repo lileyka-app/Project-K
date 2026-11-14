@@ -42,16 +42,16 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         // Not found rather than forbidden: an item one may not see is not confirmed to exist.
-        if (!AgendaPermissions.IsVisibleTo(item, viewer))
+        if (!AgendaAccess.IsVisibleTo(item, viewer))
         {
             return AgendaErrors.NotFound<AgendaItemDto>();
         }
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
         var roster = await AgendaRoster.LoadAsync(_uow, lookups.MemberGroups, [item], cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, [item], cancellationToken);
 
         return new ServiceResult<AgendaItemDto>(ResultType.Success,
-            AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster));
+            AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster));
     }
 }

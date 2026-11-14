@@ -38,6 +38,13 @@ public interface IUnitOfWork
     IUserTileLayoutRepository UserTileLayouts { get; }
     IDismissedDutyRepository DismissedDuties { get; }
     IAppUserRepository Users { get; }
+
+    /// <summary>Where a resource stands (kurin, гурток, owner) and which гуртки an account leads: what authorization reads.</summary>
+    IResourceScopeRepository ResourceScopes { get; }
+
+    /// <summary>Everything the kurin's PDF report reads, in the few queries it needs.</summary>
+    IKurinReportRepository KurinReports { get; }
+
     Task<int> SaveChangesAsync(CancellationToken token = default);
     Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default);
 }

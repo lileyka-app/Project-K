@@ -28,7 +28,7 @@ public class MemberProfileVerificationHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
-    private readonly Mock<IResourceScopeReader> _scopeReaderMock;
+    private readonly Mock<IResourceScopeRepository> _scopeReaderMock;
     private readonly MemberProfileVerificationService _service;
     private readonly JournalRecorder _journal;
 
@@ -42,7 +42,7 @@ public class MemberProfileVerificationHandlerTests
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _journal = new JournalRecorder(_currentUserContextMock.Object);
         _eventsMock = new Mock<IDomainEventPublisher>();
-        _scopeReaderMock = new Mock<IResourceScopeReader>();
+        _scopeReaderMock = new Mock<IResourceScopeRepository>();
         _scopeReaderMock
             .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Guid>());
@@ -57,8 +57,7 @@ public class MemberProfileVerificationHandlerTests
             _currentUserContextMock.Object,
             _eventsMock.Object,
             FakeBlobReadLinks.Instance,
-            _scopeReaderMock.Object,
-            _kurinDataMock.Object,
+            UnitOfWorks.WithScopes(_scopeReaderMock.Object, _kurinDataMock),
             FieldAccess.SeesEverything(),
             _journal.Audit);
     }

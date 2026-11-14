@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
@@ -95,16 +96,16 @@ public class GetMyDutiesQueryTests
         var offices = new Mock<IOfficeDirectory>();
         offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
-        var scopes = new MeAgendaScopes(_user.Object, memberships.Object, members.Object, offices.Object, Mock.Of<IResourceScopeReader>(), _unitOfWork.Object);
+        var scopes = new MeAgendaScopes(new CurrentMember(_user.Object, members.Object, memberships.Object), memberships.Object, members.Object, offices.Object, UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), _unitOfWork));
 
         var permissions = new Mock<IPermissionResolver>();
         permissions.Setup(p => p.ResolveAsync(It.IsAny<IEnumerable<string>>(), Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _permissions);
 
-        var books = new ScoreBookReader(_score.Object, _unitOfWork.Object, memberships.Object, members.Object, Mock.Of<IScoreFactSource>(), _time);
+        var books = new ScoreBookReader(_score.Object, _unitOfWork.Object, memberships.Object, members.Object, Mock.Of<IScoreFactReader>(), _time);
 
         return new GetMyDutiesQueryHandler(
             scopes, _unitOfWork.Object, Mock.Of<IDuesUnitOfWork>(), members.Object, _progress.Object,
-            books, _user.Object, _time, Mock.Of<IKraiProfileProvider>(), permissions.Object);
+            books, _user.Object, _time, Mock.Of<IKraiProfileDirectory>(), permissions.Object);
     }
 
     private async Task<MyDutiesDto> ReadAsync() =>

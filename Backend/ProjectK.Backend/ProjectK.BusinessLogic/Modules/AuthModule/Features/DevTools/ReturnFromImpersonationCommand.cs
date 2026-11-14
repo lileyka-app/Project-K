@@ -22,20 +22,20 @@ public class ReturnFromImpersonationCommandHandler : IRequestHandler<ReturnFromI
     private readonly UserManager<AppUser> _userManager;
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenStore _refreshTokens;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly IActivityLogger _activityLogger;
 
     public ReturnFromImpersonationCommandHandler(
         UserManager<AppUser> userManager,
         IJwtService jwtService,
         IRefreshTokenStore refreshTokens,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         IActivityLogger activityLogger)
     {
         _userManager = userManager;
         _jwtService = jwtService;
         _refreshTokens = refreshTokens;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _activityLogger = activityLogger;
     }
 
@@ -58,7 +58,7 @@ public class ReturnFromImpersonationCommandHandler : IRequestHandler<ReturnFromI
             await _refreshTokens.RevokeAsync(token, cancellationToken);
         }
 
-        var login = await _loginResponseFactory.CreateAsync(admin, cancellationToken);
+        var login = await _loginResponseService.CreateAsync(admin, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Dev.ImpersonateReturn",

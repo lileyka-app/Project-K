@@ -50,7 +50,7 @@ public class LifeEntriesTests
     {
         var stored = new MemberLifeEntry();
 
-        LifeEntries.Apply(stored, new SaveLifeEntryRequest
+        LifeMapping.Apply(stored, new SaveLifeEntryRequest
         {
             Kind = LifeEntryKind.Camp,
             Course = TrainingCourse.Kvz,
@@ -71,7 +71,7 @@ public class LifeEntriesTests
     {
         var stored = new MemberLifeEntry();
 
-        LifeEntries.Apply(stored, Training(TrainingCourse.Kvz, "щось"));
+        LifeMapping.Apply(stored, Training(TrainingCourse.Kvz, "щось"));
 
         stored.Title.Should().BeNull();
     }

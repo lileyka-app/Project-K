@@ -14,15 +14,15 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 public abstract class CampCertificateHandlerBase
 {
     protected static ServiceResult<ThirdProbeDto> StorageFull() =>
-        ProbeProjectGuard.Refuse<ThirdProbeDto>(
+        ProbeProjectWriteRules.Refuse<ThirdProbeDto>(
             ProbesAndBadgesErrors.StorageFull, $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
 
     protected CampCertificateHandlerBase(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
+        IProbesAndBadgesAccess access,
         IPhotoService photos,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         UnitOfWork = unitOfWork;
@@ -34,14 +34,14 @@ public abstract class CampCertificateHandlerBase
     }
 
     protected IUnitOfWork UnitOfWork { get; }
-    protected IProbeProjectAccess Access { get; }
+    protected IProbesAndBadgesAccess Access { get; }
     protected IPhotoService Photos { get; }
     protected IKurinAudit Audit { get; }
-    protected IProbesCatalogService Probes { get; }
+    protected IProbesCatalogReader Probes { get; }
     protected IThirdProbeReader Reader { get; }
 
     protected Task RecordAsync(string action, ThirdProbeFile file, Guid memberKey, string probeId, CancellationToken cancellationToken) =>
         Audit.RecordAsync(
-            new AuditRecord(AuditArea.Probe, action, file.ThirdProbeFileKey, ProgressAuditLabels.Probe(Probes, probeId), memberKey),
+            new AuditRecord(AuditArea.Probe, action, file.ThirdProbeFileKey, ProgressAuditNames.Probe(Probes, probeId), memberKey),
             cancellationToken);
 }

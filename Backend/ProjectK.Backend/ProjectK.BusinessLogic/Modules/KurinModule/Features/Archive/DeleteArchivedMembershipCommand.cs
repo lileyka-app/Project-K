@@ -25,7 +25,7 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly ArchiveDeletionGate _gate;
+    private readonly ArchiveDeletionService _gate;
     private readonly IKurinAudit _audit;
     private readonly IDuesDirectory _dues;
     private readonly IDomainEventPublisher _events;
@@ -33,7 +33,7 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
     public DeleteArchivedMembershipCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        ArchiveDeletionGate gate,
+        ArchiveDeletionService gate,
         IKurinAudit audit,
         IDuesDirectory dues,
         IDomainEventPublisher events)
@@ -84,7 +84,7 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
 
         if (await _gate.SpendAsync(pass, request.KurinKey, cancellationToken) is not { } left)
         {
-            return ArchiveDeletionGate.Closed();
+            return ArchiveDeletionService.Closed();
         }
 
         var person = (await _members.GetByKeysAsync([membership.MemberKey], cancellationToken)).FirstOrDefault()?.FullName ?? string.Empty;

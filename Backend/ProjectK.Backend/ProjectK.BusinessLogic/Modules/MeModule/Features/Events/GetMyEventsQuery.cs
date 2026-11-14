@@ -30,9 +30,9 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public GetMyEventsQueryHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
+    public GetMyEventsQueryHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
@@ -49,7 +49,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
 
         foreach (var context in await _scopes.BuildAsync(cancellationToken))
         {
-            var kurin = MeKurins.Ref(context.Membership, _currentUser.KurinKey);
+            var kurin = MeKurinMapping.Ref(context.Membership, _currentUser.KurinKey);
             var items = await _unitOfWork.AgendaItems.GetForViewerAsync(
                 context.Viewer.ToScope(), now, until, onlyDated: true, kind: AgendaItemKind.Event, cancellationToken);
             var categories = (await _unitOfWork.AgendaCategories.GetForKurinAsync(context.Membership.KurinKey, includeArchived: true, cancellationToken))
@@ -68,7 +68,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
 
                 foreach (var occurrence in AgendaRecurrence.Expand(item, now, until, zone))
                 {
-                    var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrences.KeyOf(item, occurrence.StartUtc)), out var status)
+                    var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc)), out var status)
                         ? status
                         : (AgendaRsvpStatus?)null;
                     rows.Add(ToDto(item, kurin, category, occurrence, response));

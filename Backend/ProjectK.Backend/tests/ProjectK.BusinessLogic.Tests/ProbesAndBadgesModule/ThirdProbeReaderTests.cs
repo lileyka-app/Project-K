@@ -27,9 +27,9 @@ public class ThirdProbeReaderTests
     private readonly Mock<IProbeProjectRepository> _projects = new();
     private readonly Mock<IProbeProgressRepository> _progress = new();
     private readonly Mock<IBadgeProgressRepository> _badges = new();
-    private readonly Mock<IProbeProjectAccess> _access = new();
+    private readonly Mock<IProbesAndBadgesAccess> _access = new();
     private readonly Mock<IMemberProbeLine> _line = new();
-    private readonly Mock<IBadgesCatalogService> _catalog = new();
+    private readonly Mock<IBadgesCatalogReader> _catalog = new();
     private readonly Mock<IBlobReadLinks> _links = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Guid _memberKey = Guid.NewGuid();

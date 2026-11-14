@@ -29,18 +29,18 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly IMembershipDirectory _memberships;
 
     public SetKurinScopeCommandHandler(
         UserManager<AppUser> userManager,
         IUnitOfWork unitOfWork,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         IMembershipDirectory memberships)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _memberships = memberships;
     }
 
@@ -103,7 +103,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
                 "Kurin scope could not be saved.");
         }
 
-        var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+        var response = await _loginResponseService.CreateAsync(user, cancellationToken);
         return new ServiceResult<LoginUserDto>(ResultType.Success, response);
     }
 }

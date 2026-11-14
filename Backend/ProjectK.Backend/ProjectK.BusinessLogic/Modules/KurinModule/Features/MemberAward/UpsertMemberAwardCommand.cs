@@ -45,7 +45,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IHonoursCatalog _honours;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
-    private readonly IResourceScopeReader _scope;
+    private readonly IResourceScopeRepository _scope;
 
     public UpsertMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -54,10 +54,9 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         IUnitOfWork kurinData,
         IResourceAccessService access,
         IKurinAudit audit,
-        IHonoursCatalog honours,
-        IResourceScopeReader scope)
+        IHonoursCatalog honours)
     {
-        _scope = scope;
+        _scope = kurinData.ResourceScopes;
         _kurins = kurinData.Kurins;
         _honours = honours;
         _unitOfWork = unitOfWork;

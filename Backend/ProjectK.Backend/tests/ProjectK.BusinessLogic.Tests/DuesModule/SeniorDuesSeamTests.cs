@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -128,11 +129,11 @@ public class SeniorDuesSeamTests
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()) == Task.FromResult<IReadOnlyList<DuesEntry>>(Array.Empty<DuesEntry>())));
 
         var handler = new GetMyDuesQueryHandler(
-            new MePerson(user.Object, memberships.Object, members.Object),
+            new CurrentMember(user.Object, members.Object, memberships.Object),
             new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()),
             user.Object,
             new FixedTimeProvider(new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero)),
-            Mock.Of<IKraiProfileProvider>());
+            Mock.Of<IKraiProfileDirectory>());
 
         var result = await handler.Handle(new GetMyDuesQuery(), CancellationToken.None);
 

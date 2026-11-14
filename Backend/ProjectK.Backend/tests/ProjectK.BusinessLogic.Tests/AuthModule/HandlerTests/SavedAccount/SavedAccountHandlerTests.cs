@@ -120,13 +120,13 @@ public class SavedAccountHandlerTests
         factory.Verify(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    private SwitchSavedAccountCommandHandler Handler(AppUser target, out Mock<ILoginResponseFactory> factory)
+    private SwitchSavedAccountCommandHandler Handler(AppUser target, out Mock<ILoginResponseService> factory)
     {
         var userManager = new Mock<UserManager<AppUser>>(
             new Mock<IUserStore<AppUser>>().Object, null!, null!, null!, null!, null!, null!, null!, null!);
         userManager.Setup(m => m.FindByIdAsync(target.Id.ToString())).ReturnsAsync(target);
 
-        factory = new Mock<ILoginResponseFactory>();
+        factory = new Mock<ILoginResponseService>();
         factory.Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with
             {

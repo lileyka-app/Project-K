@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
@@ -34,24 +35,24 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         MemberDossierFolders.Awards, MemberDossierFolders.Progress
     ];
 
-    private readonly LifeStoryOwner _owner;
+    private readonly ICurrentMember _owner;
     private readonly ISender _sender;
     private readonly IMemberUnitOfWork _members;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHonoursCatalog _honours;
-    private readonly IProbesCatalogService _probes;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IProbesCatalogReader _probes;
+    private readonly IBadgesCatalogReader _badges;
     private readonly ILifeStoryPdfRenderer _renderer;
     private readonly TimeProvider _time;
 
     public ExportMyLifePdfQueryHandler(
-        LifeStoryOwner owner,
+        ICurrentMember owner,
         ISender sender,
         IMemberUnitOfWork members,
         IUnitOfWork unitOfWork,
         IHonoursCatalog honours,
-        IProbesCatalogService probes,
-        IBadgesCatalogService badges,
+        IProbesCatalogReader probes,
+        IBadgesCatalogReader badges,
         ILifeStoryPdfRenderer renderer,
         TimeProvider time)
     {

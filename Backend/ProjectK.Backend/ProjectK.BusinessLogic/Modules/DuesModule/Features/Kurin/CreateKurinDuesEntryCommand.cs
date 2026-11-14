@@ -23,13 +23,13 @@ public sealed class CreateKurinDuesEntryCommandValidator : AbstractValidator<Cre
 
 public sealed class CreateKurinDuesEntryCommandHandler : IRequestHandler<CreateKurinDuesEntryCommand, ServiceResult<Guid>>
 {
-    private readonly KurinDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly DuesEntryWriter _writer;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public CreateKurinDuesEntryCommandHandler(KurinDuesAccess access, DuesEntryWriter writer, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
+    public CreateKurinDuesEntryCommandHandler(DuesAccess access, DuesEntryWriter writer, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _writer = writer;

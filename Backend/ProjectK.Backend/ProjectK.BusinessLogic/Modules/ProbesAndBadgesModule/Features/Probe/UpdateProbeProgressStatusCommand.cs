@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -37,20 +36,20 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IKurinJournalReader _journal;
-    private readonly IProbesCatalogService _probesCatalogService;
+    private readonly IKurinJournalRepository _journal;
+    private readonly IProbesCatalogReader _probesCatalogReader;
     private readonly IResourceAccessService _access;
     private readonly IMemberProbeLine _line;
 
     public UpdateProbeProgressStatusCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
-        IKurinJournalReader journal,
-        IProbesCatalogService probesCatalogService,
+        IAuditUnitOfWork journal,
+        IProbesCatalogReader probesCatalogReader,
         IResourceAccessService access,
         IMemberProbeLine line)
     {
@@ -59,8 +58,8 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         _members = members;
         _actors = actors;
         _audit = audit;
-        _journal = journal;
-        _probesCatalogService = probesCatalogService;
+        _journal = journal.KurinJournal;
+        _probesCatalogReader = probesCatalogReader;
         _access = access;
     }
 
@@ -105,7 +104,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         }
 
         if (currentStatus == ProbeProgressStatus.NotStarted
-            && ProbeStartRefusal.Of<ProbeProgressDto>(
+            && ProbeStartRules.Of<ProbeProgressDto>(
                 await _line.CanStartAsync(request.MemberKey, progress.ProbeId, cancellationToken)) is { } refusal)
         {
             return refusal;
@@ -129,7 +128,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         }
 
         var now = DateTime.UtcNow;
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
 
         progress.Status = request.Status;
 
@@ -140,7 +139,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
                 AuditArea.Probe,
                 JournalAction(currentStatus, request.Status),
                 progress.ProbeProgressKey,
-                ProgressAuditLabels.Probe(_probesCatalogService, progress.ProbeId),
+                ProgressAuditNames.Probe(_probesCatalogReader, progress.ProbeId),
                 request.MemberKey,
                 AuditChanges.Of(("status", currentStatus, request.Status)),
                 request.Note),
@@ -195,7 +194,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         string probeId,
         CancellationToken cancellationToken)
     {
-        var groupedProbe = _probesCatalogService.GetGroupedProbeById(probeId.Trim());
+        var groupedProbe = _probesCatalogReader.GetGroupedProbeById(probeId.Trim());
         if (groupedProbe is null || groupedProbe.PointsCount <= 0)
         {
             return true;

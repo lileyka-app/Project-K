@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -15,9 +16,10 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.AuthModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.ActivateAccount;
 
@@ -36,7 +38,8 @@ public class ActivateAccountHandlerTests
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IMediator> _mediator = new();
-    private readonly Mock<ILoginResponseFactory> _loginResponses = new();
+    private readonly Mock<ILoginResponseService> _loginResponses = new();
+    private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<UserManager<AppUser>> _userManager;
     private readonly FixedTimeProvider _clock = new(Now);
     private readonly ActivateAccountCommandHandler _handler;
@@ -60,7 +63,12 @@ public class ActivateAccountHandlerTests
             .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with { UserKey = user.Id, Email = user.Email! });
 
-        _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock, _loginResponses.Object);
+        // The member side answers the activation by opening a person; read back, it is this one.
+        _memberDirectory
+            .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid userKey, CancellationToken _) => new MemberSummary(Guid.NewGuid(), userKey, Guid.Empty, null, "Ліна", "Лідер", "leader@example.com", null));
+
+        _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock, _loginResponses.Object, _events.Object);
     }
 
     private Invitation GivenInvitation(Guid userKey, DateTime? expiresAtUtc = null)
@@ -169,6 +177,7 @@ public class ActivateAccountHandlerTests
         _userManager.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), SystemRole.Member), Times.Once);
         _mediator.Verify(x => x.Send(It.IsAny<UpsertLeadershipCommand>(), It.IsAny<CancellationToken>()), Times.Never);
         invitation.UsedAtUtc.Should().NotBeNull();
+        _events.Verify(x => x.PublishAsync(It.Is<AccountActivated>(e => e.Account.UserKey == userKey), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>

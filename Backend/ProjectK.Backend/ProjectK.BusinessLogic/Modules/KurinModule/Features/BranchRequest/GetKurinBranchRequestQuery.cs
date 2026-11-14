@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -34,6 +35,6 @@ public sealed class GetKurinBranchRequestQueryHandler
         var open = await _unitOfWork.KurinBranchRequests.GetPendingForKurinAsync(request.KurinKey, cancellationToken);
         return new ServiceResult<KurinBranchRequestDto?>(
             ResultType.Success,
-            open is null ? null : open.ToDto(kurin, await KurinBranchRequesters.NameOfAsync(_userManager, open)));
+            open is null ? null : open.ToDto(kurin, await KurinBranchRequesterNames.NameOfAsync(_userManager, open)));
     }
 }

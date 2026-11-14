@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -42,18 +42,18 @@ public sealed record SaveThirdProbeFileCommand(Guid MemberKey, string ProbeId, T
 public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThirdProbeFileCommand, ServiceResult<ThirdProbeDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbeProjectAccess _access;
-    private readonly AuditActorResolver _actors;
+    private readonly IProbesAndBadgesAccess _access;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public SaveThirdProbeFileCommandHandler(
         IUnitOfWork unitOfWork,
-        IProbeProjectAccess access,
-        AuditActorResolver actors,
+        IProbesAndBadgesAccess access,
+        ICurrentMember actors,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;
@@ -67,7 +67,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
     public async Task<ServiceResult<ThirdProbeDto>> Handle(SaveThirdProbeFileCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -75,15 +75,15 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         var input = Normalize(request.Input);
         if (Invalid(input) is { } invalid)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(invalid.Code, invalid.Message);
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(invalid.Code, invalid.Message);
         }
 
         if (input.PhysicalBadgeId is { } badgeId && !await HoldsAsync(request.MemberKey, badgeId, cancellationToken))
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.BadgeNotHeld, "The вмілість must be one the person holds, confirmed.");
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.BadgeNotHeld, "The вмілість must be one the person holds, confirmed.");
         }
 
-        var file = await ThirdProbeFiles.GetOrAddAsync(_unitOfWork, request.MemberKey, probeId, cancellationToken);
+        var file = await ThirdProbeFileWriter.GetOrAddAsync(_unitOfWork, request.MemberKey, probeId, cancellationToken);
         if (file.ReflectionOn != input.ReflectionOn || file.ReflectionWith != input.ReflectionWith)
         {
             file.ReflectionConfirmedAtUtc = null;
@@ -91,7 +91,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
             file.ReflectionConfirmedByName = null;
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         file.MentorZvyazkovyi = input.MentorZvyazkovyi;
         file.MentorVporiadnyk = input.MentorVporiadnyk;
         file.MentorReferent = input.MentorReferent;
@@ -112,7 +112,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
                 AuditArea.Probe,
                 AuditActions.Probe.FileEdited,
                 file.ThirdProbeFileKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey),
             cancellationToken);
 
@@ -152,7 +152,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         }
 
         // The résumé carries no pictures: there is nowhere to upload them to.
-        if (ProbeProjectMarkdown.ImageKeys(input.Resume) is not { Count: 0 })
+        if (ProbeProjectMarkdownRules.ImageKeys(input.Resume) is not { Count: 0 })
         {
             return (ProbesAndBadgesErrors.ForeignImage, "The résumé holds text only.");
         }

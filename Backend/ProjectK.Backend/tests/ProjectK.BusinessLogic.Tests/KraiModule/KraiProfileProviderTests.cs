@@ -26,7 +26,7 @@ public class KraiProfileProviderTests
     private readonly Mock<IKraiRepository> _krais = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
-    private readonly KraiProfileProvider _provider;
+    private readonly KraiProfileDirectory _provider;
 
     public KraiProfileProviderTests()
     {
@@ -41,7 +41,7 @@ public class KraiProfileProviderTests
 
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
-        _provider = new KraiProfileProvider(_unitOfWork.Object, cache.Object, NullLogger<KraiProfileProvider>.Instance);
+        _provider = new KraiProfileDirectory(_unitOfWork.Object, cache.Object, NullLogger<KraiProfileDirectory>.Instance);
     }
 
     private void Given(string code, string? json, int revision = 1)

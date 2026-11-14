@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Enums.Shared;
@@ -20,24 +21,23 @@ public sealed record GetMyGroupsQuery : IRequest<ServiceResult<IReadOnlyList<MyG
 
 public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, ServiceResult<IReadOnlyList<MyGroupDto>>>
 {
-    private readonly MePerson _me;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly ICurrentMember _me;
+    private readonly IResourceScopeRepository _scopeReader;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;
     private readonly ICurrentUserContext _currentUser;
     private readonly IOfficeDirectory _offices;
 
     public GetMyGroupsQueryHandler(
-        MePerson me,
+        ICurrentMember me,
         IOfficeDirectory offices,
-        IResourceScopeReader scopeReader,
         IUnitOfWork unitOfWork,
         IBlobReadLinks links,
         ICurrentUserContext currentUser)
     {
         _me = me;
         _offices = offices;
-        _scopeReader = scopeReader;
+        _scopeReader = unitOfWork.ResourceScopes;
         _unitOfWork = unitOfWork;
         _links = links;
         _currentUser = currentUser;
@@ -45,7 +45,7 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
 
     public async Task<ServiceResult<IReadOnlyList<MyGroupDto>>> Handle(GetMyGroupsQuery request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<IReadOnlyList<MyGroupDto>>();
@@ -63,7 +63,7 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
                 continue;
             }
 
-            var kurin = MeKurins.Ref(membership, _currentUser.KurinKey);
+            var kurin = MeKurinMapping.Ref(membership, _currentUser.KurinKey);
             var groups = await _unitOfWork.Groups.GetAllAsync(membership.KurinKey, cancellationToken);
             rows.AddRange(groups
                 .Where(g => g.GroupKey == membership.GroupKey || led.Contains(g.GroupKey))

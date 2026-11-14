@@ -1,9 +1,11 @@
 using MediatR;
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
@@ -22,13 +24,17 @@ public class DeleteMemberCommand : IRequest<ServiceResult<Unit>>
 public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberUnitOfWork _memberData;
     private readonly IMemberDirectory _members;
     private readonly IKurinAudit _audit;
-    public DeleteMemberCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IKurinAudit audit)
+    private readonly IDomainEventPublisher _events;
+    public DeleteMemberCommandHandler(IUnitOfWork unitOfWork, IMemberUnitOfWork memberData, IMemberDirectory members, IKurinAudit audit, IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
+        _memberData = memberData;
         _members = members;
         _audit = audit;
+        _events = events;
     }
 
     public async Task<ServiceResult<Unit>> Handle(DeleteMemberCommand request, CancellationToken cancellationToken)
@@ -61,7 +67,12 @@ public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, S
             cancellationToken);
 
         await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync([request.MemberKey], cancellationToken);
-        await _members.RemoveAsync(request.MemberKey, cancellationToken);
+        if (await _memberData.Members.GetByKeyAsync(request.MemberKey, cancellationToken) is { } member)
+        {
+            _memberData.Members.Delete(member, cancellationToken);
+            await _events.PublishAsync(new MembersRemoved([request.MemberKey]), cancellationToken);
+        }
+
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {

@@ -7,6 +7,7 @@ using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Enums.DuesModule;
@@ -42,7 +43,7 @@ public class KurinDuesHandlerTests
         _user.SetupGet(u => u.KurinKey).Returns(Kurin);
     }
 
-    private KurinDuesAccess Access() => new(_dues.Object, _user.Object);
+    private DuesAccess Access() => new(Mock.Of<IUnitOfWork>(), _dues.Object, _user.Object, Mock.Of<IDuesKurinShape>());
 
     private DuesEntryWriter Writer()
     {

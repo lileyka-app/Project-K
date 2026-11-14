@@ -25,14 +25,14 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IKurinTagVisibility _tags;
 
     public GetAttendanceSheetQueryHandler(
         ScoreAccess access,
         ScoreBookReader books,
         IUnitOfWork unitOfWork,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IKurinTagVisibility tags)
     {
         _tags = tags;
@@ -68,7 +68,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         }
 
         // The answers of this very day: a series' RSVPs are per occurrence, a one-off's sit under null.
-        var responses = (await _unitOfWork.AgendaResponses.GetForItemAsync(item.AgendaItemKey, AgendaOccurrences.KeyOf(item, occurrence.StartUtc), cancellationToken))
+        var responses = (await _unitOfWork.AgendaResponses.GetForItemAsync(item.AgendaItemKey, AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc), cancellationToken))
             .ToDictionary(r => r.UserKey, r => r.Status);
         var marks = book.Attendances
             .Where(a => a.AgendaItemKey == item.AgendaItemKey && a.OccurrenceStartUtc == occurrence.StartUtc)

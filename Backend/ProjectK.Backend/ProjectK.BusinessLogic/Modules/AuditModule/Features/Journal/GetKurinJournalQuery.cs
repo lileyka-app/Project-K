@@ -4,6 +4,7 @@ using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -37,26 +38,26 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeReader _scopeReader;
-    private readonly IMemberDirectory _members;
-    private readonly IKurinJournalReader _journal;
-    private readonly IProbesCatalogService _probes;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IResourceScopeRepository _scopeReader;
+    private readonly ICurrentMember _currentMember;
+    private readonly IKurinJournalRepository _journal;
+    private readonly IProbesCatalogReader _probes;
+    private readonly IBadgesCatalogReader _badges;
 
     public GetKurinJournalQueryHandler(
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
-        IResourceScopeReader scopeReader,
-        IMemberDirectory members,
-        IKurinJournalReader journal,
-        IProbesCatalogService probes,
-        IBadgesCatalogService badges)
+        IUnitOfWork unitOfWork,
+        ICurrentMember currentMember,
+        IAuditUnitOfWork audit,
+        IProbesCatalogReader probes,
+        IBadgesCatalogReader badges)
     {
         _currentUser = currentUser;
         _permissions = permissions;
-        _scopeReader = scopeReader;
-        _members = members;
-        _journal = journal;
+        _scopeReader = unitOfWork.ResourceScopes;
+        _currentMember = currentMember;
+        _journal = audit.KurinJournal;
         _probes = probes;
         _badges = badges;
     }
@@ -90,7 +91,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
             }
 
             var ledGroups = await _scopeReader.GetLedGroupKeysAsync(userKey, request.KurinKey, cancellationToken);
-            var self = await _members.FindByAccountAsync(userKey, cancellationToken);
+            var self = await _currentMember.FindAsync(cancellationToken);
             visibility = new JournalVisibility(ledGroups, self?.MemberKey);
         }
 
@@ -117,8 +118,8 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
     // History folded in from the old probe and badge trails carries the catalogue id, not the title.
     private string Label(KurinAuditEvent entry) => entry.Area switch
     {
-        AuditArea.Probe => ProgressAuditLabels.Probe(_probes, entry.SubjectLabel),
-        AuditArea.Badge => ProgressAuditLabels.Badge(_badges, entry.SubjectLabel),
+        AuditArea.Probe => ProgressAuditNames.Probe(_probes, entry.SubjectLabel),
+        AuditArea.Badge => ProgressAuditNames.Badge(_badges, entry.SubjectLabel),
         _ => entry.SubjectLabel
     };
 }

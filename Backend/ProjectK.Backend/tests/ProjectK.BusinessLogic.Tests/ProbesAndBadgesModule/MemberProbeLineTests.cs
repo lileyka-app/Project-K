@@ -27,7 +27,7 @@ public class MemberProbeLineTests
     {
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(x => x.ProbeProgresses).Returns(_progress.Object);
-        var catalog = new Mock<IProbesCatalogService>();
+        var catalog = new Mock<IProbesCatalogReader>();
         catalog.Setup(x => x.GetProbes()).Returns(
         [
             Probe("probe-1", 1),

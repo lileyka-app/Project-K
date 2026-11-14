@@ -45,19 +45,19 @@ public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArch
             .OrderByDescending(item => item.ArchivedAtUtc)
             .ToList();
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, _members, request.KurinKey, items, cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _members, request.KurinKey, items, cancellationToken);
         var roster = await AgendaRoster.LoadAsync(_uow, lookups.MemberGroups, items, cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var matching = items
-            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster))
-            .Where(response => AgendaSearch.Matches(response, request.Search))
+            .Select(item => AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster))
+            .Where(response => AgendaSearchRules.Matches(response, request.Search))
             .ToList();
 
         return new ServiceResult<AgendaArchivePageDto>(ResultType.Success, new AgendaArchivePageDto
         {
             Total = matching.Count,
-            Items = matching.Skip(PagingRules.Skip(request.Skip)).Take(PagingRules.Take(request.Take, AgendaBoardPaging.MaxTake)).ToList(),
+            Items = matching.Skip(PagingRules.Skip(request.Skip)).Take(PagingRules.Take(request.Take, AgendaBoardPagingRules.MaxTake)).ToList(),
             Policy = new AgendaArchivePolicyDto { AutoArchiveAfterDays = kurin.TaskAutoArchiveAfterDays, PurgeAfterDays = kurin.TaskArchivePurgeAfterDays }
         });
     }

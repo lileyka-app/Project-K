@@ -24,13 +24,13 @@ public class SwitchSavedAccountCommandHandler : IRequestHandler<SwitchSavedAccou
     private readonly ISavedSessionList _saved;
     private readonly IRefreshTokenStore _refreshTokens;
     private readonly UserManager<AppUser> _userManager;
-    private readonly ILoginResponseFactory _loginResponses;
+    private readonly ILoginResponseService _loginResponses;
 
     public SwitchSavedAccountCommandHandler(
         ISavedSessionList saved,
         IRefreshTokenStore refreshTokens,
         UserManager<AppUser> userManager,
-        ILoginResponseFactory loginResponses)
+        ILoginResponseService loginResponses)
     {
         _saved = saved;
         _refreshTokens = refreshTokens;

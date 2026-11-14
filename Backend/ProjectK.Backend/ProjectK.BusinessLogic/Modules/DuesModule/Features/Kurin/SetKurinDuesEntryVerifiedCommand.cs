@@ -12,12 +12,12 @@ public sealed record SetKurinDuesEntryVerifiedCommand(Guid KurinKey, Guid EntryK
 
 public sealed class SetKurinDuesEntryVerifiedCommandHandler : IRequestHandler<SetKurinDuesEntryVerifiedCommand, ServiceResult<Unit>>
 {
-    private readonly KurinDuesAccess _access;
+    private readonly DuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public SetKurinDuesEntryVerifiedCommandHandler(KurinDuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
+    public SetKurinDuesEntryVerifiedCommandHandler(DuesAccess access, IDuesUnitOfWork dues, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _dues = dues;
