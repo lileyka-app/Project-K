@@ -91,7 +91,7 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 `ChooseProbeEdition` (`GroupProbeEdition:Update`, за замовчуванням лише Звʼязковий); зміна йде в
 Журнал дій як `Settings.GroupProbeEditionChanged`.
 
-Яку пробу людина бачить на якому місці, вирішує `ProbeLine` (`ProbesAndBadgesModule/Services`):
+Яку пробу людина бачить на якому місці, вирішує `ProbeLineRules` (`ProbesAndBadgesModule/Services`):
 
 - редакція людини — редакція її гуртка (`IGroupProbeEditions`), **якщо** вона не закрила пробу,
   далі за перше місце (`order ≥ 1`, тобто першу чи пізнішу), в іншій редакції. Тоді вона
@@ -158,13 +158,13 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 (PUT), `third-probe/camp/certificate` (POST/DELETE), `projects` (POST), `projects/{key}`
 (PUT/DELETE), `projects/{spare}/swap/{main}`, `projects/{key}/approval|completion` (PUT/DELETE),
 `projects/{key}/images`. Читання — `ProbeProgress:Read` на людину; писати може сама людина й той,
-хто має `SignProbe` (`IProbeProjectAccess`). Кожен запис відповідає всією вкладкою
+хто має `SignProbe` (`IProbesAndBadgesAccess`). Кожен запис відповідає всією вкладкою
 (`IThirdProbeReader`), тож клієнти не складають її з частин.
 
 ### Для інструменту референта
 
 Інструмент референта ІІІ проби буде частиною Лілейки, але його ще немає; поки є адреси, з яких він
-братиме дані. `GET api/kurin/{kurinKey}/third-probers` (`ThirdProberStatusResponse`) — по рядку на
+братиме дані. `GET api/kurin/{kurinKey}/third-probers` (`ThirdProberStatusDto`) — по рядку на
 кожного, хто має третю пробу в черзі й уже її почав (є файл або закрита друга проба), лише тих, чию
 пробу глядач може підписувати. У рядку — `memberKey`, імʼя, `probeId`, `stages` (сім дат, хто й
 коли міняв востаннє), лічильники основних і виконаних проєктів, вмілостей під час проби, чи є табір і
@@ -189,7 +189,7 @@ PNG/JPEG/WebP); декодер бере лише картинку до 40 Мп (
 `CampCertificateBlobName` для посвідки. Збереження тексту видаляє зображення, яких він більше не
 показує; видалення проєкту чи заміна посвідки — їхні блоби. Теки `probe-project-images` і
 `third-probe-certificates` входять у `BlobUploadFolderNames.ScenarioFolders`, а
-`ProbeProjectImageReferenceProvider` віддає `OrphanPhotoCleanupBackgroundService` усі блоби з рядків, тож
+`ProbeProjectImageReferenceReader` віддає `OrphanPhotoCleanupBackgroundService` усі блоби з рядків, тож
 завантажене й покинуте прибирається само. Видалення людини прибирає її третю пробу через
 `ProgressCleanupEventHandler`. Журнал дій: `Probe.Project*`, `Probe.ProjectsSwapped`,
 `Probe.FileEdited`, `Probe.Reflection*`, `Probe.StagesChanged`, `Probe.Certificate*`.

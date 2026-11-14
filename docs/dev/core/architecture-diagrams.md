@@ -6,7 +6,7 @@ sidebar:
 ---
 
 Лілейка — **модульний моноліт**: один процес `.NET`, одна база, один образ на всі середовища, але
-всередині девʼять модулів із контрактами між ними, які колись можна винести окремо. Словами це
+всередині десять модулів із контрактами між ними, які колись можна винести окремо. Словами це
 описано в [Архітектурі](/dev/core/architecture/); тут ті самі речі намальовані. Діаграми
 підлаштовуються під ширину екрана і тему сайту.
 
@@ -33,8 +33,9 @@ flowchart TB
         SCORE["ScoreModule"]
         KRAI["KraiModule"]
         ME["MeModule"]
+        AUDIT["AuditModule"]
         HTTP --> AUTH & USERS & KURIN & PB & INFRA
-        HTTP --> DUES & SCORE & KRAI & ME
+        HTTP --> DUES & SCORE & KRAI & ME & AUDIT
     end
 
     subgraph ext["Зовнішні служби"]
@@ -72,8 +73,9 @@ sequenceDiagram
     participant M as Middleware
     participant A as Авторизація
     participant C as Контролер
-    participant H as MediatR · хендлер
-    participant R as Репозиторії · IUnitOfWork
+    participant P as Поведінки MediatR
+    participant H as Хендлер · Mapping
+    participant R as Репозиторії · UoW
     participant DB as SQL Server
 
     B->>M: HTTP-запит з access-токеном
@@ -82,53 +84,61 @@ sequenceDiagram
     A->>A: політика AuthorizationPolicies.*
     A->>A: ResourceAuthorize → IResourceAccessService (Own · OwnGroups · KurinWide)
     A->>C: 403, якщо будь-який крок відмовив
-    C->>H: _mediator.Send(команда)
-    H->>H: FluentValidation → доменне рішення
-    H->>R: читання й зміни через Common-інтерфейси
-    R->>DB: SaveChangesAsync
+    C->>P: _mediator.Send(команда)
+    P->>P: RequestTiming → Validation (400 ValidationFailed) → Transaction
+    P->>H: команда пройшла валідацію
+    H->>R: читання й зміни через фасади UoW і контракти модулів
+    H->>H: Mapping області — ApplyTo для зміни, ToDto для відповіді
+    R->>DB: SaveChangesAsync, інтерсептори збереження
     DB-->>R: ок
     R-->>H: сутності
-    H-->>C: ServiceResult<T>
-    C-->>B: ToActionResult → JSON або { error, message }
+    H-->>C: ServiceResult<T> (без даних — ServiceResult<Unit>)
+    C-->>B: ToActionResult → JSON, 204 для Unit, або { error, message }
 ```
 
 Контролер не приймає рішень: усе, що він робить, — `_mediator.Send(...)` і переклад
-`ServiceResult<T>` у HTTP в одному місці, `ServiceResultExtensions.ToActionResult`.
+`ServiceResult<T>` у HTTP в одному місці, `ServiceResultExtensions.ToActionResult`. Код помилки
+хендлер бере з каталогу свого модуля (`<Module>Errors`).
 
 ## 3. Шари й модулі всередині моноліту
 
 Чотири проєкти з односторонніми залежностями. `BusinessLogic` та `Infrastructure` не знають одне
 про одного: інтерфейс живе в `Common`, реалізація — в `Infrastructure`. Модулі не читають таблиць
-одне одного, а питають через контракти в `Common/Contracts/<Module>/`; `ProjectK.Architecture.Tests`
-читає IL і валить збірку, якщо хтось перетнув межу.
+одне одного, а питають через контракти в `Common/Contracts/<Module>/`, і ці контракти лише
+відповідають; змінити щось у чужому модулі можна тільки подією, яку той модуль обробить сам.
+`ProjectK.Architecture.Tests` читає IL і валить збірку, якщо хтось перетнув межу. `Common` розкладений
+спершу за видом, потім за модулем: `Entities/`, `Contracts/`, `Dtos/`, `Records/`, `Events/`, `Enums/`,
+`Rules/`, `Options/`.
 
 ```mermaid
 flowchart TB
     subgraph API["ProjectK.API"]
         direction LR
-        CTRL["Контролери по модулях<br/>Auth · Users · Kurin · ProbesAndBadges · Infrastructure<br/>Dues · Score · Krai · Me"]
-        POL["AuthorizationPolicies<br/>ResourceAuthorize"]
-        DI["Program.cs · DI · Serilog<br/>middleware · прогрів після старту"]
+        CTRL["Controllers по модулях<br/>Auth · Users · Kurin · ProbesAndBadges · Infrastructure<br/>Dues · Score · Krai · Me · Audit"]
+        POL["Authorization · Filters<br/>AuthorizationPolicies · ResourceAuthorize"]
+        DI["Program.cs · Hosting · Middleware<br/>Cookies · прогрів після старту"]
     end
 
     subgraph BL["ProjectK.BusinessLogic"]
         direction LR
-        MODS["Modules/*<br/>команди · запити · хендлери · валідатори"]
-        ACCESS["AgendaAccess · RolePermissionRules<br/>доменні правила доступу"]
+        MODS["Modules/*/Features/*<br/>команда чи запит з валідатором і хендлером<br/>Mapping області · ToDto · ApplyTo"]
+        SVCS["Services · Events · каталоги помилок<br/>рушій прав AuthModule · Access модулів"]
+        BEH["Behaviors<br/>час · валідація · транзакція"]
     end
 
     subgraph COMMON["ProjectK.Common"]
         direction LR
-        ENT["Сутності<br/>Member · Membership · Kurin · Group · AgendaItem …"]
-        IFACE["Інтерфейси<br/>IUnitOfWork · IEmailService · IBlobStorageService …"]
-        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory<br/>IDuesDirectory · IKraiProfileProvider"]
+        ENT["Entities<br/>Member · Membership · Kurin · Group · AgendaItem …"]
+        IFACE["Contracts<br/>IUnitOfWork · IEmailService · IPhotoService …"]
+        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · ICurrentMember · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory<br/>IDuesDirectory · IKraiProfileDirectory"]
+        KINDS["Dtos · Records · Events<br/>Enums · Rules · Options"]
     end
 
     subgraph INFRA["ProjectK.Infrastructure"]
         direction LR
-        DBC["DbContext · міграції · репозиторії"]
-        SVC["Сервіси<br/>Resend · Blob · QuestPDF · GitHub · JWT"]
-        BG["Фонові служби<br/>аудит · перестороги · осиротілі фото · архів задач<br/>каталог · телеметрія · сповіщення · демо-скидання"]
+        DBC["DbContext · Persistence<br/>конфігурації й інтерсептори<br/>репозиторії · UnitOfWork · Stores · міграції"]
+        SVC["Services<br/>Email · Blobs · Reports · Feedback · Jwt · Catalog"]
+        BG["BackgroundServices<br/>аудит · перестороги · осиротілі фото · архів задач<br/>каталог · телеметрія · сповіщення · демо-скидання"]
     end
 
     EXT["Зовнішнє<br/>пакет ProjectK.Optimization · API каталогу · сервіс статусу"]
@@ -142,7 +152,9 @@ flowchart TB
 
 Модулі однакові по обидва боки межі: `BusinessLogic/Modules/AuthModule` і
 `API/Controllers/AuthModule` — про одне й те саме. Мембер від початку будувався так, щоб його
-можна було винести в окремий сервіс: контракт замість репозиторію, ключ замість навігації.
+можна було винести в окремий сервіс: контракт замість репозиторію, подія замість виклику, ключ
+замість навігації. Що в яку теку лягає і як зветься — таблиця «Що куди лягає» в
+[Конвенціях](/dev/core/contributing/).
 
 ## 4. Прод і локальні заглушки
 
@@ -164,7 +176,7 @@ flowchart LR
     subgraph ifaces["Інтерфейси в Common"]
         direction TB
         IE["IEmailService"]
-        IB["IBlobStorageService"]
+        IB["IPhotoService"]
         IP["IProblemReporter"]
         IL["Serilog"]
         IS["Сідер і дев-інструменти"]
@@ -194,7 +206,7 @@ flowchart LR
 | Демо-дані | `ASPNETCORE_ENVIRONMENT` | `Production`, `Staging`, `SelfHost`, `Tailscale`: нічого | `Development`, `E2E`, `Demo`: демо-курінь, стирається при старті (`Demo` — ще й щоночі) |
 | Дев-контролери | `ASPNETCORE_ENVIRONMENT` | знімаються з моделі | `Development`, `E2E`, `Tailscale` |
 | Телеметрія | `Telemetry:Enabled` | `Production`, `SelfHost`: щоденний пінг сервісу статусу (`PROJECTK_TELEMETRY=false` вимикає на self-host) | вимкнена, служба не реєструється |
-| Прогрів | `Startup:WarmUp` | без ключа ввімкнений: після старту компілює мапінги й запити дашборда | `Development`, `Testing`, `E2E`: вимкнений |
+| Прогрів | `Startup:WarmUp` | без ключа ввімкнений: після старту прогріває MediatR і запити дашборда | `Development`, `Testing`, `E2E`: вимкнений |
 
 `SelfHost` живе між двома колонками: заглушки вмикаються не середовищем, а відсутністю ключа, тож
 станиця може поставити систему без пошти й GitHub і додати їх пізніше, не міняючи образ.

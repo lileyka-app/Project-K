@@ -52,7 +52,7 @@ sidebar:
   `POST /waitlist/{key}/reject` — відхилити; `POST /waitlist/{key}/resend-invitation` — надіслати
   ще раз; `POST /invitation/resend` — те саме для будь-якого неактивованого акаунта;
 - `GET /invitation/{token}/validate` — перевірити токен;
-- `POST /activate` — задати пароль. Відповідь — `LoginUserResponse` з refresh-cookie: людина
+- `POST /activate` — задати пароль. Відповідь — `LoginUserDto` з refresh-cookie: людина
   одразу в застосунку;
 - `POST /password-reset/request` · `POST /password-reset/reset` — відновлення пароля. Запит також
   надсилає нове запрошення, якщо акаунт ще не активований.
@@ -65,7 +65,7 @@ sidebar:
 TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → `POST /mfa/recovery-codes`
 (резервні коди, за поточним паролем). `GET /mfa/status` каже, чи увімкнено і чи вимагається.
 
-**Примус для проводу:** `PrivilegedMfaEnforcementMiddleware` + `MfaEnforcementPolicy` вимагають
+**Примус для проводу:** `PrivilegedMfaEnforcementMiddleware` + `IMfaEnforcementReader` вимагають
 другий фактор для адміністратора і Звʼязкового на `Production` і `Staging`; `Security:EnforcePrivilegedMFA`
 керує цим на self-host. Ключ `E2E:BypassPrivilegedMfa` читається лише на тестових тирах. Гейт не ходить
 у базу: access-токен несе клейм `amr` (`mfa` / `pwd`, `AccessTokenClaimNames`), записаний при видачі —
@@ -117,7 +117,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 
 Токен доступу несе ролі на момент видачі (`iat`). Коли людині призначають чи знімають офіс або
 впорядництво, змінюють членство, роль адміністратора чи політику куреня, сервер позначає це в
-`IAccessChangeSignal`, і `AccessStaleHeaderMiddleware` додає до відповіді на старий токен
+`IAccessChangeStore`, і `AccessStaleHeaderMiddleware` додає до відповіді на старий токен
 `X-Access-Stale: 1`. Веб і телефон на цей заголовок тихо роблять рефреш і застосовують `access` —
 сайдбар і кнопки оновлюються без виходу. Позначки живуть у пам'яті процесу; на кількох інстансах
 запасні шляхи — рефреш після 403 `ResourceAccessDenied` (не частіше ніж раз на 30 с) і закінчення
@@ -157,7 +157,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
   би записати її в інший курінь, не спитавши. Статус акаунта (`AccountStatus`) — тим, хто може
   редагувати цю людину (`Member:Update`).
 - **Запис:** група, прихована від того, хто редагує, вважається ненадісланою — збережене значення
-  лишається, обовʼязковість не перевіряється (`HiddenDataOnWrite`).
+  лишається, обовʼязковість не перевіряється (`HiddenDataOnWriteRules`).
 - PDF-звіт куреня не маскується: його бачать лише ті, хто керує всім куренем, а вони закріплені на
   повний доступ (тест це тримає).
 
@@ -195,7 +195,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 `IKurinAudit.RecordAsync` перед власним `SaveChangesAsync`, тож запис і зміна комітяться разом. Дія —
 рядок з `AuditActionNames`, розділ — `AuditArea`; зміни — `AuditChangeRules` (лише змінене, особисті поля як
 «змінено» без значень). Історія на картці проби й вмілості читається з того ж журналу
-(`IKurinJournalReader`). Строк — 365 днів, див. [зберігання](/dev/operations/data-retention/).
+(`IAuditUnitOfWork.KurinJournal`). Строк — 365 днів, див. [зберігання](/dev/operations/data-retention/).
 
 ## Локальні дев-інструменти
 

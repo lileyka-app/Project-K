@@ -50,8 +50,9 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 ### Що куди лягає
 
 Правила нижче ухвалено 2026-11-14 (рішення D-1…D-8 потоку полірування `POL`). Старий код
-переїжджає під них кроками `POL-02…POL-13`; **новий код пишеться одразу за ними**, навіть коли
-сусідній файл ще лежить по-старому. Архітектурні тести почнуть тримати це в `POL-11`.
+переведено під них кроками `POL-02…POL-10`; розрізати `KurinModule` лишилось на `POL-13`, тож
+**новий код пишеться одразу за ними**, навіть коли сусідній файл ще лежить по-старому. Архітектурні
+тести почнуть тримати це в `POL-11`.
 
 | Що пишеш | Куди | Як звати |
 |---|---|---|
@@ -78,7 +79,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Доступ до таблиці | `Infrastructure/Repositories/<Module>/`, лише через UoW | `<Entity>Repository` |
 | Сховище не-таблиці (сесії, кеш, файли) | `Infrastructure/Stores/` | `…Store` |
 | Стан у памʼяті процесу, який тримає модуль (позначки, відкриті зони) | `BusinessLogic/Modules/<M>/Services/`, singleton | `…Store` |
-| Нащадок типу бібліотеки чи фреймворку | де його шукає бібліотека | суфікс базового типу: `…Problem`, `…ControllerFeatureProvider`, `…DbContextFactory`, `…ValueResolver` |
+| Нащадок типу бібліотеки чи фреймворку | де його шукає бібліотека | суфікс базового типу: `…Problem`, `…ControllerFeatureProvider`, `…DbContextFactory`, `…Interceptor` |
 | Зовнішня система | контракт у `Common/Contracts/`, реалізація в `Infrastructure/Services/<Concept>/` | тека за поняттям: `Email/`, не `EmailService/` |
 | Фонова служба | `Infrastructure/BackgroundServices/` | `…BackgroundService` |
 | Middleware, фільтр, кукі | `API/Middleware/`, `API/Filters/`, `API/Cookies/` | `…Middleware`, `…Filter`, `…Cookie` |
@@ -88,6 +89,8 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Розширення контролера (`ToActionResult`, `UserKey`) | `API/Extensions/` | `…Extensions` |
 | Серіалізація, Swagger, політики авторизації | `API/Serialization/`, `API/Swagger/`, `API/Authorization/` | `…Converter`, `…Filter`, `…Policies` |
 | Налаштування | `Common/Options/<Module>/` (усі, хоч би який шар читав) | `…Options` із `SectionName` |
+
+<!-- POL-12: рядок «Налаштування → Common/Options/<Module>/ (усі, хоч би який шар читав)» суперечить рядку «Реєстрація хоста, старт, налаштування хоста → API/Hosting/, …Options». У коді ClientIpOptions і SecurityPatchOptions лежать в API/Hosting/, решта — в Common/Options/. -->
 
 Якщо нового класу немає в цій таблиці — спершу допиши рядок сюди, потім заводь теку чи суфікс.
 
@@ -121,8 +124,8 @@ Modules/<Module>/Features/<Area>/
 
 **Один запит — один файл**, і теки-дієслова (`Upsert/`, `Get/`) під областю немає: вона давала
 145 тек на 302 файли, по два файли на теку, і саме від неї код утікав у власні розкладки. Область —
-іменник предметної області (`Group`, `Agenda`, `LifeEntry`), а не назва сутності за таблицею.
-Файл, що збирає кілька запитів (`ScoreSettingsFeatures.cs` з 22 типами), не допускається.
+іменник предметної області (`Group`, `Agenda`, `Life`), а не назва сутності за таблицею.
+Файл, що збирає кілька запитів (як колишній `ScoreSettingsFeatures.cs` з 22 типами), не допускається.
 Окремих папок `Commands/`, `Queries/` чи `Handlers/` не буває.
 
 Імена — за суфіксом, і він обовʼязковий: запит, що змінює стан, зветься `…Command`, запит, що лише
@@ -202,10 +205,11 @@ Directory лише відповідає на питання; запис у чу�
 
 ### Належність питається в членства
 
-Де стоїть людина — відповідає **`Membership`**, і ніщо інше. `AppUser.KurinKey` лишився як носій
-одного випадку: засновник нового куреня, у якого членства ще фізично немає, бо курінь створено
-хвилину тому. Поле пишеться раз, при відкритті акаунта, і **більше ніколи не оновлюється** — людина
-перейшла в інший курінь або стала в другий, а поле про це не знає.
+Де стоїть людина — відповідає **`Membership`**, і ніщо інше. Куреня на акаунті немає: поле
+`AppUser.KurinKey` знято. Єдиний випадок, коли членства ще фізично немає, — засновник нового куреня,
+бо курінь створено хвилину тому; його курінь памʼятає заявка (`WaitlistEntry.FoundedKurinKey`), і
+активація з неї відкриває членство. `AppUser.ActiveKurinKey` — лише запамʼятований вибір, у якому
+курені людина зараз діє, а не належність.
 
 Тому будь-яке рішення — «чий це юнак», «скільки місць зайнято», «який курінь показати» — береться з
 `IMembershipDirectory`, а не з поля акаунта. Знімок, що виглядає свіжим, небезпечніший за порожнє
@@ -229,7 +233,7 @@ Directory лише відповідає на питання; запис у чу�
 - Кнопки на клієнті не вгадують права з назв ролей — беруть `GET api/member/{key}/abilities`.
 - Звʼязковий закріплений на «весь курінь» у кожному рядку: курінь не має лишитися без людини,
   яка поверне права. Сервер відхиляє політику, що це міняє.
-- `RolePermissionMapGoldenTests` тримає зліпок мапи. Свідома зміна прав — це рядок в
+- `RolePermissionRulesGoldenTests` тримає зліпок мапи. Свідома зміна прав — це рядок в
   `IntendedChanges` з причиною, а не перегенерований файл.
 
 ### Дані людини назовні — лише через маску
@@ -264,10 +268,12 @@ Directory лише відповідає на питання; запис у чу�
 
 ### DTO проти Records
 
+<!-- POL-12: «і тільки тут» суперечить рядку «Запит із файлом (`IFormFile` — у Common його не буває) → `API/Models/Requests/`» у таблиці «Що куди лягає». У коді такі запити лежать в `API/Models/Requests/`. Яке з правил головне — вирішує власник. -->
+
 - **`Common/Dtos/<Module>/`** — усе, що перетинає межу API, і **тільки тут**: відповідь зветься
   `…Dto`, запит — `…Request`. Не в контролері, не в `BusinessLogic/…/Models` — Infrastructure теж
   проєктує запити просто в DTO, а BusinessLogic вона не бачить.
-- **`Common/Records/`** — внутрішні типи-значення, які **ніколи не серіалізуються клієнту**:
+- **`Common/Records/<Module>/`** — внутрішні типи-значення, які **ніколи не серіалізуються клієнту**:
   `ServiceResult`, `ResourceAccessDecision`, `AgendaViewerScope`, результати завантаження блобів.
 - **`BusinessLogic/Modules/<M>/Models/`** — внутрішнє одного модуля.
 
@@ -427,13 +433,16 @@ internal static class GroupMapping
 {
     public static GroupDto ToDto(this Group group, IBlobReadLinks links) => new(
         GroupKey: group.GroupKey,
+        KurinKey: group.KurinKey,
         Name: group.Name,
+        Description: group.Description,
         SilhouetteUrl: links.For(group.SilhouetteBlobName),
         KurinNumber: group.Kurin?.Number);
 
     public static void ApplyTo(this UpsertGroupCommand request, Group group, DateTime now)
     {
         group.Name = request.Name;
+        group.Description = TextRules.TrimOrNull(request.Description);
         group.UpdatedDate = now;
     }
 }
