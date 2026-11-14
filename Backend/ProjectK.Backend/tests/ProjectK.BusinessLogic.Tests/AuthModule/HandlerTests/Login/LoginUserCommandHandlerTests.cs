@@ -16,7 +16,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.AuthModule;
 using ProjectK.Common.Records.AuthModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login;

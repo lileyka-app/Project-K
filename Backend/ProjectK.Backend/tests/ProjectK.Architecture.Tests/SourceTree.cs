@@ -12,7 +12,7 @@ public static class SourceTree
 {
     public static readonly string BackendRoot = FindBackendRoot();
 
-    public static readonly Assembly Common = typeof(ProjectK.Common.Entities.KurinModule.Member).Assembly;
+    public static readonly Assembly Common = typeof(ProjectK.Common.Entities.MemberModule.Member).Assembly;
     public static readonly Assembly Infrastructure = typeof(ProjectK.Infrastructure.DbContexts.AppDbContext).Assembly;
     public static readonly Assembly BusinessLogic = typeof(ProjectK.BusinessLogic.DependencyInjection).Assembly;
     public static readonly Assembly Api = typeof(ProjectK.API.ServiceCollectionExtensions).Assembly;

@@ -5,7 +5,7 @@ using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;

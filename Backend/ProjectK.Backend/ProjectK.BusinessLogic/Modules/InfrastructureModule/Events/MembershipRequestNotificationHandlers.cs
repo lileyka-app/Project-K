@@ -4,8 +4,8 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Enums.InfrastructureModule;
-using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KurinModule;
 

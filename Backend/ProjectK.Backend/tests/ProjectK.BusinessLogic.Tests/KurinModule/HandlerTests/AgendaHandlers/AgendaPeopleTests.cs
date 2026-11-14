@@ -4,7 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
 

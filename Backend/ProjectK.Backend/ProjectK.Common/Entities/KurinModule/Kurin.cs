@@ -2,6 +2,7 @@ using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.Shared;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Rules.KurinModule;

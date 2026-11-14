@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.AuthModule;

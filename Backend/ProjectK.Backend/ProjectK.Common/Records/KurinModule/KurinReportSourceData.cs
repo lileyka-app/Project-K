@@ -1,5 +1,6 @@
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 
 namespace ProjectK.Common.Records.KurinModule;
 

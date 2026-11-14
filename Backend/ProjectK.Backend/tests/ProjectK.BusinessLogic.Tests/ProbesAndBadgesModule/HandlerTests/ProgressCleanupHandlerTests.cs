@@ -3,7 +3,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Events;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 

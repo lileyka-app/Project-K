@@ -11,7 +11,7 @@ using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.ProbesAndBadgesModule;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 

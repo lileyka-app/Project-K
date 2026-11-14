@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Records.KurinModule;

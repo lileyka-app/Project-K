@@ -1,4 +1,4 @@
-using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Rules.Shared;

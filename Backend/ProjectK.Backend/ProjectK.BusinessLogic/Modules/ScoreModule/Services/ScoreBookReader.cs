@@ -1,13 +1,12 @@
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Records.ScoreModule;
+using ProjectK.Common.Rules.MemberModule;
 
-using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 

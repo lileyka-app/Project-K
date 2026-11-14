@@ -10,7 +10,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.UsersModule;
 using ProjectK.Common.Options.InfrastructureModule;

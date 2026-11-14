@@ -1,6 +1,6 @@
 using Moq;
-using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Entities.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 

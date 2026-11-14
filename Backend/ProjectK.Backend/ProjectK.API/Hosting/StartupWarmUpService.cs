@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 
 namespace ProjectK.API.Hosting;

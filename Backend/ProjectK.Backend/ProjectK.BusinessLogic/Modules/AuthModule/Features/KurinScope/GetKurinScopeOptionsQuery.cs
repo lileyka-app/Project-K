@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;

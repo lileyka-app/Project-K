@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Seeding;

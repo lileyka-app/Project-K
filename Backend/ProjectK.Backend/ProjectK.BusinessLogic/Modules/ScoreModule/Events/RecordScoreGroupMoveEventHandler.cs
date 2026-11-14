@@ -2,7 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Events;
 

@@ -1,13 +1,14 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;

@@ -1,8 +1,7 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 

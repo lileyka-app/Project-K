@@ -12,7 +12,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;

@@ -1,9 +1,9 @@
 using System.Text.Json;
 using FluentAssertions;
 using ProjectK.Common.Dtos.AuditModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuditModule;
 

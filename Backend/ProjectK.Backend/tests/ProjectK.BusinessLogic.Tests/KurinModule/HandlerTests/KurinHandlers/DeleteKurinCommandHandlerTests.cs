@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;

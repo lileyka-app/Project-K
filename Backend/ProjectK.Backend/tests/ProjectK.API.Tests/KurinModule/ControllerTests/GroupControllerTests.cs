@@ -5,10 +5,11 @@ using Moq;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.MentorAssignment;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 

@@ -1,4 +1,5 @@
-using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
+
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

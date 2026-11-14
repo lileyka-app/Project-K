@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.Common.Rules.KurinModule;
 

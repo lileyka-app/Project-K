@@ -1,9 +1,8 @@
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 

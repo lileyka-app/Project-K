@@ -26,13 +26,14 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.API.Tests.Security;
 

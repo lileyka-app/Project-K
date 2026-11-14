@@ -1,5 +1,5 @@
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.Common.Contracts.MemberModule;
 

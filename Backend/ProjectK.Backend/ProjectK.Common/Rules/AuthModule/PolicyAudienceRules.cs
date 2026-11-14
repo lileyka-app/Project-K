@@ -1,5 +1,5 @@
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.Common.Rules.AuthModule;
 

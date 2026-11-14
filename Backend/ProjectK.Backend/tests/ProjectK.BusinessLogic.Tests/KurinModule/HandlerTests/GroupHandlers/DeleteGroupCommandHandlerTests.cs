@@ -6,8 +6,10 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Rules.AuditModule;
@@ -89,7 +91,7 @@ public class DeleteGroupHandlerTests
     public async Task Handle_RevokesTheGroupsMentors()
     {
         var groupKey = Guid.NewGuid();
-        var assignment = new Common.Entities.KurinModule.MentorAssignment { GroupKey = groupKey, MentorUserKey = Guid.NewGuid() };
+        var assignment = new Common.Entities.MemberModule.MentorAssignment { GroupKey = groupKey, MentorUserKey = Guid.NewGuid() };
         _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default)).ReturnsAsync(new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey });
         _mentorRepositoryMock.Setup(r => r.GetByGroupKeyAsync(groupKey, default)).ReturnsAsync([assignment]);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);

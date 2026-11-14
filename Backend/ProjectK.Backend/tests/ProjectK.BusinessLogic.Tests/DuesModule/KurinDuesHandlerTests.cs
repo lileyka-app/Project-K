@@ -5,15 +5,14 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Enums.DuesModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;

@@ -1,6 +1,7 @@
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KurinModule;

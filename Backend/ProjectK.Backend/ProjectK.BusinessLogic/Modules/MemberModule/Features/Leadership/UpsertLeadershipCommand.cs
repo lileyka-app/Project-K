@@ -1,0 +1,367 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Dtos.MemberModule.Requests;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
+using LeadershipEntity = ProjectK.Common.Entities.MemberModule.Leadership;
+
+namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Leadership;
+
+public class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipDto>>
+{
+    public Guid? LeadershipKey { get; set; }
+    public string? Type { get; set; }
+    public Guid? EntityKey { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    public IEnumerable<LeadershipHistoryMemberDto> LeadershipHistoryMembers { get; set; }
+
+    /// <summary>
+    /// Set only by server-side flows that seat an office with no signed-in assigner — account
+    /// activation makes the new kurin leader the Зв'язковий while the caller is still anonymous.
+    /// It is absent from <see cref="UpsertLeadershipRequest"/>, so an HTTP caller cannot set it.
+    /// </summary>
+    public bool SeatedBySystem { get; init; }
+
+    public UpsertLeadershipCommand(UpsertLeadershipRequest request)
+    {
+        Type = request.Type;
+        EntityKey = request.EntityKey;
+        StartDate = request.StartDate;
+        EndDate = request.EndDate;
+        LeadershipHistoryMembers = request.LeadershipHistories;
+    }
+    public UpsertLeadershipCommand(UpsertLeadershipRequest request, Guid leadershipKey)
+    {
+        LeadershipKey = leadershipKey;
+        Type = request.Type;
+        EntityKey = request.EntityKey;
+        StartDate = request.StartDate;
+        EndDate = request.EndDate;
+        LeadershipHistoryMembers = request.LeadershipHistories;
+    }
+}
+
+public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCommand, ServiceResult<LeadershipDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IBlobReadLinks _links;
+    private readonly ICurrentUserContext _currentUserContext;
+    private readonly IMemberDirectory _members;
+    private readonly IBackendCache _cache;
+    private readonly IAccessChangeStore _accessChanges;
+    private readonly IKurinAudit _audit;
+
+    public UpsertLeadershipCommandHandler(
+        IUnitOfWork unitOfWork,
+        IBlobReadLinks links,
+        ICurrentUserContext currentUserContext,
+        IMemberDirectory members,
+        IBackendCache cache,
+        IAccessChangeStore accessChanges,
+        IKurinAudit audit)
+    {
+        _unitOfWork = unitOfWork;
+        _links = links;
+        _currentUserContext = currentUserContext;
+        _members = members;
+        _cache = cache;
+        _accessChanges = accessChanges;
+        _audit = audit;
+    }
+
+    public async Task<ServiceResult<LeadershipDto>> Handle(UpsertLeadershipCommand request, CancellationToken cancellationToken)
+    {
+        LeadershipEntity? existing = null;
+        bool isCreated = false;
+        var moved = false;
+        IReadOnlyList<OfficeChange> officeChanges;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (request.LeadershipKey != null && request.LeadershipKey != Guid.Empty)
+        {
+            existing = await _unitOfWork.Leaderships.GetByKeyAsync(request.LeadershipKey.Value, cancellationToken);
+        }
+
+        if (existing != null)
+        {
+            // Update existing Leadership
+            var placedBefore = (existing.Type, existing.KurinKey, existing.GroupKey);
+            existing.Type = Enum.Parse<Common.Enums.MemberModule.LeadershipType>(request.Type!, ignoreCase: true);
+            PlaceOnEntity(existing, request.EntityKey);
+            moved = placedBefore != (existing.Type, existing.KurinKey, existing.GroupKey);
+            if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
+            {
+                return ServiceResult<LeadershipDto>.Failure(ResultType.Forbidden, LeadershipErrors.OfficeNotAssignable, "You may not assign one of the roles this change touches.");
+            }
+
+            officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
+            _unitOfWork.Leaderships.Update(existing, cancellationToken);
+        }
+        else
+        {
+            existing = new LeadershipEntity();
+            if (request.LeadershipKey is Guid leadershipKey && leadershipKey != Guid.Empty)
+            {
+                existing.LeadershipKey = leadershipKey;
+            }
+
+            existing.StartDate = today;
+            existing.EndDate = null;
+            existing.Type = Enum.Parse<Common.Enums.MemberModule.LeadershipType>(request.Type!, ignoreCase: true);
+            PlaceOnEntity(existing, request.EntityKey);
+            if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
+            {
+                return ServiceResult<LeadershipDto>.Failure(ResultType.Forbidden, LeadershipErrors.OfficeNotAssignable, "You may not assign one of the roles this change touches.");
+            }
+
+            officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
+            _unitOfWork.Leaderships.Add(existing, cancellationToken);
+            isCreated = true;
+        }
+
+        var touchedHolders = officeChanges.SelectMany(change => change.Ended.Concat(change.Seated)).ToHashSet();
+        if (moved)
+        {
+            // A провід moved to another гурток or курінь changes what every sitting holder may do,
+            // though none of them was seated or unseated.
+            touchedHolders.UnionWith(existing.LeadershipHistories.Where(history => history.EndDate == null).Select(history => history.MemberKey));
+        }
+        IReadOnlyCollection<MemberSummary> holders = touchedHolders.Count == 0
+            ? []
+            : await _members.GetByKeysAsync(touchedHolders, cancellationToken);
+        await RecordAsync(existing, officeChanges, holders, cancellationToken);
+
+        var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (changes <= 0)
+        {
+            return ServiceResult<LeadershipDto>.Failure(ResultType.InternalServerError, LeadershipErrors.LeadershipNotSaved, "The leadership could not be saved.");
+        }
+
+        // What an office grants is worked out from this registry when a token is minted. Whoever
+        // was seated or unseated is told their token is stale, so the change reaches them on their
+        // next request; the cached led-group sets are read from offices too and must not lag.
+        if (touchedHolders.Count > 0)
+        {
+            _cache.Invalidate(BackendCacheRules.MentorScopeReads);
+            MarkHolders(holders);
+        }
+
+        var response = existing.ToDto(_links);
+
+        return isCreated
+            ? new ServiceResult<LeadershipDto>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
+            : new ServiceResult<LeadershipDto>(ResultType.Success, response);
+    }
+
+    private void MarkHolders(IReadOnlyCollection<MemberSummary> holders)
+    {
+        foreach (var userKey in holders.Select(holder => holder.UserKey).OfType<Guid>().Distinct())
+        {
+            _accessChanges.MarkUser(userKey);
+        }
+    }
+
+    /// <summary>
+    /// One journal entry per role that changed hands: who held it and who holds it now. The entry is
+    /// about the new holder, or about the one who left when nobody took their place.
+    /// </summary>
+    private async Task RecordAsync(
+        LeadershipEntity leadership,
+        IReadOnlyList<OfficeChange> officeChanges,
+        IReadOnlyCollection<MemberSummary> holders,
+        CancellationToken cancellationToken)
+    {
+        if (officeChanges.Count == 0)
+        {
+            return;
+        }
+
+        var names = MemberSummaryNames.ByMember(holders);
+        // The entry lands in the провід's kurin, or the acting one for a гурток's: name the role as that kurin does.
+        var kurinKey = leadership.KurinKey ?? _currentUserContext.KurinKey;
+        var kurin = kurinKey is { } key ? await _unitOfWork.Kurins.GetByKeyAsync(key, cancellationToken) : null;
+        var kurinNames = KurinRoleNames.Read(kurin?.RoleNames);
+        foreach (var change in officeChanges)
+        {
+            var seated = change.Seated.Count > 0;
+            var subject = seated ? change.Seated : change.Ended;
+            await _audit.RecordAsync(
+                new AuditRecord(
+                    AuditArea.Office,
+                    seated ? AuditActionNames.Office.Assigned : AuditActionNames.Office.Ended,
+                    leadership.LeadershipKey,
+                    ArchiveErrors.RoleLabel(change.Role, kurinNames),
+                    subject.Count == 1 ? subject[0] : null,
+                    AuditChangeRules.Of(("holder", NamesOf(change.Ended, names), NamesOf(change.Seated, names))),
+                    KurinKey: leadership.KurinKey),
+                cancellationToken);
+        }
+    }
+
+    private static string? NamesOf(List<Guid> memberKeys, IReadOnlyDictionary<Guid, string> names) =>
+        memberKeys.Count == 0
+            ? null
+            : string.Join(", ", memberKeys.Select(key => names.GetValueOrDefault(key, string.Empty)).Where(name => name.Length > 0).Order(StringComparer.Ordinal));
+
+    private static void PlaceOnEntity(LeadershipEntity leadership, Guid? entityKey)
+    {
+        switch (leadership.Type)
+        {
+            case LeadershipType.Kurin or LeadershipType.KV:
+                leadership.KurinKey = entityKey;
+                leadership.GroupKey = null;
+                break;
+            case LeadershipType.Group:
+                leadership.GroupKey = entityKey;
+                leadership.KurinKey = null;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Rejects the request when it would seat or unseat an office the caller may not assign. Only
+    /// the offices actually changing are checked — resubmitting an untouched провід stays allowed.
+    /// </summary>
+    private bool MayAssignTouchedOffices(
+        LeadershipEntity leadership,
+        IEnumerable<LeadershipHistoryMemberDto> requestedHistories,
+        LeadershipType type)
+    {
+        var assignable = RolePermissionRules.AssignableOffices(_currentUserContext.Roles);
+        var requested = ParseRequestedAssignments(requestedHistories);
+        var active = leadership.LeadershipHistories
+            .Where(history => history.EndDate == null)
+            .ToList();
+
+        var touched = new HashSet<LeadershipRole>();
+        foreach (var activeHistory in active)
+        {
+            var isStillAssigned = requested.Any(assignment =>
+                assignment.Role == activeHistory.Role && assignment.MemberKey == activeHistory.MemberKey);
+            if (!isStillAssigned)
+            {
+                touched.Add(activeHistory.Role);
+            }
+        }
+
+        foreach (var assignment in requested)
+        {
+            var alreadyActive = active.Any(history =>
+                history.Role == assignment.Role && history.MemberKey == assignment.MemberKey);
+            if (!alreadyActive)
+            {
+                touched.Add(assignment.Role);
+            }
+        }
+
+        return touched.All(role => assignable.Contains((type, role)));
+    }
+
+    private static List<(LeadershipRole Role, Guid MemberKey)> ParseRequestedAssignments(
+        IEnumerable<LeadershipHistoryMemberDto> requestedHistories) =>
+        requestedHistories
+            .Where(history => history.EndDate == null)
+            .Where(history => history.Member?.MemberKey is Guid memberKey && memberKey != Guid.Empty)
+            .Where(history => !string.IsNullOrWhiteSpace(history.Role))
+            .Select(history => (
+                Role: Enum.Parse<LeadershipRole>(history.Role, ignoreCase: true),
+                MemberKey: history.Member.MemberKey))
+            .Distinct()
+            .ToList();
+
+    /// <summary>
+    /// Ends the holders the request no longer names and seats the new ones. Answers each role that
+    /// changed hands, with who left it and who took it.
+    /// </summary>
+    private static List<OfficeChange> ApplyLeadershipHistoryChanges(
+        LeadershipEntity leadership,
+        IEnumerable<LeadershipHistoryMemberDto> requestedHistories,
+        DateOnly today)
+    {
+        var touched = new Dictionary<LeadershipRole, OfficeChange>();
+        OfficeChange ChangeOf(LeadershipRole role)
+        {
+            if (!touched.TryGetValue(role, out var change))
+            {
+                change = new OfficeChange(role, [], []);
+                touched[role] = change;
+            }
+
+            return change;
+        }
+
+        var requestedAssignments = requestedHistories
+            .Where(history => history.EndDate == null)
+            .Where(history => history.Member?.MemberKey is Guid memberKey && memberKey != Guid.Empty)
+            .Where(history => !string.IsNullOrWhiteSpace(history.Role))
+            .Select(history => new
+            {
+                Role = Enum.Parse<LeadershipRole>(history.Role, ignoreCase: true),
+                MemberKey = history.Member.MemberKey
+            })
+            .Distinct()
+            .ToList();
+
+        var activeHistories = leadership.LeadershipHistories
+            .Where(history => history.EndDate == null)
+            .ToList();
+
+        foreach (var activeHistory in activeHistories)
+        {
+            var isStillAssigned = requestedAssignments.Any(assignment =>
+                assignment.Role == activeHistory.Role &&
+                assignment.MemberKey == activeHistory.MemberKey);
+
+            if (!isStillAssigned)
+            {
+                activeHistory.EndDate = today;
+                ChangeOf(activeHistory.Role).Ended.Add(activeHistory.MemberKey);
+            }
+        }
+
+        foreach (var assignment in requestedAssignments)
+        {
+            var alreadyActive = activeHistories.Any(history =>
+                history.Role == assignment.Role &&
+                history.MemberKey == assignment.MemberKey);
+
+            if (alreadyActive)
+            {
+                continue;
+            }
+
+            leadership.LeadershipHistories.Add(new Common.Entities.MemberModule.LeadershipHistory
+            {
+                Leadership = leadership,
+                LeadershipKey = leadership.LeadershipKey,
+                Role = assignment.Role,
+                MemberKey = assignment.MemberKey,
+                StartDate = today,
+                EndDate = null
+            });
+            ChangeOf(assignment.Role).Seated.Add(assignment.MemberKey);
+        }
+
+        return touched.Values.OrderBy(change => change.Role).ToList();
+    }
+
+    /// <summary>A role that changed hands: the people who left it and the people who took it.</summary>
+    private sealed record OfficeChange(LeadershipRole Role, List<Guid> Ended, List<Guid> Seated);
+}

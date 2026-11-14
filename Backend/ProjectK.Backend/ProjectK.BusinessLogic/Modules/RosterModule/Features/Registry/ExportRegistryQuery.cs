@@ -3,7 +3,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.BusinessLogic.Modules.RosterModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;

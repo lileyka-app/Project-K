@@ -49,7 +49,7 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.AccessSnapshotFactory",
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.CurrentPermissions",
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.PermissionResolver",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.CurrentMember",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.CurrentMember",
     ];
 
     /// <summary>
@@ -78,8 +78,8 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.GroupProbeEditions",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagAssignments",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagVisibility",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipAskRouting",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipMoves",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MembershipAskRouting",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MembershipMoves",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.DutyRights",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MeAgendaScopes",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MemberCards",
@@ -107,7 +107,7 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaViewerContext",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.ArchiveReachResult",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagSettingsState",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipAskRoute",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MembershipAskRoute",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MeKurinContext",
         "ProjectK.BusinessLogic.Modules.ScoreModule.Services.EventOccurrence",
     ];

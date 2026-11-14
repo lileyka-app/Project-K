@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.MemberModule;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule;
 

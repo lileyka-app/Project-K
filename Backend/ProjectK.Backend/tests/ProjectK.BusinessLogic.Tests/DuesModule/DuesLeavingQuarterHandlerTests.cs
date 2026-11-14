@@ -6,7 +6,7 @@ using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Enums.DuesModule;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;

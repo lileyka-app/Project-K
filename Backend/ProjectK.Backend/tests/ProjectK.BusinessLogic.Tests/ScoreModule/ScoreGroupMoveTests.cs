@@ -5,7 +5,7 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 
