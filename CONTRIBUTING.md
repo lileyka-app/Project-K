@@ -30,9 +30,9 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 
 | Шар | Що | Чого там не буває |
 |---|---|---|
-| `Common` | сутності, інтерфейси, DTO, налаштування, чисті правила (`RolePermissionMap`, `AgendaVisibility`) | ASP.NET-типи (`IFormFile`, `ControllerBase`), EF-типи |
+| `Common` | сутності, контракти, DTO, події, enum-и, чисті правила (`RolePermissionMap`, `AgendaVisibility`) | ASP.NET-типи (`IFormFile`, `ControllerBase`), EF-типи (виняток — Identity, нижче) |
 | `Infrastructure` | EF, репозиторії, блоби, пошта, логери, фонові служби, сідинг, рендеринг PDF | доменні рішення |
-| `BusinessLogic` | хендлери, доменні служби, мапінг-профілі | `Microsoft.EntityFrameworkCore`, HTTP |
+| `BusinessLogic` | хендлери, доменні служби, явний мапінг | `Microsoft.EntityFrameworkCore`, HTTP, AutoMapper |
 | `API` | контролери, middleware, серіалізація, DI-хост | доменна логіка, прямі звернення до `AppDbContext` |
 
 **Папки `Services/` в API немає і не має з'являтися.** Якщо новий клас тягне на «сервіс» — його
@@ -41,35 +41,114 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 Кожен шар реєструє **своє**: `AddInfrastructure()`, `AddBusinessLogic()`; в API лишається тільки
 хостове (`HttpContextAccessor`, прив'язка конфігурації, `TimeProvider`, `ICurrentUserContext`).
 
+**Виняток: Identity.** `AppUser : IdentityUser` лежить у `Common`, і через нього `Common` тягне
+`Microsoft.AspNetCore.Identity.EntityFrameworkCore`. Це свідомий, записаний виняток: винести акаунт
+за власний інтерфейс означало б переписати 48 файлів з `UserManager` заради чистоти, яка
+одному розробнику нічого не дає. Далі винятку не розширюємо — жоден інший тип `Common` не
+спирається на EF, і контракти не повертають `ChangeTracking`-типів.
+
+### Що куди лягає
+
+Правила нижче ухвалено 2026-11-14 (рішення D-1…D-8 потоку полірування `POL`). Старий код
+переїжджає під них кроками `POL-02…POL-13`; **новий код пишеться одразу за ними**, навіть коли
+сусідній файл ще лежить по-старому. Архітектурні тести почнуть тримати це в `POL-11`.
+
+| Що пишеш | Куди | Як звати |
+|---|---|---|
+| HTTP-ендпоінт | `API/Controllers/<Module>/` | `<Resource>Controller` — лише `IMediator` і `ToActionResult`, без власних типів у файлі |
+| Дія, що змінює стан | `BusinessLogic/Modules/<M>/Features/<Area>/` | `<Verb><Thing>Command.cs` — запит, валідатор і хендлер в одному файлі |
+| Читання | там само | `Get<Thing>Query.cs` — так само одним файлом |
+| Мапінг області | там само | `<Area>Mapping.cs`: `ToDto(…)`, `ApplyTo(…)` |
+| Реакція на подію | `BusinessLogic/Modules/<M>/Events/` | `…EventHandler` |
+| Логіка для кількох зрізів із залежностями | `BusinessLogic/Modules/<M>/Services/` | `…Service` |
+| Внутрішній помічник, що лише читає / лише пише | там само | `…Reader` / `…Writer` |
+| Перевірка прав модуля | там само | `<M>Access` — одна на модуль |
+| Журнал змін сутності | там само | `…Trail` |
+| Поняття предметної області | модуль-власник | сам іменник: `DuesLedger`, `ScoreBook` |
+| Коди помилок | `BusinessLogic/Modules/<M>/<M>Errors.cs` | PascalCase-константи |
+| Внутрішній тип модуля, який клієнт не бачить | `BusinessLogic/Modules/<M>/Models/` | за змістом |
+| Те, що бачить клієнт | `Common/Dtos/<Module>/` | відповідь `…Dto`, запит `…Request`; record з конструктором |
+| Питання до іншого модуля | `Common/Contracts/<Module>/` | `I…Directory` — лише читання |
+| Зміна в іншому модулі | подія в `Common/Events/<Module>/`, обробник — у модулі, чиї дані міняються | `<Thing><PastVerb>`, `…EventHandler` |
+| Фіксований довідник із файлів (проби, вмілості, відзначення) | контракт у `Common/Contracts/<Module>/` | `I…Catalog` |
+| Чисте правило без стану | `Common/Rules/<Module>/` | `…Rules`, static |
+| Підписи для людей | `Common/Rules/<Module>/` | `…Names`, static |
+| Таблиця | сутність `Common/Entities/<Module>/`, конфіг `Infrastructure/Persistence/Configurations/<Module>/` | `<Entity>`, `<Entity>Configuration` |
+| Доступ до таблиці | `Infrastructure/Repositories/<Module>/`, лише через UoW | `<Entity>Repository` |
+| Сховище не-таблиці (сесії, кеш, файли) | `Infrastructure/Stores/` | `…Store` |
+| Зовнішня система | контракт у `Common/Contracts/`, реалізація в `Infrastructure/Services/<Concept>/` | тека за поняттям: `Email/`, не `EmailService/` |
+| Фонова служба | `Infrastructure/BackgroundServices/` | `…BackgroundService` |
+| Middleware, фільтр, кукі | `API/Middleware/`, `API/Filters/`, `API/Cookies/` | `…Middleware`, `…Filter`, `…Cookie` |
+| Налаштування | шар, який їх читає | `…Options` із `SectionName` |
+
+Якщо нового класу немає в цій таблиці — спершу допиши рядок сюди, потім заводь теку чи суфікс.
+
+### Схема тек Common
+
+Спершу **вид**, потім модуль: `Common/<Вид>/<Module>/`. Видів сім, інших розділів у `Common` немає:
+
+```
+Entities/   Contracts/   Dtos/   Records/   Events/   Enums/   Rules/
+```
+
+Спільне для всіх модулів лягає в підтеку `Shared/` відповідного виду (`Rules/Shared/PhoneNumbers.cs`).
+Один публічний тип — один файл. Те, що зараз лежить у `Models/<Тема>/`, `Interfaces/Modules/`,
+`Phones/`, `Security/` чи `Extensions/`, розходиться по цих видах у `POL-09`.
+
 ### Вертикальні зрізи
 
 Уся бізнес-логіка живе за одним шаблоном:
 
 ```
-Modules/<Module>/Features/<Entity>/<Verb>/
-    <Verb><Entity>Command.cs        // або Query
-    <Verb><Entity>CommandValidator.cs
-    <Verb><Entity>CommandHandler.cs
+Modules/<Module>/Features/<Area>/
+    <Verb><Thing>Command.cs     // запит + валідатор + хендлер
+    Get<Thing>Query.cs          // запит + хендлер
+    <Area>Mapping.cs            // ToDto / ApplyTo цієї області
 ```
 
-Запит, валідатор і хендлер лежать **поруч**. Окремих папок `Commands/`, `Queries/` чи `Handlers/`
-не буває — саме їхнє співіснування й давало чотири різні розкладки.
+**Один запит — один файл**, і теки-дієслова (`Upsert/`, `Get/`) під областю немає: вона давала
+145 тек на 302 файли, по два файли на теку, і саме від неї код утікав у власні розкладки. Область —
+іменник предметної області (`Group`, `Agenda`, `LifeEntry`), а не назва сутності за таблицею.
+Файл, що збирає кілька запитів (`ScoreSettingsFeatures.cs` з 22 типами), не допускається.
+Окремих папок `Commands/`, `Queries/` чи `Handlers/` не буває.
 
 Імена — за суфіксом, і він обовʼязковий: запит, що змінює стан, зветься `…Command`, запит, що лише
 читає, — `…Query` (`GetKurinsQuery`, `PreviewRosterImportQuery`, `ExportRegistryQuery`);
 хендлер — імʼя запиту плюс `Handler`, валідатор — плюс `Validator`. Короткий стиль без суфікса
 (`UpsertMember` + `UpsertMemberHandler`), який жив у `KurinModule`, знято 2026-09-11 (`DEBT-06`).
-Запит і його хендлер можуть лежати в одному файлі, названому за запитом
-(`DeleteGroupCommand.cs`), — розкладка по файлах не є частиною правила.
+Файл зветься за запитом (`DeleteGroupCommand.cs`).
 
 Обробники доменних подій (`INotificationHandler<DomainEventNotification<…>>`) звуться
 `…EventHandler`, щоб не плутатися з хендлерами запитів. Усе це перевіряє
 `ProjectK.Architecture.Tests` → `NamingRules`.
 
-Поза `Features/` у модулі допускаються лише `Models/` (типи відповідей), `Services/` (доменні
-служби, спільні для кількох зрізів — сюди ж ідуть збирачі звітів і розвʼязувачі) і `Events/`
-(обробники чужих доменних подій). Окремих тек на кшталт `Reports/` чи `Solvers/` не буває: вони
-зʼявились як мовчазні винятки й знято 2026-10-09 (`DEBT-04`).
+Поза `Features/` у модулі допускаються лише `Models/` (внутрішні типи, яких клієнт не бачить),
+`Services/` (доменні служби, спільні для кількох зрізів — сюди ж ідуть збирачі звітів і
+розвʼязувачі), `Events/` (усі обробники доменних подій модуля — і своїх, і чужих) та файл
+`<Module>Errors.cs`. Окремих тек на кшталт `Reports/` чи `Solvers/` не буває: вони зʼявились як
+мовчазні винятки й знято 2026-10-09 (`DEBT-04`).
+
+### Словник імен
+
+Суфікс каже роль класу, тож на одну роль — один суфікс. Інших суфіксів, ніж у таблиці
+«Що куди лягає», не заводимо.
+
+- **`Directory` проти `Service`.** `I…Directory` — двері модуля для **інших** модулів: контракт у
+  `Common/Contracts`, змінювати його — змінювати домовленість між модулями. `…Service` — внутрішня
+  кухня модуля, назовні не видна. Directory **лише відповідає**; змінити щось у чужому модулі можна
+  тільки подією, яку той модуль обробить сам.
+- **`Reader` / `Writer` / `Service` — за поведінкою.** Клас лише читає — `Reader`, лише пише —
+  `Writer`, усе інше із залежностями — `Service`. `Provider`, `Source`, `Lookups`, `Resolver`,
+  `Locator`, `Editor` і подібні разові суфікси розходяться по цих трьох.
+- **`I…Catalog`** — лише фіксовані довідники, що читаються з файлів; без `Service` у назві.
+- **Права модуля — один клас `<M>Access`.** Рушій авторизації AuthModule (`PermissionResolver`,
+  `AccessContextResolver`, `AccessSnapshotFactory`, `CurrentPermissions`) — не права модуля, а сам
+  механізм, і живе під своїми іменами.
+- **Журнал змін сутності — `…Trail`**, не `…AuditFields`.
+- **«Поточна людина» — один клас** на весь бекенд; нових «хто я» поруч не заводимо.
+- **Доменні іменники** (`DuesLedger`, `ScoreBook`, `AgendaRecurrence`) лишаються, якщо клас моделює
+  саме це поняття. Це не суфікс ролі.
+- **Static-клас** — або `…Rules` (рішення без стану), або `…Names` (підписи для людей).
 
 ### Межі модулів
 
@@ -78,8 +157,9 @@ Modules/<Module>/Features/<Entity>/<Verb>/
 на пам'яті:
 
 **Контракт замість чужого репозиторію.** Питання до іншого модуля ставиться через інтерфейс у
-`Common/Interfaces/Modules/<Module>/` — `IMemberDirectory`, `IMembershipDirectory`,
-`IOfficeDirectory`, `IMemberProgressDirectory`. За межами модуля, якому належить сутність, її імені
+`Common/Contracts/<Module>/` (до `POL-09` — `Common/Interfaces/Modules/<Module>/`) —
+`IMemberDirectory`, `IMembershipDirectory`, `IOfficeDirectory`, `IMemberProgressDirectory`.
+Directory лише відповідає на питання; запис у чужий модуль через нього не йде. За межами модуля, якому належить сутність, її імені
 не буває: поза мембером ніхто не називає ні `Member`, ні `IMemberRepository`. Пиши контракт так,
 ніби виклик піде по мережі: читання, що повертає багатьох, робиться **одним** методом, бо «один за
 ключем» перетворює список на N звернень.
@@ -88,7 +168,9 @@ Modules/<Module>/Features/<Entity>/<Verb>/
 планувалося. Межа проведена в тестах раніше за переїзд саме тому, що переїзд без неї неможливий.
 
 **Подія замість синхронного виклику.** Коли після дії має статися щось у чужому модулі —
-оголошуй подію (`Common/Models/Events/`) і публікуй через `IDomainEventPublisher`. Хендлер, який
+оголошуй подію (`Common/Events/<Module>/`, до `POL-09` — `Common/Models/Events/`) і публікуй через
+`IDomainEventPublisher`. Подія зветься тим, що вже сталося (`MembershipLeft`, `KurinTagDeleted`), і
+модуль, чиї дані міняються, обробляє її сам. Хендлер, який
 сам пише в чужий інбокс, валить `Modules_ShouldAnnounceWhatHappened_RatherThanWriteToTheInbox`.
 Той, хто зробив дію, не має знати, кого вона обходить.
 
@@ -158,19 +240,23 @@ Modules/<Module>/Features/<Entity>/<Verb>/
   тож нову дію додавай і в таблицю підписів на фронті.
 - Зміни пиши через `AuditChanges.Of/Added/Removed`: вони лишають тільки змінене і самі ховають
   поля з `MemberDataFields` — у журналі буде «змінено», а не значення.
-- Знімок «до» роби перед мапером, а не після: `_mapper.Map(request, existing)` уже нічого не пам'ятає.
+- Знімок «до» роби перед `ApplyTo`, а не після: оновлена сутність уже нічого не пам'ятає.
 - Журнал без зовнішніх ключів і пишеться знімками (ім'я, роль, гурток на момент дії) — він має
   пережити те, що описує. Зберігається 365 днів.
 
 ### DTO проти Records
 
-- **`Common/Models/Dtos/<Module>/`** — усе, що перетинає межу API: те, що клієнт отримує.
-  Запити — у `<Module>/Requests/`.
-- **`Common/Models/Records/`** — внутрішні типи-значення, які **ніколи не серіалізуються клієнту**:
+- **`Common/Dtos/<Module>/`** — усе, що перетинає межу API, і **тільки тут**: відповідь зветься
+  `…Dto`, запит — `…Request`. Не в контролері, не в `BusinessLogic/…/Models` — Infrastructure теж
+  проєктує запити просто в DTO, а BusinessLogic вона не бачить.
+- **`Common/Records/`** — внутрішні типи-значення, які **ніколи не серіалізуються клієнту**:
   `ServiceResult`, `ResourceAccessDecision`, `AgendaViewerScope`, результати завантаження блобів.
+- **`BusinessLogic/Modules/<M>/Models/`** — внутрішнє одного модуля.
 
-Перевірка проста: якщо тип згадується у відповіді або запиті контролера — це DTO.
-(`DateRangeDto` довго лежав у `Records/`, хоч і був у відповіді планування.)
+DTO — `record` з конструктором (або з `required`-властивостями): нове поле не скомпілюється, поки
+його не заповнить `ToDto`. Перевірка, куди класти, проста: якщо тип згадується у відповіді або
+запиті контролера — це DTO. (`DateRangeDto` довго лежав у `Records/`, хоч і був у відповіді
+планування.) До `POL-09` наявні DTO лежать у `Common/Models/Dtos/`.
 
 ### Репозиторії
 
@@ -180,7 +266,9 @@ Modules/<Module>/Features/<Entity>/<Verb>/
 
 Репозиторії групуються за модулем (`Repositories/<Module>/`) і доступні **тільки** через
 `IUnitOfWork` — окремо вони не реєструються, бо це створювало б другий екземпляр на той самий
-`DbContext`.
+`DbContext`. Усе, що читає чи пише таблицю, — репозиторій, як би воно не звалося: `…Reader`,
+`…Writer` чи `…Source` над `AppDbContext` в обхід UoW не буває. Сховище не-таблиці (сесії
+оновлення, кеш, файли) — `…Store` в `Infrastructure/Stores/`.
 
 **Запити для видалення — окремі від читальних.** Читальний метод часто тягне граф і `AsNoTracking`;
 для видалення це отрута: кожна сутність несе власну відчеплену копію батька, і при `Remove` EF
@@ -253,6 +341,15 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 `error` — стабільний код, за яким UI обирає формулювання. `message` англійською і призначений
 розробнику; користувацький текст пише фронт (див. `LOGIN_ERROR_TEXT`).
 
+- **Коди живуть у каталозі модуля** `<Module>Errors` (`BusinessLogic/Modules/<M>/<M>Errors.cs`):
+  PascalCase-константи й фабрики частих випадків (`KurinErrors.NotFound<T>()`). Літерал коду в
+  хендлері не пишемо — саме так «курінь не знайдено» встиг стати чотирма різними рядками.
+- **Кожна невдача має код.** `new ServiceResult<T>(ResultType.NotFound)` без коду не буває.
+- Код — частина контракту з фронтом: перейменування коду ламає текст на екрані, тож нові й змінені
+  коди дзеркалимо у відповідній `*_ERROR_TEXT` на фронті в тому самому PR.
+- **Результат без даних — `ServiceResult<Unit>`.** Не `<object>` і не `<bool>`: `true` у відповіді
+  нічого не означає, а читач мусить це вгадувати. JSON для клієнта від цього не міняється.
+
 Усі `DateTime` серіалізуються як UTC із `Z` — це робить `UtcDateTimeConverter`, вручну позначати
 `DateTimeKind` не треба.
 
@@ -300,12 +397,37 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 
 ### Мапінг
 
-Один спосіб — **AutoMapper**, профілі в `BusinessLogic/MappingProfiles/`. Мапінг у DTO має бути
-повним; часткові мапінги в сутність позначаються `MemberList.None` із поясненням, бо решту полів
-заповнює хендлер. `MappingConfigurationTests` не дасть додати мапу з незаповленим полем.
+Один спосіб — **явний код**, без бібліотек. AutoMapper знято 2026-11-14 (D-2); до кінця `POL-05`
+він ще живе в KurinModule, але нових мап у ньому не додаємо.
+
+```csharp
+// Features/Group/GroupMapping.cs
+internal static class GroupMapping
+{
+    public static GroupDto ToDto(this Group group, IBlobReadLinks links) => new(
+        GroupKey: group.GroupKey,
+        Name: group.Name,
+        SilhouetteUrl: links.For(group.SilhouetteBlobName),
+        KurinNumber: group.Kurin?.Number);
+
+    public static void ApplyTo(this UpsertGroupCommand request, Group group, DateTime now)
+    {
+        group.Name = request.Name;
+        group.UpdatedDate = now;
+    }
+}
+```
+
+- **`ToDto(…)`** — читання. Усе, що потрібно для відповіді (посилання на блоби, назви), приходить
+  параметром, а не з DI.
+- **`ApplyTo(…)`** — оновлення наявної сутності. Пише **лише перелічені поля**: нове поле запиту
+  не потрапить у базу, поки його не дописали сюди. Кожен upsert має тест, що міняються тільки
+  очікувані поля.
+- Мапінг області лежить в `<Area>Mapping.cs` поруч із її запитами. Повноту `ToDto` тримає
+  компілятор, бо DTO — record з конструктором.
 
 Складні відповіді, які збираються з кількох джерел із довідниками (логін, агенда, звіт), лишаються
-явними фабриками — профіль їх чесно не виражає.
+явними фабриками.
 
 ### Кодування і формат
 
