@@ -1,9 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Create;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Delete;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Update;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Verify;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.DuesModule;
@@ -274,12 +271,19 @@ public class DuesEntryHandlerTests
 
         validator.Validate(new UpsertDuesEntryRequest
         {
-            Kind = DuesEntryKind.Expense, Method = DuesPaymentMethod.Cash, Amount = 10, OccurredOn = new DateOnly(2026, 6, 1)
+            Kind = DuesEntryKind.Expense,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 10,
+            OccurredOn = new DateOnly(2026, 6, 1)
         }).IsValid.Should().BeFalse();
 
         validator.Validate(new UpsertDuesEntryRequest
         {
-            Kind = DuesEntryKind.Expense, Method = DuesPaymentMethod.Cash, Amount = 10, OccurredOn = new DateOnly(2026, 5, 1), MembershipKey = Guid.NewGuid()
+            Kind = DuesEntryKind.Expense,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 10,
+            OccurredOn = new DateOnly(2026, 5, 1),
+            MembershipKey = Guid.NewGuid()
         }).IsValid.Should().BeFalse();
     }
 }

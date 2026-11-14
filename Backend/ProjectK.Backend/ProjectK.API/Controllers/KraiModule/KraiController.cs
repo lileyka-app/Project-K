@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Manage;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
+using ProjectK.Common.Models.Dtos.DuesModule;
 
 namespace ProjectK.API.Controllers.KraiModule;
 
@@ -109,7 +109,7 @@ public class KraiController : ControllerBase
     /// quarter running now by the край's clock.
     /// </summary>
     [HttpGet("{kraiCode}/dues/concessions")]
-    [ProducesResponseType(typeof(KraiConcessionReportResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KraiConcessionReportDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetConcessionReport(string kraiCode, [FromQuery] int? year, [FromQuery] int? number)

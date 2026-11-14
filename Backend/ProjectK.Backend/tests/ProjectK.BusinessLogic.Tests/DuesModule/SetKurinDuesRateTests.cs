@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.DuesModule;
@@ -40,7 +40,7 @@ public class SetKurinDuesRateTests
         _user.SetupGet(u => u.UserId).Returns(Guid.NewGuid());
     }
 
-    private Task<Common.Models.Records.ServiceResult<object>> Send(SetKurinDuesRateRequest request) =>
+    private Task<Common.Models.Records.ServiceResult<MediatR.Unit>> Send(SetKurinDuesRateRequest request) =>
         new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object, _unitOfWork.Object, _accrual.Object)
             .Handle(new SetKurinDuesRateCommand(Kurin, request), CancellationToken.None);
 

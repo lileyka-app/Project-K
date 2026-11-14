@@ -4,7 +4,7 @@ import { kurin, ok, refuse, shot, signIn, type ExtraApi } from './support/mock-a
 /**
  * The kurin's box (the web's kurin-dues): its cash, the гуртки and their quarters, the transfers
  * waiting for «Отримано», the kurin's own operations and its rates. Fixtures are shaped like the
- * API's KurinDuesResponse.
+ * API's KurinDuesDto.
  */
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────────────────────

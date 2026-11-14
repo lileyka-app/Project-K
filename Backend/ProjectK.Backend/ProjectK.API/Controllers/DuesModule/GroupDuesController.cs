@@ -4,16 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Create;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Delete;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Update;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Verify;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.Get;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.Grants;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.Grants;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.SetConcession;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.SetRate;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -37,7 +31,7 @@ public class GroupDuesController : ControllerBase
 
     [HttpGet]
     [ResourceAuthorize(ResourceType.GroupDues, ResourceAction.Read, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupDuesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDuesDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid groupKey)
     {

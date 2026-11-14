@@ -23,7 +23,7 @@ public sealed class KurinDuesAccess
     }
 
     public ServiceResult<T>? Refuse<T>(Guid kurinKey) =>
-        kurinKey == Guid.Empty || _currentUser.KurinKey != kurinKey ? new ServiceResult<T>(ResultType.Forbidden) : null;
+        kurinKey == Guid.Empty || _currentUser.KurinKey != kurinKey ? DuesErrors.Refused<T>() : null;
 
     /// <summary>One of the kurin's own operations, tracked with its trail; null when it is not here.</summary>
     public async Task<DuesEntry?> OwnEntryAsync(Guid kurinKey, Guid entryKey, CancellationToken cancellationToken)
@@ -39,11 +39,4 @@ public sealed class KurinDuesAccess
         return entry is null || entry.KurinKey != kurinKey || entry.GroupKey is null
             || entry.Kind != DuesEntryKind.TransferToKurin || entry.IsDeleted ? null : entry;
     }
-
-    public static ServiceResult<T> NotFound<T>() =>
-        ServiceResult<T>.Failure(ResultType.NotFound, "EntryNotFound", "There is no such operation here.");
-
-    public static ServiceResult<T> Locked<T>() =>
-        ServiceResult<T>.Failure(ResultType.Conflict, "EntryVerified",
-            "A verified operation is locked. Add a correction, or have the Звʼязковий unmark it.");
 }

@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Member.Get;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Member;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.DuesModule;
@@ -28,7 +28,7 @@ public class MemberDuesController : ControllerBase
 
     [HttpGet]
     [ResourceAuthorize(ResourceType.GroupDues, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(MemberDuesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MemberDuesDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(Guid memberKey)
     {
         var result = await _mediator.Send(new GetMemberDuesQuery(memberKey));

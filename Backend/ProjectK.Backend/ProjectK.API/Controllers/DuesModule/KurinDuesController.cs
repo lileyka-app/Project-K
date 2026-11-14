@@ -4,15 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.Grants;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.SetConcession;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Entry;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Get;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Groups;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Receive;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetSettings;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -37,7 +31,7 @@ public class KurinDuesController : ControllerBase
 
     [HttpGet]
     [ResourceAuthorize(ResourceType.KurinDues, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinDuesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinDuesDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(Guid kurinKey)
     {
         var result = await _mediator.Send(new GetKurinDuesQuery(kurinKey));

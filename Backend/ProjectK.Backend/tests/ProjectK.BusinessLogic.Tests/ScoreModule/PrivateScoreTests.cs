@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
@@ -11,6 +10,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -121,11 +121,15 @@ public class PrivateScoreTests
         new CreatePrivateScoreEntryCommandHandler(Access(), Books(), _score.Object, User(), _time).Handle(
             new CreatePrivateScoreEntryCommand(Kurin, new UpsertPrivateScoreEntryRequest
             {
-                MembershipKey = _oksana, PrivateScoreCriterionKey = criterion, Points = points, Note = note, OccurredOn = new DateOnly(2026, 10, 6)
+                MembershipKey = _oksana,
+                PrivateScoreCriterionKey = criterion,
+                Points = points,
+                Note = note,
+                OccurredOn = new DateOnly(2026, 10, 6)
             }),
             CancellationToken.None);
 
-    private Task<ServiceResult<PrivateScoreResponse>> Read() =>
+    private Task<ServiceResult<PrivateScoreDto>> Read() =>
         new GetPrivateScoreQueryHandler(Access(), Books(), _score.Object).Handle(new GetPrivateScoreQuery(Kurin, new ScorePeriodQuery()), CancellationToken.None);
 
     [Fact]

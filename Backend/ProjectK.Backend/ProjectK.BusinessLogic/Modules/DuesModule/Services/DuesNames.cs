@@ -1,7 +1,7 @@
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;

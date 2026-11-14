@@ -1,12 +1,12 @@
 using MediatR;
-using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
 
@@ -17,10 +17,10 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
 /// </summary>
 /// <remarks>Without a quarter it reads the one running now by the край's own clock.</remarks>
 public sealed record GetKraiConcessionReportQuery(string KraiCode, int? Year = null, int? Number = null)
-    : IRequest<ServiceResult<KraiConcessionReportResponse>>;
+    : IRequest<ServiceResult<KraiConcessionReportDto>>;
 
 public sealed class GetKraiConcessionReportQueryHandler
-    : IRequestHandler<GetKraiConcessionReportQuery, ServiceResult<KraiConcessionReportResponse>>
+    : IRequestHandler<GetKraiConcessionReportQuery, ServiceResult<KraiConcessionReportDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DuesLedgerReader _ledgers;
@@ -35,18 +35,18 @@ public sealed class GetKraiConcessionReportQueryHandler
         _time = time;
     }
 
-    public async Task<ServiceResult<KraiConcessionReportResponse>> Handle(GetKraiConcessionReportQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<KraiConcessionReportDto>> Handle(GetKraiConcessionReportQuery request, CancellationToken cancellationToken)
     {
         if ((request.Year is null) != (request.Number is null) || request.Number is < 1 or > 4 || request.Year is < 2000 or > 2100)
         {
-            return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.BadRequest, "InvalidQuarter", "Квартал задано неправильно.");
+            return ServiceResult<KraiConcessionReportDto>.Failure(ResultType.BadRequest, DuesErrors.InvalidQuarter, "Квартал задано неправильно.");
         }
 
         var code = request.KraiCode.Trim().ToLowerInvariant();
         var profile = await _profiles.GetForKraiAsync(code, cancellationToken);
         if (profile is null)
         {
-            return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.NotFound, "KraiNotFound", "Krai not found.");
+            return ServiceResult<KraiConcessionReportDto>.Failure(ResultType.NotFound, DuesErrors.KraiNotFound, "Krai not found.");
         }
 
         var quarter = request is { Year: int year, Number: int number }
@@ -94,13 +94,13 @@ public sealed class GetKraiConcessionReportQueryHandler
             }
         }
 
-        return new ServiceResult<KraiConcessionReportResponse>(ResultType.Success, new KraiConcessionReportResponse
+        return new ServiceResult<KraiConcessionReportDto>(ResultType.Success, new KraiConcessionReportDto
         {
             KraiCode = profile.KraiCode,
             KraiName = profile.KraiName,
             Currency = profile.Locale.Currency,
             NumberLocale = profile.Locale.NumberLocale,
-            Quarter = new QuarterDto { Year = quarter.Year, Number = quarter.Number },
+            Quarter = quarter.ToDto(),
             KurinCount = kurins.Count,
             Concessions = rows.Values
                 .OrderBy(r => r.Name, StringComparer.CurrentCulture)

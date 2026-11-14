@@ -1,7 +1,6 @@
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
@@ -29,12 +28,12 @@ public sealed class GroupDuesAccess
         var group = await _unitOfWork.Groups.GetByKeyAsync(groupKey, cancellationToken);
         if (group is null)
         {
-            return (null, ServiceResult<T>.Failure(ResultType.NotFound, "GroupNotFound", "There is no such гурток."));
+            return (null, DuesErrors.NoGroup<T>());
         }
 
         if (_currentUser.KurinKey != group.KurinKey)
         {
-            return (null, new ServiceResult<T>(ResultType.Forbidden));
+            return (null, DuesErrors.Refused<T>());
         }
 
         return (group, null);
@@ -50,7 +49,7 @@ public sealed class GroupDuesAccess
         {
             return await _shape.IsSeniorAsync(boxKey, cancellationToken)
                 ? (new DuesBox(boxKey, null), null)
-                : (null, ServiceResult<T>.Failure(ResultType.NotFound, "GroupNotFound", "There is no such гурток."));
+                : (null, DuesErrors.NoGroup<T>());
         }
 
         var (group, failure) = await OpenAsync<T>(boxKey, cancellationToken);

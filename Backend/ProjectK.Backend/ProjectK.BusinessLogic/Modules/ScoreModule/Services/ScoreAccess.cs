@@ -21,7 +21,7 @@ public sealed class ScoreAccess
     }
 
     public ServiceResult<T>? Refuse<T>(Guid kurinKey) =>
-        kurinKey == Guid.Empty || _currentUser.KurinKey != kurinKey ? new ServiceResult<T>(ResultType.Forbidden) : null;
+        kurinKey == Guid.Empty || _currentUser.KurinKey != kurinKey ? ScoreErrors.Refused<T>() : null;
 
     /// <summary>Whether the caller may do <paramref name="action"/> to the points of a гурток — or of the kurin's unplaced youths.</summary>
     public async Task<bool> MayScoreAsync(Guid kurinKey, Guid? groupKey, ResourceAction action, CancellationToken cancellationToken)
@@ -56,9 +56,4 @@ public sealed class ScoreAccess
 
     public async Task<bool> MayManageAsync(Guid kurinKey, CancellationToken cancellationToken) =>
         (await _resourceAccess.CheckAccessAsync(ResourceType.KurinScore, ResourceAction.Manage, kurinKey, cancellationToken)).IsAllowed;
-
-    public static ServiceResult<T> Forbidden<T>() => new(ResultType.Forbidden);
-
-    public static ServiceResult<T> NotFound<T>(string what) =>
-        ServiceResult<T>.Failure(ResultType.NotFound, "ScoreNotFound", what);
 }
