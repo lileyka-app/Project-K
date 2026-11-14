@@ -28,7 +28,7 @@ internal static class DuesMapping
         TagKey = rate.TagKey,
         Articles = (rate.Articles.Count > 0
                 ? rate.Articles
-                : KurinDuesArticles.Standard(rate.StanytsiaFull, rate.StanytsiaReduced, rate.KurinShare))
+                : KurinDuesArticleRules.Standard(rate.StanytsiaFull, rate.StanytsiaReduced, rate.KurinShare))
             .Select(a => new DuesArticleDto
             {
                 Name = a.Name,

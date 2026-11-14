@@ -46,26 +46,26 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
 
     public async Task<ServiceResult<Unit>> Handle(UpdateDuesConcessionGrantCommand request, CancellationToken cancellationToken)
     {
-        var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
+        var (grant, failure) = await DuesConcessionGrantRules.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
         if (grant is null)
         {
             return failure!;
         }
 
-        var to = DuesConcessionGrants.Index(request.Request.ToQuarter);
+        var to = DuesConcessionGrantRules.Index(request.Request.ToQuarter);
         if (to < grant.FromQuarter)
         {
             return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "Пільга не може закінчитися раніше, ніж почнеться.");
         }
 
         // A later end may run into another grant of the same пільга, as a new grant would.
-        if (await DuesConcessionGrants.OverlapsAsync(_dues, grant.KurinKey, grant.MembershipKey, grant.ConcessionKey, grant.FromQuarter, to, grant.DuesConcessionGrantKey, cancellationToken))
+        if (await DuesConcessionGrantRules.OverlapsAsync(_dues, grant.KurinKey, grant.MembershipKey, grant.ConcessionKey, grant.FromQuarter, to, grant.DuesConcessionGrantKey, cancellationToken))
         {
             return ServiceResult<Unit>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "Ця пільга вже діє в цих кварталах.");
         }
 
         grant.ToQuarter = to;
-        grant.Reason = DuesConcessionGrants.Reason(request.Request.Reason);
+        grant.Reason = DuesConcessionGrantRules.Reason(request.Request.Reason);
         grant.SetByUserKey = _currentUser.UserId;
         grant.UpdatedDate = DateTime.UtcNow;
         await _dues.SaveChangesAsync(cancellationToken);

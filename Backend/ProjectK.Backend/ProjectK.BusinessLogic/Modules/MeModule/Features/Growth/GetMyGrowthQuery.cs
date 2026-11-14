@@ -75,7 +75,7 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
     {
         var byId = progresses.ToDictionary(p => p.ProbeId);
         var line = await _line.ForMemberAsync(memberKey, cancellationToken);
-        var currentId = GrowthSummary.CurrentProbeId(line.Select(p => p.Id), byId.Values.Select(p => (p.ProbeId, p.Status)));
+        var currentId = GrowthSummaryRules.CurrentProbeId(line.Select(p => p.Id), byId.Values.Select(p => (p.ProbeId, p.Status)));
         if (currentId is null || _probes.GetGroupedProbeById(currentId) is not { } probe)
         {
             return null;

@@ -6,7 +6,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 
-/// <summary>The probes a member walks, in order: their <see cref="ProbeLine"/>.</summary>
+/// <summary>The probes a member walks, in order: their <see cref="ProbeLineRules"/>.</summary>
 public sealed record GetMemberProbeLineQuery(Guid MemberKey) : IRequest<ServiceResult<IReadOnlyList<ProbeSummaryDto>>>;
 
 public sealed class GetMemberProbeLineQueryHandler

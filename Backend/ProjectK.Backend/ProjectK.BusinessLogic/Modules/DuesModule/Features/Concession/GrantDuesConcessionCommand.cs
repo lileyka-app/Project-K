@@ -79,14 +79,14 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
         }
 
         var from = new DuesQuarter(request.Request.FromQuarter.Year, request.Request.FromQuarter.Number).Index;
-        var to = DuesConcessionGrants.Index(request.Request.ToQuarter);
+        var to = DuesConcessionGrantRules.Index(request.Request.ToQuarter);
         if (to < from)
         {
             return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "Пільга не може закінчитися раніше, ніж почнеться.");
         }
 
         // The same пільга twice over the same quarters would only hide which one counts.
-        if (await DuesConcessionGrants.OverlapsAsync(_dues, group.KurinKey, request.MembershipKey, rule.Key, from, to, null, cancellationToken))
+        if (await DuesConcessionGrantRules.OverlapsAsync(_dues, group.KurinKey, request.MembershipKey, rule.Key, from, to, null, cancellationToken))
         {
             return ServiceResult<Guid>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "Ця пільга вже діє в цих кварталах.");
         }
@@ -102,7 +102,7 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
             Parts = rule.Parts,
             FromQuarter = from,
             ToQuarter = to,
-            Reason = DuesConcessionGrants.Reason(request.Request.Reason),
+            Reason = DuesConcessionGrantRules.Reason(request.Request.Reason),
             SetByUserKey = _currentUser.UserId
         };
         _dues.DuesConcessionGrants.Create(grant, cancellationToken);

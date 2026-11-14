@@ -64,7 +64,7 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
                 continue;
             }
 
-            var kurin = MeKurins.Ref(membership, _currentUser.KurinKey);
+            var kurin = MeKurinMapping.Ref(membership, _currentUser.KurinKey);
             var groups = await _unitOfWork.Groups.GetAllAsync(membership.KurinKey, cancellationToken);
             rows.AddRange(groups
                 .Where(g => g.GroupKey == membership.GroupKey || led.Contains(g.GroupKey))

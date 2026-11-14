@@ -104,7 +104,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         }
 
         if (currentStatus == ProbeProgressStatus.NotStarted
-            && ProbeStartRefusal.Of<ProbeProgressDto>(
+            && ProbeStartRules.Of<ProbeProgressDto>(
                 await _line.CanStartAsync(request.MemberKey, progress.ProbeId, cancellationToken)) is { } refusal)
         {
             return refusal;
@@ -139,7 +139,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
                 AuditArea.Probe,
                 JournalAction(currentStatus, request.Status),
                 progress.ProbeProgressKey,
-                ProgressAuditLabels.Probe(_probesCatalogReader, progress.ProbeId),
+                ProgressAuditNames.Probe(_probesCatalogReader, progress.ProbeId),
                 request.MemberKey,
                 AuditChanges.Of(("status", currentStatus, request.Status)),
                 request.Note),

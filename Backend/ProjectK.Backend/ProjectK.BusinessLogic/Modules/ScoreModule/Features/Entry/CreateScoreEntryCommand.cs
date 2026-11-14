@@ -74,7 +74,7 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await ScoreEntryWriter.CheckAsync<Guid>(_access, _unitOfWork, _profiles, book, request.Request, null, cancellationToken) is { } problem)
+        if (await ScoreEntryRules.CheckAsync<Guid>(_access, _unitOfWork, _profiles, book, request.Request, null, cancellationToken) is { } problem)
         {
             return problem;
         }
@@ -89,9 +89,9 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
             CreatedDate = now,
             UpdatedDate = now
         };
-        ScoreEntryWriter.Apply(entry, request.Request, book);
+        ScoreEntryRules.Apply(entry, request.Request, book);
         _score.ScoreEntries.Create(entry, cancellationToken);
-        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Created, ScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
+        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Created, ScoreEntryRules.Snapshot(entry), _currentUser.UserId, now);
 
         try
         {
@@ -99,7 +99,7 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
         }
         catch (DuplicateRowException)
         {
-            return ScoreEntryWriter.GivenMeanwhile<Guid>();
+            return ScoreEntryRules.GivenMeanwhile<Guid>();
         }
 
         return new ServiceResult<Guid>(ResultType.Created, entry.ScoreEntryKey);

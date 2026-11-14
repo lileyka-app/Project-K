@@ -27,7 +27,7 @@ public class ProbeLineTests
         new(id, id, PointsCount: 10, SectionsCount: 2, edition, order, "ua", "approved");
 
     private static string[] Line(string? groupEdition, params (string Id, ProbeProgressStatus Status)[] progress) =>
-        [.. ProbeLine.Of(Catalog, progress.ToDictionary(p => p.Id, p => p.Status), groupEdition).Select(p => p.Id)];
+        [.. ProbeLineRules.Of(Catalog, progress.ToDictionary(p => p.Id, p => p.Status), groupEdition).Select(p => p.Id)];
 
     [Fact]
     public void Of_WalksTheUnnamedEdition_WhenTheGroupChoseNone()
@@ -75,7 +75,7 @@ public class ProbeLineTests
             ["probe-2"] = ProbeProgressStatus.Completed,
         };
 
-        ProbeLine.HeldBy(Catalog, progress)!.Id.Should().Be("probe-2");
-        ProbeLine.HeldBy(Catalog, new Dictionary<string, ProbeProgressStatus>()).Should().BeNull();
+        ProbeLineRules.HeldBy(Catalog, progress)!.Id.Should().Be("probe-2");
+        ProbeLineRules.HeldBy(Catalog, new Dictionary<string, ProbeProgressStatus>()).Should().BeNull();
     }
 }

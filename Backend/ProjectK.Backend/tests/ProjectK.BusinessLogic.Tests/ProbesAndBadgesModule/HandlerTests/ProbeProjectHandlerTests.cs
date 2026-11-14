@@ -561,7 +561,7 @@ public class ProbeProjectHandlerTests
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
 
-        ProbeProjectMarkdown.ImageKeys($"a ![x](project-image:{first})", $"[link](https://plast.org.ua) ![](project-image:{second})")
+        ProbeProjectMarkdownRules.ImageKeys($"a ![x](project-image:{first})", $"[link](https://plast.org.ua) ![](project-image:{second})")
             .Should().Equal(first, second);
     }
 }

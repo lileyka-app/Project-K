@@ -64,7 +64,7 @@ public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, Se
 
             rows.Add(new MyScoreDto
             {
-                Kurin = MeKurins.Ref(membership, _currentUser.KurinKey),
+                Kurin = MeKurinMapping.Ref(membership, _currentUser.KurinKey),
                 GroupKey = groupKey,
                 GroupName = book.GroupName(groupKey),
                 PeriodLabel = resolved.Dto.Label,

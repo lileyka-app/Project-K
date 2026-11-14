@@ -22,10 +22,10 @@ public static class KraiErrors
     public const string KurinNotFound = "KurinNotFound";
     public const string RevisionNotFound = "RevisionNotFound";
 
-    /// <summary>The profile breaks a rule of <c>KraiProfileJson.Validate</c>; the message lists which.</summary>
+    /// <summary>The profile breaks a rule of <c>KraiProfileJsonRules.Validate</c>; the message lists which.</summary>
     public const string InvalidProfile = "InvalidProfile";
 
-    /// <summary>The profile is longer than <c>KraiProfileJson.MaxLength</c> once written.</summary>
+    /// <summary>The profile is longer than <c>KraiProfileJsonRules.MaxLength</c> once written.</summary>
     public const string ProfileTooLarge = "ProfileTooLarge";
 
     /// <summary>Someone saved a newer revision since the editor loaded its base one.</summary>

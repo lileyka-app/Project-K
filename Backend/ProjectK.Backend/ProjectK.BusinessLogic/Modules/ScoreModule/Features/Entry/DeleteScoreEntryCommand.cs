@@ -52,7 +52,7 @@ public sealed class DeleteScoreEntryCommandHandler : IRequestHandler<DeleteScore
         entry.DeletedByUserKey = _currentUser.UserId;
         entry.UpdatedDate = now;
         _score.ScoreEntries.Update(entry, cancellationToken);
-        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Deleted, ScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
+        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Entry, entry.ScoreEntryKey, ScoreTrail.Deleted, ScoreEntryRules.Snapshot(entry), _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

@@ -46,7 +46,7 @@ public sealed class UploadProbeProjectImageCommandHandler
     public async Task<ServiceResult<ProbeProjectImageDto>> Handle(UploadProbeProjectImageCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ProbeProjectImageDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ProbeProjectImageDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }

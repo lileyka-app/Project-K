@@ -7,7 +7,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>
 /// Name lookups used to label agenda assignments and creators. Loaded for the items on the page:
-/// only the people they name are read, not the kurin (<see cref="AgendaPeople"/>).
+/// only the people they name are read, not the kurin (<see cref="AgendaPeopleRules"/>).
 /// </summary>
 public sealed record AgendaNames(
     IReadOnlyDictionary<Guid, string> GroupNames,
@@ -28,7 +28,7 @@ public sealed record AgendaNames(
     public static async Task<AgendaNames> LoadAsync(IUnitOfWork uow, IMemberDirectory directory, Guid kurinKey, IEnumerable<AgendaItem> items, CancellationToken cancellationToken)
     {
         var groups = await uow.Groups.GetAllAsync(kurinKey, cancellationToken);
-        var members = await AgendaPeople.ReadAsync(directory, kurinKey, AgendaPeople.ToLabel(items), cancellationToken);
+        var members = await AgendaPeopleRules.ReadAsync(directory, kurinKey, AgendaPeopleRules.ToLabel(items), cancellationToken);
 
         var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
         var memberNames = members.ToDictionary(m => m.MemberKey, m => m.FullName);

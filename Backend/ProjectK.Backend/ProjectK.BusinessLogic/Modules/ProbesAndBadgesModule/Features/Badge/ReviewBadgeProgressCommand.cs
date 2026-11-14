@@ -109,7 +109,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
                     : canRemoveConfirmed ? AuditActions.Badge.ConfirmationRemoved
                     : AuditActions.Badge.Rejected,
                 progress.BadgeProgressKey,
-                ProgressAuditLabels.Badge(_badges, progress.BadgeId),
+                ProgressAuditNames.Badge(_badges, progress.BadgeId),
                 progress.MemberKey,
                 AuditChanges.Of(("status", fromStatus, targetStatus)),
                 request.Note),

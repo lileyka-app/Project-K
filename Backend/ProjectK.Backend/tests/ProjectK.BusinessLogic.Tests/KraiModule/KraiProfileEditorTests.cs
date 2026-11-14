@@ -92,7 +92,7 @@ public class KraiProfileEditorTests
     {
         Latest(1);
 
-        var result = await _editor.SaveAsync("cz", 1, KraiProfileJson.Parse(json), null, default);
+        var result = await _editor.SaveAsync("cz", 1, KraiProfileJsonRules.Parse(json), null, default);
 
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("InvalidProfile");

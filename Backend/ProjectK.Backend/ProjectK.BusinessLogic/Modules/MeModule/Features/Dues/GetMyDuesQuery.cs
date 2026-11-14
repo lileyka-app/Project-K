@@ -62,7 +62,7 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
 
             rows.Add(new MyDuesDto
             {
-                Kurin = MeKurins.Ref(membership, _currentUser.KurinKey),
+                Kurin = MeKurinMapping.Ref(membership, _currentUser.KurinKey),
                 GroupName = membership.GroupName,
                 Currency = krai.Currency,
                 NumberLocale = krai.NumberLocale,

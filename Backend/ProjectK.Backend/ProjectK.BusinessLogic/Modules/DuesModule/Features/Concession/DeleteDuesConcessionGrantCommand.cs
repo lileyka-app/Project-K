@@ -25,7 +25,7 @@ public sealed class DeleteDuesConcessionGrantCommandHandler : IRequestHandler<De
 
     public async Task<ServiceResult<Unit>> Handle(DeleteDuesConcessionGrantCommand request, CancellationToken cancellationToken)
     {
-        var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
+        var (grant, failure) = await DuesConcessionGrantRules.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
         if (grant is null)
         {
             return failure!;

@@ -19,7 +19,7 @@ public sealed class DismissDutyCommandValidator : AbstractValidator<DismissDutyC
 {
     public DismissDutyCommandValidator()
     {
-        RuleFor(c => c.Key).Must(DutyDismissals.IsKey).WithMessage("Not a duty key.");
+        RuleFor(c => c.Key).Must(DutyDismissalRules.IsKey).WithMessage("Not a duty key.");
         RuleFor(c => c.Fingerprint).NotEmpty().MaximumLength(DismissedDuty.FingerprintMaxLength);
     }
 }

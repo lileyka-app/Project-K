@@ -15,7 +15,7 @@ public readonly record struct AgendaOccurrence(DateTime StartUtc, DateTime? EndU
 /// The series repeats by the clock on the wall, not by the UTC instant: сходини at 18:30 stay at 18:30
 /// after the clocks go back. Stepping the stored UTC start by whole days moved every occurrence after
 /// the last Sunday of October an hour earlier (found live, 1.1.4). Occurrences are therefore stepped in
-/// the kurin's zone (its край's, see <see cref="KurinTimeZone"/>) and converted back; a time the zone skips
+/// the kurin's zone (its край's, see <see cref="KurinTimeZoneRules"/>) and converted back; a time the zone skips
 /// (the spring gap) lands an hour later.
 /// </para>
 /// </summary>

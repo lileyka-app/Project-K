@@ -54,8 +54,8 @@ public class AgendaTagTargetTests
         var carrier = new AgendaViewerContext(KurinKey, Guid.NewGuid(), Guid.NewGuid(), null, [], [], false, false, ViewerTagKeysOrNull: [Novices]);
         var other = carrier with { ViewerTagKeysOrNull = [] };
 
-        AgendaCompletion.IsIn(item.Assignments.Single(), carrier).Should().BeTrue();
-        AgendaCompletion.IsIn(item.Assignments.Single(), other).Should().BeFalse();
+        AgendaCompletionRules.IsIn(item.Assignments.Single(), carrier).Should().BeTrue();
+        AgendaCompletionRules.IsIn(item.Assignments.Single(), other).Should().BeFalse();
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public class AgendaTagTargetTests
             new Dictionary<Guid, IReadOnlyList<Guid>> { [Novices] = [sokil, vedmid] });
         var overseer = new AgendaViewerContext(KurinKey, Guid.NewGuid(), Guid.NewGuid(), null, [sokoly], [], true, true, TagCarriersReach: reach);
 
-        var dto = AgendaItemResponseFactory.Create(item, overseer, "Весь курінь",
+        var dto = AgendaItemMapping.Create(item, overseer, "Весь курінь",
             new Dictionary<Guid, string>(), new Dictionary<Guid, string> { [sokil] = "Сокіл", [vedmid] = "Ведмідь" },
             new Dictionary<Guid, string>(), new Dictionary<Guid, string>(), new Dictionary<Guid, AgendaCategory>(), roster)
             .Assignments.Single();

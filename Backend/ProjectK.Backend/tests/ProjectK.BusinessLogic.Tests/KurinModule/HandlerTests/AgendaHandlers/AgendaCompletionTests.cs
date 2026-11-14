@@ -61,11 +61,11 @@ public class AgendaCompletionTests
         var target = To(AgendaTargetType.Group, Sokoly);
         var item = Task(target);
 
-        AgendaCompletion.CanMoveTarget(item, target, Youth(Oksana, Sokoly)).Should().BeFalse();
-        AgendaCompletion.BoardMove(item, Youth(Oksana, Sokoly)).Should().BeEmpty();
-        AgendaCompletion.CanMoveTarget(item, target, Hurtkovyi(Petro, Sokoly)).Should().BeTrue();
-        AgendaCompletion.CanMoveTarget(item, target, TheAuthor()).Should().BeTrue();
-        AgendaCompletion.CanMoveTarget(item, target, Zvyazkovyi()).Should().BeTrue();
+        AgendaCompletionRules.CanMoveTarget(item, target, Youth(Oksana, Sokoly)).Should().BeFalse();
+        AgendaCompletionRules.BoardMove(item, Youth(Oksana, Sokoly)).Should().BeEmpty();
+        AgendaCompletionRules.CanMoveTarget(item, target, Hurtkovyi(Petro, Sokoly)).Should().BeTrue();
+        AgendaCompletionRules.CanMoveTarget(item, target, TheAuthor()).Should().BeTrue();
+        AgendaCompletionRules.CanMoveTarget(item, target, Zvyazkovyi()).Should().BeTrue();
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public class AgendaCompletionTests
         var target = To(AgendaTargetType.Group, Sokoly, AgendaCompletionMode.SharedByAnyone);
         var item = Task(target);
 
-        AgendaCompletion.CanMoveTarget(item, target, Youth(Oksana, Sokoly)).Should().BeTrue();
-        AgendaCompletion.CanMoveTarget(item, target, Youth(Ivan, Vedmedi)).Should().BeFalse();
+        AgendaCompletionRules.CanMoveTarget(item, target, Youth(Oksana, Sokoly)).Should().BeTrue();
+        AgendaCompletionRules.CanMoveTarget(item, target, Youth(Ivan, Vedmedi)).Should().BeFalse();
     }
 
     [Fact]
@@ -84,11 +84,11 @@ public class AgendaCompletionTests
         var target = To(AgendaTargetType.Group, Sokoly, AgendaCompletionMode.PerMember);
         var item = Task(target);
 
-        AgendaCompletion.CanMovePart(item, target, Youth(Oksana, Sokoly), Oksana).Should().BeTrue();
-        AgendaCompletion.CanMovePart(item, target, Youth(Oksana, Sokoly), Marta).Should().BeFalse();
-        AgendaCompletion.CanMovePart(item, target, Hurtkovyi(Petro, Sokoly), Marta).Should().BeTrue();
-        AgendaCompletion.CanMoveTarget(item, target, Hurtkovyi(Petro, Sokoly)).Should().BeFalse("the target's state is what the parts add up to");
-        AgendaCompletion.StakeOf(item, Youth(Oksana, Sokoly))!.MemberKey.Should().Be(Oksana);
+        AgendaCompletionRules.CanMovePart(item, target, Youth(Oksana, Sokoly), Oksana).Should().BeTrue();
+        AgendaCompletionRules.CanMovePart(item, target, Youth(Oksana, Sokoly), Marta).Should().BeFalse();
+        AgendaCompletionRules.CanMovePart(item, target, Hurtkovyi(Petro, Sokoly), Marta).Should().BeTrue();
+        AgendaCompletionRules.CanMoveTarget(item, target, Hurtkovyi(Petro, Sokoly)).Should().BeFalse("the target's state is what the parts add up to");
+        AgendaCompletionRules.StakeOf(item, Youth(Oksana, Sokoly))!.MemberKey.Should().Be(Oksana);
     }
 
     [Fact]
@@ -97,15 +97,15 @@ public class AgendaCompletionTests
         var target = To(AgendaTargetType.Group, Sokoly, AgendaCompletionMode.PerMember);
         var item = Task(target);
 
-        AgendaCompletion.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.Todo);
+        AgendaCompletionRules.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.Todo);
 
         Part(target, Oksana, AgendaItemStatus.Done);
         Part(target, Petro, AgendaItemStatus.Done);
-        AgendaCompletion.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.InProgress);
+        AgendaCompletionRules.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.InProgress);
 
         Part(target, Marta, AgendaItemStatus.Done);
-        AgendaCompletion.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.Done);
-        AgendaCompletion.ItemStatus(item, Roster).Should().Be(AgendaItemStatus.Done);
+        AgendaCompletionRules.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.Done);
+        AgendaCompletionRules.ItemStatus(item, Roster).Should().Be(AgendaItemStatus.Done);
     }
 
     [Fact]
@@ -117,12 +117,12 @@ public class AgendaCompletionTests
         Part(target, Ivan, AgendaItemStatus.Done); // was in Соколи, now in Ведмеді
 
         // Марта has not done hers: the three rows do not make it done.
-        AgendaCompletion.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.InProgress);
+        AgendaCompletionRules.TargetStatus(target, Roster).Should().Be(AgendaItemStatus.InProgress);
 
         var withoutMarta = new AgendaRoster(
             new Dictionary<Guid, Guid?> { [Oksana] = Sokoly, [Petro] = Sokoly, [Ivan] = Vedmedi },
             new Dictionary<Guid, IReadOnlyList<Guid>>());
-        AgendaCompletion.TargetStatus(target, withoutMarta).Should().Be(AgendaItemStatus.Done);
+        AgendaCompletionRules.TargetStatus(target, withoutMarta).Should().Be(AgendaItemStatus.Done);
     }
 
     [Fact]
@@ -133,9 +133,9 @@ public class AgendaCompletionTests
         sokoly.Status = AgendaItemStatus.Done;
         var item = Task(sokoly, vedmedi);
 
-        AgendaCompletion.ViewerStatus(item, Hurtkovyi(Petro, Sokoly), Roster).Should().Be(AgendaItemStatus.Done);
-        AgendaCompletion.ViewerStatus(item, Hurtkovyi(Ivan, Vedmedi), Roster).Should().Be(AgendaItemStatus.Todo);
-        AgendaCompletion.ItemStatus(item, Roster).Should().Be(AgendaItemStatus.InProgress, "one гурток closing it does not close it for the other");
+        AgendaCompletionRules.ViewerStatus(item, Hurtkovyi(Petro, Sokoly), Roster).Should().Be(AgendaItemStatus.Done);
+        AgendaCompletionRules.ViewerStatus(item, Hurtkovyi(Ivan, Vedmedi), Roster).Should().Be(AgendaItemStatus.Todo);
+        AgendaCompletionRules.ItemStatus(item, Roster).Should().Be(AgendaItemStatus.InProgress, "one гурток closing it does not close it for the other");
     }
 
     [Fact]
@@ -145,8 +145,8 @@ public class AgendaCompletionTests
         var item = Task(target);
         var kurinnyi = new AgendaViewerContext(Kurin, Guid.NewGuid(), Ivan, Vedmedi, [Vedmedi], [KurinLeadership], false, true);
 
-        AgendaCompletion.CanMoveTarget(item, target, kurinnyi).Should().BeTrue();
-        AgendaCompletion.BoardMove(item, kurinnyi).Should().ContainSingle();
+        AgendaCompletionRules.CanMoveTarget(item, target, kurinnyi).Should().BeTrue();
+        AgendaCompletionRules.BoardMove(item, kurinnyi).Should().ContainSingle();
     }
 
     [Fact]
@@ -155,8 +155,8 @@ public class AgendaCompletionTests
         var target = To(AgendaTargetType.Kurin, Kurin);
         var item = Task(target);
 
-        AgendaCompletion.CanMoveTarget(item, target, Youth(Oksana, Sokoly)).Should().BeFalse();
-        AgendaCompletion.CanMoveTarget(item, target, Zvyazkovyi()).Should().BeTrue();
+        AgendaCompletionRules.CanMoveTarget(item, target, Youth(Oksana, Sokoly)).Should().BeFalse();
+        AgendaCompletionRules.CanMoveTarget(item, target, Zvyazkovyi()).Should().BeTrue();
     }
 
     [Fact]
@@ -165,8 +165,8 @@ public class AgendaCompletionTests
         var shared = To(AgendaTargetType.Group, Vedmedi);
         var perMember = To(AgendaTargetType.Group, Sokoly, AgendaCompletionMode.PerMember);
 
-        AgendaCompletion.BoardMove(Task(shared, perMember), TheAuthor()).Select(s => s.Assignment).Should().Equal(shared);
-        AgendaCompletion.BoardMove(Task(perMember), TheAuthor()).Should().BeEmpty();
+        AgendaCompletionRules.BoardMove(Task(shared, perMember), TheAuthor()).Select(s => s.Assignment).Should().Equal(shared);
+        AgendaCompletionRules.BoardMove(Task(perMember), TheAuthor()).Should().BeEmpty();
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public class AgendaCompletionTests
         var named = To(AgendaTargetType.Member, Oksana);
         var item = Task(group, named);
 
-        AgendaCompletion.StakeOf(item, Youth(Oksana, Sokoly))!.Assignment.Should().BeSameAs(named);
+        AgendaCompletionRules.StakeOf(item, Youth(Oksana, Sokoly))!.Assignment.Should().BeSameAs(named);
     }
 
     [Fact]
@@ -184,18 +184,18 @@ public class AgendaCompletionTests
     {
         var named = To(AgendaTargetType.Member, Oksana, AgendaCompletionMode.PerMember);
 
-        AgendaCompletion.ModeOf(named).Should().Be(AgendaCompletionMode.Shared);
-        AgendaCompletion.CanMoveTarget(Task(named), named, Youth(Oksana, Sokoly)).Should().BeTrue();
+        AgendaCompletionRules.ModeOf(named).Should().Be(AgendaCompletionMode.Shared);
+        AgendaCompletionRules.CanMoveTarget(Task(named), named, Youth(Oksana, Sokoly)).Should().BeTrue();
     }
 
     [Fact]
     public void ATargetHasMoved_OnceItsStateOrAnyPartHas()
     {
         var target = To(AgendaTargetType.Group, Sokoly, AgendaCompletionMode.PerMember);
-        AgendaCompletion.HasMoved(target).Should().BeFalse();
+        AgendaCompletionRules.HasMoved(target).Should().BeFalse();
 
         Part(target, Oksana, AgendaItemStatus.InProgress);
-        AgendaCompletion.HasMoved(target).Should().BeTrue();
+        AgendaCompletionRules.HasMoved(target).Should().BeTrue();
     }
 
     // Found live: the гуртковий handed in his own вкладка and the whole task jumped to «Зроблено» for him.
@@ -205,11 +205,11 @@ public class AgendaCompletionTests
         var target = To(AgendaTargetType.Group, Sokoly, AgendaCompletionMode.PerMember);
         var item = Task(target);
         Part(target, Petro, AgendaItemStatus.Done);
-        target.Status = AgendaCompletion.TargetStatus(target, Roster);
+        target.Status = AgendaCompletionRules.TargetStatus(target, Roster);
 
         var hurtkovyi = Hurtkovyi(Petro, Sokoly);
-        AgendaCompletion.ViewerStatus(item, hurtkovyi, Roster).Should().Be(AgendaItemStatus.InProgress);
-        AgendaCompletion.BoardMove(item, hurtkovyi).Should().BeEmpty("parts are marked one by one from the dialog");
-        AgendaCompletion.CanMovePart(item, target, hurtkovyi, Petro).Should().BeTrue();
+        AgendaCompletionRules.ViewerStatus(item, hurtkovyi, Roster).Should().Be(AgendaItemStatus.InProgress);
+        AgendaCompletionRules.BoardMove(item, hurtkovyi).Should().BeEmpty("parts are marked one by one from the dialog");
+        AgendaCompletionRules.CanMovePart(item, target, hurtkovyi, Petro).Should().BeTrue();
     }
 }

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -32,7 +33,7 @@ public sealed class GetPendingKurinBranchRequestsQueryHandler
             // A handful at most, so one read each is cheaper than a contract for it.
             if (await _unitOfWork.Kurins.GetByKeyAsync(open.KurinKey, cancellationToken) is { } kurin)
             {
-                responses.Add(open.ToDto(kurin, await KurinBranchRequesters.NameOfAsync(_userManager, open)));
+                responses.Add(open.ToDto(kurin, await KurinBranchRequesterNames.NameOfAsync(_userManager, open)));
             }
         }
 

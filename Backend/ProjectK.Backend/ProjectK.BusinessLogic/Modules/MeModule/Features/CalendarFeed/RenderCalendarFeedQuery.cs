@@ -189,7 +189,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             var summary = own ? item.Title : ScheduleTitle(item, groupNames);
             foreach (var occurrence in AgendaRecurrence.Expand(item, from, to, zone))
             {
-                var occurrenceKey = AgendaOccurrences.KeyOf(item, occurrence.StartUtc);
+                var occurrenceKey = AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc);
                 AgendaRsvpStatus? answer = answers.TryGetValue((item.AgendaItemKey, occurrenceKey), out var status) ? status : null;
                 rows.Add(new IcsEvent(
                     Uid: occurrenceKey is { } at ? $"{item.AgendaItemKey:N}-{at:yyyyMMdd'T'HHmmss'Z'}@{UidDomain}" : $"{item.AgendaItemKey:N}@{UidDomain}",
@@ -213,8 +213,8 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
     /// <summary>A dated task the person still has to do, as an all-day event on its due day.</summary>
     private IcsEvent? TaskRow(AgendaItem item, AgendaViewerContext viewer, AgendaRoster roster, AgendaCategory? category, string? kurinLine)
     {
-        if (AgendaCompletion.StakeOf(item, viewer) is null
-            || AgendaCompletion.ViewerStatus(item, viewer, roster) == AgendaItemStatus.Done
+        if (AgendaCompletionRules.StakeOf(item, viewer) is null
+            || AgendaCompletionRules.ViewerStatus(item, viewer, roster) == AgendaItemStatus.Done
             || (item.EndUtc ?? item.StartUtc) is not { } due)
         {
             return null;
@@ -277,7 +277,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         {
             lines.Add(kurinLine);
         }
-        lines.Add($"Відкрити в Лілейці: {_siteUrl}{AgendaNotificationText.RouteFor(item.Kind, kurinKey)}");
+        lines.Add($"Відкрити в Лілейці: {_siteUrl}{AgendaNotificationNames.RouteFor(item.Kind, kurinKey)}");
         return string.Join('\n', lines);
     }
 

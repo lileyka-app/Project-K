@@ -104,7 +104,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
             RecurrenceCount = request.RecurrenceCount,
             CreatedByUserKey = actorUserKey.Value,
             Assignments = request.Targets
-                .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey, CompletionMode = AgendaTargetModes.For(t, request.Kind) })
+                .Select(t => new AgendaAssignment { TargetType = t.TargetType, TargetKey = t.TargetKey, CompletionMode = AgendaTargetModeRules.For(t, request.Kind) })
                 .ToList()
         };
 
@@ -131,7 +131,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
 
     private async Task PublishAssignedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
 
         await _events.PublishAsync(
             new AgendaItemAssigned(

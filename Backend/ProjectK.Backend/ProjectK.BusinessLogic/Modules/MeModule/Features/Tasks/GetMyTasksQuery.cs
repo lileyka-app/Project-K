@@ -42,7 +42,7 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
 
         foreach (var context in await _scopes.BuildAsync(cancellationToken))
         {
-            var kurin = MeKurins.Ref(context.Membership, _currentUser.KurinKey);
+            var kurin = MeKurinMapping.Ref(context.Membership, _currentUser.KurinKey);
             var scope = context.Viewer.ToScope();
             var items = (await _unitOfWork.AgendaItems.GetForViewerAsync(scope, null, null, onlyDated: false, kind: AgendaItemKind.Task, cancellationToken)).ToList();
             var roster = await AgendaRoster.LoadAsync(_unitOfWork, _members, context.Membership.KurinKey, items, cancellationToken);
@@ -50,12 +50,12 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
 
             foreach (var item in items)
             {
-                if (AgendaCompletion.StakeOf(item, viewer) is null)
+                if (AgendaCompletionRules.StakeOf(item, viewer) is null)
                 {
                     continue;
                 }
 
-                var status = AgendaCompletion.ViewerStatus(item, viewer, roster);
+                var status = AgendaCompletionRules.ViewerStatus(item, viewer, roster);
                 if (status == AgendaItemStatus.Done)
                 {
                     continue;

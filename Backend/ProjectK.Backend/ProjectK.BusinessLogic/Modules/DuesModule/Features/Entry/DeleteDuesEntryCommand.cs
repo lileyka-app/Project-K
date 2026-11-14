@@ -39,7 +39,7 @@ public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEn
             return DuesErrors.NoEntry<Unit>();
         }
 
-        if (DuesEntryLock.Check(entry) is { } locked)
+        if (DuesEntryLockRules.Check(entry) is { } locked)
         {
             return locked;
         }

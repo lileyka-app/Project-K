@@ -70,9 +70,9 @@ public sealed class GetAgendaItemsQueryHandler
 
         var responses = items
             .SelectMany(item => item.RecurrenceFrequency == RecurrenceFrequency.None
-                ? new[] { AgendaItemResponseFactory.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster) }
+                ? new[] { AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster) }
                 : AgendaRecurrence.Expand(item, windowFrom, windowTo, zone)
-                    .Select(occ => AgendaItemResponseFactory.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster, occ.StartUtc, occ.EndUtc)))
+                    .Select(occ => AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.TargetLabels, lookups.Categories, roster, occ.StartUtc, occ.EndUtc)))
             .Where(r => request.IncludeKurinSchedules || r.Audience != AgendaAudience.Schedule)
             .OrderBy(r => r.StartUtc)
             .ToList();

@@ -60,16 +60,16 @@ public sealed class CreatePrivateScoreEntryCommandHandler : IRequestHandler<Crea
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await PrivateScoreEntryWriter.CheckAsync<Guid>(_score, book, request.Request, cancellationToken) is { } problem)
+        if (await PrivateScoreEntryRules.CheckAsync<Guid>(_score, book, request.Request, cancellationToken) is { } problem)
         {
             return problem;
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
         var entry = new PrivateScoreEntry { KurinKey = request.KurinKey, MembershipKey = request.Request.MembershipKey, CreatedByUserKey = _currentUser.UserId, CreatedDate = now, UpdatedDate = now };
-        PrivateScoreEntryWriter.Apply(entry, request.Request);
+        PrivateScoreEntryRules.Apply(entry, request.Request);
         _score.PrivateScoreEntries.Create(entry, cancellationToken);
-        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Created, PrivateScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
+        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Created, PrivateScoreEntryRules.Snapshot(entry), _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
         return new ServiceResult<Guid>(ResultType.Created, entry.PrivateScoreEntryKey);

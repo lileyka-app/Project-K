@@ -316,8 +316,8 @@ public sealed class AgendaAccess : IAgendaAccess
     /// <summary>
     /// Whether a drag on the board moves anything for this viewer: their own part, or the shared
     /// targets they answer for. Seeing a task is not enough — a youth whose гурток was handed a task
-    /// to be closed by its провід sees it without being able to close it. See <see cref="AgendaCompletion"/>.
+    /// to be closed by its провід sees it without being able to close it. See <see cref="AgendaCompletionRules"/>.
     /// </summary>
     public static bool CanChangeStatus(AgendaItem item, AgendaViewerContext viewer)
-        => AgendaCompletion.BoardMove(item, viewer).Count > 0;
+        => AgendaCompletionRules.BoardMove(item, viewer).Count > 0;
 }

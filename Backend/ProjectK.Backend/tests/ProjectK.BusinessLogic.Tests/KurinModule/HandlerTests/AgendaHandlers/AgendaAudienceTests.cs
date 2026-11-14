@@ -27,7 +27,7 @@ public class AgendaAudienceTests
     };
 
     private static AgendaItemDto Response(AgendaItem item, AgendaViewerContext viewer) =>
-        AgendaItemResponseFactory.Create(item, viewer, "Весь курінь",
+        AgendaItemMapping.Create(item, viewer, "Весь курінь",
             new Dictionary<Guid, string> { [Sokoly] = "Соколи", [Kelty] = "Кельти" },
             new Dictionary<Guid, string>(), new Dictionary<Guid, string>(), new Dictionary<Guid, string>(),
             new Dictionary<Guid, AgendaCategory> { [Skhodyny.AgendaCategoryKey] = Skhodyny },

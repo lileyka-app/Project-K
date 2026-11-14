@@ -13,7 +13,7 @@ public class Group : Entity
     /// <summary>
     /// The edition of the probe programme the гурток walks (the catalogue's <c>edition</c>, e.g.
     /// "upyu-2026"); null for the one kurins have walked from the start. A youth who has closed a
-    /// first probe in another edition finishes that one — see <c>ProbeLine</c>.
+    /// first probe in another edition finishes that one — see <c>ProbeLineRules</c>.
     /// </summary>
     public string? ProbeEdition { get; set; }
 

@@ -49,7 +49,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
 
         foreach (var context in await _scopes.BuildAsync(cancellationToken))
         {
-            var kurin = MeKurins.Ref(context.Membership, _currentUser.KurinKey);
+            var kurin = MeKurinMapping.Ref(context.Membership, _currentUser.KurinKey);
             var items = await _unitOfWork.AgendaItems.GetForViewerAsync(
                 context.Viewer.ToScope(), now, until, onlyDated: true, kind: AgendaItemKind.Event, cancellationToken);
             var categories = (await _unitOfWork.AgendaCategories.GetForKurinAsync(context.Membership.KurinKey, includeArchived: true, cancellationToken))
@@ -68,7 +68,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
 
                 foreach (var occurrence in AgendaRecurrence.Expand(item, now, until, zone))
                 {
-                    var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrences.KeyOf(item, occurrence.StartUtc)), out var status)
+                    var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc)), out var status)
                         ? status
                         : (AgendaRsvpStatus?)null;
                     rows.Add(ToDto(item, kurin, category, occurrence, response));

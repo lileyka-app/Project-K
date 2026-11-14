@@ -1,0 +1,49 @@
+using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Entities.ScoreModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.Shared;
+
+namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+
+/// <summary>What a new and an edited entry share: the youth is here, the criterion is on the list.</summary>
+public static class PrivateScoreEntryRules
+{
+    public static async Task<ServiceResult<T>?> CheckAsync<T>(IScoreUnitOfWork score, ScoreBook book, UpsertPrivateScoreEntryRequest request, CancellationToken cancellationToken)
+    {
+        if (!book.Memberships.TryGetValue(request.MembershipKey, out var membership) || membership.Kind != MembershipKind.Youth)
+        {
+            return ScoreErrors.NotFound<T>("That person is not a youth of this kurin.");
+        }
+
+        if (request.PrivateScoreCriterionKey is { } key)
+        {
+            var criteria = await score.PrivateScoreCriteria.GetForKurinAsync(book.KurinKey, cancellationToken);
+            if (criteria.All(c => c.PrivateScoreCriterionKey != key || c.IsArchived))
+            {
+                return ScoreErrors.NotFound<T>("There is no such criterion on the list.");
+            }
+        }
+
+        return null;
+    }
+
+    public static void Apply(PrivateScoreEntry entry, UpsertPrivateScoreEntryRequest request)
+    {
+        entry.PrivateScoreCriterionKey = request.PrivateScoreCriterionKey;
+        entry.Points = request.Points;
+        entry.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
+        entry.OccurredOn = request.OccurredOn;
+    }
+
+    public static object Snapshot(PrivateScoreEntry e) => new
+    {
+        e.MembershipKey,
+        e.PrivateScoreCriterionKey,
+        e.Points,
+        e.Note,
+        e.OccurredOn,
+        e.DeletedAtUtc,
+        e.DeletedByUserKey
+    };
+}

@@ -121,7 +121,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
                 {
                     GroupKey = a.GroupKey,
                     GroupName = a.GroupKey is { } ak ? groupNames.GetValueOrDefault(ak, "—") : DuesNames.KurinBox,
-                    Standing = DuesAccountStandings.Of(hasLeft: standing is null, standsInThisGroup: a.GroupKey == currentGroup),
+                    Standing = DuesAccountStandingRules.Of(hasLeft: standing is null, standsInThisGroup: a.GroupKey == currentGroup),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
                         Quarter = q.Quarter.ToDto(),

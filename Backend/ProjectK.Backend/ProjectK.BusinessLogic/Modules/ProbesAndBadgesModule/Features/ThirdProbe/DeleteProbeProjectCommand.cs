@@ -48,7 +48,7 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
     public async Task<ServiceResult<ThirdProbeDto>> Handle(DeleteProbeProjectCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -75,7 +75,7 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
                 AuditArea.Probe,
                 AuditActions.Probe.ProjectRemoved,
                 project.ProbeProjectKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey,
                 AuditChanges.Removed(("project", project.Title))),
             cancellationToken);

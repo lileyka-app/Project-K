@@ -56,7 +56,7 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
         }
 
         var zone = await _profiles.ForKurinAsync(item.KurinKey, cancellationToken);
-        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
+        if (!AgendaOccurrenceRules.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
         {
             return ServiceResult<Unit>.Failure(ResultType.BadRequest, MeErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }

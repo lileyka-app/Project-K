@@ -1,5 +1,6 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Rules.KraiModule;
@@ -46,7 +47,7 @@ public class MemberCardFieldsTests
     [Fact]
     public void WithoutAProfile_MiddleNameAndPhone_StayRequired()
     {
-        var outcome = MemberCardFields.Apply(KraiCardFieldsSettings.Default, Write(middleName: "I"), null);
+        var outcome = MemberCardFieldRules.Apply(KraiCardFieldsSettings.Default, Write(middleName: "I"), null);
 
         outcome.Error.Should().Be("Поле «Номер телефону» обовʼязкове.");
     }
@@ -56,7 +57,7 @@ public class MemberCardFieldsTests
     {
         var request = Write(new() { ["visaType"] = "D" }, middleName: "Changed");
 
-        var outcome = MemberCardFields.Apply(Prague, request, Existing(null));
+        var outcome = MemberCardFieldRules.Apply(Prague, request, Existing(null));
 
         outcome.Error.Should().BeNull();
         request.MiddleName.Should().Be("Ivanovych");
@@ -68,7 +69,7 @@ public class MemberCardFieldsTests
         var request = Write(new() { ["visaType"] = "D" });
         request.PhoneNumber = null!;
 
-        var outcome = MemberCardFields.Apply(Prague, request, null);
+        var outcome = MemberCardFieldRules.Apply(Prague, request, null);
 
         outcome.Error.Should().BeNull();
         request.PhoneNumber.Should().BeEmpty();
@@ -77,7 +78,7 @@ public class MemberCardFieldsTests
     [Fact]
     public void ARequiredExtraField_MustBeFilled()
     {
-        var outcome = MemberCardFields.Apply(Prague, Write(new() { ["visaType"] = "  " }), null);
+        var outcome = MemberCardFieldRules.Apply(Prague, Write(new() { ["visaType"] = "  " }), null);
 
         outcome.Error.Should().Be("Поле «Тип візи» обовʼязкове.");
     }
@@ -85,7 +86,7 @@ public class MemberCardFieldsTests
     [Fact]
     public void ExtraValues_AreMerged_AndAFieldTheKraiDroppedIsKept()
     {
-        var outcome = MemberCardFields.Apply(
+        var outcome = MemberCardFieldRules.Apply(
             Prague,
             Write(new() { ["visaUntil"] = "2027-06-30", ["unknown"] = "x" }),
             Existing("""{"visaType":"D","oldField":"kept"}"""));
@@ -102,7 +103,7 @@ public class MemberCardFieldsTests
     [Fact]
     public void ADateField_TakesOnlyADate()
     {
-        var outcome = MemberCardFields.Apply(Prague, Write(new() { ["visaType"] = "D", ["visaUntil"] = "30.06.2027" }), null);
+        var outcome = MemberCardFieldRules.Apply(Prague, Write(new() { ["visaType"] = "D", ["visaUntil"] = "30.06.2027" }), null);
 
         outcome.Error.Should().Be("Поле «Віза до» має бути датою.");
     }
@@ -110,7 +111,7 @@ public class MemberCardFieldsTests
     [Fact]
     public void AnEmptyValue_ClearsTheField()
     {
-        var outcome = MemberCardFields.Apply(
+        var outcome = MemberCardFieldRules.Apply(
             Prague,
             Write(new() { ["visaUntil"] = "" }),
             Existing("""{"visaType":"D","visaUntil":"2027-06-30"}"""));
@@ -123,7 +124,7 @@ public class MemberCardFieldsTests
     {
         var request = Write(new() { ["visaType"] = "D" });
 
-        var outcome = MemberCardFields.Apply(Prague, request, Existing(null));
+        var outcome = MemberCardFieldRules.Apply(Prague, request, Existing(null));
 
         outcome.Error.Should().BeNull();
         request.Address.Should().Be("Praha 3, Seifertova 1");
@@ -137,7 +138,7 @@ public class MemberCardFieldsTests
         request.Address = "";
         request.School = "  Gymnázium  ";
 
-        var outcome = MemberCardFields.Apply(Prague, request, Existing(null));
+        var outcome = MemberCardFieldRules.Apply(Prague, request, Existing(null));
 
         outcome.Error.Should().BeNull();
         request.Address.Should().BeNull();
@@ -157,7 +158,7 @@ public class MemberCardFieldsTests
         request.Address = "Somewhere else";
         request.MotherFirstName = "Someone";
 
-        MemberCardFields.Apply(card, request, Existing(null)).Error.Should().BeNull();
+        MemberCardFieldRules.Apply(card, request, Existing(null)).Error.Should().BeNull();
 
         request.Address.Should().Be("Praha 3, Seifertova 1");
         request.MotherFirstName.Should().Be("Olena");
@@ -171,7 +172,7 @@ public class MemberCardFieldsTests
         var request = Write(middleName: "I", phone: "+420777000111");
         request.School = " ";
 
-        MemberCardFields.Apply(card, request, null).Error.Should().Be("Поле «Школа» обовʼязкове.");
+        MemberCardFieldRules.Apply(card, request, null).Error.Should().Be("Поле «Школа» обовʼязкове.");
     }
 
     [Fact]
@@ -189,7 +190,7 @@ public class MemberCardFieldsTests
         request.MotherPhone = "";
         request.FatherFirstName = " Petro ";
 
-        MemberCardFields.Apply(Prague, request, Existing(null)).Error.Should().BeNull();
+        MemberCardFieldRules.Apply(Prague, request, Existing(null)).Error.Should().BeNull();
 
         request.MotherFirstName.Should().Be("Olena");
         request.MotherPhone.Should().BeNull();
@@ -205,9 +206,9 @@ public class MemberCardFieldsTests
         var request = Write(middleName: "I", phone: "+420777000111");
         request.MotherFirstName = "Olena";
 
-        MemberCardFields.Apply(card, request, null).Error.Should().Be("Поле «Контакти батьків» обовʼязкове.");
+        MemberCardFieldRules.Apply(card, request, null).Error.Should().Be("Поле «Контакти батьків» обовʼязкове.");
 
         request.FatherPhone = "+420777000333";
-        MemberCardFields.Apply(card, request, null).Error.Should().BeNull();
+        MemberCardFieldRules.Apply(card, request, null).Error.Should().BeNull();
     }
 }

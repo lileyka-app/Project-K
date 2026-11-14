@@ -30,6 +30,6 @@ public sealed class GetMyLifeEntriesQueryHandler : IRequestHandler<GetMyLifeEntr
         }
 
         var entries = await _unitOfWork.MemberLifeEntries.GetForMemberAsync(memberKey, cancellationToken);
-        return new ServiceResult<IReadOnlyList<MemberLifeEntryDto>>(ResultType.Success, entries.Select(LifeEntries.ToDto).ToList());
+        return new ServiceResult<IReadOnlyList<MemberLifeEntryDto>>(ResultType.Success, entries.Select(LifeMapping.ToDto).ToList());
     }
 }

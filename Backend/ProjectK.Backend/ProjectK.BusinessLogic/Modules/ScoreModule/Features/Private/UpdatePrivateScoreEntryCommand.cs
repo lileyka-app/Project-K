@@ -58,16 +58,16 @@ public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<Upda
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await PrivateScoreEntryWriter.CheckAsync<Unit>(_score, book, request.Request, cancellationToken) is { } problem)
+        if (await PrivateScoreEntryRules.CheckAsync<Unit>(_score, book, request.Request, cancellationToken) is { } problem)
         {
             return problem;
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
-        PrivateScoreEntryWriter.Apply(entry, request.Request);
+        PrivateScoreEntryRules.Apply(entry, request.Request);
         entry.UpdatedDate = now;
         _score.PrivateScoreEntries.Update(entry, cancellationToken);
-        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Updated, PrivateScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
+        ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Updated, PrivateScoreEntryRules.Snapshot(entry), _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

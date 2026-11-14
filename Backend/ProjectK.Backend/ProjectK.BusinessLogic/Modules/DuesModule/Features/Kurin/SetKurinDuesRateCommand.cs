@@ -33,14 +33,14 @@ public sealed class SetKurinDuesRateCommandValidator : AbstractValidator<SetKuri
             RuleForEach(c => c.Request.Articles!).NotNull();
             RuleFor(c => c.Request.Articles!)
                 .NotEmpty().WithMessage("A rate needs at least one стаття.")
-                .Must(a => a.Count <= KurinDuesArticles.MaxCount)
-                .WithMessage($"No more than {KurinDuesArticles.MaxCount} статей.")
+                .Must(a => a.Count <= KurinDuesArticleRules.MaxCount)
+                .WithMessage($"No more than {KurinDuesArticleRules.MaxCount} статей.")
                 .Must(a => a.Select(x => x?.Name?.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() == a.Count)
                 .WithMessage("Two статті cannot have the same name.");
             RuleForEach(c => c.Request.Articles!).ChildRules(article =>
             {
                 article.RuleFor(a => a.Name).NotEmpty().Must(n => n?.Trim().Length > 0)
-                    .MaximumLength(KurinDuesArticles.MaxNameLength);
+                    .MaximumLength(KurinDuesArticleRules.MaxNameLength);
                 article.RuleFor(a => a.Recipient).IsInEnum();
                 article.RuleFor(a => a.Amount).GreaterThanOrEqualTo(0).PrecisionScale(18, 2, ignoreTrailingZeros: true);
                 article.RuleFor(a => a.ReducedAmount!.Value).GreaterThanOrEqualTo(0)
@@ -144,13 +144,13 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
         {
             // Three amounts from a client that does not know статті: they would wipe the kurin's own.
             var inForce = rates.LastOrDefault(r => r.FromQuarter <= from);
-            if (inForce is not null && !KurinDuesArticles.AreStandard(inForce.Articles))
+            if (inForce is not null && !KurinDuesArticleRules.AreStandard(inForce.Articles))
             {
                 return ServiceResult<Unit>.Failure(ResultType.Conflict, DuesErrors.DuesArticlesInUse,
                     "The kurin has its own статті of the вкладка; change them where they can be named.");
             }
 
-            articles = KurinDuesArticles.Standard(
+            articles = KurinDuesArticleRules.Standard(
                 request.Request.StanytsiaFull, request.Request.StanytsiaReduced, request.Request.KurinShare, paysKrai: !krai.Dues.PaysStanytsia);
         }
 

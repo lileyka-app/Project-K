@@ -116,8 +116,8 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
     // History folded in from the old probe and badge trails carries the catalogue id, not the title.
     private string Label(KurinAuditEvent entry) => entry.Area switch
     {
-        AuditArea.Probe => ProgressAuditLabels.Probe(_probes, entry.SubjectLabel),
-        AuditArea.Badge => ProgressAuditLabels.Badge(_badges, entry.SubjectLabel),
+        AuditArea.Probe => ProgressAuditNames.Probe(_probes, entry.SubjectLabel),
+        AuditArea.Badge => ProgressAuditNames.Badge(_badges, entry.SubjectLabel),
         _ => entry.SubjectLabel
     };
 }

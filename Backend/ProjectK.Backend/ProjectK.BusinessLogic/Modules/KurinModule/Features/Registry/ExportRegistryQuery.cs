@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
@@ -71,7 +72,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         }
 
         var chosen = request.ColumnIds
-            .Where(id => RegistryColumns.HeaderFor(id) is not null)
+            .Where(id => RegistryColumnRules.HeaderFor(id) is not null)
             .ToList();
 
         var people = members.Data
@@ -111,13 +112,13 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         IReadOnlyDictionary<Guid, string> tagNames)
     {
         var headers = new List<string> { "Прізвище та ім'я" };
-        headers.AddRange(columnIds.Select(id => RegistryColumns.HeaderFor(id)!));
+        headers.AddRange(columnIds.Select(id => RegistryColumnRules.HeaderFor(id)!));
 
         var rows = people
             .Select(member =>
             {
                 var cells = new List<SheetCell> { SheetCell.Of(FullName(member)) };
-                cells.AddRange(columnIds.Select(id => RegistryColumns.Read(id, member, tagNames)));
+                cells.AddRange(columnIds.Select(id => RegistryColumnRules.Read(id, member, tagNames)));
                 return (IReadOnlyList<SheetCell>)cells;
             })
             .ToList();
@@ -141,7 +142,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         foreach (var level in PlastLadder.DefaultFor(branch))
         {
             rows.Add([
-                SheetCell.Of(RegistryColumns.HeaderFor($"level:{level}")),
+                SheetCell.Of(RegistryColumnRules.HeaderFor($"level:{level}")),
                 SheetCell.Count(youth.Count(member => member.LatestPlastLevel == level))
             ]);
         }

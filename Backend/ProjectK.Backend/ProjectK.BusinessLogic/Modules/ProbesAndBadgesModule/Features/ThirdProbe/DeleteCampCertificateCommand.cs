@@ -30,7 +30,7 @@ public sealed class DeleteCampCertificateCommandHandler
     public async Task<ServiceResult<ThirdProbeDto>> Handle(DeleteCampCertificateCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(Access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(Access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }

@@ -62,7 +62,7 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
         }
 
         var zone = await _profiles.ForKurinAsync(item.KurinKey, cancellationToken);
-        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
+        if (!AgendaOccurrenceRules.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
         {
             return ServiceResult<AgendaResponsesDto>.Failure(ResultType.BadRequest, AgendaErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }
@@ -79,7 +79,7 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
             waitlistEnabled = category?.WaitlistEnabled ?? false;
         }
 
-        var picture = AgendaRsvpProjector.Project(item.AgendaItemKey, occurrenceKey, responses, capacity, waitlistEnabled, names, _currentUser.UserId);
+        var picture = AgendaRsvpRules.Project(item.AgendaItemKey, occurrenceKey, responses, capacity, waitlistEnabled, names, _currentUser.UserId);
         return new ServiceResult<AgendaResponsesDto>(ResultType.Success, picture);
     }
 

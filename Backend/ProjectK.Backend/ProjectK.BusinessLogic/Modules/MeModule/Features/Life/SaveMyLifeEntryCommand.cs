@@ -62,24 +62,24 @@ public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEn
             }
 
             entry = own;
-            LifeEntries.Apply(entry, request.Entry);
+            LifeMapping.Apply(entry, request.Entry);
             entry.UpdatedDate = DateTime.UtcNow;
             _unitOfWork.MemberLifeEntries.Update(entry, cancellationToken);
         }
         else
         {
             var count = (await _unitOfWork.MemberLifeEntries.GetForMemberAsync(memberKey, cancellationToken)).Count;
-            if (count >= LifeEntries.MaxPerPerson)
+            if (count >= LifeMapping.MaxPerPerson)
             {
                 return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.BadRequest, MemberErrors.LifeStoryFull, "The life story holds no more entries.");
             }
 
             entry = new MemberLifeEntry { MemberKey = memberKey };
-            LifeEntries.Apply(entry, request.Entry);
+            LifeMapping.Apply(entry, request.Entry);
             _unitOfWork.MemberLifeEntries.Create(entry, cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<MemberLifeEntryDto>(ResultType.Success, LifeEntries.ToDto(entry));
+        return new ServiceResult<MemberLifeEntryDto>(ResultType.Success, LifeMapping.ToDto(entry));
     }
 }

@@ -75,7 +75,7 @@ public sealed class KraiProfileDirectory : IKraiProfileDirectory
         // reinterprets a field adds its conversion here, keyed on SchemaVersion.
         try
         {
-            return KraiProfileJson.Parse(revision.Json);
+            return KraiProfileJsonRules.Parse(revision.Json);
         }
         catch (JsonException exception)
         {

@@ -49,7 +49,7 @@ public sealed class GetKurinProbeEditionsQueryHandler : IRequestHandler<GetKurin
             return KurinErrors.NotFound<KurinProbeEditionsDto>();
         }
 
-        var editions = OfferedProbeEditions.OfferedTo(_catalog, kurin.KraiCode);
+        var editions = OfferedProbeEditionRules.OfferedTo(_catalog, kurin.KraiCode);
         var groups = (await _unitOfWork.Groups.GetAllAsync(kurin.KurinKey, cancellationToken))
             .OrderBy(group => group.Name, StringComparer.CurrentCulture)
             .ToList();
@@ -75,7 +75,7 @@ public sealed class GetKurinProbeEditionsQueryHandler : IRequestHandler<GetKurin
                 .OrderBy(member => member.FullName, StringComparer.CurrentCulture)
                 .ToList();
 
-            rows.Add(new GroupProbeEditionDto(group.GroupKey, group.Name, OfferedProbeEditions.Effective(editions, group.ProbeEdition), canChange, members));
+            rows.Add(new GroupProbeEditionDto(group.GroupKey, group.Name, OfferedProbeEditionRules.Effective(editions, group.ProbeEdition), canChange, members));
         }
 
         return new ServiceResult<KurinProbeEditionsDto>(ResultType.Success, new KurinProbeEditionsDto(editions, rows));

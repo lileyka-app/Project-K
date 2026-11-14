@@ -128,7 +128,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
                 AuditArea.Badge,
                 previousStatus is null ? AuditActions.Badge.Submitted : AuditActions.Badge.Resubmitted,
                 progress.BadgeProgressKey,
-                ProgressAuditLabels.Badge(_badges, progress.BadgeId),
+                ProgressAuditNames.Badge(_badges, progress.BadgeId),
                 request.MemberKey,
                 AuditChanges.Of(("status", previousStatus, progress.Status)),
                 request.Note),

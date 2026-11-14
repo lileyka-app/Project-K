@@ -7,7 +7,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// <summary>
 /// One answer per (event, occurrence, account): a fresh answer overwrites the old one for that
 /// occurrence only. Shared by the calendar and the dashboard so both write the same row the same
-/// way. The occurrence key comes resolved (<see cref="AgendaOccurrences"/>). Does not save.
+/// way. The occurrence key comes resolved (<see cref="AgendaOccurrenceRules"/>). Does not save.
 /// </summary>
 public static class AgendaRsvpWriter
 {

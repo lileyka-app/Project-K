@@ -77,7 +77,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     public async Task<ServiceResult<ProbeProjectSavedDto>> Handle(SaveProbeProjectCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ProbeProjectSavedDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ProbeProjectSavedDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -85,10 +85,10 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         var input = Normalize(request.Input);
         if (Invalid(input) is { } invalid)
         {
-            return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(invalid.Code, invalid.Message);
+            return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(invalid.Code, invalid.Message);
         }
 
-        var imageKeys = ProbeProjectMarkdown.ImageKeys(input.Description!, input.Goal!, input.Plan!, input.Results!);
+        var imageKeys = ProbeProjectMarkdownRules.ImageKeys(input.Description!, input.Goal!, input.Plan!, input.Results!);
         if (imageKeys is null)
         {
             return ForeignImage();
@@ -96,7 +96,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
 
         if (imageKeys.Distinct().Count() > ProbeProjectRules.MaxImagesPerProject)
         {
-            return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
+            return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(
                 ProbesAndBadgesErrors.TooManyImages, $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
         }
 
@@ -111,7 +111,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             var spares = all.Count(p => p.IsSpare);
             if (mains >= ProbeProjectRules.MaxMainProjects && spares >= ProbeProjectRules.MaxSpareProjects)
             {
-                return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
+                return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(
                     ProbesAndBadgesErrors.TooManyProjects, $"The probe holds {ProbeProjectRules.MaxMainProjects} projects and {ProbeProjectRules.MaxSpareProjects} spare.");
             }
 
@@ -149,7 +149,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         if (input.IsShared && !project.IsSpare
             && all.Count(p => p != project && p.IsShared && !p.IsSpare) >= ProbeProjectRules.MaxSharedMainProjects)
         {
-            return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
+            return ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(
                 ProbesAndBadgesErrors.TooManyShared, $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
         }
 
@@ -172,7 +172,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
                 AuditArea.Probe,
                 isNew ? AuditActions.Probe.ProjectAdded : AuditActions.Probe.ProjectEdited,
                 project.ProbeProjectKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey,
                 isNew ? AuditChanges.Added(("project", project.Title)) : AuditChanges.Of(("project", titleBefore, project.Title))),
             cancellationToken);
@@ -225,7 +225,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     };
 
     private static ServiceResult<ProbeProjectSavedDto> ForeignImage() =>
-        ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(ProbesAndBadgesErrors.ForeignImage, "Pictures must be uploaded into the project.");
+        ProbeProjectWriteRules.Refuse<ProbeProjectSavedDto>(ProbesAndBadgesErrors.ForeignImage, "Pictures must be uploaded into the project.");
 
     private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 

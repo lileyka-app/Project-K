@@ -59,7 +59,7 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
             return DuesErrors.NoEntry<Unit>();
         }
 
-        if (DuesEntryLock.Check(entry) is { } locked)
+        if (DuesEntryLockRules.Check(entry) is { } locked)
         {
             return locked;
         }

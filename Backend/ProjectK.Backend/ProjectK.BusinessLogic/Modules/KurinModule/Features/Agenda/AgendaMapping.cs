@@ -4,7 +4,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
 /// <summary>
-/// The agenda's plain mappings. An item itself is answered by <c>AgendaItemResponseFactory</c>,
+/// The agenda's plain mappings. An item itself is answered by <c>AgendaItemMapping</c>,
 /// which needs the viewer and the name lookups.
 /// </summary>
 internal static class AgendaMapping

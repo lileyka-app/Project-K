@@ -12,7 +12,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
 /// <summary>
 /// A drag on the board or a tick on the dashboard: moves what is the viewer's own on the task — their
-/// part, or the shared targets they answer for (<see cref="AgendaCompletion.BoardMove"/>).
+/// part, or the shared targets they answer for (<see cref="AgendaCompletionRules.BoardMove"/>).
 /// </summary>
 public sealed record ChangeAgendaItemStatusCommand(Guid AgendaItemKey, AgendaItemStatus Status)
     : IRequest<ServiceResult<Unit>>;
@@ -71,19 +71,19 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
                 return Forbidden();
             }
 
-            AgendaCompletion.SetItemStatus(item, request.Status, now);
+            AgendaCompletionRules.SetItemStatus(item, request.Status, now);
             item.UpdatedDate = now;
             await AgendaStatusWriter.RecordAsync(_audit, item, item.Title, null, null, request.Status, before, cancellationToken);
         }
         else
         {
-            var moves = AgendaCompletion.BoardMove(item, viewer);
+            var moves = AgendaCompletionRules.BoardMove(item, viewer);
             if (moves.Count == 0)
             {
                 return Forbidden();
             }
 
-            var movedFrom = AgendaCompletion.StatusOf(moves[0]);
+            var movedFrom = AgendaCompletionRules.StatusOf(moves[0]);
             var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
             foreach (var stake in moves)
             {

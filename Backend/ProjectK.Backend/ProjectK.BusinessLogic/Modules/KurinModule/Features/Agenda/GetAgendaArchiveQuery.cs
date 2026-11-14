@@ -49,14 +49,14 @@ public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArch
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var matching = items
-            .Select(item => AgendaItemResponseFactory.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster))
-            .Where(response => AgendaSearch.Matches(response, request.Search))
+            .Select(item => AgendaItemMapping.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster))
+            .Where(response => AgendaSearchRules.Matches(response, request.Search))
             .ToList();
 
         return new ServiceResult<AgendaArchivePageDto>(ResultType.Success, new AgendaArchivePageDto
         {
             Total = matching.Count,
-            Items = matching.Skip(Math.Max(0, request.Skip)).Take(Math.Clamp(request.Take, 1, AgendaBoardPaging.MaxTake)).ToList(),
+            Items = matching.Skip(Math.Max(0, request.Skip)).Take(Math.Clamp(request.Take, 1, AgendaBoardPagingRules.MaxTake)).ToList(),
             Policy = new AgendaArchivePolicyDto { AutoArchiveAfterDays = kurin.TaskAutoArchiveAfterDays, PurgeAfterDays = kurin.TaskArchivePurgeAfterDays }
         });
     }

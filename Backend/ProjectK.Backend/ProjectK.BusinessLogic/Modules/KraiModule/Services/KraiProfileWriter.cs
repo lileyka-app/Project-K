@@ -27,7 +27,7 @@ public sealed class KraiProfileWriter
     {
         try
         {
-            return KraiProfileJson.Parse(json);
+            return KraiProfileJsonRules.Parse(json);
         }
         catch (System.Text.Json.JsonException)
         {
@@ -45,15 +45,15 @@ public sealed class KraiProfileWriter
             return KraiErrors.NotFound<KraiProfileEditorDto>();
         }
 
-        var normalized = KraiProfileJson.Normalize(document);
-        var errors = KraiProfileJson.Validate(normalized);
+        var normalized = KraiProfileJsonRules.Normalize(document);
+        var errors = KraiProfileJsonRules.Validate(normalized);
         if (errors.Count > 0)
         {
             return ServiceResult<KraiProfileEditorDto>.Failure(ResultType.BadRequest, KraiErrors.InvalidProfile, string.Join(" ", errors));
         }
 
-        var json = KraiProfileJson.Serialize(normalized);
-        if (json.Length > KraiProfileJson.MaxLength)
+        var json = KraiProfileJsonRules.Serialize(normalized);
+        if (json.Length > KraiProfileJsonRules.MaxLength)
         {
             return ServiceResult<KraiProfileEditorDto>.Failure(ResultType.BadRequest, KraiErrors.ProfileTooLarge, "The profile is too large.");
         }

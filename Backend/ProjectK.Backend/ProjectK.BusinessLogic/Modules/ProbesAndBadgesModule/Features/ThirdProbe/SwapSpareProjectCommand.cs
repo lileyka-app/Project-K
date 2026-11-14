@@ -44,7 +44,7 @@ public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSparePr
     public async Task<ServiceResult<ThirdProbeDto>> Handle(SwapSpareProjectCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -60,7 +60,7 @@ public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSparePr
         var sharedAfter = all.Count(p => p != main && !p.IsSpare && p.IsShared) + (spare.IsShared ? 1 : 0);
         if (sharedAfter > ProbeProjectRules.MaxSharedMainProjects)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(
                 ProbesAndBadgesErrors.TooManyShared, $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
         }
 
@@ -72,7 +72,7 @@ public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSparePr
                 AuditArea.Probe,
                 AuditActions.Probe.ProjectsSwapped,
                 spare.ProbeProjectKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey,
                 AuditChanges.Of(("project", main.Title, spare.Title))),
             cancellationToken);

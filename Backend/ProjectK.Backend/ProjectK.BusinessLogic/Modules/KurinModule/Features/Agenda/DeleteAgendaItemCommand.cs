@@ -61,7 +61,7 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
 
         // Resolve who was assigned before the row (and its assignments) are gone.
         var actorUserKey = viewer.ViewerUserKey ?? Guid.Empty;
-        var recipients = await AgendaNotificationRecipients.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, item, actorUserKey, cancellationToken);
         var title = item.Title;
         var kind = item.Kind;
         var kurinKey = item.KurinKey;

@@ -132,7 +132,7 @@ public class UpsertMemberProfileCommandHandler
             : (await _fieldAccess.ForViewerAsync(cancellationToken)).HiddenFrom(existing.UserKey, current?.GroupKey);
         if (existing is not null)
         {
-            HiddenDataOnWrite.KeepStored(hiddenFromWriter, request, existing);
+            HiddenDataOnWriteRules.KeepStored(hiddenFromWriter, request, existing);
         }
 
         if (string.IsNullOrWhiteSpace(request.Email))
@@ -158,7 +158,7 @@ public class UpsertMemberProfileCommandHandler
         var cardExtras = existing?.CardExtras;
         if (request.ApplyCardFields && await _profiles.GetForKurinAsync(kurinKey, cancellationToken) is { } profile)
         {
-            var card = MemberCardFields.Apply(profile.CardFields, request, existing, hiddenFromWriter);
+            var card = MemberCardFieldRules.Apply(profile.CardFields, request, existing, hiddenFromWriter);
             if (card.Error is not null)
             {
                 return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberErrors.CardFieldRequired, card.Error);

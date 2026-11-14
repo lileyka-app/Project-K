@@ -43,7 +43,7 @@ public sealed record DuesKrai(string Currency, string NumberLocale, TimeZoneInfo
     };
 }
 
-public static class DuesKrais
+public static class DuesKraiRules
 {
     public static async Task<DuesKrai> DuesKraiForKurinAsync(this IKraiProfileDirectory profiles, Guid kurinKey, CancellationToken cancellationToken)
     {

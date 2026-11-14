@@ -59,7 +59,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
     {
         var probeId = request.ProbeId.Trim();
         var memberKey = request.MemberKey;
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(
                 _access, memberKey, probeId, cancellationToken, access => access.CanSignAsync(memberKey, cancellationToken))
             is { } refused)
         {
@@ -69,10 +69,10 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         var stages = request.Stages;
         if (OutOfOrder(stages) is { } message)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.StagesOutOfOrder, message);
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.StagesOutOfOrder, message);
         }
 
-        var file = await ThirdProbeFiles.GetOrAddAsync(_unitOfWork, memberKey, probeId, cancellationToken);
+        var file = await ThirdProbeFileWriter.GetOrAddAsync(_unitOfWork, memberKey, probeId, cancellationToken);
         var before = ThirdProbeReader.Stages(file);
         var actor = await _actors.ActorAsync(cancellationToken);
         file.MotivationLetterOn = stages.MotivationLetterOn;
@@ -90,7 +90,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
                 AuditArea.Probe,
                 AuditActions.Probe.StagesChanged,
                 file.ThirdProbeFileKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 memberKey,
                 AuditChanges.Of(
                     ("motivationLetter", before.MotivationLetterOn, stages.MotivationLetterOn),

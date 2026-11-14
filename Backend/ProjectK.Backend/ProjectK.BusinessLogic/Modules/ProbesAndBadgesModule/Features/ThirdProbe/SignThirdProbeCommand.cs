@@ -69,7 +69,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
     {
         var probeId = request.ProbeId.Trim();
         var memberKey = request.MemberKey;
-        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeDto>(
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(
                 _access, memberKey, probeId, cancellationToken,
                 access => request.Sign ? access.CanSignAsync(memberKey, cancellationToken) : access.CanUnsignAsync(memberKey, cancellationToken))
             is { } refused)
@@ -80,7 +80,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
         var comment = string.IsNullOrWhiteSpace(request.Comment) ? null : request.Comment.Trim();
         if (comment?.Length > ProbeProjectRules.MaxCommentLength)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.FieldTooLong, $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.FieldTooLong, $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");
         }
 
         var actor = await _actors.ActorAsync(cancellationToken);
@@ -95,7 +95,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
             var file = await _unitOfWork.ProbeProjects.GetFileAsync(memberKey, probeId, cancellationToken);
             if (request.Sign && file?.ReflectionOn is null)
             {
-                return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.NothingToConfirm, "Write down when the reflection took place first.");
+                return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.NothingToConfirm, "Write down when the reflection took place first.");
             }
 
             if (file is not null)
@@ -133,7 +133,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
                 AuditArea.Probe,
                 AuditActions.Probe.ThirdProbe(request.Part.ToString(), request.Sign),
                 subjectKey,
-                ProgressAuditLabels.Probe(_probes, probeId),
+                ProgressAuditNames.Probe(_probes, probeId),
                 memberKey,
                 request.Sign ? AuditChanges.Added((Field(request.Part), subject)) : AuditChanges.Removed((Field(request.Part), subject)),
                 comment),

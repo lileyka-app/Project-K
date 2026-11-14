@@ -85,7 +85,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         // The first signature starts a probe, and a probe starts only in its turn.
         if (request.IsSigned
             && (probeProgress is null || probeProgress.Status == ProbeProgressStatus.NotStarted)
-            && ProbeStartRefusal.Of<ProbeProgressDto>(
+            && ProbeStartRules.Of<ProbeProgressDto>(
                 await _line.CanStartAsync(request.MemberKey, normalizedProbeId, cancellationToken)) is { } refusal)
         {
             return refusal;
@@ -176,11 +176,11 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         var probeId = request.ProbeId.Trim();
         var pointId = request.PointId.Trim();
         var subjectKey = probeProgress?.ProbeProgressKey ?? pointProgress?.ProbePointProgressKey ?? Guid.Empty;
-        var probeLabel = ProgressAuditLabels.Probe(_probes, probeId);
+        var probeLabel = ProgressAuditNames.Probe(_probes, probeId);
 
         if (pointChanged)
         {
-            var pointLabel = ProgressAuditLabels.ProbePoint(_probes, probeId, pointId);
+            var pointLabel = ProgressAuditNames.ProbePoint(_probes, probeId, pointId);
             await _audit.RecordAsync(
                 new AuditRecord(
                     AuditArea.Probe,
