@@ -8,7 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Records.AuthModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ArchiveModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.Infrastructure.Services.Jwt;

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Behaviors;
+using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
@@ -93,6 +94,7 @@ public static class DependencyInjection
         services.AddMemberModule();
         services.AddDuesModule();
         services.AddScoreModule();
+        services.AddArchiveModule();
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MemberCards>();
@@ -100,10 +102,6 @@ public static class DependencyInjection
         services.AddScoped<IAgendaAccess, AgendaAccess>();
         services.AddScoped<AgendaStatusWriter>();
         services.AddScoped<AgendaRsvpWriter>();
-        services.AddScoped<ArchiveReach>();
-        services.AddSingleton<ArchiveDangerZoneStore>();
-        services.AddScoped<ArchiveDangerZoneService>();
-        services.AddScoped<ArchiveDeletionService>();
         services.AddScoped<KurinReportDataService>();
 
         services.AddScoped<INotificationService, NotificationService>();
@@ -144,6 +142,14 @@ public static class DependencyInjection
         services.AddScoped<ScoreAccess>();
         services.AddScoped<ScoreBookReader>();
         services.AddScoped<IScoreFactReader, ScoreFactReader>();
+    }
+
+    private static void AddArchiveModule(this IServiceCollection services)
+    {
+        services.AddScoped<ArchiveReach>();
+        services.AddSingleton<ArchiveDangerZoneStore>();
+        services.AddScoped<ArchiveDangerZoneService>();
+        services.AddScoped<ArchiveDeletionService>();
     }
 
     /// <summary>

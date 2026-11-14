@@ -6,7 +6,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.ArchiveModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;

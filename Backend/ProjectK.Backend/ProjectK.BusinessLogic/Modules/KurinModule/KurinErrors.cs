@@ -42,6 +42,9 @@ public static class KurinErrors
     /// <summary>A senior kurin has no гуртки at all: its people are told apart by tags.</summary>
     public const string NoGroupsInSeniorKurin = "NoGroupsInSeniorKurin";
 
+    /// <summary>A гурток is dissolved only once its dues box is settled: money left in it would be stuck.</summary>
+    public const string DissolveWithDues = "GroupBoxNotSettled";
+
     public const string ProbeEditionNotOffered = "ProbeEditionNotOffered";
 
     public const string TagNotFound = "TagNotFound";
