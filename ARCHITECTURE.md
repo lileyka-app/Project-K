@@ -154,18 +154,18 @@ HTTP
 активний курінь у токені            у якому курені людина зараз діє
         ↓ IOfficeDirectory           діловодства цього акаунта саме в цьому курені
 LeadershipRole + LeadershipType      діловодство, яке людина тримає
-        ↓ SystemRole.ForOffice()
-SystemRole                           роль доступу, дзеркало діловодства
-        ↓ RolePermissionMap + політика куреня (KurinCapabilities, Kurin.AccessPolicy)
+        ↓ SystemRoleNames.ForOffice()
+SystemRoleNames                      роль доступу, дзеркало діловодства
+        ↓ RolePermissionRules + політика куреня (KurinCapabilityRules, Kurin.AccessPolicy)
 Permission                           напр. Group:Manage:KurinWide, MemberContacts:Read:OwnGroups
 ```
 
 Діловодства — джерело; ролі доступу **виводяться з них на кожен вхід і рефреш**, а не зберігаються
-на акаунті. Другого списку «хто керує куренем» немає: усе виводиться з `RolePermissionMap`.
+на акаунті. Другого списку «хто керує куренем» немає: усе виводиться з `RolePermissionRules`.
 
 Частина прав — **налаштування куреня**: хто бачить особисті дані, хто дає перестороги й
 відзначення якого рівня, хто підписує й знімає підписи проб, хто підтверджує вмілості й читає
-журнал. Кожна така можливість — рядок `KurinCapabilities` з парою дозволу й значенням за
+журнал. Кожна така можливість — рядок `KurinCapabilityRules` з парою дозволу й значенням за
 замовчуванням для кожної аудиторії (Звʼязковий, впорядники, інструктори, курінний, провід куреня,
 гуртковий, провід гуртка, юнаки). Курінь зберігає лише відхилення, а `IPermissionResolver` складає
 статичну мапу з політикою на кожен запит, тож збережена політика діє одразу. Звʼязковий закріплений
@@ -234,7 +234,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 |---|---|---|
 | База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
 | Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі. Зміна безпеки (`RefreshTokenInvalidation`) вимикає й посилання на календар (`ICalendarFeedStore`, лише хеш токена) і кладе сповіщення в дзвіночок | `Infrastructure/Stores` |
-| Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsWriter`), повтори розгорнуті на сервері (`AgendaRecurrence`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
+| Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsWriter`), повтори розгорнуті на сервері (`AgendaRecurrenceRules`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/Blobs` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |

@@ -5,7 +5,7 @@ import { PlastLevel } from './plast-level.enum';
  * Порядок, у якому людина проходить ступені, і що з них курінь кожної гілки звично записує.
  *
  * Порядок живе тут, а не в самому enum: ступінь зберігається числом, і числа заморожені —
- * `Prykhylnyk` дописаний останнім, хоч на драбині стоїть другим. Дзеркалить `PlastLadder` на бекенді.
+ * `Prykhylnyk` дописаний останнім, хоч на драбині стоїть другим. Дзеркалить `PlastLadderRules` на бекенді.
  */
 export const PLAST_LADDER: readonly PlastLevel[] = [
   PlastLevel.Entry,

@@ -320,7 +320,7 @@ export interface PhotoChange {
  * The address, school and parents' contacts go only when changed: they are private, so someone who could not see them
  * read them blank, and one left out keeps what the server has. Emptied, they go as '' to clear.
  */
-/** The fields of the form each group of hidden data covers (the server's MemberDataFields). */
+/** The fields of the form each group of hidden data covers (the server's MemberDataFieldRules). */
 const HIDDEN_FIELDS: Record<Exclude<MemberDataGroup, 'birthday' | 'extras'>, readonly (keyof MemberForm)[]> = {
   contacts: ['email', 'phoneNumber'],
   birthDate: ['dateOfBirth'],

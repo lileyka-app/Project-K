@@ -114,7 +114,7 @@ flowchart TB
     subgraph BL["ProjectK.BusinessLogic"]
         direction LR
         MODS["Modules/*<br/>команди · запити · хендлери · валідатори"]
-        ACCESS["AgendaAccess · RolePermissionMap<br/>доменні правила доступу"]
+        ACCESS["AgendaAccess · RolePermissionRules<br/>доменні правила доступу"]
     end
 
     subgraph COMMON["ProjectK.Common"]
