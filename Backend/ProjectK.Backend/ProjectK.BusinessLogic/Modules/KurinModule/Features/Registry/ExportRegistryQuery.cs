@@ -57,7 +57,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return new ServiceResult<RegistryFile>(ResultType.NotFound);
+            return KurinErrors.NotFound<RegistryFile>();
         }
 
         var members = await _mediator.Send(new GetMembersQuery(Guid.Empty, request.KurinKey), cancellationToken);

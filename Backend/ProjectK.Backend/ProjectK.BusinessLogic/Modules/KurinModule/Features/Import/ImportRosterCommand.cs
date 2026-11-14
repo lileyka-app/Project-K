@@ -86,8 +86,6 @@ public sealed record RosterImportReport(
 /// </summary>
 public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCommand, ServiceResult<RosterImportReport>>
 {
-    public const string NotForSeniorKurinCode = "RosterImportNotForSeniorKurin";
-
     private readonly IUnitOfWork _kurinData;
     private readonly IMemberUnitOfWork _memberData;
     private readonly IMediator _mediator;
@@ -109,14 +107,14 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         var kurin = await _kurinData.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return new ServiceResult<RosterImportReport>(ResultType.NotFound);
+            return KurinErrors.NotFound<RosterImportReport>();
         }
 
         // The roster places every row in a гурток, and a senior kurin has none: it is refused there
         // rather than opening гуртки the kurin cannot have.
         if (KurinBranchSet.IsSenior(kurin.Branch))
         {
-            return ServiceResult<RosterImportReport>.Failure(ResultType.BadRequest, NotForSeniorKurinCode, "A УСП or УПС kurin has no гуртки to import a roster into.");
+            return ServiceResult<RosterImportReport>.Failure(ResultType.BadRequest, KurinErrors.RosterImportNotForSeniorKurin, "A УСП or УПС kurin has no гуртки to import a roster into.");
         }
 
         var rows = request.Rows.Select(row => RosterRow.From(row, request.Mapping)).ToList();

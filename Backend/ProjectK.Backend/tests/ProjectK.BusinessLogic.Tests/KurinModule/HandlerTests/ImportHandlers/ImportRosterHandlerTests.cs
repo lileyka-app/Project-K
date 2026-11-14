@@ -1,8 +1,9 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using MediatR;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.Common.Entities.KurinModule;
@@ -89,7 +90,7 @@ public class ImportRosterHandlerTests
             new ImportRosterCommand(KurinKey, [Row(2, "Петренко", "Іван", "01.01.1990", "", "", "Ведмеді", "5", "ivan@example.com")], FullMapping, CreateMissingGroups: true, DryRun: false),
             CancellationToken.None);
 
-        report.ErrorCode.Should().Be(ImportRosterCommandHandler.NotForSeniorKurinCode);
+        report.ErrorCode.Should().Be(KurinErrors.RosterImportNotForSeniorKurin);
         _groups.Verify(g => g.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
