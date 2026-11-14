@@ -35,7 +35,7 @@ public sealed class GetBadgeProgressesQueryHandler : IRequestHandler<GetBadgePro
     {
         if (!await _members.ExistsAsync(request.MemberKey, cancellationToken))
         {
-            return new ServiceResult<IEnumerable<BadgeProgressDto>>(ResultType.NotFound);
+            return ServiceResult<IEnumerable<BadgeProgressDto>>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");
         }
 
         var progresses = (await _unitOfWork.BadgeProgresses.GetByMemberKeyAsync(request.MemberKey, cancellationToken)).ToList();

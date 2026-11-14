@@ -76,7 +76,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
         var comment = string.IsNullOrWhiteSpace(request.Comment) ? null : request.Comment.Trim();
         if (comment?.Length > ProbeProjectRules.MaxCommentLength)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>("FieldTooLong", $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");
+            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.FieldTooLong, $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");
         }
 
         var actor = await _actors.ResolveAsync(cancellationToken);
@@ -91,7 +91,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
             var file = await _unitOfWork.ProbeProjects.GetFileAsync(memberKey, probeId, cancellationToken);
             if (request.Sign && file?.ReflectionOn is null)
             {
-                return ProbeProjectGuard.Refuse<ThirdProbeDto>("NothingToConfirm", "Write down when the reflection took place first.");
+                return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.NothingToConfirm, "Write down when the reflection took place first.");
             }
 
             if (file is not null)
@@ -107,7 +107,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
             var project = request.ProjectKey is { } key ? await _unitOfWork.ProbeProjects.GetWithImagesAsync(key, cancellationToken) : null;
             if (project is null || project.MemberKey != memberKey || project.ProbeId != probeId)
             {
-                return new ServiceResult<ThirdProbeDto>(ResultType.NotFound);
+                return ServiceResult<ThirdProbeDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProjectNotFound, "No such project in this probe.");
             }
 
             if (request.Part == ThirdProbeSignPart.ProjectApproval)

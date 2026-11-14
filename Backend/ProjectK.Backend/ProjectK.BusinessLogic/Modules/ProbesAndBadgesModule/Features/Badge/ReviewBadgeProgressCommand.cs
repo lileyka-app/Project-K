@@ -67,7 +67,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
     {
         if (string.IsNullOrWhiteSpace(request.BadgeId))
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.BadRequest);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.BadgeIdRequired, "A badge id is required.");
         }
 
         var progress = await _unitOfWork.BadgeProgresses
@@ -75,7 +75,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
 
         if (progress is null)
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.NotFound);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.BadgeProgressNotFound, "The member has not started this badge.");
         }
 
         var fromStatus = progress.Status;
@@ -86,7 +86,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         var canRemoveConfirmed = fromStatus == BadgeProgressStatus.Confirmed && !approved;
         if (!canReviewSubmitted && !canRemoveConfirmed)
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.Conflict);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.Conflict, ProbesAndBadgesErrors.BadgeNotReviewable, "The badge is neither submitted nor confirmed.");
         }
 
         var now = DateTime.UtcNow;
@@ -116,7 +116,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.InternalServerError);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.InternalServerError, ProbesAndBadgesErrors.NotSaved, "The review was not saved.");
         }
 
         await NotifyMemberOwnerAsync(progress, approved, canRemoveConfirmed, cancellationToken);

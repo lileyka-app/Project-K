@@ -62,13 +62,13 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     {
         if (string.IsNullOrWhiteSpace(request.BadgeId))
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.BadRequest);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.BadgeIdRequired, "A badge id is required.");
         }
 
         var member = await _members.FindAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.NotFound);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");
         }
 
         var progress = await _unitOfWork.BadgeProgresses
@@ -76,7 +76,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
 
         if (progress?.Status == BadgeProgressStatus.Confirmed)
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.Conflict);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.Conflict, ProbesAndBadgesErrors.BadgeAlreadyConfirmed, "The badge is already confirmed.");
         }
 
         if (progress?.Status == BadgeProgressStatus.Submitted)
@@ -88,7 +88,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         // member's even after the край's profile stops offering it.
         if (progress is null && !await IsOfferedAsync(member.KurinKey, request.BadgeId.Trim(), cancellationToken))
         {
-            return ServiceResult<BadgeProgressDto>.Failure(ResultType.BadRequest, "BadgeNotOffered", "The kurin's край does not offer this badge.");
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.BadgeNotOffered, "The kurin's край does not offer this badge.");
         }
 
         var now = DateTime.UtcNow;
@@ -133,7 +133,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<BadgeProgressDto>(ResultType.InternalServerError);
+            return ServiceResult<BadgeProgressDto>.Failure(ResultType.InternalServerError, ProbesAndBadgesErrors.NotSaved, "The badge was not saved.");
         }
 
         await PublishSubmittedAsync(member, progress, cancellationToken);

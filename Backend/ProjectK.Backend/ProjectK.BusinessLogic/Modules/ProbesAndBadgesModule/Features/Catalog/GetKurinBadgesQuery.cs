@@ -22,7 +22,7 @@ public sealed class GetKurinBadgesQueryHandler : IRequestHandler<GetKurinBadgesQ
     {
         var catalog = await _catalog.ForAsync(request.KurinKey, cancellationToken);
         return catalog is null
-            ? ServiceResult<IReadOnlyList<CatalogBadge>>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin not found.")
+            ? ServiceResult<IReadOnlyList<CatalogBadge>>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.KurinNotFound, "Kurin not found.")
             : new ServiceResult<IReadOnlyList<CatalogBadge>>(ResultType.Success, catalog.Badges);
     }
 }

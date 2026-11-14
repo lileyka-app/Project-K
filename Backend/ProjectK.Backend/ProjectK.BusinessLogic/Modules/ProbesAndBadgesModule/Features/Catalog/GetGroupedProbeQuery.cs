@@ -22,7 +22,7 @@ public sealed class GetGroupedProbeQueryHandler : IRequestHandler<GetGroupedProb
     {
         var probe = _catalog.GetGroupedProbeById(request.ProbeId);
         return Task.FromResult(probe is null
-            ? ServiceResult<GroupedProbeDto>.Failure(ResultType.NotFound, "ProbeNotFound", "No probe with this id is in the catalogue.")
+            ? ServiceResult<GroupedProbeDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProbeNotFound, "No probe with this id is in the catalogue.")
             : new ServiceResult<GroupedProbeDto>(ResultType.Success, probe));
     }
 }

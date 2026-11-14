@@ -143,9 +143,9 @@ public static class ProbeStartRefusal
     public static ServiceResult<T>? Of<T>(ProbeStart start) => start switch
     {
         ProbeStart.NotInLine => ServiceResult<T>.Failure(
-            ResultType.Conflict, "ProbeNotInLine", "This probe is not one the member walks: it belongs to another edition of the programme."),
+            ResultType.Conflict, ProbesAndBadgesErrors.ProbeNotInLine, "This probe is not one the member walks: it belongs to another edition of the programme."),
         ProbeStart.WaitsForPrevious => ServiceResult<T>.Failure(
-            ResultType.Conflict, "ProbeWaitsForPrevious", "This probe opens once the one before it is closed."),
+            ResultType.Conflict, ProbesAndBadgesErrors.ProbeWaitsForPrevious, "This probe opens once the one before it is closed."),
         _ => null
     };
 }

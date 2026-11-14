@@ -50,14 +50,14 @@ public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSparePr
         var main = all.FirstOrDefault(p => p.ProbeProjectKey == request.MainKey && !p.IsSpare);
         if (spare is null || main is null)
         {
-            return new ServiceResult<ThirdProbeDto>(ResultType.NotFound);
+            return ServiceResult<ThirdProbeDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProjectNotFound, "No such project in this probe.");
         }
 
         var sharedAfter = all.Count(p => p != main && !p.IsSpare && p.IsShared) + (spare.IsShared ? 1 : 0);
         if (sharedAfter > ProbeProjectRules.MaxSharedMainProjects)
         {
             return ProbeProjectGuard.Refuse<ThirdProbeDto>(
-                "TooManyShared", $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
+                ProbesAndBadgesErrors.TooManyShared, $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
         }
 
         spare.IsSpare = false;

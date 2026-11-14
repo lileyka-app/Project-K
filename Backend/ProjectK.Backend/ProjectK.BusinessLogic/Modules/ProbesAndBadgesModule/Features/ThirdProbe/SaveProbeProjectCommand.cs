@@ -92,7 +92,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         if (imageKeys.Distinct().Count() > ProbeProjectRules.MaxImagesPerProject)
         {
             return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
-                "TooManyImages", $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
+                ProbesAndBadgesErrors.TooManyImages, $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
         }
 
         await _unitOfWork.ProbeProjects.LockAsync(request.MemberKey, probeId, cancellationToken);
@@ -107,7 +107,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             if (mains >= ProbeProjectRules.MaxMainProjects && spares >= ProbeProjectRules.MaxSpareProjects)
             {
                 return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
-                    "TooManyProjects", $"The probe holds {ProbeProjectRules.MaxMainProjects} projects and {ProbeProjectRules.MaxSpareProjects} spare.");
+                    ProbesAndBadgesErrors.TooManyProjects, $"The probe holds {ProbeProjectRules.MaxMainProjects} projects and {ProbeProjectRules.MaxSpareProjects} spare.");
             }
 
             // A new project has no pictures yet: they are uploaded into a project that exists.
@@ -129,7 +129,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             var found = all.FirstOrDefault(p => p.ProbeProjectKey == request.ProjectKey);
             if (found is null)
             {
-                return new ServiceResult<ProbeProjectSavedDto>(ResultType.NotFound);
+                return ServiceResult<ProbeProjectSavedDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProjectNotFound, "No such project in this probe.");
             }
 
             project = found;
@@ -145,7 +145,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             && all.Count(p => p != project && p.IsShared && !p.IsSpare) >= ProbeProjectRules.MaxSharedMainProjects)
         {
             return ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(
-                "TooManyShared", $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
+                ProbesAndBadgesErrors.TooManyShared, $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
         }
 
         var actor = await _actors.ResolveAsync(cancellationToken);
@@ -220,7 +220,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     };
 
     private static ServiceResult<ProbeProjectSavedDto> ForeignImage() =>
-        ProbeProjectGuard.Refuse<ProbeProjectSavedDto>("ForeignImage", "Pictures must be uploaded into the project.");
+        ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(ProbesAndBadgesErrors.ForeignImage, "Pictures must be uploaded into the project.");
 
     private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -229,28 +229,28 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         const int shortText = ProbeProjectRules.MaxShortTextLength;
         if (input.Title!.Length == 0)
         {
-            return ("TitleRequired", "A project needs a title.");
+            return (ProbesAndBadgesErrors.TitleRequired, "A project needs a title.");
         }
 
         if (new[] { input.Title, input.SharedWith, input.Location, input.EventLeads, input.CoordinatorName, input.CoordinatorContact }
             .Any(text => text?.Length > shortText))
         {
-            return ("FieldTooLong", $"Short fields hold at most {shortText} characters.");
+            return (ProbesAndBadgesErrors.FieldTooLong, $"Short fields hold at most {shortText} characters.");
         }
 
         if (new[] { input.Description, input.Goal, input.Plan, input.Results }.Any(text => text!.Length > ProbeProjectRules.MaxTextLength))
         {
-            return ("DescriptionTooLong", $"Each text holds at most {ProbeProjectRules.MaxTextLength} characters.");
+            return (ProbesAndBadgesErrors.DescriptionTooLong, $"Each text holds at most {ProbeProjectRules.MaxTextLength} characters.");
         }
 
         if (input.Area is { } area && !Enum.IsDefined(area))
         {
-            return ("UnknownArea", "Unknown project area.");
+            return (ProbesAndBadgesErrors.UnknownArea, "Unknown project area.");
         }
 
         if (input.StartsOn is { } start && input.EndsOn is { } end && end < start)
         {
-            return ("EndsBeforeStart", "A project cannot end before it starts.");
+            return (ProbesAndBadgesErrors.EndsBeforeStart, "A project cannot end before it starts.");
         }
 
         return null;

@@ -20,13 +20,13 @@ internal static class ProbeProjectGuard
         if (!await access.IsProjectProbeAsync(memberKey, probeId, cancellationToken))
         {
             return ServiceResult<T>.Failure(
-                ResultType.BadRequest, "NotProjectProbe", "Only the third probe of the person's line has projects.");
+                ResultType.BadRequest, ProbesAndBadgesErrors.NotProjectProbe, "Only the third probe of the person's line has projects.");
         }
 
         var allowed = right is null
             ? await access.CanEditAsync(memberKey, cancellationToken)
             : await right(access);
-        return allowed ? null : new ServiceResult<T>(ResultType.Forbidden);
+        return allowed ? null : ServiceResult<T>.Failure(ResultType.Forbidden, ProbesAndBadgesErrors.ProbeProjectEditNotAllowed, "The third probe of this person is not yours to change.");
     }
 
     public static ServiceResult<T> Refuse<T>(string code, string message) =>

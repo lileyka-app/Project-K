@@ -75,7 +75,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
 
         if (input.PhysicalBadgeId is { } badgeId && !await HoldsAsync(request.MemberKey, badgeId, cancellationToken))
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>("BadgeNotHeld", "The вмілість must be one the person holds, confirmed.");
+            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.BadgeNotHeld, "The вмілість must be one the person holds, confirmed.");
         }
 
         var file = await ThirdProbeFiles.GetOrAddAsync(_unitOfWork, request.MemberKey, probeId, cancellationToken);
@@ -140,28 +140,28 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         if (new[] { input.MentorZvyazkovyi, input.MentorVporiadnyk, input.MentorReferent, input.ReflectionWith, input.CampName }
             .Any(text => text?.Length > shortText))
         {
-            return ("FieldTooLong", $"Short fields hold at most {shortText} characters.");
+            return (ProbesAndBadgesErrors.FieldTooLong, $"Short fields hold at most {shortText} characters.");
         }
 
         if (input.Resume!.Length > ProbeProjectRules.MaxResumeLength)
         {
-            return ("DescriptionTooLong", $"The résumé holds at most {ProbeProjectRules.MaxResumeLength} characters.");
+            return (ProbesAndBadgesErrors.DescriptionTooLong, $"The résumé holds at most {ProbeProjectRules.MaxResumeLength} characters.");
         }
 
         // The résumé carries no pictures: there is nowhere to upload them to.
         if (ProbeProjectMarkdown.ImageKeys(input.Resume) is not { Count: 0 })
         {
-            return ("ForeignImage", "The résumé holds text only.");
+            return (ProbesAndBadgesErrors.ForeignImage, "The résumé holds text only.");
         }
 
         if (input.CampKind is { } kind && !Enum.IsDefined(kind))
         {
-            return ("UnknownCampKind", "Unknown camp kind.");
+            return (ProbesAndBadgesErrors.UnknownCampKind, "Unknown camp kind.");
         }
 
         if (input.CampFrom is { } from && input.CampTo is { } to && to < from)
         {
-            return ("EndsBeforeStart", "A camp cannot end before it starts.");
+            return (ProbesAndBadgesErrors.EndsBeforeStart, "A camp cannot end before it starts.");
         }
 
         return null;

@@ -53,7 +53,7 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
         var project = all.FirstOrDefault(p => p.ProbeProjectKey == request.ProjectKey);
         if (project is null)
         {
-            return new ServiceResult<ThirdProbeDto>(ResultType.NotFound);
+            return ServiceResult<ThirdProbeDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProjectNotFound, "No such project in this probe.");
         }
 
         var blobs = project.Images.Select(image => image.BlobName).ToList();

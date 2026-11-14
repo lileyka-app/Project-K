@@ -52,14 +52,14 @@ public sealed class UploadProbeProjectImageCommandHandler
         if (request.Content.LongLength > ProbeProjectRules.MaxImageBytes)
         {
             return ServiceResult<ProbeProjectImageDto>.Failure(
-                ResultType.BadRequest, "ImageTooLarge", "Image file must be 1 MB or smaller.");
+                ResultType.BadRequest, ProbesAndBadgesErrors.ImageTooLarge, "Image file must be 1 MB or smaller.");
         }
 
         await _unitOfWork.ProbeProjects.LockAsync(request.MemberKey, probeId, cancellationToken);
         var project = await _unitOfWork.ProbeProjects.GetWithImagesAsync(request.ProjectKey, cancellationToken);
         if (project is null || project.MemberKey != request.MemberKey || project.ProbeId != probeId)
         {
-            return new ServiceResult<ProbeProjectImageDto>(ResultType.NotFound);
+            return ServiceResult<ProbeProjectImageDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProjectNotFound, "No such project in this probe.");
         }
 
         // Counted by rows, not by what the text shows: a picture taken out of the editor but not
@@ -67,7 +67,7 @@ public sealed class UploadProbeProjectImageCommandHandler
         if (project.Images.Count >= ProbeProjectRules.MaxImagesPerProject)
         {
             return ServiceResult<ProbeProjectImageDto>.Failure(
-                ResultType.BadRequest, "TooManyImages", $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
+                ResultType.BadRequest, ProbesAndBadgesErrors.TooManyImages, $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
         }
 
         var stored = await _unitOfWork.ProbeProjects.GetStoredBytesAsync(request.MemberKey, probeId, cancellationToken);
@@ -85,7 +85,7 @@ public sealed class UploadProbeProjectImageCommandHandler
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             return ServiceResult<ProbeProjectImageDto>.Failure(
-                ResultType.BadRequest, "InvalidImageContent", "Uploaded file is not a valid image.");
+                ResultType.BadRequest, ProbesAndBadgesErrors.InvalidImageContent, "Uploaded file is not a valid image.");
         }
 
         // Counted as stored: the picture is re-encoded, and that, not the upload, is what is paid for.
@@ -101,7 +101,7 @@ public sealed class UploadProbeProjectImageCommandHandler
         if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0)
         {
             await _photos.DeletePhotoAsync(upload.BlobName, cancellationToken);
-            return new ServiceResult<ProbeProjectImageDto>(ResultType.InternalServerError);
+            return ServiceResult<ProbeProjectImageDto>.Failure(ResultType.InternalServerError, ProbesAndBadgesErrors.NotSaved, "The third probe was not saved.");
         }
 
         return new ServiceResult<ProbeProjectImageDto>(ResultType.Success, ThirdProbeMapping.ToDto(image, _links));
@@ -109,5 +109,5 @@ public sealed class UploadProbeProjectImageCommandHandler
 
     private static ServiceResult<ProbeProjectImageDto> StorageFull() =>
         ServiceResult<ProbeProjectImageDto>.Failure(
-            ResultType.BadRequest, "StorageFull", $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
+            ResultType.BadRequest, ProbesAndBadgesErrors.StorageFull, $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
 }

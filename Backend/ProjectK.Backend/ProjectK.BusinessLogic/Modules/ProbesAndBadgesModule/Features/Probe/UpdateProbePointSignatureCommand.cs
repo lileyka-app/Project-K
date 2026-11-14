@@ -62,7 +62,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
     {
         if (string.IsNullOrWhiteSpace(request.ProbeId) || string.IsNullOrWhiteSpace(request.PointId))
         {
-            return new ServiceResult<ProbeProgressDto>(ResultType.BadRequest);
+            return ServiceResult<ProbeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.ProbePointRequired, "A probe id and a point id are required.");
         }
 
         var normalizedProbeId = request.ProbeId.Trim();
@@ -71,7 +71,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
         if (memberKurinKey is null)
         {
-            return new ServiceResult<ProbeProgressDto>(ResultType.NotFound);
+            return ServiceResult<ProbeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");
         }
 
         var pointProgress = await _unitOfWork.ProbePointProgresses
@@ -135,7 +135,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
             var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
             if (changes <= 0)
             {
-                return new ServiceResult<ProbeProgressDto>(ResultType.InternalServerError);
+                return ServiceResult<ProbeProgressDto>.Failure(ResultType.InternalServerError, ProbesAndBadgesErrors.NotSaved, "The signature was not saved.");
             }
         }
 

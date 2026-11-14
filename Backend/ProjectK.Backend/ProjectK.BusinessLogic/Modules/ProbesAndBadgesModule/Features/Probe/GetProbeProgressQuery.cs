@@ -37,13 +37,13 @@ public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgr
     {
         if (string.IsNullOrWhiteSpace(request.ProbeId))
         {
-            return new ServiceResult<ProbeProgressDto>(ResultType.BadRequest);
+            return ServiceResult<ProbeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.ProbeIdRequired, "A probe id is required.");
         }
 
         var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
         if (memberKurinKey is null)
         {
-            return new ServiceResult<ProbeProgressDto>(ResultType.NotFound);
+            return ServiceResult<ProbeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");
         }
 
         var progress = await _unitOfWork.ProbeProgresses

@@ -22,7 +22,7 @@ public sealed class GetBadgeQueryHandler : IRequestHandler<GetBadgeQuery, Servic
     {
         var badge = _catalog.GetBadgeById(request.Id);
         return Task.FromResult(badge is null
-            ? ServiceResult<CatalogBadge>.Failure(ResultType.NotFound, "BadgeNotFound", "No badge with this id is in the catalogue.")
+            ? ServiceResult<CatalogBadge>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.BadgeNotFound, "No badge with this id is in the catalogue.")
             : new ServiceResult<CatalogBadge>(ResultType.Success, badge));
     }
 }

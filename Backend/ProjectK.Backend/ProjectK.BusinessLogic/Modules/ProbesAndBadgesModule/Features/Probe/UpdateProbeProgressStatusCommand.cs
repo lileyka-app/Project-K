@@ -65,13 +65,13 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
     {
         if (string.IsNullOrWhiteSpace(request.ProbeId) || request.Status == ProbeProgressStatus.NotStarted)
         {
-            return new ServiceResult<ProbeProgressDto>(ResultType.BadRequest);
+            return ServiceResult<ProbeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.InvalidProbeStatus, "A probe id and a status other than NotStarted are required.");
         }
 
         var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
         if (memberKurinKey is null)
         {
-            return new ServiceResult<ProbeProgressDto>(ResultType.NotFound);
+            return ServiceResult<ProbeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");
         }
 
         var progress = await _unitOfWork.ProbeProgresses
@@ -115,7 +115,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         {
             return ServiceResult<ProbeProgressDto>.Failure(
                 ResultType.Forbidden,
-                "ProbeUnsignNotAllowed",
+                ProbesAndBadgesErrors.ProbeUnsignNotAllowed,
                 "The kurin's policy does not let you take a probe back from verified.");
         }
 
@@ -147,7 +147,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 
         if (changes <= 0)
         {
-            return new ServiceResult<ProbeProgressDto>(ResultType.InternalServerError);
+            return ServiceResult<ProbeProgressDto>.Failure(ResultType.InternalServerError, ProbesAndBadgesErrors.NotSaved, "The probe status was not saved.");
         }
 
         return await RespondAsync(ResultType.Success, progress, request, cancellationToken);

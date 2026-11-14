@@ -66,7 +66,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         var stages = request.Stages;
         if (OutOfOrder(stages) is { } message)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>("StagesOutOfOrder", message);
+            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.StagesOutOfOrder, message);
         }
 
         var file = await ThirdProbeFiles.GetOrAddAsync(_unitOfWork, memberKey, probeId, cancellationToken);

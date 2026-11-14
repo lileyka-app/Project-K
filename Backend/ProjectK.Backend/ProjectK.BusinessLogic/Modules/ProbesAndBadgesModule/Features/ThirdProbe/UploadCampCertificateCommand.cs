@@ -46,7 +46,7 @@ public sealed class UploadCampCertificateCommandHandler
 
         if (request.Content.LongLength > ProbeProjectRules.MaxCertificateBytes)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeDto>("CertificateTooLarge", "The посвідка must be 2 MB or smaller.");
+            return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.CertificateTooLarge, "The посвідка must be 2 MB or smaller.");
         }
 
         await UnitOfWork.ProbeProjects.LockAsync(request.MemberKey, probeId, cancellationToken);
@@ -67,7 +67,7 @@ public sealed class UploadCampCertificateCommandHandler
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             return ProbeProjectGuard.Refuse<ThirdProbeDto>(
-                "InvalidCertificate", "The посвідка must be a picture (PNG, JPEG, WebP) or a PDF.");
+                ProbesAndBadgesErrors.InvalidCertificate, "The посвідка must be a picture (PNG, JPEG, WebP) or a PDF.");
         }
 
         if (storedElsewhere + upload.Bytes > ProbeProjectRules.MaxStoredBytes)
@@ -87,7 +87,7 @@ public sealed class UploadCampCertificateCommandHandler
         if (await UnitOfWork.SaveChangesAsync(cancellationToken) <= 0)
         {
             await Photos.DeletePhotoAsync(upload.BlobName, cancellationToken);
-            return new ServiceResult<ThirdProbeDto>(ResultType.InternalServerError);
+            return ServiceResult<ThirdProbeDto>.Failure(ResultType.InternalServerError, ProbesAndBadgesErrors.NotSaved, "The third probe was not saved.");
         }
 
         if (previous is not null)

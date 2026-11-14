@@ -49,7 +49,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
         {
             return ServiceResult<IEnumerable<BadgeProgressDto>>.Failure(
                 ResultType.Forbidden,
-                "BadgeReviewNotAllowed",
+                ProbesAndBadgesErrors.BadgeReviewNotAllowed,
                 "The kurin's policy does not let you review badges.");
         }
 
@@ -58,7 +58,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
         {
             if (_currentUserContext.UserId == null)
             {
-                return new ServiceResult<IEnumerable<BadgeProgressDto>>(ResultType.Unauthorized, null);
+                return ServiceResult<IEnumerable<BadgeProgressDto>>.Failure(ResultType.Unauthorized, ProbesAndBadgesErrors.Unauthorized, "No one is signed in.");
             }
             allowedGroupKeys = await _scopeReader.GetLedGroupKeysAsync(_currentUserContext.UserId.Value, request.KurinKey, cancellationToken);
         }

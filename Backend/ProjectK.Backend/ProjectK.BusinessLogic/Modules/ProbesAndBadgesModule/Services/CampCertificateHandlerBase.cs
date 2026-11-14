@@ -16,7 +16,7 @@ public abstract class CampCertificateHandlerBase
 {
     protected static ServiceResult<ThirdProbeDto> StorageFull() =>
         ProbeProjectGuard.Refuse<ThirdProbeDto>(
-            "StorageFull", $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
+            ProbesAndBadgesErrors.StorageFull, $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
 
     protected CampCertificateHandlerBase(
         IUnitOfWork unitOfWork,
