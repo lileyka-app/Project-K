@@ -1,22 +1,21 @@
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
 
 public class UpsertGroupHandlerTests
 {
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
@@ -25,13 +24,7 @@ public class UpsertGroupHandlerTests
 
     public UpsertGroupHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = mapperConfig.CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
 
         _groupRepositoryMock = new Mock<IGroupRepository>();
         _kurinRepositoryMock = new Mock<IKurinRepository>();
@@ -41,7 +34,7 @@ public class UpsertGroupHandlerTests
         _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinRepositoryMock.Object);
 
-        _handler = new UpsertGroupCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object);
+        _handler = new UpsertGroupCommandHandler(_unitOfWorkMock.Object, _links, _cacheMock.Object);
     }
 
     [Fact]
@@ -269,8 +262,7 @@ public class UpsertGroupHandlerTests
 
         // Assert
         result.Type.Should().Be(ResultType.Created);
-        var mapped = _mapper.Map<GroupResponse>(saved);
-        result.Data.Should().BeEquivalentTo(mapped);
+        result.Data.Should().BeEquivalentTo(new { saved.GroupKey, saved.Name, KurinKey = kurin.KurinKey, KurinNumber = kurin.Number, SilhouetteUrl = (string?)null });
     }
     /// <summary>
     /// Renaming a гурток must not move it. The update command carries no kurin at all, so a
@@ -302,4 +294,45 @@ public class UpsertGroupHandlerTests
         existing.KurinKey.Should().Be(kurinKey);
     }
 
+    [Fact]
+    public async Task Handle_WhenUpdatingAGroup_ShouldWriteOnlyItsNameAndDescription()
+    {
+        var kurinKey = Guid.NewGuid();
+        var dissolved = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+        var created = new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        var existing = new Group("Before", kurinKey, "old")
+        {
+            GroupKey = Guid.NewGuid(),
+            SilhouetteBlobName = "group-silhouettes/old.png",
+            ProbeEdition = "upyu-2026",
+            DissolvedAtUtc = dissolved,
+            CreatedDate = created,
+            UpdatedDate = created
+        };
+        var groupKey = existing.GroupKey;
+        _groupRepositoryMock
+            .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _unitOfWorkMock
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var result = await _handler.Handle(
+            new UpsertGroupCommand(groupKey, "After", "  new  "),
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.Should().BeEquivalentTo(new
+        {
+            Name = "After",
+            Description = "new",
+            GroupKey = groupKey,
+            KurinKey = kurinKey,
+            SilhouetteBlobName = "group-silhouettes/old.png",
+            ProbeEdition = "upyu-2026",
+            DissolvedAtUtc = (DateTime?)dissolved,
+            CreatedDate = created
+        });
+        existing.UpdatedDate.Should().BeAfter(created);
+    }
 }

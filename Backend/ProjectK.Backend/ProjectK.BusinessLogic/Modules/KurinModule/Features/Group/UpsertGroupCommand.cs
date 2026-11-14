@@ -1,14 +1,14 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
-public class UpsertGroupCommand : IRequest<ServiceResult<GroupResponse>>
+public class UpsertGroupCommand : IRequest<ServiceResult<GroupDto>>
 {
     public Guid GroupKey { get; set; }
     public string Name { get; set; }
@@ -30,24 +30,24 @@ public class UpsertGroupCommand : IRequest<ServiceResult<GroupResponse>>
     }
 }
 
-public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, ServiceResult<GroupResponse>>
+public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, ServiceResult<GroupDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IBackendCache _cache;
-    public UpsertGroupCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
+    public UpsertGroupCommandHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _cache = cache;
     }
 
-    public async Task<ServiceResult<GroupResponse>> Handle(UpsertGroupCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<GroupDto>> Handle(UpsertGroupCommand request, CancellationToken cancellationToken)
     {
-        var description = NormalizeOptionalText(request.Description);
+        var description = GroupMapping.Trimmed(request.Description);
         if (description?.Length > 1000)
         {
-            return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, KurinErrors.DescriptionTooLong, "Description must be 1000 characters or fewer.");
+            return ServiceResult<GroupDto>.Failure(ResultType.BadRequest, KurinErrors.DescriptionTooLong, "Description must be 1000 characters or fewer.");
         }
 
         var existing = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
@@ -58,13 +58,13 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
         {
             if (kurin == null)
             {
-                return new ServiceResult<GroupResponse>(ResultType.NotFound);
+                return KurinErrors.NotFound<GroupDto>();
             }
 
             // A senior kurin has no гуртки at all: its people are told apart by tags.
             if (KurinBranchSet.IsSenior(kurin.Branch))
             {
-                return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, KurinErrors.NoGroupsInSeniorKurin, "A УСП or УПС kurin has no гуртки.");
+                return ServiceResult<GroupDto>.Failure(ResultType.BadRequest, KurinErrors.NoGroupsInSeniorKurin, "A УСП or УПС kurin has no гуртки.");
             }
 
             // Create new Group
@@ -75,8 +75,7 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
         else
         {
             // Update existing Group
-            _mapper.Map(request, existing);
-            existing.Description = description;
+            request.ApplyTo(existing, DateTime.UtcNow);
             _unitOfWork.Groups.Update(existing, cancellationToken);
         }
 
@@ -84,25 +83,18 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
 
         if (changes <= 0)
         {
-            return new ServiceResult<GroupResponse>(
-                ResultType.InternalServerError);
+            return ServiceResult<GroupDto>.Failure(ResultType.InternalServerError, KurinErrors.GroupSaveFailed, "The group was not saved.");
         }
 
-        var response = _mapper.Map<GroupResponse>(existing);
+        var response = existing.ToDto(_links);
         _cache.Invalidate(BackendCachePolicies.GroupReads);
 
         return isCreated
-            ? new ServiceResult<GroupResponse>(
+            ? new ServiceResult<GroupDto>(
                 ResultType.Created,
                 response,
                 CreatedAtActionName: "GetByKey",
                 CreatedAtRouteValues: new { groupKey = response.GroupKey })
-            : new ServiceResult<GroupResponse>(ResultType.Success, response);
+            : new ServiceResult<GroupDto>(ResultType.Success, response);
     }
-
-    private static string? NormalizeOptionalText(string? value)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
-    }
-}
+}

@@ -1,43 +1,36 @@
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
 
 public class GetGroupByKeyHandlerTests
 {
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly GetGroupByKeyQueryHandler _handler;
 
     public GetGroupByKeyHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var config = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = config.CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
 
         _groupRepositoryMock = new Mock<IGroupRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
 
         _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-        _handler = new GetGroupByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+        _handler = new GetGroupByKeyQueryHandler(_unitOfWorkMock.Object, _links, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>
@@ -138,8 +131,7 @@ public class GetGroupByKeyHandlerTests
 
         // Assert
         result.Type.Should().Be(ResultType.Success);
-        var directlyMapped = _mapper.Map<GroupResponse>(group);
-        result.Data.Should().BeEquivalentTo(directlyMapped);
+        result.Data.Should().BeEquivalentTo(new { group.GroupKey, group.KurinKey, group.Name, group.Description, SilhouetteUrl = FakeBlobReadLinks.Instance.For(group.SilhouetteBlobName), KurinNumber = group.Kurin?.Number });
     }
 
     [Fact]

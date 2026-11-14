@@ -37,7 +37,7 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
         var settings = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
         if (settings is null)
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin was not found.");
+            return KurinErrors.NotFound<KurinTagDto>();
         }
 
         if (!settings.Enabled)

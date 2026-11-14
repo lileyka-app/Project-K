@@ -1,14 +1,15 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
-public class GetGroupByKeyQuery : IRequest<ServiceResult<GroupResponse>>
+public class GetGroupByKeyQuery : IRequest<ServiceResult<GroupDto>>
 {
     public Guid GroupKey { get; set; }
     public GetGroupByKeyQuery(Guid groupKey)
@@ -17,19 +18,19 @@ public class GetGroupByKeyQuery : IRequest<ServiceResult<GroupResponse>>
     }
 }
 
-public class GetGroupByKeyQueryHandler : IRequestHandler<GetGroupByKeyQuery, ServiceResult<GroupResponse>>
+public class GetGroupByKeyQueryHandler : IRequestHandler<GetGroupByKeyQuery, ServiceResult<GroupDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IBackendCache _cache;
-    public GetGroupByKeyQueryHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
+    public GetGroupByKeyQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _cache = cache;
     }
 
-    public async Task<ServiceResult<GroupResponse>> Handle(GetGroupByKeyQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<GroupDto>> Handle(GetGroupByKeyQuery request, CancellationToken cancellationToken)
     {
         return await _cache.GetOrCreateAsync(
             BackendCachePolicies.GroupReads,
@@ -40,12 +41,12 @@ public class GetGroupByKeyQueryHandler : IRequestHandler<GetGroupByKeyQuery, Ser
 
                 if (group is null)
                 {
-                    return new ServiceResult<GroupResponse>(ResultType.NotFound);
+                    return KurinErrors.GroupMissing<GroupDto>();
                 }
 
-                var response = _mapper.Map<GroupResponse>(group);
+                var response = group.ToDto(_links);
 
-                return new ServiceResult<GroupResponse>(ResultType.Success, response);
+                return new ServiceResult<GroupDto>(ResultType.Success, response);
             },
             cancellationToken);
     }

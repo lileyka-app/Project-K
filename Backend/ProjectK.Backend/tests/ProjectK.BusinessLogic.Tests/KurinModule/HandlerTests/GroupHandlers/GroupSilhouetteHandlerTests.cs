@@ -1,8 +1,5 @@
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -17,7 +14,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
 
 public sealed class GroupSilhouetteHandlerTests
 {
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IPhotoService> _photoServiceMock;
@@ -25,13 +22,7 @@ public sealed class GroupSilhouetteHandlerTests
 
     public GroupSilhouetteHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = mapperConfig.CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
 
         _groupRepositoryMock = new Mock<IGroupRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -47,7 +38,7 @@ public sealed class GroupSilhouetteHandlerTests
         var kurin = new Kurin(10) { KurinKey = Guid.NewGuid() };
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin, SilhouetteBlobName = "old.png" };
-        var handler = new UploadGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
+        var handler = new UploadGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _links, _cacheMock.Object);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -79,7 +70,7 @@ public sealed class GroupSilhouetteHandlerTests
         var kurin = new Kurin(10) { KurinKey = Guid.NewGuid() };
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin };
-        var handler = new UploadGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
+        var handler = new UploadGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _links, _cacheMock.Object);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))
@@ -105,7 +96,7 @@ public sealed class GroupSilhouetteHandlerTests
         var kurin = new Kurin(10) { KurinKey = Guid.NewGuid() };
         var groupKey = Guid.NewGuid();
         var group = new Group("Alpha", kurin.KurinKey) { GroupKey = groupKey, Kurin = kurin, SilhouetteBlobName = "old.png" };
-        var handler = new DeleteGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _mapper, _cacheMock.Object);
+        var handler = new DeleteGroupSilhouetteCommandHandler(_unitOfWorkMock.Object, _photoServiceMock.Object, _links, _cacheMock.Object);
 
         _groupRepositoryMock
             .Setup(r => r.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>()))

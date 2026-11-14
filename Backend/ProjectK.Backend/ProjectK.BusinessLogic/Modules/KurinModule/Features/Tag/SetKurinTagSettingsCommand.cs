@@ -38,7 +38,7 @@ public sealed class SetKurinTagSettingsCommandHandler : IRequestHandler<SetKurin
         var before = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
         if (before is null)
         {
-            return ServiceResult<KurinTagSettingsDto>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin was not found.");
+            return KurinErrors.NotFound<KurinTagSettingsDto>();
         }
 
         var stored = await _uow.KurinTags.GetSettingsAsync(request.KurinKey, cancellationToken);

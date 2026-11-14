@@ -29,8 +29,8 @@ public class GroupControllerTests
     public async Task GetByKey_ShouldReturnOk_WhenSuccess()
     {
         var key = Guid.NewGuid();
-        var dto = new GroupResponse { GroupKey = key, Name = "Alpha", KurinKey = Guid.NewGuid(), KurinNumber = 5 };
-        var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, dto);
+        var dto = new GroupDto(GroupKey: key, KurinKey: Guid.NewGuid(), Name: "Alpha", Description: null, SilhouetteUrl: null, KurinNumber: 5);
+        var serviceResult = new ServiceResult<GroupDto>(ResultType.Success, dto);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetGroupByKeyQuery>(), It.IsAny<CancellationToken>()))
@@ -39,7 +39,7 @@ public class GroupControllerTests
         var result = await _controller.GetByKey(key);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<GroupResponse>(ok.Value);
+        var data = Assert.IsType<GroupDto>(ok.Value);
         Assert.Equal(key, data.GroupKey);
     }
 
@@ -47,7 +47,7 @@ public class GroupControllerTests
     public async Task GetByKey_ShouldReturnNotFound_WhenNotFound()
     {
         var key = Guid.NewGuid();
-        var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
+        var serviceResult = new ServiceResult<GroupDto>(ResultType.NotFound);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetGroupByKeyQuery>(), It.IsAny<CancellationToken>()))
@@ -62,12 +62,12 @@ public class GroupControllerTests
     public async Task GetAll_ShouldReturnOk_WhenSuccess()
     {
         var kurinKey = Guid.NewGuid();
-        var groups = new List<GroupResponse>
+        var groups = new List<GroupDto>
         {
-            new() { GroupKey = Guid.NewGuid(), Name = "A", KurinKey = kurinKey, KurinNumber = 1 },
-            new() { GroupKey = Guid.NewGuid(), Name = "B", KurinKey = kurinKey, KurinNumber = 1 }
+            new(GroupKey: Guid.NewGuid(), KurinKey: kurinKey, Name: "A", Description: null, SilhouetteUrl: null, KurinNumber: 1),
+            new(GroupKey: Guid.NewGuid(), KurinKey: kurinKey, Name: "B", Description: null, SilhouetteUrl: null, KurinNumber: 1)
         };
-        var serviceResult = new ServiceResult<IEnumerable<GroupResponse>>(ResultType.Success, groups);
+        var serviceResult = new ServiceResult<IEnumerable<GroupDto>>(ResultType.Success, groups);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetGroupsQuery>(), It.IsAny<CancellationToken>()))
@@ -76,7 +76,7 @@ public class GroupControllerTests
         var result = await _controller.GetAll(kurinKey);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<List<GroupResponse>>(ok.Value);
+        var data = Assert.IsType<List<GroupDto>>(ok.Value);
         Assert.Equal(groups.Count, data.Count);
     }
 
@@ -85,9 +85,9 @@ public class GroupControllerTests
     {
         var groupKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
-        var response = new GroupResponse { GroupKey = groupKey, Name = "Alpha", KurinKey = kurinKey, KurinNumber = 10 };
+        var response = new GroupDto(GroupKey: groupKey, KurinKey: kurinKey, Name: "Alpha", Description: null, SilhouetteUrl: null, KurinNumber: 10);
 
-        var serviceResult = new ServiceResult<GroupResponse>(
+        var serviceResult = new ServiceResult<GroupDto>(
             ResultType.Created,
             response,
             "GetByKey",
@@ -105,7 +105,7 @@ public class GroupControllerTests
 
         var created = Assert.IsType<CreatedAtActionResult>(result);
         Assert.Equal("GetByKey", created.ActionName);
-        var data = Assert.IsType<GroupResponse>(created.Value);
+        var data = Assert.IsType<GroupDto>(created.Value);
         Assert.Equal(groupKey, data.GroupKey);
     }
 
@@ -113,7 +113,7 @@ public class GroupControllerTests
     public async Task Create_ShouldReturnNotFound_WhenKurinMissing()
     {
         var kurinKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
+        var serviceResult = new ServiceResult<GroupDto>(ResultType.NotFound);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
@@ -130,8 +130,8 @@ public class GroupControllerTests
     public async Task Update_ShouldReturnOk_WhenSuccess()
     {
         var groupKey = Guid.NewGuid();
-        var response = new GroupResponse { GroupKey = groupKey, Name = "Updated", KurinKey = Guid.NewGuid(), KurinNumber = 3 };
-        var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
+        var response = new GroupDto(GroupKey: groupKey, KurinKey: Guid.NewGuid(), Name: "Updated", Description: null, SilhouetteUrl: null, KurinNumber: 3);
+        var serviceResult = new ServiceResult<GroupDto>(ResultType.Success, response);
 
         _mediatorMock
             .Setup(m => m.Send(
@@ -144,7 +144,7 @@ public class GroupControllerTests
         var result = await _controller.Update(groupKey, updateRequest);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<GroupResponse>(ok.Value);
+        var data = Assert.IsType<GroupDto>(ok.Value);
         Assert.Equal("Updated", data.Name);
     }
 
@@ -152,7 +152,7 @@ public class GroupControllerTests
     public async Task Update_ShouldReturnNotFound_WhenGroupNotFound()
     {
         var groupKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<GroupResponse>(ResultType.NotFound);
+        var serviceResult = new ServiceResult<GroupDto>(ResultType.NotFound);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpsertGroupCommand>(), It.IsAny<CancellationToken>()))
@@ -169,15 +169,8 @@ public class GroupControllerTests
     public async Task UploadSilhouette_ShouldSendCommandAndReturnOk_WhenFileIsValid()
     {
         var groupKey = Guid.NewGuid();
-        var response = new GroupResponse
-        {
-            GroupKey = groupKey,
-            Name = "Alpha",
-            KurinKey = Guid.NewGuid(),
-            KurinNumber = 3,
-            SilhouetteUrl = "group-silhouettes/2026/05/27/test.png"
-        };
-        var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
+        var response = new GroupDto(GroupKey: groupKey, KurinKey: Guid.NewGuid(), Name: "Alpha", Description: null, SilhouetteUrl: "group-silhouettes/2026/05/27/test.png", KurinNumber: 3);
+        var serviceResult = new ServiceResult<GroupDto>(ResultType.Success, response);
 
         _mediatorMock
             .Setup(m => m.Send(
@@ -193,7 +186,7 @@ public class GroupControllerTests
         var result = await _controller.UploadSilhouette(groupKey, new UploadImageRequest { File = file }, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<GroupResponse>(ok.Value);
+        var data = Assert.IsType<GroupDto>(ok.Value);
         Assert.Equal(response.SilhouetteUrl, data.SilhouetteUrl);
     }
 
@@ -213,8 +206,8 @@ public class GroupControllerTests
     public async Task DeleteSilhouette_ShouldSendCommandAndReturnOk()
     {
         var groupKey = Guid.NewGuid();
-        var response = new GroupResponse { GroupKey = groupKey, Name = "Alpha", KurinKey = Guid.NewGuid(), KurinNumber = 3 };
-        var serviceResult = new ServiceResult<GroupResponse>(ResultType.Success, response);
+        var response = new GroupDto(GroupKey: groupKey, KurinKey: Guid.NewGuid(), Name: "Alpha", Description: null, SilhouetteUrl: null, KurinNumber: 3);
+        var serviceResult = new ServiceResult<GroupDto>(ResultType.Success, response);
 
         _mediatorMock
             .Setup(m => m.Send(
@@ -231,7 +224,7 @@ public class GroupControllerTests
     public async Task Delete_ShouldReturnOk_WhenSuccess()
     {
         var groupKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>(ResultType.Success);
+        var serviceResult = new ServiceResult<Unit>(ResultType.Success, Unit.Value);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
@@ -247,7 +240,7 @@ public class GroupControllerTests
     public async Task Delete_ShouldReturnNotFound_WhenGroupMissing()
     {
         var groupKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>(ResultType.NotFound);
+        var serviceResult = new ServiceResult<Unit>(ResultType.NotFound);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))
@@ -262,7 +255,7 @@ public class GroupControllerTests
     public async Task Delete_ShouldReturnInternalServerError_WhenUnexpected()
     {
         var groupKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>((ResultType)999);
+        var serviceResult = new ServiceResult<Unit>((ResultType)999);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteGroupCommand>(), It.IsAny<CancellationToken>()))

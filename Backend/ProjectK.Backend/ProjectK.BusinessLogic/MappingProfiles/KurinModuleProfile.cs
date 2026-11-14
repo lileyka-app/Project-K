@@ -1,7 +1,6 @@
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
@@ -22,17 +21,6 @@ public class KurinModuleProfile : Profile
 {
     public KurinModuleProfile()
     {
-        // Group Mapping
-        CreateMap<Group, GroupResponse>()
-            .ForMember(dest => dest.KurinNumber, opt => opt.MapFrom(src => src.Kurin.Number))
-            .ForMember(dest => dest.SilhouetteUrl, opt => opt.MapFrom<GroupSilhouetteUrlResolver>());
-        CreateMap<UpsertGroupCommand, Group>(MemberList.None)
-            .ForMember(dest => dest.GroupKey, opt => opt.Ignore())
-            // A гурток does not change kurin by being renamed. The update path builds the command
-            // without a KurinKey, so mapping it would write Guid.Empty over a live foreign key.
-            .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
-            .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
-
         // Member Mapping
         CreateMap<UpsertMemberProfileCommand, Member>(MemberList.None)
             .ForMember(dest => dest.MemberKey, opt => opt.Ignore())

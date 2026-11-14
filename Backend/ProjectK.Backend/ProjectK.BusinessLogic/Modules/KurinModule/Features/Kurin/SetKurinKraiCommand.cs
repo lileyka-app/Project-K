@@ -32,7 +32,7 @@ public sealed class SetKurinKraiCommandHandler : IRequestHandler<SetKurinKraiCom
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<KurinDto>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin not found.");
+            return KurinErrors.NotFound<KurinDto>();
         }
 
         if (kurin.KraiCode == kraiCode)

@@ -107,7 +107,7 @@ public class DeleteGroupHandlerTests
         var result = await _handler.Handle(new DeleteGroupCommand(groupKey), default);
 
         result.Type.Should().Be(ResultType.NotFound);
-        result.ErrorCode.Should().Be("GROUP_NOT_FOUND");
+        result.ErrorCode.Should().Be("GroupNotFound");
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }
 
@@ -117,7 +117,7 @@ public class DeleteGroupHandlerTests
         var result = await _handler.Handle(new DeleteGroupCommand(Guid.Empty), default);
 
         result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be("GROUP_KEY_EMPTY");
+        result.ErrorCode.Should().Be("GroupKeyEmpty");
         _groupRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), default), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }

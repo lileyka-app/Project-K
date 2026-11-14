@@ -13,9 +13,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 /// Dissolves a гурток. Nothing is erased: the гурток, its провід and that провід's history move to
 /// the kurin's archive, and only the danger zone deletes them for good.
 /// </summary>
-public sealed record DeleteGroupCommand(Guid GroupKey) : IRequest<ServiceResult<object>>;
+public sealed record DeleteGroupCommand(Guid GroupKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupCommand, ServiceResult<object>>
+public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
@@ -32,11 +32,11 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeleteGroupCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteGroupCommand request, CancellationToken cancellationToken)
     {
         if (request.GroupKey == Guid.Empty)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.BadRequest,
                 KurinErrors.GroupKeyEmpty,
                 "GroupKey cannot be empty.");
@@ -44,7 +44,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         var existing = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
         if (existing is null)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.NotFound,
                 KurinErrors.GroupNotFound,
                 $"Group with key {request.GroupKey} not found.");
@@ -53,7 +53,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         // A dissolved гурток's box is no longer read anywhere: money left in it would be stuck.
         if (!await _dues.GroupBoxSettledAsync(existing.KurinKey, existing.GroupKey, cancellationToken))
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.Conflict,
                 ArchiveErrors.DissolveWithDues,
                 "The гурток's box still holds money, owes the kurin or has accounts in debt.");
@@ -87,7 +87,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.InternalServerError,
                 KurinErrors.GroupDeleteFailed,
                 "Failed to delete Group due to internal error.");
@@ -95,6 +95,6 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         _cache.Invalidate(BackendCachePolicies.GroupReads);
         _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

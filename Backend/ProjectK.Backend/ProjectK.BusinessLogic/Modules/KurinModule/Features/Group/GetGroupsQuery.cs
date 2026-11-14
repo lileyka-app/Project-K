@@ -1,14 +1,15 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
-public class GetGroupsQuery : IRequest<ServiceResult<IEnumerable<GroupResponse>>>
+public class GetGroupsQuery : IRequest<ServiceResult<IEnumerable<GroupDto>>>
 {
     public Guid KurinKey { get; set; }
     public GetGroupsQuery(Guid kurinKey)
@@ -17,20 +18,20 @@ public class GetGroupsQuery : IRequest<ServiceResult<IEnumerable<GroupResponse>>
     }
 }
 
-public class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, ServiceResult<IEnumerable<GroupResponse>>>
+public class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, ServiceResult<IEnumerable<GroupDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IBackendCache _cache;
 
-    public GetGroupsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
+    public GetGroupsQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _cache = cache;
     }
 
-    public async Task<ServiceResult<IEnumerable<GroupResponse>>> Handle(GetGroupsQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<IEnumerable<GroupDto>>> Handle(GetGroupsQuery request, CancellationToken cancellationToken)
     {
         return await _cache.GetOrCreateAsync(
             BackendCachePolicies.GroupReads,
@@ -38,8 +39,8 @@ public class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, ServiceResu
             async token =>
             {
                 var groups = await _unitOfWork.Groups.GetAllAsync(request.KurinKey, token);
-                var response = _mapper.Map<IEnumerable<GroupResponse>>(groups).ToList();
-                return new ServiceResult<IEnumerable<GroupResponse>>(ResultType.Success, response);
+                var response = groups.Select(item => item.ToDto(_links)).ToList();
+                return new ServiceResult<IEnumerable<GroupDto>>(ResultType.Success, response);
             },
             cancellationToken);
     }

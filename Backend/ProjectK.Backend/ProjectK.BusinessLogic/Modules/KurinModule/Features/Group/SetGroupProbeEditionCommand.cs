@@ -14,9 +14,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 /// under way stays in its edition, and whoever closed a probe past the first finishes theirs.
 /// </summary>
 /// <param name="Edition">Null or empty for the unnamed edition.</param>
-public sealed record SetGroupProbeEditionCommand(Guid GroupKey, string? Edition) : IRequest<ServiceResult<object>>;
+public sealed record SetGroupProbeEditionCommand(Guid GroupKey, string? Edition) : IRequest<ServiceResult<Unit>>;
 
-public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGroupProbeEditionCommand, ServiceResult<object>>
+public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGroupProbeEditionCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProbesCatalog _catalog;
@@ -29,25 +29,25 @@ public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGrou
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetGroupProbeEditionCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetGroupProbeEditionCommand request, CancellationToken cancellationToken)
     {
         var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
         if (group is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, KurinErrors.GroupNotFound, "Group was not found.");
+            return KurinErrors.GroupMissing<Unit>();
         }
 
         var edition = string.IsNullOrWhiteSpace(request.Edition) ? null : request.Edition.Trim();
         if (edition == group.ProbeEdition)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(group.KurinKey, cancellationToken);
         var offered = OfferedProbeEditions.OfferedTo(_catalog, kurin?.KraiCode ?? string.Empty);
         if (!offered.Any(offer => offer.Id == edition))
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.BadRequest,
                 KurinErrors.ProbeEditionNotOffered,
                 "The catalogue offers this kurin no such edition of the probe programme.");
@@ -66,7 +66,7 @@ public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGrou
         group.ProbeEdition = edition;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
     /// <summary>
