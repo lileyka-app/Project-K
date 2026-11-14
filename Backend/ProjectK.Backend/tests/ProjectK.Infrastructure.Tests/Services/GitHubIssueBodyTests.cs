@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Infrastructure.Services.Feedback;
 
 namespace ProjectK.Infrastructure.Tests.Services;

@@ -27,8 +27,11 @@ using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Tests.Security;
 

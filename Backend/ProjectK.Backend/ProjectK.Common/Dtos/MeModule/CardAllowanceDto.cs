@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Dtos.MeModule;
 

@@ -1,8 +1,7 @@
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

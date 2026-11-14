@@ -12,9 +12,9 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KraiModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 

@@ -1,8 +1,8 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -159,7 +159,7 @@ public class SeniorDuesLedgerTests
         var grant = new DuesConcessionGrant
         {
             KurinKey = Kurin, MembershipKey = Person, ConcessionKey = "large", Name = "Багатодітна родина",
-            Kind = ProjectK.Common.Models.KraiProfiles.KraiDues.Exempt, Parts = DuesParts.Krai, FromQuarter = Q1.Index
+            Kind = ProjectK.Common.Rules.KraiModule.KraiDues.Exempt, Parts = DuesParts.Krai, FromQuarter = Q1.Index
         };
 
         var quarter = new DuesLedger(_rates, [], _concessions, _charges, _entries, [grant]).Accounts().Single().Quarters.Single();

@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;

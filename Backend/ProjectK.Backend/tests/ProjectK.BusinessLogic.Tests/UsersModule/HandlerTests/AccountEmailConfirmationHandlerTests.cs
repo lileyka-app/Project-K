@@ -11,9 +11,9 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
 

@@ -5,7 +5,7 @@ using Moq;
 using ProjectK.API.Middleware;
 using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Tests.Security;
 

@@ -6,8 +6,8 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Records.InfrastructureModule;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 

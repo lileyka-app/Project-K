@@ -2,8 +2,9 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.ScoreModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 

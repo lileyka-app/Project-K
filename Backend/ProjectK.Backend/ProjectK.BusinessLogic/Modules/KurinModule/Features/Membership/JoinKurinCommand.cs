@@ -3,9 +3,12 @@ using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;

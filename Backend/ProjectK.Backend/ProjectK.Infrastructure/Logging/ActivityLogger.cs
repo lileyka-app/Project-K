@@ -6,9 +6,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Common.Security;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.Shared;
 using Serilog.Context;
 
 namespace ProjectK.Infrastructure.Logging;

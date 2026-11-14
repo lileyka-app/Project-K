@@ -1,5 +1,5 @@
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Tests.TestHelpers;
 

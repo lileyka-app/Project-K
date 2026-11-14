@@ -6,7 +6,6 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings;
 using ProjectK.Common.Dtos.AuthModule.Requests;
-using ProjectK.Common.Extensions;
 
 namespace ProjectK.API.Controllers.AuthModule;
 

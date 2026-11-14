@@ -10,10 +10,14 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Records.KraiModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

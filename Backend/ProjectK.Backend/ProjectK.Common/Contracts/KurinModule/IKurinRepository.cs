@@ -1,6 +1,6 @@
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;
 

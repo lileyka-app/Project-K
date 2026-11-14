@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.API.Cookies;
 

@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 

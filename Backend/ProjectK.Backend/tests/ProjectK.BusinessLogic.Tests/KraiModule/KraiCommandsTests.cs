@@ -6,10 +6,10 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 

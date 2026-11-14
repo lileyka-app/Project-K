@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 

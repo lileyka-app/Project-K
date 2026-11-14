@@ -3,8 +3,8 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 

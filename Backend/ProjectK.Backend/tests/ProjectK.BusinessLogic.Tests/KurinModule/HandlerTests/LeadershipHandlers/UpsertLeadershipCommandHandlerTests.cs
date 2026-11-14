@@ -9,9 +9,12 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers;
 
@@ -32,9 +35,9 @@ public class UpsertLeadershipHandlerTests
         _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinsMock.Object);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[]
         {
-            ProjectK.Common.Models.Authorization.SystemRole.ForOffice(
-                ProjectK.Common.Models.Enums.LeadershipType.KV,
-                ProjectK.Common.Models.Enums.LeadershipRole.Zvyazkovyi)
+            ProjectK.Common.Rules.AuthModule.SystemRole.ForOffice(
+                ProjectK.Common.Enums.KurinModule.LeadershipType.KV,
+                ProjectK.Common.Enums.KurinModule.LeadershipRole.Zvyazkovyi)
         });
         _membersMock
             .Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))

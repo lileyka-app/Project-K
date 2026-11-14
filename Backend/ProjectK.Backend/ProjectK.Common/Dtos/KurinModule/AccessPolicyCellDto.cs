@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.Common.Dtos.KurinModule;
 

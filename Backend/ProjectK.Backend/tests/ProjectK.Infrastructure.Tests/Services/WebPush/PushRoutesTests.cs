@@ -1,5 +1,5 @@
 using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Infrastructure.Services.WebPush;
 
 namespace ProjectK.Infrastructure.Tests.Services.WebPush;

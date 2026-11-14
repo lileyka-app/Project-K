@@ -5,8 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Rules.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 

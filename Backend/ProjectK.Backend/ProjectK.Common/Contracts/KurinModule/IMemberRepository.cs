@@ -1,7 +1,7 @@
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;
 

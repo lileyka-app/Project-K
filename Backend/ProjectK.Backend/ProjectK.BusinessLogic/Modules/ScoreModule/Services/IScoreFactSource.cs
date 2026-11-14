@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Score;
+using ProjectK.Common.Records.ScoreModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 

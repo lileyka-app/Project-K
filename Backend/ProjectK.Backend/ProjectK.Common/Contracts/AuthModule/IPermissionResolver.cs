@@ -1,4 +1,5 @@
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.Common.Contracts.AuthModule;
 

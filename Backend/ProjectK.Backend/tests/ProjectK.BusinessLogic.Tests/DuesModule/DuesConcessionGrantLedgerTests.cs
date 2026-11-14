@@ -1,9 +1,9 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

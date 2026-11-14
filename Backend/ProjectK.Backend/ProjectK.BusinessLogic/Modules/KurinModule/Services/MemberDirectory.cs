@@ -3,9 +3,11 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

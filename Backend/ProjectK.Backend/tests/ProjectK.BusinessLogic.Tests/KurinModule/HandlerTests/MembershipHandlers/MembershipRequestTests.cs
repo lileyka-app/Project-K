@@ -12,9 +12,11 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 
@@ -433,7 +435,7 @@ public class MembershipRequestTests
 
     private void Senior(Guid kurinKey) => _branches[kurinKey] = KurinBranch.USP;
 
-    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.Common.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
+    private Task<ProjectK.Common.Records.Shared.ServiceResult<ProjectK.Common.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
         MembershipRequestKind kind, MembershipKind as_ = MembershipKind.Youth, Guid? from = null) =>
         Create().Handle(new CreateMembershipRequestCommand(_kurinB, Code, null, kind, as_, from), default);
 

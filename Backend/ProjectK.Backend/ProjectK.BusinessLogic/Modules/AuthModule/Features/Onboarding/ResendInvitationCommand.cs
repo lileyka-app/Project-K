@@ -6,8 +6,9 @@ using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 

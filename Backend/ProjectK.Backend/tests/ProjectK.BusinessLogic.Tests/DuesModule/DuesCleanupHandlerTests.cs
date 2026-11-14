@@ -9,8 +9,8 @@ using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Events.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

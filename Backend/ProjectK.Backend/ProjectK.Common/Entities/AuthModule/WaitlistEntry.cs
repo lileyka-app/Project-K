@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using ProjectK.Common.Entities.Shared;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Entities.AuthModule;
 

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 

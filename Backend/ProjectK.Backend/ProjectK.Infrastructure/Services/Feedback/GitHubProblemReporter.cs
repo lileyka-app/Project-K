@@ -5,8 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.Feedback;
 

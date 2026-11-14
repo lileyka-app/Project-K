@@ -1,8 +1,8 @@
 using MediatR;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KraiModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 

@@ -8,8 +8,8 @@ using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Feedback;
 using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Dtos.InfrastructureModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.API.Controllers.InfrastructureModule;
 

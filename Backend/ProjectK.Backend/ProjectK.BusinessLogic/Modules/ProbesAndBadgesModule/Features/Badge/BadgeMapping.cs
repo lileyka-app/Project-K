@@ -2,7 +2,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 

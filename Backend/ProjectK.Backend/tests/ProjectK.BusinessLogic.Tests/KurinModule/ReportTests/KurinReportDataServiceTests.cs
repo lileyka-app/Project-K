@@ -11,9 +11,10 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
 
@@ -192,7 +193,7 @@ public sealed class KurinReportDataServiceTests
             RevokedAtUtc = revokedAtUtc
         });
 
-    private Task<Common.Models.Reports.KurinReportData?> Build(KurinBranch branch = KurinBranch.UPYu)
+    private Task<Common.Records.KurinModule.KurinReportData?> Build(KurinBranch branch = KurinBranch.UPYu)
     {
         _kurin.SetBranches([new KurinNumbering(branch, 7)]);
         _source

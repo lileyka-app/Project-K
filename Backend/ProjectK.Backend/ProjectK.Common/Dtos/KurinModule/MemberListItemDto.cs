@@ -1,5 +1,7 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Members;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.Common.Dtos.KurinModule;
 

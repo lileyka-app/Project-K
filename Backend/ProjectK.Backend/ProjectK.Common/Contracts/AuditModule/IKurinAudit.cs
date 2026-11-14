@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.AuditModule;
 
 namespace ProjectK.Common.Contracts.AuditModule;
 

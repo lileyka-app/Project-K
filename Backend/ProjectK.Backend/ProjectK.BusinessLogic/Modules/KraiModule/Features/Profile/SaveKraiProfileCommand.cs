@@ -1,8 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.Common.Dtos.KraiModule;
-using ProjectK.Common.Models.KraiProfiles;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 

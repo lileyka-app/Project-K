@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Dtos.KurinModule.Requests;
 

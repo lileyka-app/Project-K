@@ -1,5 +1,3 @@
-using ProjectK.Common.Models.Catalog;
-
 namespace ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 /// <summary>A проба from the catalogue with its points grouped into sections.</summary>

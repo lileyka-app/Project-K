@@ -9,10 +9,9 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.Catalog;
 

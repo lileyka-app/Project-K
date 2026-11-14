@@ -4,7 +4,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Logout;
 

@@ -7,7 +7,7 @@ using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 

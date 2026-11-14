@@ -7,9 +7,10 @@ using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -40,7 +41,7 @@ public class SetKurinDuesRateTests
         _user.SetupGet(u => u.UserId).Returns(Guid.NewGuid());
     }
 
-    private Task<Common.Models.Records.ServiceResult<MediatR.Unit>> Send(SetKurinDuesRateRequest request) =>
+    private Task<Common.Records.Shared.ServiceResult<MediatR.Unit>> Send(SetKurinDuesRateRequest request) =>
         new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object, _unitOfWork.Object, _accrual.Object)
             .Handle(new SetKurinDuesRateCommand(Kurin, request), CancellationToken.None);
 

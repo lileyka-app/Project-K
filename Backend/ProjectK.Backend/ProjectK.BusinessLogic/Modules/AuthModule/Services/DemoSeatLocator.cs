@@ -4,9 +4,9 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

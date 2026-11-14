@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Infrastructure.Reports;
 using QuestPDF.Infrastructure;
 

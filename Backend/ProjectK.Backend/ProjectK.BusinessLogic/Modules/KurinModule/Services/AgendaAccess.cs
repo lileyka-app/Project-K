@@ -4,11 +4,12 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

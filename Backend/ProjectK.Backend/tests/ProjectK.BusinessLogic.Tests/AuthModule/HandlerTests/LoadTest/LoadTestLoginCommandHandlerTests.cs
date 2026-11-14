@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.LoadTest;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.LoadTest;
 

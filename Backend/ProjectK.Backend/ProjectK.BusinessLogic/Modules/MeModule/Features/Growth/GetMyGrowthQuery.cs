@@ -3,8 +3,10 @@ using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 

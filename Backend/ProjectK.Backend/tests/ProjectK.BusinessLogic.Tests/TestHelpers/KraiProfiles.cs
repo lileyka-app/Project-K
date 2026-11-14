@@ -1,6 +1,6 @@
 using Moq;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Records.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 

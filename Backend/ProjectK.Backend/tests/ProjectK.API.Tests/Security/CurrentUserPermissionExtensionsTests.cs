@@ -1,9 +1,8 @@
 using Moq;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Tests.Security;
 

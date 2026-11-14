@@ -5,9 +5,10 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests;
 

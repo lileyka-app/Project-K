@@ -1,5 +1,6 @@
 using ProjectK.Common.Dtos.AuthModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.InfrastructureModule;
 

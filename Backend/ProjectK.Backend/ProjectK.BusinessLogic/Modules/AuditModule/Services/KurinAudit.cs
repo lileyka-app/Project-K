@@ -3,7 +3,8 @@ using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuditModule.Services;
 

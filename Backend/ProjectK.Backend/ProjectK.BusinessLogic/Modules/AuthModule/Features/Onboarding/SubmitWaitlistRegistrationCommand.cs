@@ -10,11 +10,13 @@ using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Common.Phones;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 

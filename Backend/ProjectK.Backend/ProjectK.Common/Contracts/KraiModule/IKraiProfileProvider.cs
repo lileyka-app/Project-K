@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Records.KraiModule;
 
 namespace ProjectK.Common.Contracts.KraiModule;
 

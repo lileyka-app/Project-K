@@ -4,9 +4,12 @@ using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 

@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Dtos.MeModule;
 

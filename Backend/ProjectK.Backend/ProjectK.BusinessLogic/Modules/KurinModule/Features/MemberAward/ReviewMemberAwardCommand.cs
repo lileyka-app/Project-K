@@ -6,12 +6,16 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 

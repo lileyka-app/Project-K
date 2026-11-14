@@ -4,10 +4,12 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Records.KraiModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
 

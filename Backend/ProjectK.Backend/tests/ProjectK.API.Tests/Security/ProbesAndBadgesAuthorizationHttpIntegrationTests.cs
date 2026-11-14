@@ -14,7 +14,6 @@ using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Catalog;
 
 namespace ProjectK.API.Tests.Security;
 

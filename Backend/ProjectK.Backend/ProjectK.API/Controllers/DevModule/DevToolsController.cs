@@ -9,7 +9,7 @@ using ProjectK.API.Hosting;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Dtos.AuthModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.DevModule;
 

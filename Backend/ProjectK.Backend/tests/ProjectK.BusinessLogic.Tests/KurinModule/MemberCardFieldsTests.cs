@@ -1,7 +1,9 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Records.KraiModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;
 

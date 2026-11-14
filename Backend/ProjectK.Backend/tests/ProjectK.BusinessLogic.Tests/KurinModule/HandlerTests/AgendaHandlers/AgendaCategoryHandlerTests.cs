@@ -4,7 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
 

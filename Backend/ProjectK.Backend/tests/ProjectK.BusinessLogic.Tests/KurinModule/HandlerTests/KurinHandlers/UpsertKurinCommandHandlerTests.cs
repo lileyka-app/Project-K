@@ -10,9 +10,13 @@ using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 

@@ -5,9 +5,9 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
+using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 

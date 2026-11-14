@@ -1,8 +1,8 @@
 using MediatR;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 

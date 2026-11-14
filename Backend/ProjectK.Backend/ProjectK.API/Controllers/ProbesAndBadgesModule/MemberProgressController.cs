@@ -8,7 +8,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 

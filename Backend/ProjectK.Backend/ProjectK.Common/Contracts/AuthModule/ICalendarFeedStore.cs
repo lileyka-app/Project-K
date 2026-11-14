@@ -1,5 +1,5 @@
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.Common.Contracts.AuthModule;
 

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Infrastructure.Seeding;
 
 namespace ProjectK.Infrastructure.Tests.Seeding;

@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Hosting;
 

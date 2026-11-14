@@ -1,6 +1,7 @@
 using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Authorization;
 

@@ -3,8 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.BackgroundServices;

@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
 
 namespace ProjectK.Common.Dtos.DuesModule;
 

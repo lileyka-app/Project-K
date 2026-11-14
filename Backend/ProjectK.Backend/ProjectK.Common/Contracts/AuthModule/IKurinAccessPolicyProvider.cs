@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.Common.Contracts.AuthModule;
 

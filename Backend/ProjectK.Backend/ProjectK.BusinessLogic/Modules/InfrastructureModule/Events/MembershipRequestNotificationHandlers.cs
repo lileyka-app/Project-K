@@ -3,9 +3,12 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 

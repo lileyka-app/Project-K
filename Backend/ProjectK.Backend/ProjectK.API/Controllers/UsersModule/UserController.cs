@@ -11,8 +11,8 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.Common.Dtos.UsersModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.UsersModule;
 

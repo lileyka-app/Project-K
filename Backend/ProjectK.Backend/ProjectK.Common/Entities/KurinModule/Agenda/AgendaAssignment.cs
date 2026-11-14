@@ -1,5 +1,5 @@
 using ProjectK.Common.Entities.Shared;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Entities.KurinModule.Agenda;
 

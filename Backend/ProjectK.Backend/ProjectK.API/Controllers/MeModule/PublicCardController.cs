@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Security;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Controllers.MeModule;
 
@@ -40,7 +40,7 @@ public class PublicCardController : ControllerBase
     public async Task<IActionResult> Linked(string token, CancellationToken cancellationToken) =>
         Answer(await _mediator.Send(new ReadLinkedCardQuery(token), cancellationToken));
 
-    private IActionResult Answer(Common.Models.Records.ServiceResult<PublicCardDto> result)
+    private IActionResult Answer(Common.Records.Shared.ServiceResult<PublicCardDto> result)
     {
         Response.Headers.CacheControl = "no-store";
         Response.Headers["X-Robots-Tag"] = "noindex, nofollow";

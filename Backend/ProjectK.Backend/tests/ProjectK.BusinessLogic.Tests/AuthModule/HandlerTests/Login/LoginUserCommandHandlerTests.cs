@@ -13,11 +13,11 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login;
 

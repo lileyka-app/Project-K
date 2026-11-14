@@ -1,4 +1,4 @@
-using ProjectK.Common.Models;
+using ProjectK.Common.Rules.Shared;
 using Spectre.Console;
 
 namespace ProjectK.API.Hosting;

@@ -1,8 +1,8 @@
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 

@@ -1,6 +1,6 @@
 using ProjectK.Common.Entities.Shared;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.Common.Entities.DuesModule;
 

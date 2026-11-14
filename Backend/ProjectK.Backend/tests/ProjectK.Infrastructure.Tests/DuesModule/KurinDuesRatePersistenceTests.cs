@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.DuesModule;
 

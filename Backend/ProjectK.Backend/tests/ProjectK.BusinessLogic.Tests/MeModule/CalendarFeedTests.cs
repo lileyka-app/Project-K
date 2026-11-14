@@ -17,11 +17,13 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Common.Security;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

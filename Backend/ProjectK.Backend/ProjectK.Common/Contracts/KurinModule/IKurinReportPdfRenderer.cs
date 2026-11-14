@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;
 

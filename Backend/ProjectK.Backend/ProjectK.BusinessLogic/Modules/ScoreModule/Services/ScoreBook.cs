@@ -5,10 +5,11 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Score;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ScoreModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ScoreModule;
+using ProjectK.Common.Rules.DuesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 

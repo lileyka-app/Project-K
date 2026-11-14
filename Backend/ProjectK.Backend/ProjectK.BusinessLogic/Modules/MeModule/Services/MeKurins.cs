@@ -1,6 +1,6 @@
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 

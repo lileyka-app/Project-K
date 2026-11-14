@@ -5,7 +5,7 @@ using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
@@ -143,6 +143,6 @@ public class PushSubscriptionHandlersTests
         result.IsValid.Should().Be(valid);
     }
 
-    private Task<ProjectK.Common.Models.Records.ServiceResult<MediatR.Unit>> Subscribe(SubscribeToPushCommand command) =>
+    private Task<ProjectK.Common.Records.Shared.ServiceResult<MediatR.Unit>> Subscribe(SubscribeToPushCommand command) =>
         new SubscribeToPushCommandHandler(_unitOfWork.Object, _currentUser.Object, On).Handle(command, CancellationToken.None);
 }

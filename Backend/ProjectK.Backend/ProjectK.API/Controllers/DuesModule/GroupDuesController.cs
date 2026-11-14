@@ -9,7 +9,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group;
 using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Controllers.DuesModule;
 

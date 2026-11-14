@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Catalog;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

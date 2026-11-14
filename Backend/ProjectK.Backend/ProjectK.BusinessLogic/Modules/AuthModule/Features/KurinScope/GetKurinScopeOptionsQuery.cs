@@ -1,8 +1,9 @@
 using MediatR;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.AuthModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope;
 

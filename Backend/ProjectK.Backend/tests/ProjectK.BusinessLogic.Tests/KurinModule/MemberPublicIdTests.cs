@@ -1,5 +1,5 @@
 using FluentAssertions;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;
 

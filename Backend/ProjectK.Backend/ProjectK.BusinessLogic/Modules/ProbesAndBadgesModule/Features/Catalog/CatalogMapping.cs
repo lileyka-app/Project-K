@@ -1,6 +1,5 @@
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Catalog;
-using CatalogProbe = ProjectK.Common.Models.Catalog.Probe;
+using CatalogProbe = ProjectK.Common.Dtos.ProbesAndBadgesModule.Probe;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 

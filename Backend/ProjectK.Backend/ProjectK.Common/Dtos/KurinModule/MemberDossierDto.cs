@@ -1,4 +1,5 @@
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Dtos.KurinModule;
 

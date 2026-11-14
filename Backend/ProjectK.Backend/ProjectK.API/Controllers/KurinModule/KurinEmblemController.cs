@@ -9,8 +9,7 @@ using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 

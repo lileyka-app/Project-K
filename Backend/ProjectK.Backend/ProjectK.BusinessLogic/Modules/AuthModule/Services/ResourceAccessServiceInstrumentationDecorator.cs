@@ -1,9 +1,8 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

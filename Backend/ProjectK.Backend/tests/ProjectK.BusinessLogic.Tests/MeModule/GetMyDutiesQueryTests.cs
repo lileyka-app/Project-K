@@ -17,9 +17,11 @@ using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MeModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

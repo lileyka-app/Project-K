@@ -11,10 +11,11 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Common.Phones;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 

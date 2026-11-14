@@ -1,5 +1,6 @@
 using ProjectK.Common.Entities.Shared;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Entities.KurinModule;
 

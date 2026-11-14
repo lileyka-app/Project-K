@@ -13,7 +13,7 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
 

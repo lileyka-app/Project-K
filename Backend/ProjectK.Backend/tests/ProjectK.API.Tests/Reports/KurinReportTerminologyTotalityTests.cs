@@ -1,5 +1,7 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Tests.Reports;
 

@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.MeModule;
 
 namespace ProjectK.Common.Dtos.MeModule;
 

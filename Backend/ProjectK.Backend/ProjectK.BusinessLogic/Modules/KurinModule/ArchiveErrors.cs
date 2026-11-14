@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Reports;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule;
 

@@ -6,8 +6,8 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 

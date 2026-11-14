@@ -3,7 +3,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Records.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 
@@ -54,8 +54,8 @@ public class KurinLocaleTests
         var toronto = await Profile("America/Toronto").Object.DuesKraiForKurinAsync(Kurin, default);
         var lateOn31March = new DateTimeOffset(2026, 3, 31, 23, 30, 0, TimeSpan.Zero);
 
-        prague.QuarterOf(lateOn31March).Should().Be(new Common.Models.Dues.DuesQuarter(2026, 2));
-        toronto.QuarterOf(lateOn31March).Should().Be(new Common.Models.Dues.DuesQuarter(2026, 1));
+        prague.QuarterOf(lateOn31March).Should().Be(new Common.Records.DuesModule.DuesQuarter(2026, 2));
+        toronto.QuarterOf(lateOn31March).Should().Be(new Common.Records.DuesModule.DuesQuarter(2026, 1));
         prague.Today(lateOn31March).Should().Be(new DateOnly(2026, 4, 1));
     }
 
@@ -67,9 +67,9 @@ public class KurinLocaleTests
         var start = new DateTime(2026, 10, 26, 22, 0, 0, DateTimeKind.Unspecified);
         var item = new Common.Entities.KurinModule.Agenda.AgendaItem
         {
-            Kind = Common.Models.Enums.AgendaItemKind.Event,
+            Kind = Common.Enums.KurinModule.AgendaItemKind.Event,
             StartUtc = start,
-            RecurrenceFrequency = Common.Models.Enums.RecurrenceFrequency.Weekly,
+            RecurrenceFrequency = Common.Enums.KurinModule.RecurrenceFrequency.Weekly,
             RecurrenceInterval = 1,
             RecurrenceByWeekday = 1 << (int)DayOfWeek.Monday
         };

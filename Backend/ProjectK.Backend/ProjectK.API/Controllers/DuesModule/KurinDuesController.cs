@@ -8,7 +8,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Controllers.DuesModule;
 

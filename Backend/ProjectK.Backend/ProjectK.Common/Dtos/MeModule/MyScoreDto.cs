@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.ScoreModule;
 
 namespace ProjectK.Common.Dtos.MeModule;
 

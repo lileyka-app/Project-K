@@ -2,8 +2,8 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 

@@ -1,8 +1,7 @@
 using System.Security.Claims;
 using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Middleware;
 

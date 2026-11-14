@@ -1,4 +1,5 @@
-using ProjectK.Common.Models.Catalog;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Services.Catalog;

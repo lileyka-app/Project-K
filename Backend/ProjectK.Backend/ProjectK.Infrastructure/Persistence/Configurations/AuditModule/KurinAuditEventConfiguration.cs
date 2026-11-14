@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Records.AuditModule;
 
 namespace ProjectK.Infrastructure.Persistence.Configurations.AuditModule;
 

@@ -1,13 +1,15 @@
 using System.Globalization;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>
 /// The fields of a person's card the kurin's journal records. They go by the card's JSON names, so
-/// <see cref="ProjectK.Common.Models.Members.MemberDataFields"/> recognises the private ones and the
+/// <see cref="ProjectK.Common.Rules.KurinModule.MemberDataFields"/> recognises the private ones and the
 /// journal records them as changed without their values.
 /// </summary>
 public static class MemberAuditFields

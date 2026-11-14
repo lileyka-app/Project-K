@@ -1,6 +1,6 @@
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Dtos.AuthModule;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

@@ -2,7 +2,8 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
 

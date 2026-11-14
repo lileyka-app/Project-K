@@ -12,8 +12,7 @@ using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Dtos.AuthModule.Requests;
 using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.API.Controllers.AuthModule;

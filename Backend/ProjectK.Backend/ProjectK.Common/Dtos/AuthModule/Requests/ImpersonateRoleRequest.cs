@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.Common.Dtos.AuthModule.Requests;
 

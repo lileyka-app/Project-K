@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Catalog;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Contracts.ProbesAndBadgesModule;
 

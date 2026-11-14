@@ -10,8 +10,11 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 
