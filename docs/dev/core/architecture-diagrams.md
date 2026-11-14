@@ -99,7 +99,7 @@ sequenceDiagram
 
 Чотири проєкти з односторонніми залежностями. `BusinessLogic` та `Infrastructure` не знають одне
 про одного: інтерфейс живе в `Common`, реалізація — в `Infrastructure`. Модулі не читають таблиць
-одне одного, а питають через контракти в `Common/Interfaces/Modules/`; `ProjectK.Architecture.Tests`
+одне одного, а питають через контракти в `Common/Contracts/<Module>/`; `ProjectK.Architecture.Tests`
 читає IL і валить збірку, якщо хтось перетнув межу.
 
 ```mermaid

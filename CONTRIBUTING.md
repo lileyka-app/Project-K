@@ -97,11 +97,13 @@ Entities/   Contracts/   Dtos/   Records/   Events/   Enums/   Rules/   Options/
 ```
 
 Спільне для всіх модулів лягає в підтеку `Shared/` відповідного виду (`Rules/Shared/PhoneNumbers.cs`).
-Модуль у шляху зветься так само, як у `Entities/` (`KurinModule`, `AuthModule`). Винятки репозиторію
+Модуль у шляху зветься так само, як у `Entities/` (`KurinModule`, `AuthModule`), а модуль без власних
+таблиць — як у `BusinessLogic/Modules/` (`MeModule`, `UsersModule`). Простір імен іде за текою:
+`ProjectK.Common.<Вид>.<Module>`. Винятки репозиторію
 (`StaleRowException`, `DuplicateRowException`) — частина обіцянки Infrastructure бізнес-логіці, тож лежать у
 `Contracts/Shared/`; розширення `ClaimsPrincipal` і користувача — `Rules/AuthModule/`.
-Один публічний тип — один файл. Те, що зараз лежить у `Models/<Тема>/`, `Interfaces/Modules/`,
-`Phones/`, `Security/` чи `Extensions/`, розходиться по цих видах у `POL-09`.
+Один публічний тип — один файл: супутній record чи enum контракту лягає у свій вид, а не поруч з
+інтерфейсом. Static-клас (правило, підписи, набір значень) — завжди `Rules/`, навіть коли описує enum.
 
 ### Вертикальні зрізи
 
@@ -165,7 +167,7 @@ Modules/<Module>/Features/<Area>/
 на пам'яті:
 
 **Контракт замість чужого репозиторію.** Питання до іншого модуля ставиться через інтерфейс у
-`Common/Contracts/<Module>/` (до `POL-09` — `Common/Interfaces/Modules/<Module>/`) —
+`Common/Contracts/<Module>/` —
 `IMemberDirectory`, `IMembershipDirectory`, `IOfficeDirectory`, `IMemberProgressDirectory`.
 Directory лише відповідає на питання; запис у чужий модуль через нього не йде. За межами модуля, якому належить сутність, її імені
 не буває: поза мембером ніхто не називає ні `Member`, ні `IMemberRepository`. Пиши контракт так,
@@ -176,7 +178,7 @@ Directory лише відповідає на питання; запис у чу�
 планувалося. Межа проведена в тестах раніше за переїзд саме тому, що переїзд без неї неможливий.
 
 **Подія замість синхронного виклику.** Коли після дії має статися щось у чужому модулі —
-оголошуй подію (`Common/Events/<Module>/`, до `POL-09` — `Common/Models/Events/`) і публікуй через
+оголошуй подію (`Common/Events/<Module>/`) і публікуй через
 `IDomainEventPublisher`. Подія зветься тим, що вже сталося (`MembershipLeft`, `KurinTagDeleted`), і
 модуль, чиї дані міняються, обробляє її сам. Хендлер, який
 сам пише в чужий інбокс, валить `Modules_ShouldAnnounceWhatHappened_RatherThanWriteToTheInbox`.
@@ -264,7 +266,7 @@ Directory лише відповідає на питання; запис у чу�
 DTO — `record` з конструктором (або з `required`-властивостями): нове поле не скомпілюється, поки
 його не заповнить `ToDto`. Перевірка, куди класти, проста: якщо тип згадується у відповіді або
 запиті контролера — це DTO. (`DateRangeDto` довго лежав у `Records/`, хоч і був у відповіді
-планування.) До `POL-09` наявні DTO лежать у `Common/Models/Dtos/`.
+планування.)
 
 ### Репозиторії
 
@@ -373,7 +375,7 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 ### Номер телефону
 
 Телефон зберігається одним виглядом: «+», код країни й цифри, без пробілів — `+380501234567`,
-`+420777123456`. Правило живе в одному місці, `ProjectK.Common/Phones/PhoneNumbers.cs`:
+`+420777123456`. Правило живе в одному місці, `ProjectK.Common/Rules/Shared/PhoneNumbers.cs`:
 
 - `PhoneNumbers.Normalize` — для всього, що людина вводить у формі: прибирає пробіли, дефіси, дужки
   й крапки, а номер без «+» і коду країни відхиляє (`null`; помилка — `PhoneNumbers.ErrorCode`,
@@ -397,7 +399,7 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 краю, а не в перевірках `if (kraiCode == "cz")`. Читати профіль — лише через `IKraiProfileProvider`.
 Нове налаштування додається в три кроки:
 
-1. необовʼязкове (nullable) поле в `KraiProfileDocument` (`ProjectK.Common/Models/KraiProfiles`) —
+1. необовʼязкове (nullable) поле в `KraiProfileDocument` (`ProjectK.Common/Dtos/KraiModule`) —
    так профіль, збережений раніше, читається й далі;
 2. значення за замовчуванням у `KraiProfileProvider.Resolve` — те, як Лілейка працювала без
    налаштування, тож порожній профіль нічого не змінює;

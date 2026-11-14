@@ -39,7 +39,7 @@ sidebar:
 Банер рендериться з `public/assets/lileyka-banner-1080x288.svg` скриптом
 `Frontend/projectk-frontend/scripts/render-email-banner.mjs` (Playwright, 1200×320).
 
-## Налаштування (`EmailSettings`)
+## Налаштування (`EmailOptions`)
 
 Секція `Email` в `appsettings`:
 
