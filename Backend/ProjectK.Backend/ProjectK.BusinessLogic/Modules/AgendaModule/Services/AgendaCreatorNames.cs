@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;

@@ -1,10 +1,9 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

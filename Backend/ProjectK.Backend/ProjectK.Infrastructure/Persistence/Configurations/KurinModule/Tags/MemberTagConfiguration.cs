@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Entities.MemberModule;
 
 namespace ProjectK.Infrastructure.Persistence.Configurations.KurinModule.Tags;
 

@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 
 namespace ProjectK.Common.Contracts.DuesModule;

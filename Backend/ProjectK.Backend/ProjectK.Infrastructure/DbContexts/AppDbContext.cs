@@ -9,6 +9,7 @@ using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ScoreModule;
 

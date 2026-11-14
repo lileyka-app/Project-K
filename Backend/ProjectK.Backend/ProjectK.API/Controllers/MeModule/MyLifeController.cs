@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
-using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Dtos.MemberModule.Requests;
 using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.MeModule;

@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -84,9 +86,53 @@ public sealed class KurinReportRepository : IKurinReportRepository
         return new KurinReportSourceData(
             kurin,
             groups,
-            mentorAssignments,
-            members,
+            mentorAssignments
+                .Select(assignment => new KurinReportSourceMentor(assignment.MentorUserKey, assignment.GroupKey, assignment.RevokedAtUtc))
+                .ToList(),
+            members.Select(ToSource).ToList(),
             (IReadOnlyDictionary<Guid, AppUser>)usersByKey,
-            memberships.ToDictionary(membership => membership.MemberKey));
+            memberships.ToDictionary(
+                membership => membership.MemberKey,
+                membership => new KurinMembershipRecord(
+                    membership.MembershipKey,
+                    membership.MemberKey,
+                    membership.GroupKey,
+                    membership.Kind,
+                    membership.JoinedAtUtc,
+                    membership.LeftAtUtc)));
     }
+
+    private static KurinReportSourceMember ToSource(Member member) => new(
+        member.MemberKey,
+        member.UserKey,
+        member.FirstName,
+        member.MiddleName,
+        member.LastName,
+        member.Email,
+        member.PhoneNumber,
+        member.DateOfBirth,
+        member.Address,
+        member.School,
+        member.ProfilePhotoBlobName,
+        member.LatestPlastLevel,
+        member.PlastLevelHistory
+            .Select(history => new KurinReportPlastLevel(history.PlastLevel, history.DateAchieved))
+            .ToList(),
+        member.MemberWarnings
+            .Select(warning => new KurinReportSourceWarning(warning.Level, warning.IssuedAtUtc, warning.ExpiresAtUtc, warning.RevokedAtUtc))
+            .ToList(),
+        member.MemberAwards
+            .Select(award => new KurinReportSourceAward(award.Level, award.CatalogId, award.DateAcquired, award.Note, award.Status))
+            .ToList(),
+        member.LeadershipHistories
+            .Select(history => new KurinReportSourceOffice(
+                history.Leadership.Type,
+                history.Leadership.KurinKey,
+                history.Leadership.GroupKey,
+                history.Leadership.Name,
+                history.Leadership.EndDate,
+                history.Role,
+                history.StartDate,
+                history.EndDate))
+            .ToList());
 }

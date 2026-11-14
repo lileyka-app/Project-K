@@ -1,3 +1,4 @@
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.Shared;
 
 namespace ProjectK.Common.Entities.KurinModule;

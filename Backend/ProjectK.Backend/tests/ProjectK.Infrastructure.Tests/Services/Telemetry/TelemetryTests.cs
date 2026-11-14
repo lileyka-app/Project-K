@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Infrastructure.DbContexts;

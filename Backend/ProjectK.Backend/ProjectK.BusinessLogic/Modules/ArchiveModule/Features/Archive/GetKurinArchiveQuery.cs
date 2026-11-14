@@ -8,7 +8,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.ArchiveModule;
 using ProjectK.Common.Records.Shared;
-using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.ArchiveModule.Features.Archive;
 

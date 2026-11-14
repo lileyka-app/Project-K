@@ -1,6 +1,6 @@
-using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Contracts.MemberModule;

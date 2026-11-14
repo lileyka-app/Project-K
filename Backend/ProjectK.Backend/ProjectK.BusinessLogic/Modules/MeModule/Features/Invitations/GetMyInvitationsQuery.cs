@@ -1,6 +1,6 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.MembershipRequest;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;

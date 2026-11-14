@@ -1,6 +1,8 @@
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Records.KurinModule;

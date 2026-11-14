@@ -1,20 +1,19 @@
 using System.Globalization;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
@@ -71,7 +70,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return ServiceResult<LifeStoryPdf>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
+            return ServiceResult<LifeStoryPdf>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var dossier = await _sender.Send(new GetMemberDossierQuery(memberKey, Folders), cancellationToken);
@@ -79,7 +78,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         {
             return ServiceResult<LifeStoryPdf>.Failure(
                 dossier.Type == ResultType.Success ? ResultType.NotFound : dossier.Type,
-                dossier.ErrorCode ?? MemberErrors.MemberNotFound,
+                dossier.ErrorCode ?? MeErrors.MemberNotFound,
                 dossier.ErrorMessage ?? "Your record could not be read.");
         }
 
@@ -191,7 +190,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         return new LifeStoryRow(badge.ReviewedAtUtc is { } date ? Day(DateOnly.FromDateTime(date)) : "без дати", title, null);
     }
 
-    private static LifeStoryRow EntryRow(ProjectK.Common.Entities.KurinModule.MemberLifeEntry entry)
+    private static LifeStoryRow EntryRow(ProjectK.Common.Entities.MemberModule.MemberLifeEntry entry)
     {
         var what = entry.Kind == LifeEntryKind.Training ? TrainingName(entry.Course, entry.Title, entry.Number) : entry.Title ?? "-";
         var detail = Join([

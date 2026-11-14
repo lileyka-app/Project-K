@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.Common.Rules.KurinModule;
 
@@ -6,7 +6,7 @@ namespace ProjectK.Common.Rules.KurinModule;
 /// Where the line between юнацтво and кадра виховників runs, said once so the реєстр and the
 /// звіт куреня cannot answer it differently.
 /// <para>
-/// <see cref="ProjectK.Common.Entities.KurinModule.Membership"/> has a <c>Kind</c> field meant
+/// <see cref="ProjectK.Common.Entities.MemberModule.Membership"/> has a <c>Kind</c> field meant
 /// for exactly this, and it is <c>Youth</c> on every row that exists: the migration that added
 /// it deliberately did not guess, and nothing has set it since. Until a провід starts filling
 /// it in, the question is answered by the offices instead — and when they do, <c>Kind</c>

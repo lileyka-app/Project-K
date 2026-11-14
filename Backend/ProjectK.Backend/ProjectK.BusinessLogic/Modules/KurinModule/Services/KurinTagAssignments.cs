@@ -1,4 +1,5 @@
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Enums.AuditModule;
@@ -16,11 +17,13 @@ internal sealed class KurinTagAssignments
 {
     private readonly IUnitOfWork _uow;
     private readonly IKurinAudit _audit;
+    private readonly IMembershipDirectory _memberships;
 
-    public KurinTagAssignments(IUnitOfWork uow, IKurinAudit audit)
+    public KurinTagAssignments(IUnitOfWork uow, IKurinAudit audit, IMembershipDirectory memberships)
     {
         _uow = uow;
         _audit = audit;
+        _memberships = memberships;
     }
 
     /// <summary>
@@ -45,7 +48,7 @@ internal sealed class KurinTagAssignments
             return [];
         }
 
-        var current = (await _uow.Memberships.GetRecordsInKurinAsync(kurinKey, cancellationToken))
+        var current = (await _memberships.GetInKurinAsync(kurinKey, cancellationToken))
             .Where(record => record.LeftAtUtc is null)
             .Select(record => record.MemberKey)
             .ToHashSet();

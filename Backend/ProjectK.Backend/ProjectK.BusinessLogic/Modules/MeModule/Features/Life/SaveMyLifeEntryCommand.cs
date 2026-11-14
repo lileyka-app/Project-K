@@ -1,12 +1,10 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Dtos.KurinModule.Requests;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Dtos.MemberModule.Requests;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -49,7 +47,7 @@ public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEn
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
+            return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         MemberLifeEntry entry;
@@ -58,7 +56,7 @@ public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEn
             // Someone else's entry answers as missing: whether it exists is not the caller's to learn.
             if (await _unitOfWork.MemberLifeEntries.GetOwnAsync(memberKey, key, cancellationToken) is not { } own)
             {
-                return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.NotFound, MemberErrors.LifeEntryNotFound, "No such entry in your life story.");
+                return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.NotFound, MeErrors.LifeEntryNotFound, "No such entry in your life story.");
             }
 
             entry = own;
@@ -71,7 +69,7 @@ public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEn
             var count = (await _unitOfWork.MemberLifeEntries.GetForMemberAsync(memberKey, cancellationToken)).Count;
             if (count >= LifeMapping.MaxPerPerson)
             {
-                return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.BadRequest, MemberErrors.LifeStoryFull, "The life story holds no more entries.");
+                return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.BadRequest, MeErrors.LifeStoryFull, "The life story holds no more entries.");
             }
 
             entry = new MemberLifeEntry { MemberKey = memberKey };

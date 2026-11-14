@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.Shared;
@@ -61,43 +61,43 @@ public static class KurinReportNames
     private static readonly IReadOnlyDictionary<MemberWarningLevel, string> WarningLevelLabels =
         new Dictionary<MemberWarningLevel, string>
         {
-            [ProjectK.Common.Enums.KurinModule.MemberWarningLevel.Level1] = "1-а пересторога",
-            [ProjectK.Common.Enums.KurinModule.MemberWarningLevel.Level2] = "2-а пересторога",
-            [ProjectK.Common.Enums.KurinModule.MemberWarningLevel.Level3] = "3-а пересторога"
+            [ProjectK.Common.Enums.MemberModule.MemberWarningLevel.Level1] = "1-а пересторога",
+            [ProjectK.Common.Enums.MemberModule.MemberWarningLevel.Level2] = "2-а пересторога",
+            [ProjectK.Common.Enums.MemberModule.MemberWarningLevel.Level3] = "3-а пересторога"
         };
 
     private static readonly IReadOnlyDictionary<MemberAwardLevel, string> AwardLevelLabels =
         new Dictionary<MemberAwardLevel, string>
         {
-            [ProjectK.Common.Enums.KurinModule.MemberAwardLevel.First] = "1-е відзначення",
-            [ProjectK.Common.Enums.KurinModule.MemberAwardLevel.Second] = "2-е відзначення",
-            [ProjectK.Common.Enums.KurinModule.MemberAwardLevel.Third] = "3-е відзначення",
-            [ProjectK.Common.Enums.KurinModule.MemberAwardLevel.Fourth] = "4-е відзначення"
+            [ProjectK.Common.Enums.MemberModule.MemberAwardLevel.First] = "1-е відзначення",
+            [ProjectK.Common.Enums.MemberModule.MemberAwardLevel.Second] = "2-е відзначення",
+            [ProjectK.Common.Enums.MemberModule.MemberAwardLevel.Third] = "3-е відзначення",
+            [ProjectK.Common.Enums.MemberModule.MemberAwardLevel.Fourth] = "4-е відзначення"
         };
 
     private static readonly IReadOnlyDictionary<LeadershipType, string> LeadershipTypeLabels =
         new Dictionary<LeadershipType, string>
         {
-            [ProjectK.Common.Enums.KurinModule.LeadershipType.Kurin] = "Курінь",
-            [ProjectK.Common.Enums.KurinModule.LeadershipType.Group] = "Гурток",
-            [ProjectK.Common.Enums.KurinModule.LeadershipType.KV] = "КВ"
+            [ProjectK.Common.Enums.MemberModule.LeadershipType.Kurin] = "Курінь",
+            [ProjectK.Common.Enums.MemberModule.LeadershipType.Group] = "Гурток",
+            [ProjectK.Common.Enums.MemberModule.LeadershipType.KV] = "КВ"
         };
 
     private static readonly IReadOnlyDictionary<LeadershipRole, string> LeadershipRoleLabels =
         new Dictionary<LeadershipRole, string>
         {
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Kurinnuy] = "Курінний",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Hurtkoviy] = "Гуртковий",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Suddya] = "Суддя",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Pysar] = "Писар",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Skarbnyk] = "Скарбник",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Horunjiy] = "Хорунжий",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Gospodar] = "Господар",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Hronikar] = "Хронікар",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Instruktor] = "Інструктор",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Vykhovnyk] = "Впорядник",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.Zvyazkovyi] = "Зв'язковий",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.OtherKurin] = "Інша курінна роль",
-            [ProjectK.Common.Enums.KurinModule.LeadershipRole.OtherGroup] = "Інша гурткова роль"
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Kurinnuy] = "Курінний",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Hurtkoviy] = "Гуртковий",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Suddya] = "Суддя",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Pysar] = "Писар",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Skarbnyk] = "Скарбник",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Horunjiy] = "Хорунжий",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Gospodar] = "Господар",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Hronikar] = "Хронікар",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Instruktor] = "Інструктор",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Vykhovnyk] = "Впорядник",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.Zvyazkovyi] = "Зв'язковий",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.OtherKurin] = "Інша курінна роль",
+            [ProjectK.Common.Enums.MemberModule.LeadershipRole.OtherGroup] = "Інша гурткова роль"
         };
 }

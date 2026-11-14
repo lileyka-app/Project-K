@@ -12,6 +12,9 @@ using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -112,8 +115,6 @@ public static class DependencyInjection
         services.AddScoped<IProgressCatalogReader, ProgressCatalogReader>();
         services.AddScoped<IKurinCatalog, KurinCatalog>();
 
-        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
-        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
@@ -167,6 +168,8 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberImportWriter, MemberImportWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<MembershipMoves>();

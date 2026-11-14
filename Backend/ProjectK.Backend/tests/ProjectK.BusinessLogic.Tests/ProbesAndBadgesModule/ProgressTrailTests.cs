@@ -14,7 +14,7 @@ using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;

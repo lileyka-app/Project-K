@@ -1,9 +1,7 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -48,7 +46,7 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
     {
         if (await _currentMember.FindAsync(cancellationToken) is not { } me)
         {
-            return ServiceResult<bool>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
+            return ServiceResult<bool>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var catalogId = request.CatalogId?.Trim();
@@ -57,7 +55,7 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
             .ToList();
         if (grants.Count == 0)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, MemberErrors.AwardNotFound, "You hold no such award.");
+            return ServiceResult<bool>.Failure(ResultType.NotFound, MeErrors.AwardNotFound, "You hold no such award.");
         }
 
         foreach (var award in grants)

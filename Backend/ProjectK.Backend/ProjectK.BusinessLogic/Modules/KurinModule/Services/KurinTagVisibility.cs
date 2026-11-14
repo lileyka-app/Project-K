@@ -1,11 +1,13 @@
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -172,6 +174,3 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
 
     private bool IsUnscopedAdmin() => _currentUser.IsInRole(SystemRoleNames.Admin) && _currentUser.KurinKey is null;
 }
-
-/// <summary>A kurin's tag switches with the defaults filled in.</summary>
-public sealed record KurinTagSettingsState(bool Enabled, bool EnabledByDefault, bool OwnTagsVisible);

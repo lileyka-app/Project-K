@@ -1,9 +1,9 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -55,11 +55,11 @@ public class MemberBoundaryRules
     {
         var rule = Types()
             .That().ResideInNamespaceMatching(@"ProjectK\.(BusinessLogic|API|Common\.Entities)\..*")
-            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.KurinModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.MemberModule(\..*)?")
             // Another module's entity may hold a MemberKey, never a Member navigation: that would be
             // a foreign key across the boundary, and the join it promises disappears with the module.
-            .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.KurinModule(\..*)?")
-            .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.KurinModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.MemberModule(\..*)?")
+            .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.MemberModule(\..*)?")
             .Should().NotDependOnAny(typeof(Member), typeof(IMemberRepository));
 
         ProjectKArchitecture.Violations(rule).Should().BeSubsetOf(
@@ -109,7 +109,7 @@ public class MemberBoundaryRules
     public void Modules_ShouldAnnounceWhatHappened_RatherThanWriteToTheInbox()
     {
         var rule = Types()
-            .That().ResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.(KurinModule|ProbesAndBadgesModule)(\..*)?")
+            .That().ResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.(KurinModule|MemberModule|ProbesAndBadgesModule)(\..*)?")
             .Should().NotDependOnAny(typeof(INotificationService));
 
         ProjectKArchitecture.Violations(rule).Should().BeEmpty(

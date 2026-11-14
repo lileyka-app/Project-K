@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.ArchiveModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.ArchiveModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;

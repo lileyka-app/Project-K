@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
@@ -257,7 +258,7 @@ public class KurinRepositoryIntegrationTests
             PhoneNumber = "0500000000"
         };
         context.Members.Add(seeded);
-        context.Memberships.Add(Infrastructure.Tests.KurinModule.RepositoryTests.Integration.Placing.Of(seeded, kurin.KurinKey, group.GroupKey));
+        context.Memberships.Add(Infrastructure.Tests.MemberModule.RepositoryTests.Integration.Placing.Of(seeded, kurin.KurinKey, group.GroupKey));
         context.Leaderships.AddRange(
             new Leadership { LeadershipKey = Guid.NewGuid(), KurinKey = kurin.KurinKey },
             new Leadership { LeadershipKey = Guid.NewGuid(), GroupKey = group.GroupKey });

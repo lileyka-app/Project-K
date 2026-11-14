@@ -4,7 +4,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Rules.AuthModule;

@@ -51,19 +51,19 @@ public sealed class SubmitKurinBranchRequestCommandHandler
     {
         if (_currentUser.UserId is not Guid userKey)
         {
-            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.Unauthorized, MemberErrors.Unauthorized, "Sign in to send a request.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.Unauthorized, KurinErrors.Unauthorized, "Sign in to send a request.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.NotFound, MemberErrors.KurinNotFound, "Kurin not found.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin not found.");
         }
 
         // A УПЮ kurin has one number it sets in its own settings; гілки change only for the older ones.
         if (!KurinBranchSetRules.IsSenior(kurin.Branch))
         {
-            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, MemberErrors.NotSeniorKurin, "Only a УСП or УПС kurin changes its гілки by request.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, KurinErrors.NotSeniorKurin, "Only a УСП or УПС kurin changes its гілки by request.");
         }
 
         var wanted = new KurinBranchRequest
@@ -85,7 +85,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
         {
             if (await _unitOfWork.Kurins.IsNumberTakenAsync(kurin.KraiCode, numbering.Branch, numbering.Number!.Value, kurin.KurinKey, cancellationToken))
             {
-                return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.Conflict, MemberErrors.KurinNumberTaken, "A kurin with this number already exists in this край.");
+                return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.Conflict, KurinErrors.KurinNumberTaken, "A kurin with this number already exists in this край.");
             }
         }
 
@@ -117,7 +117,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
     {
         if (wanted.Note?.Length > KurinBranchRequest.NoteMaxLength)
         {
-            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, MemberErrors.NoteTooLong, $"A note is up to {KurinBranchRequest.NoteMaxLength} characters.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, KurinErrors.NoteTooLong, $"A note is up to {KurinBranchRequest.NoteMaxLength} characters.");
         }
 
         var branches = wanted.WantedBranches;
@@ -130,13 +130,13 @@ public sealed class SubmitKurinBranchRequestCommandHandler
         {
             return ServiceResult<KurinBranchRequestDto>.Failure(
                 ResultType.BadRequest,
-                MemberErrors.KurinNumberOutOfRange,
+                KurinErrors.KurinNumberOutOfRange,
                 _numbers.OutOfRangeMessage);
         }
 
         if (branches.SequenceEqual(kurin.Numbering))
         {
-            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, MemberErrors.NothingToChange, "The kurin already has these гілки and numbers.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, KurinErrors.NothingToChange, "The kurin already has these гілки and numbers.");
         }
 
         return null;

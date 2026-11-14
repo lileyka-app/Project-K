@@ -15,6 +15,7 @@ using ProjectK.API.Controllers.InfrastructureModule;
 using ProjectK.API.Controllers.KraiModule;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Controllers.MeModule;
+using ProjectK.API.Controllers.MemberModule;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Controllers.RosterModule;
 using ProjectK.API.Controllers.ScoreModule;
@@ -38,6 +39,10 @@ using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
+using ProjectK.Common.Dtos.MemberModule.Requests;
 
 namespace ProjectK.API.Tests.Security;
 

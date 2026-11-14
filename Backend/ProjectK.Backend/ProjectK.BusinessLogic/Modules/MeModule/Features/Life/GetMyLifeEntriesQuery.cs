@@ -1,8 +1,6 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -26,7 +24,7 @@ public sealed class GetMyLifeEntriesQueryHandler : IRequestHandler<GetMyLifeEntr
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return ServiceResult<IReadOnlyList<MemberLifeEntryDto>>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
+            return ServiceResult<IReadOnlyList<MemberLifeEntryDto>>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var entries = await _unitOfWork.MemberLifeEntries.GetForMemberAsync(memberKey, cancellationToken);

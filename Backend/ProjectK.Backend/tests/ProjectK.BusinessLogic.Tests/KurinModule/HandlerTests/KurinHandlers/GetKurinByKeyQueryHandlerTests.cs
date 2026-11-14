@@ -3,11 +3,13 @@ using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -45,7 +47,7 @@ public class GetKurinByKeyHandlerTests
             .ReturnsAsync(Array.Empty<Guid>());
         _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
 
-        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _links, CreateCache());
+        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _links, CreateCache(), new MembershipDirectory(_unitOfWorkMock.Object));
     }
 
     private static IBackendCache CreateCache() =>

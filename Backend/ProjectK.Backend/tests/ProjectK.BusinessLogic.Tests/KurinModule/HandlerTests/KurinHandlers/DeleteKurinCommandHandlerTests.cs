@@ -3,8 +3,10 @@ using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
@@ -49,7 +51,7 @@ public class DeleteKurinHandlerTests
         _unitOfWorkMock.Setup(uow => uow.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(uow => uow.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
 
-        _handler = new DeleteKurinCommandHandler(_unitOfWorkMock.Object, _cacheMock.Object);
+        _handler = new DeleteKurinCommandHandler(_unitOfWorkMock.Object, _cacheMock.Object, new KurinCleanupEvents(_unitOfWorkMock.Object));
     }
 
     [Fact]

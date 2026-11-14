@@ -1,6 +1,6 @@
 using System.Globalization;
 using ProjectK.Common.Dtos.AuditModule;
-using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.Common.Rules.AuditModule;
 

@@ -1,5 +1,5 @@
-using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Records.MemberModule;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;

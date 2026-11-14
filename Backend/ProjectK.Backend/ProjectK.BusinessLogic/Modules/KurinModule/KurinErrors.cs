@@ -66,6 +66,15 @@ public static class KurinErrors
 
     public const string PlanningSessionNotFound = "PlanningSessionNotFound";
 
+    public const string KurinBranchRequestNotFound = "KurinBranchRequestNotFound";
+    public const string KurinBranchRequestAlreadySettled = "KurinBranchRequestAlreadySettled";
+    public const string NotSeniorKurin = "NotSeniorKurin";
+    public const string NoteTooLong = "NoteTooLong";
+    public const string NothingToChange = "NothingToChange";
+
+    /// <summary>The caller's identity is missing from the token.</summary>
+    public const string Unauthorized = "Unauthorized";
+
     public static ServiceResult<T> NotFound<T>() =>
         ServiceResult<T>.Failure(ResultType.NotFound, KurinNotFound, "Kurin was not found.");
 

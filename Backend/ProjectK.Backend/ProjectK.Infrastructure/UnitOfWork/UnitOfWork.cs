@@ -8,6 +8,7 @@ using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Contracts.Shared;
@@ -20,6 +21,7 @@ using ProjectK.Infrastructure.Repositories.DuesModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KraiModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.MemberModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Repositories.ScoreModule;
 

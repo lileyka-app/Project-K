@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.Infrastructure.Persistence.Interceptors;
 

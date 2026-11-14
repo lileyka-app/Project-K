@@ -1,13 +1,12 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;
@@ -52,13 +51,13 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         var asked = await _unitOfWork.MembershipRequests.GetAsync(request.MembershipRequestKey, cancellationToken);
         if (me is null || asked is null || asked.FromKurinKey is not null || asked.MemberKey != me.MemberKey)
         {
-            return ServiceResult<Unit>.Failure(ResultType.NotFound, MembershipErrors.RequestNotFound, "No such invitation for you.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MeErrors.RequestNotFound, "No such invitation for you.");
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
         if (!asked.IsOpen(now))
         {
-            return ServiceResult<Unit>.Failure(ResultType.Conflict, MembershipErrors.RequestClosed, "The invitation was already answered, withdrawn or has lapsed.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, MeErrors.RequestClosed, "The invitation was already answered, withdrawn or has lapsed.");
         }
 
         if (request.Accept)
@@ -85,7 +84,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         }
         catch (StaleRowException)
         {
-            return ServiceResult<Unit>.Failure(ResultType.Conflict, MembershipErrors.RequestClosed, "The invitation was already answered, withdrawn or has lapsed.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, MeErrors.RequestClosed, "The invitation was already answered, withdrawn or has lapsed.");
         }
 
         if (request.Accept && me.UserKey is { } account)
