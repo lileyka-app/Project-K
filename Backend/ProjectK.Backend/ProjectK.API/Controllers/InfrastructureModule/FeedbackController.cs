@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.ReportProblem;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.UploadScreenshot;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.InfrastructureModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -28,17 +30,6 @@ public class FeedbackController : ControllerBase
     {
         _mediator = mediator;
     }
-
-    public sealed record ReportProblemRequest(
-        string? Title,
-        string Description,
-        string? Steps,
-        string? Expected,
-        string? Route,
-        string? AppVersion,
-        IReadOnlyCollection<string>? ScreenshotUrls);
-
-    public sealed record ScreenshotUploaded(string Url);
 
     /// <summary>
     /// Files a problem report. The browser's user agent is read from the request, not trusted from the body.
@@ -74,29 +65,24 @@ public class FeedbackController : ControllerBase
     [HttpPost("screenshots")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(ScreenshotUploaded), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ScreenshotUploadedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> UploadScreenshot(IFormFile? file, CancellationToken cancellationToken)
     {
-        if (file is null || file.Length == 0)
+        if (this.RefuseRequiredImage(file, "FileRequired", "Attach an image.") is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, "FileRequired", "Attach an image.");
+            return refusal;
         }
 
-        if (ImageUploadRules.Refusal(file) is { } refusal)
-        {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
-        }
-
-        await using var content = file.OpenReadStream();
+        await using var content = file!.OpenReadStream();
         var response = await _mediator.Send(new UploadFeedbackScreenshotCommand(content, file.FileName), cancellationToken);
         if (response.Type != ResultType.Success || response.Data is null)
         {
             return response.ToActionResult(this);
         }
 
-        return Ok(new ScreenshotUploaded(response.Data));
+        return Ok(new ScreenshotUploadedDto(response.Data));
     }
 }

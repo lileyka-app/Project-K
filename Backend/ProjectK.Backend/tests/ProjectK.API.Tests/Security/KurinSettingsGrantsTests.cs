@@ -1,5 +1,5 @@
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 
@@ -34,10 +34,10 @@ public class KurinSettingsGrantsTests
 
     // Every read of the settings page: a read the КВ is refused leaves its tile empty or wrong.
     [Theory]
-    [InlineData(typeof(KurinController), nameof(KurinController.GetCardFields))]
-    [InlineData(typeof(KurinController), nameof(KurinController.GetCardSharing))]
-    [InlineData(typeof(KurinController), nameof(KurinController.GetAccessPolicy))]
-    [InlineData(typeof(KurinController), nameof(KurinController.GetBranchRequest))]
+    [InlineData(typeof(KurinSettingsController), nameof(KurinSettingsController.GetCardFields))]
+    [InlineData(typeof(KurinSettingsController), nameof(KurinSettingsController.GetCardSharing))]
+    [InlineData(typeof(KurinSettingsController), nameof(KurinSettingsController.GetAccessPolicy))]
+    [InlineData(typeof(KurinBranchRequestsController), nameof(KurinBranchRequestsController.GetBranchRequest))]
     [InlineData(typeof(KurinTagsController), nameof(KurinTagsController.GetTagSettings))]
     public void TheSettingsReads_AskForKurinSettingsRead(Type controller, string action)
     {
@@ -45,7 +45,7 @@ public class KurinSettingsGrantsTests
     }
 
     [Theory]
-    [InlineData(typeof(KurinController), nameof(KurinController.SubmitBranchRequest))]
+    [InlineData(typeof(KurinBranchRequestsController), nameof(KurinBranchRequestsController.SubmitBranchRequest))]
     [InlineData(typeof(KurinTagsController), nameof(KurinTagsController.SetTagSettings))]
     public void TheirWrites_StillAskForKurinUpdate(Type controller, string action)
     {

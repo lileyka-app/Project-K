@@ -6,6 +6,8 @@ using Moq;
 using ProjectK.API.Controllers.InfrastructureModule;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.ReportProblem;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.UploadScreenshot;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.InfrastructureModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -37,7 +39,7 @@ public class FeedbackControllerTests
             .ReturnsAsync(new ServiceResult<ProblemReportReceipt>(ResultType.Success, new ProblemReportReceipt("https://github.com/x/y/issues/3", 3)));
 
         var result = await _controller.ReportProblem(
-            new FeedbackController.ReportProblemRequest("T", "D", null, null, "/kurin", "v1", null),
+            new ReportProblemRequest("T", "D", null, null, "/kurin", "v1", null),
             CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
@@ -69,7 +71,7 @@ public class FeedbackControllerTests
         var result = await _controller.UploadScreenshot(FormFile("shot.png", "image/png", "png-bytes"), CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal("https://blob/feedback-screenshots/a.png", Assert.IsType<FeedbackController.ScreenshotUploaded>(ok.Value).Url);
+        Assert.Equal("https://blob/feedback-screenshots/a.png", Assert.IsType<ScreenshotUploadedDto>(ok.Value).Url);
     }
 
     private static FormFile FormFile(string name, string contentType, string content)

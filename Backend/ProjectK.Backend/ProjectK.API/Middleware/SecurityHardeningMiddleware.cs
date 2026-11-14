@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Infrastructure.Services.GeoIP;
 

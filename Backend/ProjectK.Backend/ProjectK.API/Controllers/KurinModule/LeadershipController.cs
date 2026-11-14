@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -102,7 +102,7 @@ public class LeadershipController : ControllerBase
     /// Returns who has held an office over time.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("histories/{leadershipKey}")]
+    [HttpGet("histories/{leadershipKey:guid}")]
     [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
     [ProducesResponseType(typeof(IEnumerable<LeadershipHistoryMemberDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)

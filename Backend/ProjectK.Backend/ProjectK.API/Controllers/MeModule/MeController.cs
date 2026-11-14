@@ -4,13 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Invitations;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Disable;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Get;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Issue;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Update;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
@@ -19,6 +18,7 @@ using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Dtos.MeModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -220,11 +220,6 @@ public class MeController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    public sealed class AnswerInvitationRequest
-    {
-        public bool Accept { get; set; }
-    }
-
     /// <summary>Where the calendar link stands. The link itself is shown only once, when issued.</summary>
     [HttpGet("calendar-feed")]
     [ProducesResponseType(typeof(CalendarFeedStatusDto), StatusCodes.Status200OK)]
@@ -237,7 +232,7 @@ public class MeController : ControllerBase
     /// <summary>Issues the calendar link, revoking any earlier one, and returns it this once.</summary>
     [HttpPost("calendar-feed")]
     [EnableRateLimiting("AccountSecurityLimit")]
-    [ProducesResponseType(typeof(IssuedCalendarFeedResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CalendarFeedLinkDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> IssueCalendarFeed([FromBody] CalendarFeedOptionsRequest request)
     {
         var result = await _mediator.Send(new IssueCalendarFeedCommand(request.IncludeSchedules, request.IncludeTasks));
@@ -246,7 +241,7 @@ public class MeController : ControllerBase
             return result.ToActionResult(this);
         }
 
-        return Ok(new IssuedCalendarFeedResponse(CalendarFeedController.UrlOf(Request, result.Data.Token), result.Data.Status));
+        return Ok(new CalendarFeedLinkDto(CalendarFeedController.UrlOf(Request, result.Data.Token), result.Data.Status));
     }
 
     /// <summary>Changes what the live link carries; the link stays the same.</summary>
@@ -267,14 +262,3 @@ public class MeController : ControllerBase
         return result.ToActionResult(this);
     }
 }
-
-/// <summary>Body for a dashboard RSVP; <c>OccurrenceStartUtc</c> names the occurrence of a series, null for a one-off event.</summary>
-public sealed record SetMyEventResponseRequest(AgendaRsvpStatus? Status, DateTime? OccurrenceStartUtc = null);
-
-public sealed record CalendarFeedOptionsRequest(bool IncludeSchedules, bool IncludeTasks);
-
-/// <summary>A just-issued calendar link: the only answer that ever carries it.</summary>
-public sealed record IssuedCalendarFeedResponse(string FeedUrl, CalendarFeedStatusDto Status);
-
-/// <summary>Body of <c>PUT api/me/card/fields</c>.</summary>
-public sealed record CardFieldsRequest(CardField Fields);

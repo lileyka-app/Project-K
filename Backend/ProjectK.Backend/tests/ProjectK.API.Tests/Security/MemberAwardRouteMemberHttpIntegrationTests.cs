@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;

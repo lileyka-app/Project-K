@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;

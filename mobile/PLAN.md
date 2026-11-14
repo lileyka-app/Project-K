@@ -226,7 +226,7 @@ Project-K/
 - `features/notificationsModule/models/app-notification.model.ts`.
 - `features/authModule/pages/login/login.ts`, `services/auth.interceptor.ts` (дочитати).
 - `shared/tile-board/tile-layout.service.ts`, `shared/empty-state`.
-- Backend: `ProjectK.API/Program.cs` (CORS), `Helpers/RefreshTokenCookie.cs`, `MfaTrustCookie.cs`, `AuthorizationBaselineMatrixTests`, `ProjectK.Architecture.Tests`.
+- Backend: `ProjectK.API/Program.cs` (CORS), `Cookies/RefreshTokenCookie.cs`, `MfaTrustCookie.cs`, `AuthorizationBaselineMatrixTests`, `ProjectK.Architecture.Tests`.
 - `.github/actions/release-info/action.yml`, `.github/workflows/{angular,dotnet,site,e2e,selfhost-docker}.yml`.
 - `docs/user/features/*` (dashboard, calendar-and-tasks, probes-and-badges, notifications, dues, score, member-card), `docs/user/roles/*`, `docs/user/account.md`.
 

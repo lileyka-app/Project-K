@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 
 namespace ProjectK.API.Middleware;
 

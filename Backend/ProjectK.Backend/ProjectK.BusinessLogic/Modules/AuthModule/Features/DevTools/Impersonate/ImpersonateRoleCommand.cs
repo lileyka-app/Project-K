@@ -14,17 +14,6 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.Impersonate;
 
-/// <summary>The seats the dev role switcher can put an administrator into.</summary>
-public enum DevRole
-{
-    Zvyazkovyi,
-    Vykhovnyk,
-    Kurinnyi,
-    Skarbnyk,
-    /// <summary>A member of the kurin with no kurin-wide or КВ office and no гурток to mentor; a гуртковий office is fine.</summary>
-    Member
-}
-
 /// <summary>
 /// Signs the administrator in as somebody who holds <paramref name="Role"/> in the kurin, with a
 /// ticket that brings them back. A testing tool: it exists only on the local tiers, where the

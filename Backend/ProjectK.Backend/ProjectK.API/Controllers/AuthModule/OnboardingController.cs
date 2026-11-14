@@ -1,12 +1,12 @@
 using System.Threading.Tasks;
 using MediatR;
-using ProjectK.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
+using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetWaitlistEntries;
@@ -21,6 +21,7 @@ using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 
 using ProjectK.Common.Models.Settings;
@@ -64,8 +65,11 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [HttpGet("kurin-numbers")]
     [ProducesResponseType(typeof(KurinNumberRange), StatusCodes.Status200OK)]
-    public IActionResult GetKurinNumberRange([FromServices] IOptions<KurinNumberOptions> numbers)
-        => Ok(new KurinNumberRange(KurinNumberOptions.MinNumber, numbers.Value.MaxNumber));
+    public async Task<IActionResult> GetKurinNumberRange()
+    {
+        var response = await _mediator.Send(new GetKurinNumberRangeQuery());
+        return response.ToActionResult(this);
+    }
 
     /// <summary>
     /// The краї the form offers, by code and name only. Open to anyone, like the form itself.
@@ -86,7 +90,7 @@ public class OnboardingController : ControllerBase
     /// The body is optional: a край in it overrides the one the applicant picked, and the kurin opens there.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("waitlist/{key}/approve")]
+    [HttpPost("waitlist/{key:guid}/approve")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -96,12 +100,6 @@ public class OnboardingController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    /// <summary>Body of <c>POST waitlist/{key}/approve</c>.</summary>
-    public sealed class ApproveWaitlistEntryRequest
-    {
-        public string? KraiCode { get; set; }
-    }
-
     /// <summary>
     /// Sends the invitation again, replacing the previous link.
     /// </summary>
@@ -109,7 +107,7 @@ public class OnboardingController : ControllerBase
     /// The earlier token stops working, so a link forwarded to the wrong address goes dead.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("waitlist/{key}/resend-invitation")]
+    [HttpPost("waitlist/{key:guid}/resend-invitation")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     public async Task<IActionResult> ResendInvitation(Guid key)
     {
@@ -137,7 +135,7 @@ public class OnboardingController : ControllerBase
     /// Rejects a waitlist entry, optionally recording why.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("waitlist/{key}/reject")]
+    [HttpPost("waitlist/{key:guid}/reject")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     public async Task<IActionResult> RejectWaitlistEntry(Guid key, [FromBody] string? note)
     {
@@ -188,7 +186,7 @@ public class OnboardingController : ControllerBase
         var response = await _mediator.Send(command);
         if (response.Type == ResultType.Success && response.Data?.Tokens is { } tokens)
         {
-            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken);
         }
 
         return response.ToActionResult(this);

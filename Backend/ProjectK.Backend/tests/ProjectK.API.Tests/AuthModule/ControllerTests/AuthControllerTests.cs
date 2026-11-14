@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,15 +25,13 @@ namespace ProjectK.API.Tests.Controllers;
 public class AuthControllerTests
 {
     private readonly Mock<IMediator> _mediatorMock;
-    private readonly Mock<IMapper> _mapperMock;
     private readonly AuthController _controller;
 
     public AuthControllerTests()
     {
         _mediatorMock = new Mock<IMediator>();
-        _mapperMock = new Mock<IMapper>();
 
-        _controller = new AuthController(_mediatorMock.Object, _mapperMock.Object)
+        _controller = new AuthController(_mediatorMock.Object)
         {
             ControllerContext = new ControllerContext
             {
@@ -77,9 +74,6 @@ public class AuthControllerTests
 
         var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens });
 
-        _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
-            .Returns(new LoginUserCommand(request.Email, request.Password));
-
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
             .ReturnsAsync(serviceResult);
 
@@ -88,6 +82,9 @@ public class AuthControllerTests
 
         // Assert
         Assert.IsType<OkObjectResult>(result);
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<LoginUserCommand>(c => c.Email == request.Email && c.Password == request.Password && c.MfaTrustToken == null),
+            default));
         var setCookieHeader = _controller.Response.Headers["Set-Cookie"].ToString();
         Assert.Contains("refreshToken", setCookieHeader);
         Assert.Contains("samesite=lax", setCookieHeader, StringComparison.OrdinalIgnoreCase);
@@ -111,9 +108,6 @@ public class AuthControllerTests
             }
         };
 
-        _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
-            .Returns(new LoginUserCommand(request.Email, request.Password));
-
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
             .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens }));
 
@@ -134,9 +128,6 @@ public class AuthControllerTests
         // Arrange
         var request = new LoginUserRequest { Email = "bad@test.com", Password = "wrong" };
         var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
-
-        _mapperMock.Setup(m => m.Map<LoginUserCommand>(request))
-            .Returns(new LoginUserCommand(request.Email, request.Password));
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
             .ReturnsAsync(serviceResult);

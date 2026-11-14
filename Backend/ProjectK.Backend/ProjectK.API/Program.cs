@@ -8,7 +8,6 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using ProjectK.API.Authorization;
-using ProjectK.API.Helpers;
 using ProjectK.API.Hosting;
 using ProjectK.API.Middleware;
 using ProjectK.API.Serialization;

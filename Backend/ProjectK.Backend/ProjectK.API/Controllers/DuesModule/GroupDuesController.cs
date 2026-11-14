@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Create;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Delete;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Update;

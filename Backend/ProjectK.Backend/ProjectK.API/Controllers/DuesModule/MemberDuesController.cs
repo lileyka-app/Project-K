@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.Common.Models.Enums;

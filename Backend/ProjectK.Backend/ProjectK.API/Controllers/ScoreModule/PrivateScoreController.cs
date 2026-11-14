@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;

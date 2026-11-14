@@ -1,12 +1,12 @@
-using ProjectK.Common.Models.Members;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
+using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Abilities;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
@@ -19,6 +19,7 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.API.Controllers.KurinModule;
@@ -42,7 +43,7 @@ public class MemberController : ControllerBase
     /// Returns one member.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("{memberKey}")]
+    [HttpGet("{memberKey:guid}")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
     [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -179,9 +180,9 @@ public class MemberController : ControllerBase
             return this.Failure(ResultType.BadRequest, "GroupKeyRequired", "groupKey is required.");
         }
 
-        if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+        if (this.RefuseImage(request.Blob) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            return refusal;
         }
 
         var command = new UpsertMemberCommand
@@ -223,9 +224,9 @@ public class MemberController : ControllerBase
         [FromForm] UpsertMemberRequest request,
         CancellationToken cancellationToken)
     {
-        if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+        if (this.RefuseImage(request.Blob) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            return refusal;
         }
 
         var command = new UpsertMemberCommand
@@ -272,9 +273,9 @@ public class MemberController : ControllerBase
                                             [FromForm] UpsertMemberRequest request,
                                             CancellationToken cancellationToken)
     {
-        if (ImageUploadRules.Refusal(request.Blob) is { } refusal)
+        if (this.RefuseImage(request.Blob) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+            return refusal;
         }
 
         var command = new UpsertMemberCommand

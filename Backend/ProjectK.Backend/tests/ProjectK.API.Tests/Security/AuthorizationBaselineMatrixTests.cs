@@ -128,18 +128,18 @@ public class AuthorizationBaselineMatrixTests
 
         yield return Row<Action<MemberController, Guid, string?>>(nameof(MemberController.GetDossier), "RequireUser");
         yield return Row<Action<MemberController, Guid, string>>(nameof(MemberController.GetDossierFolder), "RequireUser");
-        yield return Row<Action<KurinController, Guid, string>>(nameof(KurinController.FindCandidate), "RequireUser");
-        yield return Row<Action<KurinController, Guid, KurinController.JoinKurinRequest>>(nameof(KurinController.Join), "RequireUser");
-        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerMembers), "RequireUser");
-        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.Leave), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.MembershipRequests), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerStanding), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.WaitingMembershipRequests), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid, KurinController.CreateMembershipRequestRequest>>(nameof(KurinController.CreateMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.ApproveMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.DeclineMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
-        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.CancelMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipsController, Guid, string>>(nameof(KurinMembershipsController.FindCandidate), "RequireUser");
+        yield return Row<Action<KurinMembershipsController, Guid, JoinKurinRequest>>(nameof(KurinMembershipsController.Join), "RequireUser");
+        yield return Row<Action<KurinMembershipsController, Guid>>(nameof(KurinMembershipsController.FormerMembers), "RequireUser");
+        yield return Row<Action<KurinMembershipsController, Guid, Guid>>(nameof(KurinMembershipsController.Leave), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipsController, Guid, Guid, MoveToGroupRequest>>(nameof(KurinMembershipsController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipRequestsController, Guid>>(nameof(KurinMembershipRequestsController.MembershipRequests), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipRequestsController, Guid>>(nameof(KurinMembershipRequestsController.FormerStanding), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipRequestsController, Guid>>(nameof(KurinMembershipRequestsController.WaitingMembershipRequests), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipRequestsController, Guid, CreateMembershipRequestRequest>>(nameof(KurinMembershipRequestsController.CreateMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipRequestsController, Guid, Guid>>(nameof(KurinMembershipRequestsController.ApproveMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipRequestsController, Guid, Guid>>(nameof(KurinMembershipRequestsController.DeclineMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinMembershipRequestsController, Guid, Guid>>(nameof(KurinMembershipRequestsController.CancelMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
 
         // Dues: every action is resource-checked against the гурток; the policy is only "signed in".
         yield return Row<Action<GroupDuesController, Guid>>(nameof(GroupDuesController.Get), "RequireUser");
@@ -240,23 +240,23 @@ public class AuthorizationBaselineMatrixTests
 
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetByKey), "RequireUser");
         yield return Row<Action<KurinController>>(nameof(KurinController.GetAll), "RequireAdmin");
-        yield return Row<Action<KurinController, KurinController.CreateKurinRequest>>(nameof(KurinController.Create), "RequireAdmin");
+        yield return Row<Action<KurinController, CreateKurinRequest>>(nameof(KurinController.Create), "RequireAdmin");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetProfile), "RequireUser");
-        yield return Row<Action<KurinController, Guid, KurinController.SetKurinKraiRequest>>(nameof(KurinController.SetKrai), "RequireAdmin");
-        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.GetBranchRequest), "RequireUser");
-        yield return Row<Action<KurinController, Guid, KurinController.KurinBranchRequestBody, CancellationToken>>(nameof(KurinController.SubmitBranchRequest), "RequireUser");
-        yield return Row<Action<KurinController, CancellationToken>>(nameof(KurinController.GetPendingBranchRequests), "RequireAdmin");
-        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.ApproveBranchRequest), "RequireAdmin");
-        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.RejectBranchRequest), "RequireAdmin");
-        yield return Row<Action<KurinController, Guid, UploadImageRequest, CancellationToken>>(nameof(KurinController.UploadEmblem), "RequireUser");
-        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.DeleteEmblem), "RequireUser");
-        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetCardFields), "RequireUser");
-        yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
-        yield return Endpoint<KurinController>(nameof(KurinController.GetProbeEditions), "RequireUser");
-        yield return Endpoint<KurinController>(nameof(KurinController.GetAccessPolicy), "RequireUser");
-        yield return Endpoint<KurinController>(nameof(KurinController.GetCardSharing), "RequireUser");
-        yield return Endpoint<KurinController>(nameof(KurinController.SetCardSharing), AuthorizationPolicies.RequireKurinManagement);
-        yield return Endpoint<KurinController>(nameof(KurinController.SetAccessPolicy), "RequireUser");
+        yield return Row<Action<KurinController, Guid, SetKurinKraiRequest>>(nameof(KurinController.SetKrai), "RequireAdmin");
+        yield return Row<Action<KurinBranchRequestsController, Guid, CancellationToken>>(nameof(KurinBranchRequestsController.GetBranchRequest), "RequireUser");
+        yield return Row<Action<KurinBranchRequestsController, Guid, SubmitKurinBranchRequest, CancellationToken>>(nameof(KurinBranchRequestsController.SubmitBranchRequest), "RequireUser");
+        yield return Row<Action<KurinBranchRequestsController, CancellationToken>>(nameof(KurinBranchRequestsController.GetPendingBranchRequests), "RequireAdmin");
+        yield return Row<Action<KurinBranchRequestsController, Guid, CancellationToken>>(nameof(KurinBranchRequestsController.ApproveBranchRequest), "RequireAdmin");
+        yield return Row<Action<KurinBranchRequestsController, Guid, CancellationToken>>(nameof(KurinBranchRequestsController.RejectBranchRequest), "RequireAdmin");
+        yield return Row<Action<KurinEmblemController, Guid, UploadImageRequest, CancellationToken>>(nameof(KurinEmblemController.UploadEmblem), "RequireUser");
+        yield return Row<Action<KurinEmblemController, Guid, CancellationToken>>(nameof(KurinEmblemController.DeleteEmblem), "RequireUser");
+        yield return Row<Action<KurinSettingsController, Guid>>(nameof(KurinSettingsController.GetCardFields), "RequireUser");
+        yield return Row<Action<KurinSettingsController, Guid, SetKurinCardFieldsRequest>>(nameof(KurinSettingsController.SetCardFields), "RequireUser");
+        yield return Endpoint<KurinSettingsController>(nameof(KurinSettingsController.GetProbeEditions), "RequireUser");
+        yield return Endpoint<KurinSettingsController>(nameof(KurinSettingsController.GetAccessPolicy), "RequireUser");
+        yield return Endpoint<KurinSettingsController>(nameof(KurinSettingsController.GetCardSharing), "RequireUser");
+        yield return Endpoint<KurinSettingsController>(nameof(KurinSettingsController.SetCardSharing), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<KurinSettingsController>(nameof(KurinSettingsController.SetAccessPolicy), "RequireUser");
         yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.GetTags), "RequireUser");
         yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.CreateTag), "RequireUser");
         yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.UpdateTag), "RequireUser");
@@ -340,9 +340,9 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<GroupController>(nameof(GroupController.AssignMentor), "RequireUser");
         yield return Endpoint<GroupController>(nameof(GroupController.RevokeMentor), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.ExportReportPdf), AuthorizationPolicies.RequireKurinManagement);
-        yield return Endpoint<KurinController>(nameof(KurinController.ExportRegistry), AuthorizationPolicies.RequireGroupLeadership);
-        yield return Endpoint<KurinController>(nameof(KurinController.PreviewRosterImport), AuthorizationPolicies.RequireKurinManagement);
-        yield return Endpoint<KurinController>(nameof(KurinController.ImportRoster), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.ExportRegistry), AuthorizationPolicies.RequireGroupLeadership);
+        yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.PreviewRosterImport), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.ImportRoster), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<DevToolsController>(nameof(DevToolsController.Impersonate), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<DevToolsController>(nameof(DevToolsController.ImpersonateMember), AuthorizationPolicies.RequireAdmin);
         yield return Endpoint<FeedbackController>(nameof(FeedbackController.ReportProblem), AuthorizationPolicies.RequireUser);
@@ -411,7 +411,7 @@ public class AuthorizationBaselineMatrixTests
     public static IEnumerable<object[]> AllowAnonymousEndpoints()
     {
         yield return Row<Action<AuthController, LoginUserRequest, bool>>(nameof(AuthController.Login));
-        yield return Row<Action<DevToolsController, DevToolsController.ReturnRequest>>(nameof(DevToolsController.Return));
+        yield return Row<Action<DevToolsController, ReturnFromImpersonationRequest>>(nameof(DevToolsController.Return));
         yield return Row<Action<AuthController>>(nameof(AuthController.Refresh));
         yield return Row<Action<AuthController, MfaLoginRequestDto, bool>>(nameof(AuthController.VerifyMfaLogin));
         yield return AnonymousEndpoint<AuthController>(nameof(AuthController.GetSavedAccounts));

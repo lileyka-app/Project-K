@@ -1,8 +1,5 @@
 namespace ProjectK.API.Middleware;
 
-/// <summary>Server-side time of real requests over a recent window, as <c>/health</c> reports it.</summary>
-public sealed record RequestTimingSnapshot(int WindowMinutes, int Requests, double? P50Ms, double? P95Ms);
-
 /// <summary>
 /// How long the API itself spent on the requests of the last few minutes, from the first middleware
 /// to the last byte. The status page used to show the probe's round trip instead, and that was the

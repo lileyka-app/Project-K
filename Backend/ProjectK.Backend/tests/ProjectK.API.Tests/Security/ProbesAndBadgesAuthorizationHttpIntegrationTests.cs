@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Models.Catalog;
@@ -148,6 +149,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
             builder.Services.AddSingleton(badgesCatalogService.Object);
             builder.Services.AddSingleton(probesCatalogService.Object);
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetBadgesQuery).Assembly));
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(BadgesCatalogController).Assembly);

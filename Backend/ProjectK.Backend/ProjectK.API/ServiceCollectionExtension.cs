@@ -1,4 +1,4 @@
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.BusinessLogic;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Infrastructure;

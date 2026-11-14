@@ -1,40 +1,34 @@
-using System;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
+using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
-[ApiController]
-[Route("api/member/{memberKey:guid}/awards")]
-// Says what it means: authenticated. The scope check is the ResourceAuthorize filter on each action.
 /// <summary>
 /// Awards recorded against a member, and the images that illustrate them.
 /// </summary>
+[ApiController]
+[Route("api/member/{memberKey:guid}/awards")]
+// Says what it means: authenticated. The scope check is the ResourceAuthorize filter on each action.
 [Authorize(Policy = AuthorizationPolicies.RequireUser)]
 public class MemberAwardsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IAwardImagesCatalog _awardImages;
 
-    public MemberAwardsController(IMediator mediator, IAwardImagesCatalog awardImages)
+    public MemberAwardsController(IMediator mediator)
     {
         _mediator = mediator;
-        _awardImages = awardImages;
     }
 
     /// <summary>
@@ -96,10 +90,10 @@ public class MemberAwardsController : ControllerBase
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "image/png")]
     public async Task<IActionResult> GetAwardImage(int level, [FromQuery] bool colored = true, CancellationToken cancellationToken = default)
     {
-        var image = await _awardImages.GetAwardImageAsync(level, colored, cancellationToken);
-        if (image == null)
+        var response = await _mediator.Send(new GetAwardImageQuery(level, colored), cancellationToken);
+        if (response.Type != ResultType.Success || response.Data is not { } image)
         {
-            return this.Failure(ResultType.NotFound, "AwardImageNotFound", "No award image exists for this level.");
+            return response.ToActionResult(this);
         }
 
         Response.Headers.CacheControl = "public,max-age=86400";
