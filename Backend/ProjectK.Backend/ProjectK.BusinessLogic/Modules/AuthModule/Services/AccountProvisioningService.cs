@@ -68,7 +68,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             var errors = string.Join(", ", created.Errors.Select(error => error.Description));
             return ServiceResult<AccountProvisioningResult>.Failure(
                 ResultType.BadRequest,
-                "UserNotCreated",
+                AuthErrors.UserNotCreated,
                 $"Failed to create user: {errors}");
         }
 
@@ -104,13 +104,13 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
         var user = await _userManager.FindByIdAsync(userKey.ToString());
         if (user is null)
         {
-            return ServiceResult<AccountProvisioningResult>.Failure(ResultType.NotFound, "AccountNotFound", "Account not found.");
+            return ServiceResult<AccountProvisioningResult>.Failure(ResultType.NotFound, AuthErrors.AccountNotFound, "Account not found.");
         }
 
         if (user.OnboardingStatus != OnboardingStatus.PendingActivation)
         {
             return ServiceResult<AccountProvisioningResult>.Failure(
-                ResultType.Conflict, "AccountNotPending", "The account is already activated; only its owner can change its address.");
+                ResultType.Conflict, AuthErrors.AccountNotPending, "The account is already activated; only its owner can change its address.");
         }
 
         // The queue entry is found by the address the account was opened for, so it is looked up
@@ -124,7 +124,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             if (await CheckAvailabilityAsync(email, cancellationToken) != AccountAvailability.Available)
             {
                 return ServiceResult<AccountProvisioningResult>.Failure(
-                    ResultType.Conflict, "EmailTaken", "This email is already used by another account or registration.");
+                    ResultType.Conflict, AuthErrors.EmailTaken, "This email is already used by another account or registration.");
             }
 
             // Identity saves the whole context here, so this runs before anything else is tracked:
@@ -133,7 +133,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             if (!moved.Succeeded)
             {
                 return ServiceResult<AccountProvisioningResult>.Failure(
-                    ResultType.BadRequest, "EmailNotChanged", string.Join(", ", moved.Errors.Select(error => error.Description)));
+                    ResultType.BadRequest, AuthErrors.EmailNotChanged, string.Join(", ", moved.Errors.Select(error => error.Description)));
             }
         }
 
@@ -185,7 +185,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
         var user = await _userManager.FindByIdAsync(userKey.ToString());
         if (user is null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.NotFound, "AccountNotFound", "Account not found.");
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, AuthErrors.AccountNotFound, "Account not found.");
         }
 
         if (string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
@@ -196,14 +196,14 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
         var holder = await _userManager.FindByEmailAsync(email);
         if (holder is not null && holder.Id != user.Id)
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, "EmailTaken", "This email is already used by another account.");
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, AuthErrors.EmailTaken, "This email is already used by another account.");
         }
 
         var moved = await MoveAsync(user, email);
         if (!moved.Succeeded)
         {
             return ServiceResult<Guid>.Failure(
-                ResultType.BadRequest, "EmailNotChanged", string.Join(", ", moved.Errors.Select(error => error.Description)));
+                ResultType.BadRequest, AuthErrors.EmailNotChanged, string.Join(", ", moved.Errors.Select(error => error.Description)));
         }
 
         // The address is what a password reset goes to, so a session opened under the old one

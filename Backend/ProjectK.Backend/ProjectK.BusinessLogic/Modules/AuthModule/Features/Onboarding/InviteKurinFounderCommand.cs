@@ -105,23 +105,23 @@ public sealed class InviteKurinFounderCommandHandler
         {
             case AccountAvailability.EmailTaken:
                 return ServiceResult<KurinFounderInvitation>.Failure(
-                    ResultType.Conflict, "EmailTaken", "За цією адресою вже є акаунт.");
+                    ResultType.Conflict, AuthErrors.EmailTaken, "За цією адресою вже є акаунт.");
             case AccountAvailability.WaitlistPending:
                 return ServiceResult<KurinFounderInvitation>.Failure(
-                    ResultType.Conflict, "WaitlistPending", "Від цієї адреси вже є заявка — схвали її в «Заявках».");
+                    ResultType.Conflict, AuthErrors.WaitlistPending, "Від цієї адреси вже є заявка — схвали її в «Заявках».");
         }
 
         var kraiCode = Krai.NormalizeCode(request.KraiCode) ?? _krai.Default;
         if (!await _unitOfWork.Krais.ExistsAsync(kraiCode, cancellationToken))
         {
             return ServiceResult<KurinFounderInvitation>.Failure(
-                ResultType.BadRequest, "KraiNotFound", "Такого краю немає в списку.");
+                ResultType.BadRequest, AuthErrors.KraiNotFound, "Такого краю немає в списку.");
         }
 
         if (request.KurinNumber is int number && await _unitOfWork.Kurins.ExistsAsync(kraiCode, number, cancellationToken))
         {
             return ServiceResult<KurinFounderInvitation>.Failure(
-                ResultType.Conflict, "KurinNumberTaken", "Курінь з таким числом у цьому краї вже є.");
+                ResultType.Conflict, AuthErrors.KurinNumberTaken, "Курінь з таким числом у цьому краї вже є.");
         }
 
         var kurin = new Kurin(request.KurinNumber) { KraiCode = kraiCode };
@@ -162,7 +162,7 @@ public sealed class InviteKurinFounderCommandHandler
         {
             return ServiceResult<KurinFounderInvitation>.Failure(
                 provisioned.Type,
-                provisioned.ErrorCode ?? "UserNotCreated",
+                provisioned.ErrorCode ?? AuthErrors.UserNotCreated,
                 provisioned.ErrorMessage ?? "Failed to create user.");
         }
 

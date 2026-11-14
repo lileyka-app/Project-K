@@ -30,7 +30,7 @@ public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvit
             // page shows, and it was being dropped into CreatedAtActionName.
             return ServiceResult<InvitationValidationResponse>.Failure(
                 ResultType.NotFound,
-                "InvalidInvitationToken",
+                AuthErrors.InvalidInvitationToken,
                 "Invalid or expired invitation token.");
         }
 
@@ -41,7 +41,7 @@ public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvit
             // page shows, and it was being dropped into CreatedAtActionName.
             return ServiceResult<InvitationValidationResponse>.Failure(
                 ResultType.NotFound,
-                "WaitlistEntryNotFound",
+                AuthErrors.WaitlistEntryNotFound,
                 "Associated waitlist entry not found.");
         }
 

@@ -11,7 +11,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record ResendInvitationByEmailCommand(string Email) : IRequest<ServiceResult<bool>>, ITransactionalRequest;
+public record ResendInvitationByEmailCommand(string Email) : IRequest<ServiceResult<Unit>>, ITransactionalRequest;
 
 public sealed class ResendInvitationByEmailCommandValidator : AbstractValidator<ResendInvitationByEmailCommand>
 {
@@ -23,7 +23,7 @@ public sealed class ResendInvitationByEmailCommandValidator : AbstractValidator<
     }
 }
 
-public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<ResendInvitationByEmailCommand, ServiceResult<bool>>
+public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<ResendInvitationByEmailCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
@@ -45,7 +45,7 @@ public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<Rese
         _logger = logger;
     }
 
-    public async Task<ServiceResult<bool>> Handle(
+    public async Task<ServiceResult<Unit>> Handle(
         ResendInvitationByEmailCommand request,
         CancellationToken cancellationToken)
     {
@@ -61,13 +61,13 @@ public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<Rese
         if (user is null)
         {
             _logger.LogInformation("An invitation resend was asked for an address no account holds; nothing was sent.");
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         if (user.OnboardingStatus != OnboardingStatus.PendingActivation)
         {
             _logger.LogInformation("An invitation resend was asked for an account that is not awaiting activation; nothing was sent.");
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
@@ -106,7 +106,7 @@ public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<Rese
             // the same thing an unknown address is told, and the failure is left in the log.
             _logger.LogError(exception, "Could not send a replacement invitation; nothing was changed for the account.");
 
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         if (entryIsNew)
@@ -135,7 +135,7 @@ public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<Rese
 
         _logger.LogInformation("A replacement invitation was sent.");
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
     /// <summary>

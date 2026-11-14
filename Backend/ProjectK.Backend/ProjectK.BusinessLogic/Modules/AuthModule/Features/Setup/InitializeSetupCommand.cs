@@ -52,7 +52,7 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
             {
                 return ServiceResult<LoginUserResponse>.Failure(
                     ResultType.Forbidden,
-                    "AlreadyInitialized",
+                    AuthErrors.AlreadyInitialized,
                     "System is already initialized.");
             }
 
@@ -69,7 +69,10 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
             var result = await _userManager.CreateAsync(user, request.Password);
             if (!result.Succeeded)
             {
-                return new ServiceResult<LoginUserResponse>(ResultType.BadRequest, null, string.Join(", ", result.Errors.Select(e => e.Description)));
+                return ServiceResult<LoginUserResponse>.Failure(
+                    ResultType.BadRequest,
+                    AuthErrors.SetupFailed,
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
             }
 
             await _userManager.AddToRoleAsync(user, SystemRole.Admin);

@@ -5,9 +5,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings;
 
-public record UpdateSystemSettingCommand(string Key, string Value) : IRequest<ServiceResult<object>>;
+public record UpdateSystemSettingCommand(string Key, string Value) : IRequest<ServiceResult<Unit>>;
 
-public class UpdateSystemSettingCommandHandler : IRequestHandler<UpdateSystemSettingCommand, ServiceResult<object>>
+public class UpdateSystemSettingCommandHandler : IRequestHandler<UpdateSystemSettingCommand, ServiceResult<Unit>>
 {
     private readonly ISystemSettingsService _systemSettings;
 
@@ -16,9 +16,9 @@ public class UpdateSystemSettingCommandHandler : IRequestHandler<UpdateSystemSet
         _systemSettings = systemSettings;
     }
 
-    public async Task<ServiceResult<object>> Handle(UpdateSystemSettingCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(UpdateSystemSettingCommand request, CancellationToken cancellationToken)
     {
         await _systemSettings.SetValueAsync(request.Key, request.Value, cancellationToken);
-        return new ServiceResult<object>(ResultType.Success, null);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

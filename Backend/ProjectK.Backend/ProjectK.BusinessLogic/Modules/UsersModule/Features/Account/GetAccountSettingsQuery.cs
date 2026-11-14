@@ -30,7 +30,7 @@ public class GetAccountSettingsQueryHandler : IRequestHandler<GetAccountSettings
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return new ServiceResult<AccountSettingsDto>(ResultType.NotFound);
+            return ServiceResult<AccountSettingsDto>.Failure(ResultType.NotFound, UsersErrors.UserNotFound, "User not found.");
         }
 
         var roles = (await _access.ResolveAsync(user, cancellationToken)).Roles;

@@ -9,9 +9,9 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 
 public record ChangeOwnPasswordCommand(Guid UserKey, string CurrentPassword, string NewPassword)
-    : IRequest<ServiceResult<bool>>;
+    : IRequest<ServiceResult<Unit>>;
 
-public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<bool>>
+public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;
@@ -27,18 +27,18 @@ public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPassword
         _sessions = sessions;
     }
 
-    public async Task<ServiceResult<bool>> Handle(ChangeOwnPasswordCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ChangeOwnPasswordCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return ServiceResult<bool>.Failure(ResultType.Unauthorized, "Unauthorized", "User not found or unauthorized.");
+            return UsersErrors.AccountMissing<Unit>();
         }
 
         var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "PasswordChangeFailed", "Failed to change password. Please check your current password and try again.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.PasswordChangeFailed, "Failed to change password. Please check your current password and try again.");
         }
 
         var updateResult = await _userManager.UpdateAsync(user);
@@ -53,9 +53,9 @@ public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPassword
                 actorUserId: user.Id,
                 targetUserId: user.Id,
                 reason: "User changed their own password.");
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
-        return ServiceResult<bool>.Failure(ResultType.BadRequest, "PasswordChangeFailed", "Failed to change password. Please try again.");
+        return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.PasswordChangeFailed, "Failed to change password. Please try again.");
     }
 }

@@ -38,13 +38,13 @@ public sealed class GetMfaStatusQueryHandler : IRequestHandler<GetMfaStatusQuery
     {
         if (_currentUser.UserId is not { } userKey)
         {
-            return ServiceResult<MfaStatusResponse>.Failure(ResultType.Unauthorized, "Unauthorized", "User not found or unauthorized.");
+            return AuthErrors.AccountMissing<MfaStatusResponse>();
         }
 
         var user = await _userManager.FindByIdAsync(userKey.ToString());
         if (user is null)
         {
-            return ServiceResult<MfaStatusResponse>.Failure(ResultType.NotFound, "UserNotFound", "User not found.");
+            return ServiceResult<MfaStatusResponse>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "User not found.");
         }
 
         var isPrivileged = RolePermissionMap.GrantsWholeKurinManagement(_currentUser.Roles ?? []);

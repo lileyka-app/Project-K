@@ -112,12 +112,12 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("invitation/resend")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> ResendInvitationByEmail([FromBody] ResendInvitationByEmailCommand command)
     {
         var response = await _mediator.Send(command);
         return response.Type == ResultType.Success
-            ? Accepted(response.Data)
+            ? Accepted()
             : response.ToActionResult(this);
     }
 
@@ -192,7 +192,7 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("password-reset/request")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetCommand command)
     {
         var response = await _mediator.Send(command);
@@ -209,7 +209,7 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("password-reset/reset")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
     {
         var response = await _mediator.Send(command);

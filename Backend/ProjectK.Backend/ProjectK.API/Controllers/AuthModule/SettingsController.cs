@@ -41,7 +41,7 @@ public class SettingsController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPut("{key}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateSetting(string key, [FromBody] UpdateSettingRequest request)
     {
         var response = await _mediator.Send(new UpdateSystemSettingCommand(key, request.Value));

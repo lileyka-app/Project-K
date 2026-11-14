@@ -117,6 +117,7 @@ public class SetKurinScopeCommandHandlerTests
         var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, someoneElses), CancellationToken.None);
 
         Assert.Equal(ResultType.Forbidden, result.Type);
+        Assert.Equal("KurinScopeForbidden", result.ErrorCode);
         Assert.Null(user.ActiveKurinKey);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
     }
@@ -129,6 +130,7 @@ public class SetKurinScopeCommandHandlerTests
         var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, null), CancellationToken.None);
 
         Assert.Equal(ResultType.Forbidden, result.Type);
+        Assert.Equal("KurinScopeForbidden", result.ErrorCode);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
     }
 
@@ -143,6 +145,7 @@ public class SetKurinScopeCommandHandlerTests
         var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, kurinKey), CancellationToken.None);
 
         Assert.Equal(ResultType.NotFound, result.Type);
+        Assert.Equal("KurinNotFound", result.ErrorCode);
         Assert.Null(user.ActiveKurinKey);
     }
 

@@ -7,7 +7,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 
-public class LogoutUserCommand : IRequest<ServiceResult<object>>
+public class LogoutUserCommand : IRequest<ServiceResult<Unit>>
 {
     public string? UserKey { get; set; }
 
@@ -37,7 +37,7 @@ public class LogoutUserCommand : IRequest<ServiceResult<object>>
     }
 }
 
-public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, ServiceResult<object>>
+public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IRefreshTokenStore _refreshTokens;
@@ -48,21 +48,21 @@ public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, Servi
         _refreshTokens = refreshTokens;
     }
 
-    public async Task<ServiceResult<object>> Handle(LogoutUserCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(LogoutUserCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(request.UserKey))
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.Unauthorized,
-                "InvalidToken",
+                AuthErrors.InvalidToken,
                 "Access token is missing or invalid.");
         }
         var user = await _userManager.FindByIdAsync(request.UserKey);
         if (user == null)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.NotFound,
-                "UserNotFound",
+                AuthErrors.UserNotFound,
                 "User not found.");
         }
         // Only this browser's sessions. Signing out on one device leaves the others signed in —
@@ -84,9 +84,6 @@ public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, Servi
         // stepped into, and /panel bounces them straight back out of it.
         user.ActiveKurinKey = null;
         await _userManager.UpdateAsync(user);
-        return new(
-            ResultType.Success,
-            "User logged out successfully."
-        );
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

@@ -8,9 +8,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
-public record ResetOwnMfaCommand(Guid UserKey, string CurrentPassword) : IRequest<ServiceResult<bool>>;
+public record ResetOwnMfaCommand(Guid UserKey, string CurrentPassword) : IRequest<ServiceResult<Unit>>;
 
-public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, ServiceResult<bool>>
+public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;
@@ -26,35 +26,35 @@ public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, Ser
         _sessions = sessions;
     }
 
-    public async Task<ServiceResult<bool>> Handle(ResetOwnMfaCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ResetOwnMfaCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return ServiceResult<bool>.Failure(ResultType.Unauthorized, "Unauthorized", "User not found or unauthorized.");
+            return AuthErrors.AccountMissing<Unit>();
         }
 
         if (string.IsNullOrWhiteSpace(request.CurrentPassword))
         {
-            return ServiceResult<bool>.Failure(ResultType.Unauthorized, "InvalidCredentials", "Invalid credentials.");
+            return ServiceResult<Unit>.Failure(ResultType.Unauthorized, AuthErrors.InvalidCredentials, "Invalid credentials.");
         }
 
         var passwordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
         if (!passwordValid)
         {
-            return ServiceResult<bool>.Failure(ResultType.Unauthorized, "InvalidCredentials", "Invalid credentials.");
+            return ServiceResult<Unit>.Failure(ResultType.Unauthorized, AuthErrors.InvalidCredentials, "Invalid credentials.");
         }
 
         var disableResult = await _userManager.SetTwoFactorEnabledAsync(user, false);
         if (!disableResult.Succeeded)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaResetFailed, "Failed to reset MFA.");
         }
 
         var resetResult = await _userManager.ResetAuthenticatorKeyAsync(user);
         if (!resetResult.Succeeded)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaResetFailed, "Failed to reset MFA.");
         }
 
         var updateResult = await _userManager.UpdateAsync(user);
@@ -69,9 +69,9 @@ public class ResetOwnMfaCommandHandler : IRequestHandler<ResetOwnMfaCommand, Ser
                 actorUserId: user.Id,
                 targetUserId: user.Id,
                 reason: "User reset their own MFA.");
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
-        return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
+        return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaResetFailed, "Failed to reset MFA.");
     }
 }

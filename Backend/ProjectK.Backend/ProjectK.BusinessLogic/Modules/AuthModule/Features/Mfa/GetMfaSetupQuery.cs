@@ -30,7 +30,7 @@ public class GetMfaSetupQueryHandler : IRequestHandler<GetMfaSetupQuery, Service
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return new ServiceResult<MfaSetupResponseDto>(ResultType.NotFound);
+            return ServiceResult<MfaSetupResponseDto>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "User not found.");
         }
 
         var unformattedKey = await _userManager.GetAuthenticatorKeyAsync(user);

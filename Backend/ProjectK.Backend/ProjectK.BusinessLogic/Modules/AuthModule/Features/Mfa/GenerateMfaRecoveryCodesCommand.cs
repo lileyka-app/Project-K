@@ -32,18 +32,18 @@ public class GenerateMfaRecoveryCodesCommandHandler
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return ServiceResult<MfaRecoveryCodesResponseDto>.Failure(ResultType.Unauthorized, "Unauthorized", "User not found or unauthorized.");
+            return AuthErrors.AccountMissing<MfaRecoveryCodesResponseDto>();
         }
 
         if (!user.TwoFactorEnabled)
         {
-            return ServiceResult<MfaRecoveryCodesResponseDto>.Failure(ResultType.BadRequest, "MfaNotEnabled", "MFA is not enabled.");
+            return ServiceResult<MfaRecoveryCodesResponseDto>.Failure(ResultType.BadRequest, AuthErrors.MfaNotEnabled, "MFA is not enabled.");
         }
 
         if (string.IsNullOrWhiteSpace(request.CurrentPassword)
             || !await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
         {
-            return ServiceResult<MfaRecoveryCodesResponseDto>.Failure(ResultType.Unauthorized, "InvalidCredentials", "Invalid credentials.");
+            return ServiceResult<MfaRecoveryCodesResponseDto>.Failure(ResultType.Unauthorized, AuthErrors.InvalidCredentials, "Invalid credentials.");
         }
 
         var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);

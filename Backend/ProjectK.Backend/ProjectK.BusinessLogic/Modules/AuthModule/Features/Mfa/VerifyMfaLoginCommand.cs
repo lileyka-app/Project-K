@@ -20,7 +20,7 @@ public record VerifyMfaLoginCommand(string Email, string Code, bool RememberMe, 
 
 public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginCommand, ServiceResult<LoginUserResponse>>
 {
-    private const string InvalidCredentialsCode = "InvalidCredentials";
+    private const string InvalidCredentialsCode = AuthErrors.InvalidCredentials;
     private const string InvalidCredentialsMessage = "Invalid verification code or recovery code.";
 
     private readonly UserManager<AppUser> _userManager;

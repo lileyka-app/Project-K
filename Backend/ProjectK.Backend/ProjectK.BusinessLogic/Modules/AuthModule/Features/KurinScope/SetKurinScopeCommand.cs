@@ -51,7 +51,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user is null)
         {
-            return new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
+            return AuthErrors.AccountMissing<LoginUserResponse>();
         }
 
         // Switching kurin is no longer an admin's privilege — it is what someone does when they
@@ -65,7 +65,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
             {
                 return ServiceResult<LoginUserResponse>.Failure(
                     ResultType.Forbidden,
-                    "kurin_scope_forbidden",
+                    AuthErrors.KurinScopeForbidden,
                     "Only an admin can be outside every kurin.");
             }
         }
@@ -76,7 +76,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
             {
                 return ServiceResult<LoginUserResponse>.Failure(
                     ResultType.NotFound,
-                    "kurin_not_found",
+                    AuthErrors.KurinNotFound,
                     "Kurin to scope into was not found.");
             }
 
@@ -87,7 +87,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
                 {
                     return ServiceResult<LoginUserResponse>.Failure(
                         ResultType.Forbidden,
-                        "kurin_scope_forbidden",
+                        AuthErrors.KurinScopeForbidden,
                         "You have no current membership in that kurin.");
                 }
             }
@@ -99,7 +99,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
         {
             return ServiceResult<LoginUserResponse>.Failure(
                 ResultType.BadRequest,
-                "kurin_scope_not_saved",
+                AuthErrors.KurinScopeNotSaved,
                 "Kurin scope could not be saved.");
         }
 

@@ -54,24 +54,24 @@ public class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMember
     {
         if (_currentUser.UserId is not { } actorKey || !_currentUser.IsAdmin())
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.Forbidden, "AdminOnly", "Only an administrator can step into another account.");
+            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.Forbidden, AuthErrors.AdminOnly, "Only an administrator can step into another account.");
         }
 
         var person = await _members.FindAsync(request.MemberKey, cancellationToken);
         if (person is null)
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, "NoSuchMember", "There is no such member.");
+            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, AuthErrors.NoSuchMember, "There is no such member.");
         }
 
         var target = person.UserKey is { } accountKey ? await _userManager.FindByIdAsync(accountKey.ToString()) : null;
         if (target is null || !target.CanSignIn())
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, "NoAccountForMember", $"{person.FullName} has no account to sign in as.");
+            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, AuthErrors.NoAccountForMember, $"{person.FullName} has no account to sign in as.");
         }
 
         if (target.Id == actorKey || await _userManager.IsInRoleAsync(target, SystemRole.Admin))
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.Conflict, "AdminAccount", "That account is an administrator already.");
+            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.Conflict, AuthErrors.AdminAccount, "That account is an administrator already.");
         }
 
         // Land where the tester is looking when the person stands there too; otherwise in the

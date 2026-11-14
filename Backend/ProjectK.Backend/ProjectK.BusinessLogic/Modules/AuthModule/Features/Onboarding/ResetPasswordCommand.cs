@@ -9,7 +9,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record ResetPasswordCommand(string Email, string Token, string NewPassword) : IRequest<ServiceResult<bool>>;
+public record ResetPasswordCommand(string Email, string Token, string NewPassword) : IRequest<ServiceResult<Unit>>;
 
 public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
 {
@@ -22,7 +22,7 @@ public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPassw
     }
 }
 
-public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, ServiceResult<bool>>
+public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IActivityLogger _activityLogger;
@@ -38,18 +38,18 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         _sessions = sessions;
     }
 
-    public async Task<ServiceResult<bool>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || user.OnboardingStatus != OnboardingStatus.Active)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidResetAttempt", "Invalid reset attempt. Please check your email or token.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.InvalidResetAttempt, "Invalid reset attempt. Please check your email or token.");
         }
 
         var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
         if (!result.Succeeded)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidResetAttempt", "Invalid reset attempt. Please check your email or token.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.InvalidResetAttempt, "Invalid reset attempt. Please check your email or token.");
         }
 
         // A reset is what someone does when they suspect the password is known: a session opened
@@ -63,6 +63,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             email: user.Email,
             reason: "Password reset completed with reset token.");
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

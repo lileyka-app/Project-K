@@ -35,7 +35,7 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.Unauthorized, "Unauthorized", "User not found or unauthorized.");
+            return AuthErrors.AccountMissing<MfaEnableResponseDto>();
         }
 
         var verificationCode = request.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
@@ -45,19 +45,19 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
 
         if (!isTokenValid)
         {
-            return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, "InvalidCode", "Invalid verification code.");
+            return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, AuthErrors.InvalidCode, "Invalid verification code.");
         }
 
         var enableResult = await _userManager.SetTwoFactorEnabledAsync(user, true);
         if (!enableResult.Succeeded)
         {
-            return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, "MfaSetupFailed", "Failed to enable MFA.");
+            return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, AuthErrors.MfaSetupFailed, "Failed to enable MFA.");
         }
 
         var updateResult = await _userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)
         {
-            return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, "MfaSetupFailed", "Failed to enable MFA.");
+            return ServiceResult<MfaEnableResponseDto>.Failure(ResultType.BadRequest, AuthErrors.MfaSetupFailed, "Failed to enable MFA.");
         }
 
         // Only once the change is stored. RevokeAllAsync commits on its own, so ending the

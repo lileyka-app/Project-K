@@ -48,13 +48,13 @@ public sealed class LoadTestLoginCommandHandler : IRequestHandler<LoadTestLoginC
         if (string.IsNullOrEmpty(expectedKey) || !SecretComparer.Matches(request.ApiKey, expectedKey))
         {
             return ServiceResult<LoadTestSession>.Failure(
-                ResultType.Unauthorized, "InvalidApiKey", "Invalid or disabled load test API key.");
+                ResultType.Unauthorized, AuthErrors.InvalidApiKey, "Invalid or disabled load test API key.");
         }
 
         var user = await _userManager.FindByEmailAsync(LoadTestAccountEmail);
         if (user is null)
         {
-            return ServiceResult<LoadTestSession>.Failure(ResultType.NotFound, "UserNotFound", "Load test user not found.");
+            return ServiceResult<LoadTestSession>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "Load test user not found.");
         }
 
         var context = await _access.ResolveAsync(user, cancellationToken);

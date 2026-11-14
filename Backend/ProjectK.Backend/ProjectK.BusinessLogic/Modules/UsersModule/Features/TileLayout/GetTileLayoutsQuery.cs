@@ -23,12 +23,7 @@ public class GetTileLayoutsQueryHandler : IRequestHandler<GetTileLayoutsQuery, S
 
         var dtos = layouts
             .Where(layout => TileBoardKeys.All.Contains(layout.BoardKey))
-            .Select(layout => new TileLayoutDto(
-                layout.BoardKey,
-                TileOrderSerializer.Deserialize(layout.TileOrderJson),
-                TileOrderSerializer.Deserialize(layout.HiddenTilesJson),
-                layout.SchemaVersion,
-                layout.UpdatedAtUtc))
+            .Select(layout => layout.ToDto())
             .ToList();
 
         return new ServiceResult<IReadOnlyList<TileLayoutDto>>(ResultType.Success, dtos);

@@ -56,7 +56,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
     {
         if (_currentUser.UserId is not { } actorKey || !_currentUser.IsAdmin())
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.Forbidden, "AdminOnly", "Only an administrator can step into another role.");
+            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.Forbidden, AuthErrors.AdminOnly, "Only an administrator can step into another role.");
         }
 
         // The kurin the admin is looking at, else the demo kurin: the tool is for testing a
@@ -70,7 +70,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
 
         if (kurinKey is null)
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, "NoKurin", "There is no kurin to step into.");
+            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, AuthErrors.NoKurin, "There is no kurin to step into.");
         }
 
         var target = await new DemoSeatLocator(_userManager, _unitOfWork, _members, _memberships)
@@ -79,7 +79,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
         {
             return ServiceResult<DevImpersonationResponse>.Failure(
                 ResultType.NotFound,
-                "NoAccountForRole",
+                AuthErrors.NoAccountForRole,
                 $"Nobody in this kurin holds {request.Role} with an account to sign in as.");
         }
 

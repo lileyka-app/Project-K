@@ -62,13 +62,13 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
         // that provider.
         if (!string.Equals(_environment.EnvironmentName, Environment, StringComparison.OrdinalIgnoreCase))
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, "NotDemo", "There is no demo here.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, AuthErrors.NotDemo, "There is no demo here.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByNumberAsync(Krai.Ukraine, DemoKurinNumber, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, "NoDemoKurin", "The demo kurin is not seeded.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, AuthErrors.NoDemoKurin, "The demo kurin is not seeded.");
         }
 
         var role = request.Seat switch
@@ -83,7 +83,7 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
         var account = await locator.FindAsync(role, kurin.KurinKey, excludeAccountKey: null, cancellationToken);
         if (account is null)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, "NoAccountForSeat", $"Nobody in the demo kurin holds {request.Seat}.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, AuthErrors.NoAccountForSeat, $"Nobody in the demo kurin holds {request.Seat}.");
         }
 
         account.ActiveKurinKey = kurin.KurinKey;

@@ -70,18 +70,12 @@ public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutComman
 
     public async Task<ServiceResult<TileLayoutDto>> Handle(SaveTileLayoutCommand request, CancellationToken cancellationToken)
     {
-        var tileKeys = request.TileKeys ?? [];
-
-        var hiddenKeys = request.HiddenTileKeys ?? [];
-
-        var orderJson = TileOrderSerializer.Serialize(tileKeys);
-        var hiddenJson = TileOrderSerializer.Serialize(hiddenKeys);
-        if (orderJson.Length > MaxOrderJsonLength || hiddenJson.Length > MaxOrderJsonLength)
+        if (TileLayoutMapping.WriteKeys(request.TileKeys ?? []).Length > MaxOrderJsonLength
+            || TileLayoutMapping.WriteKeys(request.HiddenTileKeys ?? []).Length > MaxOrderJsonLength)
         {
-            return ServiceResult<TileLayoutDto>.Failure(ResultType.BadRequest, "LayoutTooLarge", "Tile layout is too large.");
+            return ServiceResult<TileLayoutDto>.Failure(ResultType.BadRequest, UsersErrors.LayoutTooLarge, "Tile layout is too large.");
         }
 
-        var schemaVersion = request.SchemaVersion <= 0 ? 1 : request.SchemaVersion;
         var existing = await _unitOfWork.UserTileLayouts.GetByBoardAsync(request.UserKey, request.BoardKey, cancellationToken);
 
         if (existing == null)
@@ -90,26 +84,19 @@ public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutComman
             {
                 UserTileLayoutKey = Guid.NewGuid(),
                 UserKey = request.UserKey,
-                BoardKey = request.BoardKey,
-                TileOrderJson = orderJson,
-                HiddenTilesJson = hiddenJson,
-                SchemaVersion = schemaVersion,
-                UpdatedAtUtc = DateTime.UtcNow
+                BoardKey = request.BoardKey
             };
+            request.ApplyTo(existing, DateTime.UtcNow);
             _unitOfWork.UserTileLayouts.Create(existing, cancellationToken);
         }
         else
         {
-            existing.TileOrderJson = orderJson;
-            existing.HiddenTilesJson = hiddenJson;
-            existing.SchemaVersion = schemaVersion;
-            existing.UpdatedAtUtc = DateTime.UtcNow;
+            request.ApplyTo(existing, DateTime.UtcNow);
             _unitOfWork.UserTileLayouts.Update(existing, cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var dto = new TileLayoutDto(existing.BoardKey, tileKeys, hiddenKeys, existing.SchemaVersion, existing.UpdatedAtUtc);
-        return new ServiceResult<TileLayoutDto>(ResultType.Success, dto);
+        return new ServiceResult<TileLayoutDto>(ResultType.Success, existing.ToDto());
     }
 }

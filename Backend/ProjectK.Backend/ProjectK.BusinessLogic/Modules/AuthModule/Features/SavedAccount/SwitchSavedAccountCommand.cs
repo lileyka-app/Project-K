@@ -46,21 +46,21 @@ public class SwitchSavedAccountCommandHandler : IRequestHandler<SwitchSavedAccou
         {
             return ServiceResult<SwitchedAccount>.Failure(
                 ResultType.NotFound,
-                "AccountNotSaved",
+                AuthErrors.AccountNotSaved,
                 "This browser holds no live session for that account.");
         }
 
         var user = await _userManager.FindByIdAsync(target.UserKey.ToString());
         if (user is null || !user.CanSignIn())
         {
-            return new ServiceResult<SwitchedAccount>(ResultType.Unauthorized);
+            return AuthErrors.SessionEnded<SwitchedAccount>();
         }
 
         // Spent before a new one is issued, and only by the call that spent it — the same race the
         // refresh guards against.
         if (!await _refreshTokens.RevokeAsync(target.Token, cancellationToken))
         {
-            return new ServiceResult<SwitchedAccount>(ResultType.Unauthorized);
+            return AuthErrors.SessionEnded<SwitchedAccount>();
         }
 
         var login = await _loginResponses.CreateAsync(user, cancellationToken);

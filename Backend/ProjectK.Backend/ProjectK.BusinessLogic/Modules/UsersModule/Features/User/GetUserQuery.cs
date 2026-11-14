@@ -28,7 +28,7 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<U
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return new ServiceResult<UserDto>(ResultType.NotFound);
+            return ServiceResult<UserDto>.Failure(ResultType.NotFound, UsersErrors.UserNotFound, "User not found.");
         }
 
         // The kurin comes from membership; the account record's own copy is a snapshot from the

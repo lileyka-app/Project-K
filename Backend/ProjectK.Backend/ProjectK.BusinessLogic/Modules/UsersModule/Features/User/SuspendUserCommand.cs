@@ -10,7 +10,7 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
 /// <summary>Refuses the account at sign-in and ends every session it holds. Reversible.</summary>
-public record SuspendUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<bool>>;
+public record SuspendUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
 
 /// <summary>
 /// The switch between deleting an account and leaving it alone. A person who left the kurin
@@ -18,7 +18,7 @@ public record SuspendUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<bo
 /// for a season: none of these is a reason to destroy the account and everything it is linked
 /// to, and all of them are reasons it must not open a session tomorrow.
 /// </summary>
-public class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, ServiceResult<bool>>
+public class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;
@@ -37,31 +37,31 @@ public class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, Ser
         _activityLogger = activityLogger;
     }
 
-    public async Task<ServiceResult<bool>> Handle(SuspendUserCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SuspendUserCommand request, CancellationToken cancellationToken)
     {
         var target = await _userManager.FindByIdAsync(request.TargetUserKey.ToString());
         if (target is null)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
+            return UsersErrors.TargetNotFound<Unit>();
         }
 
         // The one account an administrator cannot suspend is their own: that would be the last
         // administrator locking the door from the outside.
         if (target.Id == _currentUserContext.UserId)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "CannotSuspendSelf", "You cannot suspend your own account.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.CannotSuspendSelf, "You cannot suspend your own account.");
         }
 
         if (!target.CanSignIn())
         {
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         target.OnboardingStatus = OnboardingStatus.Suspended;
         var update = await _userManager.UpdateAsync(target);
         if (!update.Succeeded)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "SuspendFailed", "Failed to suspend the account.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.SuspendFailed, "Failed to suspend the account.");
         }
 
         // Only once the status is stored: RevokeAllAsync commits on its own, and ending the
@@ -74,6 +74,6 @@ public class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, Ser
             targetUserId: target.Id,
             reason: "Administrator suspended an account; all its sessions were ended.");
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

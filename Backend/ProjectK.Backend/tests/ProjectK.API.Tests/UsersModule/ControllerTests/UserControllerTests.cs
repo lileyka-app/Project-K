@@ -240,14 +240,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ChangeOwnPasswordCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.ChangePassword(request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<ChangeOwnPasswordCommand>(cmd =>
             cmd.UserKey == userKey &&
@@ -265,14 +265,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ResetOwnMfaCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.ResetMfa(request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<ResetOwnMfaCommand>(cmd =>
             cmd.UserKey == userKey &&
@@ -289,14 +289,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DisableOwnMfaCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.DisableMfa(request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<DisableOwnMfaCommand>(cmd =>
             cmd.UserKey == userKey &&
@@ -311,14 +311,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ResetUserMfaCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.ResetUserMfa(targetUserKey);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<ResetUserMfaCommand>(cmd =>
             cmd.TargetUserKey == targetUserKey), It.IsAny<CancellationToken>()), Times.Once);
@@ -330,7 +330,7 @@ public class UserControllerTests
         var targetUserKey = Guid.NewGuid();
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<SuspendUserCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         var result = await _controller.SuspendUser(targetUserKey);
 
@@ -345,7 +345,7 @@ public class UserControllerTests
         var targetUserKey = Guid.NewGuid();
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<RestoreUserCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         var result = await _controller.RestoreUser(targetUserKey);
 

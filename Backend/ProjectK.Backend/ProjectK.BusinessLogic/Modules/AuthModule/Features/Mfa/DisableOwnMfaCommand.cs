@@ -10,9 +10,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
-public record DisableOwnMfaCommand(Guid UserKey, string CurrentPassword) : IRequest<ServiceResult<bool>>;
+public record DisableOwnMfaCommand(Guid UserKey, string CurrentPassword) : IRequest<ServiceResult<Unit>>;
 
-public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand, ServiceResult<bool>>
+public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;
@@ -31,35 +31,35 @@ public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand,
         _access = access;
     }
 
-    public async Task<ServiceResult<bool>> Handle(DisableOwnMfaCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DisableOwnMfaCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return ServiceResult<bool>.Failure(ResultType.Unauthorized, "Unauthorized", "User not found or unauthorized.");
+            return AuthErrors.AccountMissing<Unit>();
         }
 
         if (string.IsNullOrWhiteSpace(request.CurrentPassword)
             || !await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
         {
-            return ServiceResult<bool>.Failure(ResultType.Unauthorized, "InvalidCredentials", "Invalid credentials.");
+            return ServiceResult<Unit>.Failure(ResultType.Unauthorized, AuthErrors.InvalidCredentials, "Invalid credentials.");
         }
 
         var roles = (await _access.ResolveAsync(user, cancellationToken)).Roles;
         if (RolePermissionMap.GrantsWholeKurinManagement(roles))
         {
-            return ServiceResult<bool>.Failure(ResultType.Forbidden, "MfaRequired", "Privileged users must keep MFA enabled. Reset MFA to reconfigure it.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, AuthErrors.MfaRequired, "Privileged users must keep MFA enabled. Reset MFA to reconfigure it.");
         }
 
         if (!user.TwoFactorEnabled)
         {
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         var disableResult = await _userManager.SetTwoFactorEnabledAsync(user, false);
         if (!disableResult.Succeeded)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaDisableFailed", "Failed to disable MFA.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaDisableFailed, "Failed to disable MFA.");
         }
 
         var updateResult = await _userManager.UpdateAsync(user);
@@ -74,9 +74,9 @@ public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand,
                 actorUserId: user.Id,
                 targetUserId: user.Id,
                 reason: "User disabled their own MFA.");
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
-        return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaDisableFailed", "Failed to disable MFA.");
+        return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaDisableFailed, "Failed to disable MFA.");
     }
 }

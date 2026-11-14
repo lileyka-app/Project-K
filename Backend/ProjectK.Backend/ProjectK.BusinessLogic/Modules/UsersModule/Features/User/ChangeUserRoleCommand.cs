@@ -10,9 +10,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
-public record ChangeUserRoleCommand(Guid TargetUserId, UserRole NewRole) : IRequest<ServiceResult<bool>>;
+public record ChangeUserRoleCommand(Guid TargetUserId, UserRole NewRole) : IRequest<ServiceResult<Unit>>;
 
-public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleCommand, ServiceResult<bool>>
+public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;
@@ -31,20 +31,20 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
         _accessChanges = accessChanges;
     }
 
-    public async Task<ServiceResult<bool>> Handle(ChangeUserRoleCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ChangeUserRoleCommand request, CancellationToken cancellationToken)
     {
         // Get target user
         var targetUser = await _userManager.FindByIdAsync(request.TargetUserId.ToString());
         if (targetUser == null)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
+            return UsersErrors.TargetNotFound<Unit>();
         }
 
         // Only admins manage the system Admin role. Kurin-level roles come from діловодські
         // offices (the Leadership screen) and are synced automatically, not set here.
         if (!_currentUserContext.IsAdmin())
         {
-            return ServiceResult<bool>.Failure(ResultType.Forbidden, "AdminOnly", "Only admins can change system roles.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, UsersErrors.AdminOnly, "Only admins can change system roles.");
         }
 
         var currentRoles = await _userManager.GetRolesAsync(targetUser);
@@ -54,13 +54,13 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
         {
             if (isCurrentlyAdmin)
             {
-                return new ServiceResult<bool>(ResultType.Success, true, "User is already an admin.");
+                return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
             }
 
             var addResult = await _userManager.AddToRoleAsync(targetUser, SystemRole.Admin);
             if (!addResult.Succeeded)
             {
-                return ServiceResult<bool>.Failure(ResultType.BadRequest, "AdminRoleNotGranted", "Failed to grant admin role.");
+                return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.AdminRoleNotGranted, "Failed to grant admin role.");
             }
         }
         else
@@ -70,7 +70,7 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
                 var removeResult = await _userManager.RemoveFromRoleAsync(targetUser, SystemRole.Admin);
                 if (!removeResult.Succeeded)
                 {
-                    return ServiceResult<bool>.Failure(ResultType.BadRequest, "AdminRoleNotRevoked", "Failed to revoke admin role.");
+                    return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.AdminRoleNotRevoked, "Failed to revoke admin role.");
                 }
             }
 
@@ -88,6 +88,6 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
             targetUserId: targetUser.Id,
             reason: $"System role changed to {request.NewRole}.");
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

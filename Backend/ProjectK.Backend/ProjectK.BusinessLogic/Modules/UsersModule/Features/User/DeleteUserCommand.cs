@@ -7,9 +7,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
-public record DeleteUserCommand(Guid UserId) : IRequest<ServiceResult<bool>>;
+public record DeleteUserCommand(Guid UserId) : IRequest<ServiceResult<Unit>>;
 
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ServiceResult<bool>>
+public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
@@ -20,12 +20,12 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Servi
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult<bool>> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserId.ToString());
         if (user == null)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "User not found.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, UsersErrors.UserNotFound, "User not found.");
         }
 
         // A mentor's assignments reference the account, so they go first — read by the mentor,
@@ -48,9 +48,9 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Servi
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            return ServiceResult<bool>.Failure(ResultType.InternalServerError, "UserNotDeleted", $"Failed to delete user: {errors}");
+            return ServiceResult<Unit>.Failure(ResultType.InternalServerError, UsersErrors.UserNotDeleted, $"Failed to delete user: {errors}");
         }
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

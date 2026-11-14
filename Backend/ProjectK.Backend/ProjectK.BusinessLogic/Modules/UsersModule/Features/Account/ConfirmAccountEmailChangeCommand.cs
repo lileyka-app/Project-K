@@ -41,25 +41,25 @@ public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAc
         var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
         if (user == null)
         {
-            return ServiceResult<AccountSettingsDto>.Failure(ResultType.Unauthorized, "Unauthorized", "User not found or unauthorized.");
+            return UsersErrors.AccountMissing<AccountSettingsDto>();
         }
 
         var email = request.Email.Trim();
         if (!MailAddress.TryCreate(email, out _))
         {
-            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, "InvalidEmail", "Invalid email format.");
+            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, UsersErrors.InvalidEmail, "Invalid email format.");
         }
 
         var existingUser = await _userManager.FindByEmailAsync(email);
         if (existingUser != null && existingUser.Id != user.Id)
         {
-            return ServiceResult<AccountSettingsDto>.Failure(ResultType.Conflict, "EmailAlreadyInUse", "Email is already in use.");
+            return ServiceResult<AccountSettingsDto>.Failure(ResultType.Conflict, UsersErrors.EmailAlreadyInUse, "Email is already in use.");
         }
 
         var changeEmailResult = await _userManager.ChangeEmailAsync(user, email, request.Token);
         if (!changeEmailResult.Succeeded)
         {
-            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, "InvalidToken", "Invalid or expired email confirmation token.");
+            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, UsersErrors.InvalidToken, "Invalid or expired email confirmation token.");
         }
 
         user.UserName = email;
@@ -67,7 +67,7 @@ public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAc
         var updateResult = await _userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)
         {
-            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, "UpdateFailed", "Failed to update profile.");
+            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, UsersErrors.UpdateFailed, "Failed to update profile.");
         }
 
         // Only once the change is stored. RevokeAllAsync commits on its own, so ending the

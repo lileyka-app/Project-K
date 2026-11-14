@@ -28,17 +28,17 @@ public class CheckEntityAccessQueryHandler : IRequestHandler<CheckEntityAccessQu
     {
         if (!Guid.TryParse(request.EntityKey, out var parsedEntityKey))
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidEntityKey", "Invalid entity key.");
+            return ServiceResult<bool>.Failure(ResultType.BadRequest, AuthErrors.InvalidEntityKey, "Invalid entity key.");
         }
 
         if (!TryMapResourceType(request.EntityType, out var resourceType))
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "InvalidEntityType", "Invalid entity type.");
+            return ServiceResult<bool>.Failure(ResultType.BadRequest, AuthErrors.InvalidEntityType, "Invalid entity type.");
         }
 
         if (!TryResolveResourceAction(request.Action, out var action, out var actionError))
         {
-            return new ServiceResult<bool>(ResultType.BadRequest, false, actionError);
+            return ServiceResult<bool>.Failure(ResultType.BadRequest, AuthErrors.InvalidResourceAction, actionError);
         }
 
         var decision = await _resourceAccessService.CheckAccessAsync(

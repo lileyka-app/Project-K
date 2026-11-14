@@ -52,12 +52,12 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(request.WaitlistEntryKey, cancellationToken);
         if (entry == null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.NotFound, "WaitlistEntryNotFound", "Waitlist entry not found.");
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, AuthErrors.WaitlistEntryNotFound, "Waitlist entry not found.");
         }
 
         if (entry.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation)
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, "WaitlistEntryAlreadyApproved", "Waitlist entry is already approved.");
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, AuthErrors.WaitlistEntryAlreadyApproved, "Waitlist entry is already approved.");
         }
 
         // The admin's pick wins over the applicant's; an entry from before the form asked has neither,
@@ -65,7 +65,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         var chosenKrai = Krai.NormalizeCode(request.KraiCode);
         if (chosenKrai is not null && !await _unitOfWork.Krais.ExistsAsync(chosenKrai, cancellationToken))
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "KraiNotFound", "Такого краю немає в списку.");
+            return ServiceResult<Guid>.Failure(ResultType.BadRequest, AuthErrors.KraiNotFound, "Такого краю немає в списку.");
         }
 
         var kraiCode = chosenKrai ?? entry.KraiCode ?? _krai.Default;
@@ -83,7 +83,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
             // A number is the kurin's within its край, so it is only taken if this край has it.
             if (await _unitOfWork.Kurins.ExistsAsync(kraiCode, claimed, cancellationToken))
             {
-                return ServiceResult<Guid>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this krai.");
+                return ServiceResult<Guid>.Failure(ResultType.Conflict, AuthErrors.KurinNumberTaken, "A kurin with this number already exists in this krai.");
             }
         }
 
@@ -94,7 +94,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
             {
                 if (await _unitOfWork.Kurins.IsNumberTakenAsync(kraiCode, numbering.Branch, numbering.Number!.Value, null, cancellationToken))
                 {
-                    return ServiceResult<Guid>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this krai.");
+                    return ServiceResult<Guid>.Failure(ResultType.Conflict, AuthErrors.KurinNumberTaken, "A kurin with this number already exists in this krai.");
                 }
             }
         }
@@ -112,7 +112,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         {
             return ServiceResult<Guid>.Failure(
                 provisioned.Type,
-                provisioned.ErrorCode ?? "UserNotCreated",
+                provisioned.ErrorCode ?? AuthErrors.UserNotCreated,
                 provisioned.ErrorMessage ?? "Failed to create user.");
         }
 

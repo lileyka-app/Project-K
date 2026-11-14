@@ -72,7 +72,7 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
         When(command => !string.IsNullOrWhiteSpace(command.KraiCode), () =>
         {
             RuleFor(command => command.KraiCode)
-                .MustAsync(KraiExistsAsync).WithErrorCode("KraiNotFound").WithMessage("Такого краю немає в списку.");
+                .MustAsync(KraiExistsAsync).WithErrorCode(AuthErrors.KraiNotFound).WithMessage("Такого краю немає в списку.");
         });
 
         RuleFor(command => command.IsKurinLeaderCandidate)
@@ -150,13 +150,13 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         var existingEntry = await _unitOfWork.WaitlistEntries.GetByEmailAsync(request.Email, cancellationToken);
         if (existingEntry != null && existingEntry.VerificationStatus != WaitlistVerificationStatus.Rejected)
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, "WaitlistEntryExists", "Waitlist entry with this email already exists.");
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, AuthErrors.WaitlistEntryExists, "Waitlist entry with this email already exists.");
         }
 
         // Also check existing members just in case
         if (await _members.ExistsByEmailAsync(request.Email, cancellationToken))
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, "MemberEmailExists", "A member with this email already exists in the system.");
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, AuthErrors.MemberEmailExists, "A member with this email already exists in the system.");
         }
 
         var entry = existingEntry ?? new WaitlistEntry { WaitlistEntryKey = Guid.NewGuid() };

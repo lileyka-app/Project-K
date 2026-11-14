@@ -12,9 +12,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
-public record ResetUserMfaCommand(Guid TargetUserKey) : IRequest<ServiceResult<bool>>;
+public record ResetUserMfaCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
 
-public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, ServiceResult<bool>>
+public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;
@@ -39,19 +39,19 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
         _memberships = memberships;
     }
 
-    public async Task<ServiceResult<bool>> Handle(ResetUserMfaCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ResetUserMfaCommand request, CancellationToken cancellationToken)
     {
         var targetUser = await _userManager.FindByIdAsync(request.TargetUserKey.ToString());
         if (targetUser == null)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "Target user not found.");
         }
 
         var isAdmin = _currentUserContext.IsAdmin();
         var isKurinManager = !isAdmin && _currentUserContext.CanManageWholeKurin();
         if (!isAdmin && !isKurinManager)
         {
-            return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "You do not have permission to perform this action.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, AuthErrors.Forbidden, "You do not have permission to perform this action.");
         }
 
         var targetRoles = (await _access.ResolveAsync(targetUser, cancellationToken)).Roles;
@@ -65,12 +65,12 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
             var targetKurinKeys = await _memberships.GetKurinKeysForAccountAsync(targetUser.Id, cancellationToken);
             if (!managerKurinKey.HasValue || !targetKurinKeys.Contains(managerKurinKey.Value))
             {
-                return ServiceResult<bool>.Failure(ResultType.Forbidden, "Forbidden", "Kurin managers can reset MFA only in their own Kurin.");
+                return ServiceResult<Unit>.Failure(ResultType.Forbidden, AuthErrors.Forbidden, "Kurin managers can reset MFA only in their own Kurin.");
             }
 
             if (RolePermissionMap.GrantsWholeKurinManagement(targetRoles))
             {
-                return ServiceResult<bool>.Failure(ResultType.Forbidden, "CannotResetPrivilegedMfa", "Kurin managers cannot reset MFA for privileged users.");
+                return ServiceResult<Unit>.Failure(ResultType.Forbidden, AuthErrors.CannotResetPrivilegedMfa, "Kurin managers cannot reset MFA for privileged users.");
             }
         }
 
@@ -79,14 +79,14 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
             var disableResult = await _userManager.SetTwoFactorEnabledAsync(targetUser, false);
             if (!disableResult.Succeeded)
             {
-                return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
+                return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaResetFailed, "Failed to reset MFA.");
             }
         }
 
         var resetResult = await _userManager.ResetAuthenticatorKeyAsync(targetUser);
         if (!resetResult.Succeeded)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaResetFailed, "Failed to reset MFA.");
         }
 
         var updateResult = await _userManager.UpdateAsync(targetUser);
@@ -101,9 +101,9 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
                 actorUserId: _currentUserContext.UserId,
                 targetUserId: targetUser.Id,
                 reason: "Privileged user reset MFA for another account.");
-            return new ServiceResult<bool>(ResultType.Success, true);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
-        return ServiceResult<bool>.Failure(ResultType.BadRequest, "MfaResetFailed", "Failed to reset MFA.");
+        return ServiceResult<Unit>.Failure(ResultType.BadRequest, AuthErrors.MfaResetFailed, "Failed to reset MFA.");
     }
 }

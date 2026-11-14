@@ -44,13 +44,13 @@ public class ReturnFromImpersonationCommandHandler : IRequestHandler<ReturnFromI
         var adminKey = string.IsNullOrWhiteSpace(request.Ticket) ? null : _jwtService.ReadDevReturnTicket(request.Ticket);
         if (adminKey is null)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, "InvalidTicket", "The return ticket is missing, expired or not one.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, AuthErrors.InvalidTicket, "The return ticket is missing, expired or not one.");
         }
 
         var admin = await _userManager.FindByIdAsync(adminKey.Value.ToString());
         if (admin is null || !await _userManager.IsInRoleAsync(admin, SystemRole.Admin))
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.Forbidden, "NotAnAdministrator", "The ticket does not belong to an administrator.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.Forbidden, AuthErrors.NotAnAdministrator, "The ticket does not belong to an administrator.");
         }
 
         foreach (var token in request.RefreshTokens.Distinct(StringComparer.Ordinal))

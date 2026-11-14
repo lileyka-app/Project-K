@@ -9,7 +9,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record RequestPasswordResetCommand(string Email) : IRequest<ServiceResult<bool>>;
+public record RequestPasswordResetCommand(string Email) : IRequest<ServiceResult<Unit>>;
 
 /// <summary>
 /// Example validator wired through <c>ValidationBehavior</c>: a malformed or empty email is
@@ -26,7 +26,7 @@ public sealed class RequestPasswordResetCommandValidator : AbstractValidator<Req
     }
 }
 
-public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswordResetCommand, ServiceResult<bool>>
+public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswordResetCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IEmailService _emailService;
@@ -45,7 +45,7 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
         _logger = logger;
     }
 
-    public async Task<ServiceResult<bool>> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
 
@@ -73,6 +73,6 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
             }
         }
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

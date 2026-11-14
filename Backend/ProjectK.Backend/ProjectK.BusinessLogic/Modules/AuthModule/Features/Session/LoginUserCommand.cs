@@ -69,7 +69,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         {
             return ServiceResult<LoginUserResponse>.Failure(
                 ResultType.TooManyRequests,
-                "TooManyAttempts",
+                AuthErrors.TooManyAttempts,
                 "Too many failed sign-ins for this email. Try again later or reset the password.");
         }
 
@@ -82,7 +82,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
             _throttle.RecordFailure(request.Email);
             return ServiceResult<LoginUserResponse>.Failure(
                 ResultType.Unauthorized,
-                "InvalidCredentials",
+                AuthErrors.InvalidCredentials,
                 "Email or password is incorrect.");
         }
 
@@ -96,7 +96,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
             _throttle.RecordFailure(request.Email);
             return ServiceResult<LoginUserResponse>.Failure(
                 ResultType.Unauthorized,
-                "InvalidCredentials",
+                AuthErrors.InvalidCredentials,
                 "Email or password is incorrect.");
         }
 

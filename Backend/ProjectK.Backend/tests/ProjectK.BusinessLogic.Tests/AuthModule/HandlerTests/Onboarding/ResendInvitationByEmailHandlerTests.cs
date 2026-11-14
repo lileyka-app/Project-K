@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -89,7 +90,7 @@ public sealed class ResendInvitationByEmailHandlerTests
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        result.Data.Should().BeTrue();
+        result.Data.Should().Be(Unit.Value);
         _emailService.Verify(service => service.SendInvitationEmailAsync(
             It.IsAny<string>(),
             It.IsAny<string>(),

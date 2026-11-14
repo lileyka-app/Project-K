@@ -47,7 +47,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
         var session = await _refreshTokens.FindActiveAsync(request.RefreshToken, cancellationToken);
         if (session is null)
         {
-            return new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized);
+            return AuthErrors.SessionEnded<RefreshTokenResponse>();
         }
 
         // Suspension ends every session when it is applied; this is the backstop for a token
@@ -55,7 +55,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
         var user = await _userManager.FindByIdAsync(session.UserId.ToString());
         if (user is null || !user.CanSignIn())
         {
-            return new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized);
+            return AuthErrors.SessionEnded<RefreshTokenResponse>();
         }
 
         // Spend the token first, and only continue if this call is the one that spent it. Two
@@ -64,7 +64,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
         // alive, unreachable and beyond the reach of logout.
         if (!await _refreshTokens.RevokeAsync(session.Token, cancellationToken))
         {
-            return new ServiceResult<RefreshTokenResponse>(ResultType.Unauthorized);
+            return AuthErrors.SessionEnded<RefreshTokenResponse>();
         }
 
         // A refresh is where a change of office reaches the token, so the roles are worked out

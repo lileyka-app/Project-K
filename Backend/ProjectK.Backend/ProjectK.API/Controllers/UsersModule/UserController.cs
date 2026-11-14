@@ -116,7 +116,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("me/password")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
@@ -136,7 +136,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("me/mfa/reset")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ResetMfa([FromBody] ResetMfaRequestDto request)
@@ -159,7 +159,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("me/mfa/disable")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> DisableMfa([FromBody] DisableMfaRequestDto request)
@@ -217,7 +217,7 @@ public class UserController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("me/layouts/{boardKey}")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ResetTileLayout(string boardKey)
     {
@@ -240,7 +240,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("{userId:guid}/mfa/reset")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResetUserMfa(Guid userId)
     {
@@ -257,7 +257,7 @@ public class UserController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{userId:guid}/suspend")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SuspendUser(Guid userId)
@@ -271,7 +271,7 @@ public class UserController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{userId:guid}/restore")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreUser(Guid userId)
     {
@@ -284,7 +284,7 @@ public class UserController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpDelete("{userId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUser(Guid userId)
     {
@@ -303,7 +303,7 @@ public class UserController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpPost("{userId:guid}/role")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangeUserRole(Guid userId, [FromBody] UserRole newRole)

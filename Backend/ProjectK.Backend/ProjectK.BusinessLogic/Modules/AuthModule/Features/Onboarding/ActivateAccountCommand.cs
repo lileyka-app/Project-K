@@ -58,19 +58,19 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
 
         if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "InvalidInvitationToken", "Invalid or expired invitation token.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.InvalidInvitationToken, "Invalid or expired invitation token.");
         }
 
         // 2. Get User
         if (!invitation.TargetUserKey.HasValue)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "InvitationHasNoUser", "Invitation is not linked to a user.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.InvitationHasNoUser, "Invitation is not linked to a user.");
         }
 
         var user = await _userManager.FindByIdAsync(invitation.TargetUserKey.Value.ToString());
         if (user == null)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, "UserNotFound", "Target user not found.");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "Target user not found.");
         }
 
         // 3. Set Password and Activate
@@ -78,7 +78,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         if (!addPasswordResult.Succeeded)
         {
             var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "PasswordNotSet", $"Failed to set password: {errors}");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.PasswordNotSet, $"Failed to set password: {errors}");
         }
 
         user.OnboardingStatus = OnboardingStatus.Active;
@@ -88,7 +88,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         if (!updateResult.Succeeded)
         {
             var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, "UserNotUpdated", $"Failed to update user status: {errors}");
+            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.UserNotUpdated, $"Failed to update user status: {errors}");
         }
 
         // 3.5. Assign the baseline system role. Kurin authority comes from a діловодський office,
