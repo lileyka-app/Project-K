@@ -1,7 +1,3 @@
-using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.ScoreModule;
-using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
@@ -23,7 +19,7 @@ public sealed class ScoreBook
     private readonly IReadOnlyDictionary<Guid, MemberSummary> _byMember;
     private readonly IReadOnlyDictionary<Guid, string> _byAccount;
 
-    private ScoreBook(
+    internal ScoreBook(
         Guid kurinKey,
         DateOnly today,
         ScoreAlgorithm algorithm,
@@ -75,71 +71,6 @@ public sealed class ScoreBook
 
     /// <summary>The earliest day anything was scored on, or today.</summary>
     public DateOnly FirstDay { get; }
-
-    public static async Task<ScoreBook> OpenAsync(
-        Guid kurinKey,
-        IScoreUnitOfWork score,
-        IUnitOfWork unitOfWork,
-        IMembershipDirectory memberships,
-        IMemberDirectory members,
-        IScoreFactReader facts,
-        TimeProvider time,
-        CancellationToken cancellationToken)
-    {
-        var today = DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
-        var settings = await score.KurinScoreSettings.GetForKurinAsync(kurinKey, cancellationToken);
-        var rules = await score.ScoreRules.GetForKurinAsync(kurinKey, cancellationToken);
-        var rates = await score.ScoreAttendanceRates.GetForKurinAsync(kurinKey, cancellationToken);
-        var items = await score.ScoreItems.GetForKurinAsync(kurinKey, cancellationToken);
-        var stages = await score.ScoreStages.GetForKurinAsync(kurinKey, cancellationToken);
-        var moves = await score.ScoreGroupMoves.GetForKurinAsync(kurinKey, cancellationToken);
-        var attendances = await score.ScoreAttendances.GetForKurinAsync(kurinKey, cancellationToken);
-        var entries = await score.ScoreEntries.GetForKurinAsync(kurinKey, cancellationToken);
-        var kurinFacts = await facts.ForKurinAsync(kurinKey, cancellationToken);
-
-        var inKurin = (await memberships.GetInKurinAsync(kurinKey, cancellationToken)).ToDictionary(m => m.MembershipKey);
-        var current = await members.GetByKurinAsync(kurinKey, cancellationToken);
-
-        // The kurin's people are those who stand in it now, but a youth who left still has a row in
-        // their гурток's table below; read them by key, or that row is named «—».
-        var currentKeys = current.Select(p => p.MemberKey).ToHashSet();
-        var leftKeys = inKurin.Values.Select(m => m.MemberKey).Where(key => !currentKeys.Contains(key)).Distinct().ToList();
-        var left = leftKeys.Count == 0
-            ? []
-            : await members.GetByKeysAsync(leftKeys, cancellationToken) ?? [];
-        var people = current.Concat(left).GroupBy(p => p.MemberKey).Select(g => g.First()).ToList();
-        var groupNames = (await unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken)).ToDictionary(g => g.GroupKey, g => g.Name);
-
-        // The ledger prices a mark by its event's group, so every marked event's group is read at once.
-        var eventKeys = attendances.Select(a => a.AgendaItemKey).Distinct().ToList();
-        var eventCategories = await unitOfWork.AgendaItems.GetCategoryKeysAsync(eventKeys, cancellationToken);
-
-        var youths = inKurin.Values
-            .Where(m => m.Kind == MembershipKind.Youth)
-            // A youth who left keeps the гурток they left from: what they earned before leaving, and
-            // the days they were there, still count for it. LeftOn bounds the days.
-            .Select(m => new ScoreMember(
-                m.MembershipKey,
-                m.GroupKey,
-                DateOnly.FromDateTime(m.JoinedAtUtc),
-                m.LeftAtUtc is { } left ? DateOnly.FromDateTime(left) : null))
-            .ToList();
-
-        var algorithm = settings?.Algorithm ?? ScoreAlgorithm.Average;
-        var ledger = new ScoreLedger(algorithm, today, youths, moves, rules, rates, eventCategories, attendances, entries, kurinFacts);
-
-        var firstDay = attendances.Select(a => DateOnly.FromDateTime(a.OccurrenceStartUtc))
-            .Concat(entries.Select(e => e.OccurredOn))
-            .Concat(kurinFacts.Select(f => f.On))
-            .DefaultIfEmpty(today)
-            .Min();
-
-        return new ScoreBook(
-            kurinKey, today, algorithm, ledger, inKurin,
-            people.ToDictionary(p => p.MemberKey),
-            people.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
-            groupNames, rules, rates, items, stages, entries, attendances, firstDay);
-    }
 
     /// <summary>The days a request asks about; null when it names a stage that is not here.</summary>
     public (ScorePeriod Period, ScorePeriodDto Dto)? ResolvePeriod(ScorePeriodQuery query)
