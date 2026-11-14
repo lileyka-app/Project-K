@@ -24,7 +24,7 @@ using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.Infrastructure.Services.Jwt;
 
 namespace ProjectK.API.Tests.Security;
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Infrastructure.Services.Blobs;
 
 namespace ProjectK.Infrastructure.BackgroundServices;
 

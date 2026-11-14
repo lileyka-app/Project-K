@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace ProjectK.Infrastructure.Reports;
+namespace ProjectK.Infrastructure.Services.Reports;
 
 /// <summary>
 /// Turns the stored UTC timestamps into the hours the reader's own clock showed.

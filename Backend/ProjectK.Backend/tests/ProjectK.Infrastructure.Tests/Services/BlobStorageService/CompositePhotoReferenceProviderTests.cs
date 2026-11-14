@@ -1,4 +1,4 @@
-using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Infrastructure.Services.Blobs;
 
 namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService;
 

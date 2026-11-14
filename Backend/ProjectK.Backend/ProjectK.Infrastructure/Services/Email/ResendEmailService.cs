@@ -5,7 +5,7 @@ using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using Resend;
 
-namespace ProjectK.Infrastructure.Services.EmailService;
+namespace ProjectK.Infrastructure.Services.Email;
 
 /// <summary>
 /// The letters Лілейка sends, in Ukrainian, under one frame: the banner on top, one green button,

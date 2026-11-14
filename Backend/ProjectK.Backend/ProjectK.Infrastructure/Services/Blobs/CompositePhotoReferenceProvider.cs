@@ -1,4 +1,4 @@
-namespace ProjectK.Infrastructure.Services.BlobStorageService;
+namespace ProjectK.Infrastructure.Services.Blobs;
 
 public sealed class CompositePhotoReferenceProvider : IPhotoReferenceProvider
 {

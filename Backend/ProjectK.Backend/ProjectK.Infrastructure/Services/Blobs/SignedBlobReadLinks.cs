@@ -4,7 +4,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.Infrastructure.Services.BlobStorageService;
+namespace ProjectK.Infrastructure.Services.Blobs;
 
 /// <summary>
 /// Signs read-only links to single blobs with the account key from the connection string.

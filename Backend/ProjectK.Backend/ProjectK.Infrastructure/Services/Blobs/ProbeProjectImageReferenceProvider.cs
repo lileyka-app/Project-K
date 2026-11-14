@@ -1,7 +1,7 @@
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 
-namespace ProjectK.Infrastructure.Services.BlobStorageService;
+namespace ProjectK.Infrastructure.Services.Blobs;
 
 /// <summary>
 /// The files of the third probe: pictures of projects and the camp посвідка. A picture removed from

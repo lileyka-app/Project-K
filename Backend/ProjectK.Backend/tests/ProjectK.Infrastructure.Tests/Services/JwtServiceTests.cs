@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Configuration;
-using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.Infrastructure.Services.Jwt;
 
 namespace ProjectK.Infrastructure.Tests.Services;
 

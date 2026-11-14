@@ -13,7 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using ProjectK.API.Middleware;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.Infrastructure.Services.Jwt;
 
 namespace ProjectK.API.Tests.Security;
 

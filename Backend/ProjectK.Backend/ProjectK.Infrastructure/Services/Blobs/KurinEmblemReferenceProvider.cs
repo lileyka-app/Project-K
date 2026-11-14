@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Services.BlobStorageService;
+namespace ProjectK.Infrastructure.Services.Blobs;
 
 /// <summary>The emblems senior kurins point at, so the orphan cleanup leaves them and sweeps the replaced ones.</summary>
 public sealed class KurinEmblemReferenceProvider : IPhotoReferenceProvider

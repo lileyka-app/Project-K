@@ -3,7 +3,7 @@ using Moq;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Infrastructure.Services.Blobs;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;

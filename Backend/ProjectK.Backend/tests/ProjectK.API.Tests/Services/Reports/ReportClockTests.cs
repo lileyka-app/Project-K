@@ -1,4 +1,4 @@
-using ProjectK.Infrastructure.Reports;
+using ProjectK.Infrastructure.Services.Reports;
 
 namespace ProjectK.API.Tests.Services.Reports;
 
