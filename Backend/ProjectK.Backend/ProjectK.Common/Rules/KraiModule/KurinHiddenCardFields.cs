@@ -1,26 +1,13 @@
 using System.Text.Json;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.Common.Rules.KraiModule;
 
 /// <summary>How a kurin's hidden card fields are kept in one column.</summary>
 public static class KurinHiddenCardFields
 {
-    public static IReadOnlyList<string> Read(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<List<string>>(json) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-    }
+    /// <inheritdoc cref="JsonListRules.ReadStrings"/>
+    public static IReadOnlyList<string> Read(string? json) => JsonListRules.ReadStrings(json);
 
     public static string? Write(IEnumerable<string> keys)
     {
