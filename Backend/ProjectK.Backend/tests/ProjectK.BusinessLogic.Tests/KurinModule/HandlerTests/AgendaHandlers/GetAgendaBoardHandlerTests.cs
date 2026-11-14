@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.AuthModule;

@@ -1,7 +1,8 @@
-using ProjectK.Common.Exceptions;
+using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -98,5 +99,18 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
         return new ServiceResult<KurinTagDto>(
             isNew ? ResultType.Created : ResultType.Success,
             new KurinTagDto(tag.KurinTagKey, tag.Name, tag.ColorHex, null));
+    }
+}
+
+public sealed class UpsertKurinTagCommandValidator : AbstractValidator<UpsertKurinTagCommand>
+{
+    public UpsertKurinTagCommandValidator()
+    {
+        RuleFor(c => c.KurinKey).NotEmpty();
+        RuleFor(c => c.Name)
+            .Must(name => !string.IsNullOrWhiteSpace(name) && name.Trim().Length <= KurinTagRules.MaxNameLength);
+        RuleFor(c => c.ColorHex)
+            .Must(KurinTagRules.IsPaletteColor)
+            .WithErrorCode(KurinTagErrors.TagColorNotInPalette);
     }
 }

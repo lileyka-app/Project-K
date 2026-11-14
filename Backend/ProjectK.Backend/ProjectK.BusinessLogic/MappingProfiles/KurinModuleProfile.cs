@@ -1,11 +1,11 @@
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;

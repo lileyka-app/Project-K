@@ -7,7 +7,7 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;

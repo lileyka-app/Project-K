@@ -1,8 +1,8 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
