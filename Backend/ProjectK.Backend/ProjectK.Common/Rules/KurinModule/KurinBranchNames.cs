@@ -1,3 +1,4 @@
+using System.Globalization;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 
@@ -44,5 +45,5 @@ public static class KurinBranchNames
     }
 
     /// <summary>The kurin's number in a downloaded file's name, or <c>pidhotovchyi</c> for a підготовчий курінь.</summary>
-    public static string InFileName(int? number) => number?.ToString() ?? "pidhotovchyi";
+    public static string InFileName(int? number) => number?.ToString(CultureInfo.CurrentCulture) ?? "pidhotovchyi";
 }
