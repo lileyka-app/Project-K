@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
@@ -110,7 +110,7 @@ public class NotificationsController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("push/subscriptions")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SubscribeToPush(

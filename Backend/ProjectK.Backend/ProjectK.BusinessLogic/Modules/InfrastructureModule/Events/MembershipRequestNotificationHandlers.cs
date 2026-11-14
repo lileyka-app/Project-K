@@ -7,7 +7,7 @@ using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 
 /// <summary>
 /// Who hears about a request between kurins. It goes to the Звʼязковий of a kurin and nobody else in

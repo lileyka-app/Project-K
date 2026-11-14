@@ -8,7 +8,7 @@ using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;

@@ -3,7 +3,13 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.UploadScreenshot;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Feedback;
+
+/// <summary>
+/// One picture for a problem report, stored before the report itself exists so the editor can
+/// show it inline. Returns the public URL the report will embed.
+/// </summary>
+public sealed record UploadFeedbackScreenshotCommand(Stream Content, string FileName) : IRequest<ServiceResult<string>>;
 
 public sealed class UploadFeedbackScreenshotCommandHandler
     : IRequestHandler<UploadFeedbackScreenshotCommand, ServiceResult<string>>
@@ -21,7 +27,7 @@ public sealed class UploadFeedbackScreenshotCommandHandler
     {
         if (_currentUser.UserId is null)
         {
-            return ServiceResult<string>.Failure(ResultType.Unauthorized, "SignInRequired", "Sign in to attach a screenshot.");
+            return ServiceResult<string>.Failure(ResultType.Unauthorized, InfrastructureErrors.SignInRequired, "Sign in to attach a screenshot.");
         }
 
         try
@@ -36,7 +42,7 @@ public sealed class UploadFeedbackScreenshotCommandHandler
         }
         catch (InvalidOperationException)
         {
-            return ServiceResult<string>.Failure(ResultType.BadRequest, "InvalidImage", "The uploaded file is not a valid image.");
+            return ServiceResult<string>.Failure(ResultType.BadRequest, InfrastructureErrors.InvalidImage, "The uploaded file is not a valid image.");
         }
     }
 }

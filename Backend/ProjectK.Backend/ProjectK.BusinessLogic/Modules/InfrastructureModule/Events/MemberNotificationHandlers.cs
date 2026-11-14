@@ -6,7 +6,7 @@ using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 
 /// <summary>
 /// Turns what happened to a member into something they read in their inbox. The wording, the

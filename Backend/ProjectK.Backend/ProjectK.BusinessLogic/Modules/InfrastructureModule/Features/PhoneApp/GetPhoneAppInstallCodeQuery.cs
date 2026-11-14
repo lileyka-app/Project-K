@@ -7,7 +7,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PhoneApp.GetInstallCode;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PhoneApp;
 
 /// <summary>
 /// The QR code a computer shows for «Встановити на телефон». It points at the phone app's install

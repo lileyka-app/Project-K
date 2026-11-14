@@ -140,9 +140,6 @@ public class KurinModuleProfile : Profile
         // Member Warning Mapping
         CreateMap<MemberWarning, MemberWarningDto>();
 
-        // Notifications Mapping
-        CreateMap<AppNotification, AppNotificationDto>();
-
         // Member Award Mapping
         CreateMap<MemberAward, MemberAwardDto>()
             .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src =>

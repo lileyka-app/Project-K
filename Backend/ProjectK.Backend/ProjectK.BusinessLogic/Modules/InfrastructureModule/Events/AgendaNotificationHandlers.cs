@@ -1,25 +1,12 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
-
-/// <summary>
-/// Where an agenda change turns into an inbox entry. The route and the wording are worked out here
-/// from what the event says — a task belongs to the board, an event to the calendar — so the agenda
-/// itself no longer holds a screen path.
-/// </summary>
-internal static class AgendaNotificationText
-{
-    public static string RouteFor(AgendaItemKind kind, Guid kurinKey) =>
-        kind == AgendaItemKind.Task ? $"/tasks/{kurinKey}" : $"/calendar/{kurinKey}";
-
-    public static string KindWord(AgendaItemKind kind) =>
-        kind == AgendaItemKind.Task ? "Задачу" : "Подію";
-}
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 
 public sealed class AgendaItemAssignedEventHandler
     : INotificationHandler<DomainEventNotification<AgendaItemAssigned>>

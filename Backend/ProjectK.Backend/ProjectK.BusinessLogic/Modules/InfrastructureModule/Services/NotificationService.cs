@@ -1,10 +1,10 @@
-using AutoMapper;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 
 public sealed class NotificationService : INotificationService
 {
@@ -13,18 +13,15 @@ public sealed class NotificationService : INotificationService
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IMapper _mapper;
     private readonly IPushQueue _pushQueue;
 
     public NotificationService(
         IUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
-        IMapper mapper,
         IPushQueue pushQueue)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
-        _mapper = mapper;
         _pushQueue = pushQueue;
     }
 
@@ -69,7 +66,7 @@ public sealed class NotificationService : INotificationService
             return null;
         }
 
-        var saved = _mapper.Map<AppNotificationDto>(notification);
+        var saved = notification.ToDto();
         // Only a new entry reaches the phone: a repeat folded into an unread one must not buzz again.
         if (isNew)
         {
@@ -113,7 +110,7 @@ public sealed class NotificationService : INotificationService
             DateTime.UtcNow,
             cancellationToken);
 
-        return _mapper.Map<IReadOnlyList<AppNotificationDto>>(notifications);
+        return notifications.Select(notification => notification.ToDto()).ToList();
     }
 
     public async Task<int> GetUnreadCountAsync(CancellationToken cancellationToken = default)
@@ -155,7 +152,7 @@ public sealed class NotificationService : INotificationService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return _mapper.Map<AppNotificationDto>(notification);
+        return notification.ToDto();
     }
 
     public async Task<int> MarkAllAsReadAsync(CancellationToken cancellationToken = default)

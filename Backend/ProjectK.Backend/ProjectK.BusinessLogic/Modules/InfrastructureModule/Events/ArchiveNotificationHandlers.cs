@@ -8,7 +8,7 @@ using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 
 /// <summary>
 /// The danger zone of the archive reaches the other Звʼязкові and the курінний: records are about

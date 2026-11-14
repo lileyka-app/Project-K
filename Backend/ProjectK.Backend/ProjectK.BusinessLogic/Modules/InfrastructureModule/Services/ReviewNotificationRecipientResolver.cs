@@ -6,7 +6,7 @@ using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 
 /// <summary>
 /// Tells exactly the people who could act: every office holder in the kurin whose reach covers the

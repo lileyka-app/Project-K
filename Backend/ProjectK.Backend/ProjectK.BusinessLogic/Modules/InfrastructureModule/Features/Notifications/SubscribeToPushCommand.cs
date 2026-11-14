@@ -2,47 +2,24 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
-
-/// <summary>The key a browser subscribes with; <c>null</c> when this server sends no pushes.</summary>
-public sealed record GetPushPublicKeyQuery : IRequest<ServiceResult<WebPushPublicKeyDto>>;
+namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications;
 
 /// <summary>
 /// Registers the caller's device for push, or refreshes it: the endpoint is the identity, so the
 /// same device posting again (on every app start, as endpoints rotate) updates its row.
 /// </summary>
 public sealed record SubscribeToPushCommand(string Endpoint, string P256dh, string Auth, string? UserAgent)
-    : IRequest<ServiceResult<bool>>;
-
-/// <summary>Forgets one of the caller's devices. Idempotent: an unknown endpoint is already forgotten.</summary>
-public sealed record UnsubscribeFromPushCommand(string Endpoint) : IRequest<ServiceResult<bool>>;
-
-public sealed class GetPushPublicKeyQueryHandler
-    : IRequestHandler<GetPushPublicKeyQuery, ServiceResult<WebPushPublicKeyDto>>
-{
-    private readonly WebPushOptions _options;
-
-    public GetPushPublicKeyQueryHandler(IOptions<WebPushOptions> options)
-    {
-        _options = options.Value;
-    }
-
-    public Task<ServiceResult<WebPushPublicKeyDto>> Handle(GetPushPublicKeyQuery request, CancellationToken cancellationToken)
-    {
-        var key = new WebPushPublicKeyDto { PublicKey = _options.IsConfigured ? _options.PublicKey!.Trim() : null };
-        return Task.FromResult(new ServiceResult<WebPushPublicKeyDto>(ResultType.Success, key));
-    }
-}
+    : IRequest<ServiceResult<Unit>>;
 
 public sealed class SubscribeToPushCommandHandler
-    : IRequestHandler<SubscribeToPushCommand, ServiceResult<bool>>
+    : IRequestHandler<SubscribeToPushCommand, ServiceResult<Unit>>
 {
     private const int MaxUserAgentLength = 300;
 
@@ -60,16 +37,16 @@ public sealed class SubscribeToPushCommandHandler
         _options = options.Value;
     }
 
-    public async Task<ServiceResult<bool>> Handle(SubscribeToPushCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SubscribeToPushCommand request, CancellationToken cancellationToken)
     {
         if (!_currentUserContext.UserId.HasValue)
         {
-            return new ServiceResult<bool>(ResultType.Unauthorized);
+            return ServiceResult<Unit>.Failure(ResultType.Unauthorized, InfrastructureErrors.Unauthorized, "No one is signed in.");
         }
 
         if (!_options.IsConfigured)
         {
-            return ServiceResult<bool>.Failure(ResultType.BadRequest, "PushNotConfigured", "This server does not send push notifications.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, InfrastructureErrors.PushNotConfigured, "This server does not send push notifications.");
         }
 
         var userKey = _currentUserContext.UserId.Value;
@@ -104,39 +81,7 @@ public sealed class SubscribeToPushCommandHandler
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<bool>(ResultType.Success, true);
-    }
-}
-
-public sealed class UnsubscribeFromPushCommandHandler
-    : IRequestHandler<UnsubscribeFromPushCommand, ServiceResult<bool>>
-{
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ICurrentUserContext _currentUserContext;
-
-    public UnsubscribeFromPushCommandHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUserContext)
-    {
-        _unitOfWork = unitOfWork;
-        _currentUserContext = currentUserContext;
-    }
-
-    public async Task<ServiceResult<bool>> Handle(UnsubscribeFromPushCommand request, CancellationToken cancellationToken)
-    {
-        if (!_currentUserContext.UserId.HasValue)
-        {
-            return new ServiceResult<bool>(ResultType.Unauthorized);
-        }
-
-        var device = await _unitOfWork.WebPushSubscriptions.GetByEndpointAsync(request.Endpoint, cancellationToken);
-        // Somebody else's device is not the caller's to forget; the answer is the same either way.
-        if (device is null || device.UserKey != _currentUserContext.UserId.Value)
-        {
-            return new ServiceResult<bool>(ResultType.Success, false);
-        }
-
-        _unitOfWork.WebPushSubscriptions.Delete(device, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }
 
