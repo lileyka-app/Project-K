@@ -73,6 +73,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Фіксований довідник із файлів (проби, вмілості, відзначення) | контракт у `Common/Contracts/<Module>/` | `I…Catalog` |
 | Чисте правило без стану | `Common/Rules/<Module>/` | `…Rules`, static |
 | Підписи для людей | `Common/Rules/<Module>/` | `…Names`, static |
+| Правило чи підписи, яких Infrastructure не потребує | `BusinessLogic/Modules/<M>/Services/` | `…Rules` / `…Names`, static |
 | Таблиця | сутність `Common/Entities/<Module>/`, конфіг `Infrastructure/Persistence/Configurations/<Module>/` | `<Entity>`, `<Entity>Configuration` |
 | Доступ до таблиці | `Infrastructure/Repositories/<Module>/`, лише через UoW | `<Entity>Repository` |
 | Сховище не-таблиці (сесії, кеш, файли) | `Infrastructure/Stores/` | `…Store` |
