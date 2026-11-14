@@ -26,7 +26,7 @@ public sealed class CurrentPermissions : ICurrentPermissions
 
     public async Task<IReadOnlyCollection<Permission>> GetAsync(CancellationToken cancellationToken = default)
     {
-        return _permissions ??= RolePermissionMap.Resolve(Roles(), await PolicyAsync(cancellationToken));
+        return _permissions ??= RolePermissionRules.Resolve(Roles(), await PolicyAsync(cancellationToken));
     }
 
     public async Task<AccessScope?> WidestScopeAsync(
@@ -34,13 +34,13 @@ public sealed class CurrentPermissions : ICurrentPermissions
         ResourceAction action,
         CancellationToken cancellationToken = default)
     {
-        return RolePermissionMap.WidestScope(await GetAsync(cancellationToken), resource, action);
+        return RolePermissionRules.WidestScope(await GetAsync(cancellationToken), resource, action);
     }
 
     public async Task<CapabilityReach> ReachAsync(KurinCapability capability, CancellationToken cancellationToken = default)
     {
         var policy = await PolicyAsync(cancellationToken);
-        return policy.Reach(capability, PolicyAudiences.For(Roles()));
+        return policy.Reach(capability, PolicyAudienceRules.For(Roles()));
     }
 
     private IReadOnlyCollection<string> Roles() => _currentUser.Roles ?? [];

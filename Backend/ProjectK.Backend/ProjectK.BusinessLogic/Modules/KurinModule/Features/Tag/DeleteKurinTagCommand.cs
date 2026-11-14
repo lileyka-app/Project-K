@@ -40,8 +40,8 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
         }
 
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Tag, AuditActions.Tag.Deleted, tag.KurinTagKey, tag.Name,
-                Changes: AuditChanges.Removed(("name", tag.Name), ("carriedBy", tag.Members.Count)),
+            new AuditRecord(AuditArea.Tag, AuditActionNames.Tag.Deleted, tag.KurinTagKey, tag.Name,
+                Changes: AuditChangeRules.Removed(("name", tag.Name), ("carriedBy", tag.Members.Count)),
                 KurinKey: request.KurinKey),
             cancellationToken);
 

@@ -126,11 +126,11 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Badge,
-                previousStatus is null ? AuditActions.Badge.Submitted : AuditActions.Badge.Resubmitted,
+                previousStatus is null ? AuditActionNames.Badge.Submitted : AuditActionNames.Badge.Resubmitted,
                 progress.BadgeProgressKey,
                 ProgressAuditNames.Badge(_badges, progress.BadgeId),
                 request.MemberKey,
-                AuditChanges.Of(("status", previousStatus, progress.Status)),
+                AuditChangeRules.Of(("status", previousStatus, progress.Status)),
                 request.Note),
             cancellationToken);
 

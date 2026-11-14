@@ -26,7 +26,7 @@ public class TileLayoutHandlersTests
     {
         var userKey = Guid.NewGuid();
         _repositoryMock
-            .Setup(r => r.GetByBoardAsync(userKey, TileBoardKeys.MemberCard, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByBoardAsync(userKey, TileBoardNames.MemberCard, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserTileLayout?)null);
 
         UserTileLayout? created = null;
@@ -36,7 +36,7 @@ public class TileLayoutHandlersTests
 
         var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
         var result = await handler.Handle(
-            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "profile", "skills", "probes" }, Array.Empty<string>(), 1),
+            new SaveTileLayoutCommand(userKey, TileBoardNames.MemberCard, new[] { "profile", "skills", "probes" }, Array.Empty<string>(), 1),
             CancellationToken.None);
 
         Assert.Equal(ResultType.Success, result.Type);
@@ -53,17 +53,17 @@ public class TileLayoutHandlersTests
         {
             UserTileLayoutKey = Guid.NewGuid(),
             UserKey = userKey,
-            BoardKey = TileBoardKeys.MemberCard,
+            BoardKey = TileBoardNames.MemberCard,
             TileOrderJson = "[\"profile\"]",
             SchemaVersion = 1
         };
         _repositoryMock
-            .Setup(r => r.GetByBoardAsync(userKey, TileBoardKeys.MemberCard, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByBoardAsync(userKey, TileBoardNames.MemberCard, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
         var result = await handler.Handle(
-            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "skills", "profile" }, Array.Empty<string>(), 1),
+            new SaveTileLayoutCommand(userKey, TileBoardNames.MemberCard, new[] { "skills", "profile" }, Array.Empty<string>(), 1),
             CancellationToken.None);
 
         Assert.Equal(ResultType.Success, result.Type);
@@ -77,7 +77,7 @@ public class TileLayoutHandlersTests
     {
         var userKey = Guid.NewGuid();
         _repositoryMock
-            .Setup(r => r.GetByBoardAsync(userKey, TileBoardKeys.MemberCard, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByBoardAsync(userKey, TileBoardNames.MemberCard, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserTileLayout?)null);
 
         UserTileLayout? created = null;
@@ -87,7 +87,7 @@ public class TileLayoutHandlersTests
 
         var handler = new SaveTileLayoutCommandHandler(_unitOfWorkMock.Object);
         await handler.Handle(
-            new SaveTileLayoutCommand(userKey, TileBoardKeys.MemberCard, new[] { "profile" }, Array.Empty<string>(), 0),
+            new SaveTileLayoutCommand(userKey, TileBoardNames.MemberCard, new[] { "profile" }, Array.Empty<string>(), 0),
             CancellationToken.None);
 
         Assert.Equal(1, created!.SchemaVersion);
@@ -101,7 +101,7 @@ public class TileLayoutHandlersTests
             .Setup(r => r.GetByUserAsync(userKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<UserTileLayout>
             {
-                new() { BoardKey = TileBoardKeys.MemberCard, TileOrderJson = "[\"profile\",\"skills\"]", SchemaVersion = 1 },
+                new() { BoardKey = TileBoardNames.MemberCard, TileOrderJson = "[\"profile\",\"skills\"]", SchemaVersion = 1 },
                 new() { BoardKey = "legacy-removed-board", TileOrderJson = "[\"x\"]", SchemaVersion = 1 }
             });
 
@@ -112,7 +112,7 @@ public class TileLayoutHandlersTests
         Assert.NotNull(result.Data);
         Assert.Single(result.Data!);
         var dto = result.Data!.Single();
-        Assert.Equal(TileBoardKeys.MemberCard, dto.BoardKey);
+        Assert.Equal(TileBoardNames.MemberCard, dto.BoardKey);
         Assert.Equal(new[] { "profile", "skills" }, dto.TileKeys);
     }
 
@@ -124,7 +124,7 @@ public class TileLayoutHandlersTests
             .Setup(r => r.GetByUserAsync(userKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<UserTileLayout>
             {
-                new() { BoardKey = TileBoardKeys.MemberCard, TileOrderJson = "{ this is not json", SchemaVersion = 1 }
+                new() { BoardKey = TileBoardNames.MemberCard, TileOrderJson = "{ this is not json", SchemaVersion = 1 }
             });
 
         var handler = new GetTileLayoutsQueryHandler(_unitOfWorkMock.Object);
@@ -138,13 +138,13 @@ public class TileLayoutHandlersTests
     public async Task Reset_ShouldDelete_WhenLayoutExists()
     {
         var userKey = Guid.NewGuid();
-        var existing = new UserTileLayout { BoardKey = TileBoardKeys.MemberCard };
+        var existing = new UserTileLayout { BoardKey = TileBoardNames.MemberCard };
         _repositoryMock
-            .Setup(r => r.GetByBoardAsync(userKey, TileBoardKeys.MemberCard, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByBoardAsync(userKey, TileBoardNames.MemberCard, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var handler = new ResetTileLayoutCommandHandler(_unitOfWorkMock.Object);
-        var result = await handler.Handle(new ResetTileLayoutCommand(userKey, TileBoardKeys.MemberCard), CancellationToken.None);
+        var result = await handler.Handle(new ResetTileLayoutCommand(userKey, TileBoardNames.MemberCard), CancellationToken.None);
 
         Assert.Equal(ResultType.Success, result.Type);
         _repositoryMock.Verify(r => r.Delete(existing, It.IsAny<CancellationToken>()), Times.Once);
@@ -156,11 +156,11 @@ public class TileLayoutHandlersTests
     {
         var userKey = Guid.NewGuid();
         _repositoryMock
-            .Setup(r => r.GetByBoardAsync(userKey, TileBoardKeys.MemberCard, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByBoardAsync(userKey, TileBoardNames.MemberCard, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserTileLayout?)null);
 
         var handler = new ResetTileLayoutCommandHandler(_unitOfWorkMock.Object);
-        var result = await handler.Handle(new ResetTileLayoutCommand(userKey, TileBoardKeys.MemberCard), CancellationToken.None);
+        var result = await handler.Handle(new ResetTileLayoutCommand(userKey, TileBoardNames.MemberCard), CancellationToken.None);
 
         Assert.Equal(ResultType.Success, result.Type);
         _repositoryMock.Verify(r => r.Delete(It.IsAny<UserTileLayout>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -185,7 +185,7 @@ public class TileLayoutHandlersTests
         {
             UserTileLayoutKey = key,
             UserKey = owner,
-            BoardKey = TileBoardKeys.MemberCard,
+            BoardKey = TileBoardNames.MemberCard,
             TileOrderJson = "[\"old\"]",
             HiddenTilesJson = "[]",
             SchemaVersion = 1,
@@ -197,7 +197,7 @@ public class TileLayoutHandlersTests
 
         Assert.Equal(key, layout.UserTileLayoutKey);
         Assert.Equal(owner, layout.UserKey);
-        Assert.Equal(TileBoardKeys.MemberCard, layout.BoardKey);
+        Assert.Equal(TileBoardNames.MemberCard, layout.BoardKey);
         Assert.Equal(["profile", "skills"], TileLayoutMapping.ReadKeys(layout.TileOrderJson));
         Assert.Equal(["probes"], TileLayoutMapping.ReadKeys(layout.HiddenTilesJson));
         Assert.Equal(1, layout.SchemaVersion);

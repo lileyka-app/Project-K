@@ -72,7 +72,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
             return ServiceResult<MemberAwardDto>.Failure(ResultType.Conflict, MemberErrors.AwardNotSubmitted, "Only a submitted youth award is reviewed.");
         }
 
-        if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, award.MemberKey, cancellationToken: cancellationToken, capability: KurinCapabilities.ConfirmAward(awardLevel)) is { IsAllowed: false } senior)
+        if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, award.MemberKey, cancellationToken: cancellationToken, capability: KurinCapabilityRules.ConfirmAward(awardLevel)) is { IsAllowed: false } senior)
         {
             return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, MemberErrors.SeniorYouthRecord, senior.Reason);
         }
@@ -80,7 +80,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         // The permission at the endpoint is shared by every level; which levels this person may
         // confirm is the kurin's policy.
         var level = await _access.CheckCapabilityAsync(
-            KurinCapabilities.ConfirmAward(awardLevel), ResourceType.Member, award.MemberKey, cancellationToken);
+            KurinCapabilityRules.ConfirmAward(awardLevel), ResourceType.Member, award.MemberKey, cancellationToken);
         if (!level.IsAllowed)
         {
             return ServiceResult<MemberAwardDto>.Failure(
@@ -102,11 +102,11 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Award,
-                approved ? AuditActions.Award.Confirmed : AuditActions.Award.Rejected,
+                approved ? AuditActionNames.Award.Confirmed : AuditActionNames.Award.Rejected,
                 award.MemberAwardKey,
-                KurinReportTerminology.AwardLevel(awardLevel),
+                KurinReportNames.AwardLevel(awardLevel),
                 award.MemberKey,
-                AuditChanges.Of(("status", fromStatus, award.Status))),
+                AuditChangeRules.Of(("status", fromStatus, award.Status))),
             cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

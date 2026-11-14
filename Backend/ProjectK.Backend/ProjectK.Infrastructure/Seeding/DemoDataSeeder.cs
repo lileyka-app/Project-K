@@ -112,14 +112,14 @@ public partial class DemoDataSeeder : IDemoDataSeeder
     // Hronikar from the гуртковий провід, so demo data no longer matched what the app allows.
     // The «інша роль» placeholders are left empty: a seat with no name is not a провід anyone has.
     private static readonly LeadershipRole[] GroupOffices =
-        LeadershipOffices.Grouping[LeadershipType.Group]
+        LeadershipOfficeRules.Grouping[LeadershipType.Group]
             .Where(role => role != LeadershipRole.OtherGroup)
             .ToArray();
 
     private static readonly string[] PrivateCriteria = { "Лідерство", "Ініціатива", "Відповідальність" };
 
     private static readonly LeadershipRole[] KurinOffices =
-        LeadershipOffices.Grouping[LeadershipType.Kurin]
+        LeadershipOfficeRules.Grouping[LeadershipType.Kurin]
             .Where(role => role != LeadershipRole.OtherKurin)
             .ToArray();
 
@@ -669,7 +669,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
             ? total
             : Math.Clamp((int)Math.Round(total * fraction), 1, Math.Max(1, total));
 
-        var mentorRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+        var mentorRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
         var firstSignature = Later(person.JoinedAtUtc.AddDays(30), DaysAgo(540));
         var lastSignature = DaysAgo(_random.Next(3, 40));
         if (lastSignature <= firstSignature)
@@ -711,20 +711,20 @@ public partial class DemoDataSeeder : IDemoDataSeeder
             progress.CompletedByName = mentor.FullName;
             progress.CompletedByRole = mentorRole;
             AddJournalEntry(
-                person, kurinKey, AuditArea.Probe, AuditActions.Probe.Completed, progress.ProbeProgressKey, probe.Title,
+                person, kurinKey, AuditArea.Probe, AuditActionNames.Probe.Completed, progress.ProbeProgressKey, probe.Title,
                 ProbeProgressStatus.InProgress, ProbeProgressStatus.Completed, mentor, mentorRole, completedAt, "Усі точки підписані");
         }
 
         if (status == ProbeProgressStatus.Verified && verifier is not null)
         {
             var verifiedAt = Earlier(progress.CompletedAtUtc!.Value.AddDays(_random.Next(2, 14)), _now.AddHours(-1));
-            var verifierRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+            var verifierRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
             progress.VerifiedAtUtc = verifiedAt;
             progress.VerifiedByUserKey = verifier.UserKey;
             progress.VerifiedByName = verifier.FullName;
             progress.VerifiedByRole = verifierRole;
             AddJournalEntry(
-                person, kurinKey, AuditArea.Probe, AuditActions.Probe.Verified, progress.ProbeProgressKey, probe.Title,
+                person, kurinKey, AuditArea.Probe, AuditActionNames.Probe.Verified, progress.ProbeProgressKey, probe.Title,
                 ProbeProgressStatus.Completed, ProbeProgressStatus.Verified, verifier, verifierRole, verifiedAt, "Перевірено на сходинах куреня");
         }
 
@@ -748,7 +748,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         };
 
         var taken = new HashSet<string>();
-        var mentorRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+        var mentorRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
 
         for (var i = 0; i < confirmedCount; i++)
         {
@@ -776,7 +776,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
             };
             AddSubmittedEntry(progress, person, submittedAt);
             AddJournalEntry(
-                person, kurinKey, AuditArea.Badge, AuditActions.Badge.Confirmed, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
+                person, kurinKey, AuditArea.Badge, AuditActionNames.Badge.Confirmed, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
                 BadgeProgressStatus.Submitted, BadgeProgressStatus.Confirmed, mentor, mentorRole, reviewedAt, note);
             _dbContext.BadgeProgresses.Add(progress);
         }
@@ -824,7 +824,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
                 };
                 AddSubmittedEntry(progress, person, submittedAt);
                 AddJournalEntry(
-                    person, kurinKey, AuditArea.Badge, AuditActions.Badge.Rejected, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
+                    person, kurinKey, AuditArea.Badge, AuditActionNames.Badge.Rejected, progress.BadgeProgressKey, _catalog.GetBadgeTitle(badgeId),
                     BadgeProgressStatus.Submitted, BadgeProgressStatus.Rejected, mentor, mentorRole, reviewedAt, note);
                 _dbContext.BadgeProgresses.Add(progress);
             }
@@ -833,8 +833,8 @@ public partial class DemoDataSeeder : IDemoDataSeeder
 
     private void AddSubmittedEntry(BadgeProgress progress, Person person, DateTime submittedAt, string? note = null) =>
         AddJournalEntry(
-            person, progress.KurinKey, AuditArea.Badge, AuditActions.Badge.Submitted, progress.BadgeProgressKey, _catalog.GetBadgeTitle(progress.BadgeId),
-            null, BadgeProgressStatus.Submitted, person, SystemRole.Member, submittedAt, note);
+            person, progress.KurinKey, AuditArea.Badge, AuditActionNames.Badge.Submitted, progress.BadgeProgressKey, _catalog.GetBadgeTitle(progress.BadgeId),
+            null, BadgeProgressStatus.Submitted, person, SystemRoleNames.Member, submittedAt, note);
 
     /// <summary>
     /// The journal entry the status handlers write for one step of a проба or a вмілість, so the
@@ -855,7 +855,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         string? note) =>
         AddJournalEntry(
             subject, kurinKey, area, action, subjectKey, label,
-            AuditChanges.Of(("status", fromStatus, toStatus)), actor, actorRole, occurredAtUtc, note);
+            AuditChangeRules.Of(("status", fromStatus, toStatus)), actor, actorRole, occurredAtUtc, note);
 
     /// <summary>The journal entry a handler writes for one change of a member's record.</summary>
     private void AddJournalEntry(
@@ -892,10 +892,10 @@ public partial class DemoDataSeeder : IDemoDataSeeder
 
     private void AddAwardEntries(MemberAward award, Person subject, Person submitter, string submitterRole, Person? reviewer)
     {
-        var label = KurinReportTerminology.AwardLevel(award.Level!.Value);
+        var label = KurinReportNames.AwardLevel(award.Level!.Value);
         AddJournalEntry(
-            subject, award.KurinKey, AuditArea.Award, AuditActions.Award.Added, award.MemberAwardKey, label,
-            AuditChanges.Added(
+            subject, award.KurinKey, AuditArea.Award, AuditActionNames.Award.Added, award.MemberAwardKey, label,
+            AuditChangeRules.Added(
                 ("level", award.Level),
                 ("dateAcquired", award.DateAcquired),
                 ("note", award.Note),
@@ -905,25 +905,25 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         if (reviewer is not null && award.ReviewedAtUtc is { } reviewedAt)
         {
             AddJournalEntry(
-                subject, award.KurinKey, AuditArea.Award, AuditActions.Award.Confirmed, award.MemberAwardKey, label,
-                AuditChanges.Of(("status", BadgeProgressStatus.Submitted, award.Status)),
+                subject, award.KurinKey, AuditArea.Award, AuditActionNames.Award.Confirmed, award.MemberAwardKey, label,
+                AuditChangeRules.Of(("status", BadgeProgressStatus.Submitted, award.Status)),
                 reviewer, ZvyazkovyiRole, reviewedAt);
         }
     }
 
     private void AddWarningEntries(MemberWarning warning, Person subject, Person issuer, string issuerRole, Person? revoker)
     {
-        var label = KurinReportTerminology.WarningLevel(warning.Level);
+        var label = KurinReportNames.WarningLevel(warning.Level);
         AddJournalEntry(
-            subject, warning.KurinKey, AuditArea.Warning, AuditActions.Warning.Given, warning.MemberWarningKey, label,
-            AuditChanges.Added(("level", warning.Level), ("expiresAtUtc", warning.ExpiresAtUtc)),
+            subject, warning.KurinKey, AuditArea.Warning, AuditActionNames.Warning.Given, warning.MemberWarningKey, label,
+            AuditChangeRules.Added(("level", warning.Level), ("expiresAtUtc", warning.ExpiresAtUtc)),
             issuer, issuerRole, warning.IssuedAtUtc);
 
         if (revoker is not null && warning.RevokedAtUtc is { } revokedAt)
         {
             AddJournalEntry(
-                subject, warning.KurinKey, AuditArea.Warning, AuditActions.Warning.Cancelled, warning.MemberWarningKey, label,
-                AuditChanges.Removed(
+                subject, warning.KurinKey, AuditArea.Warning, AuditActionNames.Warning.Cancelled, warning.MemberWarningKey, label,
+                AuditChangeRules.Removed(
                     ("level", warning.Level),
                     ("issuedAtUtc", warning.IssuedAtUtc),
                     ("expiresAtUtc", warning.ExpiresAtUtc)),
@@ -963,7 +963,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
             ActorName = zvyazkovyi.FullName,
             ActorRole = ZvyazkovyiRole,
             Area = AuditArea.Settings,
-            Action = AuditActions.Settings.AccessPolicyChanged,
+            Action = AuditActionNames.Settings.AccessPolicyChanged,
             SubjectKey = kurin.KurinKey,
             SubjectLabel = "Права й видимість",
             Changes = narrowed
@@ -973,8 +973,8 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         });
     }
 
-    private static readonly string ZvyazkovyiRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-    private static readonly string VykhovnykRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string ZvyazkovyiRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string VykhovnykRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
 
     // ── Відзначення і перестороги ─────────────────────────────────────────────────────────────────
 
@@ -1735,7 +1735,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         IReadOnlyDictionary<Guid, Guid> memberships)
     {
         var today = DateOnly.FromDateTime(_now);
-        var since = PlastYear.FirstDay(PlastYear.Of(today) - 1);
+        var since = PlastYearRules.FirstDay(PlastYearRules.Of(today) - 1);
         var judge = zvyazkovyi.UserKey;
 
         _dbContext.KurinScoreSettings.Add(new KurinScoreSettings { KurinKey = kurinKey, Algorithm = ScoreAlgorithm.Average, SetByUserKey = judge });

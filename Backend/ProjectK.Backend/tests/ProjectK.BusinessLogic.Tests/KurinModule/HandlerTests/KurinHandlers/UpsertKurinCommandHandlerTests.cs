@@ -302,7 +302,7 @@ public class UpsertKurinHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Settings);
-        entry.Action.Should().Be(AuditActions.Settings.KurinChanged);
+        entry.Action.Should().Be(AuditActionNames.Settings.KurinChanged);
         entry.KurinKey.Should().Be(kurinKey);
         entry.Changes.Should().Equal(new AuditChange("stanytsia", null, "Lviv"));
     }

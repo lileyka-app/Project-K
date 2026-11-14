@@ -220,7 +220,7 @@ public class GetMemberByKeyHandlerTests
             PublicId = "PL-1",
             Address = "Street 1",
             MotherPhone = "+380501112233",
-            CardExtras = MemberCardExtras.Write(new Dictionary<string, string> { ["visa"] = "D" })
+            CardExtras = MemberCardExtraRules.Write(new Dictionary<string, string> { ["visa"] = "D" })
         };
 
         _membershipsMock

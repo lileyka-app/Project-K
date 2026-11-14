@@ -61,7 +61,7 @@ public class AgendaAccessAuthorizeTargetTests
 
     private AgendaAccess AccessFor(string role)
     {
-        var roles = role == SystemRole.Member ? new[] { SystemRole.Member } : new[] { role, SystemRole.Member };
+        var roles = role == SystemRoleNames.Member ? new[] { SystemRoleNames.Member } : new[] { role, SystemRoleNames.Member };
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(x => x.IsAuthenticated).Returns(true);
         user.SetupGet(x => x.UserId).Returns(_userKey);
@@ -89,9 +89,9 @@ public class AgendaAccessAuthorizeTargetTests
         (Target(AgendaTargetType.Leadership, _kv), null, null)
     ];
 
-    private static readonly string Zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-    private static readonly string Vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-    private static readonly string Hurtkovyy = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
+    private static readonly string Zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string Vykhovnyk = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string Hurtkovyy = SystemRoleNames.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
 
     // Kurin · led гурток · other гурток · person in led · person in other · led провід · other провід · КВ.
     [Theory]
@@ -167,7 +167,7 @@ public class AgendaAccessAuthorizeTargetTests
     [Fact]
     public async Task TheKurinny_MayAssignToEveryProvid_AndTheKv()
     {
-        var access = AccessFor(SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy));
+        var access = AccessFor(SystemRoleNames.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy));
 
         (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Leadership, _kv))).IsAllowed.Should().BeTrue();
         (await access.AuthorizeTargetAsync(Target(AgendaTargetType.Leadership, _otherGroupProvid))).IsAllowed.Should().BeTrue();

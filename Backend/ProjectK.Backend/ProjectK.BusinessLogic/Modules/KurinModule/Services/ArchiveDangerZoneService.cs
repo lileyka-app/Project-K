@@ -21,7 +21,7 @@ public sealed class ArchiveDangerZoneService
     /// the one detail that says how — <c>method</c> on the way in, <c>reason</c> on the way out.
     /// </summary>
     public static AuditRecord JournalEntry(string action, Guid userKey, Guid kurinKey, string field, string value)
-        => new(AuditArea.Archive, action, userKey, "Небезпечний режим", Changes: AuditChanges.Added((field, value)), KurinKey: kurinKey);
+        => new(AuditArea.Archive, action, userKey, "Небезпечний режим", Changes: AuditChangeRules.Added((field, value)), KurinKey: kurinKey);
 
     private readonly ArchiveDangerZoneStore _store;
     private readonly IJwtService _jwt;

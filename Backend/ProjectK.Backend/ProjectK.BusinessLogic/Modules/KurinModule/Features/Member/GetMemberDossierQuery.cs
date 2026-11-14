@@ -64,7 +64,7 @@ public sealed class GetMemberDossierQueryHandler
         }
 
         var unknown = request.Include
-            .Where(folder => !MemberDossierFolders.Exists(folder))
+            .Where(folder => !MemberDossierFolderNames.Exists(folder))
             .ToList();
 
         if (unknown.Count > 0)
@@ -72,7 +72,7 @@ public sealed class GetMemberDossierQueryHandler
             return ServiceResult<MemberDossierDto>.Failure(
                 ResultType.BadRequest,
                 MemberErrors.UnknownDossierFolder,
-                $"No such folder: {string.Join(", ", unknown)}. Known folders: {string.Join(", ", MemberDossierFolders.All)}.");
+                $"No such folder: {string.Join(", ", unknown)}. Known folders: {string.Join(", ", MemberDossierFolderNames.All)}.");
         }
 
         var person = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
@@ -87,7 +87,7 @@ public sealed class GetMemberDossierQueryHandler
 
         var wants = new HashSet<string>(request.Include, StringComparer.OrdinalIgnoreCase);
 
-        var memberships = wants.Contains(MemberDossierFolders.Memberships)
+        var memberships = wants.Contains(MemberDossierFolderNames.Memberships)
             ? await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken)
             : null;
 
@@ -97,7 +97,7 @@ public sealed class GetMemberDossierQueryHandler
         var showsBirthDate = mask.Shows(MemberDataGroup.BirthDate, person.UserKey, null)
             || mask.Shows(MemberDataGroup.BirthDate, person.UserKey, await GroupHereAsync(person.MemberKey, memberships, cancellationToken));
 
-        var progress = wants.Contains(MemberDossierFolders.Progress)
+        var progress = wants.Contains(MemberDossierFolderNames.Progress)
             ? await _progress.GetForMemberAsync(request.MemberKey, cancellationToken)
             : null;
 
@@ -125,24 +125,24 @@ public sealed class GetMemberDossierQueryHandler
                     person.ProfileVerifiedAtUtc),
                 Folders:
                 [
-                    new(MemberDossierFolders.Memberships, membershipCount),
-                    new(MemberDossierFolders.Offices, mapped.LeadershipHistories.Count),
-                    new(MemberDossierFolders.Levels, mapped.PlastLevelHistories.Count),
-                    new(MemberDossierFolders.Awards, mapped.Awards.Count),
-                    new(MemberDossierFolders.Warnings, mapped.Warnings.Count),
-                    new(MemberDossierFolders.Progress, progressCount)
+                    new(MemberDossierFolderNames.Memberships, membershipCount),
+                    new(MemberDossierFolderNames.Offices, mapped.LeadershipHistories.Count),
+                    new(MemberDossierFolderNames.Levels, mapped.PlastLevelHistories.Count),
+                    new(MemberDossierFolderNames.Awards, mapped.Awards.Count),
+                    new(MemberDossierFolderNames.Warnings, mapped.Warnings.Count),
+                    new(MemberDossierFolderNames.Progress, progressCount)
                 ],
                 Memberships: memberships?.Select(m => m.InLineOf(LevelsOf(person))).ToList(),
-                Offices: wants.Contains(MemberDossierFolders.Offices)
+                Offices: wants.Contains(MemberDossierFolderNames.Offices)
                     ? [.. mapped.LeadershipHistories]
                     : null,
-                Levels: wants.Contains(MemberDossierFolders.Levels)
+                Levels: wants.Contains(MemberDossierFolderNames.Levels)
                     ? [.. mapped.PlastLevelHistories]
                     : null,
-                Awards: wants.Contains(MemberDossierFolders.Awards)
+                Awards: wants.Contains(MemberDossierFolderNames.Awards)
                     ? [.. mapped.Awards]
                     : null,
-                Warnings: wants.Contains(MemberDossierFolders.Warnings)
+                Warnings: wants.Contains(MemberDossierFolderNames.Warnings)
                     ? [.. mapped.Warnings]
                     : null,
                 Progress: progress));

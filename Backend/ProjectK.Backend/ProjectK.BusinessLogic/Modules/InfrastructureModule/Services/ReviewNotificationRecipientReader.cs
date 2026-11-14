@@ -105,8 +105,8 @@ public sealed class ReviewNotificationRecipientReader : IReviewNotificationRecip
         Guid? groupKey,
         CancellationToken cancellationToken)
     {
-        var offices = LeadershipOffices.Grouping[LeadershipType.Group]
-            .Select(office => (Office: office, Reach: ReachOf(subject, policy, SystemRole.ForOffice(LeadershipType.Group, office))))
+        var offices = LeadershipOfficeRules.Grouping[LeadershipType.Group]
+            .Select(office => (Office: office, Reach: ReachOf(subject, policy, SystemRoleNames.ForOffice(LeadershipType.Group, office))))
             .ToList();
         var wholeKurin = offices.Where(o => o.Reach == CapabilityReach.Kurin).Select(o => o.Office).ToList();
         var ownGroup = offices.Where(o => o.Reach == CapabilityReach.OwnGroup).Select(o => o.Office).ToList();
@@ -144,7 +144,7 @@ public sealed class ReviewNotificationRecipientReader : IReviewNotificationRecip
     {
         if (subject == ReviewSubject.Profile)
         {
-            return RolePermissionMap.WidestScope(RolePermissionMap.StaticGrants([role]), ResourceType.Member, ResourceAction.Update) switch
+            return RolePermissionRules.WidestScope(RolePermissionRules.StaticGrants([role]), ResourceType.Member, ResourceAction.Update) switch
             {
                 AccessScope.KurinWide => CapabilityReach.Kurin,
                 AccessScope.OwnGroups => CapabilityReach.OwnGroup,
@@ -152,7 +152,7 @@ public sealed class ReviewNotificationRecipientReader : IReviewNotificationRecip
             };
         }
 
-        var audiences = PolicyAudiences.For([role]);
+        var audiences = PolicyAudienceRules.For([role]);
         return subject == ReviewSubject.Award
             ? AwardCapabilities.Max(capability => policy.Reach(capability, audiences))
             : policy.Reach(KurinCapability.ReviewBadge, audiences);

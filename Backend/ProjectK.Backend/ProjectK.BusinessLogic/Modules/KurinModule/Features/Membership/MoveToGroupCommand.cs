@@ -92,11 +92,11 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
             await _audit.RecordAsync(
                 new AuditRecord(
                     AuditArea.Membership,
-                    AuditActions.Membership.MovedToGroup,
+                    AuditActionNames.Membership.MovedToGroup,
                     membership.MembershipKey,
                     person?.FullName ?? string.Empty,
                     request.MemberKey,
-                    AuditChanges.Of(("group", fromGroup, toGroup)),
+                    AuditChangeRules.Of(("group", fromGroup, toGroup)),
                     KurinKey: request.KurinKey),
                 cancellationToken);
         }

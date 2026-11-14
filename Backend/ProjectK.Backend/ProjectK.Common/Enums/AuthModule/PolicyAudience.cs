@@ -5,7 +5,7 @@ namespace ProjectK.Common.Enums.AuthModule;
 
 /// <summary>
 /// A column of the kurin's policy: the people a capability is given to. Offices fold into these
-/// in <see cref="PolicyAudiences.For"/> only. Declared in the order the settings page shows them.
+/// in <see cref="PolicyAudienceRules.For"/> only. Declared in the order the settings page shows them.
 /// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<PolicyAudience>))]
 public enum PolicyAudience

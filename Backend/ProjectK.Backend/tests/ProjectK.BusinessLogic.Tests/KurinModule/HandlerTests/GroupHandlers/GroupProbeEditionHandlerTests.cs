@@ -78,7 +78,7 @@ public class GroupProbeEditionHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _group.ProbeEdition.Should().Be(New);
         _audit.Verify(x => x.RecordAsync(
-            It.Is<AuditRecord>(r => r.Action == AuditActions.Settings.GroupProbeEditionChanged
+            It.Is<AuditRecord>(r => r.Action == AuditActionNames.Settings.GroupProbeEditionChanged
                 && r.SubjectKey == _group.GroupKey && r.KurinKey == _kurin.KurinKey
                 && r.Changes!.Single().From == null && r.Changes!.Single().To == NewTitle),
             It.IsAny<CancellationToken>()), Times.Once);

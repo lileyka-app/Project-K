@@ -21,7 +21,7 @@ public class GetSetupStatusQueryHandler : IRequestHandler<GetSetupStatusQuery, S
 
     public async Task<ServiceResult<SetupStatusDto>> Handle(GetSetupStatusQuery request, CancellationToken cancellationToken)
     {
-        var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
+        var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
         var isInitialized = adminUsers.Any();
         return new ServiceResult<SetupStatusDto>(ResultType.Success, new SetupStatusDto(isInitialized));
     }

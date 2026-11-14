@@ -83,7 +83,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             Token = Guid.NewGuid().ToString("N"),
             WaitlistEntryKey = waitlistEntryKey,
             TargetUserKey = user.Id,
-            ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(OnboardingPolicy.InvitationLifetimeDays)
+            ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(OnboardingRules.InvitationLifetimeDays)
         };
 
         _unitOfWork.Invitations.Create(invitation, cancellationToken);
@@ -170,7 +170,7 @@ public sealed class AccountProvisioningService : IAccountProvisioningService
             Token = Guid.NewGuid().ToString("N"),
             WaitlistEntryKey = entryKey,
             TargetUserKey = user.Id,
-            ExpiresAtUtc = now.AddDays(OnboardingPolicy.InvitationLifetimeDays)
+            ExpiresAtUtc = now.AddDays(OnboardingRules.InvitationLifetimeDays)
         };
 
         _unitOfWork.Invitations.Create(invitation, cancellationToken);

@@ -36,7 +36,7 @@ public class SetAgendaArchivePolicyHandlerTests
         result.Type.Should().Be(ResultType.Success);
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Settings);
-        entry.Action.Should().Be(AuditActions.Settings.ArchivePolicyChanged);
+        entry.Action.Should().Be(AuditActionNames.Settings.ArchivePolicyChanged);
         entry.KurinKey.Should().Be(_kurin.KurinKey);
         entry.SubjectLabel.Should().Be(SetAgendaArchivePolicyCommandHandler.Label);
         entry.Changes.Should().Equal(

@@ -41,7 +41,7 @@ public sealed class KurinBranchRequestSubmittedEventHandler
         var raised = notification.Event;
         try
         {
-            var admins = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
+            var admins = await _userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
 
             await _notifications.NotifyManyAsync(
                 admins.Select(admin => new NotificationRequest

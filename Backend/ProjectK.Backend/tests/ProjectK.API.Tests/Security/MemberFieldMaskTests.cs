@@ -14,7 +14,7 @@ namespace ProjectK.API.Tests.Security;
 
 /// <summary>
 /// What each audience sees of a person under a kurin's policy: of themselves, of someone in a гурток
-/// they count as theirs, and of someone elsewhere — for every group of <see cref="MemberDataFields"/>.
+/// they count as theirs, and of someone elsewhere — for every group of <see cref="MemberDataFieldRules"/>.
 /// </summary>
 public class MemberFieldMaskTests
 {
@@ -24,14 +24,14 @@ public class MemberFieldMaskTests
 
     private static readonly Dictionary<PolicyAudience, string> RoleOf = new()
     {
-        [PolicyAudience.Zvyazkovyi] = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi),
-        [PolicyAudience.Vykhovnyk] = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk),
-        [PolicyAudience.Instruktor] = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Instruktor),
-        [PolicyAudience.Kurinnyy] = SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy),
-        [PolicyAudience.KurinProvid] = SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Pysar),
-        [PolicyAudience.Hurtkovyy] = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy),
-        [PolicyAudience.GroupProvid] = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Pysar),
-        [PolicyAudience.Youth] = SystemRole.Member
+        [PolicyAudience.Zvyazkovyi] = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi),
+        [PolicyAudience.Vykhovnyk] = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk),
+        [PolicyAudience.Instruktor] = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Instruktor),
+        [PolicyAudience.Kurinnyy] = SystemRoleNames.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy),
+        [PolicyAudience.KurinProvid] = SystemRoleNames.ForOffice(LeadershipType.Kurin, LeadershipRole.Pysar),
+        [PolicyAudience.Hurtkovyy] = SystemRoleNames.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy),
+        [PolicyAudience.GroupProvid] = SystemRoleNames.ForOffice(LeadershipType.Group, LeadershipRole.Pysar),
+        [PolicyAudience.Youth] = SystemRoleNames.Member
     };
 
     // The closed defaults the owner chose: contacts within one's own гурток for its провід and
@@ -57,9 +57,9 @@ public class MemberFieldMaskTests
     public static TheoryData<PolicyAudience, MemberDataGroup> EveryAudienceAndGroup()
     {
         var data = new TheoryData<PolicyAudience, MemberDataGroup>();
-        foreach (var audience in KurinCapabilities.Audiences)
+        foreach (var audience in KurinCapabilityRules.Audiences)
         {
-            foreach (var info in MemberDataFields.All)
+            foreach (var info in MemberDataFieldRules.All)
             {
                 data.Add(audience, info.Group);
             }
@@ -141,11 +141,11 @@ public class MemberFieldMaskTests
     [Fact]
     public void EveryDataGroup_ShouldBeShownByItsOwnCapabilityRow()
     {
-        var dataRows = KurinCapabilities.All
+        var dataRows = KurinCapabilityRules.All
             .Where(descriptor => descriptor.Group == CapabilityGroup.MemberData)
             .Select(descriptor => descriptor.Key);
 
-        Assert.Equal(dataRows.Order(), MemberDataFields.All.Select(info => info.Capability).Order());
+        Assert.Equal(dataRows.Order(), MemberDataFieldRules.All.Select(info => info.Capability).Order());
     }
 
     /// <summary>
@@ -163,13 +163,13 @@ public class MemberFieldMaskTests
             .Single();
         Assert.Equal(AuthorizationPolicies.RequireKurinManagement, authorize.Policy);
 
-        var managers = SystemRole.All().Where(role => RolePermissionMap.GrantsWholeKurinManagement([role])).ToList();
+        var managers = SystemRoleNames.All().Where(role => RolePermissionRules.GrantsWholeKurinManagement([role])).ToList();
         Assert.NotEmpty(managers);
-        Assert.All(managers, role => Assert.Contains(PolicyAudience.Zvyazkovyi, PolicyAudiences.For([role])));
+        Assert.All(managers, role => Assert.Contains(PolicyAudience.Zvyazkovyi, PolicyAudienceRules.For([role])));
 
-        foreach (var info in MemberDataFields.All)
+        foreach (var info in MemberDataFieldRules.All)
         {
-            var descriptor = KurinCapabilities.Get(info.Capability);
+            var descriptor = KurinCapabilityRules.Get(info.Capability);
             Assert.True(descriptor.IsLocked(PolicyAudience.Zvyazkovyi));
             Assert.Equal(CapabilityReach.Kurin, descriptor.Defaults[PolicyAudience.Zvyazkovyi]);
             Assert.NotEmpty(KurinAccessPolicy.Validate(new Dictionary<string, IReadOnlyDictionary<string, string?>>
@@ -184,8 +184,8 @@ public class MemberFieldMaskTests
 
     private static CapabilityReach ReachOf(PolicyAudience audience, MemberDataGroup group, KurinAccessPolicy policy)
     {
-        var audiences = PolicyAudiences.For([RoleOf[audience]]);
-        var reach = policy.Reach(MemberDataFields.Of(group).Capability, audiences);
+        var audiences = PolicyAudienceRules.For([RoleOf[audience]]);
+        var reach = policy.Reach(MemberDataFieldRules.Of(group).Capability, audiences);
         if (group == MemberDataGroup.Birthday)
         {
             var dateReach = policy.Reach(KurinCapability.SeeBirthDate, audiences);
@@ -197,10 +197,10 @@ public class MemberFieldMaskTests
 
     private static MemberFieldMask MaskFor(PolicyAudience audience, KurinAccessPolicy policy)
     {
-        var audiences = PolicyAudiences.For([RoleOf[audience]]);
+        var audiences = PolicyAudienceRules.For([RoleOf[audience]]);
         return new MemberFieldMask(
             Viewer,
-            MemberDataFields.All.ToDictionary(info => info.Group, info => policy.Reach(info.Capability, audiences)),
+            MemberDataFieldRules.All.ToDictionary(info => info.Group, info => policy.Reach(info.Capability, audiences)),
             [OwnGroup]);
     }
 

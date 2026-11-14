@@ -42,13 +42,13 @@ public sealed class AccessContextResolver : IAccessContextResolver
     /// </summary>
     public async Task<AccessContext> ResolveAsync(AppUser user, CancellationToken cancellationToken = default)
     {
-        var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { SystemRole.Member };
+        var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { SystemRoleNames.Member };
 
         // The identity store is down to one role that means anything: Admin is granted to a person,
         // not to a person-in-a-kurin, and is the only thing that outlives the kurin they are in.
-        if (await _userManager.IsInRoleAsync(user, SystemRole.Admin))
+        if (await _userManager.IsInRoleAsync(user, SystemRoleNames.Admin))
         {
-            roles.Add(SystemRole.Admin);
+            roles.Add(SystemRoleNames.Admin);
         }
 
         // The account's choice is a bare key with no foreign key behind it, so it can outlive the
@@ -68,7 +68,7 @@ public sealed class AccessContextResolver : IAccessContextResolver
 
         foreach (var office in offices)
         {
-            roles.Add(SystemRole.ForOffice(office.Type, office.Role));
+            roles.Add(SystemRoleNames.ForOffice(office.Type, office.Role));
         }
 
         return new AccessContext(user.Id, kurinKey, [.. roles]);

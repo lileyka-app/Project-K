@@ -98,12 +98,12 @@ public class MemberController : ControllerBase
         var dossier = response.Data!;
         return folder.ToLowerInvariant() switch
         {
-            MemberDossierFolders.Memberships => Ok(dossier.Memberships),
-            MemberDossierFolders.Offices => Ok(dossier.Offices),
-            MemberDossierFolders.Levels => Ok(dossier.Levels),
-            MemberDossierFolders.Awards => Ok(dossier.Awards),
-            MemberDossierFolders.Warnings => Ok(dossier.Warnings),
-            MemberDossierFolders.Progress => Ok(dossier.Progress),
+            MemberDossierFolderNames.Memberships => Ok(dossier.Memberships),
+            MemberDossierFolderNames.Offices => Ok(dossier.Offices),
+            MemberDossierFolderNames.Levels => Ok(dossier.Levels),
+            MemberDossierFolderNames.Awards => Ok(dossier.Awards),
+            MemberDossierFolderNames.Warnings => Ok(dossier.Warnings),
+            MemberDossierFolderNames.Progress => Ok(dossier.Progress),
             _ => Ok(dossier.Folders)
         };
     }
@@ -118,7 +118,7 @@ public class MemberController : ControllerBase
         }
 
         return string.Equals(include.Trim(), "all", StringComparison.OrdinalIgnoreCase)
-            ? MemberDossierFolders.All
+            ? MemberDossierFolderNames.All
             : [.. include.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
     }
 

@@ -23,11 +23,11 @@ public sealed class DutyRights
 
     /// <summary>Whether (resource, action) is theirs over the whole kurin.</summary>
     public bool WholeKurin(ResourceType resource, ResourceAction action) =>
-        RolePermissionMap.WidestScope(_permissions, resource, action) == AccessScope.KurinWide;
+        RolePermissionRules.WidestScope(_permissions, resource, action) == AccessScope.KurinWide;
 
     /// <summary>Whether (resource, action) is theirs for this гурток: kurin-wide, or a гурток they lead.</summary>
     public bool ForGroup(ResourceType resource, ResourceAction action, Guid? groupKey) =>
-        RolePermissionMap.WidestScope(_permissions, resource, action) switch
+        RolePermissionRules.WidestScope(_permissions, resource, action) switch
         {
             AccessScope.KurinWide => true,
             AccessScope.OwnGroups => groupKey is { } key && _ledGroupKeys.Contains(key),
@@ -36,5 +36,5 @@ public sealed class DutyRights
 
     /// <summary>Whether (resource, action) is theirs for at least one гурток.</summary>
     public bool ForAnyGroup(ResourceType resource, ResourceAction action) =>
-        WholeKurin(resource, action) || (_ledGroupKeys.Count > 0 && RolePermissionMap.WidestScope(_permissions, resource, action) == AccessScope.OwnGroups);
+        WholeKurin(resource, action) || (_ledGroupKeys.Count > 0 && RolePermissionRules.WidestScope(_permissions, resource, action) == AccessScope.OwnGroups);
 }

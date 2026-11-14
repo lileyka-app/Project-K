@@ -36,21 +36,21 @@ public static class MemberCardFieldRules
             return new Outcome(existing?.CardExtras, error);
         }
 
-        var values = MemberCardExtras.Read(existing?.CardExtras);
+        var values = MemberCardExtraRules.Read(existing?.CardExtras);
         error = MergeExtras(card, request, values, hiddenFromWriter.Contains(MemberDataGroup.Extras));
         return error is null
-            ? new Outcome(MemberCardExtras.Write(values), null)
+            ? new Outcome(MemberCardExtraRules.Write(values), null)
             : new Outcome(existing?.CardExtras, error);
     }
 
     private static void KeepWhatTheFormDidNotSend(KraiCardFieldsSettings card, UpsertMemberProfileCommand request, MemberEntity? existing)
     {
-        if (card.ModeOf(KraiCardFields.MiddleName) == KraiCardFields.Hidden)
+        if (card.ModeOf(KraiCardFieldNames.MiddleName) == KraiCardFieldNames.Hidden)
         {
             request.MiddleName = existing?.MiddleName ?? string.Empty;
         }
 
-        if (card.ModeOf(KraiCardFields.PhoneNumber) == KraiCardFields.Hidden)
+        if (card.ModeOf(KraiCardFieldNames.PhoneNumber) == KraiCardFieldNames.Hidden)
         {
             request.PhoneNumber = existing?.PhoneNumber ?? string.Empty;
         }
@@ -60,12 +60,12 @@ public static class MemberCardFieldRules
 
         // Address and school are private: a form that never showed them sends nothing, and that keeps
         // what is stored. An empty value clears it.
-        if (card.ModeOf(KraiCardFields.Address) == KraiCardFields.Hidden || request.Address is null)
+        if (card.ModeOf(KraiCardFieldNames.Address) == KraiCardFieldNames.Hidden || request.Address is null)
         {
             request.Address = existing?.Address;
         }
 
-        if (card.ModeOf(KraiCardFields.School) == KraiCardFields.Hidden || request.School is null)
+        if (card.ModeOf(KraiCardFieldNames.School) == KraiCardFieldNames.Hidden || request.School is null)
         {
             request.School = existing?.School;
         }
@@ -74,8 +74,8 @@ public static class MemberCardFieldRules
         request.School = TextRules.TrimOrNull(request.School);
 
         // Parents' contacts are private the same way, each value on its own.
-        var parentsHidden = card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Hidden;
-        foreach (var field in ParentContacts.Fields)
+        var parentsHidden = card.ModeOf(KraiCardFieldNames.Parents) == KraiCardFieldNames.Hidden;
+        foreach (var field in ParentContactRules.Fields)
         {
             var sent = field.Get(request);
             var kept = existing is null ? null : field.Get(existing);
@@ -88,13 +88,13 @@ public static class MemberCardFieldRules
         var parentNames = new[] { request.MotherFirstName, request.MotherLastName, request.FatherFirstName, request.FatherLastName };
         if (parentNames.Any(name => name?.Length > MaxValueLength))
         {
-            return $"Поле «{KraiCardFields.Labels[KraiCardFields.Parents]}» задовге.";
+            return $"Поле «{KraiCardFieldNames.Labels[KraiCardFieldNames.Parents]}» задовге.";
         }
 
         if (request.Address?.Length > MaxValueLength || request.School?.Length > MaxValueLength)
         {
-            var field = request.Address?.Length > MaxValueLength ? KraiCardFields.Address : KraiCardFields.School;
-            return $"Поле «{KraiCardFields.Labels[field]}» задовге.";
+            var field = request.Address?.Length > MaxValueLength ? KraiCardFieldNames.Address : KraiCardFieldNames.School;
+            return $"Поле «{KraiCardFieldNames.Labels[field]}» задовге.";
         }
 
         return null;
@@ -107,23 +107,23 @@ public static class MemberCardFieldRules
     {
         var missing = new[]
             {
-                (Field: KraiCardFields.MiddleName, Value: request.MiddleName, Group: (MemberDataGroup?)null),
-                (Field: KraiCardFields.PhoneNumber, Value: request.PhoneNumber, Group: MemberDataGroup.Contacts),
-                (Field: KraiCardFields.Address, Value: request.Address, Group: MemberDataGroup.Address),
-                (Field: KraiCardFields.School, Value: request.School, Group: MemberDataGroup.Address)
+                (Field: KraiCardFieldNames.MiddleName, Value: request.MiddleName, Group: (MemberDataGroup?)null),
+                (Field: KraiCardFieldNames.PhoneNumber, Value: request.PhoneNumber, Group: MemberDataGroup.Contacts),
+                (Field: KraiCardFieldNames.Address, Value: request.Address, Group: MemberDataGroup.Address),
+                (Field: KraiCardFieldNames.School, Value: request.School, Group: MemberDataGroup.Address)
             }
             .Where(field => field.Group is not { } group || !hiddenFromWriter.Contains(group))
-            .FirstOrDefault(field => card.ModeOf(field.Field) == KraiCardFields.Required && string.IsNullOrWhiteSpace(field.Value));
+            .FirstOrDefault(field => card.ModeOf(field.Field) == KraiCardFieldNames.Required && string.IsNullOrWhiteSpace(field.Value));
 
         // Required parents' contacts mean at least one parent the kurin can call.
-        if (missing.Field is null && card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Required
+        if (missing.Field is null && card.ModeOf(KraiCardFieldNames.Parents) == KraiCardFieldNames.Required
             && !hiddenFromWriter.Contains(MemberDataGroup.Parents)
             && request.MotherPhone is null && request.FatherPhone is null)
         {
-            missing.Field = KraiCardFields.Parents;
+            missing.Field = KraiCardFieldNames.Parents;
         }
 
-        return missing.Field is null ? null : $"Поле «{KraiCardFields.Labels[missing.Field]}» обовʼязкове.";
+        return missing.Field is null ? null : $"Поле «{KraiCardFieldNames.Labels[missing.Field]}» обовʼязкове.";
     }
 
     private static string? MergeExtras(
@@ -142,7 +142,7 @@ public static class MemberCardFieldRules
                     return $"Поле «{field.Label}» задовге.";
                 }
 
-                if (value.Length > 0 && field.Type == KraiCardFields.Date
+                if (value.Length > 0 && field.Type == KraiCardFieldNames.Date
                     && !DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
                 {
                     return $"Поле «{field.Label}» має бути датою.";

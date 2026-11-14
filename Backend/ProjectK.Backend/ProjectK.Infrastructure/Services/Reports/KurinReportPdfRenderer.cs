@@ -127,7 +127,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             ("Дата народження", member.DateOfBirth.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
             ("Адреса", member.Address ?? "-"),
             ("Школа", member.School ?? "-"),
-            (LevelLabel, KurinReportTerminology.PlastLevel(member.LatestPlastLevel)),
+            (LevelLabel, KurinReportNames.PlastLevel(member.LatestPlastLevel)),
             ("Діловодство", FormatList(CurrentOffices(member)))
         };
         if (report.ShowsTags)
@@ -182,7 +182,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     column.Item().AlignRight().Text(report.Header.GeneratedByEmail).FontSize(8).FontColor(Colors.Grey.Darken1);
                 }
 
-                column.Item().AlignRight().Text(ReleaseDisplay.Label(report.Header.BackendVersion, report.Header.BackendCodename))
+                column.Item().AlignRight().Text(ReleaseDisplayRules.Label(report.Header.BackendVersion, report.Header.BackendCodename))
                     .FontSize(8)
                     .FontColor(Colors.Grey.Darken1);
             });
@@ -384,7 +384,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 {
                     BodyCell(table, member.FullName);
                     BodyCell(table, member.GroupName ?? "-");
-                    BodyCell(table, KurinReportTerminology.PlastLevel(member.LatestPlastLevel));
+                    BodyCell(table, KurinReportNames.PlastLevel(member.LatestPlastLevel));
                     BodyCell(table, member.PhoneNumber);
                     if (showsTags)
                     {
@@ -522,7 +522,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     BodyCell(table, member.FullName);
                     BodyCell(table, member.Email);
                     BodyCell(table, member.PhoneNumber ?? "-");
-                    BodyCell(table, KurinReportTerminology.PlastLevel(member.LatestPlastLevel));
+                    BodyCell(table, KurinReportNames.PlastLevel(member.LatestPlastLevel));
                 }
             });
         });

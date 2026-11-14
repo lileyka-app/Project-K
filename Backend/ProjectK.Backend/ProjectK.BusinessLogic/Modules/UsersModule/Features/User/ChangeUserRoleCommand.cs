@@ -48,7 +48,7 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
         }
 
         var currentRoles = await _userManager.GetRolesAsync(targetUser);
-        var isCurrentlyAdmin = currentRoles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase);
+        var isCurrentlyAdmin = currentRoles.Contains(SystemRoleNames.Admin, StringComparer.OrdinalIgnoreCase);
 
         if (request.NewRole == UserRole.Admin)
         {
@@ -57,7 +57,7 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
                 return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
             }
 
-            var addResult = await _userManager.AddToRoleAsync(targetUser, SystemRole.Admin);
+            var addResult = await _userManager.AddToRoleAsync(targetUser, SystemRoleNames.Admin);
             if (!addResult.Succeeded)
             {
                 return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.AdminRoleNotGranted, "Failed to grant admin role.");
@@ -67,16 +67,16 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
         {
             if (isCurrentlyAdmin)
             {
-                var removeResult = await _userManager.RemoveFromRoleAsync(targetUser, SystemRole.Admin);
+                var removeResult = await _userManager.RemoveFromRoleAsync(targetUser, SystemRoleNames.Admin);
                 if (!removeResult.Succeeded)
                 {
                     return ServiceResult<Unit>.Failure(ResultType.BadRequest, UsersErrors.AdminRoleNotRevoked, "Failed to revoke admin role.");
                 }
             }
 
-            if (!currentRoles.Contains(SystemRole.Member, StringComparer.OrdinalIgnoreCase))
+            if (!currentRoles.Contains(SystemRoleNames.Member, StringComparer.OrdinalIgnoreCase))
             {
-                await _userManager.AddToRoleAsync(targetUser, SystemRole.Member);
+                await _userManager.AddToRoleAsync(targetUser, SystemRoleNames.Member);
             }
         }
 

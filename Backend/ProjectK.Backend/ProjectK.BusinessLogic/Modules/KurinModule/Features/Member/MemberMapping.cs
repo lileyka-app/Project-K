@@ -38,7 +38,7 @@ public static class MemberMapping
         FatherFirstName = member.FatherFirstName,
         FatherLastName = member.FatherLastName,
         FatherPhone = member.FatherPhone,
-        CardExtras = MemberCardExtras.Read(member.CardExtras),
+        CardExtras = MemberCardExtraRules.Read(member.CardExtras),
         // The newest ступінь on record; a record older than the history holds it alone.
         LatestPlastLevel = member.PlastLevelHistory
             .OrderByDescending(history => history.DateAchieved)
@@ -99,7 +99,7 @@ public static class MemberMapping
         PlastLevel = history.PlastLevel,
         DateAchieved = history.DateAchieved,
         IsPlastunka = history.IsPlastunka,
-        CatalogId = PlastLevelDegrees.CatalogId(history.PlastLevel, history.IsPlastunka)
+        CatalogId = PlastLevelDegreeRules.CatalogId(history.PlastLevel, history.IsPlastunka)
     };
 
     /// <summary>An office the person held, named by its провід: the type, the гурток and the kurin it is in.</summary>

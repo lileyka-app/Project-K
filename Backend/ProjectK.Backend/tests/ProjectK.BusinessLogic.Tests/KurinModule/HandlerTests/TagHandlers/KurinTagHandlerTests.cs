@@ -150,8 +150,8 @@ public class KurinTagHandlerTests
         _tags.Verify(t => t.RemoveAssignment(It.Is<MemberTag>(a => a.KurinTagKey == gone.KurinTagKey)), Times.Once);
         _journal.Select(entry => (entry.Action, entry.SubjectLabel, entry.SubjectMemberKey)).Should().BeEquivalentTo(new[]
         {
-            (AuditActions.Tag.Put, "Рада куреня", (Guid?)MemberKey),
-            (AuditActions.Tag.TakenOff, "Табір 2026", (Guid?)MemberKey)
+            (AuditActionNames.Tag.Put, "Рада куреня", (Guid?)MemberKey),
+            (AuditActionNames.Tag.TakenOff, "Табір 2026", (Guid?)MemberKey)
         });
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -160,7 +160,7 @@ public class KurinTagHandlerTests
     public async Task SetMemberTags_AnAdminOutsideAnyKurin_SetsThemInTheKurinNamed_OrThePersonsOnlyOne()
     {
         _currentUser.Setup(c => c.KurinKey).Returns((Guid?)null);
-        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(true);
+        _currentUser.Setup(c => c.IsInRole(SystemRoleNames.Admin)).Returns(true);
         var tag = Tag("Табір 2026");
         _tags.Setup(t => t.GetForKurinAsync(KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([tag]);
         _tags.Setup(t => t.GetTrackedForMemberAsync(KurinKey, MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
@@ -179,7 +179,7 @@ public class KurinTagHandlerTests
     public async Task SetMemberTags_AnAdminOutsideAnyKurin_MustNameItForSomeoneInSeveral()
     {
         _currentUser.Setup(c => c.KurinKey).Returns((Guid?)null);
-        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(true);
+        _currentUser.Setup(c => c.IsInRole(SystemRoleNames.Admin)).Returns(true);
         _memberships.Setup(m => m.GetActiveForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new Membership { MemberKey = MemberKey, KurinKey = KurinKey }, new Membership { MemberKey = MemberKey, KurinKey = Guid.NewGuid() }]);
 
@@ -259,7 +259,7 @@ public class KurinTagHandlerTests
 
         result.Data!.MemberCount.Should().Be(1);
         _tags.Verify(t => t.RemoveAssignment(It.Is<MemberTag>(a => a.MemberKey == other)), Times.Once);
-        _journal.Select(entry => entry.Action).Should().BeEquivalentTo([AuditActions.Tag.Put, AuditActions.Tag.TakenOff]);
+        _journal.Select(entry => entry.Action).Should().BeEquivalentTo([AuditActionNames.Tag.Put, AuditActionNames.Tag.TakenOff]);
     }
 
     /// <summary>Who left the kurin is not in the list sent back from the screen; their tag waits for a return.</summary>
@@ -276,7 +276,7 @@ public class KurinTagHandlerTests
         await TagMembersHandler().Handle(new SetTagMembersCommand(KurinKey, tag.KurinTagKey, [MemberKey]), default);
 
         _tags.Verify(t => t.RemoveAssignment(It.IsAny<MemberTag>()), Times.Never);
-        _journal.Select(entry => entry.Action).Should().Equal(AuditActions.Tag.Put);
+        _journal.Select(entry => entry.Action).Should().Equal(AuditActionNames.Tag.Put);
     }
 
     [Fact]
@@ -292,7 +292,7 @@ public class KurinTagHandlerTests
 
         stored.Enabled.Should().BeNull("on is what a senior kurin has anyway, so it keeps following its branch");
         stored.OwnTagsVisible.Should().BeFalse();
-        _journal.Single().Action.Should().Be(AuditActions.Settings.TagSettingsChanged);
+        _journal.Single().Action.Should().Be(AuditActionNames.Settings.TagSettingsChanged);
     }
 
     private SetMemberTagsCommandHandler MemberTagsHandler() =>

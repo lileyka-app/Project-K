@@ -195,7 +195,7 @@ public sealed class AgendaAccess : IAgendaAccess
 
         // A гуртковий answers for tasks set to their гурток even where their office grants no right to
         // manage it (a youth гуртковий of УПЮ), so any group office counts here, not only leadership.
-        var holdsGroupOffice = (_currentUser.Roles ?? Array.Empty<string>()).Any(SystemRole.IsGroupOffice);
+        var holdsGroupOffice = (_currentUser.Roles ?? Array.Empty<string>()).Any(SystemRoleNames.IsGroupOffice);
         IReadOnlyCollection<Guid> ledGroups = Array.Empty<Guid>();
         if ((isLeadership || holdsGroupOffice) && !canSeeWholeKurin && userKey.HasValue)
         {
@@ -310,7 +310,7 @@ public sealed class AgendaAccess : IAgendaAccess
     /// only accepted on events the user could actually see. Requires <see cref="AgendaItem.Assignments"/>.
     /// </summary>
     public static bool IsVisibleTo(AgendaItem item, AgendaViewerContext viewer)
-        => AgendaVisibility.IsVisible(item, viewer.ToScope());
+        => AgendaVisibilityRules.IsVisible(item, viewer.ToScope());
 
     /// <summary>
     /// Whether a drag on the board moves anything for this viewer: their own part, or the shared

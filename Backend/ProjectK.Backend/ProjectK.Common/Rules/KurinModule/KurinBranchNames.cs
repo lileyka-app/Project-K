@@ -19,7 +19,7 @@ public static class KurinBranchNames
 
     /// <summary>«5-й курінь УСП · 20-й курінь УПС».</summary>
     public static string DescribeSenior(IEnumerable<KurinNumbering> branches)
-        => string.Join(" · ", KurinBranchSet.Ordered(branches, b => b.Branch)
+        => string.Join(" · ", KurinBranchSetRules.Ordered(branches, b => b.Branch)
             .Select(b => b.Number is int number ? $"{number}-й курінь {Label(b.Branch)}" : $"курінь {Label(b.Branch)}"));
 
     /// <summary>
@@ -35,7 +35,7 @@ public static class KurinBranchNames
     /// <inheritdoc cref="InText(ProjectK.Common.Entities.KurinModule.Kurin)"/>
     public static string InText(IReadOnlyCollection<KurinNumbering> branches)
     {
-        var senior = branches.Where(b => KurinBranchSet.IsSenior(b.Branch)).ToList();
+        var senior = branches.Where(b => KurinBranchSetRules.IsSenior(b.Branch)).ToList();
         if (senior.Count > 0)
         {
             return DescribeSenior(senior);

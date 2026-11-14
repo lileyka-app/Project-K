@@ -12,12 +12,12 @@ public class MemberCardFieldsTests
     private static readonly KraiCardFieldsSettings Prague = new(
         new Dictionary<string, string>
         {
-            [KraiCardFields.MiddleName] = KraiCardFields.Hidden,
-            [KraiCardFields.PhoneNumber] = KraiCardFields.Optional
+            [KraiCardFieldNames.MiddleName] = KraiCardFieldNames.Hidden,
+            [KraiCardFieldNames.PhoneNumber] = KraiCardFieldNames.Optional
         },
         [
             new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true },
-            new KraiCardExtraField { Key = "visaUntil", Label = "Віза до", Type = KraiCardFields.Date }
+            new KraiCardExtraField { Key = "visaUntil", Label = "Віза до", Type = KraiCardFieldNames.Date }
         ]);
 
     private static UpsertMemberProfileCommand Write(Dictionary<string, string>? extras = null, string middleName = "", string phone = "") => new()
@@ -92,7 +92,7 @@ public class MemberCardFieldsTests
             Existing("""{"visaType":"D","oldField":"kept"}"""));
 
         outcome.Error.Should().BeNull();
-        MemberCardExtras.Read(outcome.CardExtras).Should().Equal(new Dictionary<string, string>
+        MemberCardExtraRules.Read(outcome.CardExtras).Should().Equal(new Dictionary<string, string>
         {
             ["oldField"] = "kept",
             ["visaType"] = "D",
@@ -116,7 +116,7 @@ public class MemberCardFieldsTests
             Write(new() { ["visaUntil"] = "" }),
             Existing("""{"visaType":"D","visaUntil":"2027-06-30"}"""));
 
-        MemberCardExtras.Read(outcome.CardExtras).Should().Equal(new Dictionary<string, string> { ["visaType"] = "D" });
+        MemberCardExtraRules.Read(outcome.CardExtras).Should().Equal(new Dictionary<string, string> { ["visaType"] = "D" });
     }
 
     [Fact]
@@ -151,8 +151,8 @@ public class MemberCardFieldsTests
         var card = new KraiCardFieldsSettings(
             new Dictionary<string, string>
             {
-                [KraiCardFields.Address] = KraiCardFields.Hidden,
-                [KraiCardFields.Parents] = KraiCardFields.Hidden
+                [KraiCardFieldNames.Address] = KraiCardFieldNames.Hidden,
+                [KraiCardFieldNames.Parents] = KraiCardFieldNames.Hidden
             }, []);
         var request = Write(middleName: "I", phone: "+420777000111");
         request.Address = "Somewhere else";
@@ -168,7 +168,7 @@ public class MemberCardFieldsTests
     public void ARequiredSchool_MustBeFilled()
     {
         var card = new KraiCardFieldsSettings(
-            new Dictionary<string, string> { [KraiCardFields.School] = KraiCardFields.Required }, []);
+            new Dictionary<string, string> { [KraiCardFieldNames.School] = KraiCardFieldNames.Required }, []);
         var request = Write(middleName: "I", phone: "+420777000111");
         request.School = " ";
 
@@ -178,9 +178,9 @@ public class MemberCardFieldsTests
     [Fact]
     public void AddressAndSchool_AreOptionalWithoutAProfile_AndAKurinMayHideThem()
     {
-        KraiCardFieldsSettings.Default.ModeOf(KraiCardFields.Address).Should().Be(KraiCardFields.Optional);
+        KraiCardFieldsSettings.Default.ModeOf(KraiCardFieldNames.Address).Should().Be(KraiCardFieldNames.Optional);
         KraiCardFieldsSettings.Default.Hideable().Select(field => field.Key)
-            .Should().BeEquivalentTo([KraiCardFields.Address, KraiCardFields.School, KraiCardFields.Parents]);
+            .Should().BeEquivalentTo([KraiCardFieldNames.Address, KraiCardFieldNames.School, KraiCardFieldNames.Parents]);
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class MemberCardFieldsTests
     public void RequiredParents_NeedAtLeastOnePhone()
     {
         var card = new KraiCardFieldsSettings(
-            new Dictionary<string, string> { [KraiCardFields.Parents] = KraiCardFields.Required }, []);
+            new Dictionary<string, string> { [KraiCardFieldNames.Parents] = KraiCardFieldNames.Required }, []);
         var request = Write(middleName: "I", phone: "+420777000111");
         request.MotherFirstName = "Olena";
 

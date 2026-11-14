@@ -120,7 +120,7 @@ public class KurinAccessPolicyHandlerTests
         // One change per cell that moved, from the reach it had to the new one; filed under the kurin.
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Settings);
-        entry.Action.Should().Be(AuditActions.Settings.AccessPolicyChanged);
+        entry.Action.Should().Be(AuditActionNames.Settings.AccessPolicyChanged);
         entry.KurinKey.Should().Be(_kurin.KurinKey);
         entry.SubjectLabel.Should().Be(SetKurinAccessPolicyCommandHandler.Label);
         entry.Changes.Should().HaveCount(2).And.OnlyContain(change => change.From != null && !change.Redacted);

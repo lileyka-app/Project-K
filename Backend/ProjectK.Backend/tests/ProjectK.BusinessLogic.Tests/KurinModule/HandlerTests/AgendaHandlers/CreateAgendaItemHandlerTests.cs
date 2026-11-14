@@ -116,7 +116,7 @@ public class CreateAgendaItemHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Agenda);
-        entry.Action.Should().Be(AuditActions.Agenda.Created);
+        entry.Action.Should().Be(AuditActionNames.Agenda.Created);
         entry.KurinKey.Should().Be(kurinKey);
         entry.SubjectKey.Should().Be(result.Data);
         entry.SubjectLabel.Should().Be("Табір");

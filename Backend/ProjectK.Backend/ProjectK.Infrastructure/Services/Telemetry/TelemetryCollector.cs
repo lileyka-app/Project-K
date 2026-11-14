@@ -19,7 +19,7 @@ internal sealed partial class TelemetryCollector
     /// <summary>The installation's random id: made once and kept in <c>SystemSettings</c>.</summary>
     public async Task<string> InstanceIdAsync(CancellationToken cancellationToken)
     {
-        var setting = await _db.SystemSettings.FirstOrDefaultAsync(s => s.Key == SystemSettingKeys.TelemetryInstanceId, cancellationToken);
+        var setting = await _db.SystemSettings.FirstOrDefaultAsync(s => s.Key == SystemSettingNames.TelemetryInstanceId, cancellationToken);
         if (setting is not null && Guid.TryParse(setting.Value, out var existing))
         {
             return existing.ToString();
@@ -28,7 +28,7 @@ internal sealed partial class TelemetryCollector
         var id = Guid.NewGuid().ToString();
         if (setting is null)
         {
-            _db.SystemSettings.Add(new SystemSetting { Key = SystemSettingKeys.TelemetryInstanceId, Value = id, UpdatedAtUtc = DateTime.UtcNow });
+            _db.SystemSettings.Add(new SystemSetting { Key = SystemSettingNames.TelemetryInstanceId, Value = id, UpdatedAtUtc = DateTime.UtcNow });
         }
         else
         {

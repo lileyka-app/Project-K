@@ -8,7 +8,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>
 /// The fields of a person's card the kurin's journal records. They go by the card's JSON names, so
-/// <see cref="ProjectK.Common.Rules.KurinModule.MemberDataFields"/> recognises the private ones and the
+/// <see cref="ProjectK.Common.Rules.KurinModule.MemberDataFieldRules"/> recognises the private ones and the
 /// journal records them as changed without their values.
 /// </summary>
 public static class MemberTrail
@@ -43,11 +43,11 @@ public static class MemberTrail
 
     /// <summary>A new card: every field it was made with, the verification it has not had yet left out.</summary>
     public static IReadOnlyList<AuditChange> Added(Member member) =>
-        AuditChanges.Added(Of(member).Where(field => field.Field != ProfileVerification).ToArray());
+        AuditChangeRules.Added(Of(member).Where(field => field.Field != ProfileVerification).ToArray());
 
     /// <summary>The fields that differ between two snapshots taken with <see cref="Of"/>.</summary>
     public static IReadOnlyList<AuditChange> Between((string Field, object? Value)[] before, (string Field, object? Value)[] after) =>
-        AuditChanges.Of(before.Zip(after, (was, now) => (was.Field, was.Value, now.Value)).ToArray());
+        AuditChangeRules.Of(before.Zip(after, (was, now) => (was.Field, was.Value, now.Value)).ToArray());
 
     /// <summary>The ступені in the order they were reached, each with its date; null when there are none.</summary>
     public static string? PlastLevelsOf(IEnumerable<PlastLevelHistory> history)

@@ -143,7 +143,7 @@ public sealed class E2ETestController : ControllerBase
         }
 
         if (!Request.Headers.TryGetValue(ResetTokenHeader, out var providedToken)
-            || !SecretComparer.Matches(providedToken.ToString(), expectedToken))
+            || !SecretComparisonRules.Matches(providedToken.ToString(), expectedToken))
         {
             return this.Failure(ResultType.Unauthorized, "InvalidResetToken", "Invalid E2E reset token.");
         }

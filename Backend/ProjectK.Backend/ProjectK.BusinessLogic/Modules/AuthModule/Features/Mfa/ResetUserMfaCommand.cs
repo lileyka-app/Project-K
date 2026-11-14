@@ -67,7 +67,7 @@ public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, S
                 return ServiceResult<Unit>.Failure(ResultType.Forbidden, AuthErrors.Forbidden, "Kurin managers can reset MFA only in their own Kurin.");
             }
 
-            if (RolePermissionMap.GrantsWholeKurinManagement(targetRoles))
+            if (RolePermissionRules.GrantsWholeKurinManagement(targetRoles))
             {
                 return ServiceResult<Unit>.Failure(ResultType.Forbidden, AuthErrors.CannotResetPrivilegedMfa, "Kurin managers cannot reset MFA for privileged users.");
             }

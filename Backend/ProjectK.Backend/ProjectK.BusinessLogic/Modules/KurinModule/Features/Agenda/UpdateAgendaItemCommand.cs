@@ -162,17 +162,17 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         if (!targetsBefore.ToHashSet().SetEquals(targetsAfter))
         {
             var names = await AgendaTargetNames.LoadAsync(_uow, _members, item.KurinKey, targetsBefore.Concat(targetsAfter), cancellationToken);
-            changes.AddRange(AuditChanges.Of((AgendaTrail.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
+            changes.AddRange(AuditChangeRules.Of((AgendaTrail.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
         }
 
-        changes.AddRange(AuditChanges.Of(("status", statusBefore, item.Status)));
+        changes.AddRange(AuditChangeRules.Of(("status", statusBefore, item.Status)));
         if (changes.Count == 0)
         {
             return;
         }
 
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Agenda, AuditActions.Agenda.Changed, item.AgendaItemKey, item.Title, Changes: changes, KurinKey: item.KurinKey),
+            new AuditRecord(AuditArea.Agenda, AuditActionNames.Agenda.Changed, item.AgendaItemKey, item.Title, Changes: changes, KurinKey: item.KurinKey),
             cancellationToken);
     }
 

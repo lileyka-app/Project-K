@@ -43,7 +43,7 @@ public sealed class IssueMyCardLinkCommandHandler : IRequestHandler<IssueMyCardL
         }
 
         var share = await _cards.ShareOfAsync(memberKey, cancellationToken);
-        share.LinkToken = SecretHash.NewToken(18);
+        share.LinkToken = SecretHashRules.NewToken(18);
         share.LinkIssuedAtUtc = _time.GetUtcNow().UtcDateTime;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return new ServiceResult<MyCardDto>(ResultType.Success, await _cards.MineAsync(memberKey, cancellationToken));

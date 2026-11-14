@@ -46,8 +46,8 @@ public sealed class ArchiveDangerZoneEnteredEventHandler : INotificationHandler<
 
     private async Task NotifyAsync(ArchiveDangerZoneEntered raised, CancellationToken cancellationToken)
     {
-        var zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-        var kurinnyi = SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
+        var zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var kurinnyi = SystemRoleNames.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
         var holders = (await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(raised.KurinKey, LeadershipType.KV, cancellationToken))
             .Where(holder => holder.UserRole == zvyazkovyi)
             .Concat((await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(raised.KurinKey, LeadershipType.Kurin, cancellationToken))

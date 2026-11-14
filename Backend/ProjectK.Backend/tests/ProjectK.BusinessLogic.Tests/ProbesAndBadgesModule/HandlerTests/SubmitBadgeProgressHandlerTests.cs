@@ -151,7 +151,7 @@ public class SubmitBadgeProgressHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Badge);
-        entry.Action.Should().Be(AuditActions.Badge.Submitted);
+        entry.Action.Should().Be(AuditActionNames.Badge.Submitted);
         entry.SubjectLabel.Should().Be("Велосипедист");
         entry.SubjectMemberName.Should().Be("Ivan Petrenko");
         entry.SubjectGroupKey.Should().Be(groupKey);
@@ -168,7 +168,7 @@ public class SubmitBadgeProgressHandlerTests
         await _handler.Handle(new SubmitBadgeProgressCommand(memberKey, "badge-1", null), CancellationToken.None);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Badge.Resubmitted);
+        entry.Action.Should().Be(AuditActionNames.Badge.Resubmitted);
         entry.SubjectKey.Should().Be(progress.BadgeProgressKey);
         entry.Changes.Should().Equal(new AuditChange("status", "Rejected", "Submitted"));
     }

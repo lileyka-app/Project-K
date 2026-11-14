@@ -102,7 +102,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(invitation.WaitlistEntryKey, cancellationToken);
         bool isKurinLeaderCandidate = entry?.IsKurinLeaderCandidate ?? false;
 
-        await _userManager.AddToRoleAsync(user, SystemRole.Member);
+        await _userManager.AddToRoleAsync(user, SystemRoleNames.Member);
 
         // 4. Mark Invitation as used, and the queue entry as one nobody is waiting on any more.
         // The entry keeps the only record of how this account came to be; leaving it looking

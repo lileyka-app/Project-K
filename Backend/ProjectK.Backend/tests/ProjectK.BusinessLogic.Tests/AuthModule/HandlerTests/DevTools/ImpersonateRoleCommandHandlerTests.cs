@@ -48,7 +48,7 @@ public class ImpersonateRoleCommandHandlerTests
 
         _currentUser.SetupGet(c => c.UserId).Returns(_adminKey);
         _currentUser.SetupGet(c => c.KurinKey).Returns(_kurinKey);
-        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(true);
+        _currentUser.Setup(c => c.IsInRole(SystemRoleNames.Admin)).Returns(true);
         _jwt.Setup(j => j.GenerateDevReturnTicket(_adminKey)).Returns("ticket");
         _loginResponses
             .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
@@ -65,7 +65,7 @@ public class ImpersonateRoleCommandHandlerTests
     {
         var user = new AppUser { Id = Guid.NewGuid(), Email = email, OnboardingStatus = OnboardingStatus.Active };
         _userManager.Setup(m => m.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
-        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRole.Admin)).ReturnsAsync(false);
+        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRoleNames.Admin)).ReturnsAsync(false);
         return user;
     }
 
@@ -155,7 +155,7 @@ public class ImpersonateRoleCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldRefuseAnyoneWhoIsNotAnAdministrator()
     {
-        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(false);
+        _currentUser.Setup(c => c.IsInRole(SystemRoleNames.Admin)).Returns(false);
 
         var result = await Handler().Handle(new ImpersonateRoleCommand(DevRole.Zvyazkovyi, null), CancellationToken.None);
 
@@ -167,7 +167,7 @@ public class ImpersonateRoleCommandHandlerTests
     {
         var admin = new AppUser { Id = _adminKey, Email = "admin@example.com" };
         _userManager.Setup(m => m.FindByIdAsync(_adminKey.ToString())).ReturnsAsync(admin);
-        _userManager.Setup(m => m.IsInRoleAsync(admin, SystemRole.Admin)).ReturnsAsync(true);
+        _userManager.Setup(m => m.IsInRoleAsync(admin, SystemRoleNames.Admin)).ReturnsAsync(true);
         _jwt.Setup(j => j.ReadDevReturnTicket("ticket")).Returns(_adminKey);
         var handler = new ReturnFromImpersonationCommandHandler(
             _userManager.Object, _jwt.Object, _refreshTokens.Object, _loginResponses.Object, _activityLogger.Object);

@@ -82,11 +82,11 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Office,
-                AuditActions.Office.MentorAssigned,
+                AuditActionNames.Office.MentorAssigned,
                 assignment.MentorAssignmentKey,
-                KurinReportTerminology.LeadershipRole(LeadershipRole.Vykhovnyk),
+                KurinReportNames.LeadershipRole(LeadershipRole.Vykhovnyk),
                 mentorMember.MemberKey,
-                AuditChanges.Added(("group", group.Name)),
+                AuditChangeRules.Added(("group", group.Name)),
                 KurinKey: group.KurinKey),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

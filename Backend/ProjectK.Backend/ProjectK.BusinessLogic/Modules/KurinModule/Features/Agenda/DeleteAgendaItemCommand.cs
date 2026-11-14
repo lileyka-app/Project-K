@@ -71,10 +71,10 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,
-                AuditActions.Agenda.Deleted,
+                AuditActionNames.Agenda.Deleted,
                 item.AgendaItemKey,
                 title,
-                Changes: AuditChanges.Removed([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
+                Changes: AuditChangeRules.Removed([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
                 KurinKey: kurinKey),
             cancellationToken);
 

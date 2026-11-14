@@ -62,8 +62,8 @@ public class KurinAuditTests
             .Knows(memberKey, _kurinKey, groupKey, "Олесь", "Юнак")
             .Knows(Guid.NewGuid(), _kurinKey, null, "Марта", "Впорядниця", _actorUserKey);
 
-        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Award, AuditActions.Award.Added, Guid.NewGuid(), "1-е відзначення", memberKey));
-        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Award, AuditActions.Award.Confirmed, Guid.NewGuid(), "1-е відзначення", memberKey));
+        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Award, AuditActionNames.Award.Added, Guid.NewGuid(), "1-е відзначення", memberKey));
+        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Award, AuditActionNames.Award.Confirmed, Guid.NewGuid(), "1-е відзначення", memberKey));
 
         journal.Entries.Should().HaveCount(2).And.AllSatisfy(entry =>
         {
@@ -87,7 +87,7 @@ public class KurinAuditTests
         var journal = new JournalRecorder(User(_kurinKey).Object)
             .Knows(memberKey, Guid.NewGuid(), Guid.NewGuid(), "Олесь", "Юнак");
 
-        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Award, AuditActions.Award.Deleted, Guid.NewGuid(), "x", memberKey));
+        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Award, AuditActionNames.Award.Deleted, Guid.NewGuid(), "x", memberKey));
 
         var entry = journal.Entries.Single();
         entry.KurinKey.Should().Be(_kurinKey);
@@ -99,20 +99,20 @@ public class KurinAuditTests
     public async Task AnUnscopedAdmin_IsFiledUnderTheSubjectsKurin()
     {
         var memberKey = Guid.NewGuid();
-        var journal = new JournalRecorder(User(null, SystemRole.Admin).Object)
+        var journal = new JournalRecorder(User(null, SystemRoleNames.Admin).Object)
             .Knows(memberKey, _kurinKey, null, "Олесь", "Юнак");
 
-        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Warning, AuditActions.Warning.Given, Guid.NewGuid(), "x", memberKey));
+        await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Warning, AuditActionNames.Warning.Given, Guid.NewGuid(), "x", memberKey));
 
         var entry = journal.Entries.Single();
         entry.KurinKey.Should().Be(_kurinKey);
-        entry.ActorRole.Should().Be(SystemRole.Admin);
+        entry.ActorRole.Should().Be(SystemRoleNames.Admin);
     }
 
     [Fact]
     public async Task NothingToFileItUnder_WritesNothing()
     {
-        var journal = new JournalRecorder(User(null, SystemRole.Admin).Object);
+        var journal = new JournalRecorder(User(null, SystemRoleNames.Admin).Object);
 
         await journal.Audit.RecordAsync(new AuditRecord(AuditArea.Settings, "Settings.Changed", Guid.NewGuid(), "x"));
 
@@ -123,11 +123,11 @@ public class KurinAuditTests
     public async Task AKurinNamedByTheRecord_IsWhereItIsFiled_WhateverTheRequestActsIn()
     {
         var namedKurin = Guid.NewGuid();
-        var unscoped = new JournalRecorder(User(null, SystemRole.Admin).Object);
+        var unscoped = new JournalRecorder(User(null, SystemRoleNames.Admin).Object);
         var elsewhere = new JournalRecorder(User(_kurinKey).Object);
 
-        await unscoped.Audit.RecordAsync(new AuditRecord(AuditArea.Settings, AuditActions.Settings.KurinChanged, namedKurin, "x", KurinKey: namedKurin));
-        await elsewhere.Audit.RecordAsync(new AuditRecord(AuditArea.Settings, AuditActions.Settings.KurinChanged, namedKurin, "x", KurinKey: namedKurin));
+        await unscoped.Audit.RecordAsync(new AuditRecord(AuditArea.Settings, AuditActionNames.Settings.KurinChanged, namedKurin, "x", KurinKey: namedKurin));
+        await elsewhere.Audit.RecordAsync(new AuditRecord(AuditArea.Settings, AuditActionNames.Settings.KurinChanged, namedKurin, "x", KurinKey: namedKurin));
 
         unscoped.Entries.Single().KurinKey.Should().Be(namedKurin);
         elsewhere.Entries.Single().KurinKey.Should().Be(namedKurin);
@@ -139,7 +139,7 @@ public class KurinAuditTests
         var journal = new JournalRecorder(User(_kurinKey).Object);
 
         await journal.Audit.RecordAsync(new AuditRecord(
-            AuditArea.Probe, AuditActions.Probe.PointSigned, Guid.NewGuid(), new string('л', 400), Note: new string('н', 3000)));
+            AuditArea.Probe, AuditActionNames.Probe.PointSigned, Guid.NewGuid(), new string('л', 400), Note: new string('н', 3000)));
 
         var entry = journal.Entries.Single();
         entry.SubjectLabel.Should().HaveLength(Common.Entities.AuditModule.KurinAuditEvent.LabelMaxLength);

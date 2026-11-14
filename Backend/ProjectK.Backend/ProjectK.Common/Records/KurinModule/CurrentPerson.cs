@@ -14,7 +14,7 @@ public sealed record CurrentPerson(
 {
     /// <summary>Whether the youth programme — проби, вмілості, точкування — is theirs in this kurin. The rule the card draws by.</summary>
     public bool HasYouthProgramIn(MembershipRecord membership) =>
-        PlastLadder.PersonalBranch(Levels, membership.Branch) == KurinBranch.UPYu;
+        PlastLadderRules.PersonalBranch(Levels, membership.Branch) == KurinBranch.UPYu;
 
     /// <summary>Whether it is theirs anywhere they stand.</summary>
     public bool HasYouthProgram => Memberships.Any(HasYouthProgramIn);

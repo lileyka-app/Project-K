@@ -35,7 +35,7 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<U
         var here = (await _memberships.GetCurrentForAccountAsync(user.Id, cancellationToken)).FirstOrDefault();
 
         // Only the system role is shown here; offices belong to a kurin and are asked for per kurin.
-        var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
+        var isAdmin = await _userManager.IsInRoleAsync(user, SystemRoleNames.Admin);
 
         var userDto = new UserDto
         {
@@ -47,7 +47,7 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<U
             KurinNamedAfter = null,
             KurinKraiCode = null,
             Email = user.Email!,
-            Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
+            Role = isAdmin ? SystemRoleNames.Admin : SystemRoleNames.Member,
             TwoFactorEnabled = user.TwoFactorEnabled,
             IsSuspended = !user.CanSignIn(),
             FirstName = user.FirstName,

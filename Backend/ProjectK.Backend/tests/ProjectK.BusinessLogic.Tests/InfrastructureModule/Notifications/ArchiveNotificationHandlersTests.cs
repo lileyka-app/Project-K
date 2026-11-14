@@ -30,8 +30,8 @@ public class ArchiveNotificationHandlersTests
     public async Task OnlyLeadersStandingInTheKurin_AreTold_AndNotTheOneWhoTurnedItOn()
     {
         var leaderships = new Mock<ILeadershipRepository>();
-        var zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-        var kurinnyi = SystemRole.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
+        var zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var kurinnyi = SystemRoleNames.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
         leaderships.Setup(l => l.GetOfficeMembersLookupAsync(_kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>()))
             .ReturnsAsync([
                 new MemberLookupDto { UserKey = _actor, UserRole = zvyazkovyi },

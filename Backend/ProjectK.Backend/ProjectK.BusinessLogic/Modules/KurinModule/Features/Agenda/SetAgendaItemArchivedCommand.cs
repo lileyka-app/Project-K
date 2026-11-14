@@ -77,7 +77,7 @@ public sealed class SetAgendaItemArchivedCommandHandler : IRequestHandler<SetAge
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,
-                request.Archived ? AuditActions.Agenda.Archived : AuditActions.Agenda.Restored,
+                request.Archived ? AuditActionNames.Agenda.Archived : AuditActionNames.Agenda.Restored,
                 item.AgendaItemKey,
                 item.Title,
                 KurinKey: item.KurinKey),

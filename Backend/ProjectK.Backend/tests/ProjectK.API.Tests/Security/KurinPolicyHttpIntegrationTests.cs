@@ -42,7 +42,7 @@ namespace ProjectK.API.Tests.Security;
 /// </summary>
 public class KurinPolicyHttpIntegrationTests
 {
-    private static readonly string Vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string Vykhovnyk = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
 
     [Fact]
     public async Task Unsigning_ShouldBeRefused_WhenTheKurinKeepsUnsignProbe_WhileSigningStillWorks()
@@ -80,7 +80,7 @@ public class KurinPolicyHttpIntegrationTests
     [Fact]
     public async Task APolicyGivingMore_ShouldOpenTheEndpoint_ToAnOfficeTheStaticMapLeavesOut()
     {
-        var hurtkovyy = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
+        var hurtkovyy = SystemRoleNames.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
         await using var host = await PolicyTestHost.StartAsync(hurtkovyy);
         var route = $"/api/member/{host.MemberKey}/probes/probe-1/points/p-1/sign";
 
@@ -221,7 +221,7 @@ public class KurinPolicyHttpIntegrationTests
                 new(ClaimTypes.NameIdentifier, authState.UserId.ToString()),
                 new("sub", authState.UserId.ToString()),
                 new("kurinKey", authState.KurinKey.ToString()),
-                new(ClaimTypes.Role, SystemRole.Member),
+                new(ClaimTypes.Role, SystemRoleNames.Member),
                 new(ClaimTypes.Role, authState.Role)
             };
 

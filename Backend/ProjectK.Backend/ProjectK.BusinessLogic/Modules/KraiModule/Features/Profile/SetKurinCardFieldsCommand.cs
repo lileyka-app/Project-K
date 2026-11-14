@@ -45,19 +45,19 @@ public sealed class SetKurinCardFieldsCommandHandler : IRequestHandler<SetKurinC
 
         var hideable = profile.CardFields.Hideable().Select(field => field.Key).ToHashSet(StringComparer.Ordinal);
         var hiddenBefore = kurin.HiddenCardFields;
-        kurin.HiddenCardFields = KurinHiddenCardFields.Write(request.Hidden.Where(hideable.Contains));
+        kurin.HiddenCardFields = KurinHiddenCardFieldRules.Write(request.Hidden.Where(hideable.Contains));
         _unitOfWork.Kurins.Update(kurin, cancellationToken);
 
         // One change for the whole list: a card field's key can be the very name the journal
         // keeps private (address, school), and a field per key would be recorded without its values.
-        var changes = AuditChanges.Of((
+        var changes = AuditChangeRules.Of((
             "hiddenFields",
             HiddenLabels(profile.CardFields, hiddenBefore),
             HiddenLabels(profile.CardFields, kurin.HiddenCardFields)));
         if (changes.Count > 0)
         {
             await _audit.RecordAsync(
-                new AuditRecord(AuditArea.Settings, AuditActions.Settings.CardFieldsChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
+                new AuditRecord(AuditArea.Settings, AuditActionNames.Settings.CardFieldsChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
                 cancellationToken);
         }
 
@@ -70,7 +70,7 @@ public sealed class SetKurinCardFieldsCommandHandler : IRequestHandler<SetKurinC
     /// <summary>The hidden fields by the names the settings page shows, in its order; a key no longer offered is named by itself.</summary>
     private static string HiddenLabels(KraiCardFieldsSettings card, string? hiddenJson)
     {
-        var hidden = KurinHiddenCardFields.Read(hiddenJson);
+        var hidden = KurinHiddenCardFieldRules.Read(hiddenJson);
         var offered = card.Hideable();
         var labels = offered.Where(field => hidden.Contains(field.Key)).Select(field => field.Label)
             .Concat(hidden.Where(key => offered.All(field => field.Key != key)).Order(StringComparer.Ordinal));

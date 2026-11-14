@@ -191,7 +191,7 @@ public sealed class ActivityLogger : IActivityLogger
         var userId = httpContext.User.GetUserKeyValue();
 
         var ip = ipOverride ?? httpContext.Connection.RemoteIpAddress?.ToString();
-        var path = SecretPaths.Mask(httpContext.Request?.Path.Value);
+        var path = SecretPathRules.Mask(httpContext.Request?.Path.Value);
         var method = httpContext.Request?.Method;
         var userAgent = httpContext.Request?.Headers["User-Agent"].ToString();
         var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;

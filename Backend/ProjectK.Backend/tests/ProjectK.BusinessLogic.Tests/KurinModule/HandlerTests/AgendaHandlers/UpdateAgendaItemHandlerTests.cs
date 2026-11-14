@@ -120,7 +120,7 @@ public class UpdateAgendaItemHandlerTests
 
         // Measured against the item as it was before the request was written over it: only the end moved.
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Agenda.Changed);
+        entry.Action.Should().Be(AuditActionNames.Agenda.Changed);
         entry.SubjectKey.Should().Be(item.AgendaItemKey);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.Changes.Should().Equal(new AuditChange("end", null, "2026-08-14"));

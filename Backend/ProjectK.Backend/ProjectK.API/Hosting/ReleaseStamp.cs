@@ -10,5 +10,5 @@ internal static class ReleaseStamp
 
     /// <summary>The code name this build was stamped with, or <c>null</c> when it carries none.</summary>
     public static string? CodeName(IConfiguration config) =>
-        ReleaseDisplay.CodeName(config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"]);
+        ReleaseDisplayRules.CodeName(config["ReleaseInfo:Codename"] ?? config["ReleaseInfo:CodeName"]);
 }

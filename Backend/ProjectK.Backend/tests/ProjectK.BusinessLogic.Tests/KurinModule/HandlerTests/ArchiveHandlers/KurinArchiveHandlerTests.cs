@@ -134,7 +134,7 @@ public class KurinArchiveHandlerTests
         result.Data!.DeletionsLeft.Should().Be(ArchiveDangerZoneService.Deletions - 1);
         _archive.Verify(a => a.RemoveOffice(office), Times.Once);
         var entry = _journal.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Archive.OfficeDeleted);
+        entry.Action.Should().Be(AuditActionNames.Archive.OfficeDeleted);
         entry.Changes!.Select(change => change.Field).Should().Contain(["holder", "role", "startDate", "endDate"]);
         entry.Changes!.Should().OnlyContain(change => change.To == null);
     }
@@ -197,7 +197,7 @@ public class KurinArchiveHandlerTests
         var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, eleventh.LeadershipHistoryKey, ticket), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.DangerZoneClosed);
-        _journal.Should().ContainSingle(entry => entry.Action == AuditActions.Archive.DangerZoneEnded);
+        _journal.Should().ContainSingle(entry => entry.Action == AuditActionNames.Archive.DangerZoneEnded);
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class KurinArchiveHandlerTests
 
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be(ArchiveErrors.WrongCredentials);
-        _journal.Should().ContainSingle(entry => entry.Action == AuditActions.Archive.DangerZoneRefused);
+        _journal.Should().ContainSingle(entry => entry.Action == AuditActionNames.Archive.DangerZoneRefused);
         _zones.Close(_userKey, _kurinKey).Should().BeNull();
         events.Verify(e => e.PublishAsync(It.IsAny<ArchiveDangerZoneEntered>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -230,7 +230,7 @@ public class KurinArchiveHandlerTests
         result.Type.Should().Be(ResultType.Success);
         result.Data!.DeletionsLeft.Should().Be(ArchiveDangerZoneService.Deletions);
         result.Data.ExpiresAtUtc.Should().Be(Now.UtcDateTime.Add(ArchiveDangerZoneService.Lifetime));
-        _journal.Should().ContainSingle(entry => entry.Action == AuditActions.Archive.DangerZoneEntered);
+        _journal.Should().ContainSingle(entry => entry.Action == AuditActionNames.Archive.DangerZoneEntered);
         events.Verify(e => e.PublishAsync(It.Is<ArchiveDangerZoneEntered>(raised => raised.KurinKey == _kurinKey), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -278,7 +278,7 @@ public class KurinArchiveHandlerTests
         theirs.Role.Should().Be(LeadershipRole.Skarbnyk);
         theirs.StartDate.Should().Be(new DateOnly(2021, 10, 1));
         var entry = _journal.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Office.Corrected);
+        entry.Action.Should().Be(AuditActionNames.Office.Corrected);
         entry.Changes!.Select(change => change.Field).Should().BeEquivalentTo(["role", "startDate"]);
         refused.ErrorCode.Should().Be(ArchiveErrors.OutOfReach);
     }

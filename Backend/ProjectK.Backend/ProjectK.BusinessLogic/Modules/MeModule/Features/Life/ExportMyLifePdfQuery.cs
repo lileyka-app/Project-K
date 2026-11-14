@@ -31,8 +31,8 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
 {
     private static readonly IReadOnlyCollection<string> Folders =
     [
-        MemberDossierFolders.Memberships, MemberDossierFolders.Offices, MemberDossierFolders.Levels,
-        MemberDossierFolders.Awards, MemberDossierFolders.Progress
+        MemberDossierFolderNames.Memberships, MemberDossierFolderNames.Offices, MemberDossierFolderNames.Levels,
+        MemberDossierFolderNames.Awards, MemberDossierFolderNames.Progress
     ];
 
     private readonly ICurrentMember _owner;
@@ -154,7 +154,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         var title = level.PlastLevel == PlastLevel.Entry ? "Вступ до Пласту"
             : level.CatalogId is { } id && _honours.GetById(id) is { } honour ? honour.Title
             : PlastLevelNames.Of(level.PlastLevel);
-        return new LifeStoryRow(Day(level.DateAchieved), title, KurinBranchNames.Label(PlastLadder.BranchOf(level.PlastLevel)));
+        return new LifeStoryRow(Day(level.DateAchieved), title, KurinBranchNames.Label(PlastLadderRules.BranchOf(level.PlastLevel)));
     }
 
     private static LifeStoryRow OfficeRow(
@@ -164,7 +164,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
     {
         var role = office.KurinKey is { } key && roleNames.TryGetValue(key, out var names) && names.TryGetValue(office.Role, out var own)
             ? own
-            : KurinReportTerminology.LeadershipRole(office.Role);
+            : KurinReportNames.LeadershipRole(office.Role);
         var kurin = memberships.FirstOrDefault(m => m.KurinKey == office.KurinKey) is { } membership ? KurinName(membership) : null;
         var where = Join([kurin, office.GroupName is { } group ? $"гурток {group}" : null]);
         return new LifeStoryRow(Period(office.StartDate, office.EndDate, open: true), role, where);
@@ -172,7 +172,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
 
     private LifeStoryRow AwardRow(MemberAwardDto award)
     {
-        var title = KurinReportTerminology.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title);
+        var title = KurinReportNames.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title);
         var line = award.Level is null ? "УСП/УПС" : "УПЮ";
         return new LifeStoryRow(Day(DateOnly.FromDateTime(award.DateAcquired)), title, Join([line, award.Note]));
     }
@@ -221,7 +221,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
     /// <summary>A senior kurin by its name and гілки, an УПЮ one by its number and patron.</summary>
     private static string KurinName(MembershipRecord membership)
     {
-        if (KurinBranchSet.IsSenior(membership.Branch))
+        if (KurinBranchSetRules.IsSenior(membership.Branch))
         {
             var branches = KurinBranchNames.DescribeSenior(membership.Numbering);
             return membership.KurinNamedAfter is { } name ? $"«{name}» · {branches}" : branches;

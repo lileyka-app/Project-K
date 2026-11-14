@@ -85,15 +85,15 @@ public sealed class AgendaStatusWriter
         CancellationToken cancellationToken)
     {
         var changes = movedFrom is null
-            ? AuditChanges.Of(("status", taskBefore, item.Status))
-            : AuditChanges.Of(("status", movedFrom, movedTo), ("taskStatus", taskBefore, item.Status));
+            ? AuditChangeRules.Of(("status", taskBefore, item.Status))
+            : AuditChangeRules.Of(("status", movedFrom, movedTo), ("taskStatus", taskBefore, item.Status));
         if (changes.Count == 0)
         {
             return Task.CompletedTask;
         }
 
         return _audit.RecordAsync(
-            new AuditRecord(AuditArea.Agenda, AuditActions.Agenda.StatusChanged, item.AgendaItemKey, label, memberKey, changes, KurinKey: item.KurinKey),
+            new AuditRecord(AuditArea.Agenda, AuditActionNames.Agenda.StatusChanged, item.AgendaItemKey, label, memberKey, changes, KurinKey: item.KurinKey),
             cancellationToken);
     }
 

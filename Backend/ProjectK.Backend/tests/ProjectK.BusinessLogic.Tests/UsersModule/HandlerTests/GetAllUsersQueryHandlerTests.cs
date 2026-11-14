@@ -87,7 +87,7 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin))
             .ReturnsAsync(false);
 
         // Act
@@ -173,7 +173,7 @@ public class GetAllUsersQueryHandlerTests
         Assert.NotNull(result.Data);
         Assert.Empty(result.Data);
 
-        _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin), Times.Never);
+        _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin), Times.Never);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == userId), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == userId), SystemRoleNames.Admin))
             .ReturnsAsync(true);
 
         // Act
@@ -225,7 +225,7 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin))
             .ReturnsAsync(false);
 
         // Act
@@ -256,7 +256,7 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin))
             .ReturnsAsync(false);
 
         // Act
@@ -304,11 +304,11 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user1Id), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user1Id), SystemRoleNames.Admin))
             .ReturnsAsync(true);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user2Id), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user2Id), SystemRoleNames.Admin))
             .ReturnsAsync(false);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user3Id), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.Is<AppUser>(u => u.Id == user3Id), SystemRoleNames.Admin))
             .ReturnsAsync(false);
 
         // Act
@@ -346,7 +346,7 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin))
             .ReturnsAsync(false);
 
         // Act
@@ -397,14 +397,14 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin))
             .ReturnsAsync(false);
 
         // Act
         await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin), Times.Exactly(3));
+        _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin), Times.Exactly(3));
     }
 
     [Fact]
@@ -426,7 +426,7 @@ public class GetAllUsersQueryHandlerTests
         var query = new GetAllUsersQuery();
 
         SetupUserManagerUsers(users.AsQueryable());
-        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin))
+        _userManagerMock.Setup(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin))
             .ReturnsAsync(false);
 
         // Act
@@ -435,7 +435,7 @@ public class GetAllUsersQueryHandlerTests
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
         Assert.Equal(100, result.Data.Count());
-        _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRole.Admin), Times.Exactly(100));
+        _userManagerMock.Verify(x => x.IsInRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Admin), Times.Exactly(100));
     }
 
     [Fact]

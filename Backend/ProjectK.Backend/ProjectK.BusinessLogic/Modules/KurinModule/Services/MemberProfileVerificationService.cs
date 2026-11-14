@@ -71,7 +71,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         member.UpdatedDate = DateTime.UtcNow;
 
         // Checking a profile again is an act of its own, so it is recorded even when it was already current.
-        await RecordAsync(AuditActions.Member.ProfileVerified, member, statusBefore, member.ProfileVerificationNote, cancellationToken);
+        await RecordAsync(AuditActionNames.Member.ProfileVerified, member, statusBefore, member.ProfileVerificationNote, cancellationToken);
 
         var result = await SaveAsync(member, groupKey, cancellationToken);
         if (result.Type == ResultType.Success)
@@ -102,7 +102,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
 
         if (statusBefore != MemberProfileVerificationStatus.Unverified)
         {
-            await RecordAsync(AuditActions.Member.VerificationReset, member, statusBefore, null, cancellationToken);
+            await RecordAsync(AuditActionNames.Member.VerificationReset, member, statusBefore, null, cancellationToken);
         }
 
         return await SaveAsync(member, groupKey, cancellationToken);
@@ -213,7 +213,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
                 member.MemberKey,
                 MemberTrail.LabelOf(member),
                 member.MemberKey,
-                AuditChanges.Of((MemberTrail.ProfileVerification, statusBefore, member.ProfileVerificationStatus)),
+                AuditChangeRules.Of((MemberTrail.ProfileVerification, statusBefore, member.ProfileVerificationStatus)),
                 note),
             cancellationToken);
 

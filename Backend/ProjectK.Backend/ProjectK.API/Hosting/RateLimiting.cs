@@ -146,7 +146,7 @@ public static class RateLimiting
     private static string? CalendarFeedPartition(HttpContext httpContext)
     {
         var path = httpContext.Request.Path.Value;
-        return SecretPaths.IsSecret(path) ? "calendar-feed:" + SecretHash.Sha256Hex(path!)[..32] : null;
+        return SecretPathRules.IsSecret(path) ? "calendar-feed:" + SecretHashRules.Sha256Hex(path!)[..32] : null;
     }
 
     private static RateLimitPartition<string>? TryGetBypassPartition(HttpContext httpContext, IConfiguration configuration)
@@ -154,7 +154,7 @@ public static class RateLimiting
         var bypassKey = configuration["RateLimitBypassKey"];
         if (!string.IsNullOrEmpty(bypassKey) &&
             httpContext.Request.Headers.TryGetValue("X-RateLimit-Bypass", out var providedKey) &&
-            SecretComparer.Matches(providedKey.ToString(), bypassKey))
+            SecretComparisonRules.Matches(providedKey.ToString(), bypassKey))
         {
             return RateLimitPartition.GetNoLimiter("Bypass");
         }

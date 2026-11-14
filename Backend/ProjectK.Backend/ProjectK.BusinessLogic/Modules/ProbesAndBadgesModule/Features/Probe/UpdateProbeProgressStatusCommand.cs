@@ -141,7 +141,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
                 progress.ProbeProgressKey,
                 ProgressAuditNames.Probe(_probesCatalogReader, progress.ProbeId),
                 request.MemberKey,
-                AuditChanges.Of(("status", currentStatus, request.Status)),
+                AuditChangeRules.Of(("status", currentStatus, request.Status)),
                 request.Note),
             cancellationToken);
 
@@ -226,10 +226,10 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 
     private static string JournalAction(ProbeProgressStatus currentStatus, ProbeProgressStatus targetStatus) => targetStatus switch
     {
-        ProbeProgressStatus.Completed when currentStatus == ProbeProgressStatus.Verified => AuditActions.Probe.Unverified,
-        ProbeProgressStatus.Completed => AuditActions.Probe.Completed,
-        ProbeProgressStatus.Verified => AuditActions.Probe.Verified,
-        _ => AuditActions.Probe.Started
+        ProbeProgressStatus.Completed when currentStatus == ProbeProgressStatus.Verified => AuditActionNames.Probe.Unverified,
+        ProbeProgressStatus.Completed => AuditActionNames.Probe.Completed,
+        ProbeProgressStatus.Verified => AuditActionNames.Probe.Verified,
+        _ => AuditActionNames.Probe.Started
     };
 
     private static void ApplyStatusSideEffects(

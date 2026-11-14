@@ -97,11 +97,11 @@ public class KurinBranchRequestHandlerTests
     [Fact]
     public void BranchSet_ShouldNotMixYouthWithTheOlderBranches()
     {
-        KurinBranchSet.IsValid([KurinBranch.UPYu]).Should().BeTrue();
-        KurinBranchSet.IsValid([KurinBranch.USP, KurinBranch.UPS]).Should().BeTrue();
-        KurinBranchSet.IsValid([KurinBranch.UPYu, KurinBranch.USP]).Should().BeFalse();
-        KurinBranchSet.IsValid([KurinBranch.USP, KurinBranch.USP]).Should().BeFalse();
-        KurinBranchSet.IsValid([]).Should().BeFalse();
+        KurinBranchSetRules.IsValid([KurinBranch.UPYu]).Should().BeTrue();
+        KurinBranchSetRules.IsValid([KurinBranch.USP, KurinBranch.UPS]).Should().BeTrue();
+        KurinBranchSetRules.IsValid([KurinBranch.UPYu, KurinBranch.USP]).Should().BeFalse();
+        KurinBranchSetRules.IsValid([KurinBranch.USP, KurinBranch.USP]).Should().BeFalse();
+        KurinBranchSetRules.IsValid([]).Should().BeFalse();
     }
 
     [Fact]

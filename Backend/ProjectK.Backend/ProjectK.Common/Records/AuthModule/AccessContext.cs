@@ -8,7 +8,7 @@ namespace ProjectK.Common.Records.AuthModule;
 /// sentence that cannot be said by roles stored on the account itself.
 /// <para>
 /// It is the one answer to "what roles does this person have". Nothing reads the identity store for
-/// that any more — it holds <see cref="SystemRole.Admin"/> and nothing else that matters here.
+/// that any more — it holds <see cref="SystemRoleNames.Admin"/> and nothing else that matters here.
 /// </para>
 /// </summary>
 public sealed record AccessContext(
@@ -16,8 +16,8 @@ public sealed record AccessContext(
     Guid? KurinKey,
     IReadOnlyCollection<string> Roles)
 {
-    public bool IsAdmin => Roles.Contains(SystemRole.Admin, StringComparer.OrdinalIgnoreCase);
+    public bool IsAdmin => Roles.Contains(SystemRoleNames.Admin, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>An account with no kurin and nothing but the baseline. Used where there is no user.</summary>
-    public static AccessContext None(Guid userKey) => new(userKey, null, [SystemRole.Member]);
+    public static AccessContext None(Guid userKey) => new(userKey, null, [SystemRoleNames.Member]);
 }

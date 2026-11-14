@@ -50,7 +50,7 @@ public class AgendaPermissionsTests
         var item = ItemAssignedTo(AgendaTargetType.Member, Guid.NewGuid(), createdBy: _userKey);
 
         AgendaAccess.IsVisibleTo(item, Viewer()).Should().BeTrue();
-        AgendaVisibility.IsAddressedTo(item, Viewer().ToScope()).Should().BeFalse();
+        AgendaVisibilityRules.IsAddressedTo(item, Viewer().ToScope()).Should().BeFalse();
         AgendaAccess.IsVisibleTo(item, Viewer() with { ViewerUserKey = Guid.NewGuid() }).Should().BeFalse();
     }
 

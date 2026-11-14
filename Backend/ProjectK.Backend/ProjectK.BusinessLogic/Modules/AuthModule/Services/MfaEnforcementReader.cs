@@ -36,7 +36,7 @@ public class MfaEnforcementReader : IMfaEnforcementReader
                 || _configuration.GetValue<bool>("E2E:BypassPrivilegedMfa", false)
                 || (_environment.EnvironmentName == "SelfHost"
                     && !await _systemSettings.GetBoolAsync(
-                        SystemSettingKeys.EnforcePrivilegedMfa,
+                        SystemSettingNames.EnforcePrivilegedMfa,
                         defaultValue: false,
                         cancellationToken)));
 

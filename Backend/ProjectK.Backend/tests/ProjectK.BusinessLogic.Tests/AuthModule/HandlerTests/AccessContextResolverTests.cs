@@ -53,7 +53,7 @@ public class AccessContextResolverTests
             ActiveKurinKey = activeKurinKey
         };
 
-        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRole.Admin)).ReturnsAsync(isAdmin);
+        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRoleNames.Admin)).ReturnsAsync(isAdmin);
         _userManager.Setup(m => m.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         return user;
     }
@@ -73,7 +73,7 @@ public class AccessContextResolverTests
 
         var access = await _resolver.ResolveAsync(user);
 
-        access.Roles.Should().Equal(SystemRole.Member);
+        access.Roles.Should().Equal(SystemRoleNames.Member);
         access.IsAdmin.Should().BeFalse();
     }
 
@@ -89,7 +89,7 @@ public class AccessContextResolverTests
 
         access.KurinKey.Should().Be(kurinKey);
         access.Roles.Should().BeEquivalentTo(
-            [SystemRole.Member, SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)]);
+            [SystemRoleNames.Member, SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)]);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class AccessContextResolverTests
         var access = await _resolver.ResolveAsync(user);
 
         access.KurinKey.Should().Be(steppedInto);
-        access.Roles.Should().BeEquivalentTo([SystemRole.Member, SystemRole.Admin]);
+        access.Roles.Should().BeEquivalentTo([SystemRoleNames.Member, SystemRoleNames.Admin]);
         _offices.Verify(
             d => d.GetForAccountInKurinAsync(user.Id, ownKurin, It.IsAny<CancellationToken>()),
             Times.Never);
@@ -120,7 +120,7 @@ public class AccessContextResolverTests
 
         access.KurinKey.Should().BeNull();
         access.IsAdmin.Should().BeTrue();
-        access.Roles.Should().BeEquivalentTo([SystemRole.Member, SystemRole.Admin]);
+        access.Roles.Should().BeEquivalentTo([SystemRoleNames.Member, SystemRoleNames.Admin]);
         _offices.Verify(
             d => d.GetForAccountInKurinAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -135,7 +135,7 @@ public class AccessContextResolverTests
         var access = await _resolver.ResolveAsync(missing);
 
         access.KurinKey.Should().BeNull();
-        access.Roles.Should().Equal(SystemRole.Member);
+        access.Roles.Should().Equal(SystemRoleNames.Member);
     }
 
     /// <summary>Belongs to one kurin and has never used the switcher — that kurin is where they are.</summary>
@@ -150,7 +150,7 @@ public class AccessContextResolverTests
         var access = await _resolver.ResolveAsync(user);
 
         access.KurinKey.Should().Be(kurinKey);
-        access.Roles.Should().Contain(SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
+        access.Roles.Should().Contain(SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
     }
 
     /// <summary>An explicit choice is never second-guessed by the memberships.</summary>
@@ -184,7 +184,7 @@ public class AccessContextResolverTests
         var access = await _resolver.ResolveAsync(user);
 
         access.KurinKey.Should().Be(withOffice);
-        access.Roles.Should().Contain(SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
+        access.Roles.Should().Contain(SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
     }
 
     /// <summary>Holding nothing anywhere: the newest, so they land somewhere real rather than nowhere.</summary>
@@ -220,7 +220,7 @@ public class AccessContextResolverTests
         var access = await _resolver.ResolveAsync(user);
 
         access.KurinKey.Should().Be(real);
-        access.Roles.Should().Contain(SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
+        access.Roles.Should().Contain(SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk));
         _offices.Verify(
             d => d.GetForAccountInKurinAsync(user.Id, gone, It.IsAny<CancellationToken>()),
             Times.Never);
@@ -248,7 +248,7 @@ public class AccessContextResolverTests
         var access = await _resolver.ResolveAsync(user);
 
         access.KurinKey.Should().BeNull();
-        access.Roles.Should().Equal(SystemRole.Member);
+        access.Roles.Should().Equal(SystemRoleNames.Member);
     }
 
     private void BelongsTo(AppUser user, params (Guid KurinKey, DateTime JoinedAtUtc)[] memberships) =>

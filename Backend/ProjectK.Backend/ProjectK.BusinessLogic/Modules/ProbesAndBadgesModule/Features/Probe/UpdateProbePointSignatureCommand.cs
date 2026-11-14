@@ -184,13 +184,13 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
             await _audit.RecordAsync(
                 new AuditRecord(
                     AuditArea.Probe,
-                    request.IsSigned ? AuditActions.Probe.PointSigned : AuditActions.Probe.PointUnsigned,
+                    request.IsSigned ? AuditActionNames.Probe.PointSigned : AuditActionNames.Probe.PointUnsigned,
                     subjectKey,
                     probeLabel,
                     request.MemberKey,
                     request.IsSigned
-                        ? AuditChanges.Added(("point", pointLabel))
-                        : AuditChanges.Removed(("point", pointLabel)),
+                        ? AuditChangeRules.Added(("point", pointLabel))
+                        : AuditChangeRules.Removed(("point", pointLabel)),
                     request.Note),
                 cancellationToken);
         }
@@ -200,11 +200,11 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
             await _audit.RecordAsync(
                 new AuditRecord(
                     AuditArea.Probe,
-                    AuditActions.Probe.Reopened,
+                    AuditActionNames.Probe.Reopened,
                     subjectKey,
                     probeLabel,
                     request.MemberKey,
-                    AuditChanges.Of(("status", before, probeProgress.Status))),
+                    AuditChangeRules.Of(("status", before, probeProgress.Status))),
                 cancellationToken);
         }
     }

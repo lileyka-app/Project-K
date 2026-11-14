@@ -89,7 +89,7 @@ public class ChangeAgendaItemStatusHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Agenda);
-        entry.Action.Should().Be(AuditActions.Agenda.StatusChanged);
+        entry.Action.Should().Be(AuditActionNames.Agenda.StatusChanged);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(item.AgendaItemKey);
         entry.SubjectLabel.Should().Be("Прибирання");

@@ -48,7 +48,7 @@ public sealed class KraiProfileDirectory : IKraiProfileDirectory
         }
 
         // The край's profile is shared and cached; what the kurin leaves off its card is its own.
-        var hidden = KurinHiddenCardFields.Read(kurin.HiddenCardFields);
+        var hidden = KurinHiddenCardFieldRules.Read(kurin.HiddenCardFields);
         return hidden.Count == 0 ? profile : profile with { CardFields = profile.CardFields.HidingFor(hidden) };
     }
 
@@ -104,9 +104,9 @@ public sealed class KraiProfileDirectory : IKraiProfileDirectory
                 TimeZone: TextRules.TrimOrNull(locale?.TimeZone) ?? AgendaRecurrence.DefaultZone.Id,
                 NumberLocale: TextRules.TrimOrNull(locale?.NumberLocale) ?? "uk-UA"),
             CardFields(document.CardFields),
-            new KraiDuesSettings(TextRules.TrimOrNull(document.Dues?.Upstream)?.ToLowerInvariant() is { } upstream && KraiDues.Upstreams.Contains(upstream)
+            new KraiDuesSettings(TextRules.TrimOrNull(document.Dues?.Upstream)?.ToLowerInvariant() is { } upstream && KraiDuesNames.Upstreams.Contains(upstream)
                 ? upstream
-                : KraiDues.Stanytsia)
+                : KraiDuesNames.Stanytsia)
             {
                 Concessions = Concessions(document.Dues?.Concessions)
             });
@@ -127,9 +127,9 @@ public sealed class KraiProfileDirectory : IKraiProfileDirectory
                 && rule.Parts != DuesParts.None
                 && rule.Kind switch
                 {
-                    KraiDues.Exempt => true,
-                    KraiDues.Percent => rule.Value is > 0 and <= 100,
-                    KraiDues.Amount => rule.Value > 0,
+                    KraiDuesNames.Exempt => true,
+                    KraiDuesNames.Percent => rule.Value is > 0 and <= 100,
+                    KraiDuesNames.Amount => rule.Value > 0,
                     _ => false
                 })
             .DistinctBy(rule => rule.Key)
@@ -140,18 +140,18 @@ public sealed class KraiProfileDirectory : IKraiProfileDirectory
     // field this Lilejka does not know is left out rather than guessed at.
     private static KraiCardFieldsSettings CardFields(KraiCardFieldsDocument? document)
     {
-        var fields = KraiCardFields.Configurable.ToDictionary(
+        var fields = KraiCardFieldNames.Configurable.ToDictionary(
             field => field.Key,
             field => document?.Fields is { } set
                 && set.TryGetValue(field.Key, out var mode)
-                && KraiCardFields.Modes.Contains(mode)
+                && KraiCardFieldNames.Modes.Contains(mode)
                     ? mode
                     : field.Value);
 
         var extra = (document?.Extra ?? [])
             .Where(field => !string.IsNullOrWhiteSpace(field.Key)
                 && !string.IsNullOrWhiteSpace(field.Label)
-                && KraiCardFields.Types.Contains(field.Type))
+                && KraiCardFieldNames.Types.Contains(field.Type))
             .DistinctBy(field => field.Key)
             .ToList();
 

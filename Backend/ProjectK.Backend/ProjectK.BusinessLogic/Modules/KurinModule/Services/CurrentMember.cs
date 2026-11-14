@@ -111,20 +111,20 @@ public sealed class CurrentMember : ICurrentMember
     /// </summary>
     private string ActorRole()
     {
-        if (_currentUser.IsInRole(SystemRole.Admin))
+        if (_currentUser.IsInRole(SystemRoleNames.Admin))
         {
-            return SystemRole.Admin;
+            return SystemRoleNames.Admin;
         }
 
         var office = (_currentUser.Roles ?? [])
-            .Where(role => !string.Equals(role, SystemRole.Member, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(role => RolePermissionMap.WidestScope(
-                RolePermissionMap.Resolve(new[] { role }),
+            .Where(role => !string.Equals(role, SystemRoleNames.Member, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(role => RolePermissionRules.WidestScope(
+                RolePermissionRules.Resolve(new[] { role }),
                 ResourceType.Member,
                 ResourceAction.Update) ?? default)
             .ThenBy(role => role, StringComparer.Ordinal)
             .FirstOrDefault();
 
-        return office ?? SystemRole.Member;
+        return office ?? SystemRoleNames.Member;
     }
 }

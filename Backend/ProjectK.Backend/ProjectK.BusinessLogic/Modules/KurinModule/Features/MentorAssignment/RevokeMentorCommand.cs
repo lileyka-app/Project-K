@@ -60,11 +60,11 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Office,
-                AuditActions.Office.MentorRevoked,
+                AuditActionNames.Office.MentorRevoked,
                 existingAssignment.MentorAssignmentKey,
-                KurinReportTerminology.LeadershipRole(LeadershipRole.Vykhovnyk),
+                KurinReportNames.LeadershipRole(LeadershipRole.Vykhovnyk),
                 mentor?.MemberKey,
-                AuditChanges.Removed(("group", group?.Name)),
+                AuditChangeRules.Removed(("group", group?.Name)),
                 KurinKey: group?.KurinKey),
             cancellationToken);
 

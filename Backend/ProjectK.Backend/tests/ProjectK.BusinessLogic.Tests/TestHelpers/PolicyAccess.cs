@@ -38,7 +38,7 @@ internal sealed class PolicyAccess
 
     public ICurrentUserContext User(Guid userKey, params string[] roles)
     {
-        var held = roles.Append(SystemRole.Member).ToArray();
+        var held = roles.Append(SystemRoleNames.Member).ToArray();
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(x => x.IsAuthenticated).Returns(true);
         user.SetupGet(x => x.UserId).Returns(userKey);
@@ -62,7 +62,7 @@ internal sealed class PolicyAccess
 
     public ICurrentPermissions PermissionsFor(ICurrentUserContext user) => new CurrentPermissions(user, Policies);
 
-    public static string Office(LeadershipType type, LeadershipRole role) => SystemRole.ForOffice(type, role);
+    public static string Office(LeadershipType type, LeadershipRole role) => SystemRoleNames.ForOffice(type, role);
 
     public static readonly string Zvyazkovyi = Office(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
     public static readonly string Vykhovnyk = Office(LeadershipType.KV, LeadershipRole.Vykhovnyk);

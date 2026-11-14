@@ -19,5 +19,5 @@ public sealed record AuditChange(
 {
     /// <summary>The same change without its values when the field is private data; unchanged otherwise.</summary>
     public AuditChange Sanitized() =>
-        AuditChanges.IsPrivate(Field) ? new AuditChange(Field, null, null, Redacted: true) : this;
+        AuditChangeRules.IsPrivate(Field) ? new AuditChange(Field, null, null, Redacted: true) : this;
 }

@@ -54,13 +54,13 @@ public sealed class SetKurinTagSettingsCommandHandler : IRequestHandler<SetKurin
         stored.Enabled = request.Enabled == before.EnabledByDefault ? null : request.Enabled;
         stored.OwnTagsVisible = request.OwnTagsVisible;
 
-        var changes = AuditChanges.Of(
+        var changes = AuditChangeRules.Of(
             ("enabled", before.Enabled, request.Enabled),
             ("ownTagsVisible", before.OwnTagsVisible, request.OwnTagsVisible));
         if (changes.Count > 0)
         {
             await _audit.RecordAsync(
-                new AuditRecord(AuditArea.Settings, AuditActions.Settings.TagSettingsChanged, request.KurinKey, Label,
+                new AuditRecord(AuditArea.Settings, AuditActionNames.Settings.TagSettingsChanged, request.KurinKey, Label,
                     Changes: changes, KurinKey: request.KurinKey),
                 cancellationToken);
         }

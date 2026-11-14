@@ -170,7 +170,7 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
         }
     }
 
-    private bool IsUnscopedAdmin() => _currentUser.IsInRole(SystemRole.Admin) && _currentUser.KurinKey is null;
+    private bool IsUnscopedAdmin() => _currentUser.IsInRole(SystemRoleNames.Admin) && _currentUser.KurinKey is null;
 }
 
 /// <summary>A kurin's tag switches with the defaults filled in.</summary>

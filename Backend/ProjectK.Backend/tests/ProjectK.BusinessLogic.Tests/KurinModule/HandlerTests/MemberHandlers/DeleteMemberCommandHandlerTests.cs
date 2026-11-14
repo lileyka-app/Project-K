@@ -138,7 +138,7 @@ public class DeleteMemberHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Member);
-        entry.Action.Should().Be(AuditActions.Member.Deleted);
+        entry.Action.Should().Be(AuditActionNames.Member.Deleted);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(memberKey);
         entry.SubjectLabel.Should().Be("Олесь Юнак");

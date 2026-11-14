@@ -107,7 +107,7 @@ public class ProbeProjectHandlerTests
         project.Reach.Should().Be(ProbeProjectReach.GroupOrKurin | ProbeProjectReach.Stanytsia);
         project.CoordinatorName.Should().Be("Олена Коваль");
         result.Data!.ProjectKey.Should().Be(project.ProbeProjectKey);
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectAdded);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectAdded);
     }
 
     [Fact]
@@ -253,7 +253,7 @@ public class ProbeProjectHandlerTests
         _projects.Verify(r => r.Delete(project, It.IsAny<CancellationToken>()), Times.Once);
         _photos.Verify(p => p.DeletePhotoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         spare.IsSpare.Should().BeFalse();
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectRemoved);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectRemoved);
     }
 
     [Fact]
@@ -282,7 +282,7 @@ public class ProbeProjectHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         (main.IsSpare, spare.IsSpare).Should().Be((true, false));
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectsSwapped);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectsSwapped);
     }
 
     [Fact]
@@ -311,7 +311,7 @@ public class ProbeProjectHandlerTests
 
         project.CompletedAtUtc.Should().NotBeNull();
         project.CoordinatorComment.Should().Be("Взірцево");
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectCompleted);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectCompleted);
     }
 
     [Fact]
@@ -483,7 +483,7 @@ public class ProbeProjectHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _file!.ApplicationSubmittedOn.Should().Be(new DateOnly(2025, 10, 1));
         _file.OpenedOn.Should().Be(new DateOnly(2025, 11, 1));
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.StagesChanged);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.StagesChanged);
     }
 
     [Theory]

@@ -38,7 +38,7 @@ public static class DataSeeder
         // 1. Seed the two roles the identity store still holds. Office roles are not among them:
         // what an office grants is worked out from the registry for the kurin the account is in,
         // and storing it on the account is what used to make it true everywhere at once.
-        foreach (var roleName in new[] { SystemRole.Admin, SystemRole.Member })
+        foreach (var roleName in new[] { SystemRoleNames.Admin, SystemRoleNames.Member })
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
@@ -124,7 +124,7 @@ public static class DataSeeder
     /// </summary>
     internal static async Task<bool> HasConfiguredAdministratorAsync(UserManager<AppUser> userManager)
     {
-        var administrators = await userManager.GetUsersInRoleAsync(SystemRole.Admin);
+        var administrators = await userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
         return administrators.Any(administrator => !IsSeededAdministrator(administrator));
     }
 
@@ -137,7 +137,7 @@ public static class DataSeeder
     /// </summary>
     private static async Task WarnWhenNoAdministratorAsync(IServiceProvider services, UserManager<AppUser> userManager)
     {
-        var administrators = await userManager.GetUsersInRoleAsync(SystemRole.Admin);
+        var administrators = await userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
         if (administrators.Count > 0)
         {
             return;
@@ -184,7 +184,7 @@ public static class DataSeeder
         // An administrator is not demo data. The seeded one was spared here by address alone, which
         // spared exactly the account that is cheapest to recreate and none of the ones that are not:
         // an administrator configured by hand, who happens to stand in kurin 1, was deleted outright.
-        var administratorIds = (await userManager.GetUsersInRoleAsync(SystemRole.Admin))
+        var administratorIds = (await userManager.GetUsersInRoleAsync(SystemRoleNames.Admin))
             .Select(administrator => administrator.Id)
             .ToHashSet();
 

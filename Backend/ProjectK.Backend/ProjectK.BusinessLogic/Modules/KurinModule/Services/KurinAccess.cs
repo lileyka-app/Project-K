@@ -33,8 +33,8 @@ public static class KurinAccess
             return true;
         }
 
-        return RolePermissionMap.WidestScope(
-            RolePermissionMap.Resolve(currentUser.Roles),
+        return RolePermissionRules.WidestScope(
+            RolePermissionRules.Resolve(currentUser.Roles),
             ResourceType.PlanningSession,
             ResourceAction.Delete) == AccessScope.KurinWide;
     }

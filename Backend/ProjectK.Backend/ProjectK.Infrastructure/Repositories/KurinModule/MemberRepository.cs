@@ -159,7 +159,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                     // юнак; тому тут звужено до KV, а не до «має якусь роль». Активне закріплення
                     // за гуртком — теж впорядник: доступ так його й трактує (LeadershipRepository),
                     // і реєстр не має казати «юнак» тому, кого сайдбар зве впорядником.
-                    // Це дзеркало KurinRoster.IsStaffOffice і KurinRoster.IsStaffAssignment, яким
+                    // Це дзеркало KurinRosterRules.IsStaffOffice і KurinRosterRules.IsStaffAssignment, яким
                     // відповідає звіт; EF не перекладе виклик методу, тож правило стоїть тут рядком.
                     IsStaff = Context.LeadershipHistories.Any(history =>
                         history.MemberKey == x.Person.MemberKey
@@ -249,7 +249,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
 
         foreach (var row in rows.Where(row => row.Office is not null))
         {
-            row.Item.UserRole = SystemRole.ForOffice(row.Office!.Type, row.Office.Role);
+            row.Item.UserRole = SystemRoleNames.ForOffice(row.Office!.Type, row.Office.Role);
         }
 
         return [.. rows.Select(row => row.Item)];
@@ -436,7 +436,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
 
         foreach (var row in rows.Where(row => row.Office is not null))
         {
-            row.Item.UserRole = SystemRole.ForOffice(row.Office!.Type, row.Office.Role);
+            row.Item.UserRole = SystemRoleNames.ForOffice(row.Office!.Type, row.Office.Role);
         }
 
         return [.. rows.Select(row => row.Item)];

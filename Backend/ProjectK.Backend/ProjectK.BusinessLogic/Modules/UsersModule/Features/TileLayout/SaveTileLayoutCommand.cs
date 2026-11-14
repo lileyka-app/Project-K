@@ -27,7 +27,7 @@ public sealed partial class SaveTileLayoutCommandValidator : AbstractValidator<S
         RuleLevelCascadeMode = CascadeMode.Stop;
 
         RuleFor(command => command.BoardKey)
-            .Must(TileBoardKeys.All.Contains)
+            .Must(TileBoardNames.All.Contains)
             .WithMessage("Unknown board key.");
 
         RuleFor(command => command.TileKeys)

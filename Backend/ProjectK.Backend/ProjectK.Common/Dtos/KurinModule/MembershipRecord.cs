@@ -35,8 +35,8 @@ public sealed record MembershipRecord(
     /// </summary>
     public MembershipRecord InLineOf(IEnumerable<PlastLevel> levels)
     {
-        var line = PlastLadder.Highest(levels) is { } top ? PlastLadder.BranchOf(top) : KurinBranch.UPYu;
-        if (line == Branch || !KurinBranchSet.IsSenior(line) || !KurinBranchSet.IsSenior(Branch))
+        var line = PlastLadderRules.Highest(levels) is { } top ? PlastLadderRules.BranchOf(top) : KurinBranch.UPYu;
+        if (line == Branch || !KurinBranchSetRules.IsSenior(line) || !KurinBranchSetRules.IsSenior(Branch))
         {
             return this;
         }

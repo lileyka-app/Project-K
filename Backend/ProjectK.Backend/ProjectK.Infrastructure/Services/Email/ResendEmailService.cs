@@ -63,7 +63,7 @@ public class ResendEmailService : IEmailService
             Paragraphs:
             [
                 "Для вас створено акаунт у Лілейці — системі обліку куреня. Щоб активувати його і встановити пароль, натисніть кнопку нижче.",
-                $"Посилання діє {OnboardingPolicy.InvitationLifetimeDays} днів. Якщо воно прострочиться, нове можна замовити на сторінці входу через «Забули пароль».",
+                $"Посилання діє {OnboardingRules.InvitationLifetimeDays} днів. Якщо воно прострочиться, нове можна замовити на сторінці входу через «Забули пароль».",
             ],
             ButtonText: "Активувати акаунт",
             Url: activationUrl,

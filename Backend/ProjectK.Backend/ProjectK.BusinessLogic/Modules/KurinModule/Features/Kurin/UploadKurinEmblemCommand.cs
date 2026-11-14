@@ -42,7 +42,7 @@ public sealed class UploadKurinEmblemCommandHandler : IRequestHandler<UploadKuri
             return KurinErrors.NotFound<KurinDto>();
         }
 
-        if (!KurinBranchSet.IsSenior(kurin.Branch))
+        if (!KurinBranchSetRules.IsSenior(kurin.Branch))
         {
             return ServiceResult<KurinDto>.Failure(ResultType.BadRequest, KurinErrors.EmblemForSeniorKurins, "A УПЮ kurin keeps its number plate.");
         }

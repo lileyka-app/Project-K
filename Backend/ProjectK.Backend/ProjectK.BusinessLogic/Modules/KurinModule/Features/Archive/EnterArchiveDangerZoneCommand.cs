@@ -70,13 +70,13 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
                 return ServiceResult<ArchiveDangerZoneDto>.Failure(ResultType.BadRequest, ArchiveErrors.NoSecondFactor, "The account has no second factor; use the password.");
             case ReauthenticationOutcome.Wrong:
                 // Not 401: the session is fine, and the client would take a 401 for a lost one.
-                await _audit.RecordAsync(ArchiveDangerZoneService.JournalEntry(AuditActions.Archive.DangerZoneRefused, userKey, request.KurinKey, "method", method), cancellationToken);
+                await _audit.RecordAsync(ArchiveDangerZoneService.JournalEntry(AuditActionNames.Archive.DangerZoneRefused, userKey, request.KurinKey, "method", method), cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return ServiceResult<ArchiveDangerZoneDto>.Failure(ResultType.BadRequest, ArchiveErrors.WrongCredentials, "Wrong password or code.");
         }
 
         var (ticket, entry) = _zone.Open(userKey, request.KurinKey, proof.SecurityStamp!);
-        await _audit.RecordAsync(ArchiveDangerZoneService.JournalEntry(AuditActions.Archive.DangerZoneEntered, userKey, request.KurinKey, "method", method), cancellationToken);
+        await _audit.RecordAsync(ArchiveDangerZoneService.JournalEntry(AuditActionNames.Archive.DangerZoneEntered, userKey, request.KurinKey, "method", method), cancellationToken);
         // An administrator acting in the kurin has no member card; the leadership is told the account's name.
         var actor = (await _currentMember.FindAsync(cancellationToken))?.FullName ?? proof.AccountName ?? string.Empty;
         await _events.PublishAsync(new ArchiveDangerZoneEntered(request.KurinKey, actor, userKey), cancellationToken);

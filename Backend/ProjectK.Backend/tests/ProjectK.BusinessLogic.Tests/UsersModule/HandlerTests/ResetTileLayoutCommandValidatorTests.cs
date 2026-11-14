@@ -11,7 +11,7 @@ public class ResetTileLayoutCommandValidatorTests
     [Fact]
     public void Validate_ShouldPass_ForKnownBoard()
     {
-        var command = new ResetTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard);
+        var command = new ResetTileLayoutCommand(Guid.NewGuid(), TileBoardNames.MemberCard);
         _validator.TestValidate(command).ShouldNotHaveAnyValidationErrors();
     }
 

@@ -171,11 +171,11 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Probe,
-                isNew ? AuditActions.Probe.ProjectAdded : AuditActions.Probe.ProjectEdited,
+                isNew ? AuditActionNames.Probe.ProjectAdded : AuditActionNames.Probe.ProjectEdited,
                 project.ProbeProjectKey,
                 ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey,
-                isNew ? AuditChanges.Added(("project", project.Title)) : AuditChanges.Of(("project", titleBefore, project.Title))),
+                isNew ? AuditChangeRules.Added(("project", project.Title)) : AuditChangeRules.Of(("project", titleBefore, project.Title))),
             cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

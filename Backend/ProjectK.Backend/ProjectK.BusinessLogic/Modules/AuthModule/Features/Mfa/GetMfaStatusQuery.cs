@@ -46,7 +46,7 @@ public sealed class GetMfaStatusQueryHandler : IRequestHandler<GetMfaStatusQuery
             return ServiceResult<MfaStatusDto>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "User not found.");
         }
 
-        var isPrivileged = RolePermissionMap.GrantsWholeKurinManagement(_currentUser.Roles ?? []);
+        var isPrivileged = RolePermissionRules.GrantsWholeKurinManagement(_currentUser.Roles ?? []);
         var isMfaRequired = isPrivileged && await _policy.IsPrivilegedMfaRequiredAsync(cancellationToken);
 
         return new ServiceResult<MfaStatusDto>(

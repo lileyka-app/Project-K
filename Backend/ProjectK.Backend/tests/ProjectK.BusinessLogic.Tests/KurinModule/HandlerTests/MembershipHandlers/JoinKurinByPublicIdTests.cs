@@ -84,7 +84,7 @@ public class JoinKurinByPublicIdTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Membership);
-        entry.Action.Should().Be(AuditActions.Membership.Joined);
+        entry.Action.Should().Be(AuditActionNames.Membership.Joined);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(opened.MembershipKey);
         entry.SubjectMemberKey.Should().Be(_memberKey);

@@ -14,7 +14,7 @@ public class DutyRightsTests
     private static readonly Guid Other = Guid.NewGuid();
 
     private static DutyRights Of(LeadershipType type, LeadershipRole role, params Guid[] led) =>
-        new(RolePermissionMap.Resolve([SystemRole.ForOffice(type, role)]), led.ToHashSet());
+        new(RolePermissionRules.Resolve([SystemRoleNames.ForOffice(type, role)]), led.ToHashSet());
 
     [Fact]
     public void TheZvyazkovyi_SeesEverything_InTheKurin()
@@ -69,7 +69,7 @@ public class DutyRightsTests
     public void ABadgeDuty_FollowsTheKurinsPolicy()
     {
         var policy = PolicyAccess.With((KurinCapability.ReviewBadge, PolicyAudience.Vykhovnyk, CapabilityReach.None));
-        var rights = new DutyRights(RolePermissionMap.Resolve([PolicyAccess.Vykhovnyk], policy), new HashSet<Guid> { Led });
+        var rights = new DutyRights(RolePermissionRules.Resolve([PolicyAccess.Vykhovnyk], policy), new HashSet<Guid> { Led });
 
         rights.ForAnyGroup(ResourceType.BadgeProgress, ResourceAction.Update).Should().BeFalse();
         Of(LeadershipType.KV, LeadershipRole.Vykhovnyk, Led).ForGroup(ResourceType.BadgeProgress, ResourceAction.Update, Led).Should().BeTrue();

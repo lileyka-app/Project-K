@@ -24,7 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.DuesModule;
 public class DuesConcessionGrantHandlerTests
 {
     private static readonly Guid Actor = Guid.NewGuid();
-    private static readonly DuesConcessionRule Sibling = new("sibling", "Брат чи сестра", KraiDues.Percent, 20, DuesParts.Stanytsia);
+    private static readonly DuesConcessionRule Sibling = new("sibling", "Брат чи сестра", KraiDuesNames.Percent, 20, DuesParts.Stanytsia);
 
     private readonly Kurin _kurin = new(7);
     private readonly Group _group;
@@ -76,7 +76,7 @@ public class DuesConcessionGrantHandlerTests
             new KraiCatalogSettings(["ua"], []),
             new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
             KraiCardFieldsSettings.Default,
-            new KraiDuesSettings(KraiDues.Stanytsia) { Concessions = [Sibling] });
+            new KraiDuesSettings(KraiDuesNames.Stanytsia) { Concessions = [Sibling] });
         var profiles = new Mock<IKraiProfileDirectory>();
         profiles.Setup(p => p.GetForKurinAsync(_kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(profile);
         return profiles.Object;
@@ -100,7 +100,7 @@ public class DuesConcessionGrantHandlerTests
         result.Type.Should().Be(ResultType.Created);
         var grant = _grants.Single();
         grant.Name.Should().Be("Брат чи сестра");
-        grant.Kind.Should().Be(KraiDues.Percent);
+        grant.Kind.Should().Be(KraiDuesNames.Percent);
         grant.Value.Should().Be(20);
         grant.Parts.Should().Be(DuesParts.Stanytsia);
         grant.FromQuarter.Should().Be(new DuesQuarter(2026, 2).Index);

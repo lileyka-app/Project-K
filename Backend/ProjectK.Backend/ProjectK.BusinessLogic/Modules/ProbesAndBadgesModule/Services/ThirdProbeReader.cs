@@ -83,7 +83,7 @@ public sealed class ThirdProbeReader : IThirdProbeReader
 
     private async Task<ThirdProbeMentorOptionsDto> MentorOptionsAsync(Guid memberKey, CancellationToken cancellationToken)
     {
-        var zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
         var zvyazkovi = new List<string>();
         var ownGroup = new List<string>();
         var kurinWide = new List<string>();

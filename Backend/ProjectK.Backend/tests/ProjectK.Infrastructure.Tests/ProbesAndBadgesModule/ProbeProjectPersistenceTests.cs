@@ -31,9 +31,9 @@ public class ProbeProjectPersistenceTests
     [Fact]
     public void TheCleanupSweepsTheProjectFolder()
     {
-        Assert.Contains(BlobUploadFolders.ProbeProjectImages, BlobUploadFolders.ScenarioFolders);
-        Assert.StartsWith(BlobUploadFolders.ProbeProjectImages, BlobUploadContext.ProbeProjectImage.Folder);
-        Assert.Contains(BlobUploadFolders.ThirdProbeCertificates, BlobUploadFolders.ScenarioFolders);
+        Assert.Contains(BlobUploadFolderNames.ProbeProjectImages, BlobUploadFolderNames.ScenarioFolders);
+        Assert.StartsWith(BlobUploadFolderNames.ProbeProjectImages, BlobUploadContext.ProbeProjectImage.Folder);
+        Assert.Contains(BlobUploadFolderNames.ThirdProbeCertificates, BlobUploadFolderNames.ScenarioFolders);
     }
 
     [Fact]

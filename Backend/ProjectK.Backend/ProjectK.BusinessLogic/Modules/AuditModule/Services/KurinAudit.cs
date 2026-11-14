@@ -13,7 +13,7 @@ namespace ProjectK.BusinessLogic.Modules.AuditModule.Services;
 /// action is filed under the kurin of the person it is about. The actor comes from the request's
 /// <see cref="ICurrentMember"/>, so it is the same one the handler signed with.
 /// <para>
-/// Private data is stripped here as well as in <c>AuditChanges</c>: a change built by hand still
+/// Private data is stripped here as well as in <c>AuditChangeRules</c>: a change built by hand still
 /// cannot carry a phone number into the journal.
 /// </para>
 /// </summary>

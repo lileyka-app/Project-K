@@ -12,7 +12,7 @@ namespace ProjectK.API.Controllers.MeModule;
 /// <summary>
 /// Shared member cards as anyone sees them, signed in or not: the one behind a «перевірити» QR and
 /// the one behind a permanent link. The token in the path is the whole of the access, so the request
-/// log masks it (<see cref="SecretPaths.PublicCardPrefix"/>), and nothing is cached.
+/// log masks it (<see cref="SecretPathRules.PublicCardPrefix"/>), and nothing is cached.
 /// </summary>
 [ApiController]
 public class PublicCardController : ControllerBase
@@ -25,7 +25,7 @@ public class PublicCardController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpGet(SecretPaths.PublicCardPrefix + "check/{token}")]
+    [HttpGet(SecretPathRules.PublicCardPrefix + "check/{token}")]
     [EnableRateLimiting("PublicCardLimit")]
     [ProducesResponseType(typeof(PublicCardDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -33,7 +33,7 @@ public class PublicCardController : ControllerBase
         Answer(await _mediator.Send(new ReadCheckedCardQuery(token), cancellationToken));
 
     [AllowAnonymous]
-    [HttpGet(SecretPaths.PublicCardPrefix + "link/{token}")]
+    [HttpGet(SecretPathRules.PublicCardPrefix + "link/{token}")]
     [EnableRateLimiting("PublicCardLimit")]
     [ProducesResponseType(typeof(PublicCardDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

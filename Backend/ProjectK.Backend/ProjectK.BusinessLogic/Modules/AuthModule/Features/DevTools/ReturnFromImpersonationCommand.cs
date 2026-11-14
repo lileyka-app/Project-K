@@ -48,7 +48,7 @@ public class ReturnFromImpersonationCommandHandler : IRequestHandler<ReturnFromI
         }
 
         var admin = await _userManager.FindByIdAsync(adminKey.Value.ToString());
-        if (admin is null || !await _userManager.IsInRoleAsync(admin, SystemRole.Admin))
+        if (admin is null || !await _userManager.IsInRoleAsync(admin, SystemRoleNames.Admin))
         {
             return ServiceResult<LoginUserDto>.Failure(ResultType.Forbidden, AuthErrors.NotAnAdministrator, "The ticket does not belong to an administrator.");
         }

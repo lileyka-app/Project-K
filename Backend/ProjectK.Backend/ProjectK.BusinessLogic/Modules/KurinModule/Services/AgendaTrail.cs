@@ -27,7 +27,7 @@ public static class AgendaTrail
 
     /// <summary>The fields that differ between two snapshots taken with <see cref="Of"/>.</summary>
     public static IReadOnlyList<AuditChange> Between((string Field, object? Value)[] before, (string Field, object? Value)[] after) =>
-        AuditChanges.Of(before.Zip(after, (was, now) => (was.Field, was.Value, now.Value)).ToArray());
+        AuditChangeRules.Of(before.Zip(after, (was, now) => (was.Field, was.Value, now.Value)).ToArray());
 
     /// <summary>The item's targets, as <see cref="AgendaTargetNames"/> takes them.</summary>
     public static List<(AgendaTargetType Type, Guid Key)> TargetsOf(AgendaItem item) =>

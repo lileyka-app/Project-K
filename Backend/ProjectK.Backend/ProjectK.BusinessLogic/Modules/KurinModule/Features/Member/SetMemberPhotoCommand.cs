@@ -96,11 +96,11 @@ public class SetMemberPhotoCommandHandler
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Member,
-                member.ProfilePhotoBlobName is null ? AuditActions.Member.PhotoRemoved : AuditActions.Member.PhotoChanged,
+                member.ProfilePhotoBlobName is null ? AuditActionNames.Member.PhotoRemoved : AuditActionNames.Member.PhotoChanged,
                 member.MemberKey,
                 MemberTrail.LabelOf(member),
                 member.MemberKey,
-                AuditChanges.Of((MemberTrail.ProfileVerification, verificationBefore, member.ProfileVerificationStatus))),
+                AuditChangeRules.Of((MemberTrail.ProfileVerification, verificationBefore, member.ProfileVerificationStatus))),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

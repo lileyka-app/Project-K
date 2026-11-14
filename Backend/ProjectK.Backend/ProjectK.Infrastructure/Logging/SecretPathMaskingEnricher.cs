@@ -5,7 +5,7 @@ using Serilog.Events;
 namespace ProjectK.Infrastructure.Logging;
 
 /// <summary>
-/// Cuts the secret tail off request paths in every log event (see <see cref="SecretPaths"/>). One
+/// Cuts the secret tail off request paths in every log event (see <see cref="SecretPathRules"/>). One
 /// enricher rather than a fix at each source: ASP.NET puts <c>RequestPath</c> on the scope of every
 /// line written inside the request, the request log adds it again, and the Telegram alert prints it.
 /// </summary>
@@ -19,9 +19,9 @@ public sealed class SecretPathMaskingEnricher : ILogEventEnricher
         {
             if (logEvent.Properties.TryGetValue(name, out var value)
                 && value is ScalarValue { Value: string path }
-                && SecretPaths.IsSecret(path))
+                && SecretPathRules.IsSecret(path))
             {
-                logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(name, SecretPaths.Mask(path)));
+                logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(name, SecretPathRules.Mask(path)));
             }
         }
     }

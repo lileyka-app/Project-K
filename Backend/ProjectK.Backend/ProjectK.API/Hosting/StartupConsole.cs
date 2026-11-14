@@ -26,7 +26,7 @@ internal static class StartupConsole
 
         AnsiConsole.Write(new FigletText("Project K").Color(Color.Green));
 
-        AnsiConsole.Write(new Rule($"[yellow]{ReleaseDisplay.Label(version, ReleaseStamp.CodeName(config))}[/]")
+        AnsiConsole.Write(new Rule($"[yellow]{ReleaseDisplayRules.Label(version, ReleaseStamp.CodeName(config))}[/]")
         {
             Justification = Justify.Left
         });

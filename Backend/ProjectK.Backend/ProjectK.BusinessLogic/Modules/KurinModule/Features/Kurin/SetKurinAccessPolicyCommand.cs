@@ -70,7 +70,7 @@ public sealed class SetKurinAccessPolicyCommandHandler : IRequestHandler<SetKuri
         if (changes.Count > 0)
         {
             await _audit.RecordAsync(
-                new AuditRecord(AuditArea.Settings, AuditActions.Settings.AccessPolicyChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
+                new AuditRecord(AuditArea.Settings, AuditActionNames.Settings.AccessPolicyChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
                 cancellationToken);
         }
 
@@ -83,8 +83,8 @@ public sealed class SetKurinAccessPolicyCommandHandler : IRequestHandler<SetKuri
 
     /// <summary>Every cell whose reach differs, named <c>Capability/Audience</c>, from the old reach to the new.</summary>
     private static IReadOnlyList<AuditChange> ChangedCells(KurinAccessPolicy before, KurinAccessPolicy after) =>
-        AuditChanges.Of(KurinCapabilities.All
-            .SelectMany(descriptor => KurinCapabilities.Audiences.Select(audience => (
+        AuditChangeRules.Of(KurinCapabilityRules.All
+            .SelectMany(descriptor => KurinCapabilityRules.Audiences.Select(audience => (
                 Field: $"{descriptor.Key}/{audience}",
                 From: (object?)before.Reach(descriptor.Key, audience),
                 To: (object?)after.Reach(descriptor.Key, audience))))

@@ -82,10 +82,10 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
             }
         }
 
-        var phone = PhoneNumbers.Normalize(request.PhoneNumber);
+        var phone = PhoneNumberRules.Normalize(request.PhoneNumber);
         if (phone is null)
         {
-            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, PhoneNumbers.ErrorCode, PhoneNumbers.InvalidMessage);
+            return ServiceResult<AccountSettingsDto>.Failure(ResultType.BadRequest, PhoneNumberRules.ErrorCode, PhoneNumberRules.InvalidMessage);
         }
 
         user.PhoneNumber = phone.Length == 0 ? null : phone;

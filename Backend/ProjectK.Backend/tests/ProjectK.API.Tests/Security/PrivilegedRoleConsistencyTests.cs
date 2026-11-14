@@ -5,7 +5,7 @@ namespace ProjectK.API.Tests.Security;
 
 /// <summary>
 /// Pins "who counts as privileged" to a single derived answer. A second hardcoded list used to live
-/// on <see cref="SystemRole"/> and drifted from the grant tables, so the MFA middleware never
+/// on <see cref="SystemRoleNames"/> and drifted from the grant tables, so the MFA middleware never
 /// required Курінний to enable MFA while the disable handler refused to let him turn it off.
 /// </summary>
 public class PrivilegedRoleConsistencyTests
@@ -21,7 +21,7 @@ public class PrivilegedRoleConsistencyTests
     [InlineData("Member", false)]
     public void GrantsWholeKurinManagement_ShouldMatchTheGrantTables(string role, bool expected)
     {
-        Assert.Equal(expected, RolePermissionMap.GrantsWholeKurinManagement(new[] { role }));
+        Assert.Equal(expected, RolePermissionRules.GrantsWholeKurinManagement(new[] { role }));
     }
 
     [Fact]
@@ -29,11 +29,11 @@ public class PrivilegedRoleConsistencyTests
     {
         // Guards against a helper reintroducing a parallel "privileged roles" array: the only offices
         // that may answer true are the ones the grant tables give kurin-wide Group:Manage.
-        var privileged = LeadershipOffices.All()
-            .Select(office => SystemRole.ForOffice(office.Type, office.Role))
-            .Where(role => RolePermissionMap.GrantsWholeKurinManagement(new[] { role }))
+        var privileged = LeadershipOfficeRules.All()
+            .Select(office => SystemRoleNames.ForOffice(office.Type, office.Role))
+            .Where(role => RolePermissionRules.GrantsWholeKurinManagement(new[] { role }))
             .ToList();
 
-        Assert.Equal(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi) }, privileged);
+        Assert.Equal(new[] { SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi) }, privileged);
     }
 }

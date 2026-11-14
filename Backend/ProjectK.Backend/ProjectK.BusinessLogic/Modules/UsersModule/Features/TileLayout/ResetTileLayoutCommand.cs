@@ -14,7 +14,7 @@ public sealed class ResetTileLayoutCommandValidator : AbstractValidator<ResetTil
     public ResetTileLayoutCommandValidator()
     {
         RuleFor(command => command.BoardKey)
-            .Must(TileBoardKeys.All.Contains)
+            .Must(TileBoardNames.All.Contains)
             .WithMessage("Unknown board key.");
     }
 }

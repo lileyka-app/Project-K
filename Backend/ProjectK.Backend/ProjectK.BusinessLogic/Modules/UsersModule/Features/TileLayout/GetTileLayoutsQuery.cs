@@ -23,7 +23,7 @@ public class GetTileLayoutsQueryHandler : IRequestHandler<GetTileLayoutsQuery, S
         var layouts = await _unitOfWork.UserTileLayouts.GetByUserAsync(request.UserKey, cancellationToken);
 
         var dtos = layouts
-            .Where(layout => TileBoardKeys.All.Contains(layout.BoardKey))
+            .Where(layout => TileBoardNames.All.Contains(layout.BoardKey))
             .Select(layout => layout.ToDto())
             .ToList();
 

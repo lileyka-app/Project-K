@@ -105,9 +105,9 @@ public class KraiProfileProviderTests
 
         var card = (await _provider.GetForKraiAsync("cz"))!.CardFields;
 
-        card.ModeOf(KraiCardFields.MiddleName).Should().Be(KraiCardFields.Hidden);
-        card.ModeOf(KraiCardFields.PhoneNumber).Should().Be(KraiCardFields.Required);
-        card.ModeOf(KraiCardFields.School).Should().Be(KraiCardFields.Hidden);
+        card.ModeOf(KraiCardFieldNames.MiddleName).Should().Be(KraiCardFieldNames.Hidden);
+        card.ModeOf(KraiCardFieldNames.PhoneNumber).Should().Be(KraiCardFieldNames.Required);
+        card.ModeOf(KraiCardFieldNames.School).Should().Be(KraiCardFieldNames.Hidden);
         card.Fields.Should().NotContainKey("shoeSize");
         card.Extra.Select(field => field.Key).Should().Equal("visaType", "visaUntil");
         card.Extra[0].Required.Should().BeTrue();
@@ -175,8 +175,8 @@ public class KraiProfileProviderTests
 
         var card = (await _provider.GetForKurinAsync(kurin.KurinKey))!.CardFields;
 
-        card.ModeOf(KraiCardFields.MiddleName).Should().Be(KraiCardFields.Hidden);
-        card.ModeOf(KraiCardFields.PhoneNumber).Should().Be(KraiCardFields.Required);
+        card.ModeOf(KraiCardFieldNames.MiddleName).Should().Be(KraiCardFieldNames.Hidden);
+        card.ModeOf(KraiCardFieldNames.PhoneNumber).Should().Be(KraiCardFieldNames.Required);
         card.Extra.Select(field => field.Key).Should().Equal("visaType");
         (await _provider.GetForKraiAsync("cz"))!.CardFields.Extra.Should().HaveCount(2);
     }
@@ -203,7 +203,7 @@ public class KraiProfileProviderTests
         // Filed under the kurin itself, so an unscoped admin's change is kept too.
         var entry = journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Settings);
-        entry.Action.Should().Be(AuditActions.Settings.CardFieldsChanged);
+        entry.Action.Should().Be(AuditActionNames.Settings.CardFieldsChanged);
         entry.KurinKey.Should().Be(kurin.KurinKey);
         entry.SubjectKey.Should().Be(kurin.KurinKey);
         entry.Changes.Should().Equal(new AuditChange("hiddenFields", null, "Примітка"));

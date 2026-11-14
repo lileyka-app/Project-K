@@ -64,7 +64,7 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
             }
 
             // A senior kurin has no гуртки at all: its people are told apart by tags.
-            if (KurinBranchSet.IsSenior(kurin.Branch))
+            if (KurinBranchSetRules.IsSenior(kurin.Branch))
             {
                 return ServiceResult<GroupDto>.Failure(ResultType.BadRequest, KurinErrors.NoGroupsInSeniorKurin, "A УСП or УПС kurin has no гуртки.");
             }

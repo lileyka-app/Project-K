@@ -35,8 +35,8 @@ public sealed class IssueCalendarFeedCommandHandler : IRequestHandler<IssueCalen
             return MeErrors.SignInRequired<IssuedCalendarFeedDto>();
         }
 
-        var token = SecretHash.NewToken();
-        await _feeds.IssueAsync(userKey, SecretHash.Sha256Hex(token), request.IncludeSchedules, request.IncludeTasks, cancellationToken);
+        var token = SecretHashRules.NewToken();
+        await _feeds.IssueAsync(userKey, SecretHashRules.Sha256Hex(token), request.IncludeSchedules, request.IncludeTasks, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Account.CalendarFeedIssued",

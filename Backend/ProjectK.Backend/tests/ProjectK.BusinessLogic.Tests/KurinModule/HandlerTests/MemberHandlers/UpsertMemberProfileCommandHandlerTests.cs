@@ -157,7 +157,7 @@ public class UpsertMemberProfileCommandHandlerTests
         // contacts and birth date are recorded as given, never with what they are.
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Member);
-        entry.Action.Should().Be(AuditActions.Member.Added);
+        entry.Action.Should().Be(AuditActionNames.Member.Added);
         entry.KurinKey.Should().Be(group.KurinKey);
         entry.SubjectKey.Should().Be(created.MemberKey);
         entry.SubjectMemberKey.Should().Be(created.MemberKey);
@@ -224,7 +224,7 @@ public class UpsertMemberProfileCommandHandlerTests
 
         cmd.FatherPhone = "0501234567";
         var refused = await _handler.Handle(cmd, CancellationToken.None);
-        refused.ErrorCode.Should().Be(PhoneNumbers.ErrorCode);
+        refused.ErrorCode.Should().Be(PhoneNumberRules.ErrorCode);
     }
 
     [Fact]
@@ -235,7 +235,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be(PhoneNumbers.ErrorCode);
+        result.ErrorCode.Should().Be(PhoneNumberRules.ErrorCode);
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var group = MakeGroup();
         _profilesMock.Setup(p => p.GetForKurinAsync(group.KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new KraiProfile("cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
-                new KraiCardFieldsSettings(KraiCardFields.Configurable, [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }]), KraiDuesSettings.Default));
+                new KraiCardFieldsSettings(KraiCardFieldNames.Configurable, [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }]), KraiDuesSettings.Default));
         var cmd = new UpsertMemberProfileCommand
         {
             GroupKey = group.GroupKey,
@@ -443,7 +443,7 @@ public class UpsertMemberProfileCommandHandlerTests
         await _handler.Handle(cmd, CancellationToken.None);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Member.Changed);
+        entry.Action.Should().Be(AuditActionNames.Member.Changed);
         entry.KurinKey.Should().Be(group.KurinKey);
         entry.SubjectMemberKey.Should().Be(existing.MemberKey);
         entry.SubjectGroupKey.Should().Be(group.GroupKey);
@@ -811,7 +811,7 @@ public class UpsertMemberProfileCommandHandlerTests
         _profilesMock.Setup(p => p.GetForKurinAsync(group.KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new KraiProfile("cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
                 new KraiCardFieldsSettings(
-                    new Dictionary<string, string> { [KraiCardFields.Parents] = KraiCardFields.Required, [KraiCardFields.Address] = KraiCardFields.Required },
+                    new Dictionary<string, string> { [KraiCardFieldNames.Parents] = KraiCardFieldNames.Required, [KraiCardFieldNames.Address] = KraiCardFieldNames.Required },
                     [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }, new KraiCardExtraField { Key = "school2", Label = "Друга школа", Required = true }]),
                 KraiDuesSettings.Default));
         var writer = new MemberFieldMask(

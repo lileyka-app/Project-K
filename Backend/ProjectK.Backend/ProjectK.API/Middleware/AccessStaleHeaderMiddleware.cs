@@ -25,7 +25,7 @@ public sealed class AccessStaleHeaderMiddleware
     {
         if (context.User.GetUserKey() is { } userKey && IssuedAt(context) is { } issuedAt)
         {
-            var kurinKey = Guid.TryParse(context.User.FindFirst(AccessTokenClaims.KurinKey)?.Value, out var kurin)
+            var kurinKey = Guid.TryParse(context.User.FindFirst(AccessTokenClaimNames.KurinKey)?.Value, out var kurin)
                 ? kurin
                 : (Guid?)null;
 
@@ -41,7 +41,7 @@ public sealed class AccessStaleHeaderMiddleware
 
     // A token minted before the claim existed says nothing here; it runs out on its own.
     private static DateTimeOffset? IssuedAt(HttpContext context) =>
-        long.TryParse(context.User.FindFirst(AccessTokenClaims.IssuedAt)?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds)
+        long.TryParse(context.User.FindFirst(AccessTokenClaimNames.IssuedAt)?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds)
             ? DateTimeOffset.FromUnixTimeSeconds(seconds)
             : null;
 }

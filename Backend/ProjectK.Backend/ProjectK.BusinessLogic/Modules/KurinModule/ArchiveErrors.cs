@@ -22,5 +22,5 @@ public static class ArchiveErrors
 
     /// <summary>A role as the kurin names it: its own name where it gave one.</summary>
     public static string RoleLabel(LeadershipRole role, IReadOnlyDictionary<LeadershipRole, string> kurinNames) =>
-        kurinNames.GetValueOrDefault(role) ?? KurinReportTerminology.LeadershipRole(role);
+        kurinNames.GetValueOrDefault(role) ?? KurinReportNames.LeadershipRole(role);
 }

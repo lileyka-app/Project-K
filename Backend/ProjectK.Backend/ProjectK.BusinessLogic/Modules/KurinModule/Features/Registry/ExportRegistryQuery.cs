@@ -140,7 +140,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
     {
         var rows = new List<IReadOnlyList<SheetCell>>();
 
-        foreach (var level in PlastLadder.DefaultFor(branch))
+        foreach (var level in PlastLadderRules.DefaultFor(branch))
         {
             rows.Add([
                 SheetCell.Of(RegistryColumnRules.HeaderFor($"level:{level}")),
@@ -151,7 +151,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         // Everyone whose ступінь is outside this branch's ladder, or who has none recorded at
         // all. Without it the column would not add up to the roster, and a missing ступінь is
         // exactly the thing a провід is looking for in this table.
-        var counted = PlastLadder.DefaultFor(branch).ToHashSet();
+        var counted = PlastLadderRules.DefaultFor(branch).ToHashSet();
         var rest = youth.Count(member => member.LatestPlastLevel is null || !counted.Contains(member.LatestPlastLevel.Value));
         if (rest > 0)
         {

@@ -68,7 +68,7 @@ public class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMember
             return ServiceResult<DevImpersonationDto>.Failure(ResultType.NotFound, AuthErrors.NoAccountForMember, $"{person.FullName} has no account to sign in as.");
         }
 
-        if (target.Id == actorKey || await _userManager.IsInRoleAsync(target, SystemRole.Admin))
+        if (target.Id == actorKey || await _userManager.IsInRoleAsync(target, SystemRoleNames.Admin))
         {
             return ServiceResult<DevImpersonationDto>.Failure(ResultType.Conflict, AuthErrors.AdminAccount, "That account is an administrator already.");
         }

@@ -44,7 +44,7 @@ public sealed class MemberFieldAccess : IMemberFieldAccess
         }
 
         var reach = new Dictionary<MemberDataGroup, CapabilityReach>();
-        foreach (var info in MemberDataFields.All)
+        foreach (var info in MemberDataFieldRules.All)
         {
             reach[info.Group] = await _permissions.ReachAsync(info.Capability, cancellationToken);
         }

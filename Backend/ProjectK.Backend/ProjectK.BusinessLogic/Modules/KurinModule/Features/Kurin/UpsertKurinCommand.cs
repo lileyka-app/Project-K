@@ -143,11 +143,11 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
 
             _unitOfWork.Kurins.Update(existing, cancellationToken);
 
-            var recorded = AuditChanges.Of(before.Zip(Snapshot(existing), (was, now) => (was.Field, was.Value, now.Value)).ToArray());
+            var recorded = AuditChangeRules.Of(before.Zip(Snapshot(existing), (was, now) => (was.Field, was.Value, now.Value)).ToArray());
             if (recorded.Count > 0)
             {
                 await _audit.RecordAsync(
-                    new AuditRecord(AuditArea.Settings, AuditActions.Settings.KurinChanged, existing.KurinKey, Label, Changes: recorded, KurinKey: existing.KurinKey),
+                    new AuditRecord(AuditArea.Settings, AuditActionNames.Settings.KurinChanged, existing.KurinKey, Label, Changes: recorded, KurinKey: existing.KurinKey),
                     cancellationToken);
             }
         }
@@ -206,7 +206,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         }
 
         // A senior kurin's numbers are the administrators' to hand out: it asks through a request.
-        if (existing is not null && KurinBranchSet.IsSenior(existing.Branch))
+        if (existing is not null && KurinBranchSetRules.IsSenior(existing.Branch))
         {
             return ServiceResult<KurinDto>.Failure(ResultType.BadRequest, KurinErrors.SeniorNumberByRequest, "A senior kurin changes its numbers by request to an administrator.");
         }

@@ -59,7 +59,7 @@ public class KraiConcessionReportTests
             new KraiCatalogSettings(["ua"], []),
             new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
             KraiCardFieldsSettings.Default,
-            new KraiDuesSettings(KraiDues.Stanytsia) { Concessions = [new DuesConcessionRule("sibling", "Брат чи сестра", KraiDues.Percent, 50, DuesParts.Stanytsia)] });
+            new KraiDuesSettings(KraiDuesNames.Stanytsia) { Concessions = [new DuesConcessionRule("sibling", "Брат чи сестра", KraiDuesNames.Percent, 50, DuesParts.Stanytsia)] });
         var profiles = new Mock<IKraiProfileDirectory>();
         profiles.Setup(p => p.GetForKraiAsync("cz", It.IsAny<CancellationToken>())).ReturnsAsync(profile);
 
@@ -81,10 +81,10 @@ public class KraiConcessionReportTests
     [Fact]
     public async Task OnlyThePilhaThatSetThePrice_Counts_UnderTheKraisCurrentName()
     {
-        Grant(Youth, "Брат (стара назва)", KraiDues.Percent, 50, DuesParts.Stanytsia);
-        Grant(Sister, "Брат (стара назва)", KraiDues.Percent, 50, DuesParts.Stanytsia);
+        Grant(Youth, "Брат (стара назва)", KraiDuesNames.Percent, 50, DuesParts.Stanytsia);
+        Grant(Sister, "Брат (стара назва)", KraiDuesNames.Percent, 50, DuesParts.Stanytsia);
         // For the sister the exemption beats 50 % off, so only it counts for her.
-        Grant(Sister, "Звільнення", KraiDues.Exempt, 0, DuesParts.Stanytsia | DuesParts.Kurin);
+        Grant(Sister, "Звільнення", KraiDuesNames.Exempt, 0, DuesParts.Stanytsia | DuesParts.Kurin);
 
         var result = await Handler(DateTimeOffset.UtcNow).Handle(new GetKraiConcessionReportQuery("cz", 2026, 4), default);
 

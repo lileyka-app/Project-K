@@ -97,11 +97,11 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Archive,
-                AuditActions.Archive.MembershipDeleted,
+                AuditActionNames.Archive.MembershipDeleted,
                 membership.MembershipKey,
                 person,
                 membership.MemberKey,
-                AuditChanges.Removed(
+                AuditChangeRules.Removed(
                     ("holder", person),
                     ("kind", membership.Kind),
                     ("joinedOn", joinedOn),

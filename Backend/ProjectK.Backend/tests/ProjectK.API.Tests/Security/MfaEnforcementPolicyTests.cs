@@ -66,7 +66,7 @@ public class MfaEnforcementPolicyTests
     private static Mock<ISystemSettingsService> CreateSystemSettings(bool enforce)
     {
         var mock = new Mock<ISystemSettingsService>();
-        mock.Setup(x => x.GetBoolAsync(SystemSettingKeys.EnforcePrivilegedMfa, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+        mock.Setup(x => x.GetBoolAsync(SystemSettingNames.EnforcePrivilegedMfa, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(enforce);
         return mock;
     }

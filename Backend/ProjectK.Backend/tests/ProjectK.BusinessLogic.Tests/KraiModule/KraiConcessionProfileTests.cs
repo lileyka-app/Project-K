@@ -25,7 +25,7 @@ public class KraiConcessionProfileTests
         var concession = document.Dues!.Concessions!.Single();
         concession.Key.Should().Be("free");
         concession.Name.Should().Be("Звільнення");
-        concession.Kind.Should().Be(KraiDues.Exempt);
+        concession.Kind.Should().Be(KraiDuesNames.Exempt);
         concession.Value.Should().BeNull();
         concession.AppliesTo.Should().Equal("group");
         KraiProfileJsonRules.Validate(document).Should().BeEmpty();

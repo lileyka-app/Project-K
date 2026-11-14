@@ -126,7 +126,7 @@ public static partial class KraiProfileJsonRules
             errors.AddRange(CardFieldErrors(card));
         }
 
-        if (document.Dues?.Upstream is { } upstream && !KraiDues.Upstreams.Contains(upstream))
+        if (document.Dues?.Upstream is { } upstream && !KraiDuesNames.Upstreams.Contains(upstream))
         {
             errors.Add($"Dues go upstream to stanytsia, krai or both, not '{upstream}'.");
         }
@@ -143,11 +143,11 @@ public static partial class KraiProfileJsonRules
     {
         foreach (var (field, mode) in card.Fields ?? new Dictionary<string, string>())
         {
-            if (!KraiCardFields.Configurable.ContainsKey(field))
+            if (!KraiCardFieldNames.Configurable.ContainsKey(field))
             {
                 yield return $"Card field '{field}' is not configurable.";
             }
-            else if (!KraiCardFields.Modes.Contains(mode))
+            else if (!KraiCardFieldNames.Modes.Contains(mode))
             {
                 yield return $"Card field '{field}' is required, optional or hidden, not '{mode}'.";
             }
@@ -171,7 +171,7 @@ public static partial class KraiProfileJsonRules
                 yield return $"Field '{field.Key}' needs a label of 1 to {MaxLabelLength} characters.";
             }
 
-            if (!KraiCardFields.Types.Contains(field.Type))
+            if (!KraiCardFieldNames.Types.Contains(field.Type))
             {
                 yield return $"Field '{field.Key}' is text or date, not '{field.Type}'.";
             }
@@ -200,7 +200,7 @@ public static partial class KraiProfileJsonRules
             {
                 Key = field.Key.Trim(),
                 Label = field.Label?.Trim() ?? string.Empty,
-                Type = TextRules.TrimOrNull(field.Type)?.ToLowerInvariant() ?? KraiCardFields.Text,
+                Type = TextRules.TrimOrNull(field.Type)?.ToLowerInvariant() ?? KraiCardFieldNames.Text,
                 Required = field.Required
             })
             .ToList();
@@ -216,7 +216,7 @@ public static partial class KraiProfileJsonRules
                 Key = c.Key?.Trim() ?? string.Empty,
                 Name = c.Name?.Trim() ?? string.Empty,
                 Kind = c.Kind?.Trim().ToLowerInvariant() ?? string.Empty,
-                Value = c.Kind?.Trim().ToLowerInvariant() == KraiDues.Exempt ? null : c.Value,
+                Value = c.Kind?.Trim().ToLowerInvariant() == KraiDuesNames.Exempt ? null : c.Value,
                 AppliesTo = List(c.AppliesTo?.Select(part => part?.Trim().ToLowerInvariant()))
             })
             .ToList();
@@ -248,15 +248,15 @@ public static partial class KraiProfileJsonRules
                 yield return $"Concession '{concession.Key}' needs a name of 1 to 80 characters.";
             }
 
-            if (!KraiDues.ConcessionKinds.Contains(concession.Kind))
+            if (!KraiDuesNames.ConcessionKinds.Contains(concession.Kind))
             {
                 yield return $"Concession '{name}' is percent, amount or exempt, not '{concession.Kind}'.";
             }
-            else if (concession.Kind == KraiDues.Percent && concession.Value is not (> 0 and <= 100))
+            else if (concession.Kind == KraiDuesNames.Percent && concession.Value is not (> 0 and <= 100))
             {
                 yield return $"Concession '{name}' takes off more than 0 and at most 100 percent.";
             }
-            else if (concession.Kind == KraiDues.Amount && concession.Value is not > 0)
+            else if (concession.Kind == KraiDuesNames.Amount && concession.Value is not > 0)
             {
                 yield return $"Concession '{name}' must take off more than zero.";
             }
@@ -267,7 +267,7 @@ public static partial class KraiProfileJsonRules
             }
             else
             {
-                foreach (var part in parts.Where(part => !KraiDues.Parts.Contains(part)))
+                foreach (var part in parts.Where(part => !KraiDuesNames.Parts.Contains(part)))
                 {
                     yield return $"Concession '{name}' names an unknown part of the dues '{part}'.";
                 }

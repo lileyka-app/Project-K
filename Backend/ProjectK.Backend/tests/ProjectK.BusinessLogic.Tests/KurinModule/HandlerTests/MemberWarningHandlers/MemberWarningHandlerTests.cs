@@ -99,14 +99,14 @@ public class MemberWarningHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Warning);
-        entry.Action.Should().Be(AuditActions.Warning.Given);
+        entry.Action.Should().Be(AuditActionNames.Warning.Given);
         entry.ActorUserKey.Should().Be(userKey);
         entry.SubjectKey.Should().Be(created.MemberWarningKey);
         entry.SubjectMemberKey.Should().Be(memberKey);
         entry.SubjectLabel.Should().Be("1-а пересторога");
         entry.Changes.Should().Equal(
             new AuditChange("level", null, "Level1"),
-            new AuditChange("expiresAtUtc", null, AuditChanges.Format(created.ExpiresAtUtc)));
+            new AuditChange("expiresAtUtc", null, AuditChangeRules.Format(created.ExpiresAtUtc)));
     }
 
     [Fact]
@@ -289,7 +289,7 @@ public class MemberWarningHandlerTests
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Warning.Cancelled);
+        entry.Action.Should().Be(AuditActionNames.Warning.Cancelled);
         entry.SubjectKey.Should().Be(warningKey);
         entry.Changes.Select(change => change.Field).Should().Equal("level", "issuedAtUtc", "expiresAtUtc");
         entry.Changes.Should().OnlyContain(change => change.To == null);

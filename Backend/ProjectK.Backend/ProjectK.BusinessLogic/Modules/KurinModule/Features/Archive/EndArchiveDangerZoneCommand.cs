@@ -49,7 +49,7 @@ public sealed class EndArchiveDangerZoneCommandHandler : IRequestHandler<EndArch
 
         var reason = timedOut ? "time" : request.Reason == ArchiveDangerZoneEnd.Left ? "left" : "manual";
         await _audit.RecordAsync(
-            ArchiveDangerZoneService.JournalEntry(AuditActions.Archive.DangerZoneEnded, userKey, request.KurinKey, "reason", reason),
+            ArchiveDangerZoneService.JournalEntry(AuditActionNames.Archive.DangerZoneEnded, userKey, request.KurinKey, "reason", reason),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

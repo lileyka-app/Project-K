@@ -6,7 +6,7 @@ namespace ProjectK.Common.Enums.Shared;
 /// A пластовий ступінь. The numbers are stored — the column is an <c>int</c> — and they are
 /// frozen: a value inserted in the middle would renumber every row after it, and every учасник
 /// in the database would quietly become a розвідувач. A new ступінь is appended with the next
-/// free number and takes its real place in <see cref="PlastLadder"/>, which is what order means
+/// free number and takes its real place in <see cref="PlastLadderRules"/>, which is what order means
 /// here. Nothing may compare these values with &lt; or &gt;.
 /// </summary>
 public enum PlastLevel

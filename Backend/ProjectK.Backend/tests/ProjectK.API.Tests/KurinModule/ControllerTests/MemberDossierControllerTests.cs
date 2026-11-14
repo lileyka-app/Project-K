@@ -34,7 +34,7 @@ public class MemberDossierControllerTests
         Profile: new MemberDossierProfileDto(
             Guid.NewGuid(), "PL-ABCDE-12345", null, "Оксана", null, "Тестова",
             null, null, null, MemberProfileVerificationStatus.Unverified, null),
-        Folders: [new(MemberDossierFolders.Warnings, 1)],
+        Folders: [new(MemberDossierFolderNames.Warnings, 1)],
         Memberships: [],
         Offices: null,
         Levels: null,
@@ -59,9 +59,9 @@ public class MemberDossierControllerTests
     [Fact]
     public async Task AFolderRoute_ShouldAskForThatFolderAndReturnOnlyIt()
     {
-        var result = await _controller.GetDossierFolder(Guid.NewGuid(), MemberDossierFolders.Warnings);
+        var result = await _controller.GetDossierFolder(Guid.NewGuid(), MemberDossierFolderNames.Warnings);
 
-        Assert.Equal([MemberDossierFolders.Warnings], _sent!.Include);
+        Assert.Equal([MemberDossierFolderNames.Warnings], _sent!.Include);
         var ok = Assert.IsType<OkObjectResult>(result);
         var warnings = Assert.IsAssignableFrom<IReadOnlyCollection<MemberWarningDto>>(ok.Value);
         Assert.Single(warnings);

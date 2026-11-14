@@ -56,7 +56,7 @@ public class EnterDemoCommandHandlerTests
     {
         var user = new AppUser { Id = Guid.NewGuid(), Email = email, OnboardingStatus = OnboardingStatus.Active };
         _userManager.Setup(m => m.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
-        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRole.Admin)).ReturnsAsync(false);
+        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRoleNames.Admin)).ReturnsAsync(false);
         return user;
     }
 

@@ -84,7 +84,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
 
         existing.DissolvedAtUtc = now;
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Archive, AuditActions.Archive.GroupDissolved, existing.GroupKey, existing.Name, KurinKey: existing.KurinKey),
+            new AuditRecord(AuditArea.Archive, AuditActionNames.Archive.GroupDissolved, existing.GroupKey, existing.Name, KurinKey: existing.KurinKey),
             cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -137,7 +137,7 @@ public class GetKurinJournalQueryTests
     public async Task HasMore_IsTrue_OnlyWhenTheReadReturnedMoreThanAPage()
     {
         var entries = Enumerable.Range(0, 3)
-            .Select(i => new KurinAuditEvent { Action = AuditActions.Award.Added, OccurredAtUtc = DateTime.UtcNow.AddMinutes(-i) })
+            .Select(i => new KurinAuditEvent { Action = AuditActionNames.Award.Added, OccurredAtUtc = DateTime.UtcNow.AddMinutes(-i) })
             .ToList();
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), 0, 3, It.IsAny<CancellationToken>())).ReturnsAsync(entries);
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), 2, 3, It.IsAny<CancellationToken>())).ReturnsAsync(entries.Take(1).ToList());
@@ -159,9 +159,9 @@ public class GetKurinJournalQueryTests
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
-                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActions.Probe.Verified, SubjectLabel = "probe-1" },
-                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActions.Probe.Verified, SubjectLabel = "Друга проба" },
-                new KurinAuditEvent { Area = AuditArea.Award, Action = AuditActions.Award.Added, SubjectLabel = "probe-1" }
+                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActionNames.Probe.Verified, SubjectLabel = "probe-1" },
+                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActionNames.Probe.Verified, SubjectLabel = "Друга проба" },
+                new KurinAuditEvent { Area = AuditArea.Award, Action = AuditActionNames.Award.Added, SubjectLabel = "probe-1" }
             ]);
 
         var result = await ReadAsync(_access.Actor(PolicyAccess.Zvyazkovyi));

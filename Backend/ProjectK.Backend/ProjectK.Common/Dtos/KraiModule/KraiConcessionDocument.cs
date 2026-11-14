@@ -14,12 +14,12 @@ public sealed record KraiConcessionDocument
 
     public string Name { get; init; } = string.Empty;
 
-    /// <summary><see cref="KraiDues.Percent"/>, <see cref="KraiDues.Amount"/> or <see cref="KraiDues.Exempt"/>.</summary>
-    public string Kind { get; init; } = KraiDues.Percent;
+    /// <summary><see cref="KraiDuesNames.Percent"/>, <see cref="KraiDuesNames.Amount"/> or <see cref="KraiDuesNames.Exempt"/>.</summary>
+    public string Kind { get; init; } = KraiDuesNames.Percent;
 
     /// <summary>The percent taken off, or the sum taken off per quarter. Unused for an exemption.</summary>
     public decimal? Value { get; init; }
 
-    /// <summary>Which parts of the вкладка it lowers: <see cref="KraiDues.Parts"/>.</summary>
+    /// <summary>Which parts of the вкладка it lowers: <see cref="KraiDuesNames.Parts"/>.</summary>
     public IReadOnlyList<string>? AppliesTo { get; init; }
 }

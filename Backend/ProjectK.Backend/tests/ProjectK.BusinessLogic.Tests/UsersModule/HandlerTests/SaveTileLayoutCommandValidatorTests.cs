@@ -11,7 +11,7 @@ public class SaveTileLayoutCommandValidatorTests
     [Fact]
     public void Validate_ShouldPass_ForValidLayout()
     {
-        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard, new[] { "profile", "skills" }, Array.Empty<string>(), 1);
+        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardNames.MemberCard, new[] { "profile", "skills" }, Array.Empty<string>(), 1);
         _validator.TestValidate(command).ShouldNotHaveAnyValidationErrors();
     }
 
@@ -28,7 +28,7 @@ public class SaveTileLayoutCommandValidatorTests
     public void Validate_ShouldFail_WhenTooManyTiles()
     {
         var tiles = Enumerable.Range(0, 41).Select(i => $"tile-{i}").ToArray();
-        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard, tiles, Array.Empty<string>(), 1);
+        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardNames.MemberCard, tiles, Array.Empty<string>(), 1);
         _validator.TestValidate(command)
             .ShouldHaveValidationErrorFor(x => x.TileKeys)
             .WithErrorMessage("A layout cannot contain more than 40 tiles.");
@@ -40,7 +40,7 @@ public class SaveTileLayoutCommandValidatorTests
     [InlineData("under_score")] // underscore not allowed
     public void Validate_ShouldFail_ForMalformedTileKey(string badKey)
     {
-        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard, new[] { badKey }, Array.Empty<string>(), 1);
+        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardNames.MemberCard, new[] { badKey }, Array.Empty<string>(), 1);
         _validator.TestValidate(command)
             .ShouldHaveValidationErrorFor(x => x.TileKeys)
             .WithErrorMessage("Tile keys must be non-empty, at most 64 lowercase alphanumeric/hyphen characters.");
@@ -49,7 +49,7 @@ public class SaveTileLayoutCommandValidatorTests
     [Fact]
     public void Validate_ShouldFail_ForDuplicateTileKeys()
     {
-        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardKeys.MemberCard, new[] { "profile", "profile" }, Array.Empty<string>(), 1);
+        var command = new SaveTileLayoutCommand(Guid.NewGuid(), TileBoardNames.MemberCard, new[] { "profile", "profile" }, Array.Empty<string>(), 1);
         _validator.TestValidate(command)
             .ShouldHaveValidationErrorFor(x => x.TileKeys)
             .WithErrorMessage("Tile keys must be unique.");

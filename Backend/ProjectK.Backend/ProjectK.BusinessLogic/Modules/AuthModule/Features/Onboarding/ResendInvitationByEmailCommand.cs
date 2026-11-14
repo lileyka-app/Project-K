@@ -92,7 +92,7 @@ public sealed class ResendInvitationByEmailCommandHandler : IRequestHandler<Rese
             Token = Guid.NewGuid().ToString("N"),
             WaitlistEntryKey = entry.WaitlistEntryKey,
             TargetUserKey = user.Id,
-            ExpiresAtUtc = now.AddDays(OnboardingPolicy.InvitationLifetimeDays)
+            ExpiresAtUtc = now.AddDays(OnboardingRules.InvitationLifetimeDays)
         };
 
         // The letter goes first, and nothing is written until it is away. A send that throws must

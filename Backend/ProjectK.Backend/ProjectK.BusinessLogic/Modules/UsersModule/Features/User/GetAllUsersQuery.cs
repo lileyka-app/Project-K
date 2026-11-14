@@ -47,7 +47,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Service
         List<UserDto> result = [];
         foreach (var user in users)
         {
-            var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
+            var isAdmin = await _userManager.IsInRoleAsync(user, SystemRoleNames.Admin);
             var here = standing.TryGetValue(user.Id, out var current) ? current.FirstOrDefault() : null;
             UserDto userDto = new()
             {
@@ -60,7 +60,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Service
                 KurinKraiCode = here is not null && kraiOf.TryGetValue(here.KurinKey, out var krai) ? krai : null,
                 Email = user.Email!,
                 // Admin panel manages the system role only; offices are shown elsewhere.
-                Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
+                Role = isAdmin ? SystemRoleNames.Admin : SystemRoleNames.Member,
                 TwoFactorEnabled = user.TwoFactorEnabled,
                 IsSuspended = !user.CanSignIn(),
                 FirstName = user.FirstName,

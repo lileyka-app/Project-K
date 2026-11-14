@@ -72,13 +72,13 @@ internal static class DuesMapping
     public static IReadOnlyList<PlastYearDto> Years(DuesQuarter first, DuesQuarter current)
     {
         var years = new List<PlastYearDto>();
-        for (var year = PlastYear.Of(current); year >= PlastYear.Of(first); year--)
+        for (var year = PlastYearRules.Of(current); year >= PlastYearRules.Of(first); year--)
         {
             years.Add(new PlastYearDto
             {
                 StartYear = year,
-                Label = PlastYear.Label(year),
-                Quarters = PlastYear.QuartersOf(year).Select(ToDto).ToList()
+                Label = PlastYearRules.Label(year),
+                Quarters = PlastYearRules.QuartersOf(year).Select(ToDto).ToList()
             });
         }
 
@@ -87,9 +87,9 @@ internal static class DuesMapping
 
     private static IReadOnlyList<string> PartNames(DuesParts parts) =>
     [
-        .. (parts & DuesParts.Stanytsia) != 0 ? [KraiDues.PartStanytsia] : Array.Empty<string>(),
-        .. (parts & DuesParts.Krai) != 0 ? [KraiDues.PartKrai] : Array.Empty<string>(),
-        .. (parts & DuesParts.Kurin) != 0 ? [KraiDues.PartKurin] : Array.Empty<string>(),
-        .. (parts & DuesParts.Group) != 0 ? [KraiDues.PartGroup] : Array.Empty<string>()
+        .. (parts & DuesParts.Stanytsia) != 0 ? [KraiDuesNames.PartStanytsia] : Array.Empty<string>(),
+        .. (parts & DuesParts.Krai) != 0 ? [KraiDuesNames.PartKrai] : Array.Empty<string>(),
+        .. (parts & DuesParts.Kurin) != 0 ? [KraiDuesNames.PartKurin] : Array.Empty<string>(),
+        .. (parts & DuesParts.Group) != 0 ? [KraiDuesNames.PartGroup] : Array.Empty<string>()
     ];
 }

@@ -51,8 +51,8 @@ public class SetKurinScopeCommandHandlerTests
         };
 
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
-        _userManagerMock.Setup(x => x.IsInRoleAsync(user, SystemRole.Admin))
-            .ReturnsAsync(roles.Contains(SystemRole.Admin));
+        _userManagerMock.Setup(x => x.IsInRoleAsync(user, SystemRoleNames.Admin))
+            .ReturnsAsync(roles.Contains(SystemRoleNames.Admin));
         _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
         return user;
@@ -88,7 +88,7 @@ public class SetKurinScopeCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldLetAnyoneIntoAKurinTheyBelongTo()
     {
-        var user = ArrangeUser(SystemRole.Member);
+        var user = ArrangeUser(SystemRoleNames.Member);
         var kurinKey = Guid.NewGuid();
         _kurinsMock.Setup(x => x.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Kurin(12) { KurinKey = kurinKey });
@@ -105,7 +105,7 @@ public class SetKurinScopeCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldForbid_AKurinTheyDoNotBelongTo()
     {
-        var user = ArrangeUser(SystemRole.Member);
+        var user = ArrangeUser(SystemRoleNames.Member);
         var theirKurin = Guid.NewGuid();
         var someoneElses = Guid.NewGuid();
         _kurinsMock.Setup(x => x.GetByKeyAsync(someoneElses, It.IsAny<CancellationToken>()))
@@ -125,7 +125,7 @@ public class SetKurinScopeCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldForbidStandingOutsideEveryKurin_UnlessAdmin()
     {
-        var user = ArrangeUser(SystemRole.Member);
+        var user = ArrangeUser(SystemRoleNames.Member);
 
         var result = await _handler.Handle(new SetKurinScopeCommand(user.Id, null), CancellationToken.None);
 

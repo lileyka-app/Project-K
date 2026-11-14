@@ -15,10 +15,10 @@ public class ArchiveDangerZoneJournalTests
         var userKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
 
-        var entry = ArchiveDangerZoneService.JournalEntry(AuditActions.Archive.DangerZoneEnded, userKey, kurinKey, "reason", "spent");
+        var entry = ArchiveDangerZoneService.JournalEntry(AuditActionNames.Archive.DangerZoneEnded, userKey, kurinKey, "reason", "spent");
 
         entry.Area.Should().Be(AuditArea.Archive);
-        entry.Action.Should().Be(AuditActions.Archive.DangerZoneEnded);
+        entry.Action.Should().Be(AuditActionNames.Archive.DangerZoneEnded);
         entry.SubjectKey.Should().Be(userKey);
         entry.SubjectLabel.Should().Be("Небезпечний режим");
         entry.SubjectMemberKey.Should().BeNull();

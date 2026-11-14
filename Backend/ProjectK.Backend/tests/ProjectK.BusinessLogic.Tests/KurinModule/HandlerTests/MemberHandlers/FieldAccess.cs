@@ -14,7 +14,7 @@ internal static class FieldAccess
     public static IMemberFieldAccess SeesEverything(Guid? viewerUserKey = null) =>
         Of(new MemberFieldMask(
             viewerUserKey,
-            MemberDataFields.All.ToDictionary(info => info.Group, _ => CapabilityReach.Kurin),
+            MemberDataFieldRules.All.ToDictionary(info => info.Group, _ => CapabilityReach.Kurin),
             []));
 
     /// <summary>A viewer who sees nothing of anyone but themselves.</summary>

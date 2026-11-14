@@ -63,8 +63,8 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
             tag = new KurinTag { KurinKey = request.KurinKey, Name = name, ColorHex = color };
             _uow.KurinTags.Create(tag, cancellationToken);
             await _audit.RecordAsync(
-                new AuditRecord(AuditArea.Tag, AuditActions.Tag.Created, tag.KurinTagKey, name,
-                    Changes: AuditChanges.Added(("name", name), ("color", color)), KurinKey: request.KurinKey),
+                new AuditRecord(AuditArea.Tag, AuditActionNames.Tag.Created, tag.KurinTagKey, name,
+                    Changes: AuditChangeRules.Added(("name", name), ("color", color)), KurinKey: request.KurinKey),
                 cancellationToken);
         }
         else
@@ -76,14 +76,14 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
             }
 
             tag = existing;
-            var changes = AuditChanges.Of(("name", tag.Name, name), ("color", tag.ColorHex, color));
+            var changes = AuditChangeRules.Of(("name", tag.Name, name), ("color", tag.ColorHex, color));
             tag.Name = name;
             tag.ColorHex = color;
             tag.UpdatedDate = DateTime.UtcNow;
             if (changes.Count > 0)
             {
                 await _audit.RecordAsync(
-                    new AuditRecord(AuditArea.Tag, AuditActions.Tag.Changed, tag.KurinTagKey, name, Changes: changes, KurinKey: request.KurinKey),
+                    new AuditRecord(AuditArea.Tag, AuditActionNames.Tag.Changed, tag.KurinTagKey, name, Changes: changes, KurinKey: request.KurinKey),
                     cancellationToken);
             }
         }

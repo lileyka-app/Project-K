@@ -117,7 +117,7 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
         audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,
-                notHeld ? AuditActions.Agenda.OccurrenceNotHeld : AuditActions.Agenda.OccurrenceHeld,
+                notHeld ? AuditActionNames.Agenda.OccurrenceNotHeld : AuditActionNames.Agenda.OccurrenceHeld,
                 occurrence.Item.AgendaItemKey,
                 occurrence.Label,
                 KurinKey: kurinKey),

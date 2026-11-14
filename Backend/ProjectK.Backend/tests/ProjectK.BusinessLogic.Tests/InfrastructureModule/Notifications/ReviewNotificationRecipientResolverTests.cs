@@ -76,7 +76,7 @@ public class ReviewNotificationRecipientResolverTests
     }
 
     private static MemberLookupDto Holder(Guid userKey, LeadershipType type, LeadershipRole role) =>
-        new() { MemberKey = Guid.NewGuid(), UserKey = userKey, UserRole = SystemRole.ForOffice(type, role) };
+        new() { MemberKey = Guid.NewGuid(), UserKey = userKey, UserRole = SystemRoleNames.ForOffice(type, role) };
 
     [Theory]
     [InlineData(ReviewSubject.Award)]

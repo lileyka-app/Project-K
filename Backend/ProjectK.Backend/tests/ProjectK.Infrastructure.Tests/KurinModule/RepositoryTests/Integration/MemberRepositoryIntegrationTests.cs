@@ -419,7 +419,7 @@ public class MemberRepositoryIntegrationTests
 
     /// <summary>
     /// The реєстр decides кадра in SQL and the звіт куреня decides it in memory, so the rule
-    /// itself lives in <see cref="KurinRoster"/> and neither owns it. This is what stops the two
+    /// itself lives in <see cref="KurinRosterRules"/> and neither owns it. This is what stops the two
     /// from drifting: the projection's answer is compared against the rule applied to the very
     /// same offices, over a fixture that has one of each kind — including the two that look like
     /// кадра and are not.
@@ -493,7 +493,7 @@ public class MemberRepositoryIntegrationTests
         var offices = context.Set<Leadership>().ToDictionary(office => office.LeadershipKey);
         var expected = context.Set<LeadershipHistory>()
             .AsEnumerable()
-            .Where(history => KurinRoster.IsStaffOffice(
+            .Where(history => KurinRosterRules.IsStaffOffice(
                 offices[history.LeadershipKey].Type,
                 offices[history.LeadershipKey].KurinKey,
                 offices[history.LeadershipKey].EndDate,

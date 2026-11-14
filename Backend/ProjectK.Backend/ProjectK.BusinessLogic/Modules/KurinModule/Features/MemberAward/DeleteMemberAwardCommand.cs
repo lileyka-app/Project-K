@@ -100,11 +100,11 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Award,
-                AuditActions.Award.Deleted,
+                AuditActionNames.Award.Deleted,
                 award.MemberAwardKey,
-                KurinReportTerminology.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title),
+                KurinReportNames.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title),
                 award.MemberKey,
-                AuditChanges.Removed(
+                AuditChangeRules.Removed(
                     ("level", award.Level),
                     ("award", award.CatalogId is { } catalogId ? _honours.GetById(catalogId)?.Title ?? catalogId : null),
                     ("dateAcquired", award.DateAcquired),
@@ -120,7 +120,7 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
     private async Task<bool> ActsInSeniorKurinAsync(CancellationToken cancellationToken)
     {
         var kurin = _currentUser.KurinKey is { } kurinKey ? await _kurins.GetByKeyAsync(kurinKey, cancellationToken) : null;
-        return kurin is not null && KurinBranchSet.IsSenior(kurin.Branch);
+        return kurin is not null && KurinBranchSetRules.IsSenior(kurin.Branch);
     }
 
     private async Task<bool> MayWithdrawAsync(Common.Entities.KurinModule.MemberAward award, CancellationToken cancellationToken)

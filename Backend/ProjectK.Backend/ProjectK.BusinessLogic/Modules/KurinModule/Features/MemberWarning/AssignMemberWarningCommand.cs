@@ -80,7 +80,7 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
         // The permission at the endpoint covers every level; which levels this person may give is
         // the kurin's policy.
         var level = await _access.CheckCapabilityAsync(
-            KurinCapabilities.GiveWarning(request.Level), ResourceType.Member, request.MemberKey, cancellationToken);
+            KurinCapabilityRules.GiveWarning(request.Level), ResourceType.Member, request.MemberKey, cancellationToken);
         if (!level.IsAllowed)
         {
             return ServiceResult<MemberWarningDto>.Failure(
@@ -118,11 +118,11 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Warning,
-                AuditActions.Warning.Given,
+                AuditActionNames.Warning.Given,
                 warningEntity.MemberWarningKey,
-                KurinReportTerminology.WarningLevel(warningEntity.Level),
+                KurinReportNames.WarningLevel(warningEntity.Level),
                 warningEntity.MemberKey,
-                AuditChanges.Added(
+                AuditChangeRules.Added(
                     ("level", warningEntity.Level),
                     ("expiresAtUtc", warningEntity.ExpiresAtUtc))),
             cancellationToken);
