@@ -66,6 +66,9 @@ public static class KurinErrors
     /// <summary>A senior kurin has no гуртки to import a roster into.</summary>
     public const string RosterImportNotForSeniorKurin = "RosterImportNotForSeniorKurin";
 
+    /// <summary>The roster upload carried no file.</summary>
+    public const string NoFile = "NoFile";
+
     public const string EmptyFile = "EmptyFile";
     public const string UnreadableFile = "UnreadableFile";
 

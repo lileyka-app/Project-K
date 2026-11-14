@@ -6,6 +6,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 using ProjectK.Common.Extensions;
@@ -53,7 +54,7 @@ public class KurinRosterController : ControllerBase
     {
         if (request.File is null || request.File.Length == 0)
         {
-            return this.Failure(ResultType.BadRequest, "NoFile", "No file was uploaded.");
+            return this.Failure(ResultType.BadRequest, KurinErrors.NoFile, "No file was uploaded.");
         }
 
         await using var content = request.File.OpenReadStream();
