@@ -8,7 +8,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.Shared;
 
@@ -23,7 +23,7 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
     private readonly IMemberDirectory _members;
     private readonly IMediator _mediator;
     private readonly IEmailService _emailService;
-    private readonly EmailSettings _emailSettings;
+    private readonly EmailOptions _emailSettings;
     private readonly IActivityLogger _activityLogger;
 
     public UpdateAccountProfileCommandHandler(
@@ -31,7 +31,7 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
         IMemberDirectory members,
         IMediator mediator,
         IEmailService emailService,
-        IOptions<EmailSettings> emailSettings,
+        IOptions<EmailOptions> emailSettings,
         IActivityLogger activityLogger)
     {
         _userManager = userManager;

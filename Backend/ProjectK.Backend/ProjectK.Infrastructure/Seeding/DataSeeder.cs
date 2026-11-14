@@ -10,7 +10,7 @@ using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.Catalog;

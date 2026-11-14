@@ -1,6 +1,6 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.InfrastructureModule;
 
-public class EmailSettings
+public class EmailOptions
 {
     public string Provider { get; set; } = "Mock"; // "Mock" or "Resend"
     public string ApiKey { get; set; } = string.Empty;

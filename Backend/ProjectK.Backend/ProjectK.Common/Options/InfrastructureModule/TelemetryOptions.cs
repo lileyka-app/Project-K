@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.InfrastructureModule;
 
 /// <summary>
 /// The anonymous daily ping to the status service: a random instance id, the release and a few

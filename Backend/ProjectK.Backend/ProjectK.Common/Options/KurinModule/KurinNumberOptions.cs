@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.KurinModule;
 
 /// <summary>
 /// Which numbers a kurin may carry. The floor is fixed at one, so zero and below stay free for
@@ -15,6 +15,3 @@ public sealed class KurinNumberOptions
 
     public bool IsAllowed(int number) => number >= MinNumber && number <= MaxNumber;
 }
-
-/// <summary>The inclusive range of kurin numbers, as the forms read it.</summary>
-public sealed record KurinNumberRange(int Min, int Max);

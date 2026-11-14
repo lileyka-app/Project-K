@@ -12,7 +12,7 @@ using ProjectK.API.Hosting;
 using ProjectK.API.Middleware;
 using ProjectK.API.Serialization;
 using ProjectK.API.Swagger;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Infrastructure.Logging;
 using ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 using QuestPDF.Infrastructure;

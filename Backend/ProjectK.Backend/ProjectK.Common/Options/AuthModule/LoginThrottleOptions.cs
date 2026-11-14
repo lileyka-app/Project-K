@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.AuthModule;
 
 /// <summary>
 /// How many wrong passwords one email address may collect before sign-in to it pauses, and for how long

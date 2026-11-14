@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.InfrastructureModule;
 
 /// <summary>
 /// Web Push (VAPID, RFC 8292). Bound from the <c>WebPush</c> section. Without both keys push is

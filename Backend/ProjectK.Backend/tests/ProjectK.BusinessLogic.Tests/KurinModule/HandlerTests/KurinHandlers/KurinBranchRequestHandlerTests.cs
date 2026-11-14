@@ -13,7 +13,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.KurinModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.KurinModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 

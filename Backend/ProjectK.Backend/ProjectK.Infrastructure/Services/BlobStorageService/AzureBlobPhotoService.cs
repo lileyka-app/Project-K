@@ -5,7 +5,7 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.InfrastructureModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;

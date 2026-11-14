@@ -16,7 +16,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 
@@ -81,7 +81,7 @@ public class MemberCardsTests
         new FakeBlobReadLinks(),
         _scope.Object,
         _honours.Object,
-        Options.Create(new EmailSettings { BaseUrl = "https://lileyka.test" }),
+        Options.Create(new EmailOptions { BaseUrl = "https://lileyka.test" }),
         new FixedTimeProvider(Now));
 
     private ReadCheckedCardQueryHandler Checked() => new(Cards(), _signer.Object, new FixedTimeProvider(Now));

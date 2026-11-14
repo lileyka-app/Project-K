@@ -1,5 +1,5 @@
 using System.Web;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 
 namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService;

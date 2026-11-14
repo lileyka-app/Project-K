@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.Catalog;
 

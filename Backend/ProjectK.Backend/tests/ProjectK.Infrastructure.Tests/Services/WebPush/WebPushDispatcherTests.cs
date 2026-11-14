@@ -12,7 +12,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Enums.InfrastructureModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Services.WebPush;
 

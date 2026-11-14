@@ -5,7 +5,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 

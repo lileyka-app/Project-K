@@ -5,7 +5,7 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications;

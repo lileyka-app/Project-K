@@ -12,7 +12,7 @@ using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
@@ -307,7 +307,7 @@ public class AccountEmailConfirmationHandlerTests
             _memberDirectoryMock.Object,
             _mediatorMock.Object,
             _emailServiceMock.Object,
-            Options.Create(new EmailSettings { BaseUrl = "http://localhost:4200/" }),
+            Options.Create(new EmailOptions { BaseUrl = "http://localhost:4200/" }),
             new Mock<IActivityLogger>().Object);
     }
 

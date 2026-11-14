@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.ProbesAndBadgesModule;
 
 /// <summary>
 /// Where Lilejka reads вмілості, проби and відзначення from: the catalogue service's public API

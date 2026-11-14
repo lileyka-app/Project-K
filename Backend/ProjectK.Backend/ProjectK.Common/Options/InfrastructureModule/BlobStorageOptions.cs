@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.InfrastructureModule;
 
 /// <summary>
 /// Options for both Azure Blob Storage and the Azurite emulator.

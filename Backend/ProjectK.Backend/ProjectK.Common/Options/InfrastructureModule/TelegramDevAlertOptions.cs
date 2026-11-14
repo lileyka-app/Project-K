@@ -1,9 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
-
-public sealed class TelegramOptions
-{
-    public TelegramDevAlertOptions DevAlerts { get; set; } = new();
-}
+namespace ProjectK.Common.Options.InfrastructureModule;
 
 public sealed class TelegramDevAlertOptions
 {

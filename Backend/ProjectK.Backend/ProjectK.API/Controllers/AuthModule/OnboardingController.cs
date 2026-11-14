@@ -13,7 +13,7 @@ using ProjectK.Common.Dtos.AuthModule.Requests;
 using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.KurinModule;
 
 namespace ProjectK.API.Controllers.AuthModule;
 

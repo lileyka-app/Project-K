@@ -26,7 +26,9 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.AuthModule;
+using ProjectK.Common.Options.KraiModule;
+using ProjectK.Common.Options.KurinModule;
 using ProjectK.Optimization.Extensions;
 
 namespace ProjectK.BusinessLogic;

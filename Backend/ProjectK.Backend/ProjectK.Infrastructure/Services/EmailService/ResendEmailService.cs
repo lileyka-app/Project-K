@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Rules.AuthModule;
 using Resend;
 
@@ -17,9 +17,9 @@ namespace ProjectK.Infrastructure.Services.EmailService;
 public class ResendEmailService : IEmailService
 {
     private readonly IResend _resend;
-    private readonly EmailSettings _settings;
+    private readonly EmailOptions _settings;
 
-    public ResendEmailService(IResend resend, IOptions<EmailSettings> settings)
+    public ResendEmailService(IResend resend, IOptions<EmailOptions> settings)
     {
         _resend = resend;
         _settings = settings.Value;

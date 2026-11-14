@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Models.Settings;
+namespace ProjectK.Common.Options.InfrastructureModule;
 
 public sealed class OrphanCleanupOptions
 {

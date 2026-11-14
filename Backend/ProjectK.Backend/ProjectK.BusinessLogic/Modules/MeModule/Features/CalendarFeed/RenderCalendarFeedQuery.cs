@@ -15,7 +15,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
@@ -68,7 +68,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         IMemberDirectory members,
         IKraiProfileProvider profiles,
         TimeProvider time,
-        IOptions<EmailSettings> site)
+        IOptions<EmailOptions> site)
     {
         _feeds = feeds;
         _userManager = userManager;

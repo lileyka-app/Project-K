@@ -12,7 +12,7 @@ using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KurinModule;

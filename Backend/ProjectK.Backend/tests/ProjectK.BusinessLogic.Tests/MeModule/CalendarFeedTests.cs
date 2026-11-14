@@ -20,7 +20,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.Shared;
@@ -108,7 +108,7 @@ public class CalendarFeedTests
         return new RenderCalendarFeedQueryHandler(
             _feeds.Object, userManager.Object, scopes, unitOfWork.Object, members.Object,
             new Mock<IKraiProfileProvider>().Object, new FixedTimeProvider(Now),
-            Options.Create(new EmailSettings { BaseUrl = "https://lileyka.app" }));
+            Options.Create(new EmailOptions { BaseUrl = "https://lileyka.app" }));
     }
 
     private AgendaItem Event(string title, Guid group, Guid? category = null, Guid? createdBy = null)

@@ -13,7 +13,8 @@ using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Options.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Logging;
@@ -264,7 +265,7 @@ public static class DependencyInjection
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)
     {
         // The business logic reads it too: BaseUrl is the frontend address its links are built on.
-        services.Configure<EmailSettings>(configuration.GetSection("Email"));
+        services.Configure<EmailOptions>(configuration.GetSection("Email"));
 
         var provider = configuration["Email:Provider"] ?? "Mock";
         if (!provider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
