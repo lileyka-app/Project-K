@@ -10,6 +10,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.Shared;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
@@ -201,7 +202,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         _events.PublishAsync(
             new MemberProfileWentStale(
                 member.MemberKey,
-                $"{member.FirstName} {member.LastName}".Trim(),
+                PersonNames.FirstLast(member.FirstName, member.LastName),
                 _currentUserContext.UserId),
             cancellationToken);
 

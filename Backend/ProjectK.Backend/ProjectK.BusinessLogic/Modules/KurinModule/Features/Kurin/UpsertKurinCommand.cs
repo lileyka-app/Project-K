@@ -14,6 +14,7 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 
@@ -82,10 +83,10 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
     public async Task<ServiceResult<KurinDto>> Handle(UpsertKurinCommand request, CancellationToken cancellationToken)
     {
         var tooLong = TooLongField(
-            KurinMapping.Trimmed(request.Stanytsia),
-            KurinMapping.Trimmed(request.RegionOrCountry),
-            KurinMapping.Trimmed(request.NamedAfter),
-            KurinMapping.Trimmed(request.Description));
+            TextRules.TrimOrNull(request.Stanytsia),
+            TextRules.TrimOrNull(request.RegionOrCountry),
+            TextRules.TrimOrNull(request.NamedAfter),
+            TextRules.TrimOrNull(request.Description));
         if (tooLong is not null)
         {
             return tooLong;
@@ -95,7 +96,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
 
         bool isCreated = false;
 
-        var kraiCode = existing?.KraiCode ?? KurinMapping.Trimmed(request.KraiCode) ?? _krai.Default;
+        var kraiCode = existing?.KraiCode ?? TextRules.TrimOrNull(request.KraiCode) ?? _krai.Default;
         if (existing is null && !await _unitOfWork.Krais.ExistsAsync(kraiCode, cancellationToken))
         {
             return ServiceResult<KurinDto>.Failure(ResultType.BadRequest, KurinErrors.UnknownKrai, $"There is no край '{kraiCode}'.");
@@ -220,7 +221,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             return ServiceResult<KurinDto>.Failure(
                 ResultType.BadRequest,
                 KurinErrors.KurinNumberOutOfRange,
-                $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
+                _numbers.OutOfRangeMessage);
         }
 
         var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken, existing?.Branch ?? KurinBranch.UPYu);

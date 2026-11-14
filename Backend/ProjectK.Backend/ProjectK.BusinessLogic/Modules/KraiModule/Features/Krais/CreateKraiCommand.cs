@@ -34,7 +34,7 @@ public sealed class CreateKraiCommandHandler : IRequestHandler<CreateKraiCommand
 
     public async Task<ServiceResult<KraiDto>> Handle(CreateKraiCommand request, CancellationToken cancellationToken)
     {
-        var code = request.Code?.Trim().ToLowerInvariant() ?? string.Empty;
+        var code = Krai.NormalizeCode(request.Code) ?? string.Empty;
         if (!KraiProfileJson.IsKraiCode(code))
         {
             return ServiceResult<KraiDto>.Failure(ResultType.BadRequest, KraiErrors.InvalidKraiCode, "A krai code is 2 to 8 lowercase latin letters, like pl or sk.");

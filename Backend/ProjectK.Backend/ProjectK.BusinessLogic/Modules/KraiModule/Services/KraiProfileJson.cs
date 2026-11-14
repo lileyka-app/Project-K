@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Rules.KraiModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
 
@@ -65,9 +66,9 @@ public static partial class KraiProfileJson
             }),
             Locale = locale is null ? null : Empty(new KraiLocaleDocument
             {
-                Currency = Text(locale.Currency)?.ToUpperInvariant(),
-                TimeZone = Text(locale.TimeZone),
-                NumberLocale = Text(locale.NumberLocale)
+                Currency = TextRules.TrimOrNull(locale.Currency)?.ToUpperInvariant(),
+                TimeZone = TextRules.TrimOrNull(locale.TimeZone),
+                NumberLocale = TextRules.TrimOrNull(locale.NumberLocale)
             }),
             CardFields = card is null ? null : Empty(new KraiCardFieldsDocument
             {
@@ -76,7 +77,7 @@ public static partial class KraiProfileJson
             }),
             Dues = dues is null ? null : Empty(new KraiDuesDocument
             {
-                Upstream = Text(dues.Upstream)?.ToLowerInvariant(),
+                Upstream = TextRules.TrimOrNull(dues.Upstream)?.ToLowerInvariant(),
                 Concessions = Concessions(dues.Concessions)
             })
         };
@@ -199,7 +200,7 @@ public static partial class KraiProfileJson
             {
                 Key = field.Key.Trim(),
                 Label = field.Label?.Trim() ?? string.Empty,
-                Type = Text(field.Type)?.ToLowerInvariant() ?? KraiCardFields.Text,
+                Type = TextRules.TrimOrNull(field.Type)?.ToLowerInvariant() ?? KraiCardFields.Text,
                 Required = field.Required
             })
             .ToList();
@@ -284,12 +285,6 @@ public static partial class KraiProfileJson
     {
         var list = values?.Where(v => !string.IsNullOrEmpty(v)).Select(v => v!).Distinct(StringComparer.Ordinal).ToList();
         return list is { Count: > 0 } ? list : null;
-    }
-
-    private static string? Text(string? value)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 
     private static bool IsTimeZone(string id)

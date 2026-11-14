@@ -10,6 +10,7 @@ using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.DuesModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
 
@@ -102,7 +103,7 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
             Parts = rule.Parts,
             FromQuarter = from,
             ToQuarter = to,
-            Reason = DuesConcessionGrants.Reason(request.Request.Reason),
+            Reason = TextRules.TrimOrNull(request.Request.Reason),
             SetByUserKey = _currentUser.UserId
         };
         _dues.DuesConcessionGrants.Create(grant, cancellationToken);

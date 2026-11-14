@@ -11,6 +11,7 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 
@@ -125,16 +126,14 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         return progress?.Status == BadgeProgressStatus.Confirmed;
     }
 
-    private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
     private static ThirdProbeFileInput Normalize(ThirdProbeFileInput input) => input with
     {
-        MentorZvyazkovyi = Optional(input.MentorZvyazkovyi),
-        MentorVporiadnyk = Optional(input.MentorVporiadnyk),
-        MentorReferent = Optional(input.MentorReferent),
-        ReflectionWith = Optional(input.ReflectionWith),
-        CampName = Optional(input.CampName),
-        PhysicalBadgeId = Optional(input.PhysicalBadgeId),
+        MentorZvyazkovyi = TextRules.TrimOrNull(input.MentorZvyazkovyi),
+        MentorVporiadnyk = TextRules.TrimOrNull(input.MentorVporiadnyk),
+        MentorReferent = TextRules.TrimOrNull(input.MentorReferent),
+        ReflectionWith = TextRules.TrimOrNull(input.ReflectionWith),
+        CampName = TextRules.TrimOrNull(input.CampName),
+        PhysicalBadgeId = TextRules.TrimOrNull(input.PhysicalBadgeId),
         Resume = input.Resume?.Trim() ?? string.Empty
     };
 

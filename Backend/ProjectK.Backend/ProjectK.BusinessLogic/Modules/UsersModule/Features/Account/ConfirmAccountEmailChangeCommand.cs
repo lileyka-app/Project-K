@@ -1,6 +1,7 @@
 using System.Net.Mail;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -38,10 +39,10 @@ public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAc
 
     public async Task<ServiceResult<AccountSettingsDto>> Handle(ConfirmAccountEmailChangeCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
+        var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
-            return UsersErrors.AccountMissing<AccountSettingsDto>();
+            return AuthErrors.AccountMissing<AccountSettingsDto>();
         }
 
         var email = request.Email.Trim();

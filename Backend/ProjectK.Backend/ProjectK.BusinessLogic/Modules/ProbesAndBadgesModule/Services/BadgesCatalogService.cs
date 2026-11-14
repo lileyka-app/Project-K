@@ -2,6 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
@@ -50,7 +51,7 @@ public sealed class BadgesCatalogService : IBadgesCatalogService
 
     public IReadOnlyList<Badge> GetBadges(int take)
     {
-        var safeTake = Math.Clamp(take, 1, 1000);
+        var safeTake = PagingRules.Take(take, 1000);
         var cacheKey = $"catalog:badges:list:{_badgesCatalog.Version}:{safeTake}";
 
         if (_cache.TryGetValue(cacheKey, out IReadOnlyList<Badge>? cachedBadges))

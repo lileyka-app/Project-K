@@ -14,6 +14,7 @@ using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
@@ -116,8 +117,8 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
 
         item.Kind = request.Kind;
         item.Title = request.Title.Trim();
-        item.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
-        item.Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim();
+        item.Description = TextRules.TrimOrNull(request.Description);
+        item.Location = TextRules.TrimOrNull(request.Location);
         item.StartUtc = request.StartUtc;
         item.EndUtc = request.EndUtc;
         item.IsAllDay = request.IsAllDay;

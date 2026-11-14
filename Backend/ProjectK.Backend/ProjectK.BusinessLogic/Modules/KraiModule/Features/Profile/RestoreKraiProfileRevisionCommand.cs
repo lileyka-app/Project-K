@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -24,7 +25,7 @@ public sealed class RestoreKraiProfileRevisionCommandHandler : IRequestHandler<R
 
     public async Task<ServiceResult<KraiProfileEditorDto>> Handle(RestoreKraiProfileRevisionCommand request, CancellationToken cancellationToken)
     {
-        var code = request.KraiCode.Trim().ToLowerInvariant();
+        var code = Krai.NormalizeCode(request.KraiCode) ?? string.Empty;
         var source = await _unitOfWork.Krais.GetProfileRevisionAsync(code, request.Revision, cancellationToken);
         if (source is null)
         {

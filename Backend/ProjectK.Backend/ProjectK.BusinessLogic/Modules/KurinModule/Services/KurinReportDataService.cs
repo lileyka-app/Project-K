@@ -127,7 +127,7 @@ public sealed class KurinReportDataService
                     .ThenBy(member => member.FirstName)
                     .Select(member => new KurinReportGroupMember(
                         member.MemberKey,
-                        BuildFullName(member),
+                        PersonNames.Full(member.FirstName, member.MiddleName, member.LastName),
                         member.Email,
                         member.PhoneNumber,
                         LatestLevelOf(member)))
@@ -263,7 +263,7 @@ public sealed class KurinReportDataService
             GroupOf(source, member.MemberKey) is Guid groupKey && groupNamesByKey.TryGetValue(groupKey, out var groupName)
                 ? groupName
                 : null,
-            BuildFullName(member),
+            PersonNames.Full(member.FirstName, member.MiddleName, member.LastName),
             BuildInitials(member),
             member.Email,
             member.PhoneNumber,
@@ -390,12 +390,12 @@ public sealed class KurinReportDataService
             {
                 if (memberByUserKey.TryGetValue(assignment.MentorUserKey, out var member))
                 {
-                    return BuildFullName(member);
+                    return PersonNames.Full(member.FirstName, member.MiddleName, member.LastName);
                 }
 
                 if (usersByKey.TryGetValue(assignment.MentorUserKey, out var user))
                 {
-                    return $"{user.FirstName} {user.LastName}".Trim();
+                    return PersonNames.FirstLast(user.FirstName, user.LastName);
                 }
 
                 return assignment.MentorUserKey.ToString();
@@ -410,7 +410,7 @@ public sealed class KurinReportDataService
     {
         if (_currentUser.UserId is Guid userKey && usersByKey.TryGetValue(userKey, out var user))
         {
-            var fullName = $"{user.FirstName} {user.LastName}".Trim();
+            var fullName = PersonNames.FirstLast(user.FirstName, user.LastName);
             return string.IsNullOrWhiteSpace(fullName) ? user.Email ?? user.UserName ?? user.Id.ToString() : fullName;
         }
 
@@ -440,11 +440,6 @@ public sealed class KurinReportDataService
     /// <summary>Which гурток of this kurin the person is in — their membership says, not their record.</summary>
     private static Guid? GroupOf(KurinReportSourceData source, Guid memberKey)
         => source.MembershipByMemberKey.TryGetValue(memberKey, out var membership) ? membership.GroupKey : null;
-
-
-    private static string BuildFullName(Member member)
-        => string.Join(" ", new[] { member.FirstName, member.MiddleName, member.LastName }
-            .Where(part => !string.IsNullOrWhiteSpace(part)));
 
     private static string BuildInitials(Member member)
         => string.Concat(new[] { member.FirstName, member.MiddleName, member.LastName }

@@ -10,6 +10,7 @@ using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.ScoreModule;
 using ProjectK.Common.Rules.DuesModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
@@ -137,7 +138,7 @@ public sealed class ScoreBook
         return new ScoreBook(
             kurinKey, today, algorithm, ledger, inKurin,
             people.ToDictionary(p => p.MemberKey),
-            people.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
+            MemberSummaryNames.ByAccount(people),
             groupNames, rules, rates, items, stages, entries, attendances, firstDay);
     }
 

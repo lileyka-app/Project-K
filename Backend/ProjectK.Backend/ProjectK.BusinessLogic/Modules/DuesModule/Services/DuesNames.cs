@@ -3,6 +3,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -59,8 +60,8 @@ public sealed class DuesNames
 
         return new DuesNames(
             inKurin,
-            named.GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().FullName),
-            named.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
+            MemberSummaryNames.ByMember(named),
+            MemberSummaryNames.ByAccount(named),
             named.Where(p => p.UserKey.HasValue).GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().UserKey!.Value),
             people.OrderBy(p => p.FullName).Select(p => new DuesPersonDto { MemberKey = p.MemberKey, FullName = p.FullName }).ToList());
     }

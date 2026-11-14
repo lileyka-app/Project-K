@@ -3,6 +3,7 @@ using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
@@ -79,7 +80,7 @@ public sealed class Reauthentication : IReauthentication
 
     private static string? NameOf(AppUser user)
     {
-        var name = $"{user.FirstName} {user.LastName}".Trim();
+        var name = PersonNames.FirstLast(user.FirstName, user.LastName);
         return name.Length > 0 ? name : null;
     }
 }

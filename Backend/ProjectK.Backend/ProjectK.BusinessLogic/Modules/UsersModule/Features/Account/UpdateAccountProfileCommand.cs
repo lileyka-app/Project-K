@@ -3,6 +3,8 @@ using System.Net.Mail;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using ProjectK.BusinessLogic.Modules.AuthModule;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.UsersModule;
@@ -44,10 +46,10 @@ public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountP
 
     public async Task<ServiceResult<AccountSettingsDto>> Handle(UpdateAccountProfileCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
+        var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
-            return UsersErrors.AccountMissing<AccountSettingsDto>();
+            return AuthErrors.AccountMissing<AccountSettingsDto>();
         }
 
         var email = request.Email.Trim();

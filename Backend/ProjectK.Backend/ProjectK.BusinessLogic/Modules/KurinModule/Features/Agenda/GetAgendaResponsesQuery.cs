@@ -68,7 +68,7 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
         }
 
         var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, occurrenceKey, cancellationToken);
-        var names = await ResolveNamesAsync(item.KurinKey, cancellationToken);
+        var names = AgendaCreatorNames.FromMembers(await _members.GetByKurinAsync(item.KurinKey, cancellationToken));
 
         int? capacity = null;
         var waitlistEnabled = false;
@@ -81,14 +81,5 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
 
         var picture = AgendaRsvpProjector.Project(item.AgendaItemKey, occurrenceKey, responses, capacity, waitlistEnabled, names, _currentUser.UserId);
         return new ServiceResult<AgendaResponsesDto>(ResultType.Success, picture);
-    }
-
-    private async Task<IReadOnlyDictionary<Guid, string>> ResolveNamesAsync(Guid kurinKey, CancellationToken cancellationToken)
-    {
-        var members = await _members.GetByKurinAsync(kurinKey, cancellationToken);
-        return members
-            .Where(m => m.UserKey.HasValue && m.UserKey.Value != Guid.Empty)
-            .GroupBy(m => m.UserKey!.Value)
-            .ToDictionary(g => g.Key, g => $"{g.First().FirstName} {g.First().LastName}".Trim());
     }
 }

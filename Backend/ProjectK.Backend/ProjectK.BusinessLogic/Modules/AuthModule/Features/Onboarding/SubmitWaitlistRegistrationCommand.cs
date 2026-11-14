@@ -84,11 +84,11 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
         // A senior kurin names its number in each гілка it belongs to instead of the one УПЮ number.
         RuleFor(command => command.UspNumber)
             .Must(value => range.IsAllowed(value!.Value))
-            .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.")
+            .WithMessage(range.OutOfRangeMessage)
             .When(command => command.UspNumber.HasValue);
         RuleFor(command => command.UpsNumber)
             .Must(value => range.IsAllowed(value!.Value))
-            .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.")
+            .WithMessage(range.OutOfRangeMessage)
             .When(command => command.UpsNumber.HasValue);
 
         // A підготовчий курінь has no number yet, so the box stands in for it.
@@ -98,7 +98,7 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
                 .NotEmpty().WithMessage("Kurin number is required.")
                 .Must(BeNumeric).WithMessage("Kurin number must contain only digits.")
                 .Must(value => range.IsAllowed(int.Parse(value!.Trim())))
-                .WithMessage($"Kurin number must be between {KurinNumberOptions.MinNumber} and {range.MaxNumber}.");
+                .WithMessage(range.OutOfRangeMessage);
         });
     }
 
@@ -143,7 +143,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
     {
         // Input validation lives in SubmitWaitlistRegistrationCommandValidator (runs in the pipeline).
         var stanytsia = request.Stanytsia?.Trim();
-        var regionOrCountry = string.IsNullOrWhiteSpace(request.RegionOrCountry) ? null : request.RegionOrCountry.Trim();
+        var regionOrCountry = TextRules.TrimOrNull(request.RegionOrCountry);
         var kraiCode = Krai.NormalizeCode(request.KraiCode);
         var isSenior = request.UspNumber.HasValue || request.UpsNumber.HasValue;
         var claimedKurinNumber = request.IsPreparatoryKurin || isSenior ? null : request.ClaimedKurinNameOrNumber?.Trim();

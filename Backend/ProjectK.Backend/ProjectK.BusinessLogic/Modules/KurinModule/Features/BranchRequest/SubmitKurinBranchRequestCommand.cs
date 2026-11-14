@@ -11,6 +11,7 @@ using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Options.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
 
@@ -71,7 +72,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
             RequestedByUserKey = userKey,
             UspNumber = request.UspNumber,
             UpsNumber = request.UpsNumber,
-            Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+            Note = TextRules.TrimOrNull(request.Note),
             RequestedAtUtc = DateTime.UtcNow
         };
 
@@ -98,7 +99,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var requester = await _userManager.FindByIdAsync(userKey.ToString());
-        var requesterName = requester is null ? null : $"{requester.FirstName} {requester.LastName}".Trim();
+        var requesterName = requester is null ? null : PersonNames.FirstLast(requester.FirstName, requester.LastName);
         var current = KurinBranchNames.DescribeSenior(kurin.Numbering);
         await _events.PublishAsync(
             new KurinBranchRequestSubmitted(
@@ -130,7 +131,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
             return ServiceResult<KurinBranchRequestDto>.Failure(
                 ResultType.BadRequest,
                 MemberErrors.KurinNumberOutOfRange,
-                $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
+                _numbers.OutOfRangeMessage);
         }
 
         if (branches.SequenceEqual(kurin.Numbering))

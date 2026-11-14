@@ -9,6 +9,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
@@ -40,7 +41,7 @@ public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGrou
             return KurinErrors.GroupMissing<Unit>();
         }
 
-        var edition = string.IsNullOrWhiteSpace(request.Edition) ? null : request.Edition.Trim();
+        var edition = TextRules.TrimOrNull(request.Edition);
         if (edition == group.ProbeEdition)
         {
             return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

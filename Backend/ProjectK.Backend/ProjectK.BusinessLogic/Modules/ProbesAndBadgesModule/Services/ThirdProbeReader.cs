@@ -8,6 +8,7 @@ using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
@@ -90,7 +91,7 @@ public sealed class ThirdProbeReader : IThirdProbeReader
         {
             zvyazkovi.AddRange((await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(membership.KurinKey, LeadershipType.KV, cancellationToken))
                 .Where(holder => holder.UserRole == zvyazkovyi && holder.MemberKey != memberKey)
-                .Select(holder => $"{holder.FirstName} {holder.LastName}".Trim()));
+                .Select(holder => PersonNames.FirstLast(holder.FirstName, holder.LastName)));
 
             foreach (var assignment in (await _unitOfWork.MentorAssignments.GetByKurinKeyAsync(membership.KurinKey, cancellationToken))
                          .Where(assignment => assignment.RevokedAtUtc is null))

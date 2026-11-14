@@ -191,7 +191,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             return;
         }
 
-        var names = holders.GroupBy(holder => holder.MemberKey).ToDictionary(found => found.Key, found => found.First().FullName);
+        var names = MemberSummaryNames.ByMember(holders);
         // The entry lands in the провід's kurin, or the acting one for a гурток's: name the role as that kurin does.
         var kurinKey = leadership.KurinKey ?? _currentUserContext.KurinKey;
         var kurin = kurinKey is { } key ? await _unitOfWork.Kurins.GetByKeyAsync(key, cancellationToken) : null;
@@ -213,7 +213,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         }
     }
 
-    private static string? NamesOf(List<Guid> memberKeys, Dictionary<Guid, string> names) =>
+    private static string? NamesOf(List<Guid> memberKeys, IReadOnlyDictionary<Guid, string> names) =>
         memberKeys.Count == 0
             ? null
             : string.Join(", ", memberKeys.Select(key => names.GetValueOrDefault(key, string.Empty)).Where(name => name.Length > 0).Order(StringComparer.Ordinal));

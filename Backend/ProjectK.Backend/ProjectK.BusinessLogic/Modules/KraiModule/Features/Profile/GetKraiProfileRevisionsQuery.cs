@@ -1,8 +1,10 @@
 using MediatR;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 
@@ -20,7 +22,7 @@ public sealed class GetKraiProfileRevisionsQueryHandler : IRequestHandler<GetKra
 
     public async Task<ServiceResult<IReadOnlyList<KraiProfileRevisionDto>>> Handle(GetKraiProfileRevisionsQuery request, CancellationToken cancellationToken)
     {
-        var code = request.KraiCode.Trim().ToLowerInvariant();
+        var code = Krai.NormalizeCode(request.KraiCode) ?? string.Empty;
         if (!await _unitOfWork.Krais.ExistsAsync(code, cancellationToken))
         {
             return KraiErrors.NotFound<IReadOnlyList<KraiProfileRevisionDto>>();
@@ -32,7 +34,7 @@ public sealed class GetKraiProfileRevisionsQueryHandler : IRequestHandler<GetKra
             ? new Dictionary<Guid, string>()
             : (await _unitOfWork.Users.GetAllAsync(cancellationToken))
                 .Where(u => authorKeys.Contains(u.Id))
-                .ToDictionary(u => u.Id, u => $"{u.FirstName} {u.LastName}".Trim() is { Length: > 0 } name ? name : u.Email ?? string.Empty);
+                .ToDictionary(u => u.Id, u => PersonNames.FirstLast(u.FirstName, u.LastName) is { Length: > 0 } name ? name : u.Email ?? string.Empty);
 
         IReadOnlyList<KraiProfileRevisionDto> response = revisions
             .Select(r => r.ToDto(r.CreatedByUserKey is { } key ? names.GetValueOrDefault(key) : null))

@@ -13,6 +13,7 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.Shared;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
@@ -67,7 +68,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         member.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent;
         member.ProfileVerifiedAtUtc = DateTime.UtcNow;
         member.ProfileVerifiedByUserKey = _currentUserContext.UserId;
-        member.ProfileVerificationNote = NormalizeNote(note);
+        member.ProfileVerificationNote = TextRules.TrimOrNull(note);
         member.UpdatedDate = DateTime.UtcNow;
 
         // Checking a profile again is an act of its own, so it is recorded even when it was already current.
@@ -227,11 +228,5 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         await _events.PublishAsync(
             new MemberProfileVerified(member.MemberKey, member.UserKey.Value, _currentUserContext.UserId),
             cancellationToken);
-    }
-
-    private static string? NormalizeNote(string? note)
-    {
-        var trimmed = note?.Trim();
-        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
     }
 }

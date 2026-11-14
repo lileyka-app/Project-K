@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Hosting;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Middleware;
 
@@ -19,7 +20,7 @@ public sealed class ClientIpMiddleware
     public ClientIpMiddleware(RequestDelegate next, IOptions<ClientIpOptions> options)
     {
         _next = next;
-        _header = string.IsNullOrWhiteSpace(options.Value.Header) ? null : options.Value.Header.Trim();
+        _header = TextRules.TrimOrNull(options.Value.Header);
     }
 
     public Task InvokeAsync(HttpContext context)

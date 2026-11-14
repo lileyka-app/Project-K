@@ -48,7 +48,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
         SetKurinScopeCommand request,
         CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
+        var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user is null)
         {
             return AuthErrors.AccountMissing<LoginUserDto>();

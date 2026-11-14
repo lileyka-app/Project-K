@@ -1,3 +1,5 @@
+using ProjectK.Common.Rules.Shared;
+
 namespace ProjectK.Common.Records.KurinModule;
 
 /// <summary>
@@ -16,5 +18,5 @@ public sealed record MemberSummary(
     string? ProfilePhotoBlobName)
 {
     /// <summary>The person's name as it is shown, empty when neither part is set.</summary>
-    public string FullName => $"{FirstName} {LastName}".Trim();
+    public string FullName => PersonNames.FirstLast(FirstName, LastName);
 }

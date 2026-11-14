@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 
@@ -43,7 +44,7 @@ public sealed class ExportKurinReportPdfQueryHandler
         }
 
         var bytes = _renderer.Render(report, request.TimeZone);
-        var fileName = $"kurin-{report.Kurin.Number?.ToString() ?? "pidhotovchyi"}-report-{_timeProvider.GetUtcNow():yyyyMMdd-HHmmss}.pdf";
+        var fileName = $"kurin-{KurinBranchNames.InFileName(report.Kurin.Number)}-report-{_timeProvider.GetUtcNow():yyyyMMdd-HHmmss}.pdf";
 
         return new ServiceResult<KurinReportPdf>(ResultType.Success, new KurinReportPdf(bytes, fileName));
     }

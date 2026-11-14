@@ -109,7 +109,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         };
 
         var profile = box.Profile;
-        var fullName = string.Join(' ', new[] { profile.FirstName, profile.MiddleName, profile.LastName }.Where(p => !string.IsNullOrWhiteSpace(p)));
+        var fullName = PersonNames.Full(profile.FirstName, profile.MiddleName, profile.LastName);
         var now = _time.GetUtcNow();
         var story = new LifeStoryData(fullName, now.UtcDateTime, sections.Where(s => s.Rows.Count > 0).ToList());
 

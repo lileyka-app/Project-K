@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -32,7 +33,7 @@ public sealed class RenameKraiCommandHandler : IRequestHandler<RenameKraiCommand
             return KraiNames.Invalid();
         }
 
-        var code = request.Code?.Trim().ToLowerInvariant() ?? string.Empty;
+        var code = Krai.NormalizeCode(request.Code) ?? string.Empty;
         var krai = await _unitOfWork.Krais.GetForUpdateAsync(code, cancellationToken);
         if (krai is null)
         {

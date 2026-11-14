@@ -4,6 +4,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
@@ -65,10 +66,10 @@ internal static class KurinMapping
     public static void ApplyTo(this UpsertKurinCommand request, KurinEntity kurin, DateTime now)
     {
         kurin.SetNumber(request.Number);
-        kurin.Stanytsia = Trimmed(request.Stanytsia);
-        kurin.RegionOrCountry = Trimmed(request.RegionOrCountry);
-        kurin.NamedAfter = Trimmed(request.NamedAfter);
-        kurin.Description = Trimmed(request.Description);
+        kurin.Stanytsia = TextRules.TrimOrNull(request.Stanytsia);
+        kurin.RegionOrCountry = TextRules.TrimOrNull(request.RegionOrCountry);
+        kurin.NamedAfter = TextRules.TrimOrNull(request.NamedAfter);
+        kurin.Description = TextRules.TrimOrNull(request.Description);
         kurin.ProfileVerificationEnabled = request.ProfileVerificationEnabled;
         if (request.ScoreEnabled is bool scoreEnabled)
         {
@@ -76,12 +77,5 @@ internal static class KurinMapping
         }
 
         kurin.UpdatedDate = now;
-    }
-
-    /// <summary>Free text as it is kept: trimmed, and blank as nothing.</summary>
-    public static string? Trimmed(string? value)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
     }
 }

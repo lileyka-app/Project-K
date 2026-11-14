@@ -1,3 +1,5 @@
+using ProjectK.Common.Rules.Shared;
+
 namespace ProjectK.Common.Records.KurinModule;
 
 /// <summary>
@@ -14,5 +16,5 @@ public sealed record MemberCard(
     string? ProfilePhotoBlobName,
     int CurrentMembershipCount)
 {
-    public string FullName => $"{FirstName} {LastName}".Trim();
+    public string FullName => PersonNames.FirstLast(FirstName, LastName);
 }

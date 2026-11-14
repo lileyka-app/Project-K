@@ -9,6 +9,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
@@ -56,7 +57,7 @@ public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArch
         return new ServiceResult<AgendaArchivePageDto>(ResultType.Success, new AgendaArchivePageDto
         {
             Total = matching.Count,
-            Items = matching.Skip(Math.Max(0, request.Skip)).Take(Math.Clamp(request.Take, 1, AgendaBoardPaging.MaxTake)).ToList(),
+            Items = matching.Skip(PagingRules.Skip(request.Skip)).Take(PagingRules.Take(request.Take, AgendaBoardPaging.MaxTake)).ToList(),
             Policy = new AgendaArchivePolicyDto { AutoArchiveAfterDays = kurin.TaskAutoArchiveAfterDays, PurgeAfterDays = kurin.TaskArchivePurgeAfterDays }
         });
     }

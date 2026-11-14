@@ -40,8 +40,7 @@ internal sealed class RosterRow
     /// <summary>Dates of other ступені the file happened to carry.</summary>
     public Dictionary<PlastLevel, DateOnly> LevelDates { get; } = [];
 
-    public string DisplayName => string.Join(' ', new[] { LastName, FirstName }
-        .Where(part => !string.IsNullOrWhiteSpace(part)));
+    public string DisplayName => PersonNames.SurnameFirst(LastName, FirstName);
 
     /// <summary>
     /// Why this row cannot be imported, or null when it can. The required set is IMPORT-01's:
@@ -89,7 +88,7 @@ internal sealed class RosterRow
     public static RosterRow From(SheetRow row, IReadOnlyList<ColumnMapping> mapping)
     {
         string? At(int index) => index >= 0 && index < row.Cells.Count
-            ? RosterValues.Text(row.Cells[index])
+            ? TextRules.TrimOrNull(row.Cells[index])
             : null;
 
         string? Of(RosterField field) => mapping

@@ -1,10 +1,8 @@
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 
@@ -56,7 +54,7 @@ public sealed class ArchiveDeletionGate
         if (left == 0 && _currentUser.UserId is { } userKey && _zone.Close(userKey, kurinKey) is not null)
         {
             await _audit.RecordAsync(
-                new AuditRecord(AuditArea.Archive, AuditActions.Archive.DangerZoneEnded, userKey, "Небезпечний режим", Changes: AuditChanges.Added(("reason", "spent")), KurinKey: kurinKey),
+                ArchiveDangerZone.JournalEntry(AuditActions.Archive.DangerZoneEnded, userKey, kurinKey, "reason", "spent"),
                 cancellationToken);
         }
 

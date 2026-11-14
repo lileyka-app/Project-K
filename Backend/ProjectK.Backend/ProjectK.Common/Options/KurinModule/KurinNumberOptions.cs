@@ -14,4 +14,7 @@ public sealed class KurinNumberOptions
     public int MaxNumber { get; init; } = 200;
 
     public bool IsAllowed(int number) => number >= MinNumber && number <= MaxNumber;
+
+    /// <summary>The one answer to a number outside <see cref="IsAllowed"/>, wherever a number is checked.</summary>
+    public string OutOfRangeMessage => $"Kurin number must be between {MinNumber} and {MaxNumber}.";
 }

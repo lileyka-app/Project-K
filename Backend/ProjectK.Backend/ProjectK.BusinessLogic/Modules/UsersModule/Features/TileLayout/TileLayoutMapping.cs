@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 
@@ -26,22 +27,8 @@ public static class TileLayoutMapping
         layout.UpdatedAtUtc = now;
     }
 
-    public static IReadOnlyList<string> ReadKeys(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<List<string>>(json) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-    }
+    /// <inheritdoc cref="JsonListRules.ReadStrings"/>
+    public static IReadOnlyList<string> ReadKeys(string? json) => JsonListRules.ReadStrings(json);
 
     public static string WriteKeys(IReadOnlyList<string> tileKeys) => JsonSerializer.Serialize(tileKeys);
 }

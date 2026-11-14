@@ -318,7 +318,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             new MemberAwardSubmitted(
                 award.MemberAwardKey,
                 member.MemberKey,
-                $"{member.FirstName} {member.LastName}".Trim(),
+                PersonNames.FirstLast(member.FirstName, member.LastName),
                 kurinKey,
                 groupKey,
                 _currentUserContext.UserId),

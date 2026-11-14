@@ -16,7 +16,7 @@ public static class ReleaseDisplay
 
     /// <summary>The code name, or <c>null</c> when this release carries none.</summary>
     public static string? CodeName(string? configured) =>
-        string.IsNullOrWhiteSpace(configured) ? null : configured.Trim();
+        TextRules.TrimOrNull(configured);
 
     /// <summary>
     /// The version on its own, or the version followed by the code name in quotes when there is one.

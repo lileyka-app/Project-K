@@ -9,6 +9,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
@@ -77,8 +78,8 @@ public sealed class GetAgendaBoardQueryHandler
     public async Task<ServiceResult<AgendaBoardDto>> Handle(GetAgendaBoardQuery request, CancellationToken cancellationToken)
     {
         var filter = request.Filter ?? new AgendaBoardFilter();
-        var take = Math.Clamp(filter.Take, 1, AgendaBoardPaging.MaxTake);
-        var skip = Math.Max(0, filter.Skip);
+        var take = PagingRules.Take(filter.Take, AgendaBoardPaging.MaxTake);
+        var skip = PagingRules.Skip(filter.Skip);
         var viewer = await _access.BuildViewerAsync(request.KurinKey, cancellationToken);
 
         var items = (await _uow.AgendaItems.GetForViewerAsync(

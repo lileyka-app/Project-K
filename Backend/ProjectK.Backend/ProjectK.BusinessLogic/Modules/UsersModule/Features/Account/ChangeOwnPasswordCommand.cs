@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -29,10 +30,10 @@ public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPassword
 
     public async Task<ServiceResult<Unit>> Handle(ChangeOwnPasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
+        var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
-            return UsersErrors.AccountMissing<Unit>();
+            return AuthErrors.AccountMissing<Unit>();
         }
 
         var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
