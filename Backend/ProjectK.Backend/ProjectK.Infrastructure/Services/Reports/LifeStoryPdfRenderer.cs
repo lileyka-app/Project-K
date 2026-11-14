@@ -4,7 +4,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace ProjectK.Infrastructure.Reports;
+namespace ProjectK.Infrastructure.Services.Reports;
 
 /// <summary>The life story on A4, in the kurin report's type and colours, one table per section.</summary>
 public sealed class LifeStoryPdfRenderer : ILifeStoryPdfRenderer

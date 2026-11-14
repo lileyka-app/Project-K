@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 
 namespace ProjectK.Infrastructure.Tests.ScoreModule;
 
@@ -15,7 +16,7 @@ public class ScoreModelTests
 {
     private static IEntityType Entity<T>()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         using var context = new AppDbContext(options);

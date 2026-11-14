@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 
 namespace ProjectK.API.Tests.KurinModule;
@@ -26,7 +27,7 @@ public class AgendaKurinScheduleVisibilityTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
-        _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseSqlite(_connection).Options;
 
         using var context = new AppDbContext(_options);
         context.Database.EnsureCreated();

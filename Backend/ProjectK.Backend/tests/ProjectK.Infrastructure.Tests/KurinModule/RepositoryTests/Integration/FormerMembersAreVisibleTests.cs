@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
@@ -14,7 +15,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
 public sealed class FormerMembersAreVisibleTests
 {
     private static AppDbContext NewContext()
-        => new(new DbContextOptionsBuilder<AppDbContext>()
+        => new(new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 

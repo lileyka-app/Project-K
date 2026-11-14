@@ -7,23 +7,24 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.Services.Blobs;
 
-namespace ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
+namespace ProjectK.Infrastructure.BackgroundServices;
 
 // Background service for cleaning up orphaned blob files (photos).
 // Periodically compares the list of blobs with the set of references in the database.
-public sealed class OrphanPhotoCleanupService : BackgroundService
+public sealed class OrphanPhotoCleanupBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<OrphanPhotoCleanupService> _logger;
+    private readonly ILogger<OrphanPhotoCleanupBackgroundService> _logger;
     private readonly BlobStorageOptions _blobOptions;
     private readonly OrphanCleanupOptions _options;
     private readonly SemaphoreSlim _runLock = new(1, 1);
     private readonly Random _rnd = new();
 
-    public OrphanPhotoCleanupService(
+    public OrphanPhotoCleanupBackgroundService(
         IServiceScopeFactory scopeFactory,
-        ILogger<OrphanPhotoCleanupService> logger,
+        ILogger<OrphanPhotoCleanupBackgroundService> logger,
         BlobStorageOptions blobOptions,
         IOptions<OrphanCleanupOptions> cleanupOptions)
     {
@@ -37,11 +38,11 @@ public sealed class OrphanPhotoCleanupService : BackgroundService
     {
         if (!_options.Enabled)
         {
-            _logger.LogInformation("OrphanPhotoCleanupService disabled (Enabled=false).");
+            _logger.LogInformation("OrphanPhotoCleanupBackgroundService disabled (Enabled=false).");
             return;
         }
 
-        _logger.LogInformation("OrphanPhotoCleanupService started. Interval: {Interval}, Grace: {Grace}, MaxDeletes: {Max}",
+        _logger.LogInformation("OrphanPhotoCleanupBackgroundService started. Interval: {Interval}, Grace: {Grace}, MaxDeletes: {Max}",
             _options.Interval, _options.GracePeriod, _options.MaxDeletesPerRun);
 
         // Initial small jitter to avoid mass start after deployment
@@ -76,7 +77,7 @@ public sealed class OrphanPhotoCleanupService : BackgroundService
             }
         }
 
-        _logger.LogInformation("OrphanPhotoCleanupService stopped.");
+        _logger.LogInformation("OrphanPhotoCleanupBackgroundService stopped.");
     }
 
     private async Task RunOnceAsync(CancellationToken ct)

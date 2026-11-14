@@ -17,20 +17,21 @@ using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Logging;
-using ProjectK.Infrastructure.Reports;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Seeding;
-using ProjectK.Infrastructure.Services;
-using ProjectK.Infrastructure.Services.BlobStorageService;
-using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
+using ProjectK.Infrastructure.Services.Blobs;
+using ProjectK.Infrastructure.Services.Cards;
 using ProjectK.Infrastructure.Services.Catalog;
-using ProjectK.Infrastructure.Services.EmailService;
+using ProjectK.Infrastructure.Services.Email;
 using ProjectK.Infrastructure.Services.Feedback;
 using ProjectK.Infrastructure.Services.GeoIP;
-using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.Infrastructure.Services.Jwt;
+using ProjectK.Infrastructure.Services.Qr;
+using ProjectK.Infrastructure.Services.Reports;
 using ProjectK.Infrastructure.Services.Spreadsheets;
 using ProjectK.Infrastructure.Services.Telemetry;
 using ProjectK.Infrastructure.Services.WebPush;
@@ -129,6 +130,7 @@ public static class DependencyInjection
             opt.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
                 b => b.MigrationsAssembly("ProjectK.Infrastructure"));
+            opt.AddAppDbContextInterceptors();
         });
     }
 
@@ -175,7 +177,7 @@ public static class DependencyInjection
                 sp.GetRequiredService<ILogger<AzureBlobPhotoService>>());
         });
 
-        services.AddHostedService<OrphanPhotoCleanupService>();
+        services.AddHostedService<OrphanPhotoCleanupBackgroundService>();
     }
 
     /// <summary>

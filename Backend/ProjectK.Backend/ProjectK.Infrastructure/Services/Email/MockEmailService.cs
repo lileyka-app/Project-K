@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
-namespace ProjectK.Infrastructure.Services.EmailService;
+namespace ProjectK.Infrastructure.Services.Email;
 
 public class MockEmailService : IEmailService
 {

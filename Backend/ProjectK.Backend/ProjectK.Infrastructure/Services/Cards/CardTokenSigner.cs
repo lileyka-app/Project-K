@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
-namespace ProjectK.Infrastructure.Services;
+namespace ProjectK.Infrastructure.Services.Cards;
 
 /// <summary>
 /// Signs «перевірити картку» tokens with HMAC-SHA256 under a key derived from the JWT key, so there

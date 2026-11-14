@@ -6,7 +6,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace ProjectK.Infrastructure.Reports;
+namespace ProjectK.Infrastructure.Services.Reports;
 
 public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
 {

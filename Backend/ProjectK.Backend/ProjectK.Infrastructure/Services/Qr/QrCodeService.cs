@@ -1,7 +1,7 @@
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using QRCoder;
 
-namespace ProjectK.Infrastructure.Services;
+namespace ProjectK.Infrastructure.Services.Qr;
 
 public class QrCodeService : IQrCodeService
 {

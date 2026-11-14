@@ -3,6 +3,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.UnitOfWork;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.RepositoryTests.Integration;
@@ -11,7 +12,7 @@ public class KurinRepositoryIntegrationTests
 {
     private AppDbContext CreateInMemoryDbContext()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         return new AppDbContext(options);

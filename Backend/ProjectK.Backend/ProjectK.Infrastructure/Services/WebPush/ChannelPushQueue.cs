@@ -18,12 +18,3 @@ public sealed class ChannelPushQueue : IPushQueue
 
     public void Enqueue(AppNotificationDto notification) => _channel.Writer.TryWrite(notification);
 }
-
-/// <summary>Push is not configured here (no VAPID keys): notifications stay in the app.</summary>
-public sealed class DisabledPushQueue : IPushQueue
-{
-    public void Enqueue(AppNotificationDto notification)
-    {
-        // Nothing to send with.
-    }
-}

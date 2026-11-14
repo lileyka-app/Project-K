@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule;
 
@@ -12,7 +13,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule;
 public class KurinTagSettingsPersistenceTests
 {
     private static DbContextOptions<AppDbContext> Options() =>
-        new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     [Fact]
     public void OwnTagsVisible_HasNoDatabaseDefault_SoFalseIsAlwaysWritten()

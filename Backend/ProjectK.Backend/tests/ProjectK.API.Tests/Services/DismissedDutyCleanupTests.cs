@@ -7,6 +7,7 @@ using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 
 namespace ProjectK.API.Tests.Services;
 
@@ -20,7 +21,7 @@ public class DismissedDutyCleanupTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
-        _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseSqlite(_connection).Options;
 
         using var context = new AppDbContext(_options);
         context.Database.EnsureCreated();
@@ -42,7 +43,7 @@ public class DismissedDutyCleanupTests : IDisposable
         }
 
         var services = new ServiceCollection();
-        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection));
+        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection).AddAppDbContextInterceptors());
         var service = new AuditCleanupBackgroundService(
             services.BuildServiceProvider(), new Mock<ILogger<AuditCleanupBackgroundService>>().Object);
         var cleanup = typeof(AuditCleanupBackgroundService).GetMethod("CleanupOldRecordsAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;

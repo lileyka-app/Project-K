@@ -13,13 +13,7 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 
-namespace ProjectK.Infrastructure.Services.BlobStorageService;
-
-
-public interface IPhotoReferenceProvider
-{
-    Task<IReadOnlyCollection<string>> GetAllReferencedBlobNamesAsync(CancellationToken cancellationToken);
-}
+namespace ProjectK.Infrastructure.Services.Blobs;
 
 public class AzureBlobPhotoService : IPhotoService
 {

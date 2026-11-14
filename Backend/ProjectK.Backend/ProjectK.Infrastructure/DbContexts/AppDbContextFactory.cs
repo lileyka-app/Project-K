@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 
 namespace ProjectK.Infrastructure.DbContexts;
 
@@ -13,6 +14,7 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlServer(connectionString, builder => builder.MigrationsAssembly("ProjectK.Infrastructure"))
+            .AddAppDbContextInterceptors()
             .Options;
 
         return new AppDbContext(options);

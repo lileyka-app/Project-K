@@ -10,7 +10,9 @@ using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Services.Telemetry;
 
 namespace ProjectK.Infrastructure.Tests.Services.Telemetry;
@@ -18,7 +20,7 @@ namespace ProjectK.Infrastructure.Tests.Services.Telemetry;
 public class TelemetryTests
 {
     private static DbContextOptions<AppDbContext> NewDatabase() =>
-        new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     [Theory]
     [InlineData("Production", "prod")]

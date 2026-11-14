@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Settings;
 
-namespace ProjectK.Infrastructure.Reports;
+namespace ProjectK.Infrastructure.Services.Reports;
 
 public sealed class KurinReportMediaService : IKurinReportMedia
 {
