@@ -27,6 +27,8 @@ internal static class PlanningSessionMapping
             .ToList()
     };
 
+    /// <summary>The session as the planning page reads it.</summary>
+    /// <param name="session">The session, with its participants and their busy ranges loaded.</param>
     /// <param name="canDelete">Whether this caller may withdraw it; the record cannot say.</param>
     public static PlanningSessionDto ToDto(this PlanningSessionEntity session, bool canDelete) => new(
         PlanningSessionKey: session.PlanningSessionKey,

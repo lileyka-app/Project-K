@@ -30,26 +30,6 @@ internal static class KurinMapping
         EmblemUrl: links.For(kurin.EmblemBlobName),
         CanRenameRoles: KurinRoleNames.IsAvailableFor(kurin.Branch));
 
-    /// <summary>
-    /// Writes the kurin's own record. The key, the край, the гілки, the role names and the emblem
-    /// are never written here: each has its own request and its own checks.
-    /// </summary>
-    public static void ApplyTo(this UpsertKurinCommand request, KurinEntity kurin, DateTime now)
-    {
-        kurin.SetNumber(request.Number);
-        kurin.Stanytsia = Trimmed(request.Stanytsia);
-        kurin.RegionOrCountry = Trimmed(request.RegionOrCountry);
-        kurin.NamedAfter = Trimmed(request.NamedAfter);
-        kurin.Description = Trimmed(request.Description);
-        kurin.ProfileVerificationEnabled = request.ProfileVerificationEnabled;
-        if (request.ScoreEnabled is bool scoreEnabled)
-        {
-            kurin.ScoreEnabled = scoreEnabled;
-        }
-
-        kurin.UpdatedDate = now;
-    }
-
     /// <summary>What the kurin lets its people under 18 share. A kurin that never set it lets them share nothing.</summary>
     public static KurinCardSharingDto ToDto(this KurinCardSharing? settings) =>
         settings is null
@@ -75,6 +55,26 @@ internal static class KurinMapping
             .ToList();
 
         return new KurinAccessPolicyDto(KurinCapabilities.Audiences, rows);
+    }
+
+    /// <summary>
+    /// Writes the kurin's own record. The key, the край, the гілки, the role names and the emblem
+    /// are never written here: each has its own request and its own checks.
+    /// </summary>
+    public static void ApplyTo(this UpsertKurinCommand request, KurinEntity kurin, DateTime now)
+    {
+        kurin.SetNumber(request.Number);
+        kurin.Stanytsia = Trimmed(request.Stanytsia);
+        kurin.RegionOrCountry = Trimmed(request.RegionOrCountry);
+        kurin.NamedAfter = Trimmed(request.NamedAfter);
+        kurin.Description = Trimmed(request.Description);
+        kurin.ProfileVerificationEnabled = request.ProfileVerificationEnabled;
+        if (request.ScoreEnabled is bool scoreEnabled)
+        {
+            kurin.ScoreEnabled = scoreEnabled;
+        }
+
+        kurin.UpdatedDate = now;
     }
 
     /// <summary>Free text as it is kept: trimmed, and blank as nothing.</summary>

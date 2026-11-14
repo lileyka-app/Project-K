@@ -131,7 +131,7 @@ public class GetKurinsHandlerTests
         result.Type.Should().Be(ResultType.Success);
         result.Data.Should().NotBeNull();
 
-        result.Data!.Select(kurin => (kurin.KurinKey, kurin.Number)).Should().Equal(kurins.Select(kurin => (kurin.KurinKey, kurin.Number)));
+        result.Data.Select(kurin => (kurin.KurinKey, kurin.Number)).Should().Equal(kurins.Select(kurin => (kurin.KurinKey, kurin.Number)));
     }
 
     [Fact]

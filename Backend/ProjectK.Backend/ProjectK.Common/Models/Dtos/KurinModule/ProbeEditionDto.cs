@@ -1,5 +1,6 @@
 namespace ProjectK.Common.Models.Dtos.KurinModule;
 
+/// <summary>One edition of the probe programme the catalogue offers.</summary>
 /// <param name="Id">The catalogue id of the edition, e.g. "upyu-2026"; null for the unnamed one.</param>
 /// <param name="Title">The name the catalogue gives the edition; null for the unnamed one, which the
 /// clients call «Звичайна проба» themselves.</param>

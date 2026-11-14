@@ -47,11 +47,11 @@ public class PlanningSessionHandlerTests
             CanDelete = true
         });
         var participant = session.Participants.Single();
-        result.Data!.Participants.Should().ContainSingle().Which.Should().BeEquivalentTo(new PlanningParticipantDto(
+        result.Data.Participants.Should().ContainSingle().Which.Should().BeEquivalentTo(new PlanningParticipantDto(
             participant.MemberKey.ToString(),
             participant.FullName,
             participant.RoleWeight,
-            [new DateRangeDto(new DateTime(2026, 7, 2), new DateTime(2026, 7, 4))]));
+            [new DateRangeDto(new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 7, 4, 0, 0, 0, DateTimeKind.Utc))]));
     }
 
     [Fact]
@@ -93,12 +93,12 @@ public class PlanningSessionHandlerTests
         KurinKey = Guid.NewGuid(),
         Name = "Табір",
         CreatedByUserKey = _author,
-        SearchStart = new DateTime(2026, 7, 1),
-        SearchEnd = new DateTime(2026, 7, 31),
+        SearchStart = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
+        SearchEnd = new DateTime(2026, 7, 31, 0, 0, 0, DateTimeKind.Utc),
         DurationDays = 10,
         IsCalculated = true,
-        OptimalStartDate = new DateTime(2026, 7, 10),
-        OptimalEndDate = new DateTime(2026, 7, 20),
+        OptimalStartDate = new DateTime(2026, 7, 10, 0, 0, 0, DateTimeKind.Utc),
+        OptimalEndDate = new DateTime(2026, 7, 20, 0, 0, 0, DateTimeKind.Utc),
         ConflictScore = 1.5,
         Participants =
         [
@@ -107,7 +107,7 @@ public class PlanningSessionHandlerTests
                 MemberKey = Guid.NewGuid(),
                 FullName = "Іван Петренко",
                 RoleWeight = 2,
-                BusyRanges = [new ParticipantBusyRange { Start = new DateTime(2026, 7, 2), End = new DateTime(2026, 7, 4) }]
+                BusyRanges = [new ParticipantBusyRange { Start = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc), End = new DateTime(2026, 7, 4, 0, 0, 0, DateTimeKind.Utc) }]
             }
         ]
     };
