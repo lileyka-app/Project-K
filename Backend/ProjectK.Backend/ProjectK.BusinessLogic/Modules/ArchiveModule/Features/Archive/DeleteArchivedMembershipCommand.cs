@@ -54,8 +54,8 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
             return refusal!;
         }
 
-        var membership = await _unitOfWork.Archive.FindMembershipAsync(request.MembershipKey, cancellationToken);
-        if (membership is null || membership.KurinKey != request.KurinKey)
+        var membership = await _unitOfWork.Archive.FindMembershipAsync(request.KurinKey, request.MembershipKey, cancellationToken);
+        if (membership is null)
         {
             return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such membership in this kurin.");
         }
@@ -91,7 +91,7 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
         var joinedOn = DateOnly.FromDateTime(membership.JoinedAtUtc);
         var leftOn = DateOnly.FromDateTime(leftAt);
         var offices = await _unitOfWork.Archive.RemoveOfficesHeldAsync(membership.MemberKey, request.KurinKey, joinedOn, leftOn, cancellationToken);
-        _unitOfWork.Archive.RemoveMembership(membership);
+        await _unitOfWork.Archive.RemoveMembershipAsync(membership.MembershipKey, cancellationToken);
         await _events.PublishAsync(new MembershipsRemoved([membership.MembershipKey]), cancellationToken);
 
         await _audit.RecordAsync(
@@ -106,7 +106,7 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
                     ("kind", membership.Kind),
                     ("joinedOn", joinedOn),
                     ("leftOn", leftOn),
-                    ("offices", offices.Count == 0 ? null : offices.Count)),
+                    ("offices", offices == 0 ? null : offices)),
                 KurinKey: request.KurinKey),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

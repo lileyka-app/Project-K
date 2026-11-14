@@ -14,7 +14,6 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -52,7 +51,6 @@ public class KurinArchiveHandlerTests
     private readonly Mock<IKurinAudit> _audit = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IKurinArchiveRepository> _archive = new();
-    private readonly Mock<IKurinRepository> _kurins = new();
     private readonly ArchiveDangerZoneStore _zones = new();
     private readonly List<AuditRecord> _journal = [];
 
@@ -79,7 +77,7 @@ public class KurinArchiveHandlerTests
             .Callback((AuditRecord record, CancellationToken _) => _journal.Add(record))
             .Returns(Task.CompletedTask);
         _unitOfWork.Setup(u => u.Archive).Returns(_archive.Object);
-        _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
+        _archive.Setup(a => a.GetRoleNamesAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(new Dictionary<LeadershipRole, string>());
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         Grant(AccessScope.KurinWide, ResourceAction.Read, ResourceAction.Update, ResourceAction.Delete);
     }
@@ -100,17 +98,17 @@ public class KurinArchiveHandlerTests
 
     private string OpenZone() => Zone().Open(_userKey, _kurinKey, Stamp).Ticket;
 
-    private LeadershipHistory FormerOffice(Guid? memberKey = null, Guid? groupKey = null, DateOnly? end = null) => new()
-    {
-        LeadershipHistoryKey = Guid.NewGuid(),
-        MemberKey = memberKey ?? Guid.NewGuid(),
-        Role = LeadershipRole.Pysar,
-        StartDate = new DateOnly(2021, 9, 1),
-        EndDate = end ?? new DateOnly(2023, 8, 31),
-        Leadership = groupKey is null
-            ? new Leadership { Type = LeadershipType.Kurin, KurinKey = _kurinKey }
-            : new Leadership { Type = LeadershipType.Group, GroupKey = groupKey, Group = new Group("Соколи", _kurinKey) { GroupKey = groupKey.Value } }
-    };
+    private static ArchivedOffice FormerOffice(Guid? memberKey = null, Guid? groupKey = null, DateOnly? end = null) => new(
+        Guid.NewGuid(),
+        Guid.NewGuid(),
+        groupKey is null ? LeadershipType.Kurin : LeadershipType.Group,
+        LeadershipRole.Pysar,
+        memberKey ?? Guid.NewGuid(),
+        new DateOnly(2021, 9, 1),
+        end ?? new DateOnly(2023, 8, 31),
+        groupKey,
+        groupKey is null ? null : "Соколи",
+        false);
 
     private DeleteArchivedOfficeCommandHandler DeleteOffice() => new(_unitOfWork.Object, _members.Object, Gate(), _audit.Object);
 
@@ -118,26 +116,26 @@ public class KurinArchiveHandlerTests
     public async Task Deleting_WithoutTheZone_IsRefused()
     {
         var office = FormerOffice();
-        _archive.Setup(a => a.FindOfficeAsync(office.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, office.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
 
-        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, null), default);
+        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.HistoryKey, null), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
         result.ErrorCode.Should().Be(ArchiveErrors.DangerZoneClosed);
-        _archive.Verify(a => a.RemoveOffice(It.IsAny<LeadershipHistory>()), Times.Never);
+        _archive.Verify(a => a.RemoveOfficeAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Deleting_InTheZone_RemovesTheRecord_AndTheJournalKeepsWhatItWas()
     {
         var office = FormerOffice();
-        _archive.Setup(a => a.FindOfficeAsync(office.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, office.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
 
-        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, OpenZone()), default);
+        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.HistoryKey, OpenZone()), default);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.DeletionsLeft.Should().Be(ArchiveDangerZoneService.Deletions - 1);
-        _archive.Verify(a => a.RemoveOffice(office), Times.Once);
+        _archive.Verify(a => a.RemoveOfficeAsync(office.HistoryKey, It.IsAny<CancellationToken>()), Times.Once);
         var entry = _journal.Should().ContainSingle().Subject;
         entry.Action.Should().Be(AuditActionNames.Archive.OfficeDeleted);
         entry.Changes!.Select(change => change.Field).Should().Contain(["holder", "role", "startDate", "endDate"]);
@@ -148,9 +146,9 @@ public class KurinArchiveHandlerTests
     public async Task NobodyDeletesTheirOwnRecord_EvenInTheZone()
     {
         var office = FormerOffice(_selfMemberKey);
-        _archive.Setup(a => a.FindOfficeAsync(office.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, office.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
 
-        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, OpenZone()), default);
+        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.HistoryKey, OpenZone()), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.OwnRecord);
         _zones.Find(_zones.Close(_userKey, _kurinKey)!.TicketId).Should().BeNull();
@@ -162,7 +160,7 @@ public class KurinArchiveHandlerTests
         Grant(AccessScope.OwnGroups, ResourceAction.Read, ResourceAction.Update, ResourceAction.Delete);
         var office = FormerOffice(groupKey: _ledGroup);
 
-        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, OpenZone()), default);
+        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.HistoryKey, OpenZone()), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.OutOfReach);
     }
@@ -192,14 +190,14 @@ public class KurinArchiveHandlerTests
         for (var i = 0; i < ArchiveDangerZoneService.Deletions; i++)
         {
             var office = FormerOffice();
-            _archive.Setup(a => a.FindOfficeAsync(office.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
-            (await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, ticket), default))
+            _archive.Setup(a => a.FindOfficeAsync(_kurinKey, office.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
+            (await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.HistoryKey, ticket), default))
                 .Type.Should().Be(ResultType.Success);
         }
 
         var eleventh = FormerOffice();
-        _archive.Setup(a => a.FindOfficeAsync(eleventh.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(eleventh);
-        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, eleventh.LeadershipHistoryKey, ticket), default);
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, eleventh.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(eleventh);
+        var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, eleventh.HistoryKey, ticket), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.DangerZoneClosed);
         _journal.Should().ContainSingle(entry => entry.Action == AuditActionNames.Archive.DangerZoneEnded);
@@ -259,10 +257,10 @@ public class KurinArchiveHandlerTests
     public async Task ACurrentHolding_IsNotCorrectedInTheArchive()
     {
         var office = FormerOffice();
-        office.EndDate = null;
-        _archive.Setup(a => a.FindOfficeAsync(office.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
+        office = office with { EndDate = null };
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, office.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
 
-        var result = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, LeadershipRole.Pysar, office.StartDate, new DateOnly(2024, 1, 1)), default);
+        var result = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, office.HistoryKey, LeadershipRole.Pysar, office.StartDate, new DateOnly(2024, 1, 1)), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.StillCurrent);
     }
@@ -273,15 +271,14 @@ public class KurinArchiveHandlerTests
         Grant(AccessScope.OwnGroups, ResourceAction.Read, ResourceAction.Update);
         var theirs = FormerOffice(groupKey: _ledGroup);
         var kurins = FormerOffice();
-        _archive.Setup(a => a.FindOfficeAsync(theirs.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(theirs);
-        _archive.Setup(a => a.FindOfficeAsync(kurins.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurins);
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, theirs.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(theirs);
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, kurins.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurins);
 
-        var corrected = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, theirs.LeadershipHistoryKey, LeadershipRole.Skarbnyk, new DateOnly(2021, 10, 1), new DateOnly(2023, 8, 31)), default);
-        var refused = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, kurins.LeadershipHistoryKey, LeadershipRole.Pysar, new DateOnly(2021, 10, 1), new DateOnly(2023, 8, 31)), default);
+        var corrected = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, theirs.HistoryKey, LeadershipRole.Skarbnyk, new DateOnly(2021, 10, 1), new DateOnly(2023, 8, 31)), default);
+        var refused = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, kurins.HistoryKey, LeadershipRole.Pysar, new DateOnly(2021, 10, 1), new DateOnly(2023, 8, 31)), default);
 
         corrected.Type.Should().Be(ResultType.Success);
-        theirs.Role.Should().Be(LeadershipRole.Skarbnyk);
-        theirs.StartDate.Should().Be(new DateOnly(2021, 10, 1));
+        _archive.Verify(a => a.CorrectOfficeAsync(theirs.HistoryKey, LeadershipRole.Skarbnyk, new DateOnly(2021, 10, 1), new DateOnly(2023, 8, 31), It.IsAny<CancellationToken>()), Times.Once);
         var entry = _journal.Should().ContainSingle().Subject;
         entry.Action.Should().Be(AuditActionNames.Office.Corrected);
         entry.Changes!.Select(change => change.Field).Should().BeEquivalentTo(["role", "startDate"]);
@@ -292,9 +289,9 @@ public class KurinArchiveHandlerTests
     public async Task ARoleFromAnotherProvid_IsRefused()
     {
         var office = FormerOffice();
-        _archive.Setup(a => a.FindOfficeAsync(office.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
+        _archive.Setup(a => a.FindOfficeAsync(_kurinKey, office.HistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
 
-        var result = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, LeadershipRole.Hurtkoviy, office.StartDate, office.EndDate!.Value), default);
+        var result = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, office.HistoryKey, LeadershipRole.Hurtkoviy, office.StartDate, office.EndDate!.Value), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.InvalidRole);
     }
@@ -302,14 +299,13 @@ public class KurinArchiveHandlerTests
     private readonly Mock<IDuesDirectory> _dues = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
 
-    private Membership FormerMembership(Guid? memberKey = null) => new()
-    {
-        MembershipKey = Guid.NewGuid(),
-        MemberKey = memberKey ?? Guid.NewGuid(),
-        KurinKey = _kurinKey,
-        JoinedAtUtc = new DateTime(2019, 9, 1, 0, 0, 0, DateTimeKind.Utc),
-        LeftAtUtc = new DateTime(2023, 6, 30, 0, 0, 0, DateTimeKind.Utc)
-    };
+    private static MembershipPeriod FormerMembership(Guid? memberKey = null) => new(
+        Guid.NewGuid(),
+        memberKey ?? Guid.NewGuid(),
+        null,
+        MembershipKind.Youth,
+        new DateTime(2019, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+        new DateTime(2023, 6, 30, 0, 0, 0, DateTimeKind.Utc));
 
     private DeleteArchivedMembershipCommandHandler DeleteMembership() => new(_unitOfWork.Object, _members.Object, Gate(), _audit.Object, _dues.Object, _events.Object);
     private CorrectArchivedMembershipCommandHandler CorrectMembership() => new(_unitOfWork.Object, _members.Object, Reach(), _audit.Object, _dues.Object);
@@ -319,40 +315,40 @@ public class KurinArchiveHandlerTests
     {
         // Its charges and payments would stay under a key nobody has: a debt gone, a surplus lost.
         var membership = FormerMembership();
-        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.FindMembershipAsync(_kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
         _dues.Setup(d => d.HasLedgerAsync(_kurinKey, It.Is<IReadOnlyCollection<Guid>>(keys => keys.Contains(membership.MembershipKey)), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await DeleteMembership().Handle(new DeleteArchivedMembershipCommand(_kurinKey, membership.MembershipKey, OpenZone()), default);
 
         result.Type.Should().Be(ResultType.Conflict);
         result.ErrorCode.Should().Be(ArchiveErrors.HasDues);
-        _archive.Verify(a => a.RemoveMembership(It.IsAny<Membership>()), Times.Never);
+        _archive.Verify(a => a.RemoveMembershipAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task AMembershipWhoseOfficeIsStillHeld_IsNotDeleted()
     {
         var membership = FormerMembership();
-        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.FindMembershipAsync(_kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
         _archive.Setup(a => a.HoldsOpenOfficeSinceAsync(membership.MemberKey, _kurinKey, new DateOnly(2023, 6, 30), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await DeleteMembership().Handle(new DeleteArchivedMembershipCommand(_kurinKey, membership.MembershipKey, OpenZone()), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.OpenOffice);
-        _archive.Verify(a => a.RemoveMembership(It.IsAny<Membership>()), Times.Never);
+        _archive.Verify(a => a.RemoveMembershipAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task ADeletedMembership_IsAnnounced_SoTheModulesKeyedByItForgetItToo()
     {
         var membership = FormerMembership();
-        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
-        _archive.Setup(a => a.RemoveOfficesHeldAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _archive.Setup(a => a.FindMembershipAsync(_kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.RemoveOfficesHeldAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
         var result = await DeleteMembership().Handle(new DeleteArchivedMembershipCommand(_kurinKey, membership.MembershipKey, OpenZone()), default);
 
         result.Type.Should().Be(ResultType.Success);
-        _archive.Verify(a => a.RemoveMembership(membership), Times.Once);
+        _archive.Verify(a => a.RemoveMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>()), Times.Once);
         _events.Verify(e => e.PublishAsync(It.Is<MembershipsRemoved>(raised => raised.MembershipKeys.Contains(membership.MembershipKey)), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -360,38 +356,35 @@ public class KurinArchiveHandlerTests
     public async Task AMembershipWithDues_KeepsItsKindAndDates()
     {
         var membership = FormerMembership();
-        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.FindMembershipAsync(_kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
         _archive.Setup(a => a.GetStintGroupKeysAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _dues.Setup(d => d.HasLedgerAsync(_kurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await CorrectMembership().Handle(new CorrectArchivedMembershipCommand(_kurinKey, membership.MembershipKey, MembershipKind.Staff, new DateOnly(2019, 9, 1), new DateOnly(2023, 6, 30)), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.HasDues);
-        membership.Kind.Should().Be(MembershipKind.Youth);
+        _archive.Verify(a => a.CorrectMembershipAsync(It.IsAny<Guid>(), It.IsAny<MembershipKind>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task ALeaveDateCorrectedToTheDayTheyJoined_IsNotBeforeTheyJoined()
     {
-        var membership = FormerMembership();
-        membership.JoinedAtUtc = new DateTime(2019, 9, 1, 14, 0, 0, DateTimeKind.Utc);
-        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        var membership = FormerMembership() with { JoinedAtUtc = new DateTime(2019, 9, 1, 14, 0, 0, DateTimeKind.Utc) };
+        _archive.Setup(a => a.FindMembershipAsync(_kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
         _archive.Setup(a => a.GetStintGroupKeysAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _archive.Setup(a => a.GetOtherPeriodsAsync(membership.MemberKey, _kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
-        var leftWas = membership.LeftAtUtc!.Value;
 
         var result = await CorrectMembership().Handle(new CorrectArchivedMembershipCommand(_kurinKey, membership.MembershipKey, MembershipKind.Youth, new DateOnly(2019, 9, 1), new DateOnly(2019, 9, 1)), default);
 
         result.Type.Should().Be(ResultType.Success);
-        membership.LeftAtUtc.Should().Be(membership.JoinedAtUtc);
-        _archive.Verify(a => a.MoveStintEdgesAsync(membership.MembershipKey, membership.JoinedAtUtc, membership.JoinedAtUtc, leftWas, membership.JoinedAtUtc, It.IsAny<CancellationToken>()), Times.Once);
+        _archive.Verify(a => a.CorrectMembershipAsync(membership.MembershipKey, MembershipKind.Youth, membership.JoinedAtUtc, membership.JoinedAtUtc, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task CorrectedDates_MayNotOverlapAnotherMembershipOfTheirsInTheKurin()
     {
         var membership = FormerMembership();
-        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.FindMembershipAsync(_kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
         _archive.Setup(a => a.GetStintGroupKeysAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _archive.Setup(a => a.GetOtherPeriodsAsync(membership.MemberKey, _kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([(new DateTime(2024, 1, 10, 0, 0, 0, DateTimeKind.Utc), (DateTime?)null)]);

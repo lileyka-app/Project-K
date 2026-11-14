@@ -61,8 +61,8 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The archive is not yours to correct.");
         }
 
-        var membership = await _unitOfWork.Archive.FindMembershipAsync(request.MembershipKey, cancellationToken);
-        if (membership is null || membership.KurinKey != request.KurinKey)
+        var membership = await _unitOfWork.Archive.FindMembershipAsync(request.KurinKey, request.MembershipKey, cancellationToken);
+        if (membership is null)
         {
             return ServiceResult<Unit>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such membership in this kurin.");
         }
@@ -111,21 +111,16 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
 
         // A date that did not change keeps its time of day; a corrected one is that day, and on the
         // day they joined it is no earlier than the moment they joined.
-        var joinedWas = membership.JoinedAtUtc;
-        membership.Kind = request.Kind;
-        if (request.JoinedOn != joinedOn)
-        {
-            membership.JoinedAtUtc = request.JoinedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        }
-
+        var joinedAt = request.JoinedOn != joinedOn
+            ? request.JoinedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+            : membership.JoinedAtUtc;
         if (request.LeftOn != leftOn)
         {
             var corrected = request.LeftOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            membership.LeftAtUtc = corrected < membership.JoinedAtUtc ? membership.JoinedAtUtc : corrected;
+            leftAt = corrected < joinedAt ? joinedAt : corrected;
         }
 
-        await _unitOfWork.Archive.MoveStintEdgesAsync(
-            membership.MembershipKey, joinedWas, membership.JoinedAtUtc, leftAt, membership.LeftAtUtc!.Value, cancellationToken);
+        await _unitOfWork.Archive.CorrectMembershipAsync(membership.MembershipKey, request.Kind, joinedAt, leftAt, cancellationToken);
 
         var person = (await _members.GetByKeysAsync([membership.MemberKey], cancellationToken)).FirstOrDefault()?.FullName ?? string.Empty;
         await _audit.RecordAsync(

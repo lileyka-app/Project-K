@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.ArchiveModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.ArchiveModule;
+using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.ArchiveModule;
@@ -86,22 +88,57 @@ public class KurinArchiveRepository : IKurinArchiveRepository
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-    public async Task<LeadershipHistory?> FindOfficeAsync(Guid historyKey, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyDictionary<LeadershipRole, string>> GetRoleNamesAsync(Guid kurinKey, CancellationToken cancellationToken = default) =>
+        KurinRoleNames.Read(await _context.Kurins
+            .Where(kurin => kurin.KurinKey == kurinKey)
+            .Select(kurin => kurin.RoleNames)
+            .FirstOrDefaultAsync(cancellationToken));
+
+    public async Task<ArchivedOffice?> FindOfficeAsync(Guid kurinKey, Guid historyKey, CancellationToken cancellationToken = default)
     {
         var history = await _context.LeadershipHistories
             .Include(found => found.Leadership)
             .FirstOrDefaultAsync(found => found.LeadershipHistoryKey == historyKey, cancellationToken);
-        if (history?.Leadership.GroupKey is { } groupKey)
+        if (history is null)
         {
-            history.Leadership.Group = await _context.Groups.IgnoreQueryFilters()
-                .FirstOrDefaultAsync(group => group.GroupKey == groupKey, cancellationToken);
+            return null;
         }
 
-        return history;
+        var leadership = history.Leadership;
+        var group = leadership.GroupKey is { } groupKey
+            ? await _context.Groups.IgnoreQueryFilters().FirstOrDefaultAsync(found => found.GroupKey == groupKey, cancellationToken)
+            : null;
+        if ((leadership.KurinKey ?? group?.KurinKey) != kurinKey)
+        {
+            return null;
+        }
+
+        return new ArchivedOffice(
+            history.LeadershipHistoryKey,
+            leadership.LeadershipKey,
+            leadership.Type,
+            history.Role,
+            history.MemberKey,
+            history.StartDate,
+            history.EndDate,
+            leadership.GroupKey,
+            group?.Name,
+            group?.DissolvedAtUtc is not null);
     }
 
-    public Task<Membership?> FindMembershipAsync(Guid membershipKey, CancellationToken cancellationToken = default) =>
-        _context.Memberships.FirstOrDefaultAsync(membership => membership.MembershipKey == membershipKey, cancellationToken);
+    public async Task<MembershipPeriod?> FindMembershipAsync(Guid kurinKey, Guid membershipKey, CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.Memberships.FirstOrDefaultAsync(found => found.MembershipKey == membershipKey, cancellationToken);
+        return membership is null || membership.KurinKey != kurinKey
+            ? null
+            : new MembershipPeriod(
+                membership.MembershipKey,
+                membership.MemberKey,
+                membership.GroupKey,
+                membership.Kind,
+                membership.JoinedAtUtc,
+                membership.LeftAtUtc);
+    }
 
     public async Task<IReadOnlyList<Guid>> GetStintGroupKeysAsync(Guid membershipKey, CancellationToken cancellationToken = default) =>
         await _context.MembershipGroupStints
@@ -110,13 +147,39 @@ public class KurinArchiveRepository : IKurinArchiveRepository
             .Distinct()
             .ToListAsync(cancellationToken);
 
-    public Task<Group?> FindDissolvedGroupAsync(Guid groupKey, CancellationToken cancellationToken = default) =>
+    public async Task<DissolvedGroup?> FindDissolvedGroupAsync(Guid kurinKey, Guid groupKey, CancellationToken cancellationToken = default)
+    {
+        var group = await FindDissolvedGroupRowAsync(groupKey, cancellationToken);
+        return group is null || group.KurinKey != kurinKey
+            ? null
+            : new DissolvedGroup(group.GroupKey, group.Name, group.DissolvedAtUtc!.Value);
+    }
+
+    private Task<Group?> FindDissolvedGroupRowAsync(Guid groupKey, CancellationToken cancellationToken) =>
         _context.Groups.IgnoreQueryFilters()
             .FirstOrDefaultAsync(group => group.GroupKey == groupKey && group.DissolvedAtUtc != null, cancellationToken);
 
-    public void RemoveOffice(LeadershipHistory history) => _context.LeadershipHistories.Remove(history);
+    public async Task CorrectOfficeAsync(Guid historyKey, LeadershipRole role, DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken = default)
+    {
+        if (await _context.LeadershipHistories.FindAsync([historyKey], cancellationToken) is not { } history)
+        {
+            return;
+        }
 
-    public async Task<IReadOnlyList<LeadershipHistory>> RemoveOfficesHeldAsync(
+        history.Role = role;
+        history.StartDate = startDate;
+        history.EndDate = endDate;
+    }
+
+    public async Task RemoveOfficeAsync(Guid historyKey, CancellationToken cancellationToken = default)
+    {
+        if (await _context.LeadershipHistories.FindAsync([historyKey], cancellationToken) is { } history)
+        {
+            _context.LeadershipHistories.Remove(history);
+        }
+    }
+
+    public async Task<int> RemoveOfficesHeldAsync(
         Guid memberKey,
         Guid kurinKey,
         DateOnly from,
@@ -134,7 +197,7 @@ public class KurinArchiveRepository : IKurinArchiveRepository
             .ToListAsync(cancellationToken);
 
         _context.LeadershipHistories.RemoveRange(held);
-        return held;
+        return held.Count;
     }
 
     public async Task<bool> HoldsOpenOfficeSinceAsync(Guid memberKey, Guid kurinKey, DateOnly before, CancellationToken cancellationToken = default)
@@ -161,32 +224,53 @@ public class KurinArchiveRepository : IKurinArchiveRepository
         return periods.Select(period => (period.JoinedAtUtc, period.LeftAtUtc)).ToList();
     }
 
-    public async Task MoveStintEdgesAsync(
+    public async Task CorrectMembershipAsync(
         Guid membershipKey,
-        DateTime joinedWas,
-        DateTime joinedNow,
-        DateTime leftWas,
-        DateTime leftNow,
+        MembershipKind kind,
+        DateTime joinedAtUtc,
+        DateTime leftAtUtc,
         CancellationToken cancellationToken = default)
     {
+        if (await _context.Memberships.FindAsync([membershipKey], cancellationToken) is not { } membership)
+        {
+            return;
+        }
+
+        var joinedWas = membership.JoinedAtUtc;
+        var leftWas = membership.LeftAtUtc;
+        membership.Kind = kind;
+        membership.JoinedAtUtc = joinedAtUtc;
+        membership.LeftAtUtc = leftAtUtc;
+
         foreach (var stint in await _context.MembershipGroupStints.Where(stint => stint.MembershipKey == membershipKey).ToListAsync(cancellationToken))
         {
             if (stint.FromUtc == joinedWas)
             {
-                stint.FromUtc = joinedNow;
+                stint.FromUtc = joinedAtUtc;
             }
 
             if (stint.ToUtc == leftWas)
             {
-                stint.ToUtc = leftNow;
+                stint.ToUtc = leftAtUtc;
             }
         }
     }
 
-    public void RemoveMembership(Membership membership) => _context.Memberships.Remove(membership);
-
-    public async Task<int> RemoveDissolvedGroupAsync(Group group, CancellationToken cancellationToken = default)
+    public async Task RemoveMembershipAsync(Guid membershipKey, CancellationToken cancellationToken = default)
     {
+        if (await _context.Memberships.FindAsync([membershipKey], cancellationToken) is { } membership)
+        {
+            _context.Memberships.Remove(membership);
+        }
+    }
+
+    public async Task<int> RemoveDissolvedGroupAsync(Guid groupKey, CancellationToken cancellationToken = default)
+    {
+        if (await FindDissolvedGroupRowAsync(groupKey, cancellationToken) is not { } group)
+        {
+            return 0;
+        }
+
         var leaderships = await _context.Leaderships
             .Include(leadership => leadership.LeadershipHistories)
             .Where(leadership => leadership.GroupKey == group.GroupKey)

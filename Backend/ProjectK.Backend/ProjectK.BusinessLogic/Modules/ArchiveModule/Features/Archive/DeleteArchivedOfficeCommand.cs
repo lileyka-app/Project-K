@@ -42,19 +42,18 @@ public sealed class DeleteArchivedOfficeCommandHandler : IRequestHandler<DeleteA
             return refusal!;
         }
 
-        var history = await _unitOfWork.Archive.FindOfficeAsync(request.HistoryKey, cancellationToken);
-        var leadership = history?.Leadership;
-        if (history is null || (leadership!.KurinKey ?? leadership.Group?.KurinKey) != request.KurinKey)
+        var office = await _unitOfWork.Archive.FindOfficeAsync(request.KurinKey, request.HistoryKey, cancellationToken);
+        if (office is null)
         {
             return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such holding in this kurin.");
         }
 
-        if (history.EndDate is null)
+        if (office.EndDate is null)
         {
             return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.Conflict, ArchiveErrors.StillCurrent, "A current holding is ended on the провід first.");
         }
 
-        if (pass.Reach.IsOwn(history.MemberKey))
+        if (pass.Reach.IsOwn(office.MemberKey))
         {
             return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.Forbidden, ArchiveErrors.OwnRecord, "Nobody deletes their own record.");
         }
@@ -64,24 +63,23 @@ public sealed class DeleteArchivedOfficeCommandHandler : IRequestHandler<DeleteA
             return ArchiveDeletionService.Closed();
         }
 
-        var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
-        var role = KurinRoleNames.Label(history.Role, KurinRoleNames.Read(kurin?.RoleNames));
-        var holder = (await _members.GetByKeysAsync([history.MemberKey], cancellationToken)).FirstOrDefault()?.FullName;
+        var role = KurinRoleNames.Label(office.Role, await _unitOfWork.Archive.GetRoleNamesAsync(request.KurinKey, cancellationToken));
+        var holder = (await _members.GetByKeysAsync([office.MemberKey], cancellationToken)).FirstOrDefault()?.FullName;
 
-        _unitOfWork.Archive.RemoveOffice(history);
+        await _unitOfWork.Archive.RemoveOfficeAsync(office.HistoryKey, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Archive,
                 AuditActionNames.Archive.OfficeDeleted,
-                history.LeadershipHistoryKey,
-                leadership.Group?.Name is { } groupName ? $"{role} · {groupName}" : role,
-                history.MemberKey,
+                office.HistoryKey,
+                office.GroupName is { } groupName ? $"{role} · {groupName}" : role,
+                office.MemberKey,
                 AuditChangeRules.Removed(
                     ("holder", holder),
                     ("role", role),
-                    ("group", leadership.Group?.Name),
-                    ("startDate", history.StartDate),
-                    ("endDate", history.EndDate)),
+                    ("group", office.GroupName),
+                    ("startDate", office.StartDate),
+                    ("endDate", office.EndDate)),
                 KurinKey: request.KurinKey),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

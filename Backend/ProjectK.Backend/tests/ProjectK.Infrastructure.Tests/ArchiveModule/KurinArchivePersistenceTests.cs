@@ -42,12 +42,11 @@ public class KurinArchivePersistenceTests
     {
         var left = new DateTime(2026, 6, 30);
         Guid membershipKey;
-        DateTime joined;
         await using (var context = new AppDbContext(_options))
         {
             var membership = Join(context, _sokoly.GroupKey);
             membership.LeftAtUtc = left;
-            (membershipKey, joined) = (membership.MembershipKey, membership.JoinedAtUtc);
+            membershipKey = membership.MembershipKey;
             await context.SaveChangesAsync();
         }
 
@@ -55,7 +54,9 @@ public class KurinArchivePersistenceTests
         var newJoined = new DateTime(2024, 9, 1);
         await using (var context = new AppDbContext(_options))
         {
-            await new KurinArchiveRepository(context).MoveStintEdgesAsync(membershipKey, joined, newJoined, left, newLeft);
+            var archive = new KurinArchiveRepository(context);
+            var found = await archive.FindMembershipAsync(_kurinKey, membershipKey);
+            await archive.CorrectMembershipAsync(membershipKey, found!.Kind, newJoined, newLeft);
             await context.SaveChangesAsync();
         }
 
@@ -63,6 +64,9 @@ public class KurinArchivePersistenceTests
         var stint = await read.MembershipGroupStints.SingleAsync();
         Assert.Equal(newJoined, stint.FromUtc);
         Assert.Equal(newLeft, stint.ToUtc);
+        var corrected = await read.Memberships.SingleAsync();
+        Assert.Equal(newJoined, corrected.JoinedAtUtc);
+        Assert.Equal(newLeft, corrected.LeftAtUtc);
     }
 
     [Fact]
@@ -180,11 +184,11 @@ public class KurinArchivePersistenceTests
         await using (var context = new AppDbContext(_options))
         {
             var archive = new KurinArchiveRepository(context);
-            var membership = await archive.FindMembershipAsync(membershipKey);
+            var membership = await archive.FindMembershipAsync(_kurinKey, membershipKey);
             var removed = await archive.RemoveOfficesHeldAsync(_person, _kurinKey, new DateOnly(2024, 9, 1), new DateOnly(2025, 6, 30));
-            archive.RemoveMembership(membership!);
+            await archive.RemoveMembershipAsync(membership!.MembershipKey);
             await context.SaveChangesAsync();
-            Assert.Equal([LeadershipRole.Pysar], removed.Select(history => history.Role));
+            Assert.Equal(1, removed);
         }
 
         await using var read = new AppDbContext(_options);
@@ -215,7 +219,7 @@ public class KurinArchivePersistenceTests
         var archive = new KurinArchiveRepository(read);
         Assert.True(await archive.HoldsOpenOfficeSinceAsync(_person, _kurinKey, new DateOnly(2025, 6, 30)));
         Assert.False(await archive.HoldsOpenOfficeSinceAsync(_person, _kurinKey, new DateOnly(2024, 6, 30)));
-        Assert.Empty(await archive.RemoveOfficesHeldAsync(_person, _kurinKey, new DateOnly(2024, 9, 1), new DateOnly(2025, 6, 30)));
+        Assert.Equal(0, await archive.RemoveOfficesHeldAsync(_person, _kurinKey, new DateOnly(2024, 9, 1), new DateOnly(2025, 6, 30)));
     }
 
     [Fact]

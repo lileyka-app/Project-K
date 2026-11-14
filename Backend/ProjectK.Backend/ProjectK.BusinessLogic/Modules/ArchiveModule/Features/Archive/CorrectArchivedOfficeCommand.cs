@@ -58,55 +58,51 @@ public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<Correc
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The archive is not yours to correct.");
         }
 
-        var history = await _unitOfWork.Archive.FindOfficeAsync(request.HistoryKey, cancellationToken);
-        var leadership = history?.Leadership;
-        if (history is null || (leadership!.KurinKey ?? leadership.Group?.KurinKey) != request.KurinKey)
+        var office = await _unitOfWork.Archive.FindOfficeAsync(request.KurinKey, request.HistoryKey, cancellationToken);
+        if (office is null)
         {
             return ServiceResult<Unit>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such holding in this kurin.");
         }
 
-        if (history.EndDate is null)
+        if (office.EndDate is null)
         {
             return ServiceResult<Unit>.Failure(ResultType.Conflict, ArchiveErrors.StillCurrent, "A current holding is changed on the провід.");
         }
 
-        if (reach.IsOwn(history.MemberKey))
+        if (reach.IsOwn(office.MemberKey))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OwnRecord, "Nobody corrects their own record.");
         }
 
-        if (!reach.Reaches([leadership.GroupKey]))
+        if (!reach.Reaches([office.GroupKey]))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The holding is outside your гуртки.");
         }
 
-        if (!LeadershipOfficeRules.Grouping[leadership.Type].Contains(request.Role))
+        if (!LeadershipOfficeRules.Grouping[office.Type].Contains(request.Role))
         {
             return ServiceResult<Unit>.Failure(ResultType.BadRequest, ArchiveErrors.InvalidRole, "The role does not belong to this провід.");
         }
 
-        var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
-        var kurinNames = KurinRoleNames.Read(kurin?.RoleNames);
+        var kurinNames = await _unitOfWork.Archive.GetRoleNamesAsync(request.KurinKey, cancellationToken);
         var changes = AuditChangeRules.Of(
-            ("role", KurinRoleNames.Label(history.Role, kurinNames), KurinRoleNames.Label(request.Role, kurinNames)),
-            ("startDate", history.StartDate, request.StartDate),
-            ("endDate", history.EndDate, request.EndDate));
+            ("role", KurinRoleNames.Label(office.Role, kurinNames), KurinRoleNames.Label(request.Role, kurinNames)),
+            ("startDate", office.StartDate, request.StartDate),
+            ("endDate", office.EndDate, request.EndDate));
         if (changes.Count == 0)
         {
             return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
-        history.Role = request.Role;
-        history.StartDate = request.StartDate;
-        history.EndDate = request.EndDate;
+        await _unitOfWork.Archive.CorrectOfficeAsync(office.HistoryKey, request.Role, request.StartDate, request.EndDate, cancellationToken);
 
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Office,
                 AuditActionNames.Office.Corrected,
-                history.LeadershipHistoryKey,
-                leadership.Group?.Name is { } correctedGroup ? $"{KurinRoleNames.Label(request.Role, kurinNames)} · {correctedGroup}" : KurinRoleNames.Label(request.Role, kurinNames),
-                history.MemberKey,
+                office.HistoryKey,
+                office.GroupName is { } correctedGroup ? $"{KurinRoleNames.Label(request.Role, kurinNames)} · {correctedGroup}" : KurinRoleNames.Label(request.Role, kurinNames),
+                office.MemberKey,
                 changes,
                 KurinKey: request.KurinKey),
             cancellationToken);

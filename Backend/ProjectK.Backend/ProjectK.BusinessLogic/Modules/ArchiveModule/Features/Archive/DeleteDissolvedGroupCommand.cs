@@ -38,8 +38,8 @@ public sealed class DeleteDissolvedGroupCommandHandler : IRequestHandler<DeleteD
             return refusal!;
         }
 
-        var group = await _unitOfWork.Archive.FindDissolvedGroupAsync(request.GroupKey, cancellationToken);
-        if (group is null || group.KurinKey != request.KurinKey)
+        var group = await _unitOfWork.Archive.FindDissolvedGroupAsync(request.KurinKey, request.GroupKey, cancellationToken);
+        if (group is null)
         {
             return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such dissolved гурток in this kurin.");
         }
@@ -49,7 +49,7 @@ public sealed class DeleteDissolvedGroupCommandHandler : IRequestHandler<DeleteD
             return ArchiveDeletionService.Closed();
         }
 
-        var holdings = await _unitOfWork.Archive.RemoveDissolvedGroupAsync(group, cancellationToken);
+        var holdings = await _unitOfWork.Archive.RemoveDissolvedGroupAsync(group.GroupKey, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Archive,
@@ -58,7 +58,7 @@ public sealed class DeleteDissolvedGroupCommandHandler : IRequestHandler<DeleteD
                 group.Name,
                 Changes: AuditChangeRules.Removed(
                     ("group", group.Name),
-                    ("dissolvedOn", group.DissolvedAtUtc is { } dissolved ? DateOnly.FromDateTime(dissolved) : null),
+                    ("dissolvedOn", DateOnly.FromDateTime(group.DissolvedAtUtc)),
                     ("offices", holdings == 0 ? null : holdings)),
                 KurinKey: request.KurinKey),
             cancellationToken);
