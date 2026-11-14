@@ -189,7 +189,7 @@ PNG/JPEG/WebP); декодер бере лише картинку до 40 Мп (
 `CampCertificateBlobName` для посвідки. Збереження тексту видаляє зображення, яких він більше не
 показує; видалення проєкту чи заміна посвідки — їхні блоби. Теки `probe-project-images` і
 `third-probe-certificates` входять у `BlobUploadFolders.ScenarioFolders`, а
-`ProbeProjectImageReferenceProvider` віддає `OrphanPhotoCleanupService` усі блоби з рядків, тож
+`ProbeProjectImageReferenceProvider` віддає `OrphanPhotoCleanupBackgroundService` усі блоби з рядків, тож
 завантажене й покинуте прибирається само. Видалення людини прибирає її третю пробу через
 `ProgressCleanupEventHandler`. Журнал дій: `Probe.Project*`, `Probe.ProjectsSwapped`,
 `Probe.FileEdited`, `Probe.Reflection*`, `Probe.StagesChanged`, `Probe.Certificate*`.

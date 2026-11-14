@@ -207,7 +207,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 **Архів куреня** (`KurinArchiveController`, `IKurinArchiveRepository`) — колишні ролі, закриті
 членства з гуртками, через які вони пройшли, і розформовані гуртки. Розформований гурток не
 стирається: `Group.DissolvedAtUtc` і фільтр запитів ховають його всюди, крім архіву, а провід лишається
-з датами. Гуртки членства пише сам `AppDbContext` при кожному збереженні (`MembershipGroupStint`), тож
+з датами. Гуртки членства пише інтерсептор збереження (`MembershipGroupStintInterceptor`, `MembershipGroupStint`), тож
 жоден шлях — прийом, перехід, вихід, переведення, імпорт — не забуде запис; історія починається з 1.4.
 Хто що бачить і править, вирішують хендлери за `KurinArchive:Read/Update` (Звʼязковий — увесь курінь,
 гуртковий і впорядник — свої гуртки), як у журналі; своє ніхто не править. Видаляє лише Звʼязковий і
@@ -236,7 +236,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 | Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі. Зміна безпеки (`RefreshTokenInvalidation`) вимикає й посилання на календар (`ICalendarFeedStore`, лише хеш токена) і кладе сповіщення в дзвіночок | `Infrastructure/Repositories/AuthModule` |
 | Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsWriter`), повтори розгорнуті на сервері (`AgendaRecurrence`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
 | Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
-| Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/BlobStorageService` |
+| Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/Blobs` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
 | PDF | QuestPDF; звіт куреня збирається з `IKurinReportSource` | `Infrastructure`, `BusinessLogic` |
 | Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів (події безпеки й помилки; читабельний HTML, однотипні за 5 хв — одним зведенням, черга замість відкидання) | `API/Program.cs`, `Infrastructure/Logging/TelegramDevAlerts` |
@@ -246,7 +246,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 
 Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог
 (`MemberWarningExpiryBackgroundService`), прибирання осиротілих фото
-(`OrphanPhotoCleanupService`), архів задач — зроблені в архів і давні архівні геть, за строками
+(`OrphanPhotoCleanupBackgroundService`), архів задач — зроблені в архів і давні архівні геть, за строками
 кожного куреня (`AgendaArchiveBackgroundService`), оновлення каталогу щогодини
 (`CatalogSyncBackgroundService`, `Catalog:RefreshMinutes`), щоденний пінг телеметрії
 (`TelemetryBackgroundService`; без `Telemetry:Enabled` не реєструється), черга сповіщень на телефон
