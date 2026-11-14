@@ -2,6 +2,7 @@ using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
 
@@ -20,14 +21,12 @@ public static class LifeEntries
         var training = request.Kind == LifeEntryKind.Training;
         entry.Kind = request.Kind;
         entry.Course = training ? request.Course : null;
-        entry.Title = training && request.Course != TrainingCourse.Other ? null : Clean(request.Title);
+        entry.Title = training && request.Course != TrainingCourse.Other ? null : TextRules.TrimOrNull(request.Title);
         entry.Number = training ? request.Number : null;
         entry.StartDate = request.StartDate;
         entry.EndDate = request.EndDate;
-        entry.Place = Clean(request.Place);
-        entry.Commandant = Clean(request.Commandant);
-        entry.Role = Clean(request.Role);
+        entry.Place = TextRules.TrimOrNull(request.Place);
+        entry.Commandant = TextRules.TrimOrNull(request.Commandant);
+        entry.Role = TextRules.TrimOrNull(request.Role);
     }
-
-    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

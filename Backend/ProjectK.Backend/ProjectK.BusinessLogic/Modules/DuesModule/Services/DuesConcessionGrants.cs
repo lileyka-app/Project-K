@@ -26,12 +26,6 @@ internal static class DuesConcessionGrants
                 && from <= (g.ToQuarter ?? int.MaxValue));
     }
 
-    public static string? Reason(string? reason)
-    {
-        var trimmed = reason?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
-    }
-
     /// <summary>The grant, when it belongs to someone who stands in the гурток the caller keeps.</summary>
     public static async Task<(DuesConcessionGrant? Grant, ServiceResult<Unit>? Failure)> OpenAsync(
         GroupDuesAccess access,

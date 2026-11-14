@@ -72,7 +72,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
             RequestedByUserKey = userKey,
             UspNumber = request.UspNumber,
             UpsNumber = request.UpsNumber,
-            Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+            Note = TextRules.TrimOrNull(request.Note),
             RequestedAtUtc = DateTime.UtcNow
         };
 

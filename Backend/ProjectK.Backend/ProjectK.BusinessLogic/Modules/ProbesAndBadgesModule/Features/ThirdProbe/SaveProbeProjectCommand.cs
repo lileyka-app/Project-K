@@ -14,6 +14,7 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 
@@ -213,11 +214,11 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     private static ProbeProjectInput Normalize(ProbeProjectInput input) => input with
     {
         Title = input.Title?.Trim() ?? string.Empty,
-        SharedWith = Optional(input.SharedWith),
-        Location = Optional(input.Location),
-        EventLeads = Optional(input.EventLeads),
-        CoordinatorName = Optional(input.CoordinatorName),
-        CoordinatorContact = Optional(input.CoordinatorContact),
+        SharedWith = TextRules.TrimOrNull(input.SharedWith),
+        Location = TextRules.TrimOrNull(input.Location),
+        EventLeads = TextRules.TrimOrNull(input.EventLeads),
+        CoordinatorName = TextRules.TrimOrNull(input.CoordinatorName),
+        CoordinatorContact = TextRules.TrimOrNull(input.CoordinatorContact),
         Description = input.Description?.Trim() ?? string.Empty,
         Goal = input.Goal?.Trim() ?? string.Empty,
         Plan = input.Plan?.Trim() ?? string.Empty,
@@ -226,8 +227,6 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
 
     private static ServiceResult<ProbeProjectSavedDto> ForeignImage() =>
         ProbeProjectGuard.Refuse<ProbeProjectSavedDto>(ProbesAndBadgesErrors.ForeignImage, "Pictures must be uploaded into the project.");
-
-    private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static (string Code, string Message)? Invalid(ProbeProjectInput input)
     {

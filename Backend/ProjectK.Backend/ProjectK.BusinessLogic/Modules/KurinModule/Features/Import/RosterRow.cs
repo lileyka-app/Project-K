@@ -88,7 +88,7 @@ internal sealed class RosterRow
     public static RosterRow From(SheetRow row, IReadOnlyList<ColumnMapping> mapping)
     {
         string? At(int index) => index >= 0 && index < row.Cells.Count
-            ? RosterValues.Text(row.Cells[index])
+            ? TextRules.TrimOrNull(row.Cells[index])
             : null;
 
         string? Of(RosterField field) => mapping

@@ -1,5 +1,6 @@
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Services.Catalog;
@@ -144,7 +145,7 @@ internal static class CatalogMapper
             .ToList();
         var own = ToPoints(probe.Points);
 
-        var edition = string.IsNullOrWhiteSpace(probe.Edition) ? null : probe.Edition.Trim();
+        var edition = TextRules.TrimOrNull(probe.Edition);
 
         return new Probe(probe.Id, probe.Title, own.Count > 0 ? own : [.. sections.SelectMany(s => s.Points)], sections)
         {

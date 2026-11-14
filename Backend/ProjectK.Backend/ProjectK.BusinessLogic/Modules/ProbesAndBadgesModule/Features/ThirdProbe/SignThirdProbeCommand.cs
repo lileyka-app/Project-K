@@ -10,6 +10,7 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 
@@ -77,7 +78,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
             return refused;
         }
 
-        var comment = string.IsNullOrWhiteSpace(request.Comment) ? null : request.Comment.Trim();
+        var comment = TextRules.TrimOrNull(request.Comment);
         if (comment?.Length > ProbeProjectRules.MaxCommentLength)
         {
             return ProbeProjectGuard.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.FieldTooLong, $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");

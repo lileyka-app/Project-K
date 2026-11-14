@@ -7,6 +7,7 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
 
@@ -65,7 +66,7 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
         }
 
         grant.ToQuarter = to;
-        grant.Reason = DuesConcessionGrants.Reason(request.Request.Reason);
+        grant.Reason = TextRules.TrimOrNull(request.Request.Reason);
         grant.SetByUserKey = _currentUser.UserId;
         grant.UpdatedDate = DateTime.UtcNow;
         await _dues.SaveChangesAsync(cancellationToken);

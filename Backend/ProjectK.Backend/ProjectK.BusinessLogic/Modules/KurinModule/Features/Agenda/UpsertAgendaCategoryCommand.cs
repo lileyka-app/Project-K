@@ -6,6 +6,7 @@ using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
@@ -64,10 +65,10 @@ public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertA
 
         category.Name = request.Name.Trim();
         category.ColorHex = request.ColorHex.Trim();
-        category.Icon = string.IsNullOrWhiteSpace(request.Icon) ? null : request.Icon.Trim();
+        category.Icon = TextRules.TrimOrNull(request.Icon);
         category.Capacity = request.Capacity;
         category.WaitlistEnabled = request.WaitlistEnabled;
-        category.DefaultDescription = string.IsNullOrWhiteSpace(request.DefaultDescription) ? null : request.DefaultDescription.Trim();
+        category.DefaultDescription = TextRules.TrimOrNull(request.DefaultDescription);
         category.RsvpRequired = request.RsvpRequired;
         category.DefaultDurationMinutes = request.DefaultDurationMinutes;
         category.ReminderLeadMinutes = request.ReminderLeadMinutes;

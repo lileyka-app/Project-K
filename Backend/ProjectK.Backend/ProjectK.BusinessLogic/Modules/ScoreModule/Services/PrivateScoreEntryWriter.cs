@@ -3,6 +3,7 @@ using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
@@ -32,7 +33,7 @@ public static class PrivateScoreEntryWriter
     {
         entry.PrivateScoreCriterionKey = request.PrivateScoreCriterionKey;
         entry.Points = request.Points;
-        entry.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
+        entry.Note = TextRules.TrimOrNull(request.Note);
         entry.OccurredOn = request.OccurredOn;
     }
 

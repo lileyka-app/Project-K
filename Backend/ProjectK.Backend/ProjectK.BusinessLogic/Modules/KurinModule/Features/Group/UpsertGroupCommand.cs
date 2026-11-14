@@ -6,6 +6,7 @@ using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
@@ -45,7 +46,7 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
 
     public async Task<ServiceResult<GroupDto>> Handle(UpsertGroupCommand request, CancellationToken cancellationToken)
     {
-        var description = GroupMapping.Trimmed(request.Description);
+        var description = TextRules.TrimOrNull(request.Description);
         if (description?.Length > 1000)
         {
             return ServiceResult<GroupDto>.Failure(ResultType.BadRequest, KurinErrors.DescriptionTooLong, "Description must be 1000 characters or fewer.");

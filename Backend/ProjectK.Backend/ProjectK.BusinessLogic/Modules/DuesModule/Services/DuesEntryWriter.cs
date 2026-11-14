@@ -7,6 +7,7 @@ using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -109,6 +110,6 @@ public sealed class DuesEntryWriter
         entry.OccurredOn = request.OccurredOn;
         entry.MembershipKey = DuesEntryRules.PersonalKinds.Contains(request.Kind) ? request.MembershipKey : null;
         entry.CollectedByMemberKey = request.CollectedByMemberKey;
-        entry.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
+        entry.Note = TextRules.TrimOrNull(request.Note);
     }
 }

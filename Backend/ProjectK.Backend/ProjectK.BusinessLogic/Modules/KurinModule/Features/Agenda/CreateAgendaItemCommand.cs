@@ -14,6 +14,7 @@ using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
@@ -90,8 +91,8 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
             KurinKey = request.KurinKey,
             Kind = request.Kind,
             Title = request.Title.Trim(),
-            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
-            Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim(),
+            Description = TextRules.TrimOrNull(request.Description),
+            Location = TextRules.TrimOrNull(request.Location),
             Status = AgendaItemStatus.Todo,
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,

@@ -3,6 +3,7 @@ using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Rules.KraiModule;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
@@ -68,8 +69,8 @@ public static class MemberCardFields
             request.School = existing?.School;
         }
 
-        request.Address = EmptyAsNull(request.Address);
-        request.School = EmptyAsNull(request.School);
+        request.Address = TextRules.TrimOrNull(request.Address);
+        request.School = TextRules.TrimOrNull(request.School);
 
         // Parents' contacts are private the same way, each value on its own.
         var parentsHidden = card.ModeOf(KraiCardFields.Parents) == KraiCardFields.Hidden;
@@ -77,7 +78,7 @@ public static class MemberCardFields
         {
             var sent = field.Get(request);
             var kept = existing is null ? null : field.Get(existing);
-            field.Set(request, EmptyAsNull(parentsHidden || sent is null ? kept : sent));
+            field.Set(request, TextRules.TrimOrNull(parentsHidden || sent is null ? kept : sent));
         }
     }
 
@@ -163,11 +164,5 @@ public static class MemberCardFields
         }
 
         return null;
-    }
-
-    private static string? EmptyAsNull(string? value)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 }

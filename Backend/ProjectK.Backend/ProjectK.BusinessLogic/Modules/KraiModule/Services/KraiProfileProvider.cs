@@ -9,6 +9,7 @@ using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Records.DuesModule;
 using ProjectK.Common.Rules.KraiModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
 
@@ -99,11 +100,11 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
                 BadgeSources: Codes(catalog?.BadgeSources) ?? [krai.Code],
                 HiddenBadges: Ids(catalog?.HiddenBadges)),
             new KraiLocaleSettings(
-                Currency: Text(locale?.Currency)?.ToUpperInvariant() ?? "UAH",
-                TimeZone: Text(locale?.TimeZone) ?? AgendaRecurrence.DefaultZone.Id,
-                NumberLocale: Text(locale?.NumberLocale) ?? "uk-UA"),
+                Currency: TextRules.TrimOrNull(locale?.Currency)?.ToUpperInvariant() ?? "UAH",
+                TimeZone: TextRules.TrimOrNull(locale?.TimeZone) ?? AgendaRecurrence.DefaultZone.Id,
+                NumberLocale: TextRules.TrimOrNull(locale?.NumberLocale) ?? "uk-UA"),
             CardFields(document.CardFields),
-            new KraiDuesSettings(Text(document.Dues?.Upstream)?.ToLowerInvariant() is { } upstream && KraiDues.Upstreams.Contains(upstream)
+            new KraiDuesSettings(TextRules.TrimOrNull(document.Dues?.Upstream)?.ToLowerInvariant() is { } upstream && KraiDues.Upstreams.Contains(upstream)
                 ? upstream
                 : KraiDues.Stanytsia)
             {
@@ -116,9 +117,9 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
     {
         return (concessions ?? [])
             .Select(c => new DuesConcessionRule(
-                Text(c.Key) ?? string.Empty,
-                Text(c.Name) ?? string.Empty,
-                Text(c.Kind)?.ToLowerInvariant() ?? string.Empty,
+                TextRules.TrimOrNull(c.Key) ?? string.Empty,
+                TextRules.TrimOrNull(c.Name) ?? string.Empty,
+                TextRules.TrimOrNull(c.Kind)?.ToLowerInvariant() ?? string.Empty,
                 c.Value ?? 0,
                 DuesConcessionRule.PartsOf(c.AppliesTo)))
             .Where(rule => rule.Key.Length > 0
@@ -161,7 +162,7 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
     private static IReadOnlyList<string>? Codes(IReadOnlyList<string>? codes)
     {
         var cleaned = codes?
-            .Select(Text)
+            .Select(TextRules.TrimOrNull)
             .OfType<string>()
             .Select(code => code.ToLowerInvariant())
             .Distinct()
@@ -171,12 +172,6 @@ public sealed class KraiProfileProvider : IKraiProfileProvider
 
     private static IReadOnlyList<string> Ids(IReadOnlyList<string>? ids)
     {
-        return ids?.Select(Text).OfType<string>().Distinct().ToList() ?? [];
-    }
-
-    private static string? Text(string? value)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
+        return ids?.Select(TextRules.TrimOrNull).OfType<string>().Distinct().ToList() ?? [];
     }
 }

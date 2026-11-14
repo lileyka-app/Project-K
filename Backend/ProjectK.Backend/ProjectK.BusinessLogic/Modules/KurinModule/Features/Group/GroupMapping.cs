@@ -1,5 +1,6 @@
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Rules.Shared;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
@@ -22,14 +23,7 @@ internal static class GroupMapping
     public static void ApplyTo(this UpsertGroupCommand request, GroupEntity group, DateTime now)
     {
         group.Name = request.Name;
-        group.Description = Trimmed(request.Description);
+        group.Description = TextRules.TrimOrNull(request.Description);
         group.UpdatedDate = now;
-    }
-
-    /// <summary>Free text as it is kept: trimmed, and blank as nothing.</summary>
-    public static string? Trimmed(string? value)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
     }
 }

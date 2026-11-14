@@ -1,5 +1,6 @@
 using System.Globalization;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 
@@ -58,15 +59,9 @@ internal static class RosterValues
         ("вступ", PlastLevel.Entry)
     ];
 
-    public static string? Text(string? raw)
-    {
-        var trimmed = raw?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
-    }
-
     public static DateOnly? Date(string? raw)
     {
-        var text = Text(raw);
+        var text = TextRules.TrimOrNull(raw);
         if (text is null)
         {
             return null;
@@ -95,7 +90,7 @@ internal static class RosterValues
     /// <summary>The ступінь a roster's word names, or null when nothing here recognises it.</summary>
     public static PlastLevel? Level(string? raw)
     {
-        var text = Text(raw)?.ToLowerInvariant();
+        var text = TextRules.TrimOrNull(raw)?.ToLowerInvariant();
         if (text is null)
         {
             return null;
@@ -115,7 +110,7 @@ internal static class RosterValues
     /// <summary>The kurin's number out of «14», «14 курінь» or «к. ч. 14».</summary>
     public static int? KurinNumber(string? raw)
     {
-        var text = Text(raw);
+        var text = TextRules.TrimOrNull(raw);
         if (text is null)
         {
             return null;

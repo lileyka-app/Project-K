@@ -6,6 +6,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.InfrastructureModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Feedback;
 
@@ -67,8 +68,8 @@ public sealed class ReportProblemCommandHandler
             return ServiceResult<ProblemReportReceipt>.Failure(ResultType.BadRequest, InfrastructureErrors.DescriptionTooLong, $"The description must be {MaxDescriptionLength} characters or fewer.");
         }
 
-        var steps = Trimmed(request.Steps);
-        var expected = Trimmed(request.Expected);
+        var steps = TextRules.TrimOrNull(request.Steps);
+        var expected = TextRules.TrimOrNull(request.Expected);
         if (steps?.Length > MaxSecondaryLength || expected?.Length > MaxSecondaryLength)
         {
             return ServiceResult<ProblemReportReceipt>.Failure(ResultType.BadRequest, InfrastructureErrors.FieldTooLong, $"Steps and expectation must be {MaxSecondaryLength} characters or fewer each.");
@@ -88,9 +89,9 @@ public sealed class ReportProblemCommandHandler
             Description: description,
             Steps: steps,
             Expected: expected,
-            Route: Trimmed(request.Route),
-            AppVersion: Trimmed(request.AppVersion),
-            UserAgent: Trimmed(request.UserAgent),
+            Route: TextRules.TrimOrNull(request.Route),
+            AppVersion: TextRules.TrimOrNull(request.AppVersion),
+            UserAgent: TextRules.TrimOrNull(request.UserAgent),
             ReporterUserKey: reporterKey,
             KurinKey: _currentUser.KurinKey,
             Roles: _currentUser.Roles,
@@ -120,7 +121,7 @@ public sealed class ReportProblemCommandHandler
     /// <summary>The first line of the description when no title was typed, cut to fit.</summary>
     public static string TitleFor(string? title, string description)
     {
-        var chosen = Trimmed(title);
+        var chosen = TextRules.TrimOrNull(title);
         if (chosen is null)
         {
             var firstLine = description.Split('\n', 2)[0].Trim().TrimStart('#', ' ', '>', '-', '*');
@@ -139,10 +140,4 @@ public sealed class ReportProblemCommandHandler
         && Uri.TryCreate(url, UriKind.Absolute, out var uri)
         && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
         && uri.AbsolutePath.Contains($"/{BlobUploadFolders.FeedbackScreenshots}/", StringComparison.Ordinal);
-
-    private static string? Trimmed(string? value)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
-    }
 }

@@ -143,7 +143,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
     {
         // Input validation lives in SubmitWaitlistRegistrationCommandValidator (runs in the pipeline).
         var stanytsia = request.Stanytsia?.Trim();
-        var regionOrCountry = string.IsNullOrWhiteSpace(request.RegionOrCountry) ? null : request.RegionOrCountry.Trim();
+        var regionOrCountry = TextRules.TrimOrNull(request.RegionOrCountry);
         var kraiCode = Krai.NormalizeCode(request.KraiCode);
         var isSenior = request.UspNumber.HasValue || request.UpsNumber.HasValue;
         var claimedKurinNumber = request.IsPreparatoryKurin || isSenior ? null : request.ClaimedKurinNameOrNumber?.Trim();
