@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.Common.Rules.AuthModule;

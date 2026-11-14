@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Identity;
-
 namespace ProjectK.Common.Enums.AuthModule;
 
 public enum OnboardingStatus

@@ -1,6 +1,5 @@
 using System.Globalization;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.Shared;

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;

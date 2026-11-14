@@ -1,4 +1,3 @@
-using System.Globalization;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Rules.KurinModule;

@@ -1,5 +1,4 @@
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 

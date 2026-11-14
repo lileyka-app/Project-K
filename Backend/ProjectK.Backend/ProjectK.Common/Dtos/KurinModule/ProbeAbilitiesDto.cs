@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace ProjectK.Common.Dtos.KurinModule;
 
 /// <param name="Sign">Sign points, complete and verify.</param>

@@ -6,7 +6,6 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
 

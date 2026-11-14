@@ -1,3 +1,5 @@
+using ProjectK.Common.Enums.KurinModule;
+
 namespace ProjectK.Common.Dtos.KurinModule;
 
 public class MemberLookupDto
@@ -8,7 +10,7 @@ public class MemberLookupDto
     public string? MiddleName { get; set; }
     public string LastName { get; set; }
     public string? UserRole { get; set; }
-    public ProjectK.Common.Enums.KurinModule.MemberProfileVerificationStatus ProfileVerificationStatus { get; set; }
+    public MemberProfileVerificationStatus ProfileVerificationStatus { get; set; }
     public DateTime? ProfileVerifiedAtUtc { get; set; }
     public Guid? ProfileVerifiedByUserKey { get; set; }
     public string? ProfileVerificationNote { get; set; }

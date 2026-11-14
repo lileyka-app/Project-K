@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Dtos.KurinModule;

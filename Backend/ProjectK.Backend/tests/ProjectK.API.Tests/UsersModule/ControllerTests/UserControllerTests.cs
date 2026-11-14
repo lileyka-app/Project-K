@@ -9,7 +9,6 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.Common.Dtos.UsersModule;
-using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 

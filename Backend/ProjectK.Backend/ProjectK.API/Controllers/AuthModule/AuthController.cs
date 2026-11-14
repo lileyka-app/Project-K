@@ -20,7 +20,6 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Dtos.AuthModule.Requests;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.API.Controllers.AuthModule;
 

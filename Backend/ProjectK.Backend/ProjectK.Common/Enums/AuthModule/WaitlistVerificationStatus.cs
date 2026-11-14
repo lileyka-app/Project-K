@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ProjectK.Common.Enums.AuthModule;
 
 public enum WaitlistVerificationStatus

@@ -10,7 +10,6 @@ using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Records.KurinModule;

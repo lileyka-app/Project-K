@@ -1,6 +1,5 @@
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.AuthModule;
 

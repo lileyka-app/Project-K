@@ -17,7 +17,6 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandlers;
 

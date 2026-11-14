@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace ProjectK.Common.Dtos.KurinModule;
 
 /// <param name="Confirm">The levels (1–4) the caller may confirm.</param>
