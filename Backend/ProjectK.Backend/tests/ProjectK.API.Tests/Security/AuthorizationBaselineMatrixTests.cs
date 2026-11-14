@@ -27,6 +27,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Dtos.MeModule.Requests;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;

@@ -13,7 +13,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
-public sealed record UpdateAgendaItemCommand : IRequest<ServiceResult<object>>
+public sealed record UpdateAgendaItemCommand : IRequest<ServiceResult<Unit>>
 {
     public Guid AgendaItemKey { get; init; }
     public AgendaItemKind Kind { get; init; }
@@ -32,7 +32,7 @@ public sealed record UpdateAgendaItemCommand : IRequest<ServiceResult<object>>
     public List<AgendaTargetInput> Targets { get; init; } = [];
 }
 
-public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgendaItemCommand, ServiceResult<object>>
+public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgendaItemCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
@@ -57,23 +57,23 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(UpdateAgendaItemCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(UpdateAgendaItemCommand request, CancellationToken cancellationToken)
     {
         var item = await _uow.AgendaItems.GetByKeyWithAssignmentsAsync(request.AgendaItemKey, cancellationToken);
         if (item is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "AGENDA_NOT_FOUND", "Agenda item was not found.");
+            return AgendaErrors.NotFound<Unit>();
         }
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         if (viewer.KurinKey != _currentUser.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_OTHER_KURIN", "Agenda item belongs to a different kurin.");
+            return AgendaErrors.OtherKurin<Unit>();
         }
 
         if (!AgendaPermissions.CanManage(item, viewer))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_EDIT_FORBIDDEN", "Only the creator or leadership may edit this item.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaEditForbidden, "Only the creator or leadership may edit this item.");
         }
 
         // Only a newly added target is an act of assigning: one the item already has stays when the
@@ -84,7 +84,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             var decision = await _access.AuthorizeTargetAsync(target, cancellationToken);
             if (!decision.IsAllowed)
             {
-                return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_TARGET_FORBIDDEN", decision.Reason);
+                return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaTargetForbidden, decision.Reason);
             }
         }
 
@@ -102,7 +102,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
             && AgendaCompletion.HasMoved(a));
         if (reshaped is not null)
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "AGENDA_MODE_LOCKED",
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, AgendaErrors.AgendaModeLocked,
                 "The way this target is done cannot change once someone has moved it; create a new task instead.");
         }
 
@@ -141,7 +141,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
 
         await PublishChangedAsync(item, viewer.ViewerUserKey ?? Guid.Empty, cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
     /// <summary>Records what the edit changed, targets and the status they moved included; an edit that changed nothing is not recorded.</summary>

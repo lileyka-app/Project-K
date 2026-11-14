@@ -14,9 +14,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 /// гуртковий marks the youth who handed the вкладка over in cash.
 /// </summary>
 public sealed record ChangeAgendaTargetStatusCommand(Guid AgendaItemKey, Guid AgendaAssignmentKey, AgendaItemStatus Status, Guid? MemberKey)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
-public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<ChangeAgendaTargetStatusCommand, ServiceResult<object>>
+public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<ChangeAgendaTargetStatusCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
@@ -44,25 +44,25 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(ChangeAgendaTargetStatusCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ChangeAgendaTargetStatusCommand request, CancellationToken cancellationToken)
     {
         var item = await _uow.AgendaItems.GetByKeyWithAssignmentsAsync(request.AgendaItemKey, cancellationToken);
         var assignment = item?.Assignments.FirstOrDefault(a => a.AgendaAssignmentKey == request.AgendaAssignmentKey);
         if (item is null || assignment is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "AGENDA_NOT_FOUND", "Agenda item or target was not found.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, AgendaErrors.AgendaNotFound, "Agenda item or target was not found.");
         }
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         if (viewer.KurinKey != _currentUser.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_OTHER_KURIN", "Agenda item belongs to a different kurin.");
+            return AgendaErrors.OtherKurin<Unit>();
         }
 
         var perMember = AgendaCompletion.ModeOf(assignment) == AgendaCompletionMode.PerMember;
         if (perMember != request.MemberKey.HasValue)
         {
-            return ServiceResult<object>.Failure(ResultType.BadRequest, "AGENDA_PART_MISMATCH",
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AgendaErrors.AgendaPartMismatch,
                 perMember ? "This target is done by each person; name whose part moves." : "This target has one state; no person is named.");
         }
 
@@ -71,7 +71,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         {
             if (!roster.PeopleIn(assignment).Contains(memberKey))
             {
-                return ServiceResult<object>.Failure(ResultType.BadRequest, "AGENDA_NOT_IN_TARGET", "That person is not in this target.");
+                return ServiceResult<Unit>.Failure(ResultType.BadRequest, AgendaErrors.AgendaNotInTarget, "That person is not in this target.");
             }
 
             if (!AgendaCompletion.CanMovePart(item, assignment, viewer, memberKey))
@@ -107,9 +107,9 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
             await AgendaStatusWriter.PublishAsync(_events, item, actor, cancellationToken);
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
-    private static ServiceResult<object> Forbidden() =>
-        ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_STATUS_FORBIDDEN", "This part of the task is not yours to move.");
+    private static ServiceResult<Unit> Forbidden() =>
+        ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaStatusForbidden, "This part of the task is not yours to move.");
 }

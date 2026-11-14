@@ -13,9 +13,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 /// part, or the shared targets they answer for (<see cref="AgendaCompletion.BoardMove"/>).
 /// </summary>
 public sealed record ChangeAgendaItemStatusCommand(Guid AgendaItemKey, AgendaItemStatus Status)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
-public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<ChangeAgendaItemStatusCommand, ServiceResult<object>>
+public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<ChangeAgendaItemStatusCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
@@ -43,18 +43,18 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(ChangeAgendaItemStatusCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ChangeAgendaItemStatusCommand request, CancellationToken cancellationToken)
     {
         var item = await _uow.AgendaItems.GetByKeyWithAssignmentsAsync(request.AgendaItemKey, cancellationToken);
         if (item is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "AGENDA_NOT_FOUND", "Agenda item was not found.");
+            return AgendaErrors.NotFound<Unit>();
         }
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         if (viewer.KurinKey != _currentUser.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_OTHER_KURIN", "Agenda item belongs to a different kurin.");
+            return AgendaErrors.OtherKurin<Unit>();
         }
 
         var actor = viewer.ViewerUserKey ?? Guid.Empty;
@@ -101,9 +101,9 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
             await AgendaStatusWriter.PublishAsync(_events, item, actor, cancellationToken);
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
-    private static ServiceResult<object> Forbidden() =>
-        ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_STATUS_FORBIDDEN", "Nothing on this task is yours to move.");
+    private static ServiceResult<Unit> Forbidden() =>
+        ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaStatusForbidden, "Nothing on this task is yours to move.");
 }

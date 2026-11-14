@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -51,10 +52,10 @@ public static class AgendaBoardPaging
 /// read, so narrowing happens in memory over the live set — kept small by the archive.
 /// </summary>
 public sealed record GetAgendaBoardQuery(Guid KurinKey, AgendaBoardFilter? Filter = null)
-    : IRequest<ServiceResult<AgendaBoardResponse>>;
+    : IRequest<ServiceResult<AgendaBoardDto>>;
 
 public sealed class GetAgendaBoardQueryHandler
-    : IRequestHandler<GetAgendaBoardQuery, ServiceResult<AgendaBoardResponse>>
+    : IRequestHandler<GetAgendaBoardQuery, ServiceResult<AgendaBoardDto>>
 {
     private static readonly AgendaItemStatus[] Columns = [AgendaItemStatus.Todo, AgendaItemStatus.InProgress, AgendaItemStatus.Done];
 
@@ -72,7 +73,7 @@ public sealed class GetAgendaBoardQueryHandler
         _userManager = userManager;
     }
 
-    public async Task<ServiceResult<AgendaBoardResponse>> Handle(GetAgendaBoardQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<AgendaBoardDto>> Handle(GetAgendaBoardQuery request, CancellationToken cancellationToken)
     {
         var filter = request.Filter ?? new AgendaBoardFilter();
         var take = Math.Clamp(filter.Take, 1, AgendaBoardPaging.MaxTake);
@@ -123,10 +124,10 @@ public sealed class GetAgendaBoardQueryHandler
             });
         }
 
-        return new ServiceResult<AgendaBoardResponse>(ResultType.Success, new AgendaBoardResponse { Columns = columns, Targets = targets });
+        return new ServiceResult<AgendaBoardDto>(ResultType.Success, new AgendaBoardDto { Columns = columns, Targets = targets });
     }
 
-    private static IEnumerable<AgendaItemResponse> Sort(IEnumerable<AgendaItemResponse> rows, AgendaBoardSort sort) => sort switch
+    private static IEnumerable<AgendaItemDto> Sort(IEnumerable<AgendaItemDto> rows, AgendaBoardSort sort) => sort switch
     {
         AgendaBoardSort.Recent => rows.OrderByDescending(r => r.UpdatedUtc),
         AgendaBoardSort.Created => rows.OrderByDescending(r => r.CreatedUtc),

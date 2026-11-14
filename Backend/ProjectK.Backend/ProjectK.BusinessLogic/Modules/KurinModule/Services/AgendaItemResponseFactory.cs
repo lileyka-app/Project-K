@@ -1,17 +1,17 @@
-using ProjectK.Common.Models.Authorization;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>
-/// Builds <see cref="AgendaItemResponse"/> from an entity plus name lookups and the viewer context.
+/// Builds <see cref="AgendaItemDto"/> from an entity plus name lookups and the viewer context.
 /// Kept in one place so the calendar and board return identical shapes and per-viewer flags.
 /// </summary>
 public static class AgendaItemResponseFactory
 {
-    public static AgendaItemResponse Create(
+    public static AgendaItemDto Create(
         AgendaItem item,
         AgendaViewerContext viewer,
         string kurinLabel,
@@ -39,7 +39,7 @@ public static class AgendaItemResponseFactory
         // expansion, but the key stays the series key so edit/delete act on the whole series (v1).
         var isInstance = occurrenceStartUtc.HasValue;
 
-        return new AgendaItemResponse
+        return new AgendaItemDto
         {
             AgendaItemKey = item.AgendaItemKey,
             KurinKey = item.KurinKey,
@@ -106,7 +106,10 @@ public static class AgendaItemResponseFactory
             Status = AgendaCompletion.TargetStatus(assignment, roster),
             StatusChangedByName = NameOf(assignment.StatusChangedByUserKey, userNames),
             StatusChangedAtUtc = AsUtc(assignment.StatusChangedAtUtc),
-            CanChangeStatus = AgendaCompletion.CanMoveTarget(item, assignment, viewer)
+            CanChangeStatus = AgendaCompletion.CanMoveTarget(item, assignment, viewer),
+            DoneCount = null,
+            PeopleCount = null,
+            Parts = null
         };
 
         if (mode != AgendaCompletionMode.PerMember)

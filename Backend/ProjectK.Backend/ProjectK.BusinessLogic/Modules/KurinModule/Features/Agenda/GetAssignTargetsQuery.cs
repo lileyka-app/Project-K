@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -10,10 +11,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
 /// <summary>The "Assign for" tree, trimmed to what the current user is allowed to target.</summary>
 public sealed record GetAssignTargetsQuery(Guid KurinKey)
-    : IRequest<ServiceResult<AgendaAssignTargetsResponse>>;
+    : IRequest<ServiceResult<AgendaAssignTargetsDto>>;
 
 public sealed class GetAssignTargetsQueryHandler
-    : IRequestHandler<GetAssignTargetsQuery, ServiceResult<AgendaAssignTargetsResponse>>
+    : IRequestHandler<GetAssignTargetsQuery, ServiceResult<AgendaAssignTargetsDto>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
@@ -28,15 +29,15 @@ public sealed class GetAssignTargetsQueryHandler
         _tags = tags;
     }
 
-    public async Task<ServiceResult<AgendaAssignTargetsResponse>> Handle(GetAssignTargetsQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<AgendaAssignTargetsDto>> Handle(GetAssignTargetsQuery request, CancellationToken cancellationToken)
     {
         // The same reach the create handler checks target by target, worked out once for the tree,
         // so the tree never offers what a save would refuse.
         var reach = await _access.GetAssignReachAsync(request.KurinKey, cancellationToken);
         if (!reach.CanAuthor)
         {
-            return ServiceResult<AgendaAssignTargetsResponse>.Failure(
-                ResultType.Forbidden, "AGENDA_AUTHOR_FORBIDDEN", "The kurin's policy lets this user assign nothing.");
+            return ServiceResult<AgendaAssignTargetsDto>.Failure(
+                ResultType.Forbidden, AgendaErrors.AgendaAuthorForbidden, "The kurin's policy lets this user assign nothing.");
         }
 
         var groups = (await _uow.Groups.GetAllAsync(request.KurinKey, cancellationToken)).ToList();
@@ -89,7 +90,8 @@ public sealed class GetAssignTargetsQueryHandler
                     {
                         LeadershipKey = office.LeadershipKey,
                         Label = AgendaLookups.LabelFor(office.Type, office.GroupKey, groupNames),
-                        CanTarget = reach.ReachesProvid(g.GroupKey)
+                        CanTarget = reach.ReachesProvid(g.GroupKey),
+                        Members = []
                     }
                     : null,
                 Members = members
@@ -115,7 +117,7 @@ public sealed class GetAssignTargetsQueryHandler
                 .ToList();
         }
 
-        var response = new AgendaAssignTargetsResponse
+        var response = new AgendaAssignTargetsDto
         {
             CanTargetKurin = reach.ReachesKurin,
             KurinKey = request.KurinKey,
@@ -126,6 +128,6 @@ public sealed class GetAssignTargetsQueryHandler
             Tags = tagTargets
         };
 
-        return new ServiceResult<AgendaAssignTargetsResponse>(ResultType.Success, response);
+        return new ServiceResult<AgendaAssignTargetsDto>(ResultType.Success, response);
     }
 }

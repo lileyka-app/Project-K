@@ -3,13 +3,14 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
 /// <summary>Create (empty key) or edit an event group. Authorization is enforced at the controller (Зв'язковий).</summary>
-public sealed record UpsertAgendaCategoryCommand : IRequest<ServiceResult<AgendaCategoryResponse>>
+public sealed record UpsertAgendaCategoryCommand : IRequest<ServiceResult<AgendaCategoryDto>>
 {
     public Guid? AgendaCategoryKey { get; init; }
     public Guid KurinKey { get; init; }
@@ -26,7 +27,7 @@ public sealed record UpsertAgendaCategoryCommand : IRequest<ServiceResult<Agenda
     public bool IsKurinSchedule { get; init; }
 }
 
-public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertAgendaCategoryCommand, ServiceResult<AgendaCategoryResponse>>
+public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertAgendaCategoryCommand, ServiceResult<AgendaCategoryDto>>
 {
     private readonly IUnitOfWork _uow;
 
@@ -35,7 +36,7 @@ public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertA
         _uow = uow;
     }
 
-    public async Task<ServiceResult<AgendaCategoryResponse>> Handle(UpsertAgendaCategoryCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<AgendaCategoryDto>> Handle(UpsertAgendaCategoryCommand request, CancellationToken cancellationToken)
     {
         AgendaCategory category;
         var isNew = request.AgendaCategoryKey is null || request.AgendaCategoryKey == Guid.Empty;
@@ -49,12 +50,12 @@ public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertA
             var existing = await _uow.AgendaCategories.GetByKeyAsync(request.AgendaCategoryKey!.Value, cancellationToken);
             if (existing is null)
             {
-                return ServiceResult<AgendaCategoryResponse>.Failure(ResultType.NotFound, "CATEGORY_NOT_FOUND", "Event group was not found.");
+                return ServiceResult<AgendaCategoryDto>.Failure(ResultType.NotFound, AgendaErrors.CategoryNotFound, "Event group was not found.");
             }
 
             if (existing.KurinKey != request.KurinKey)
             {
-                return ServiceResult<AgendaCategoryResponse>.Failure(ResultType.Forbidden, "CATEGORY_OTHER_KURIN", "Event group belongs to a different kurin.");
+                return ServiceResult<AgendaCategoryDto>.Failure(ResultType.Forbidden, AgendaErrors.CategoryOtherKurin, "Event group belongs to a different kurin.");
             }
 
             category = existing;
@@ -76,9 +77,9 @@ public sealed class UpsertAgendaCategoryCommandHandler : IRequestHandler<UpsertA
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<AgendaCategoryResponse>(
+        return new ServiceResult<AgendaCategoryDto>(
             isNew ? ResultType.Created : ResultType.Success,
-            AgendaCategoryResponse.From(category));
+            category.ToDto());
     }
 }
 

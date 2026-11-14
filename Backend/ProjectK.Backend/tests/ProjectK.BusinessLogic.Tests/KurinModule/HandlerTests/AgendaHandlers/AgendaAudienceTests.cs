@@ -2,6 +2,7 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
@@ -25,7 +26,7 @@ public class AgendaAudienceTests
         Assignments = [new AgendaAssignment { TargetType = AgendaTargetType.Group, TargetKey = group }]
     };
 
-    private static AgendaItemResponse Response(AgendaItem item, AgendaViewerContext viewer) =>
+    private static AgendaItemDto Response(AgendaItem item, AgendaViewerContext viewer) =>
         AgendaItemResponseFactory.Create(item, viewer, "Весь курінь",
             new Dictionary<Guid, string> { [Sokoly] = "Соколи", [Kelty] = "Кельти" },
             new Dictionary<Guid, string>(), new Dictionary<Guid, string>(), new Dictionary<Guid, string>(),

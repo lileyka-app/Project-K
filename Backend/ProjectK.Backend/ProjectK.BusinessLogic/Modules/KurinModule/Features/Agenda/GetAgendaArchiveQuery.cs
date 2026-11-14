@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -12,9 +13,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
 /// <summary>The archived tasks the viewer may see, newest first, with the kurin's rules for keeping them.</summary>
 public sealed record GetAgendaArchiveQuery(Guid KurinKey, string? Search, int Skip, int Take)
-    : IRequest<ServiceResult<AgendaArchivePageResponse>>;
+    : IRequest<ServiceResult<AgendaArchivePageDto>>;
 
-public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArchiveQuery, ServiceResult<AgendaArchivePageResponse>>
+public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArchiveQuery, ServiceResult<AgendaArchivePageDto>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
@@ -29,12 +30,12 @@ public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArch
         _userManager = userManager;
     }
 
-    public async Task<ServiceResult<AgendaArchivePageResponse>> Handle(GetAgendaArchiveQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<AgendaArchivePageDto>> Handle(GetAgendaArchiveQuery request, CancellationToken cancellationToken)
     {
         var kurin = await _uow.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<AgendaArchivePageResponse>.Failure(ResultType.NotFound, "KURIN_NOT_FOUND", "Kurin was not found.");
+            return ServiceResult<AgendaArchivePageDto>.Failure(ResultType.NotFound, AgendaErrors.KurinNotFound, "Kurin was not found.");
         }
 
         var viewer = await _access.BuildViewerAsync(request.KurinKey, cancellationToken);
@@ -51,7 +52,7 @@ public sealed class GetAgendaArchiveQueryHandler : IRequestHandler<GetAgendaArch
             .Where(response => AgendaSearch.Matches(response, request.Search))
             .ToList();
 
-        return new ServiceResult<AgendaArchivePageResponse>(ResultType.Success, new AgendaArchivePageResponse
+        return new ServiceResult<AgendaArchivePageDto>(ResultType.Success, new AgendaArchivePageDto
         {
             Total = matching.Count,
             Items = matching.Skip(Math.Max(0, request.Skip)).Take(Math.Clamp(request.Take, 1, AgendaBoardPaging.MaxTake)).ToList(),

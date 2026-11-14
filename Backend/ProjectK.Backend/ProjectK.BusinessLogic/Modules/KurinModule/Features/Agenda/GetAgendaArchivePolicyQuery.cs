@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -22,7 +23,7 @@ public sealed class GetAgendaArchivePolicyQueryHandler : IRequestHandler<GetAgen
     {
         var kurin = await _uow.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         return kurin is null
-            ? ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.NotFound, "KURIN_NOT_FOUND", "Kurin was not found.")
+            ? ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.NotFound, AgendaErrors.KurinNotFound, "Kurin was not found.")
             : new ServiceResult<AgendaArchivePolicyDto>(ResultType.Success,
                 new AgendaArchivePolicyDto { AutoArchiveAfterDays = kurin.TaskAutoArchiveAfterDays, PurgeAfterDays = kurin.TaskArchivePurgeAfterDays });
     }

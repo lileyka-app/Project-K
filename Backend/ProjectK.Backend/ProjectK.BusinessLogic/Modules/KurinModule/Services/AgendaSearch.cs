@@ -1,11 +1,12 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>Search over what a card shows: title, description and the names of its targets.</summary>
 public static class AgendaSearch
 {
-    public static bool Matches(AgendaItemResponse item, string? search)
+    public static bool Matches(AgendaItemDto item, string? search)
     {
         if (string.IsNullOrWhiteSpace(search))
         {

@@ -62,12 +62,12 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         var actorUserKey = _currentUser.UserId;
         if (actorUserKey is null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.Unauthorized, "AGENDA_NO_ACTOR", "Current user could not be resolved.");
+            return ServiceResult<Guid>.Failure(ResultType.Unauthorized, AgendaErrors.AgendaNoActor, "Current user could not be resolved.");
         }
 
         if (!await _access.CanAuthorAsync(cancellationToken))
         {
-            return ServiceResult<Guid>.Failure(ResultType.Forbidden, "AGENDA_AUTHOR_FORBIDDEN", "The kurin's policy lets this user assign nothing.");
+            return ServiceResult<Guid>.Failure(ResultType.Forbidden, AgendaErrors.AgendaAuthorForbidden, "The kurin's policy lets this user assign nothing.");
         }
 
         // Every selected target is checked against the kurin's policy for its kind, so nobody reaches
@@ -77,7 +77,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
             var decision = await _access.AuthorizeTargetAsync(target, cancellationToken);
             if (!decision.IsAllowed)
             {
-                return ServiceResult<Guid>.Failure(ResultType.Forbidden, "AGENDA_TARGET_FORBIDDEN", decision.Reason);
+                return ServiceResult<Guid>.Failure(ResultType.Forbidden, AgendaErrors.AgendaTargetForbidden, decision.Reason);
             }
         }
 

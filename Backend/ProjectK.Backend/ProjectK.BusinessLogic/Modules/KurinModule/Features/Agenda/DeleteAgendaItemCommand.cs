@@ -10,9 +10,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
-public sealed record DeleteAgendaItemCommand(Guid AgendaItemKey) : IRequest<ServiceResult<object>>;
+public sealed record DeleteAgendaItemCommand(Guid AgendaItemKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgendaItemCommand, ServiceResult<object>>
+public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgendaItemCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
@@ -37,23 +37,23 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeleteAgendaItemCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteAgendaItemCommand request, CancellationToken cancellationToken)
     {
         var item = await _uow.AgendaItems.GetByKeyWithAssignmentsAsync(request.AgendaItemKey, cancellationToken);
         if (item is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "AGENDA_NOT_FOUND", "Agenda item was not found.");
+            return AgendaErrors.NotFound<Unit>();
         }
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         if (viewer.KurinKey != _currentUser.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_OTHER_KURIN", "Agenda item belongs to a different kurin.");
+            return AgendaErrors.OtherKurin<Unit>();
         }
 
         if (!AgendaPermissions.CanManage(item, viewer))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_DELETE_FORBIDDEN", "Only the creator or leadership may delete this item.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaDeleteForbidden, "Only the creator or leadership may delete this item.");
         }
 
         // Resolve who was assigned before the row (and its assignments) are gone.
@@ -89,6 +89,6 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
                 actorUserKey),
             cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

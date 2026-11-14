@@ -110,7 +110,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
   кожну ціль через `CheckCapabilityAsync` у створенні й при додаванні цілі в редагуванні; дерево
   `GET api/agenda/{kurinKey}/assign-targets` будує ті самі рішення з `GetAssignReachAsync` і
   позначає кожну ціль (`canTarget` і в людей). Грубої політики за ролями тут нема (`RequireUser`):
-  хто не має жодного з чотирьох — 403 `AGENDA_AUTHOR_FORBIDDEN`, а клієнтський
+  хто не має жодного з чотирьох — 403 `AgendaAuthorForbidden`, а клієнтський
   `AgendaItem:Create:*` приходить із політики, тож кнопки «Нова подія/задача» зникають самі.
 
 ### Коли права змінились

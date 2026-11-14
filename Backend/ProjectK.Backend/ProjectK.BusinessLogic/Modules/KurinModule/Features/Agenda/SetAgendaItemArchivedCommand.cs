@@ -12,9 +12,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 /// Puts a task into the archive or takes it back. Whoever may edit the task may do either; a task
 /// taken back from the archive returns to the column it was in, with its parts as they were.
 /// </summary>
-public sealed record SetAgendaItemArchivedCommand(Guid AgendaItemKey, bool Archived) : IRequest<ServiceResult<object>>;
+public sealed record SetAgendaItemArchivedCommand(Guid AgendaItemKey, bool Archived) : IRequest<ServiceResult<Unit>>;
 
-public sealed class SetAgendaItemArchivedCommandHandler : IRequestHandler<SetAgendaItemArchivedCommand, ServiceResult<object>>
+public sealed class SetAgendaItemArchivedCommandHandler : IRequestHandler<SetAgendaItemArchivedCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IAgendaAccess _access;
@@ -31,33 +31,33 @@ public sealed class SetAgendaItemArchivedCommandHandler : IRequestHandler<SetAge
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetAgendaItemArchivedCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetAgendaItemArchivedCommand request, CancellationToken cancellationToken)
     {
         var item = await _uow.AgendaItems.GetByKeyWithAssignmentsAsync(request.AgendaItemKey, cancellationToken);
         if (item is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "AGENDA_NOT_FOUND", "Agenda item was not found.");
+            return AgendaErrors.NotFound<Unit>();
         }
 
         if (item.Kind != AgendaItemKind.Task)
         {
-            return ServiceResult<object>.Failure(ResultType.BadRequest, "AGENDA_ARCHIVE_TASKS_ONLY", "Only tasks are archived; events stay in the calendar.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, AgendaErrors.AgendaArchiveTasksOnly, "Only tasks are archived; events stay in the calendar.");
         }
 
         var viewer = await _access.BuildViewerAsync(item.KurinKey, cancellationToken);
         if (viewer.KurinKey != _currentUser.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_OTHER_KURIN", "Agenda item belongs to a different kurin.");
+            return AgendaErrors.OtherKurin<Unit>();
         }
 
         if (!AgendaPermissions.CanManage(item, viewer))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_EDIT_FORBIDDEN", "Only the creator or leadership may archive this task.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, AgendaErrors.AgendaEditForbidden, "Only the creator or leadership may archive this task.");
         }
 
         if (request.Archived == item.ArchivedAtUtc.HasValue)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -79,6 +79,6 @@ public sealed class SetAgendaItemArchivedCommandHandler : IRequestHandler<SetAge
                 KurinKey: item.KurinKey),
             cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

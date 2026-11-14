@@ -291,7 +291,7 @@ public class UpdateAgendaItemHandlerTests
 
         retitled.Type.Should().Be(ResultType.Success);
         widened.Type.Should().Be(ResultType.Forbidden);
-        widened.ErrorCode.Should().Be("AGENDA_TARGET_FORBIDDEN");
+        widened.ErrorCode.Should().Be("AgendaTargetForbidden");
         _access.Verify(a => a.AuthorizeTargetAsync(kept, It.IsAny<CancellationToken>()), Times.Never);
         _access.Verify(a => a.AuthorizeTargetAsync(added, It.IsAny<CancellationToken>()), Times.Once);
     }

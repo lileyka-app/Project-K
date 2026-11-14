@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -18,10 +19,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 /// for everyone, whole-kurin viewers too, so the switch means the same to all.
 /// </summary>
 public sealed record GetAgendaItemsQuery(Guid KurinKey, DateTime? FromUtc, DateTime? ToUtc, bool IncludeKurinSchedules = false)
-    : IRequest<ServiceResult<IEnumerable<AgendaItemResponse>>>;
+    : IRequest<ServiceResult<IEnumerable<AgendaItemDto>>>;
 
 public sealed class GetAgendaItemsQueryHandler
-    : IRequestHandler<GetAgendaItemsQuery, ServiceResult<IEnumerable<AgendaItemResponse>>>
+    : IRequestHandler<GetAgendaItemsQuery, ServiceResult<IEnumerable<AgendaItemDto>>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
@@ -42,7 +43,7 @@ public sealed class GetAgendaItemsQueryHandler
         _profiles = profiles;
     }
 
-    public async Task<ServiceResult<IEnumerable<AgendaItemResponse>>> Handle(GetAgendaItemsQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<IEnumerable<AgendaItemDto>>> Handle(GetAgendaItemsQuery request, CancellationToken cancellationToken)
     {
         var viewer = await _access.BuildViewerAsync(request.KurinKey, cancellationToken);
 
@@ -75,6 +76,6 @@ public sealed class GetAgendaItemsQueryHandler
             .OrderBy(r => r.StartUtc)
             .ToList();
 
-        return new ServiceResult<IEnumerable<AgendaItemResponse>>(ResultType.Success, responses);
+        return new ServiceResult<IEnumerable<AgendaItemDto>>(ResultType.Success, responses);
     }
 }

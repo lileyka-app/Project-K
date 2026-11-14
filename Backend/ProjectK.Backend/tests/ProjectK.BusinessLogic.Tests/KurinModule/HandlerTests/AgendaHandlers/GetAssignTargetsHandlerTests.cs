@@ -10,6 +10,7 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -215,6 +216,6 @@ public class GetAssignTargetsHandlerTests
         var result = await _handler.Handle(new GetAssignTargetsQuery(_kurinKey), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
-        result.ErrorCode.Should().Be("AGENDA_AUTHOR_FORBIDDEN");
+        result.ErrorCode.Should().Be("AgendaAuthorForbidden");
     }
 }

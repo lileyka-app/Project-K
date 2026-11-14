@@ -1,5 +1,6 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -11,7 +12,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// </summary>
 public static class AgendaRsvpProjector
 {
-    public static AgendaResponsesResponse Project(
+    public static AgendaResponsesDto Project(
         Guid agendaItemKey,
         DateTime? occurrenceStartUtc,
         IReadOnlyList<AgendaResponse> responses,
@@ -43,7 +44,7 @@ public static class AgendaRsvpProjector
             dtos.Add(ToDto(r, nameByUserKey, isWaitlisted: false));
         }
 
-        return new AgendaResponsesResponse
+        return new AgendaResponsesDto
         {
             AgendaItemKey = agendaItemKey,
             OccurrenceStartUtc = occurrenceStartUtc.HasValue ? DateTime.SpecifyKind(occurrenceStartUtc.Value, DateTimeKind.Utc) : null,
