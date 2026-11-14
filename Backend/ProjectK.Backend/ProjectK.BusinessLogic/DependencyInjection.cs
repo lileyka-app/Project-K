@@ -1,6 +1,10 @@
+using AutoMapper.EquivalencyExpression;
+using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ProjectK.BusinessLogic.Behaviors;
+using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
@@ -25,13 +29,40 @@ using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Settings;
+using ProjectK.Optimization.Extensions;
 
 namespace ProjectK.BusinessLogic;
 
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Registers the request pipeline (MediatR with its behaviors, validators, mapping), the domain
+    /// services and the options this project reads.
+    /// </summary>
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services, IConfiguration configuration)
     {
+        var assembly = typeof(DependencyInjection).Assembly;
+        services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(assembly);
+            // Outer -> inner. Timing wraps everything; Validation fails fast; Transaction sits
+            // around the handler.
+            cfg.AddOpenBehavior(typeof(RequestTimingBehavior<,>));
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+        });
+        services.AddValidatorsFromAssembly(assembly);
+        services.AddWolfPackOptimization();
+
+        services.Configure<KurinNumberOptions>(configuration.GetSection(KurinNumberOptions.SectionName));
+        services.Configure<KraiOptions>(configuration.GetSection(KraiOptions.SectionName));
+        services.Configure<LoginThrottleOptions>(configuration.GetSection("LoginThrottle"));
+
+        // The clock a kurin's week repeats by (DST-safe recurrence); Kyiv unless configured.
+        AgendaRecurrence.DefaultZone = AgendaRecurrence.ResolveZone(configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");
+
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
         services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
         services.AddSingleton<ILoginThrottle, LoginThrottle>();

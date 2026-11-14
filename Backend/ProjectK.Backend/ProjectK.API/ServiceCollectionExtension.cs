@@ -3,25 +3,27 @@ using Microsoft.Extensions.DependencyInjection;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure;
 
 namespace ProjectK.API;
 
 /// <summary>
-/// Host-level wiring only: request context, configuration binding, and the two calls that let each
-/// layer register what it owns.
+/// Host-level wiring only: request context, the clock, and the two calls that let each layer
+/// register what it owns.
 /// </summary>
 public static class ServiceCollectionExtension
 {
+    /// <summary>
+    /// Registers the host's own services, then <c>AddInfrastructure</c> and <c>AddBusinessLogic</c>.
+    /// </summary>
+    /// <remarks>
+    /// Call it before <c>AddAuthentication</c>: Identity, registered by the infrastructure, sets the
+    /// default schemes to its cookies, and the bearer scheme has to be set after it to win.
+    /// </remarks>
     public static IServiceCollection AddProjectDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
 
-        services.Configure<EmailSettings>(configuration.GetSection("Email"));
-        services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
-        services.Configure<LoginThrottleOptions>(configuration.GetSection("LoginThrottle"));
-        services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
         // Injected wherever the clock decides something — token and invitation expiry, warning
         // windows, the agenda's default range — so those rules can be tested at a fixed instant.
         // Plain timestamps still use DateTime.UtcNow.
