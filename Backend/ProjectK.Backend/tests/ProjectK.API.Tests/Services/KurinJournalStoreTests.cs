@@ -55,7 +55,7 @@ public class KurinJournalStoreTests : IDisposable
             ActorName = "Марта",
             ActorRole = "KV:Vykhovnyk",
             Area = area,
-            Action = AuditActions.Award.Added,
+            Action = AuditActionNames.Award.Added,
             SubjectMemberKey = subjectMemberKey,
             SubjectGroupKey = subjectGroupKey,
             SubjectKey = Guid.NewGuid(),

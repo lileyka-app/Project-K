@@ -29,7 +29,7 @@ public class KurinDuesHandlerTests
     private readonly Mock<IDuesUnitOfWork> _dues = new();
     private readonly Mock<IDuesKurinShape> _shape = new();
     private readonly Mock<ICurrentUserContext> _user = new();
-    private string _upstream = KraiDues.Stanytsia;
+    private string _upstream = KraiDuesNames.Stanytsia;
 
     public KurinDuesHandlerTests()
     {
@@ -137,11 +137,11 @@ public class KurinDuesHandlerTests
     }
 
     [Theory]
-    [InlineData(KraiDues.Stanytsia, DuesEntryKind.TransferToKrai, false)]
-    [InlineData(KraiDues.Krai, DuesEntryKind.TransferToStanytsia, false)]
-    [InlineData(KraiDues.Krai, DuesEntryKind.TransferToKrai, true)]
-    [InlineData(KraiDues.Both, DuesEntryKind.TransferToStanytsia, true)]
-    [InlineData(KraiDues.Both, DuesEntryKind.TransferToKrai, true)]
+    [InlineData(KraiDuesNames.Stanytsia, DuesEntryKind.TransferToKrai, false)]
+    [InlineData(KraiDuesNames.Krai, DuesEntryKind.TransferToStanytsia, false)]
+    [InlineData(KraiDuesNames.Krai, DuesEntryKind.TransferToKrai, true)]
+    [InlineData(KraiDuesNames.Both, DuesEntryKind.TransferToStanytsia, true)]
+    [InlineData(KraiDuesNames.Both, DuesEntryKind.TransferToKrai, true)]
     public async Task TheKurin_HandsMoneyOnOnlyTheWayItsKraiTakesIt(string upstream, DuesEntryKind kind, bool taken)
     {
         _upstream = upstream;

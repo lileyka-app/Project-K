@@ -157,7 +157,7 @@ public sealed class MemberCards
 
         string? level = null;
         if (fields.HasFlag(CardField.Level)
-            && PlastLadder.Highest(await _members.GetLevelsAsync(memberKey, cancellationToken)) is { } highest)
+            && PlastLadderRules.Highest(await _members.GetLevelsAsync(memberKey, cancellationToken)) is { } highest)
         {
             level = PlastLevelNames.Of(highest);
         }
@@ -217,7 +217,7 @@ public sealed class MemberCards
     {
         if (award.Level is { } level)
         {
-            return new PublicCardAwardDto((int)level, KurinReportTerminology.AwardLevel(level), null, award.DateAcquired, "UPYu");
+            return new PublicCardAwardDto((int)level, KurinReportNames.AwardLevel(level), null, award.DateAcquired, "UPYu");
         }
 
         var item = _honours.GetById(award.CatalogId!);

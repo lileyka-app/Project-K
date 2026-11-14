@@ -87,7 +87,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             return NotFound();
         }
 
-        var feed = await _feeds.FindByTokenHashAsync(SecretHash.Sha256Hex(request.Token), cancellationToken);
+        var feed = await _feeds.FindByTokenHashAsync(SecretHashRules.Sha256Hex(request.Token), cancellationToken);
         if (feed is null)
         {
             return NotFound();
@@ -187,7 +187,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             }
 
             var summary = own ? item.Title : ScheduleTitle(item, groupNames);
-            foreach (var occurrence in AgendaRecurrence.Expand(item, from, to, zone))
+            foreach (var occurrence in AgendaRecurrenceRules.Expand(item, from, to, zone))
             {
                 var occurrenceKey = AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc);
                 AgendaRsvpStatus? answer = answers.TryGetValue((item.AgendaItemKey, occurrenceKey), out var status) ? status : null;
@@ -208,7 +208,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
     }
 
     private static bool IsOwn(AgendaItem item, AgendaViewerScope scope, AgendaViewerContext viewer) =>
-        AgendaVisibility.IsAddressedTo(item, scope) || item.CreatedByUserKey == viewer.ViewerUserKey;
+        AgendaVisibilityRules.IsAddressedTo(item, scope) || item.CreatedByUserKey == viewer.ViewerUserKey;
 
     /// <summary>A dated task the person still has to do, as an all-day event on its due day.</summary>
     private IcsEvent? TaskRow(AgendaItem item, AgendaViewerContext viewer, AgendaRoster roster, AgendaCategory? category, string? kurinLine)

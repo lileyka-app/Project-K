@@ -60,11 +60,11 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Office,
-                AuditActions.Office.MentorRevoked,
+                AuditActionNames.Office.MentorRevoked,
                 existingAssignment.MentorAssignmentKey,
-                KurinReportTerminology.LeadershipRole(LeadershipRole.Vykhovnyk),
+                KurinReportNames.LeadershipRole(LeadershipRole.Vykhovnyk),
                 mentor?.MemberKey,
-                AuditChanges.Removed(("group", group?.Name)),
+                AuditChangeRules.Removed(("group", group?.Name)),
                 KurinKey: group?.KurinKey),
             cancellationToken);
 
@@ -72,7 +72,7 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
 
         // Revocation must take effect at once, not after the TTL — otherwise the
         // mentor keeps write access to the group until the cached set expires.
-        _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _cache.Invalidate(BackendCacheRules.MentorScopeReads);
         _accessChanges.MarkUser(request.MentorUserKey);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

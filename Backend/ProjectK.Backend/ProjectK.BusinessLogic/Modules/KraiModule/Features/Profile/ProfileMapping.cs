@@ -22,7 +22,7 @@ internal static class ProfileMapping
     /// <summary>The fields a kurin may hide, in the profile's order, each marked as it stands in <paramref name="hiddenJson"/>.</summary>
     public static IReadOnlyList<KurinCardFieldDto> ToCardFieldDtos(this KraiCardFieldsSettings card, string? hiddenJson)
     {
-        var hidden = KurinHiddenCardFields.Read(hiddenJson);
+        var hidden = KurinHiddenCardFieldRules.Read(hiddenJson);
         return card.Hideable().Select(field => new KurinCardFieldDto(field.Key, field.Label, hidden.Contains(field.Key))).ToList();
     }
 }

@@ -6,7 +6,7 @@ namespace ProjectK.Common.Enums.AuthModule;
 /// <summary>
 /// One right a kurin sets for itself in «Права й видимість». Stored and sent by name, never by
 /// number, so the values may be reordered or extended without touching saved policies.
-/// What each one grants lives in <see cref="KurinCapabilities"/>.
+/// What each one grants lives in <see cref="KurinCapabilityRules"/>.
 /// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<KurinCapability>))]
 public enum KurinCapability

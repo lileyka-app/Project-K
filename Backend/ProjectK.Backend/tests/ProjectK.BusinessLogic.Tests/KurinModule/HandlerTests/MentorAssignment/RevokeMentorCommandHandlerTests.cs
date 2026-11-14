@@ -63,7 +63,7 @@ public class RevokeMentorCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Office);
-        entry.Action.Should().Be(AuditActions.Office.MentorRevoked);
+        entry.Action.Should().Be(AuditActionNames.Office.MentorRevoked);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(_assignment.MentorAssignmentKey);
         entry.SubjectMemberKey.Should().Be(_mentorMemberKey);

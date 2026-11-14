@@ -85,7 +85,7 @@ public sealed class UploadGroupSilhouetteCommandHandler : IRequestHandler<Upload
             await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
         }
 
-        _cache.Invalidate(BackendCachePolicies.GroupReads);
+        _cache.Invalidate(BackendCacheRules.GroupReads);
         return new ServiceResult<GroupDto>(ResultType.Success, group.ToDto(_links));
     }
 }

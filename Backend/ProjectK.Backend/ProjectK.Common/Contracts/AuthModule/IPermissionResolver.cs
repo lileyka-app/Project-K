@@ -4,7 +4,7 @@ using ProjectK.Common.Rules.AuthModule;
 namespace ProjectK.Common.Contracts.AuthModule;
 
 /// <summary>
-/// What a set of roles may do in one kurin: the static grants of <see cref="RolePermissionMap"/>
+/// What a set of roles may do in one kurin: the static grants of <see cref="RolePermissionRules"/>
 /// plus what that kurin's «Права й видимість» gives them. Anything that needs permissions for a
 /// kurin other than the request's own — sign-in, the duties of every kurin a person serves —
 /// asks here; the request's own kurin is <see cref="ICurrentPermissions"/>.

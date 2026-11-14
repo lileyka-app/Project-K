@@ -33,7 +33,7 @@ public class KurinLocaleTests
     {
         var profiles = new Mock<IKraiProfileDirectory>().Object;
 
-        (await profiles.ForKurinAsync(Kurin, default)).Should().Be(AgendaRecurrence.DefaultZone);
+        (await profiles.ForKurinAsync(Kurin, default)).Should().Be(AgendaRecurrenceRules.DefaultZone);
         (await profiles.DuesKraiForKurinAsync(Kurin, default)).Should().Be(DuesKrai.Default);
     }
 
@@ -74,7 +74,7 @@ public class KurinLocaleTests
             RecurrenceByWeekday = 1 << (int)DayOfWeek.Monday
         };
 
-        var occurrences = AgendaRecurrence.Expand(item, new DateTime(2026, 10, 25), new DateTime(2026, 11, 4), zone).ToList();
+        var occurrences = AgendaRecurrenceRules.Expand(item, new DateTime(2026, 10, 25), new DateTime(2026, 11, 4), zone).ToList();
 
         occurrences.Select(o => o.StartUtc.Hour).Should().Equal(22, 23);
     }

@@ -238,5 +238,5 @@ public sealed class OrphanPhotoCleanupBackgroundService : BackgroundService
     }
 
     private static IEnumerable<string> GetCleanupPrefixes()
-        => BlobUploadFolders.ScenarioFolders;
+        => BlobUploadFolderNames.ScenarioFolders;
 }

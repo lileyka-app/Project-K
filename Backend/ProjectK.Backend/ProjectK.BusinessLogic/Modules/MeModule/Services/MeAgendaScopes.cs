@@ -74,8 +74,8 @@ public sealed class MeAgendaScopes
         foreach (var membership in (await _memberships.GetCurrentForAccountAsync(userKey, cancellationToken)).OrderBy(m => m.KurinNumber))
         {
             var offices = await _offices.GetForAccountInKurinAsync(userKey, membership.KurinKey, cancellationToken);
-            var roles = offices.Select(o => SystemRole.ForOffice(o.Type, o.Role)).ToList();
-            var canSeeWholeKurin = RolePermissionMap.GrantsWholeKurinManagement(roles);
+            var roles = offices.Select(o => SystemRoleNames.ForOffice(o.Type, o.Role)).ToList();
+            var canSeeWholeKurin = RolePermissionRules.GrantsWholeKurinManagement(roles);
 
             var led = roles.Count > 0 && !canSeeWholeKurin
                 ? (await _scopeReader.GetLedGroupKeysAsync(userKey, membership.KurinKey, cancellationToken)).ToHashSet()

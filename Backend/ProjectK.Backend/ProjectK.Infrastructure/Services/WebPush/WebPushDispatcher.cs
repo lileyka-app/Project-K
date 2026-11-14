@@ -32,10 +32,10 @@ public sealed class WebPushDispatcher
             return;
         }
 
-        var activeKurin = PushRoutes.NeedsActiveKurin(notification)
+        var activeKurin = PushRouteRules.NeedsActiveKurin(notification)
             ? await _unitOfWork.Users.GetActiveKurinKeyAsync(notification.RecipientUserKey, cancellationToken)
             : null;
-        var payload = WebPushPayload.Build(notification, PushRoutes.For(notification, activeKurin));
+        var payload = WebPushPayloadRules.Build(notification, PushRouteRules.For(notification, activeKurin));
 
         var gone = 0;
         foreach (var device in devices)

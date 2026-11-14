@@ -110,8 +110,8 @@ public class ThirdProbeReaderTests
         var leaderships = new Mock<ILeadershipRepository>();
         leaderships.Setup(l => l.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Остап", LastName = "Коваль", UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi) },
-            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Ірина", LastName = "Бойко", UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) }
+            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Остап", LastName = "Коваль", UserRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi) },
+            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Ірина", LastName = "Бойко", UserRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) }
         ]);
         _unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
         var mentors = new Mock<IMentorAssignmentRepository>();

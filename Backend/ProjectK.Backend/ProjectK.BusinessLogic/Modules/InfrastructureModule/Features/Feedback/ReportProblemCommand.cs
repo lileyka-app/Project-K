@@ -139,5 +139,5 @@ public sealed class ReportProblemCommandHandler
         !string.IsNullOrWhiteSpace(url)
         && Uri.TryCreate(url, UriKind.Absolute, out var uri)
         && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
-        && uri.AbsolutePath.Contains($"/{BlobUploadFolders.FeedbackScreenshots}/", StringComparison.Ordinal);
+        && uri.AbsolutePath.Contains($"/{BlobUploadFolderNames.FeedbackScreenshots}/", StringComparison.Ordinal);
 }

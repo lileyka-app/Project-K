@@ -5,8 +5,8 @@ namespace ProjectK.Common.Dtos.KraiModule;
 public sealed record KraiDuesDocument
 {
     /// <summary>
-    /// Where the kurins hand up the вкладка: <see cref="KraiDues.Stanytsia"/>,
-    /// <see cref="KraiDues.Krai"/> or <see cref="KraiDues.Both"/>.
+    /// Where the kurins hand up the вкладка: <see cref="KraiDuesNames.Stanytsia"/>,
+    /// <see cref="KraiDuesNames.Krai"/> or <see cref="KraiDuesNames.Both"/>.
     /// </summary>
     public string? Upstream { get; init; }
 

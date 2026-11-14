@@ -121,7 +121,7 @@ public class UpdateProbePointSignatureHandlerTests
 
         Assert.Equal(ResultType.Success, result.Type);
         var entry = Assert.Single(_journal.Entries);
-        Assert.Equal(AuditActions.Probe.PointSigned, entry.Action);
+        Assert.Equal(AuditActionNames.Probe.PointSigned, entry.Action);
         Assert.Equal(AuditArea.Probe, entry.Area);
         Assert.Equal(_kurinKey, entry.KurinKey);
         Assert.Equal("Марта Впорядниця", entry.ActorName);
@@ -265,13 +265,13 @@ public class UpdateProbePointSignatureHandlerTests
             _journal.Entries,
             unsigned =>
             {
-                Assert.Equal(AuditActions.Probe.PointUnsigned, unsigned.Action);
+                Assert.Equal(AuditActionNames.Probe.PointUnsigned, unsigned.Action);
                 Assert.Equal(new AuditChange("point", "point-1", null), Assert.Single(unsigned.Changes));
                 Assert.Equal(progress.ProbeProgressKey, unsigned.SubjectKey);
             },
             reopened =>
             {
-                Assert.Equal(AuditActions.Probe.Reopened, reopened.Action);
+                Assert.Equal(AuditActionNames.Probe.Reopened, reopened.Action);
                 Assert.Equal(new AuditChange("status", "Completed", "InProgress"), Assert.Single(reopened.Changes));
                 Assert.Equal(progress.ProbeProgressKey, reopened.SubjectKey);
             });

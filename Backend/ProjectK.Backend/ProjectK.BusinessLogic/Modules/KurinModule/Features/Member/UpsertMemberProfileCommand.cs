@@ -169,7 +169,7 @@ public class UpsertMemberProfileCommandHandler
         else if (existing is not null)
         {
             // A write that does not carry the parents' contacts (the roster import) keeps them.
-            foreach (var field in ParentContacts.Fields)
+            foreach (var field in ParentContactRules.Fields)
             {
                 field.Set(request, field.Get(request) ?? field.Get(existing));
             }
@@ -179,10 +179,10 @@ public class UpsertMemberProfileCommandHandler
         // as it is, so a number older than the rule does not block an edit of something else.
         if (existing is null || !string.Equals(request.PhoneNumber, existing.PhoneNumber, StringComparison.Ordinal))
         {
-            var phone = PhoneNumbers.Normalize(request.PhoneNumber);
+            var phone = PhoneNumberRules.Normalize(request.PhoneNumber);
             if (phone is null)
             {
-                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumbers.ErrorCode, PhoneNumbers.InvalidMessage);
+                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumberRules.ErrorCode, PhoneNumberRules.InvalidMessage);
             }
 
             request.PhoneNumber = phone;
@@ -192,7 +192,7 @@ public class UpsertMemberProfileCommandHandler
         if (!TryNormalizeParentPhone(request.MotherPhone, existing?.MotherPhone, out var motherPhone)
             || !TryNormalizeParentPhone(request.FatherPhone, existing?.FatherPhone, out var fatherPhone))
         {
-            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumbers.ErrorCode, PhoneNumbers.InvalidMessage);
+            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumberRules.ErrorCode, PhoneNumberRules.InvalidMessage);
         }
 
         request.MotherPhone = motherPhone;
@@ -363,7 +363,7 @@ public class UpsertMemberProfileCommandHandler
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Member,
-                before is null ? AuditActions.Member.Added : AuditActions.Member.Changed,
+                before is null ? AuditActionNames.Member.Added : AuditActionNames.Member.Changed,
                 member.MemberKey,
                 MemberTrail.LabelOf(member),
                 member.MemberKey,
@@ -449,7 +449,7 @@ public class UpsertMemberProfileCommandHandler
             return true;
         }
 
-        phone = PhoneNumbers.Normalize(requested);
+        phone = PhoneNumberRules.Normalize(requested);
         return phone is not null;
     }
 

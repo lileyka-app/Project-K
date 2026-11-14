@@ -77,8 +77,8 @@ public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, Ser
                 "Failed to delete Kurin due to internal error.");
         }
 
-        _cache.Invalidate(BackendCachePolicies.KurinReads);
-        _cache.Invalidate(BackendCachePolicies.GroupReads);
+        _cache.Invalidate(BackendCacheRules.KurinReads);
+        _cache.Invalidate(BackendCacheRules.GroupReads);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }

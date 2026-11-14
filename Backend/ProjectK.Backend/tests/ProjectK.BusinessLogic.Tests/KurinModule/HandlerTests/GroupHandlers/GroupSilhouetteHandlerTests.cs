@@ -61,7 +61,7 @@ public sealed class GroupSilhouetteHandlerTests
         result.Data!.SilhouetteUrl.Should().Be("https://cdn.test/group-silhouettes/2026/05/27/new.png?sig=read");
         _groupRepositoryMock.Verify(r => r.Update(group, It.IsAny<CancellationToken>()), Times.Once);
         _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.GroupReads), Times.Once);
     }
 
     [Fact]
@@ -111,6 +111,6 @@ public sealed class GroupSilhouetteHandlerTests
         group.SilhouetteBlobName.Should().BeNull();
         result.Data!.SilhouetteUrl.Should().BeNull();
         _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.GroupReads), Times.Once);
     }
 }

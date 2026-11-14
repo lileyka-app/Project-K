@@ -208,14 +208,14 @@ public class MemberAwardHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Award);
-        entry.Action.Should().Be(AuditActions.Award.Added);
+        entry.Action.Should().Be(AuditActionNames.Award.Added);
         entry.KurinKey.Should().Be(kurinKey);
         entry.SubjectKey.Should().Be(created.MemberAwardKey);
         entry.SubjectMemberKey.Should().Be(memberKey);
         entry.SubjectLabel.Should().Be("1-е відзначення");
         entry.Changes.Should().Equal(
             new AuditChange("level", null, "First"),
-            new AuditChange("dateAcquired", null, AuditChanges.Format(dateAcquired)),
+            new AuditChange("dateAcquired", null, AuditChangeRules.Format(dateAcquired)),
             new AuditChange("note", null, "Test"),
             new AuditChange("status", null, "Submitted"));
     }
@@ -253,7 +253,7 @@ public class MemberAwardHandlerTests
 
         _currentUserContextMock
             .SetupGet(x => x.Roles)
-            .Returns(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
+            .Returns(new[] { SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
 
         var result = await _upsertHandler.Handle(new UpsertMemberAwardCommand
         {
@@ -280,7 +280,7 @@ public class MemberAwardHandlerTests
 
         // Only what changed, from → to: the level stayed, and the edit un-confirmed it.
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Award.Changed);
+        entry.Action.Should().Be(AuditActionNames.Award.Changed);
         entry.SubjectKey.Should().Be(awardKey);
         entry.Changes.Select(change => change.Field).Should().Equal("dateAcquired", "note", "status");
         entry.Changes.Should().Contain(new AuditChange("note", "Old Note", "New Note"));
@@ -380,7 +380,7 @@ public class MemberAwardHandlerTests
             .ReturnsAsync(award);
         _currentUserContextMock
             .SetupGet(x => x.Roles)
-            .Returns(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
+            .Returns(new[] { SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
 
         var result = await _deleteHandler.Handle(
             new DeleteMemberAwardCommand { MemberKey = Guid.NewGuid(), MemberAwardKey = awardKey },
@@ -461,7 +461,7 @@ public class MemberAwardHandlerTests
             Times.Once);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Award.Confirmed);
+        entry.Action.Should().Be(AuditActionNames.Award.Confirmed);
         entry.ActorUserKey.Should().Be(actorUserKey);
         entry.Changes.Should().Equal(new AuditChange("status", "Submitted", "Confirmed"));
     }
@@ -521,7 +521,7 @@ public class MemberAwardHandlerTests
             .ReturnsAsync(confirmed);
         _currentUserContextMock
             .SetupGet(x => x.Roles)
-            .Returns(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
+            .Returns(new[] { SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
 
         var result = await _deleteHandler.Handle(new DeleteMemberAwardCommand { MemberAwardKey = awardKey }, CancellationToken.None);
 
@@ -551,7 +551,7 @@ public class MemberAwardHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Award.Deleted);
+        entry.Action.Should().Be(AuditActionNames.Award.Deleted);
         entry.SubjectLabel.Should().Be("2-е відзначення");
         entry.SubjectMemberName.Should().Be("Олесь Юнак");
         entry.SubjectGroupKey.Should().Be(groupKey);

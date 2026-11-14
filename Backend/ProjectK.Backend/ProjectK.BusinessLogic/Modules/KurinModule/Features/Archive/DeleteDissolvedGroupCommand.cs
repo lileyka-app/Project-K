@@ -53,10 +53,10 @@ public sealed class DeleteDissolvedGroupCommandHandler : IRequestHandler<DeleteD
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Archive,
-                AuditActions.Archive.GroupDeleted,
+                AuditActionNames.Archive.GroupDeleted,
                 group.GroupKey,
                 group.Name,
-                Changes: AuditChanges.Removed(
+                Changes: AuditChangeRules.Removed(
                     ("group", group.Name),
                     ("dissolvedOn", group.DissolvedAtUtc is { } dissolved ? DateOnly.FromDateTime(dissolved) : null),
                     ("offices", holdings == 0 ? null : holdings)),

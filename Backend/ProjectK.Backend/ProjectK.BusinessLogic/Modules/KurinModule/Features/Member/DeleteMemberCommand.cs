@@ -59,11 +59,11 @@ public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, S
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Member,
-                AuditActions.Member.Deleted,
+                AuditActionNames.Member.Deleted,
                 request.MemberKey,
                 person?.FullName ?? string.Empty,
                 request.MemberKey,
-                AuditChanges.Removed(("firstName", person?.FirstName), ("lastName", person?.LastName))),
+                AuditChangeRules.Removed(("firstName", person?.FirstName), ("lastName", person?.LastName))),
             cancellationToken);
 
         await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync([request.MemberKey], cancellationToken);

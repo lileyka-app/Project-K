@@ -41,7 +41,7 @@ public sealed class MemberPublicIdInterceptor : SaveChangesInterceptor
         {
             if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.PublicId))
             {
-                entry.Entity.PublicId = MemberPublicId.New();
+                entry.Entity.PublicId = MemberPublicIdRules.New();
             }
         }
     }

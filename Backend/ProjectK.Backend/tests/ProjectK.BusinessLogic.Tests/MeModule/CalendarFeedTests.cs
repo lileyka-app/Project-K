@@ -54,12 +54,12 @@ public class CalendarFeedTests
     private readonly Mock<ICalendarFeedStore> _feeds = new();
     private readonly Mock<IOfficeDirectory> _offices = new();
     private readonly List<AgendaItem> _items = [];
-    private CalendarFeed _feed = new() { UserId = User, TokenHash = SecretHash.Sha256Hex(Token) };
+    private CalendarFeed _feed = new() { UserId = User, TokenHash = SecretHashRules.Sha256Hex(Token) };
     private OnboardingStatus _status = OnboardingStatus.Active;
 
     public CalendarFeedTests()
     {
-        _feeds.Setup(f => f.FindByTokenHashAsync(SecretHash.Sha256Hex(Token), It.IsAny<CancellationToken>())).ReturnsAsync(() => _feed);
+        _feeds.Setup(f => f.FindByTokenHashAsync(SecretHashRules.Sha256Hex(Token), It.IsAny<CancellationToken>())).ReturnsAsync(() => _feed);
         _offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
     }
 
@@ -178,7 +178,7 @@ public class CalendarFeedTests
 
         Summaries(await Render()).Should().BeEmpty();
 
-        _feed = new CalendarFeed { UserId = User, TokenHash = SecretHash.Sha256Hex(Token), IncludeSchedules = true };
+        _feed = new CalendarFeed { UserId = User, TokenHash = SecretHashRules.Sha256Hex(Token), IncludeSchedules = true };
         Summaries(await Render()).Should().Equal("Кельти · Сходини");
     }
 
@@ -204,7 +204,7 @@ public class CalendarFeedTests
         _feed = new CalendarFeed
         {
             UserId = User,
-            TokenHash = SecretHash.Sha256Hex(Token),
+            TokenHash = SecretHashRules.Sha256Hex(Token),
             RevokedAtUtc = Now.UtcDateTime.AddDays(-2),
             RevokedReason = CalendarFeedRevokeReason.SecurityChange
         };

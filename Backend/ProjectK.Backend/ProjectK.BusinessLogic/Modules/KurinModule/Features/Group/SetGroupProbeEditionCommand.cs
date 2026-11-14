@@ -60,10 +60,10 @@ public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGrou
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Settings,
-                AuditActions.Settings.GroupProbeEditionChanged,
+                AuditActionNames.Settings.GroupProbeEditionChanged,
                 group.GroupKey,
                 group.Name,
-                Changes: AuditChanges.Of(("probeEdition", TitleOf(offered, group.ProbeEdition), TitleOf(offered, edition))),
+                Changes: AuditChangeRules.Of(("probeEdition", TitleOf(offered, group.ProbeEdition), TitleOf(offered, edition))),
                 KurinKey: group.KurinKey),
             cancellationToken);
 

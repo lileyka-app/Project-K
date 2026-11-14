@@ -28,8 +28,8 @@ public sealed record DuesConcessionRule(string Key, string Name, string Kind, de
 
         var off = Kind switch
         {
-            KraiDues.Exempt => covered,
-            KraiDues.Amount => Math.Min(Value, covered),
+            KraiDuesNames.Exempt => covered,
+            KraiDuesNames.Amount => Math.Min(Value, covered),
             _ => Round(covered * Math.Clamp(Value, 0, 100) / 100)
         };
 
@@ -68,10 +68,10 @@ public sealed record DuesConcessionRule(string Key, string Name, string Kind, de
         {
             parts |= name?.Trim().ToLowerInvariant() switch
             {
-                KraiDues.PartStanytsia => DuesParts.Stanytsia,
-                KraiDues.PartKrai => DuesParts.Krai,
-                KraiDues.PartKurin => DuesParts.Kurin,
-                KraiDues.PartGroup => DuesParts.Group,
+                KraiDuesNames.PartStanytsia => DuesParts.Stanytsia,
+                KraiDuesNames.PartKrai => DuesParts.Krai,
+                KraiDuesNames.PartKurin => DuesParts.Kurin,
+                KraiDuesNames.PartGroup => DuesParts.Group,
                 _ => DuesParts.None
             };
         }

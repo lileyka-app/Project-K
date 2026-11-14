@@ -61,7 +61,7 @@ public class PrivilegedMfaEnforcementMiddleware
 
         // Privileged = whole-kurin managers: Зв'язковий and admin. Курінний leads the провід but
         // holds nothing on members, so he is not privileged here.
-        return RolePermissionMap.GrantsWholeKurinManagement(
+        return RolePermissionRules.GrantsWholeKurinManagement(
             context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
     }
 

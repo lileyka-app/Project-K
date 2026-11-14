@@ -105,13 +105,13 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Badge,
-                approved ? AuditActions.Badge.Confirmed
-                    : canRemoveConfirmed ? AuditActions.Badge.ConfirmationRemoved
-                    : AuditActions.Badge.Rejected,
+                approved ? AuditActionNames.Badge.Confirmed
+                    : canRemoveConfirmed ? AuditActionNames.Badge.ConfirmationRemoved
+                    : AuditActionNames.Badge.Rejected,
                 progress.BadgeProgressKey,
                 ProgressAuditNames.Badge(_badges, progress.BadgeId),
                 progress.MemberKey,
-                AuditChanges.Of(("status", fromStatus, targetStatus)),
+                AuditChangeRules.Of(("status", fromStatus, targetStatus)),
                 request.Note),
             cancellationToken);
 

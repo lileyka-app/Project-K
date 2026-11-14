@@ -49,7 +49,7 @@ public sealed class RenameKraiCommandHandler : IRequestHandler<RenameKraiCommand
         {
             krai.Name = name;
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            _cache.Invalidate(BackendCachePolicies.KraiProfileReads);
+            _cache.Invalidate(BackendCacheRules.KraiProfileReads);
             _catalogNames.Name(krai.Code, name);
         }
 

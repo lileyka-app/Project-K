@@ -24,7 +24,7 @@ internal static class MembershipRequestNoticeRules
 
     public static async Task<IReadOnlyCollection<Guid>> ZvyazkoviAsync(IUnitOfWork unitOfWork, Guid kurinKey, CancellationToken cancellationToken)
     {
-        var role = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var role = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
         return (await unitOfWork.Leaderships.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.KV, cancellationToken))
             .Where(holder => holder.UserKey.HasValue && holder.UserRole == role)
             .Select(holder => holder.UserKey!.Value)

@@ -8,7 +8,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 /// <summary>
 /// Reads a kurin's policy from its record, cached for a minute under
-/// <see cref="BackendCachePolicies.KurinAccessPolicyReads"/>. A document it cannot read gives the
+/// <see cref="BackendCacheRules.KurinAccessPolicyReads"/>. A document it cannot read gives the
 /// defaults and a warning in the log, never a failed request.
 /// </summary>
 public sealed class KurinAccessPolicyReader : IKurinAccessPolicyReader
@@ -27,7 +27,7 @@ public sealed class KurinAccessPolicyReader : IKurinAccessPolicyReader
     public Task<KurinAccessPolicy> GetAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
         return _cache.GetOrCreateAsync(
-            BackendCachePolicies.KurinAccessPolicyReads,
+            BackendCacheRules.KurinAccessPolicyReads,
             kurinKey.ToString(),
             token => ReadAsync(kurinKey, token),
             cancellationToken);
@@ -35,7 +35,7 @@ public sealed class KurinAccessPolicyReader : IKurinAccessPolicyReader
 
     public void Invalidate()
     {
-        _cache.Invalidate(BackendCachePolicies.KurinAccessPolicyReads);
+        _cache.Invalidate(BackendCacheRules.KurinAccessPolicyReads);
     }
 
     private async Task<KurinAccessPolicy> ReadAsync(Guid kurinKey, CancellationToken cancellationToken)

@@ -35,7 +35,7 @@ public class UpsertLeadershipHandlerTests
         _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinsMock.Object);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[]
         {
-            ProjectK.Common.Rules.AuthModule.SystemRole.ForOffice(
+            ProjectK.Common.Rules.AuthModule.SystemRoleNames.ForOffice(
                 ProjectK.Common.Enums.KurinModule.LeadershipType.KV,
                 ProjectK.Common.Enums.KurinModule.LeadershipRole.Zvyazkovyi)
         });
@@ -406,7 +406,7 @@ public class UpsertLeadershipHandlerTests
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(oldMemberKey)), Times.Once);
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(newMemberKey)), Times.Once);
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(stayingMemberKey)), Times.Never);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.MentorScopeReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.MentorScopeReads), Times.Once);
     }
 
     [Fact]
@@ -429,7 +429,7 @@ public class UpsertLeadershipHandlerTests
 
         var entry = Assert.Single(_journal.Entries);
         Assert.Equal(AuditArea.Office, entry.Area);
-        Assert.Equal(AuditActions.Office.Assigned, entry.Action);
+        Assert.Equal(AuditActionNames.Office.Assigned, entry.Action);
         Assert.Equal(existing.KurinKey, entry.KurinKey);
         Assert.Equal(existing.LeadershipKey, entry.SubjectKey);
         Assert.Equal("Курінний", entry.SubjectLabel);
@@ -448,7 +448,7 @@ public class UpsertLeadershipHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         var entry = Assert.Single(_journal.Entries);
-        Assert.Equal(AuditActions.Office.Ended, entry.Action);
+        Assert.Equal(AuditActionNames.Office.Ended, entry.Action);
         Assert.Equal("Писар", entry.SubjectLabel);
         Assert.Equal(memberKey, entry.SubjectMemberKey);
         Assert.Equal(new[] { new AuditChange("holder", "A B", null) }, entry.Changes);
@@ -499,7 +499,7 @@ public class UpsertLeadershipHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(memberKey)), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.MentorScopeReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.MentorScopeReads), Times.Once);
         Assert.Empty(_journal.Entries);
     }
 

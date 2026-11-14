@@ -17,10 +17,10 @@ public class ResourceAccessServiceTests
 {
     // System roles that reproduce the historic tiers: Зв'язковий = whole-kurin manager,
     // Гуртковий = group leader, Member = plain user.
-    private static readonly string AdminRole = SystemRole.Admin;
-    private static readonly string ManagerRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-    private static readonly string MentorRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-    private static readonly string MemberRole = SystemRole.Member;
+    private static readonly string AdminRole = SystemRoleNames.Admin;
+    private static readonly string ManagerRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string MentorRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string MemberRole = SystemRoleNames.Member;
 
     [Fact]
     public async Task UnauthenticatedUser_ShouldBeDenied()
@@ -460,7 +460,7 @@ public class ResourceAccessServiceTests
             .ReturnsAsync(new ResourceScope(kurinKey, groupKey, null));
 
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
-        cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        cache.Invalidate(BackendCacheRules.MentorScopeReads);
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(

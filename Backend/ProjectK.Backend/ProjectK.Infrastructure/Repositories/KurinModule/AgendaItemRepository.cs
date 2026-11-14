@@ -131,8 +131,8 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
         if (!viewer.CanSeeWholeKurin)
         {
             query = query.Where(includeKurinSchedules
-                ? AgendaVisibility.AssignedOrOnKurinSchedule(viewer)
-                : AgendaVisibility.AssignedToViewer(viewer));
+                ? AgendaVisibilityRules.AssignedOrOnKurinSchedule(viewer)
+                : AgendaVisibilityRules.AssignedToViewer(viewer));
         }
 
         return await query

@@ -132,11 +132,11 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Probe,
-                AuditActions.Probe.ThirdProbe(request.Part.ToString(), request.Sign),
+                AuditActionNames.Probe.ThirdProbe(request.Part.ToString(), request.Sign),
                 subjectKey,
                 ProgressAuditNames.Probe(_probes, probeId),
                 memberKey,
-                request.Sign ? AuditChanges.Added((Field(request.Part), subject)) : AuditChanges.Removed((Field(request.Part), subject)),
+                request.Sign ? AuditChangeRules.Added((Field(request.Part), subject)) : AuditChangeRules.Removed((Field(request.Part), subject)),
                 comment),
             cancellationToken);
 

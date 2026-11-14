@@ -54,7 +54,7 @@ public sealed class ArchiveDeletionService
         if (left == 0 && _currentUser.UserId is { } userKey && _zone.Close(userKey, kurinKey) is not null)
         {
             await _audit.RecordAsync(
-                ArchiveDangerZoneService.JournalEntry(AuditActions.Archive.DangerZoneEnded, userKey, kurinKey, "reason", "spent"),
+                ArchiveDangerZoneService.JournalEntry(AuditActionNames.Archive.DangerZoneEnded, userKey, kurinKey, "reason", "spent"),
                 cancellationToken);
         }
 

@@ -99,7 +99,7 @@ public class DeleteAgendaItemHandlerTests
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Agenda.Deleted);
+        entry.Action.Should().Be(AuditActionNames.Agenda.Deleted);
         entry.SubjectKey.Should().Be(item.AgendaItemKey);
         entry.SubjectLabel.Should().Be("Подія");
         entry.Changes.Should().Equal(

@@ -54,7 +54,7 @@ public sealed class MembershipAskRouting
     {
         var memberUserKey = (await _members.FindAsync(memberKey, cancellationToken))?.UserKey;
         var toKurin = await _unitOfWork.Kurins.GetByKeyAsync(toKurinKey, cancellationToken);
-        var toSenior = toKurin is not null && KurinBranchSet.IsSenior(toKurin.Branch);
+        var toSenior = toKurin is not null && KurinBranchSetRules.IsSenior(toKurin.Branch);
 
         var open = (await _unitOfWork.Memberships.GetRecordsForMemberAsync(memberKey, cancellationToken))
             .Where(m => m.LeftAtUtc is null && m.KurinKey != toKurinKey)
@@ -69,14 +69,14 @@ public sealed class MembershipAskRouting
                 : new MembershipAskRoute(toSenior, JoinsAtOnce: true, PersonAnswers: false, TransferAllowed: false, []);
         }
 
-        var sameLine = open.Where(m => KurinBranchSet.IsSenior(m.Branch) == toSenior).Select(m => m.KurinKey).Distinct().ToList();
+        var sameLine = open.Where(m => KurinBranchSetRules.IsSenior(m.Branch) == toSenior).Select(m => m.KurinKey).Distinct().ToList();
         if (sameLine.Count > 0)
         {
             return new MembershipAskRoute(toSenior, JoinsAtOnce: false, PersonAnswers: false, TransferAllowed: true, sameLine);
         }
 
         var youthIn = open
-            .Where(m => !KurinBranchSet.IsSenior(m.Branch) && m.Kind == MembershipKind.Youth)
+            .Where(m => !KurinBranchSetRules.IsSenior(m.Branch) && m.Kind == MembershipKind.Youth)
             .Select(m => m.KurinKey).Distinct().ToList();
         if (toSenior && youthIn.Count > 0)
         {

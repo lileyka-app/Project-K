@@ -69,11 +69,11 @@ public sealed class MembershipMoves
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Membership,
-                AuditActions.Membership.Left,
+                AuditActionNames.Membership.Left,
                 membership.MembershipKey,
                 personName,
                 membership.MemberKey,
-                AuditChanges.Removed(("kind", membership.Kind), ("group", group?.Name)),
+                AuditChangeRules.Removed(("kind", membership.Kind), ("group", group?.Name)),
                 KurinKey: membership.KurinKey),
             cancellationToken);
 
@@ -100,11 +100,11 @@ public sealed class MembershipMoves
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Membership,
-                AuditActions.Membership.Joined,
+                AuditActionNames.Membership.Joined,
                 membership.MembershipKey,
                 person.FullName,
                 person.MemberKey,
-                AuditChanges.Added(("kind", kind), ("group", (string?)null)),
+                AuditChangeRules.Added(("kind", kind), ("group", (string?)null)),
                 KurinKey: kurinKey),
             cancellationToken);
         return membership;

@@ -59,7 +59,7 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
         RuleFor(command => command.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(command => command.LastName).NotEmpty().MaximumLength(100);
         RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
-        RuleFor(command => command.PhoneNumber).NotEmpty().Must(PhoneNumbers.IsValid).WithMessage(PhoneNumbers.InvalidMessage);
+        RuleFor(command => command.PhoneNumber).NotEmpty().Must(PhoneNumberRules.IsValid).WithMessage(PhoneNumberRules.InvalidMessage);
 
         RuleFor(command => command.Stanytsia)
             .NotEmpty().WithMessage("Stanytsia is required.")
@@ -166,7 +166,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         entry.FirstName = request.FirstName;
         entry.LastName = request.LastName;
         entry.Email = request.Email;
-        entry.PhoneNumber = PhoneNumbers.Normalize(request.PhoneNumber) ?? request.PhoneNumber;
+        entry.PhoneNumber = PhoneNumberRules.Normalize(request.PhoneNumber) ?? request.PhoneNumber;
         entry.DateOfBirth = request.DateOfBirth;
         entry.Stanytsia = stanytsia;
         entry.RegionOrCountry = regionOrCountry;
@@ -209,7 +209,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
     {
         try
         {
-            var admins = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
+            var admins = await _userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
             var applicant = $"{entry.FirstName} {entry.LastName}";
             var kurin = entry.IsSeniorKurin
                 ? KurinBranchNames.DescribeSenior(entry.ClaimedSeniorBranches)

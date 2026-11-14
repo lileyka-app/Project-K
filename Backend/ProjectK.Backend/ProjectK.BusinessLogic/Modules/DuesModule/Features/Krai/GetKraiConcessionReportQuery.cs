@@ -150,7 +150,7 @@ public sealed class GetKraiConcessionReportQueryHandler
                 Total = _stanytsia + _krai + _kurin + _group
             },
             Kurins = _kurins
-                .OrderBy(k => KurinBranchSet.IsSenior(k.Value.Kurin.Branch))
+                .OrderBy(k => KurinBranchSetRules.IsSenior(k.Value.Kurin.Branch))
                 .ThenBy(k => k.Value.Kurin.Number ?? int.MaxValue)
                 .Select(k => new KraiConcessionReportKurinDto
                 {

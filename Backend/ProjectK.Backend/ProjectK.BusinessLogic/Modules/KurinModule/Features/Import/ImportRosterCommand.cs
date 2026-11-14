@@ -114,7 +114,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
 
         // The roster places every row in a гурток, and a senior kurin has none: it is refused there
         // rather than opening гуртки the kurin cannot have.
-        if (KurinBranchSet.IsSenior(kurin.Branch))
+        if (KurinBranchSetRules.IsSenior(kurin.Branch))
         {
             return ServiceResult<RosterImportReport>.Failure(ResultType.BadRequest, KurinErrors.RosterImportNotForSeniorKurin, "A УСП or УПС kurin has no гуртки to import a roster into.");
         }

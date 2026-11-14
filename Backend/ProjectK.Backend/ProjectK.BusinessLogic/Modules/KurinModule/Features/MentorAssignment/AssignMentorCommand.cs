@@ -82,18 +82,18 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Office,
-                AuditActions.Office.MentorAssigned,
+                AuditActionNames.Office.MentorAssigned,
                 assignment.MentorAssignmentKey,
-                KurinReportTerminology.LeadershipRole(LeadershipRole.Vykhovnyk),
+                KurinReportNames.LeadershipRole(LeadershipRole.Vykhovnyk),
                 mentorMember.MemberKey,
-                AuditChanges.Added(("group", group.Name)),
+                AuditChangeRules.Added(("group", group.Name)),
                 KurinKey: group.KurinKey),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // The assignment itself is what grants гуртковий access — it is read when access is
         // decided. Only the cached scope set has to go, so the next check sees it at once.
-        _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _cache.Invalidate(BackendCacheRules.MentorScopeReads);
         _accessChanges.MarkUser(request.MentorUserKey);
 
         return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);

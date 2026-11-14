@@ -10,7 +10,7 @@ namespace ProjectK.API.Tests.Security;
 public class DuesGrantsTests
 {
     private static AccessScope? Widest(string role, ResourceType resource, ResourceAction action) =>
-        RolePermissionMap.WidestScope(RolePermissionMap.Resolve([role]), resource, action);
+        RolePermissionRules.WidestScope(RolePermissionRules.Resolve([role]), resource, action);
 
     [Theory]
     [InlineData("Member")]

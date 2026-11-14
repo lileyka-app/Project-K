@@ -46,7 +46,7 @@ public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand,
         }
 
         var roles = (await _access.ResolveAsync(user, cancellationToken)).Roles;
-        if (RolePermissionMap.GrantsWholeKurinManagement(roles))
+        if (RolePermissionRules.GrantsWholeKurinManagement(roles))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, AuthErrors.MfaRequired, "Privileged users must keep MFA enabled. Reset MFA to reconfigure it.");
         }

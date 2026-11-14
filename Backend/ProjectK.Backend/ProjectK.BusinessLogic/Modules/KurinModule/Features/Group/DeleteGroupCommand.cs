@@ -84,7 +84,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
 
         existing.DissolvedAtUtc = now;
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Archive, AuditActions.Archive.GroupDissolved, existing.GroupKey, existing.Name, KurinKey: existing.KurinKey),
+            new AuditRecord(AuditArea.Archive, AuditActionNames.Archive.GroupDissolved, existing.GroupKey, existing.Name, KurinKey: existing.KurinKey),
             cancellationToken);
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -95,8 +95,8 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
                 KurinErrors.GroupDeleteFailed,
                 "Failed to delete Group due to internal error.");
         }
-        _cache.Invalidate(BackendCachePolicies.GroupReads);
-        _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _cache.Invalidate(BackendCacheRules.GroupReads);
+        _cache.Invalidate(BackendCacheRules.MentorScopeReads);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }

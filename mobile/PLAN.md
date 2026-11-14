@@ -699,7 +699,7 @@ Web Push (RFC 8030) з VAPID (RFC 8292) і шифруванням `aes128gcm` (R
   (`{notification: {title, body, icon, tag, data: {onActionClick: {default: {operation: 'navigateLastFocusedOrOpen', url}}}}}`),
   тож ngsw сам показує його і на тап відкриває (або переводить відкритий застосунок на) `url` під `/m/`.
   Відповідність типів і маршрутів — та сама, що в `features/leader/notification-route.ts`, на сервері в
-  `PushRoutes` (учасник → картка, вмілості на перевірку → черга, якщо це курінь, у якому застосунок, інакше
+  `PushRouteRules` (учасник → картка, вмілості на перевірку → черга, якщо це курінь, у якому застосунок, інакше
   дзвіночок; задача/подія → сторінка, видалена → список; решта → дзвіночок `/m/tabs/home/notifications`).
   `tag` — ключ дедуплікації (або тип), тож система замінює, а не складає стосом.
 - **Бекенд:** таблиця `WebPushSubscriptions` (endpoint унікальний, ключі `p256dh`/`auth`, user agent; каскадно з

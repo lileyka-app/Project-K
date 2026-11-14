@@ -78,11 +78,11 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Warning,
-                AuditActions.Warning.Cancelled,
+                AuditActionNames.Warning.Cancelled,
                 warning.MemberWarningKey,
-                KurinReportTerminology.WarningLevel(warning.Level),
+                KurinReportNames.WarningLevel(warning.Level),
                 warning.MemberKey,
-                AuditChanges.Removed(
+                AuditChangeRules.Removed(
                     ("level", warning.Level),
                     ("issuedAtUtc", warning.IssuedAtUtc),
                     ("expiresAtUtc", warning.ExpiresAtUtc))),
@@ -109,7 +109,7 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
     {
         if (warning.IssuedByUserKey == userKey
             && (await _access.CheckCapabilityAsync(
-                KurinCapabilities.GiveWarning(warning.Level), ResourceType.Member, warning.MemberKey, cancellationToken)).IsAllowed)
+                KurinCapabilityRules.GiveWarning(warning.Level), ResourceType.Member, warning.MemberKey, cancellationToken)).IsAllowed)
         {
             return true;
         }

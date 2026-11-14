@@ -10,7 +10,7 @@ public static class MeKurinMapping
     {
         KurinKey = membership.KurinKey,
         KurinNumber = membership.KurinNumber,
-        Branches = [.. KurinBranchSet.Ordered(membership.Numbering, n => n.Branch)],
+        Branches = [.. KurinBranchSetRules.Ordered(membership.Numbering, n => n.Branch)],
         NamedAfter = membership.KurinNamedAfter,
         IsCurrent = membership.KurinKey == currentKurinKey
     };

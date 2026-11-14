@@ -68,7 +68,7 @@ public sealed class SignedBlobReadLinks : IBlobReadLinks
         };
 
         var signed = blob.GenerateSasUri(sas);
-        var address = BlobPublicUrl.Build(_options.PublicBaseUrl, blobName, blob.Uri.GetLeftPart(UriPartial.Path))!;
+        var address = BlobPublicUrlRules.Build(_options.PublicBaseUrl, blobName, blob.Uri.GetLeftPart(UriPartial.Path))!;
         return $"{address}{signed.Query}";
     }
 }

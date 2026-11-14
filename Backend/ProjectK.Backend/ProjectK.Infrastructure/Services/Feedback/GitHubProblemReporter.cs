@@ -46,7 +46,7 @@ public sealed class GitHubProblemReporter : IProblemReporter
         var labels = _options.Labels
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        var payload = new NewIssue(report.Title, GitHubIssueBody.Compose(report, _apiVersion), labels);
+        var payload = new NewIssue(report.Title, GitHubIssueBodyRules.Compose(report, _apiVersion), labels);
         using var response = await _http.PostAsJsonAsync($"repos/{_options.Repository}/issues", payload, cancellationToken);
 
         if (!response.IsSuccessStatusCode)

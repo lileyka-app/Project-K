@@ -305,7 +305,7 @@ public class ScoreHandlerTests
         _journal.Should().ContainSingle().Which.Should().BeEquivalentTo(new
         {
             Area = AuditArea.Agenda,
-            Action = AuditActions.Agenda.OccurrenceNotHeld,
+            Action = AuditActionNames.Agenda.OccurrenceNotHeld,
             SubjectKey = Skhodyny,
             SubjectLabel = "Сходини · 06.10.2026"
         });
@@ -353,7 +353,7 @@ public class ScoreHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         _notHeld.Should().BeEmpty();
-        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActions.Agenda.OccurrenceHeld);
+        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActionNames.Agenda.OccurrenceHeld);
     }
 
     [Fact]
@@ -378,7 +378,7 @@ public class ScoreHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _marks.Should().ContainSingle();
         _notHeld.Should().BeEmpty();
-        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActions.Agenda.OccurrenceHeld);
+        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActionNames.Agenda.OccurrenceHeld);
     }
 
     [Fact]

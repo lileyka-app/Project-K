@@ -110,7 +110,7 @@ public class ResourceAccessService : IResourceAccessService
     };
 
     private static bool SignsOff(ResourceType resourceType, ResourceAction action) =>
-        KurinCapabilities.All.Any(descriptor => SignOffCapabilities.Contains(descriptor.Key)
+        KurinCapabilityRules.All.Any(descriptor => SignOffCapabilities.Contains(descriptor.Key)
                                                 && descriptor.Resource == resourceType
                                                 && descriptor.Action == action);
 
@@ -137,7 +137,7 @@ public class ResourceAccessService : IResourceAccessService
         }
 
         var decision = await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
-        var descriptor = KurinCapabilities.All.First(candidate => candidate.Key == capability);
+        var descriptor = KurinCapabilityRules.All.First(candidate => candidate.Key == capability);
         if (decision.IsAllowed && ChangesYouthRecord(descriptor.Resource, descriptor.Action))
         {
             return await SeniorYouthRecordAsync(descriptor.Resource, grantedScope.Value, scopeResourceType, scopeResourceKey, ownerMayChange: false, cancellationToken)
@@ -217,7 +217,7 @@ public class ResourceAccessService : IResourceAccessService
         {
             if (early.IsAllowed)
             {
-                reachable.UnionWith(KurinCapabilities.All.Select(descriptor => descriptor.Key));
+                reachable.UnionWith(KurinCapabilityRules.All.Select(descriptor => descriptor.Key));
             }
 
             return reachable;
@@ -236,7 +236,7 @@ public class ResourceAccessService : IResourceAccessService
 
         var isOwn = _currentUserContext.UserId is { } userKey && scope.MemberUserKey == userKey;
         var senior = await _scopeReader.StandsInSeniorKurinAsync(scopeResourceType, scopeResourceKey, cancellationToken);
-        foreach (var descriptor in KurinCapabilities.All)
+        foreach (var descriptor in KurinCapabilityRules.All)
         {
             if (isOwn && SignOffCapabilities.Contains(descriptor.Key))
             {
@@ -270,7 +270,7 @@ public class ResourceAccessService : IResourceAccessService
         // An unscoped admin is system-wide: that is the /panel view, where there is no kurin to
         // check against. Once they step into a kurin the claim is re-issued and they are held to
         // that scope like anyone else — otherwise browser history reaches other kurins' data.
-        if (_currentUserContext.IsInRole(SystemRole.Admin) && _currentUserContext.KurinKey is null)
+        if (_currentUserContext.IsInRole(SystemRoleNames.Admin) && _currentUserContext.KurinKey is null)
         {
             return ResourceAccessDecision.Allow("Admin bypass: no kurin scope selected.");
         }
@@ -366,7 +366,7 @@ public class ResourceAccessService : IResourceAccessService
         }
 
         var ledGroupKeys = await _cache.GetOrCreateAsync(
-            BackendCachePolicies.MentorScopeReads,
+            BackendCacheRules.MentorScopeReads,
             $"ledgroups:kurin:{currentKurinKey}",
             token => _scopeReader.GetLedGroupKeysAsync(currentUserId.Value, currentKurinKey, token),
             cancellationToken,

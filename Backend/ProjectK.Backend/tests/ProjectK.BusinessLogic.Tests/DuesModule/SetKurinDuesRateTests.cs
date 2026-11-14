@@ -27,7 +27,7 @@ public class SetKurinDuesRateTests
     private readonly Mock<ProjectK.Common.Contracts.Shared.IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly Mock<IDuesAccrual> _accrual = new();
-    private string _upstream = KraiDues.Stanytsia;
+    private string _upstream = KraiDuesNames.Stanytsia;
 
     public SetKurinDuesRateTests()
     {
@@ -88,7 +88,7 @@ public class SetKurinDuesRateTests
     [Fact]
     public async Task InAKraiPaidStraight_ThreeAmounts_SendTheUpperPartToTheKrai()
     {
-        _upstream = KraiDues.Krai;
+        _upstream = KraiDuesNames.Krai;
 
         await Send(new SetKurinDuesRateRequest { FromQuarter = From(Q1), StanytsiaFull = 600, StanytsiaReduced = 300, KurinShare = 100 });
 
@@ -101,11 +101,11 @@ public class SetKurinDuesRateTests
     }
 
     [Theory]
-    [InlineData(KraiDues.Stanytsia, DuesRecipient.Krai, false)]
-    [InlineData(KraiDues.Krai, DuesRecipient.Stanytsia, false)]
-    [InlineData(KraiDues.Krai, DuesRecipient.Krai, true)]
-    [InlineData(KraiDues.Both, DuesRecipient.Stanytsia, true)]
-    [InlineData(KraiDues.Both, DuesRecipient.Krai, true)]
+    [InlineData(KraiDuesNames.Stanytsia, DuesRecipient.Krai, false)]
+    [InlineData(KraiDuesNames.Krai, DuesRecipient.Stanytsia, false)]
+    [InlineData(KraiDuesNames.Krai, DuesRecipient.Krai, true)]
+    [InlineData(KraiDuesNames.Both, DuesRecipient.Stanytsia, true)]
+    [InlineData(KraiDuesNames.Both, DuesRecipient.Krai, true)]
     public async Task AnArticle_GoesOnlyWhereTheKraiTakesTheVkladka(string upstream, DuesRecipient recipient, bool taken)
     {
         _upstream = upstream;

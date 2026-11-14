@@ -116,10 +116,10 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,
-                AuditActions.Agenda.Created,
+                AuditActionNames.Agenda.Created,
                 item.AgendaItemKey,
                 item.Title,
-                Changes: AuditChanges.Added([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
+                Changes: AuditChangeRules.Added([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
                 KurinKey: item.KurinKey),
             cancellationToken);
 

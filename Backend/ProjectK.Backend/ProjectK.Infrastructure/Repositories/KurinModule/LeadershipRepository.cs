@@ -246,7 +246,7 @@ public class LeadershipRepository : ILeadershipRepository
                 ProfilePhotoBlobName = r.ProfilePhotoBlobName,
                 // The system-role name, not the bare enum: MemberLookupDto.UserRole is read as an
                 // office identity, and MemberRepository fills the same field the same way.
-                UserRole = SystemRole.ForOffice(type, r.Role)
+                UserRole = SystemRoleNames.ForOffice(type, r.Role)
             })
             .ToList();
 
@@ -276,7 +276,7 @@ public class LeadershipRepository : ILeadershipRepository
                     MiddleName = mentor.MiddleName,
                     LastName = mentor.LastName,
                     ProfilePhotoBlobName = mentor.ProfilePhotoBlobName,
-                    UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)
+                    UserRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)
                 }));
         }
 

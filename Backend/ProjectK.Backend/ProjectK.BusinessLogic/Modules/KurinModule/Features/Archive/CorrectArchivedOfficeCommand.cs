@@ -80,14 +80,14 @@ public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<Correc
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The holding is outside your гуртки.");
         }
 
-        if (!LeadershipOffices.Grouping[leadership.Type].Contains(request.Role))
+        if (!LeadershipOfficeRules.Grouping[leadership.Type].Contains(request.Role))
         {
             return ServiceResult<Unit>.Failure(ResultType.BadRequest, ArchiveErrors.InvalidRole, "The role does not belong to this провід.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         var kurinNames = KurinRoleNames.Read(kurin?.RoleNames);
-        var changes = AuditChanges.Of(
+        var changes = AuditChangeRules.Of(
             ("role", ArchiveErrors.RoleLabel(history.Role, kurinNames), ArchiveErrors.RoleLabel(request.Role, kurinNames)),
             ("startDate", history.StartDate, request.StartDate),
             ("endDate", history.EndDate, request.EndDate));
@@ -103,7 +103,7 @@ public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<Correc
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Office,
-                AuditActions.Office.Corrected,
+                AuditActionNames.Office.Corrected,
                 history.LeadershipHistoryKey,
                 leadership.Group?.Name is { } correctedGroup ? $"{ArchiveErrors.RoleLabel(request.Role, kurinNames)} · {correctedGroup}" : ArchiveErrors.RoleLabel(request.Role, kurinNames),
                 history.MemberKey,

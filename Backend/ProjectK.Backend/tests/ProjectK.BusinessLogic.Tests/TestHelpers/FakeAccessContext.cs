@@ -15,7 +15,7 @@ internal static class FakeAccessContext
     internal static Mock<IAccessContextResolver> Resolver(params string[] roles)
     {
         var mock = new Mock<IAccessContextResolver>();
-        var answer = roles.Length == 0 ? [SystemRole.Member] : roles;
+        var answer = roles.Length == 0 ? [SystemRoleNames.Member] : roles;
 
         mock.Setup(r => r.ResolveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid userKey, CancellationToken _) =>

@@ -33,7 +33,7 @@ public static class AgendaItemMapping
         var scope = viewer.ToScope();
         var onSchedule = category?.IsKurinSchedule == true;
         var raisedByViewer = viewer.ViewerUserKey.HasValue && item.CreatedByUserKey == viewer.ViewerUserKey.Value;
-        var addressed = AgendaVisibility.IsAddressedTo(item, scope);
+        var addressed = AgendaVisibilityRules.IsAddressedTo(item, scope);
 
         // For a recurring series the calendar shows one row per occurrence: the dates come from the
         // expansion, but the key stays the series key so edit/delete act on the whole series (v1).

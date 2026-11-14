@@ -25,7 +25,7 @@ public interface IMemberPersonalData
     string? School { get; set; }
 
     /// <summary>
-    /// The groups of <see cref="MemberDataFields"/> blanked for this viewer, by name, so a client can
+    /// The groups of <see cref="MemberDataFieldRules"/> blanked for this viewer, by name, so a client can
     /// say «Приховано» instead of «Не вказано». Filled by the mask.
     /// </summary>
     IReadOnlyList<string> HiddenData { get; set; }

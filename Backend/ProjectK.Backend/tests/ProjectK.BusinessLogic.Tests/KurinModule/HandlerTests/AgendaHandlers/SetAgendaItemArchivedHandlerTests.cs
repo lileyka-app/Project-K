@@ -54,7 +54,7 @@ public class SetAgendaItemArchivedHandlerTests
         item.ArchivedByUserKey.Should().Be(_author);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Agenda.Archived);
+        entry.Action.Should().Be(AuditActionNames.Agenda.Archived);
         entry.SubjectKey.Should().Be(item.AgendaItemKey);
         entry.SubjectLabel.Should().Be("Прибрати");
 
@@ -76,7 +76,7 @@ public class SetAgendaItemArchivedHandlerTests
 
         item.ArchivedAtUtc.Should().BeNull();
         item.CompletedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
-        _journal.Entries.Single().Action.Should().Be(AuditActions.Agenda.Restored);
+        _journal.Entries.Single().Action.Should().Be(AuditActionNames.Agenda.Restored);
     }
 
     [Fact]

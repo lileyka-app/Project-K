@@ -84,7 +84,7 @@ public sealed class KraiProfileWriter
             return ServiceResult<KraiProfileEditorDto>.Failure(ResultType.InternalServerError, KraiErrors.NotSaved, "The profile was not saved.");
         }
 
-        _cache.Invalidate(BackendCachePolicies.KraiProfileReads);
+        _cache.Invalidate(BackendCacheRules.KraiProfileReads);
 
         return new ServiceResult<KraiProfileEditorDto>(ResultType.Success, krai.ToEditorDto(revision.Revision, normalized));
     }

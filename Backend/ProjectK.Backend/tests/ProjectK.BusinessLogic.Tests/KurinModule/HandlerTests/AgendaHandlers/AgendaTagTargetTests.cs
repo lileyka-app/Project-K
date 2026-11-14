@@ -33,9 +33,9 @@ public class AgendaTagTargetTests
     {
         var item = AimedAt(AgendaTargetType.Tag, Novices);
 
-        AgendaVisibility.IsVisible(item, Viewer(Novices)).Should().BeTrue();
-        AgendaVisibility.IsVisible(item, Viewer(Guid.NewGuid())).Should().BeFalse();
-        AgendaVisibility.IsVisible(item, Viewer()).Should().BeFalse();
+        AgendaVisibilityRules.IsVisible(item, Viewer(Novices)).Should().BeTrue();
+        AgendaVisibilityRules.IsVisible(item, Viewer(Guid.NewGuid())).Should().BeFalse();
+        AgendaVisibilityRules.IsVisible(item, Viewer()).Should().BeFalse();
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class AgendaTagTargetTests
         var item = AimedAt(AgendaTargetType.Tag, Novices);
         var noTags = new AgendaViewerScope(KurinKey, Guid.NewGuid(), Guid.NewGuid(), [], [], false);
 
-        AgendaVisibility.IsVisible(item, noTags).Should().BeFalse();
+        AgendaVisibilityRules.IsVisible(item, noTags).Should().BeFalse();
     }
 
     [Fact]

@@ -15,7 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 public sealed record DuesKrai(string Currency, string NumberLocale, TimeZoneInfo Zone, KraiDuesSettings Dues)
 {
     /// <summary>How Lilejka counted before краї had profiles.</summary>
-    public static DuesKrai Default { get; } = new("UAH", "uk-UA", AgendaRecurrence.DefaultZone, KraiDuesSettings.Default);
+    public static DuesKrai Default { get; } = new("UAH", "uk-UA", AgendaRecurrenceRules.DefaultZone, KraiDuesSettings.Default);
 
     /// <summary>The day it is in the край when the clock reads <paramref name="now"/>.</summary>
     public DateOnly Today(DateTimeOffset now) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, Zone).DateTime);
@@ -52,5 +52,5 @@ public static class DuesKraiRules
     }
 
     public static DuesKrai ToDuesKrai(this KraiProfile profile) =>
-        new(profile.Locale.Currency, profile.Locale.NumberLocale, AgendaRecurrence.ResolveZone(profile.Locale.TimeZone), profile.Dues);
+        new(profile.Locale.Currency, profile.Locale.NumberLocale, AgendaRecurrenceRules.ResolveZone(profile.Locale.TimeZone), profile.Dues);
 }

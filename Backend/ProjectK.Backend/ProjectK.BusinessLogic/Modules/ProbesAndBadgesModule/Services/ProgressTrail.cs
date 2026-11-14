@@ -16,20 +16,20 @@ public static class ProgressTrail
 {
     private static readonly Dictionary<string, (string Action, ProbeProgressStatus To)> ProbeActions = new(StringComparer.Ordinal)
     {
-        [AuditActions.Probe.Started] = ("InProgress", ProbeProgressStatus.InProgress),
-        [AuditActions.Probe.Completed] = ("Completed", ProbeProgressStatus.Completed),
-        [AuditActions.Probe.Verified] = ("Verified", ProbeProgressStatus.Verified),
-        [AuditActions.Probe.Unverified] = ("Unverify", ProbeProgressStatus.Completed),
-        [AuditActions.Probe.Reopened] = ("Unsign", ProbeProgressStatus.InProgress)
+        [AuditActionNames.Probe.Started] = ("InProgress", ProbeProgressStatus.InProgress),
+        [AuditActionNames.Probe.Completed] = ("Completed", ProbeProgressStatus.Completed),
+        [AuditActionNames.Probe.Verified] = ("Verified", ProbeProgressStatus.Verified),
+        [AuditActionNames.Probe.Unverified] = ("Unverify", ProbeProgressStatus.Completed),
+        [AuditActionNames.Probe.Reopened] = ("Unsign", ProbeProgressStatus.InProgress)
     };
 
     private static readonly Dictionary<string, (string Action, BadgeProgressStatus To)> BadgeActions = new(StringComparer.Ordinal)
     {
-        [AuditActions.Badge.Submitted] = ("Submitted", BadgeProgressStatus.Submitted),
-        [AuditActions.Badge.Resubmitted] = ("Resubmitted", BadgeProgressStatus.Submitted),
-        [AuditActions.Badge.Confirmed] = ("Confirmed", BadgeProgressStatus.Confirmed),
-        [AuditActions.Badge.Rejected] = ("Rejected", BadgeProgressStatus.Rejected),
-        [AuditActions.Badge.ConfirmationRemoved] = ("RemovedConfirmed", BadgeProgressStatus.Rejected)
+        [AuditActionNames.Badge.Submitted] = ("Submitted", BadgeProgressStatus.Submitted),
+        [AuditActionNames.Badge.Resubmitted] = ("Resubmitted", BadgeProgressStatus.Submitted),
+        [AuditActionNames.Badge.Confirmed] = ("Confirmed", BadgeProgressStatus.Confirmed),
+        [AuditActionNames.Badge.Rejected] = ("Rejected", BadgeProgressStatus.Rejected),
+        [AuditActionNames.Badge.ConfirmationRemoved] = ("RemovedConfirmed", BadgeProgressStatus.Rejected)
     };
 
     /// <summary>The status changes of one проба, oldest first, out of <paramref name="journal"/>.</summary>

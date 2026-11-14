@@ -41,13 +41,13 @@ internal static class KurinMapping
     /// <summary>Every capability with each audience's reach, its default and whether the cell is locked.</summary>
     public static KurinAccessPolicyDto ToDto(this KurinAccessPolicy policy)
     {
-        var rows = KurinCapabilities.All
+        var rows = KurinCapabilityRules.All
             .Select(descriptor => new KurinCapabilityDto(
                 descriptor.Key,
                 descriptor.Group,
                 descriptor.YouthConfigurable,
                 descriptor.Reaches,
-                KurinCapabilities.Audiences
+                KurinCapabilityRules.Audiences
                     .Select(audience => new AccessPolicyCellDto(
                         audience,
                         policy.Reach(descriptor.Key, audience),
@@ -56,7 +56,7 @@ internal static class KurinMapping
                     .ToList()))
             .ToList();
 
-        return new KurinAccessPolicyDto(KurinCapabilities.Audiences, rows);
+        return new KurinAccessPolicyDto(KurinCapabilityRules.Audiences, rows);
     }
 
     /// <summary>

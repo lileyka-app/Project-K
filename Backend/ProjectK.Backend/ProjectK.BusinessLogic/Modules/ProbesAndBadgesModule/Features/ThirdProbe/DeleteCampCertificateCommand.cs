@@ -42,7 +42,7 @@ public sealed class DeleteCampCertificateCommandHandler
             file.CampCertificateContentType = null;
             file.CampCertificateFileName = null;
             file.CampCertificateBytes = 0;
-            await RecordAsync(AuditActions.Probe.CertificateRemoved, file, request.MemberKey, probeId, cancellationToken);
+            await RecordAsync(AuditActionNames.Probe.CertificateRemoved, file, request.MemberKey, probeId, cancellationToken);
             await UnitOfWork.SaveChangesAsync(cancellationToken);
             await Photos.DeletePhotoAsync(blob, cancellationToken);
         }

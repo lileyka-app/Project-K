@@ -35,7 +35,7 @@ public sealed class DuesKurinShape : IDuesKurinShape
     public async Task<bool> IsSeniorAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
-        return kurin is not null && KurinBranchSet.IsSenior(kurin.Branch);
+        return kurin is not null && KurinBranchSetRules.IsSenior(kurin.Branch);
     }
 
     public async Task<bool> TagsOnAsync(Guid kurinKey, CancellationToken cancellationToken = default)

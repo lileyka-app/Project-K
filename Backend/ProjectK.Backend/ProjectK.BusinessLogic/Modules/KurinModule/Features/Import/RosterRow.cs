@@ -109,7 +109,7 @@ internal sealed class RosterRow
             GroupName = Of(RosterField.GroupName),
             KurinNumber = RosterValueRules.KurinNumber(Of(RosterField.KurinNumber)),
             // A number that is not one (or not one the file says plainly) is left out, not the row.
-            PhoneNumber = PhoneNumbers.NormalizeLegacy(Of(RosterField.PhoneNumber)) is { Length: > 0 } phone ? phone : null,
+            PhoneNumber = PhoneNumberRules.NormalizeLegacy(Of(RosterField.PhoneNumber)) is { Length: > 0 } phone ? phone : null,
             Email = Of(RosterField.Email),
             Address = Of(RosterField.Address),
             School = Of(RosterField.School)

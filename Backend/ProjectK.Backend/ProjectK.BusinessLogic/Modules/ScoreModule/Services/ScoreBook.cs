@@ -82,15 +82,15 @@ public sealed class ScoreBook
             return stage is null ? null : (new ScorePeriod(stage.FromDate, stage.ToDate), StageDto(stage));
         }
 
-        var year = query.Year ?? PlastYear.Of(Today);
-        return (new ScorePeriod(PlastYear.FirstDay(year), PlastYear.LastDay(year)), YearDto(year));
+        var year = query.Year ?? PlastYearRules.Of(Today);
+        return (new ScorePeriod(PlastYearRules.FirstDay(year), PlastYearRules.LastDay(year)), YearDto(year));
     }
 
     /// <summary>Every пластовий рік from the first scored day to today, newest first, then the stages.</summary>
     public ScorePeriodsDto Periods()
     {
-        var first = PlastYear.Of(FirstDay);
-        var current = PlastYear.Of(Today);
+        var first = PlastYearRules.Of(FirstDay);
+        var current = PlastYearRules.Of(Today);
         var years = Enumerable.Range(first, current - first + 1).Reverse().Select(YearDto).ToList();
         return new ScorePeriodsDto { Years = years, Stages = Stages.OrderByDescending(s => s.FromDate).Select(StageDto).ToList() };
     }
@@ -100,9 +100,9 @@ public sealed class ScoreBook
         Kind = "Year",
         Year = year,
         StageKey = null,
-        Label = PlastYear.Label(year),
-        From = PlastYear.FirstDay(year),
-        To = PlastYear.LastDay(year)
+        Label = PlastYearRules.Label(year),
+        From = PlastYearRules.FirstDay(year),
+        To = PlastYearRules.LastDay(year)
     };
 
     private static ScorePeriodDto StageDto(ScoreStage stage) => new()

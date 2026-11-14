@@ -43,7 +43,7 @@ public sealed class LoadTestLoginCommandHandler : IRequestHandler<LoadTestLoginC
     public async Task<ServiceResult<LoadTestSessionDto>> Handle(LoadTestLoginCommand request, CancellationToken cancellationToken)
     {
         var expectedKey = _configuration["LoadTestLoginKey"];
-        if (string.IsNullOrEmpty(expectedKey) || !SecretComparer.Matches(request.ApiKey, expectedKey))
+        if (string.IsNullOrEmpty(expectedKey) || !SecretComparisonRules.Matches(request.ApiKey, expectedKey))
         {
             return ServiceResult<LoadTestSessionDto>.Failure(
                 ResultType.Unauthorized, AuthErrors.InvalidApiKey, "Invalid or disabled load test API key.");

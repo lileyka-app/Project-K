@@ -44,7 +44,7 @@ public sealed class MemberFieldAccess : IMemberFieldAccess
         }
 
         var reach = new Dictionary<MemberDataGroup, CapabilityReach>();
-        foreach (var info in MemberDataFields.All)
+        foreach (var info in MemberDataFieldRules.All)
         {
             reach[info.Group] = await _permissions.ReachAsync(info.Capability, cancellationToken);
         }
@@ -55,7 +55,7 @@ public sealed class MemberFieldAccess : IMemberFieldAccess
             && _currentUser.KurinKey is { } kurinKey)
         {
             ownGroups = await _cache.GetOrCreateAsync(
-                BackendCachePolicies.MentorScopeReads,
+                BackendCacheRules.MentorScopeReads,
                 $"ledgroups:kurin:{kurinKey}",
                 token => _scopeReader.GetLedGroupKeysAsync(userKey, kurinKey, token),
                 cancellationToken,

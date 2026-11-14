@@ -57,7 +57,7 @@ public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand,
         // Switching kurin is no longer an admin's privilege — it is what someone does when they
         // belong to more than one. An admin steps into any kurin, or out of all of them; everyone
         // else may only stand where they actually are, which is what their memberships say.
-        var isAdmin = await _userManager.IsInRoleAsync(user, SystemRole.Admin);
+        var isAdmin = await _userManager.IsInRoleAsync(user, SystemRoleNames.Admin);
 
         if (request.KurinKey is null)
         {

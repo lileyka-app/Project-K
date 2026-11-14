@@ -11,7 +11,7 @@ public sealed class LifeStoryPdfRenderer : ILifeStoryPdfRenderer
 {
     public byte[] Render(LifeStoryData story, string? timeZoneId = null)
     {
-        var zone = ReportClock.Resolve(timeZoneId);
+        var zone = ReportClockRules.Resolve(timeZoneId);
 
         return Document.Create(document =>
         {
@@ -25,7 +25,7 @@ public sealed class LifeStoryPdfRenderer : ILifeStoryPdfRenderer
                 {
                     column.Item().Text("Пластовий життєпис").FontSize(9).SemiBold().FontColor(Colors.Grey.Darken1);
                     column.Item().Text(story.FullName).FontSize(17).Bold();
-                    column.Item().Text($"Сформовано: {ReportClock.Format(story.GeneratedAtUtc, zone)} {ReportClock.Label(zone)}")
+                    column.Item().Text($"Сформовано: {ReportClockRules.Format(story.GeneratedAtUtc, zone)} {ReportClockRules.Label(zone)}")
                         .FontSize(8)
                         .FontColor(Colors.Grey.Darken1);
                 });

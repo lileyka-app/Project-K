@@ -64,7 +64,7 @@ public class DeleteGroupHandlerTests
         _groupRepositoryMock.Verify(r => r.Delete(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
         _membershipRepositoryMock.Verify(r => r.DetachFromGroupAsync(groupKey, default), Times.Once);
         _auditMock.Verify(a => a.RecordAsync(
-            It.Is<AuditRecord>(record => record.Action == AuditActions.Archive.GroupDissolved && record.SubjectKey == groupKey),
+            It.Is<AuditRecord>(record => record.Action == AuditActionNames.Archive.GroupDissolved && record.SubjectKey == groupKey),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

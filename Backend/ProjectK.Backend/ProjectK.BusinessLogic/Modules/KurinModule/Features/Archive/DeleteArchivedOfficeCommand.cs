@@ -72,11 +72,11 @@ public sealed class DeleteArchivedOfficeCommandHandler : IRequestHandler<DeleteA
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Archive,
-                AuditActions.Archive.OfficeDeleted,
+                AuditActionNames.Archive.OfficeDeleted,
                 history.LeadershipHistoryKey,
                 leadership.Group?.Name is { } groupName ? $"{role} · {groupName}" : role,
                 history.MemberKey,
-                AuditChanges.Removed(
+                AuditChangeRules.Removed(
                     ("holder", holder),
                     ("role", role),
                     ("group", leadership.Group?.Name),

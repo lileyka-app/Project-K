@@ -53,16 +53,16 @@ public class Kurin : Entity
 
     /// <summary>The kurin's гілки and numbers, in the order they are shown.</summary>
     public IReadOnlyList<KurinNumbering> Numbering
-        => [.. KurinBranchSet.Ordered(Branches, row => row.Branch).Select(row => new KurinNumbering(row.Branch, row.Number))];
+        => [.. KurinBranchSetRules.Ordered(Branches, row => row.Branch).Select(row => new KurinNumbering(row.Branch, row.Number))];
 
     /// <summary>
-    /// Replaces the kurin's гілки. The caller checks the set with <see cref="KurinBranchSet.IsValid"/>
+    /// Replaces the kurin's гілки. The caller checks the set with <see cref="KurinBranchSetRules.IsValid"/>
     /// and the numbers against the край; this keeps <see cref="Branch"/> and <see cref="Number"/>
     /// pointing at the first гілка.
     /// </summary>
     public void SetBranches(IReadOnlyCollection<KurinNumbering> branches)
     {
-        var wanted = KurinBranchSet.Ordered(branches, b => b.Branch).ToList();
+        var wanted = KurinBranchSetRules.Ordered(branches, b => b.Branch).ToList();
         if (wanted.Count == 0)
         {
             throw new ArgumentException("A kurin belongs to at least one гілка.", nameof(branches));
@@ -137,7 +137,7 @@ public class Kurin : Entity
     public string? EmblemBlobName { get; set; }
 
     /// <summary>Точкування as the kurin has it now: on in УПЮ and off in the older гілки unless the kurin chose.</summary>
-    public bool IsScoreEnabled => ScoreEnabled ?? !KurinBranchSet.IsSenior(Branch);
+    public bool IsScoreEnabled => ScoreEnabled ?? !KurinBranchSetRules.IsSenior(Branch);
 
     /// <summary>Days a done task stays on the board before it moves to the archive by itself; null keeps it there.</summary>
     public int? TaskAutoArchiveAfterDays { get; set; } = 30;

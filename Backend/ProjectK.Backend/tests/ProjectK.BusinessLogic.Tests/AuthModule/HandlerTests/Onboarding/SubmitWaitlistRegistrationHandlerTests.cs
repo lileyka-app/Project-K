@@ -45,7 +45,7 @@ public class SubmitWaitlistRegistrationHandlerTests
         _userManager = new Mock<UserManager<AppUser>>(
             new Mock<IUserStore<AppUser>>().Object, null, null, null, null, null, null, null, null);
         _userManager
-            .Setup(x => x.GetUsersInRoleAsync(SystemRole.Admin))
+            .Setup(x => x.GetUsersInRoleAsync(SystemRoleNames.Admin))
             .ReturnsAsync(new List<AppUser> { _admin });
 
         _handler = new SubmitWaitlistRegistrationCommandHandler(

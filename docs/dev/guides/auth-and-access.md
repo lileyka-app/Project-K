@@ -68,7 +68,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 **Примус для проводу:** `PrivilegedMfaEnforcementMiddleware` + `MfaEnforcementPolicy` вимагають
 другий фактор для адміністратора і Звʼязкового на `Production` і `Staging`; `Security:EnforcePrivilegedMFA`
 керує цим на self-host. Ключ `E2E:BypassPrivilegedMfa` читається лише на тестових тирах. Гейт не ходить
-у базу: access-токен несе клейм `amr` (`mfa` / `pwd`, `AccessTokenClaims`), записаний при видачі —
+у базу: access-токен несе клейм `amr` (`mfa` / `pwd`, `AccessTokenClaimNames`), записаний при видачі —
 `login`, `refresh`, активація. Увімкнення MFA (`mfa/enable`) обриває всі сесії й одразу віддає нову
 (`Tokens` у відповіді + cookie), тож старий токен «лише пароль» не доживає до відмови; вимкнення теж
 обриває всі сесії, і токен без другого фактора живе щонайбільше `Jwt:ExpiresInMinutes`. Фронтенд:
@@ -78,7 +78,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 
 - `[Authorize(Policy = …)]` — грубі політики (`RequireUser`, `RequireAdmin`, `RequireKurinManagement`…).
 - `[ResourceAuthorize(ResourceType, ResourceAction, "route:key")]` — дозвіл на конкретний ресурс:
-  `RolePermissionMap` перекладає ролі з діловодств у дозволи зі скоупом (`KurinWide`, `OwnGroups`, `Own`),
+  `RolePermissionRules` перекладає ролі з діловодств у дозволи зі скоупом (`KurinWide`, `OwnGroups`, `Own`),
   а `AccessContextResolver` визначає, в якому курені людина стоїть і які діловодства тримає.
 - Активне закріплення впорядника за гуртком (`MentorAssignment`) трактується як діловодство впорядника в КВ.
 - Обидві перевірки покриті тестом `AuthorizationBaselineMatrixTests`: кожна дія контролера має
@@ -90,13 +90,13 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 перестороги кожного ступеня й підтверджує відзначення кожного рівня, хто видаляє підтверджені
 відзначення, підписує й знімає підписи проб, підтверджує вмілості, кому призначає події й задачі
 і хто читає журнал дій. Ці можливості
-описані в одній таблиці — `KurinCapabilities`; курінь зберігає лише відхилення від її значень за
+описані в одній таблиці — `KurinCapabilityRules`; курінь зберігає лише відхилення від її значень за
 замовчуванням у `Kurin.AccessPolicy`.
 
-- Дозволи людини = статична частина `RolePermissionMap` + гранти політики її куреня
+- Дозволи людини = статична частина `RolePermissionRules` + гранти політики її куреня
   (`IPermissionResolver`, у межах запиту — `ICurrentPermissions`). Політика кешується на хвилину й
   скидається при збереженні, тож сервер застосовує її з наступного ж запиту.
-- Рівні перевіряє обробник (`KurinCapabilities.GiveWarning(level)`, `ConfirmAward(level)`), решту —
+- Рівні перевіряє обробник (`KurinCapabilityRules.GiveWarning(level)`, `ConfirmAward(level)`), решту —
   `IResourceAccessService.CheckCapabilityAsync`.
 - `GET api/member/{key}/abilities` — що викликач може зробити з цією людиною (ступені пересторог,
   рівні відзначень, видалення, підпис і зняття підпису, вмілості, журнал). Клієнти беруть кнопки
@@ -144,7 +144,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 ## Особисті дані людини
 
 Пошта й телефон, дата народження (з роком і окремо день із місяцем), адреса й школа, контакти
-батьків і поля краю (`CardExtras`) — шість груп з `MemberDataFields`. Хто бачить кожну, вирішує
+батьків і поля краю (`CardExtras`) — шість груп з `MemberDataFieldRules`. Хто бачить кожну, вирішує
 політика куреня (`See*`): нікому, свій гурток (гуртки, які людина веде, і її власний) чи увесь курінь.
 
 - Маска одна — `MemberFieldMask` з `IMemberFieldAccess.ForViewerAsync`. Її накладають картка
@@ -193,7 +193,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 
 `KurinAuditEvent` — хто, що й коли змінив у курені. Обробник пише запис через
 `IKurinAudit.RecordAsync` перед власним `SaveChangesAsync`, тож запис і зміна комітяться разом. Дія —
-рядок з `AuditActions`, розділ — `AuditArea`; зміни — `AuditChanges` (лише змінене, особисті поля як
+рядок з `AuditActionNames`, розділ — `AuditArea`; зміни — `AuditChangeRules` (лише змінене, особисті поля як
 «змінено» без значень). Історія на картці проби й вмілості читається з того ж журналу
 (`IKurinJournalReader`). Строк — 365 днів, див. [зберігання](/dev/operations/data-retention/).
 

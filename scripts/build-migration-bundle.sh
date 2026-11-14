@@ -4,7 +4,7 @@ set -euo pipefail
 # Builds a self-contained EF Core migration bundle (efbundle) for the deploy step.
 #
 # Why: in Production/Staging the app does NOT auto-migrate on startup (see
-# API/Hosting/StartupTasks.cs -> ShouldRunMigrationsOnStartup) so multiple instances can boot without
+# API/Hosting/StartupTaskExtensions.cs -> ShouldRunMigrationsOnStartup) so multiple instances can boot without
 # racing each other. Apply the schema out-of-band with this bundle before/at rollout:
 #
 #   scripts/build-migration-bundle.sh                 # -> ./efbundle (or efbundle.exe on Windows)

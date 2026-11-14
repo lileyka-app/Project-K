@@ -139,7 +139,7 @@ public sealed class KurinReportDataService
         // хто лише закріплений за гуртком, звіт не рахував зовсім — реєстр і сайдбар рахували.
         var kurinOfGroup = groups.ToDictionary(group => group.GroupKey, group => group.KurinKey);
         var staffKeys = members
-            .Where(member => member.LeadershipHistories.Any(history => KurinRoster.IsStaffOffice(
+            .Where(member => member.LeadershipHistories.Any(history => KurinRosterRules.IsStaffOffice(
                     history.Leadership.Type,
                     history.Leadership.KurinKey,
                     history.Leadership.EndDate,
@@ -147,7 +147,7 @@ public sealed class KurinReportDataService
                     kurinKey))
                 || (member.UserKey is Guid accountKey && mentorAssignments.Any(assignment =>
                     assignment.MentorUserKey == accountKey
-                    && KurinRoster.IsStaffAssignment(
+                    && KurinRosterRules.IsStaffAssignment(
                         assignment.RevokedAtUtc,
                         kurinOfGroup.GetValueOrDefault(assignment.GroupKey),
                         kurinKey))))
@@ -171,7 +171,7 @@ public sealed class KurinReportDataService
                 ResolveCurrentUserEmail(usersByKey),
                 ResolveReleaseInfo("Version"),
                 // Not through ResolveReleaseInfo: its "unknown" fallback would print as a code name.
-                ReleaseDisplay.CodeName(_configuration["ReleaseInfo:Codename"] ?? _configuration["ReleaseInfo:CodeName"])),
+                ReleaseDisplayRules.CodeName(_configuration["ReleaseInfo:Codename"] ?? _configuration["ReleaseInfo:CodeName"])),
             new KurinReportKurin(
                 kurin.KurinKey,
                 kurin.Number,
@@ -179,7 +179,7 @@ public sealed class KurinReportDataService
                 kurin.RegionOrCountry,
                 kurin.NamedAfter,
                 kurin.Description,
-                KurinBranchSet.IsSenior(kurin.Branch) ? KurinBranchNames.DescribeSenior(kurin.Numbering) : null),
+                KurinBranchSetRules.IsSenior(kurin.Branch) ? KurinBranchNames.DescribeSenior(kurin.Numbering) : null),
             reportGroups,
             staff,
             youth,
@@ -197,7 +197,7 @@ public sealed class KurinReportDataService
         KurinBranch branch,
         IReadOnlyList<KurinReportMember> youth)
     {
-        var ladder = PlastLadder.DefaultFor(branch);
+        var ladder = PlastLadderRules.DefaultFor(branch);
         var rows = ladder
             .Select(level => new KurinReportLevelCount(
                 PlastLevelNames.Of(level),
@@ -289,7 +289,7 @@ public sealed class KurinReportDataService
                         item.ProbeId,
                         ResolveProbeTitle(item.ProbeId, probe),
                         item.Status,
-                        KurinReportTerminology.ProbeStatus(item.Status),
+                        KurinReportNames.ProbeStatus(item.Status),
                         item.CompletedAtUtc,
                         item.CompletedByName,
                         item.VerifiedAtUtc,
@@ -321,7 +321,7 @@ public sealed class KurinReportDataService
                         item.BadgeId,
                         badge?.Title ?? item.BadgeId,
                         item.Status,
-                        KurinReportTerminology.BadgeStatus(item.Status),
+                        KurinReportNames.BadgeStatus(item.Status),
                         item.ReviewedAtUtc,
                         item.ReviewedByName,
                         item.ReviewedByRole);
@@ -332,7 +332,7 @@ public sealed class KurinReportDataService
                 .OrderByDescending(item => item.IssuedAtUtc)
                 .Select(item => new KurinReportWarning(
                     item.Level,
-                    KurinReportTerminology.WarningLevel(item.Level),
+                    KurinReportNames.WarningLevel(item.Level),
                     item.IssuedAtUtc,
                     item.ExpiresAtUtc,
                     item.RevokedAtUtc.HasValue))
@@ -341,20 +341,20 @@ public sealed class KurinReportDataService
                 .OrderByDescending(item => item.DateAcquired)
                 .Select(item => new KurinReportAward(
                     item.Level,
-                    KurinReportTerminology.Award(item.Level, item.CatalogId, id => _honours.GetById(id)?.Title),
+                    KurinReportNames.Award(item.Level, item.CatalogId, id => _honours.GetById(id)?.Title),
                     item.DateAcquired,
                     item.Note,
                     item.Status,
-                    KurinReportTerminology.BadgeStatus(item.Status)))
+                    KurinReportNames.BadgeStatus(item.Status)))
                 .ToArray(),
             member.LeadershipHistories
                 .Where(item => BelongsToKurin(item.Leadership, kurinKey, groupNamesByKey))
                 .OrderByDescending(item => item.StartDate)
                 .Select(item => new KurinReportLeadershipHistory(
                     item.Leadership.Type,
-                    KurinReportTerminology.LeadershipType(item.Leadership.Type),
+                    KurinReportNames.LeadershipType(item.Leadership.Type),
                     item.Role,
-                    roleNames.GetValueOrDefault(item.Role) ?? KurinReportTerminology.LeadershipRole(item.Role),
+                    roleNames.GetValueOrDefault(item.Role) ?? KurinReportNames.LeadershipRole(item.Role),
                     ResolveLeadershipScopeName(item.Leadership, groupNamesByKey),
                     item.StartDate,
                     item.EndDate))

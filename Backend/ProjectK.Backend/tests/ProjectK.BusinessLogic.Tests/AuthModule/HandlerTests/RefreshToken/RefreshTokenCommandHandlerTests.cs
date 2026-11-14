@@ -41,8 +41,8 @@ public class RefreshTokenCommandHandlerTests
     {
         var kurinKey = Guid.NewGuid();
         var user = CreateUser(kurinKey);
-        var vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-        var roles = new List<string> { SystemRole.Member };
+        var vykhovnyk = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+        var roles = new List<string> { SystemRoleNames.Member };
         var access = new Mock<IAccessContextResolver>();
         access.Setup(r => r.ResolveAsync(user, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new AccessContext(user.Id, kurinKey, roles.ToArray()));
@@ -59,7 +59,7 @@ public class RefreshTokenCommandHandlerTests
         Assert.Contains(vykhovnyk, after.Data!.Access.Roles);
         Assert.False(after.Data.Access.IsAdmin);
         Assert.Equal(kurinKey.ToString(), after.Data.Access.KurinKey);
-        var expected = RolePermissionMap.Resolve(roles, KurinAccessPolicy.Default).Select(p => p.ToClaimValue());
+        var expected = RolePermissionRules.Resolve(roles, KurinAccessPolicy.Default).Select(p => p.ToClaimValue());
         Assert.Equal(expected.Order(), after.Data.Access.Permissions.Order());
         Assert.NotEqual(before.Data.Access.Permissions.Order(), after.Data.Access.Permissions.Order());
     }
@@ -69,7 +69,7 @@ public class RefreshTokenCommandHandlerTests
     {
         var kurinKey = Guid.NewGuid();
         var user = CreateUser(kurinKey);
-        var access = FakeAccessContext.With(SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy));
+        var access = FakeAccessContext.With(SystemRoleNames.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy));
         var snapshots = new AccessSnapshotFactory(new PermissionResolver(new FixedKurinAccessPolicyProvider()));
         var members = new Mock<IMemberDirectory>();
         var login = new LoginResponseService(access, _jwtServiceMock.Object, members.Object, _refreshTokensMock.Object, snapshots);

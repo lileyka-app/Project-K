@@ -75,7 +75,7 @@ public class MembershipJournalTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Membership);
-        entry.Action.Should().Be(AuditActions.Membership.Left);
+        entry.Action.Should().Be(AuditActionNames.Membership.Left);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(_membership.MembershipKey);
         entry.SubjectMemberKey.Should().Be(_membership.MemberKey);
@@ -92,7 +92,7 @@ public class MembershipJournalTests
         await Move().Handle(new MoveToGroupCommand(_membership.MemberKey, _kurinKey, _orly.GroupKey), default);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Membership.MovedToGroup);
+        entry.Action.Should().Be(AuditActionNames.Membership.MovedToGroup);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectGroupKey.Should().Be(_sokoly.GroupKey);
         entry.Changes.Should().Equal(new AuditChange("group", "Соколи", "Орли"));

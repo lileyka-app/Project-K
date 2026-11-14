@@ -145,7 +145,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (entry.IsKurinLeaderCandidate)
         {
-            _cache.Invalidate(BackendCachePolicies.KurinReads);
+            _cache.Invalidate(BackendCacheRules.KurinReads);
         }
 
         // 5. Send Invitation Email

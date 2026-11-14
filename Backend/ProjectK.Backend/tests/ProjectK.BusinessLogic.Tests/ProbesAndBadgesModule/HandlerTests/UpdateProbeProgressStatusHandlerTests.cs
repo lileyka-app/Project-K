@@ -200,7 +200,7 @@ public class UpdateProbeProgressStatusHandlerTests
 
         // The journal names the same actor the signature does, from the one resolution.
         var entry = Assert.Single(_journal.Entries);
-        Assert.Equal(AuditActions.Probe.Completed, entry.Action);
+        Assert.Equal(AuditActionNames.Probe.Completed, entry.Action);
         Assert.Equal("Ivan Shevchenko", entry.ActorName);
         Assert.Equal(actorUserKey, entry.ActorUserKey);
         Assert.Equal(progress.ProbeProgressKey, entry.SubjectKey);
@@ -297,7 +297,7 @@ public class UpdateProbeProgressStatusHandlerTests
         Assert.Equal(expected, result.Type);
         Assert.Equal(after, progress.Status);
         Assert.Equal(
-            mayUnsign ? new[] { AuditActions.Probe.Unverified } : Array.Empty<string>(),
+            mayUnsign ? new[] { AuditActionNames.Probe.Unverified } : Array.Empty<string>(),
             _journal.Entries.Select(entry => entry.Action).ToArray());
     }
 }

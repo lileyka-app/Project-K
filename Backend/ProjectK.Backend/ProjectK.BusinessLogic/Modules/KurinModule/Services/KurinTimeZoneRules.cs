@@ -8,6 +8,6 @@ public static class KurinTimeZoneRules
     public static async Task<TimeZoneInfo> ForKurinAsync(this IKraiProfileDirectory profiles, Guid kurinKey, CancellationToken cancellationToken)
     {
         var profile = await profiles.GetForKurinAsync(kurinKey, cancellationToken);
-        return profile is null ? AgendaRecurrence.DefaultZone : AgendaRecurrence.ResolveZone(profile.Locale.TimeZone);
+        return profile is null ? AgendaRecurrenceRules.DefaultZone : AgendaRecurrenceRules.ResolveZone(profile.Locale.TimeZone);
     }
 }

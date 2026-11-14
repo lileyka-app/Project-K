@@ -103,7 +103,7 @@ public class AccessStaleHeaderHttpTests
 
 
         var assigner = new Mock<ICurrentUserContext>();
-        assigner.SetupGet(c => c.Roles).Returns([SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
+        assigner.SetupGet(c => c.Roles).Returns([SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
 
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
@@ -131,10 +131,10 @@ public class AccessStaleHeaderHttpTests
 
     private static string MintedAMinuteAgo(Guid userKey, Guid? kurinKey = null) =>
         Jwt(new StoppedClock(DateTimeOffset.UtcNow.AddMinutes(-1))).GenerateAccessToken(
-            userKey.ToString(), "u@example.com", [SystemRole.Member], kurinKey?.ToString(), hasSecondFactor: false);
+            userKey.ToString(), "u@example.com", [SystemRoleNames.Member], kurinKey?.ToString(), hasSecondFactor: false);
 
     private static string MintedNow(Guid userKey) =>
-        Jwt(TimeProvider.System).GenerateAccessToken(userKey.ToString(), "u@example.com", [SystemRole.Member], null, hasSecondFactor: false);
+        Jwt(TimeProvider.System).GenerateAccessToken(userKey.ToString(), "u@example.com", [SystemRoleNames.Member], null, hasSecondFactor: false);
 
     private static JwtService Jwt(TimeProvider clock) => new(Configuration(), clock);
 

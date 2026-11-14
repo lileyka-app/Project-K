@@ -122,7 +122,7 @@ public class ResourceScopeRepository : IResourceScopeRepository
             .ToListAsync(cancellationToken);
 
         // While they are still a юнак in an УПЮ kurin, they are a юнак, whatever else they are too.
-        return standing.Any(row => KurinBranchSet.IsSenior(row.Branch))
+        return standing.Any(row => KurinBranchSetRules.IsSenior(row.Branch))
                && !standing.Any(row => row.Branch == KurinBranch.UPYu && row.Kind == MembershipKind.Youth);
     }
 

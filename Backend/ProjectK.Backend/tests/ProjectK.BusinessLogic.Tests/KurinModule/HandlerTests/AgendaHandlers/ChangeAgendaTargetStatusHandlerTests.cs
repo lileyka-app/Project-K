@@ -82,7 +82,7 @@ public class ChangeAgendaTargetStatusHandlerTests
         await _handler.Handle(new ChangeAgendaTargetStatusCommand(_item.AgendaItemKey, _target.AgendaAssignmentKey, AgendaItemStatus.Done, _youth), default);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Agenda.StatusChanged);
+        entry.Action.Should().Be(AuditActionNames.Agenda.StatusChanged);
         entry.SubjectLabel.Should().Be("Здати вкладку");
         entry.SubjectMemberKey.Should().Be(_youth);
         entry.SubjectMemberName.Should().Be("Марта Мельник");

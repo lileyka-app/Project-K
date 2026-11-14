@@ -8,8 +8,8 @@ public sealed record KraiCardExtraField
     public string Key { get; init; } = string.Empty;
     public string Label { get; init; } = string.Empty;
 
-    /// <summary><see cref="KraiCardFields.Text"/> or <see cref="KraiCardFields.Date"/>.</summary>
-    public string Type { get; init; } = KraiCardFields.Text;
+    /// <summary><see cref="KraiCardFieldNames.Text"/> or <see cref="KraiCardFieldNames.Date"/>.</summary>
+    public string Type { get; init; } = KraiCardFieldNames.Text;
 
     public bool Required { get; init; }
 }

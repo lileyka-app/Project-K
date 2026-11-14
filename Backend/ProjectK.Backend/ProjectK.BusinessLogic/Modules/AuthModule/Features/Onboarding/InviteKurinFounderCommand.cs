@@ -44,7 +44,7 @@ public sealed class InviteKurinFounderCommandValidator : AbstractValidator<Invit
         RuleFor(command => command.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(command => command.LastName).NotEmpty().MaximumLength(100);
         RuleFor(command => command.PhoneNumber)
-            .Must(PhoneNumbers.IsValid).WithMessage(PhoneNumbers.InvalidMessage)
+            .Must(PhoneNumberRules.IsValid).WithMessage(PhoneNumberRules.InvalidMessage)
             .When(command => !string.IsNullOrWhiteSpace(command.PhoneNumber));
 
         // No number opens a підготовчий курінь, as an approved application without one does.
@@ -131,7 +131,7 @@ public sealed class InviteKurinFounderCommandHandler
         _unitOfWork.Kurins.Create(kurin, cancellationToken);
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var phoneNumber = PhoneNumbers.Normalize(request.PhoneNumber) ?? string.Empty;
+        var phoneNumber = PhoneNumberRules.Normalize(request.PhoneNumber) ?? string.Empty;
         var entry = new WaitlistEntry
         {
             WaitlistEntryKey = Guid.NewGuid(),
@@ -171,7 +171,7 @@ public sealed class InviteKurinFounderCommandHandler
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         // The admin's list of kurins is cached; without this the new one turns up only a minute later.
-        _cache.Invalidate(BackendCachePolicies.KurinReads);
+        _cache.Invalidate(BackendCacheRules.KurinReads);
 
         // Everything is stored by now, so a letter that does not go is reported, not failed on:
         // a retry would only meet a taken address. It goes again by address (invitation/resend,

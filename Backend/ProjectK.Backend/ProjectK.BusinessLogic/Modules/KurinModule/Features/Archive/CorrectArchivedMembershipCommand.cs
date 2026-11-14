@@ -85,7 +85,7 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
 
         var joinedOn = DateOnly.FromDateTime(membership.JoinedAtUtc);
         var leftOn = DateOnly.FromDateTime(leftAt);
-        var changes = AuditChanges.Of(
+        var changes = AuditChangeRules.Of(
             ("kind", membership.Kind, request.Kind),
             ("joinedOn", joinedOn, request.JoinedOn),
             ("leftOn", leftOn, request.LeftOn));
@@ -131,7 +131,7 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Membership,
-                AuditActions.Membership.Corrected,
+                AuditActionNames.Membership.Corrected,
                 membership.MembershipKey,
                 person,
                 membership.MemberKey,

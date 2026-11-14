@@ -113,7 +113,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Probe,
-                AuditActions.Probe.FileEdited,
+                AuditActionNames.Probe.FileEdited,
                 file.ThirdProbeFileKey,
                 ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey),

@@ -91,11 +91,11 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Probe,
-                AuditActions.Probe.StagesChanged,
+                AuditActionNames.Probe.StagesChanged,
                 file.ThirdProbeFileKey,
                 ProgressAuditNames.Probe(_probes, probeId),
                 memberKey,
-                AuditChanges.Of(
+                AuditChangeRules.Of(
                     ("motivationLetter", before.MotivationLetterOn, stages.MotivationLetterOn),
                     ("selfReflection", before.SelfReflectionOn, stages.SelfReflectionOn),
                     ("applicationSubmitted", before.ApplicationSubmittedOn, stages.ApplicationSubmittedOn),

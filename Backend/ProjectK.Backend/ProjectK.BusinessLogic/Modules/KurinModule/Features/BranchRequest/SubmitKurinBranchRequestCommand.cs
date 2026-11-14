@@ -61,7 +61,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
         }
 
         // A УПЮ kurin has one number it sets in its own settings; гілки change only for the older ones.
-        if (!KurinBranchSet.IsSenior(kurin.Branch))
+        if (!KurinBranchSetRules.IsSenior(kurin.Branch))
         {
             return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, MemberErrors.NotSeniorKurin, "Only a УСП or УПС kurin changes its гілки by request.");
         }
@@ -123,7 +123,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
         var branches = wanted.WantedBranches;
         if (branches.Count == 0)
         {
-            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, KurinBranchSet.InvalidCode, "A senior kurin keeps at least one гілка.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, KurinBranchSetRules.InvalidCode, "A senior kurin keeps at least one гілка.");
         }
 
         if (branches.Any(b => !_numbers.IsAllowed(b.Number!.Value)))

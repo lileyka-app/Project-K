@@ -51,15 +51,15 @@ public class JwtService : IJwtService
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.Email, email),
-            new Claim(AccessTokenClaims.AuthenticationMethods, hasSecondFactor ? AccessTokenClaims.Mfa : AccessTokenClaims.Password),
-            new Claim(AccessTokenClaims.IssuedAt, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
+            new Claim(AccessTokenClaimNames.AuthenticationMethods, hasSecondFactor ? AccessTokenClaimNames.Mfa : AccessTokenClaimNames.Password),
+            new Claim(AccessTokenClaimNames.IssuedAt, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         if (kurinKey != null)
         {
-            claims.Add(new Claim(AccessTokenClaims.KurinKey, kurinKey));
+            claims.Add(new Claim(AccessTokenClaimNames.KurinKey, kurinKey));
         }
 
         var creds = new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256);

@@ -77,7 +77,7 @@ public class UpsertGroupHandlerTests
         result.Data.Should().NotBeNull();
         result.Data!.Name.Should().Be(name);
         result.Data.Description.Should().Be("First patrol group");
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.GroupReads), Times.Once);
         result.Data.KurinKey.Should().Be(kurin.KurinKey);
         result.Data.GroupKey.Should().Be(savedGroup.GroupKey);
 

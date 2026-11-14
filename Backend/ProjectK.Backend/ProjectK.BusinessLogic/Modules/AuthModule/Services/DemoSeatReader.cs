@@ -91,7 +91,7 @@ public sealed class DemoSeatReader
             }
 
             var user = await _userManager.FindByIdAsync(accountKey.ToString());
-            if (user is null || !user.CanSignIn() || await _userManager.IsInRoleAsync(user, SystemRole.Admin))
+            if (user is null || !user.CanSignIn() || await _userManager.IsInRoleAsync(user, SystemRoleNames.Admin))
             {
                 continue;
             }

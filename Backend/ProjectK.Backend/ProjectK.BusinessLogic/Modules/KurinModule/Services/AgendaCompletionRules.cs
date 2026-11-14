@@ -93,7 +93,7 @@ public sealed record AgendaStake(AgendaAssignment Assignment, Guid? MemberKey);
 
 /// <summary>
 /// Who moves which part of a task, and what the parts add up to. Three things that used to be one:
-/// who sees a task (its audience — <c>AgendaVisibility</c>), who is on the hook for it, and the state
+/// who sees a task (its audience — <c>AgendaVisibilityRules</c>), who is on the hook for it, and the state
 /// it is in for each of them. Pure functions over a loaded item, so the board, the dialog and the
 /// status commands cannot disagree.
 /// </summary>

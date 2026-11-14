@@ -89,7 +89,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
 
         // Each улад its own відзначення: levels 1–4 in an УПЮ kurin, the catalogue's in a senior one.
         var kurin = await _kurins.GetByKeyAsync(actingKurinKey, cancellationToken);
-        var inSeniorKurin = kurin is not null && KurinBranchSet.IsSenior(kurin.Branch);
+        var inSeniorKurin = kurin is not null && KurinBranchSetRules.IsSenior(kurin.Branch);
         if (request.CatalogId is not null)
         {
             // A senior kurin's провід records its people's; anywhere else a senior person keeps their own.
@@ -140,14 +140,14 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
 
             _unitOfWork.MemberAwards.Update(existingAward, cancellationToken);
 
-            var changes = AuditChanges.Of(
+            var changes = AuditChangeRules.Of(
                 ("level", before.Level, existingAward.Level),
                 ("dateAcquired", before.DateAcquired, existingAward.DateAcquired),
                 ("note", before.Note, existingAward.Note),
                 ("status", before.Status, existingAward.Status));
             if (changes.Count > 0)
             {
-                await RecordAsync(AuditActions.Award.Changed, existingAward, changes, cancellationToken);
+                await RecordAsync(AuditActionNames.Award.Changed, existingAward, changes, cancellationToken);
             }
         }
         else
@@ -169,9 +169,9 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             existingAward = newAward;
 
             await RecordAsync(
-                AuditActions.Award.Added,
+                AuditActionNames.Award.Added,
                 newAward,
-                AuditChanges.Added(
+                AuditChangeRules.Added(
                     ("level", newAward.Level),
                     ("dateAcquired", newAward.DateAcquired),
                     ("note", newAward.Note),
@@ -232,13 +232,13 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             existingAward.UpdatedDate = now;
             _unitOfWork.MemberAwards.Update(existingAward, cancellationToken);
 
-            var changes = AuditChanges.Of(
+            var changes = AuditChangeRules.Of(
                 ("award", HonourTitle(before.CatalogId), HonourTitle(existingAward.CatalogId)),
                 ("dateAcquired", before.DateAcquired, existingAward.DateAcquired),
                 ("note", before.Note, existingAward.Note));
             if (changes.Count > 0)
             {
-                await RecordAsync(AuditActions.Award.Changed, existingAward, changes, cancellationToken);
+                await RecordAsync(AuditActionNames.Award.Changed, existingAward, changes, cancellationToken);
             }
         }
         else
@@ -258,9 +258,9 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             _unitOfWork.MemberAwards.Create(existingAward, cancellationToken);
 
             await RecordAsync(
-                AuditActions.Award.Added,
+                AuditActionNames.Award.Added,
                 existingAward,
-                AuditChanges.Added(
+                AuditChangeRules.Added(
                     ("award", HonourTitle(existingAward.CatalogId)),
                     ("dateAcquired", existingAward.DateAcquired),
                     ("note", existingAward.Note)),
@@ -287,7 +287,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             levels.Add(latest);
         }
 
-        return PlastLadder.Highest(levels) is { } current && PlastLadder.BranchOf(current) != KurinBranch.UPYu
+        return PlastLadderRules.Highest(levels) is { } current && PlastLadderRules.BranchOf(current) != KurinBranch.UPYu
                || await _scope.StandsInSeniorKurinAsync(ResourceType.Member, member.MemberKey, cancellationToken);
     }
 
@@ -301,7 +301,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
                 AuditArea.Award,
                 action,
                 award.MemberAwardKey,
-                KurinReportTerminology.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title),
+                KurinReportNames.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title),
                 award.MemberKey,
                 changes),
             cancellationToken);

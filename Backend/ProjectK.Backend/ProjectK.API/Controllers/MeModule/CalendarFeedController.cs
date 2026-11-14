@@ -18,7 +18,7 @@ namespace ProjectK.API.Controllers.MeModule;
 public class CalendarFeedController : ControllerBase
 {
     /// <summary>Everything after it is the secret; logs and activity records cut the path here.</summary>
-    public const string PathPrefix = SecretPaths.CalendarFeedPrefix;
+    public const string PathPrefix = SecretPathRules.CalendarFeedPrefix;
 
     private readonly IMediator _mediator;
 
@@ -47,7 +47,7 @@ public class CalendarFeedController : ControllerBase
         }
 
         var content = Encoding.UTF8.GetBytes(result.Data.Content);
-        var etag = $"\"{SecretHash.Sha256Hex(result.Data.Content)[..32]}\"";
+        var etag = $"\"{SecretHashRules.Sha256Hex(result.Data.Content)[..32]}\"";
         Response.Headers.ETag = etag;
         Response.Headers.CacheControl = "private, max-age=300";
         if (Request.Headers.IfNoneMatch.Contains(etag))

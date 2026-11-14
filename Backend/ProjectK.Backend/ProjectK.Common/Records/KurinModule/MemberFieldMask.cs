@@ -7,7 +7,7 @@ namespace ProjectK.Common.Records.KurinModule;
 
 /// <summary>
 /// What one viewer may see of other people's data, worked out once from the kurin's policy: for each
-/// group of <see cref="MemberDataFields"/> how far it reaches, and which гуртки count as theirs.
+/// group of <see cref="MemberDataFieldRules"/> how far it reaches, and which гуртки count as theirs.
 /// Every read that hands a person's data out passes it through <see cref="Apply"/>; every write
 /// keeps the groups <see cref="HiddenFrom"/> names as they are stored.
 /// <para>
@@ -37,7 +37,7 @@ public sealed class MemberFieldMask
     /// <summary>A mask that hides nothing: for readers the policy does not apply to.</summary>
     public static MemberFieldMask ShowsEverything { get; } = new(
         null,
-        MemberDataFields.All.ToDictionary(info => info.Group, _ => CapabilityReach.Kurin),
+        MemberDataFieldRules.All.ToDictionary(info => info.Group, _ => CapabilityReach.Kurin),
         []);
 
     /// <summary>The viewer's account.</summary>
@@ -63,7 +63,7 @@ public sealed class MemberFieldMask
     /// stored: a form that showed «Приховано» cannot be allowed to wipe what it never had.
     /// </summary>
     public IReadOnlySet<MemberDataGroup> HiddenFrom(Guid? memberUserKey, Guid? memberGroupKey) =>
-        MemberDataFields.All
+        MemberDataFieldRules.All
             .Select(info => info.Group)
             .Where(group => !Shows(group, memberUserKey, memberGroupKey))
             .ToHashSet();
@@ -74,15 +74,15 @@ public sealed class MemberFieldMask
     /// </summary>
     public void Apply(IMemberPersonalData target, Guid? memberUserKey, Guid? memberGroupKey)
     {
-        target.Birthday = MemberDataFields.BirthdayOf(target.DateOfBirth);
+        target.Birthday = MemberDataFieldRules.BirthdayOf(target.DateOfBirth);
 
         var hidden = HiddenFrom(memberUserKey, memberGroupKey);
         foreach (var group in hidden)
         {
-            MemberDataFields.Hide(target, group);
+            MemberDataFieldRules.Hide(target, group);
         }
 
-        target.HiddenData = MemberDataFields.All
+        target.HiddenData = MemberDataFieldRules.All
             .Where(info => hidden.Contains(info.Group))
             .Select(info => info.Name)
             .ToList();

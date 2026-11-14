@@ -29,7 +29,7 @@ public class GetKurinsQueryHandler : IRequestHandler<GetKurinsQuery, ServiceResu
     public async Task<ServiceResult<IEnumerable<KurinDto>>> Handle(GetKurinsQuery request, CancellationToken cancellationToken)
     {
         return await _cache.GetOrCreateAsync(
-            BackendCachePolicies.KurinReads,
+            BackendCacheRules.KurinReads,
             "list",
             async token =>
             {

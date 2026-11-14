@@ -89,7 +89,7 @@ public sealed class UploadCampCertificateCommandHandler
         file.CampCertificateBytes = upload.Bytes;
         file.CampCertificateFileName = Path.GetFileName(request.FileName) is { Length: > 0 and <= ProbeProjectRules.MaxShortTextLength } name ? name : null;
 
-        await RecordAsync(AuditActions.Probe.CertificateAttached, file, request.MemberKey, probeId, cancellationToken);
+        await RecordAsync(AuditActionNames.Probe.CertificateAttached, file, request.MemberKey, probeId, cancellationToken);
         if (await UnitOfWork.SaveChangesAsync(cancellationToken) <= 0)
         {
             await Photos.DeletePhotoAsync(upload.BlobName, cancellationToken);

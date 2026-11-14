@@ -19,7 +19,7 @@ public sealed class HttpCurrentUserContext : ICurrentUserContext
 
     public Guid? UserId => Principal.GetUserKey();
 
-    public Guid? KurinKey => ParseGuid(Principal?.FindFirstValue(AccessTokenClaims.KurinKey));
+    public Guid? KurinKey => ParseGuid(Principal?.FindFirstValue(AccessTokenClaimNames.KurinKey));
 
     public IReadOnlyCollection<string> Roles => ResolveRoles();
 

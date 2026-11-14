@@ -18,7 +18,7 @@ public class Member : Entity, IHasParentContacts
 
     /// <summary>
     /// The code this person shares so another kurin can find them. Drawn at random when the member
-    /// is first saved, never derived from <see cref="MemberKey"/> — see <c>MemberPublicId</c>.
+    /// is first saved, never derived from <see cref="MemberKey"/> — see <c>MemberPublicIdRules</c>.
     /// </summary>
     public string PublicId { get; set; } = string.Empty;
     public Guid? UserKey { get; set; }
@@ -41,7 +41,7 @@ public class Member : Entity, IHasParentContacts
 
     /// <summary>
     /// Values of the card fields a край adds, as a JSON object by field key; see
-    /// <c>MemberCardExtras</c>. Kept when the край drops a field, so bringing it back loses nothing.
+    /// <c>MemberCardExtraRules</c>. Kept when the край drops a field, so bringing it back loses nothing.
     /// </summary>
     public string? CardExtras { get; set; }
     public string? ProfilePhotoBlobName { get; set; }

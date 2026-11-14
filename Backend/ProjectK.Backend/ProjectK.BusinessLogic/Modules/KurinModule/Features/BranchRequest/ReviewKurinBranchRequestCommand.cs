@@ -81,10 +81,10 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
             await _audit.RecordAsync(
                 new AuditRecord(
                     AuditArea.Settings,
-                    AuditActions.Settings.KurinChanged,
+                    AuditActionNames.Settings.KurinChanged,
                     kurin.KurinKey,
                     Label,
-                    Changes: AuditChanges.Of(("branches", before, KurinBranchNames.DescribeSenior(kurin.Numbering))),
+                    Changes: AuditChangeRules.Of(("branches", before, KurinBranchNames.DescribeSenior(kurin.Numbering))),
                     KurinKey: kurin.KurinKey),
                 cancellationToken);
         }
@@ -100,7 +100,7 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
 
         if (request.Approve)
         {
-            _cache.Invalidate(BackendCachePolicies.KurinReads);
+            _cache.Invalidate(BackendCacheRules.KurinReads);
         }
 
         await _events.PublishAsync(

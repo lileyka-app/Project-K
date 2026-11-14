@@ -74,7 +74,7 @@ internal sealed class KurinTagAssignments
     {
         _uow.KurinTags.AddAssignment(new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = memberKey });
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Tag, AuditActions.Tag.Put, tag.KurinTagKey, tag.Name,
+            new AuditRecord(AuditArea.Tag, AuditActionNames.Tag.Put, tag.KurinTagKey, tag.Name,
                 SubjectMemberKey: memberKey, KurinKey: tag.KurinKey),
             cancellationToken);
     }
@@ -83,7 +83,7 @@ internal sealed class KurinTagAssignments
     {
         _uow.KurinTags.RemoveAssignment(assignment);
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Tag, AuditActions.Tag.TakenOff, tag.KurinTagKey, tag.Name,
+            new AuditRecord(AuditArea.Tag, AuditActionNames.Tag.TakenOff, tag.KurinTagKey, tag.Name,
                 SubjectMemberKey: assignment.MemberKey, KurinKey: tag.KurinKey),
             cancellationToken);
     }

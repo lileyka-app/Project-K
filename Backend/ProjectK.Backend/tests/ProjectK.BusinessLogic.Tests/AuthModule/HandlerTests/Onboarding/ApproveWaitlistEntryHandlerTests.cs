@@ -66,7 +66,7 @@ public class ApproveWaitlistEntryHandlerTests
         _openedKurin!.Number.Should().Be(47);
         entry.FoundedKurinKey.Should().Be(_openedKurin.KurinKey);
         // The admin's cached list of kurins must show the one just opened.
-        _cache.Verify(x => x.Invalidate(BackendCachePolicies.KurinReads), Times.Once);
+        _cache.Verify(x => x.Invalidate(BackendCacheRules.KurinReads), Times.Once);
     }
 
     [Fact]

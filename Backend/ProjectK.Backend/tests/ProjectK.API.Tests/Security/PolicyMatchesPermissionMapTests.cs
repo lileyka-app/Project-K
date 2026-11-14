@@ -85,18 +85,18 @@ public class PolicyMatchesPermissionMapTests
     {
         Func<IEnumerable<string>, bool> admits = policy switch
         {
-            AuthorizationPolicies.RequireKurinManagement => RolePermissionMap.GrantsWholeKurinManagement,
-            AuthorizationPolicies.RequireGroupLeadership => RolePermissionMap.GrantsGroupLeadership,
-            AuthorizationPolicies.RequirePlanningAuthor => RolePermissionMap.GrantsPlanningAuthoring,
+            AuthorizationPolicies.RequireKurinManagement => RolePermissionRules.GrantsWholeKurinManagement,
+            AuthorizationPolicies.RequireGroupLeadership => RolePermissionRules.GrantsGroupLeadership,
+            AuthorizationPolicies.RequirePlanningAuthor => RolePermissionRules.GrantsPlanningAuthoring,
             AuthorizationPolicies.RequireUser => _ => true,
             _ => _ => false
         };
 
-        return SystemRole.All()
-            .Where(role => role != SystemRole.Admin)
+        return SystemRoleNames.All()
+            .Where(role => role != SystemRoleNames.Admin)
             .Where(role => admits([role]))
-            .Where(role => RolePermissionMap.WidestScope(
-                RolePermissionMap.Resolve([role]), resource, action) is not null)
+            .Where(role => RolePermissionRules.WidestScope(
+                RolePermissionRules.Resolve([role]), resource, action) is not null)
             .ToList();
     }
 

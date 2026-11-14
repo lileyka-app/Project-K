@@ -244,7 +244,7 @@ public class MemberMappingTests
     public void MaskFor_ShouldClearThePublicCode_ForAnyoneButItsOwner()
     {
         var member = Stored();
-        var everything = MemberDataFields.All.ToDictionary(info => info.Group, _ => CapabilityReach.Kurin);
+        var everything = MemberDataFieldRules.All.ToDictionary(info => info.Group, _ => CapabilityReach.Kurin);
 
         var own = member.ToDto(FakeBlobReadLinks.Instance).MaskFor(new MemberFieldMask(member.UserKey, everything, []), null);
         var other = member.ToDto(FakeBlobReadLinks.Instance).MaskFor(new MemberFieldMask(Guid.NewGuid(), everything, []), null);

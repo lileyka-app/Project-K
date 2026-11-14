@@ -100,7 +100,7 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
     /// <summary>The kurin an administrator outside any kurin means: the one they name, or the person's only one.</summary>
     private async Task<Guid?> UnscopedAdminKurinAsync(SetMemberTagsCommand request, CancellationToken cancellationToken)
     {
-        if (!_currentUser.IsInRole(SystemRole.Admin))
+        if (!_currentUser.IsInRole(SystemRoleNames.Admin))
         {
             return null;
         }

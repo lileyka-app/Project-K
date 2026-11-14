@@ -74,7 +74,7 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 `edition`, `order`, `kraiCode`, `statusCode`.
 
 Назву редакції задає каталог: окремий запис у `editions` (`id`, `title`, `ulad`, `krai`), який
-редагують в адмінці каталогу на вкладці «Редакції проб». `CatalogMapper` кладе її в
+редагують в адмінці каталогу на вкладці «Редакції проб». `CatalogMapping` кладе її в
 `Probe.EditionTitle`, а клієнти показують як є, нічого не виводячи з id. Звичайна проба (без
 `edition`) запису в каталозі не має, і «Звичайна проба» — єдина назва, яку дає сама Лілейка
 (`REGULAR_PROBE_LABEL`). Журнал дій записує назву, яку бачили на момент зміни, а не id: пізніше
@@ -188,7 +188,7 @@ PNG/JPEG/WebP); декодер бере лише картинку до 40 Мп (
 Файли живуть, поки їх називає рядок: `ProbeProjectImage` для зображень, колонка
 `CampCertificateBlobName` для посвідки. Збереження тексту видаляє зображення, яких він більше не
 показує; видалення проєкту чи заміна посвідки — їхні блоби. Теки `probe-project-images` і
-`third-probe-certificates` входять у `BlobUploadFolders.ScenarioFolders`, а
+`third-probe-certificates` входять у `BlobUploadFolderNames.ScenarioFolders`, а
 `ProbeProjectImageReferenceProvider` віддає `OrphanPhotoCleanupBackgroundService` усі блоби з рядків, тож
 завантажене й покинуте прибирається само. Видалення людини прибирає її третю пробу через
 `ProgressCleanupEventHandler`. Журнал дій: `Probe.Project*`, `Probe.ProjectsSwapped`,
@@ -217,7 +217,7 @@ PNG/JPEG/WebP); декодер бере лише картинку до 40 Мп (
 
 Права: підписати точку і розглянути вмілість може впорядник у своїх гуртках (`OwnGroups`) або
 Звʼязковий у всьому курені (`KurinWide`) — гранти на `ProbeProgress` і `BadgeProgress` у
-`RolePermissionMap` мають лише вони й адміністратор. Провід куреня (курінний, писар, скарбник) цих
+`RolePermissionRules` мають лише вони й адміністратор. Провід куреня (курінний, писар, скарбник) цих
 грантів не має: усі записи `MemberProgressController` захищені `ResourceAuthorize` по учаснику.
 
 ## Фронтенд

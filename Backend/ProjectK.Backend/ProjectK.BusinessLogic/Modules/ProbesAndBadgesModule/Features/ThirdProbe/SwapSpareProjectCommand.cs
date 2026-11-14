@@ -70,11 +70,11 @@ public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSparePr
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Probe,
-                AuditActions.Probe.ProjectsSwapped,
+                AuditActionNames.Probe.ProjectsSwapped,
                 spare.ProbeProjectKey,
                 ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey,
-                AuditChanges.Of(("project", main.Title, spare.Title))),
+                AuditChangeRules.Of(("project", main.Title, spare.Title))),
             cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

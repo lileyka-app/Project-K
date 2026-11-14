@@ -36,7 +36,7 @@ public class ImpersonateMemberCommandHandlerTests
         _userManager.Setup(m => m.UpdateAsync(It.IsAny<AppUser>())).ReturnsAsync(IdentityResult.Success);
         _currentUser.SetupGet(c => c.UserId).Returns(_adminKey);
         _currentUser.SetupGet(c => c.KurinKey).Returns(_onScreenKurin);
-        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(true);
+        _currentUser.Setup(c => c.IsInRole(SystemRoleNames.Admin)).Returns(true);
         _jwt.Setup(j => j.GenerateDevReturnTicket(_adminKey)).Returns("ticket");
         _loginResponses
             .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
@@ -51,7 +51,7 @@ public class ImpersonateMemberCommandHandlerTests
     {
         var user = new AppUser { Id = Guid.NewGuid(), Email = email, OnboardingStatus = OnboardingStatus.Active };
         _userManager.Setup(m => m.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
-        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRole.Admin)).ReturnsAsync(admin);
+        _userManager.Setup(m => m.IsInRoleAsync(user, SystemRoleNames.Admin)).ReturnsAsync(admin);
         return user;
     }
 
@@ -136,7 +136,7 @@ public class ImpersonateMemberCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldRefuseAnyoneWhoIsNotAnAdministrator()
     {
-        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(false);
+        _currentUser.Setup(c => c.IsInRole(SystemRoleNames.Admin)).Returns(false);
 
         var result = await Handler().Handle(new ImpersonateMemberCommand(Guid.NewGuid()), CancellationToken.None);
 

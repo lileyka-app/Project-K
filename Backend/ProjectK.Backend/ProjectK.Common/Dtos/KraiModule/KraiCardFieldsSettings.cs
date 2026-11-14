@@ -8,11 +8,11 @@ public sealed record KraiCardFieldsSettings(
     IReadOnlyList<KraiCardExtraField> Extra)
 {
     /// <summary>The card as it is without a profile.</summary>
-    public static readonly KraiCardFieldsSettings Default = new(KraiCardFields.Configurable, []);
+    public static readonly KraiCardFieldsSettings Default = new(KraiCardFieldNames.Configurable, []);
 
     public string ModeOf(string field)
     {
-        return Fields.TryGetValue(field, out var mode) ? mode : KraiCardFields.Configurable.GetValueOrDefault(field, KraiCardFields.Required);
+        return Fields.TryGetValue(field, out var mode) ? mode : KraiCardFieldNames.Configurable.GetValueOrDefault(field, KraiCardFieldNames.Required);
     }
 
     /// <summary>
@@ -22,8 +22,8 @@ public sealed record KraiCardFieldsSettings(
     public IReadOnlyList<(string Key, string Label)> Hideable()
     {
         return Fields
-            .Where(field => field.Value == KraiCardFields.Optional)
-            .Select(field => (field.Key, KraiCardFields.Labels.GetValueOrDefault(field.Key, field.Key)))
+            .Where(field => field.Value == KraiCardFieldNames.Optional)
+            .Select(field => (field.Key, KraiCardFieldNames.Labels.GetValueOrDefault(field.Key, field.Key)))
             .Concat(Extra.Where(field => !field.Required).Select(field => (field.Key, field.Label)))
             .ToList();
     }
@@ -38,7 +38,7 @@ public sealed record KraiCardFieldsSettings(
 
         var hideable = Hideable().Select(field => field.Key).Where(hidden.Contains).ToHashSet(StringComparer.Ordinal);
         return new KraiCardFieldsSettings(
-            Fields.ToDictionary(field => field.Key, field => hideable.Contains(field.Key) ? KraiCardFields.Hidden : field.Value),
+            Fields.ToDictionary(field => field.Key, field => hideable.Contains(field.Key) ? KraiCardFieldNames.Hidden : field.Value),
             Extra.Where(field => !hideable.Contains(field.Key)).ToList());
     }
 }

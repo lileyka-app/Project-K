@@ -128,11 +128,11 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Membership,
-                AuditActions.Membership.Joined,
+                AuditActionNames.Membership.Joined,
                 membership.MembershipKey,
                 person.FullName,
                 memberKey,
-                AuditChanges.Added(("kind", request.Kind), ("group", groupName)),
+                AuditChangeRules.Added(("kind", request.Kind), ("group", groupName)),
                 KurinKey: request.KurinKey),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -174,7 +174,7 @@ public class ActivateAccountHandlerTests
         var result = await _handler.Handle(new ActivateAccountCommand("token", "Password@1"), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        _userManager.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), SystemRole.Member), Times.Once);
+        _userManager.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Member), Times.Once);
         _mediator.Verify(x => x.Send(It.IsAny<UpsertLeadershipCommand>(), It.IsAny<CancellationToken>()), Times.Never);
         invitation.UsedAtUtc.Should().NotBeNull();
         _events.Verify(x => x.PublishAsync(It.Is<AccountActivated>(e => e.Account.UserKey == userKey), It.IsAny<CancellationToken>()), Times.Once);

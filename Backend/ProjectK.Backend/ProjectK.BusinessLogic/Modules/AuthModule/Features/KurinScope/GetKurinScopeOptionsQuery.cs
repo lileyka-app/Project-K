@@ -39,7 +39,7 @@ public sealed class GetKurinScopeOptionsQueryHandler
                 .OrderBy(m => m.KurinNumber)
                 .Select(m => new KurinScopeOptionDto(
                     m.KurinKey, m.KurinNumber, m.Branch, m.KurinNamedAfter, m.Kind,
-                    [.. KurinBranchSet.Ordered(m.Numbering, n => n.Branch)]))
+                    [.. KurinBranchSetRules.Ordered(m.Numbering, n => n.Branch)]))
         ];
 
         return new ServiceResult<IReadOnlyCollection<KurinScopeOptionDto>>(ResultType.Success, options);

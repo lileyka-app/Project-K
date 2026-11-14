@@ -23,6 +23,6 @@ public sealed class PermissionResolver : IPermissionResolver
             ? await _policies.GetAsync(key, cancellationToken)
             : KurinAccessPolicy.Default;
 
-        return RolePermissionMap.Resolve(roles, policy);
+        return RolePermissionRules.Resolve(roles, policy);
     }
 }

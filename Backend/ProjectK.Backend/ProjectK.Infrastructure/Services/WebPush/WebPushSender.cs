@@ -53,7 +53,7 @@ public sealed class WebPushSender
 
         // The server's own key first: a misconfigured pair must fail loudly, not pass for a dead device.
         var authorization = VapidAuthorization(endpoint);
-        var content = new ByteArrayContent(WebPushCrypto.Encrypt(payload, subscription.P256dh, subscription.Auth));
+        var content = new ByteArrayContent(WebPushCryptoRules.Encrypt(payload, subscription.P256dh, subscription.Auth));
         content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
         content.Headers.ContentEncoding.Add("aes128gcm");
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
@@ -76,7 +76,7 @@ public sealed class WebPushSender
     {
         try
         {
-            return WebPushCrypto.CreateVapidAuthorization(
+            return WebPushCryptoRules.CreateVapidAuthorization(
                 endpoint,
                 _options.EffectiveSubject,
                 _options.PublicKey!,

@@ -5,7 +5,7 @@ using ProjectK.Common.Rules.AuthModule;
 namespace ProjectK.Common.Records.AuthModule;
 
 /// <summary>
-/// What one kurin has set in «Права й видимість»: the defaults of <see cref="KurinCapabilities"/>
+/// What one kurin has set in «Права й видимість»: the defaults of <see cref="KurinCapabilityRules"/>
 /// with the kurin's own cells laid over them. Immutable; only the cells that differ from the
 /// defaults are kept, so a default changed in code reaches every kurin that never touched it.
 /// <para>
@@ -47,7 +47,7 @@ public sealed class KurinAccessPolicy
     {
         return _overrides.TryGetValue(capability, out var cells) && cells.TryGetValue(audience, out var reach)
             ? reach
-            : KurinCapabilities.Get(capability).Defaults[audience];
+            : KurinCapabilityRules.Get(capability).Defaults[audience];
     }
 
     /// <summary>The widest reach of <paramref name="capability"/> over every audience someone belongs to.</summary>
@@ -75,7 +75,7 @@ public sealed class KurinAccessPolicy
     {
         var held = audiences as IReadOnlyCollection<PolicyAudience> ?? audiences.ToList();
         var widest = new Dictionary<(ResourceType, ResourceAction), CapabilityReach>();
-        foreach (var descriptor in KurinCapabilities.All)
+        foreach (var descriptor in KurinCapabilityRules.All)
         {
             var pair = (descriptor.Resource, descriptor.Action);
             var reach = Reach(descriptor.Key, held);
@@ -134,7 +134,7 @@ public sealed class KurinAccessPolicy
                     continue;
                 }
 
-                var descriptor = KurinCapabilities.Get(capability);
+                var descriptor = KurinCapabilityRules.Get(capability);
                 foreach (var cell in row.Value.EnumerateObject())
                 {
                     if (TryName<PolicyAudience>(cell.Name, out var audience)
@@ -194,7 +194,7 @@ public sealed class KurinAccessPolicy
                 continue;
             }
 
-            var descriptor = KurinCapabilities.Get(capability);
+            var descriptor = KurinCapabilityRules.Get(capability);
             foreach (var (audienceName, reachName) in cells)
             {
                 if (!TryName<PolicyAudience>(audienceName, out var audience))
@@ -237,7 +237,7 @@ public sealed class KurinAccessPolicy
         foreach (var (capabilityName, cells) in matrix)
         {
             var capability = Enum.Parse<KurinCapability>(capabilityName);
-            var descriptor = KurinCapabilities.Get(capability);
+            var descriptor = KurinCapabilityRules.Get(capability);
             foreach (var (audienceName, reachName) in cells)
             {
                 var audience = Enum.Parse<PolicyAudience>(audienceName);
@@ -272,11 +272,11 @@ public sealed class KurinAccessPolicy
             return Default;
         }
 
-        var ordered = KurinCapabilities.All
+        var ordered = KurinCapabilityRules.All
             .Where(descriptor => overrides.ContainsKey(descriptor.Key))
             .ToDictionary(
                 descriptor => descriptor.Key,
-                descriptor => (IReadOnlyDictionary<PolicyAudience, CapabilityReach>)KurinCapabilities.Audiences
+                descriptor => (IReadOnlyDictionary<PolicyAudience, CapabilityReach>)KurinCapabilityRules.Audiences
                     .Where(overrides[descriptor.Key].ContainsKey)
                     .ToDictionary(audience => audience, audience => overrides[descriptor.Key][audience]));
 

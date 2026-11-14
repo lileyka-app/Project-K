@@ -157,7 +157,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         // next request; the cached led-group sets are read from offices too and must not lag.
         if (touchedHolders.Count > 0)
         {
-            _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+            _cache.Invalidate(BackendCacheRules.MentorScopeReads);
             MarkHolders(holders);
         }
 
@@ -203,11 +203,11 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             await _audit.RecordAsync(
                 new AuditRecord(
                     AuditArea.Office,
-                    seated ? AuditActions.Office.Assigned : AuditActions.Office.Ended,
+                    seated ? AuditActionNames.Office.Assigned : AuditActionNames.Office.Ended,
                     leadership.LeadershipKey,
                     ArchiveErrors.RoleLabel(change.Role, kurinNames),
                     subject.Count == 1 ? subject[0] : null,
-                    AuditChanges.Of(("holder", NamesOf(change.Ended, names), NamesOf(change.Seated, names))),
+                    AuditChangeRules.Of(("holder", NamesOf(change.Ended, names), NamesOf(change.Seated, names))),
                     KurinKey: leadership.KurinKey),
                 cancellationToken);
         }
@@ -242,7 +242,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         IEnumerable<LeadershipHistoryMemberDto> requestedHistories,
         LeadershipType type)
     {
-        var assignable = RolePermissionMap.AssignableOffices(_currentUserContext.Roles);
+        var assignable = RolePermissionRules.AssignableOffices(_currentUserContext.Roles);
         var requested = ParseRequestedAssignments(requestedHistories);
         var active = leadership.LeadershipHistories
             .Where(history => history.EndDate == null)

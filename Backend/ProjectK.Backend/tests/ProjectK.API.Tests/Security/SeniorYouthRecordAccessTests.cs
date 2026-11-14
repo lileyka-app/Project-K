@@ -20,8 +20,8 @@ namespace ProjectK.API.Tests.Security;
 /// </summary>
 public class SeniorYouthRecordAccessTests
 {
-    private static readonly string Zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-    private static readonly string Vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string Zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string Vykhovnyk = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
 
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _groupKey = Guid.NewGuid();
@@ -100,7 +100,7 @@ public class SeniorYouthRecordAccessTests
     [Fact]
     public async Task TheSeniorThemself_EntersTheirStupeni_ButNotTheirVmilostiOrYouthAwards()
     {
-        var (service, _) = Arrange(SystemRole.Member, senior: true, callerUserKey: _ownerUserKey);
+        var (service, _) = Arrange(SystemRoleNames.Member, senior: true, callerUserKey: _ownerUserKey);
 
         var badge = await service.CheckAccessAsync(ResourceType.BadgeProgress, ResourceAction.Create, ResourceType.Member, _memberKey);
         var award = await service.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Create, _memberKey);
@@ -126,7 +126,7 @@ public class SeniorYouthRecordAccessTests
     [Fact]
     public async Task AYouth_StillSubmitsTheirOwnVmilist()
     {
-        var (service, _) = Arrange(SystemRole.Member, senior: false, callerUserKey: _ownerUserKey);
+        var (service, _) = Arrange(SystemRoleNames.Member, senior: false, callerUserKey: _ownerUserKey);
 
         Assert.True((await service.CheckAccessAsync(ResourceType.BadgeProgress, ResourceAction.Create, ResourceType.Member, _memberKey)).IsAllowed);
     }

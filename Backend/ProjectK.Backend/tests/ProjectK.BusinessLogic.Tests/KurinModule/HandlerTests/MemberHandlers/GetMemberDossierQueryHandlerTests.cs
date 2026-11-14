@@ -112,21 +112,21 @@ public class GetMemberDossierHandlerTests
         var dossier = (await Open()).Data!;
 
         var counts = dossier.Folders.ToDictionary(folder => folder.Name, folder => folder.Count);
-        counts[MemberDossierFolders.Memberships].Should().Be(2);
-        counts[MemberDossierFolders.Offices].Should().Be(1);
-        counts[MemberDossierFolders.Levels].Should().Be(2);
-        counts[MemberDossierFolders.Awards].Should().Be(0);
-        counts[MemberDossierFolders.Warnings].Should().Be(1);
-        counts[MemberDossierFolders.Progress].Should().Be(3);
+        counts[MemberDossierFolderNames.Memberships].Should().Be(2);
+        counts[MemberDossierFolderNames.Offices].Should().Be(1);
+        counts[MemberDossierFolderNames.Levels].Should().Be(2);
+        counts[MemberDossierFolderNames.Awards].Should().Be(0);
+        counts[MemberDossierFolderNames.Warnings].Should().Be(1);
+        counts[MemberDossierFolderNames.Progress].Should().Be(3);
     }
 
     [Fact]
     public async Task AFolderThatWasRead_ShouldNotBeCountedTwice()
     {
-        var dossier = (await Open(MemberDossierFolders.Memberships)).Data!;
+        var dossier = (await Open(MemberDossierFolderNames.Memberships)).Data!;
 
         dossier.Memberships.Should().HaveCount(2);
-        dossier.Folders.Single(f => f.Name == MemberDossierFolders.Memberships).Count.Should().Be(2);
+        dossier.Folders.Single(f => f.Name == MemberDossierFolderNames.Memberships).Count.Should().Be(2);
         _memberships.Verify(
             d => d.CountForMemberAsync(MemberKey, It.IsAny<CancellationToken>()),
             Times.Never);
@@ -135,7 +135,7 @@ public class GetMemberDossierHandlerTests
     [Fact]
     public async Task AskingForEverything_ShouldFillEveryFolder()
     {
-        var dossier = (await Open([.. MemberDossierFolders.All])).Data!;
+        var dossier = (await Open([.. MemberDossierFolderNames.All])).Data!;
 
         dossier.Memberships.Should().NotBeNull();
         dossier.Offices.Should().NotBeNull();

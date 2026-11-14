@@ -47,7 +47,7 @@ public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCo
             Token = Guid.NewGuid().ToString("N"),
             WaitlistEntryKey = entry.WaitlistEntryKey,
             TargetUserKey = invitation?.TargetUserKey ?? targetUser?.Id,
-            ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(OnboardingPolicy.InvitationLifetimeDays)
+            ExpiresAtUtc = _timeProvider.GetUtcNow().UtcDateTime.AddDays(OnboardingRules.InvitationLifetimeDays)
         };
 
         await _emailService.SendInvitationEmailAsync(entry.Email, newInvitation.Token, cancellationToken);

@@ -59,8 +59,8 @@ public sealed class SetKurinKraiCommandHandler : IRequestHandler<SetKurinKraiCom
         _unitOfWork.Kurins.Update(kurin, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _cache.Invalidate(BackendCachePolicies.KurinReads);
-        _cache.Invalidate(BackendCachePolicies.GroupReads);
+        _cache.Invalidate(BackendCacheRules.KurinReads);
+        _cache.Invalidate(BackendCacheRules.GroupReads);
 
         return new ServiceResult<KurinDto>(ResultType.Success, kurin.ToDto(_links));
     }

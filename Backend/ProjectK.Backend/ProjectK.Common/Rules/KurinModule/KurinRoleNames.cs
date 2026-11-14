@@ -5,7 +5,7 @@ namespace ProjectK.Common.Rules.KurinModule;
 
 /// <summary>
 /// A kurin's own names for the roles it already has: писар becomes «скриптор». Only the name changes;
-/// rights still come from the role through <c>RolePermissionMap</c>, so a kurin can rename what it
+/// rights still come from the role through <c>RolePermissionRules</c>, so a kurin can rename what it
 /// has but never make a role that grants something new. Stored on the kurin as
 /// <c>{"Pysar":"Скриптор"}</c>; a role left out keeps its usual name.
 /// </summary>
@@ -30,7 +30,7 @@ public static class KurinRoleNames
     /// Whether this kurin may rename its roles. Senior kurins for now; the one place to open it to
     /// УПЮ later.
     /// </summary>
-    public static bool IsAvailableFor(KurinBranch branch) => KurinBranchSet.IsSenior(branch);
+    public static bool IsAvailableFor(KurinBranch branch) => KurinBranchSetRules.IsSenior(branch);
 
     /// <summary>The kurin's names by role; whatever it cannot read it skips, so a bad row costs a name, not the page.</summary>
     public static IReadOnlyDictionary<LeadershipRole, string> Read(string? json)

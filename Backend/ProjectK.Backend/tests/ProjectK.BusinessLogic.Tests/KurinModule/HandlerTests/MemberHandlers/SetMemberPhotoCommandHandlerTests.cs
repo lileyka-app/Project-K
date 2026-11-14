@@ -72,7 +72,7 @@ public class SetMemberPhotoCommandHandlerTests
         // That it changed, never where it is stored.
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Member);
-        entry.Action.Should().Be(AuditActions.Member.PhotoChanged);
+        entry.Action.Should().Be(AuditActionNames.Member.PhotoChanged);
         entry.SubjectMemberKey.Should().Be(member.MemberKey);
         entry.SubjectLabel.Should().Be("A B");
         entry.Changes.Should().BeEmpty();
@@ -109,7 +109,7 @@ public class SetMemberPhotoCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         member.ProfilePhotoBlobName.Should().BeNull();
         _photoServiceMock.Verify(p => p.DeletePhotoAsync("old.png", It.IsAny<CancellationToken>()), Times.Once);
-        _journal.Entries.Single().Action.Should().Be(AuditActions.Member.PhotoRemoved);
+        _journal.Entries.Single().Action.Should().Be(AuditActionNames.Member.PhotoRemoved);
     }
 
     [Fact]

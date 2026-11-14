@@ -73,11 +73,11 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Probe,
-                AuditActions.Probe.ProjectRemoved,
+                AuditActionNames.Probe.ProjectRemoved,
                 project.ProbeProjectKey,
                 ProgressAuditNames.Probe(_probes, probeId),
                 request.MemberKey,
-                AuditChanges.Removed(("project", project.Title))),
+                AuditChangeRules.Removed(("project", project.Title))),
             cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

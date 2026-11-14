@@ -6,8 +6,8 @@ public sealed record KraiCardFieldsDocument
 {
     /// <summary>
     /// How the card treats each of its own fields that a край may change, by name
-    /// (<see cref="KraiCardFields.Configurable"/>): one of <see cref="KraiCardFields.Required"/>,
-    /// <see cref="KraiCardFields.Optional"/> or <see cref="KraiCardFields.Hidden"/>.
+    /// (<see cref="KraiCardFieldNames.Configurable"/>): one of <see cref="KraiCardFieldNames.Required"/>,
+    /// <see cref="KraiCardFieldNames.Optional"/> or <see cref="KraiCardFieldNames.Hidden"/>.
     /// </summary>
     public IReadOnlyDictionary<string, string>? Fields { get; init; }
 

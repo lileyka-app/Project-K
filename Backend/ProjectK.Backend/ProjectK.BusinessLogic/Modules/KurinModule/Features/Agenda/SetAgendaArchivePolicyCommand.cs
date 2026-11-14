@@ -42,7 +42,7 @@ public sealed class SetAgendaArchivePolicyCommandHandler : IRequestHandler<SetAg
             return ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.NotFound, AgendaErrors.KurinNotFound, "Kurin was not found.");
         }
 
-        var changes = AuditChanges.Of(
+        var changes = AuditChangeRules.Of(
             ("autoArchiveAfterDays", kurin.TaskAutoArchiveAfterDays, request.AutoArchiveAfterDays),
             ("purgeAfterDays", kurin.TaskArchivePurgeAfterDays, request.PurgeAfterDays));
 
@@ -51,7 +51,7 @@ public sealed class SetAgendaArchivePolicyCommandHandler : IRequestHandler<SetAg
         if (changes.Count > 0)
         {
             await _audit.RecordAsync(
-                new AuditRecord(AuditArea.Settings, AuditActions.Settings.ArchivePolicyChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
+                new AuditRecord(AuditArea.Settings, AuditActionNames.Settings.ArchivePolicyChanged, kurin.KurinKey, Label, Changes: changes, KurinKey: kurin.KurinKey),
                 cancellationToken);
         }
 

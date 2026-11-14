@@ -76,7 +76,7 @@ public class AssignMentorCommandHandlerTests
         // Filed under the гурток's kurin, not the one the person joined last.
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Office);
-        entry.Action.Should().Be(AuditActions.Office.MentorAssigned);
+        entry.Action.Should().Be(AuditActionNames.Office.MentorAssigned);
         entry.KurinKey.Should().Be(kurinKey);
         entry.SubjectKey.Should().Be(result.Data);
         entry.SubjectMemberKey.Should().Be(member.MemberKey);

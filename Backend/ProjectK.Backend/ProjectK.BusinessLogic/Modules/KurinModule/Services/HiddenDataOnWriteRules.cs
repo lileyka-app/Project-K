@@ -6,7 +6,7 @@ using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>
-/// Write protection for the groups of <see cref="MemberDataFields"/> the writer may not see. Their
+/// Write protection for the groups of <see cref="MemberDataFieldRules"/> the writer may not see. Their
 /// form showed «Приховано» and sent blanks back, so whatever came for those groups counts as not
 /// sent and the stored values stay.
 /// </summary>

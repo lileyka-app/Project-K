@@ -54,13 +54,13 @@ public static class Program
                     .WriteTo.TelegramDevAlerts(
                         devAlerts,
                         context.HostingEnvironment.EnvironmentName,
-                        context.Configuration[ReleaseStamp.VersionKey] ?? ReleaseStamp.Unknown,
-                        ReleaseStamp.CodeName(context.Configuration)));
+                        context.Configuration[ReleaseStampRules.VersionKey] ?? ReleaseStampRules.Unknown,
+                        ReleaseStampRules.CodeName(context.Configuration)));
             }
         });
 
-        StartupConsole.TryClear();
-        StartupConsole.PrintTitle(builder.Configuration, builder.Environment);
+        StartupConsoleRules.TryClear();
+        StartupConsoleRules.PrintTitle(builder.Configuration, builder.Environment);
 
         // Refused before anything is wired: a template or short signing key is the one
         // misconfiguration that makes every session forgeable, and a self-host that boots
@@ -166,7 +166,7 @@ public static class Program
             options.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "ProjectK API",
-                Version = builder.Configuration[ReleaseStamp.VersionKey] ?? "v1",
+                Version = builder.Configuration[ReleaseStampRules.VersionKey] ?? "v1",
                 Description = "Management API for a Plast kurin: membership, leadership offices, "
                     + "agenda and planning, probes and badges, announcements and onboarding. "
                     + "Every failure answers with { error, message }; access is decided by the "
@@ -281,10 +281,10 @@ public static class Program
         app.MapGet("/health", (IConfiguration config, RequestTimings timings) => Results.Ok(new
         {
             status = "ready",
-            version = config[ReleaseStamp.VersionKey] ?? ReleaseStamp.Unknown,
+            version = config[ReleaseStampRules.VersionKey] ?? ReleaseStampRules.Unknown,
             // null, not "unknown", when the release carries no code name: the key stays in the
             // payload so nothing reading it has to change, and absence reads as absence.
-            codeName = ReleaseStamp.CodeName(config),
+            codeName = ReleaseStampRules.CodeName(config),
             utc = DateTimeOffset.UtcNow,
             // What the status page draws: the API's own time on real requests, not the network's.
             api = timings.Snapshot()

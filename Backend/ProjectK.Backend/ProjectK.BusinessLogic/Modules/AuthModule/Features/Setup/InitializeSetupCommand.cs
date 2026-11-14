@@ -48,7 +48,7 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
         await InitializationLock.WaitAsync(cancellationToken);
         try
         {
-            var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
+            var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
             if (adminUsers.Any())
             {
                 return ServiceResult<LoginUserDto>.Failure(
@@ -76,10 +76,10 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
                     string.Join(", ", result.Errors.Select(e => e.Description)));
             }
 
-            await _userManager.AddToRoleAsync(user, SystemRole.Admin);
+            await _userManager.AddToRoleAsync(user, SystemRoleNames.Admin);
 
             await _systemSettings.SetValueAsync(
-                SystemSettingKeys.EnforcePrivilegedMfa,
+                SystemSettingNames.EnforcePrivilegedMfa,
                 request.EnforcePrivilegedMfa ? "true" : "false",
                 cancellationToken);
 

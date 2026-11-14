@@ -62,9 +62,9 @@ public class ReviewBadgeProgressHandlerTests
     }
 
     [Theory]
-    [InlineData(BadgeProgressStatus.Submitted, true, AuditActions.Badge.Confirmed, "Confirmed")]
-    [InlineData(BadgeProgressStatus.Submitted, false, AuditActions.Badge.Rejected, "Rejected")]
-    [InlineData(BadgeProgressStatus.Confirmed, false, AuditActions.Badge.ConfirmationRemoved, "Rejected")]
+    [InlineData(BadgeProgressStatus.Submitted, true, AuditActionNames.Badge.Confirmed, "Confirmed")]
+    [InlineData(BadgeProgressStatus.Submitted, false, AuditActionNames.Badge.Rejected, "Rejected")]
+    [InlineData(BadgeProgressStatus.Confirmed, false, AuditActionNames.Badge.ConfirmationRemoved, "Rejected")]
     public async Task Handle_ShouldRecordTheDecisionInTheJournal(BadgeProgressStatus from, bool approved, string action, string to)
     {
         var memberKey = Guid.NewGuid();

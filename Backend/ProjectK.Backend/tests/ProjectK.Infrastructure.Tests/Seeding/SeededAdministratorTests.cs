@@ -92,7 +92,7 @@ public class SeededAdministratorTests
             new Mock<IUserStore<AppUser>>().Object, null, null, null, null, null, null, null, null);
 
         userManager
-            .Setup(m => m.GetUsersInRoleAsync(SystemRole.Admin))
+            .Setup(m => m.GetUsersInRoleAsync(SystemRoleNames.Admin))
             .ReturnsAsync(administrators.ToList<AppUser>());
         userManager
             .Setup(m => m.FindByEmailAsync(It.IsAny<string>()))

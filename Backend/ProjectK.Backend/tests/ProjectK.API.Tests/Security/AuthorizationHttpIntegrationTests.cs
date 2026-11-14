@@ -40,7 +40,7 @@ public class AuthorizationHttpIntegrationTests
     /// </para>
     /// </summary>
     [Theory]
-    [InlineData(SystemRole.Member, "/api/user/users")]
+    [InlineData(SystemRoleNames.Member, "/api/user/users")]
     public async Task AuthenticatedUser_WithInsufficientRole_ShouldReturn403(string roleClaim, string routeTemplate)
     {
         await using var host = await SecurityTestHost.StartAsync(roleClaim);

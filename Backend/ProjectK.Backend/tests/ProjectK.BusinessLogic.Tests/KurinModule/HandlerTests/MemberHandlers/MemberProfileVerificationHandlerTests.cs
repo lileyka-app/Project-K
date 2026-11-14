@@ -90,7 +90,7 @@ public class MemberProfileVerificationHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Member);
-        entry.Action.Should().Be(AuditActions.Member.ProfileVerified);
+        entry.Action.Should().Be(AuditActionNames.Member.ProfileVerified);
         entry.KurinKey.Should().Be(kurinKey);
         entry.SubjectMemberKey.Should().Be(member.MemberKey);
         entry.SubjectLabel.Should().Be("Ivan Petrenko");
@@ -188,7 +188,7 @@ public class MemberProfileVerificationHandlerTests
         member.ProfileVerificationNote.Should().BeNull();
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Member.VerificationReset);
+        entry.Action.Should().Be(AuditActionNames.Member.VerificationReset);
         entry.Changes.Should().Equal(new AuditChange("profileVerification", "VerifiedCurrent", "Unverified"));
 
         await handler.Handle(new ResetMemberProfileVerificationCommand(member.MemberKey), CancellationToken.None);
