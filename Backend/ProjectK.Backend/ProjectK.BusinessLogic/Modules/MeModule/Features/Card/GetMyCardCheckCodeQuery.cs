@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
@@ -12,13 +13,13 @@ public sealed record GetMyCardCheckCodeQuery : IRequest<ServiceResult<CardCodeDt
 
 public sealed class GetMyCardCheckCodeQueryHandler : IRequestHandler<GetMyCardCheckCodeQuery, ServiceResult<CardCodeDto>>
 {
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly MemberCards _cards;
     private readonly ICardTokenSigner _signer;
     private readonly IQrCodeService _qrCodes;
     private readonly TimeProvider _time;
 
-    public GetMyCardCheckCodeQueryHandler(MePerson me, MemberCards cards, ICardTokenSigner signer, IQrCodeService qrCodes, TimeProvider time)
+    public GetMyCardCheckCodeQueryHandler(ICurrentMember me, MemberCards cards, ICardTokenSigner signer, IQrCodeService qrCodes, TimeProvider time)
     {
         _me = me;
         _cards = cards;
@@ -29,7 +30,7 @@ public sealed class GetMyCardCheckCodeQueryHandler : IRequestHandler<GetMyCardCh
 
     public async Task<ServiceResult<CardCodeDto>> Handle(GetMyCardCheckCodeQuery request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<CardCodeDto>();

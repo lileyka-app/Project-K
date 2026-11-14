@@ -157,7 +157,8 @@ Modules/<Module>/Features/<Area>/
   `AccessContextResolver`, `AccessSnapshotFactory`, `CurrentPermissions`) — не права модуля, а сам
   механізм, і живе під своїми іменами.
 - **Журнал змін сутності — `…Trail`**, не `…AuditFields`.
-- **«Поточна людина» — один клас** на весь бекенд; нових «хто я» поруч не заводимо.
+- **«Поточна людина» — один клас** на весь бекенд, `ICurrentMember`: людину читає раз на запит; нових «хто я»
+  поруч не заводимо. Чужого за ключем акаунта питають `IMemberDirectory.FindByAccountAsync`.
 - **Доменні іменники** (`DuesLedger`, `ScoreBook`, `AgendaRecurrence`) лишаються, якщо клас моделює
   саме це поняття. Це не суфікс ролі.
 - **Static-клас** — або `…Rules` (рішення без стану), або `…Names` (підписи для людей).

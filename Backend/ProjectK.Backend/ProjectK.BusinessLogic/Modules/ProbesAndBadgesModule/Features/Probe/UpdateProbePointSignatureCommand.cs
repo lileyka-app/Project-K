@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
@@ -37,7 +36,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalReader _journal;
     private readonly IProbesCatalogReader _probes;
@@ -46,7 +45,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
     public UpdateProbePointSignatureCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
         IKurinJournalReader journal,
         IProbesCatalogReader probes,
@@ -92,7 +91,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
             return refusal;
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         var actorName = actor.Name;
         var now = DateTime.UtcNow;
         var pointUpdateContext = new PointSignatureUpdateContext(

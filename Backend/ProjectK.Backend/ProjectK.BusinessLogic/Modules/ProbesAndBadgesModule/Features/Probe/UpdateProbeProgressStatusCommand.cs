@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -37,7 +36,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalReader _journal;
     private readonly IProbesCatalogReader _probesCatalogReader;
@@ -47,7 +46,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
     public UpdateProbeProgressStatusCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
         IKurinJournalReader journal,
         IProbesCatalogReader probesCatalogReader,
@@ -129,7 +128,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         }
 
         var now = DateTime.UtcNow;
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
 
         progress.Status = request.Status;
 

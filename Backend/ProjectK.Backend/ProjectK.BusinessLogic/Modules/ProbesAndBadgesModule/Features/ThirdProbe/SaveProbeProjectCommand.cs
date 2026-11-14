@@ -1,9 +1,9 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -51,7 +51,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProbesAndBadgesAccess _access;
     private readonly IPhotoService _photos;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
@@ -60,7 +60,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         IUnitOfWork unitOfWork,
         IProbesAndBadgesAccess access,
         IPhotoService photos,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
         IProbesCatalogReader probes,
         IThirdProbeReader reader)
@@ -153,7 +153,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
                 ProbesAndBadgesErrors.TooManyShared, $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         Apply(project, input);
         project.UpdatedDate = DateTime.UtcNow;
         project.UpdatedByUserKey = actor.UserKey;

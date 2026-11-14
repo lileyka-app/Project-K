@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
@@ -70,7 +71,7 @@ public class AgendaAccessAuthorizeTargetTests
 
         var permissions = new CurrentPermissions(user.Object, _policies);
         var resourceAccess = new ResourceAccessService(_scopes.Object, user.Object, new PassThroughBackendCache(), permissions);
-        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), Mock.Of<IMemberDirectory>(), _scopes.Object, resourceAccess, permissions, _tagVisibility.Object);
+        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), new CurrentMember(user.Object, Mock.Of<IMemberDirectory>(), Mock.Of<IMembershipDirectory>()), _scopes.Object, resourceAccess, permissions, _tagVisibility.Object);
     }
 
     private static AgendaTargetInput Target(AgendaTargetType type, Guid key) => new() { TargetType = type, TargetKey = key };

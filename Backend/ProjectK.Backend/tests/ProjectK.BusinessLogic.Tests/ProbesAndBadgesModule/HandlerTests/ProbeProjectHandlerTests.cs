@@ -1,10 +1,11 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
@@ -52,7 +53,7 @@ public class ProbeProjectHandlerTests
         _links.Setup(l => l.For(It.IsAny<string?>())).Returns<string?>(name => $"https://blob/{name}?sig");
         _user.SetupGet(u => u.UserId).Returns(Guid.NewGuid());
         _user.SetupGet(u => u.KurinKey).Returns(Guid.NewGuid());
-        _journal = new JournalRecorder(_user.Object, new AuditActorResolver(_user.Object, new Mock<IMemberDirectory>().Object));
+        _journal = new JournalRecorder(_user.Object, new CurrentMember(_user.Object, new Mock<IMemberDirectory>().Object, Mock.Of<IMembershipDirectory>()));
         _reader.Setup(r => r.ReadAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ThirdProbeDto(true, true, true, true, null, [], [], null!));
         _projects.Setup(r => r.GetForMemberProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());

@@ -1,4 +1,3 @@
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -12,7 +11,7 @@ namespace ProjectK.BusinessLogic.Modules.AuditModule.Services;
 /// Stamps a journal entry — the kurin the request acts in, actor, time, the subject's name and
 /// гурток as they are now — and puts it on the request's pending changes. An unscoped admin's
 /// action is filed under the kurin of the person it is about. The actor comes from the request's
-/// <see cref="AuditActorResolver"/>, so it is the same one the handler signed with.
+/// <see cref="ICurrentMember"/>, so it is the same one the handler signed with.
 /// <para>
 /// Private data is stripped here as well as in <c>AuditChanges</c>: a change built by hand still
 /// cannot carry a phone number into the journal.
@@ -20,14 +19,14 @@ namespace ProjectK.BusinessLogic.Modules.AuditModule.Services;
 /// </summary>
 public sealed class KurinAudit : IKurinAudit
 {
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly ICurrentUserContext _currentUser;
     private readonly IMemberDirectory _members;
     private readonly IKurinAuditWriter _writer;
     private readonly Dictionary<(Guid? KurinKey, Guid MemberKey), Subject> _subjects = new();
 
     public KurinAudit(
-        AuditActorResolver actors,
+        ICurrentMember actors,
         ICurrentUserContext currentUser,
         IMemberDirectory members,
         IKurinAuditWriter writer)
@@ -55,7 +54,7 @@ public sealed class KurinAudit : IKurinAudit
             return;
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
 
         _writer.Add(new KurinAuditEvent
         {

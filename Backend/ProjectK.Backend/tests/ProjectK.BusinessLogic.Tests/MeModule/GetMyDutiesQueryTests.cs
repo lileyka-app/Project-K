@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
@@ -95,7 +96,7 @@ public class GetMyDutiesQueryTests
         var offices = new Mock<IOfficeDirectory>();
         offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
-        var scopes = new MeAgendaScopes(_user.Object, memberships.Object, members.Object, offices.Object, Mock.Of<IResourceScopeReader>(), _unitOfWork.Object);
+        var scopes = new MeAgendaScopes(new CurrentMember(_user.Object, members.Object, memberships.Object), memberships.Object, members.Object, offices.Object, Mock.Of<IResourceScopeReader>(), _unitOfWork.Object);
 
         var permissions = new Mock<IPermissionResolver>();
         permissions.Setup(p => p.ResolveAsync(It.IsAny<IEnumerable<string>>(), Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _permissions);

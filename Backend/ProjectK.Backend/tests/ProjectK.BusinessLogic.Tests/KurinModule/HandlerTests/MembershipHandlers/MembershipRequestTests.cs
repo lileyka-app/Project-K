@@ -536,7 +536,7 @@ public class MembershipRequestTests
     }
 
     private AnswerMyInvitationCommandHandler Answer() =>
-        new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
+        new(_unitOfWork.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
 
     [Fact]
     public async Task AcceptingAnInvitation_AddsAMembership_AndClosesNothing()

@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Enums.Shared;
@@ -20,7 +21,7 @@ public sealed record GetMyGroupsQuery : IRequest<ServiceResult<IReadOnlyList<MyG
 
 public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, ServiceResult<IReadOnlyList<MyGroupDto>>>
 {
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;
@@ -28,7 +29,7 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
     private readonly IOfficeDirectory _offices;
 
     public GetMyGroupsQueryHandler(
-        MePerson me,
+        ICurrentMember me,
         IOfficeDirectory offices,
         IResourceScopeReader scopeReader,
         IUnitOfWork unitOfWork,
@@ -45,7 +46,7 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
 
     public async Task<ServiceResult<IReadOnlyList<MyGroupDto>>> Handle(GetMyGroupsQuery request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<IReadOnlyList<MyGroupDto>>();

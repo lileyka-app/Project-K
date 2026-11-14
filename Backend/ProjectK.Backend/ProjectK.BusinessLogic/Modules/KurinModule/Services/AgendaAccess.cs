@@ -133,7 +133,7 @@ public sealed class AgendaAccess : IAgendaAccess
 
     private readonly ICurrentUserContext _currentUser;
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly ICurrentMember _currentMember;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentPermissions _permissions;
@@ -142,7 +142,7 @@ public sealed class AgendaAccess : IAgendaAccess
     public AgendaAccess(
         ICurrentUserContext currentUser,
         IUnitOfWork uow,
-        IMemberDirectory members,
+        ICurrentMember currentMember,
         IResourceScopeReader scopeReader,
         IResourceAccessService resourceAccess,
         ICurrentPermissions permissions,
@@ -151,7 +151,7 @@ public sealed class AgendaAccess : IAgendaAccess
         _tags = tags;
         _currentUser = currentUser;
         _uow = uow;
-        _members = members;
+        _currentMember = currentMember;
         _scopeReader = scopeReader;
         _resourceAccess = resourceAccess;
         _permissions = permissions;
@@ -170,7 +170,7 @@ public sealed class AgendaAccess : IAgendaAccess
         Guid? ownGroupKey = null;
         if (userKey.HasValue)
         {
-            var member = await _members.FindByAccountAsync(userKey.Value, cancellationToken);
+            var member = await _currentMember.FindAsync(cancellationToken);
             if (member is not null && member.KurinKey == kurinKey)
             {
                 memberKey = member.MemberKey;

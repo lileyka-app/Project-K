@@ -37,20 +37,20 @@ public sealed class PinMyAwardCommandValidator : AbstractValidator<PinMyAwardCom
 public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand, ServiceResult<bool>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly ICurrentMember _currentMember;
     private readonly ICurrentUserContext _currentUser;
 
-    public PinMyAwardCommandHandler(IMemberUnitOfWork unitOfWork, IMemberDirectory members, ICurrentUserContext currentUser)
+    public PinMyAwardCommandHandler(IMemberUnitOfWork unitOfWork, ICurrentMember currentMember, ICurrentUserContext currentUser)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
+        _currentMember = currentMember;
         _currentUser = currentUser;
     }
 
     public async Task<ServiceResult<bool>> Handle(PinMyAwardCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserId is not { } userKey
-            || await _members.FindByAccountAsync(userKey, cancellationToken) is not { } me)
+            || await _currentMember.FindAsync(cancellationToken) is not { } me)
         {
             return ServiceResult<bool>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
         }

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -50,7 +51,7 @@ public class MeAgendaScopesTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
         unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
-        return new MeAgendaScopes(user.Object, memberships.Object, members.Object, _offices.Object, _scopeReader.Object, unitOfWork.Object);
+        return new MeAgendaScopes(new CurrentMember(user.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, _scopeReader.Object, unitOfWork.Object);
     }
 
     private void StandIn(Guid kurin, int number, Guid? group, MembershipKind kind = MembershipKind.Youth) =>

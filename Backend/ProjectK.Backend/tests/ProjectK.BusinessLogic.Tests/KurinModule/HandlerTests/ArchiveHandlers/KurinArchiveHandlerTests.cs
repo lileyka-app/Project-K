@@ -89,7 +89,7 @@ public class KurinArchiveHandlerTests
         }
     }
 
-    private ArchiveReach Reach() => new(_user.Object, _permissions.Object, _scopes.Object, _members.Object);
+    private ArchiveReach Reach() => new(_user.Object, _permissions.Object, _scopes.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()));
     private ArchiveDangerZoneService Zone() => new(_zones, _jwt.Object, _reauth.Object, _user.Object, _time);
     private ArchiveDeletionService Gate() => new(Reach(), Zone(), _user.Object, _audit.Object);
 
@@ -206,7 +206,7 @@ public class KurinArchiveHandlerTests
         _reauth.Setup(r => r.VerifyAsync(_userKey, "nope", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ReauthenticationResult(ReauthenticationOutcome.Wrong, ReauthenticationMethod.Password));
         var events = new Mock<IDomainEventPublisher>();
-        var handler = new EnterArchiveDangerZoneCommandHandler(_unitOfWork.Object, Reach(), Zone(), _reauth.Object, _user.Object, _members.Object, _audit.Object, events.Object);
+        var handler = new EnterArchiveDangerZoneCommandHandler(_unitOfWork.Object, Reach(), Zone(), _reauth.Object, _user.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), _audit.Object, events.Object);
 
         var result = await handler.Handle(new EnterArchiveDangerZoneCommand(_kurinKey, "nope", null), default);
 
@@ -223,7 +223,7 @@ public class KurinArchiveHandlerTests
         _reauth.Setup(r => r.VerifyAsync(_userKey, "right", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ReauthenticationResult(ReauthenticationOutcome.Verified, ReauthenticationMethod.Password, Stamp));
         var events = new Mock<IDomainEventPublisher>();
-        var handler = new EnterArchiveDangerZoneCommandHandler(_unitOfWork.Object, Reach(), Zone(), _reauth.Object, _user.Object, _members.Object, _audit.Object, events.Object);
+        var handler = new EnterArchiveDangerZoneCommandHandler(_unitOfWork.Object, Reach(), Zone(), _reauth.Object, _user.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), _audit.Object, events.Object);
 
         var result = await handler.Handle(new EnterArchiveDangerZoneCommand(_kurinKey, "right", null), default);
 
@@ -241,7 +241,7 @@ public class KurinArchiveHandlerTests
         _reauth.Setup(r => r.VerifyAsync(_userKey, "right", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ReauthenticationResult(ReauthenticationOutcome.Verified, ReauthenticationMethod.Password, Stamp, "Олена Адмін"));
         var events = new Mock<IDomainEventPublisher>();
-        var handler = new EnterArchiveDangerZoneCommandHandler(_unitOfWork.Object, Reach(), Zone(), _reauth.Object, _user.Object, _members.Object, _audit.Object, events.Object);
+        var handler = new EnterArchiveDangerZoneCommandHandler(_unitOfWork.Object, Reach(), Zone(), _reauth.Object, _user.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), _audit.Object, events.Object);
 
         await handler.Handle(new EnterArchiveDangerZoneCommand(_kurinKey, "right", null), default);
 

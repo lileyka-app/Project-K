@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
@@ -18,14 +19,14 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
     private const int NextPointsShown = 3;
     private const int ConfirmedShown = 6;
 
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly IMemberProgressDirectory _progress;
     private readonly IProbesCatalogReader _probes;
     private readonly IBadgesCatalogReader _badges;
     private readonly IMemberProbeLine _line;
 
     public GetMyGrowthQueryHandler(
-        MePerson me,
+        ICurrentMember me,
         IMemberProgressDirectory progress,
         IProbesCatalogReader probes,
         IBadgesCatalogReader badges,
@@ -40,7 +41,7 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
 
     public async Task<ServiceResult<MyGrowthDto>> Handle(GetMyGrowthQuery request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<MyGrowthDto>();

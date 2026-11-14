@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -101,7 +102,7 @@ public class CalendarFeedTests
         unitOfWork.SetupGet(u => u.Groups).Returns(groups.Object);
         unitOfWork.SetupGet(u => u.AgendaResponses).Returns(responses.Object);
 
-        var scopes = new MeAgendaScopes(currentUser.Object, memberships.Object, members.Object, _offices.Object, scopeReader.Object, unitOfWork.Object);
+        var scopes = new MeAgendaScopes(new CurrentMember(currentUser.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, scopeReader.Object, unitOfWork.Object);
 
         var userManager = new Mock<UserManager<AppUser>>(new Mock<IUserStore<AppUser>>().Object, null!, null!, null!, null!, null!, null!, null!, null!);
         userManager.Setup(m => m.FindByIdAsync(User.ToString())).ReturnsAsync(() => new AppUser { Id = User, OnboardingStatus = _status });

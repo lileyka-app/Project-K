@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -13,11 +14,11 @@ public sealed record SetMyCardFieldsCommand(CardField Fields) : IRequest<Service
 
 public sealed class SetMyCardFieldsCommandHandler : IRequestHandler<SetMyCardFieldsCommand, ServiceResult<MyCardDto>>
 {
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly MemberCards _cards;
     private readonly IUnitOfWork _unitOfWork;
 
-    public SetMyCardFieldsCommandHandler(MePerson me, MemberCards cards, IUnitOfWork unitOfWork)
+    public SetMyCardFieldsCommandHandler(ICurrentMember me, MemberCards cards, IUnitOfWork unitOfWork)
     {
         _me = me;
         _cards = cards;
@@ -26,7 +27,7 @@ public sealed class SetMyCardFieldsCommandHandler : IRequestHandler<SetMyCardFie
 
     public async Task<ServiceResult<MyCardDto>> Handle(SetMyCardFieldsCommand request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<MyCardDto>();

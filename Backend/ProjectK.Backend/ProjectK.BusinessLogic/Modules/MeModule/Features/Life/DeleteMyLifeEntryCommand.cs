@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -10,10 +11,10 @@ public sealed record DeleteMyLifeEntryCommand(Guid Key) : IRequest<ServiceResult
 
 public sealed class DeleteMyLifeEntryCommandHandler : IRequestHandler<DeleteMyLifeEntryCommand, ServiceResult<Unit>>
 {
-    private readonly LifeStoryOwner _owner;
+    private readonly ICurrentMember _owner;
     private readonly IMemberUnitOfWork _unitOfWork;
 
-    public DeleteMyLifeEntryCommandHandler(LifeStoryOwner owner, IMemberUnitOfWork unitOfWork)
+    public DeleteMyLifeEntryCommandHandler(ICurrentMember owner, IMemberUnitOfWork unitOfWork)
     {
         _owner = owner;
         _unitOfWork = unitOfWork;

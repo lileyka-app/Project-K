@@ -21,7 +21,7 @@ public sealed record AnswerMyInvitationCommand(Guid MembershipRequestKey, bool A
 public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyInvitationCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly ICurrentMember _currentMember;
     private readonly MembershipMoves _moves;
     private readonly IDomainEventPublisher _events;
     private readonly ICurrentUserContext _currentUser;
@@ -30,7 +30,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
 
     public AnswerMyInvitationCommandHandler(
         IUnitOfWork unitOfWork,
-        IMemberDirectory members,
+        ICurrentMember currentMember,
         MembershipMoves moves,
         IDomainEventPublisher events,
         ICurrentUserContext currentUser,
@@ -38,7 +38,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         TimeProvider time)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
+        _currentMember = currentMember;
         _moves = moves;
         _events = events;
         _currentUser = currentUser;
@@ -48,7 +48,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
 
     public async Task<ServiceResult<Unit>> Handle(AnswerMyInvitationCommand request, CancellationToken cancellationToken)
     {
-        var me = _currentUser.UserId is { } userKey ? await _members.FindByAccountAsync(userKey, cancellationToken) : null;
+        var me = await _currentMember.FindAsync(cancellationToken);
         var asked = await _unitOfWork.MembershipRequests.GetAsync(request.MembershipRequestKey, cancellationToken);
         if (me is null || asked is null || asked.FromKurinKey is not null || asked.MemberKey != me.MemberKey)
         {

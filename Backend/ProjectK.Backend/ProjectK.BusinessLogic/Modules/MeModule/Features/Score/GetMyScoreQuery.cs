@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
@@ -20,12 +21,12 @@ public sealed record GetMyScoreQuery : IRequest<ServiceResult<IReadOnlyList<MySc
 
 public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, ServiceResult<IReadOnlyList<MyScoreDto>>>
 {
-    private readonly MePerson _me;
+    private readonly ICurrentMember _me;
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
     private readonly IUnitOfWork _unitOfWork;
 
-    public GetMyScoreQueryHandler(MePerson me, ScoreBookReader books, ICurrentUserContext currentUser, IUnitOfWork unitOfWork)
+    public GetMyScoreQueryHandler(ICurrentMember me, ScoreBookReader books, ICurrentUserContext currentUser, IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
         _me = me;
@@ -35,7 +36,7 @@ public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, Se
 
     public async Task<ServiceResult<IReadOnlyList<MyScoreDto>>> Handle(GetMyScoreQuery request, CancellationToken cancellationToken)
     {
-        var me = await _me.ReadAsync(cancellationToken);
+        var me = await _me.ReadPersonAsync(cancellationToken);
         if (me is null)
         {
             return MeErrors.NoMember<IReadOnlyList<MyScoreDto>>();

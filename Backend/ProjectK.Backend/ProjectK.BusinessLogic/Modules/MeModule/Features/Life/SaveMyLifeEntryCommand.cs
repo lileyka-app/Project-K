@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
@@ -35,10 +36,10 @@ public sealed class SaveMyLifeEntryCommandValidator : AbstractValidator<SaveMyLi
 
 public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEntryCommand, ServiceResult<MemberLifeEntryDto>>
 {
-    private readonly LifeStoryOwner _owner;
+    private readonly ICurrentMember _owner;
     private readonly IMemberUnitOfWork _unitOfWork;
 
-    public SaveMyLifeEntryCommandHandler(LifeStoryOwner owner, IMemberUnitOfWork unitOfWork)
+    public SaveMyLifeEntryCommandHandler(ICurrentMember owner, IMemberUnitOfWork unitOfWork)
     {
         _owner = owner;
         _unitOfWork = unitOfWork;

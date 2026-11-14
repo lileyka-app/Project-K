@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -34,7 +34,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProbesAndBadgesAccess _access;
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
@@ -42,7 +42,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
     public SetThirdProbeStagesCommandHandler(
         IUnitOfWork unitOfWork,
         IProbesAndBadgesAccess access,
-        AuditActorResolver actors,
+        ICurrentMember actors,
         IKurinAudit audit,
         IProbesCatalogReader probes,
         IThirdProbeReader reader)
@@ -74,7 +74,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
 
         var file = await ThirdProbeFiles.GetOrAddAsync(_unitOfWork, memberKey, probeId, cancellationToken);
         var before = ThirdProbeReader.Stages(file);
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
         file.MotivationLetterOn = stages.MotivationLetterOn;
         file.SelfReflectionOn = stages.SelfReflectionOn;
         file.ApplicationSubmittedOn = stages.ApplicationSubmittedOn;

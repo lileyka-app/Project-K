@@ -30,7 +30,7 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
     private readonly ArchiveDangerZoneService _zone;
     private readonly IReauthentication _reauthentication;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IMemberDirectory _members;
+    private readonly ICurrentMember _currentMember;
     private readonly IKurinAudit _audit;
     private readonly IDomainEventPublisher _events;
 
@@ -40,7 +40,7 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
         ArchiveDangerZoneService zone,
         IReauthentication reauthentication,
         ICurrentUserContext currentUser,
-        IMemberDirectory members,
+        ICurrentMember currentMember,
         IKurinAudit audit,
         IDomainEventPublisher events)
     {
@@ -49,7 +49,7 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
         _zone = zone;
         _reauthentication = reauthentication;
         _currentUser = currentUser;
-        _members = members;
+        _currentMember = currentMember;
         _audit = audit;
         _events = events;
     }
@@ -80,7 +80,7 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
         var (ticket, entry) = _zone.Open(userKey, request.KurinKey, proof.SecurityStamp!);
         await RecordAsync(AuditActions.Archive.DangerZoneEntered, userKey, request.KurinKey, method, cancellationToken);
         // An administrator acting in the kurin has no member card; the leadership is told the account's name.
-        var actor = (await _members.FindByAccountAsync(userKey, cancellationToken))?.FullName ?? proof.AccountName ?? string.Empty;
+        var actor = (await _currentMember.FindAsync(cancellationToken))?.FullName ?? proof.AccountName ?? string.Empty;
         await _events.PublishAsync(new ArchiveDangerZoneEntered(request.KurinKey, actor, userKey), cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

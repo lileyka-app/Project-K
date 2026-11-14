@@ -14,7 +14,6 @@ using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.AuditModule;
@@ -89,7 +88,6 @@ public static class DependencyInjection
         // Domain events. The in-process delivery is the only thing a broker would replace.
         services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
 
-        services.AddScoped<AuditActorResolver>();
         services.AddScoped<IKurinAudit, KurinAudit>();
 
         services.AddMemberModule();
@@ -97,8 +95,6 @@ public static class DependencyInjection
         services.AddScoreModule();
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
-        services.AddScoped<MePerson>();
-        services.AddScoped<ProjectK.BusinessLogic.Modules.MeModule.Features.Life.LifeStoryOwner>();
         services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
@@ -154,6 +150,7 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<MembershipMoves>();
         services.AddScoped<MembershipAskRouting>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();

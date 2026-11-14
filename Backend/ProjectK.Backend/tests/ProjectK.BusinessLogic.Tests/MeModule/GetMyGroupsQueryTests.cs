@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Groups;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
@@ -60,7 +61,7 @@ public class GetMyGroupsQueryTests
             .ReturnsAsync(holdsOffice ? [new MemberOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy)] : []);
 
         return new GetMyGroupsQueryHandler(
-            new MePerson(user.Object, memberships.Object, members.Object), offices.Object, scopes.Object, unitOfWork.Object, links.Object, user.Object);
+            new CurrentMember(user.Object, members.Object, memberships.Object), offices.Object, scopes.Object, unitOfWork.Object, links.Object, user.Object);
     }
 
     [Fact]

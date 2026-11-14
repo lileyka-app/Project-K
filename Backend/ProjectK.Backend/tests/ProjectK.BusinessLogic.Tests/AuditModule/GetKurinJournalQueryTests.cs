@@ -1,10 +1,12 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
@@ -54,7 +56,7 @@ public class GetKurinJournalQueryTests
         scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _access.LedGroups.ToArray());
 
-        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), scopes.Object, _members.Object, _reader.Object, _probes.Object, _badges.Object);
+        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), scopes.Object, new CurrentMember(user, _members.Object, Mock.Of<IMembershipDirectory>()), _reader.Object, _probes.Object, _badges.Object);
         return handler.Handle(query ?? Query(), CancellationToken.None);
     }
 

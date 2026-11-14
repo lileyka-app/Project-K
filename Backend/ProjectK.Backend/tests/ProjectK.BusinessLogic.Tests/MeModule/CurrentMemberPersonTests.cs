@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -12,12 +13,12 @@ using ProjectK.Common.Records.KurinModule;
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 
 /// <summary>Whose dashboard gets проба, вмілості and точкування: a youth's, never a впорядник's.</summary>
-public class MePersonTests
+public class CurrentMemberPersonTests
 {
     private static readonly Guid User = Guid.NewGuid();
     private static readonly Guid Person = Guid.NewGuid();
 
-    private static MePerson Reader(IReadOnlyList<PlastLevel> levels, params MembershipRecord[] memberships)
+    private static CurrentMember Reader(IReadOnlyList<PlastLevel> levels, params MembershipRecord[] memberships)
     {
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(u => u.UserId).Returns(User);
@@ -27,7 +28,7 @@ public class MePersonTests
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(Person, User, Guid.NewGuid(), null, "Оксана", "Паливода", "o@x", null));
         members.Setup(m => m.GetLevelsAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync(levels);
-        return new MePerson(user.Object, directory.Object, members.Object);
+        return new CurrentMember(user.Object, members.Object, directory.Object);
     }
 
     private static MembershipRecord In(KurinBranch branch, MembershipKind kind = MembershipKind.Youth) =>
@@ -36,7 +37,7 @@ public class MePersonTests
     [Fact]
     public async Task AYouthInAYouthKurin_HasTheProgramme()
     {
-        var me = await Reader([PlastLevel.Uchasnyk], In(KurinBranch.UPYu)).ReadAsync(CancellationToken.None);
+        var me = await Reader([PlastLevel.Uchasnyk], In(KurinBranch.UPYu)).ReadPersonAsync(CancellationToken.None);
 
         me!.HasYouthProgram.Should().BeTrue();
     }
@@ -44,7 +45,7 @@ public class MePersonTests
     [Fact]
     public async Task AVporiadnykWithASeniorStupin_DoesNot_EvenAsAYouthKurinsMember()
     {
-        var me = await Reader([PlastLevel.Senior], In(KurinBranch.UPYu)).ReadAsync(CancellationToken.None);
+        var me = await Reader([PlastLevel.Senior], In(KurinBranch.UPYu)).ReadPersonAsync(CancellationToken.None);
 
         me!.HasYouthProgram.Should().BeFalse();
     }
@@ -52,7 +53,7 @@ public class MePersonTests
     [Fact]
     public async Task OneYouthKurinAmongSeniorOnes_IsEnough()
     {
-        var me = await Reader([], In(KurinBranch.USP), In(KurinBranch.UPYu)).ReadAsync(CancellationToken.None);
+        var me = await Reader([], In(KurinBranch.USP), In(KurinBranch.UPYu)).ReadPersonAsync(CancellationToken.None);
 
         me!.HasYouthProgram.Should().BeTrue();
         me.HasYouthProgramIn(me.Memberships[0]).Should().BeFalse();
@@ -66,6 +67,6 @@ public class MePersonTests
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(u => u.UserId).Returns(User);
 
-        (await new MePerson(user.Object, Mock.Of<IMembershipDirectory>(), members.Object).ReadAsync(CancellationToken.None)).Should().BeNull();
+        (await new CurrentMember(user.Object, members.Object, Mock.Of<IMembershipDirectory>()).ReadPersonAsync(CancellationToken.None)).Should().BeNull();
     }
 }

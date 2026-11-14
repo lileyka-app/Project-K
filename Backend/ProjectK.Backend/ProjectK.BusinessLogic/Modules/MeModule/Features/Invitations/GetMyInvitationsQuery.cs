@@ -20,21 +20,21 @@ public sealed class GetMyInvitationsQueryHandler
     : IRequestHandler<GetMyInvitationsQuery, ServiceResult<IReadOnlyList<MembershipInvitationDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly ICurrentMember _currentMember;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public GetMyInvitationsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ICurrentUserContext currentUser, TimeProvider time)
+    public GetMyInvitationsQueryHandler(IUnitOfWork unitOfWork, ICurrentMember currentMember, ICurrentUserContext currentUser, TimeProvider time)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
+        _currentMember = currentMember;
         _currentUser = currentUser;
         _time = time;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MembershipInvitationDto>>> Handle(GetMyInvitationsQuery request, CancellationToken cancellationToken)
     {
-        var me = _currentUser.UserId is { } userKey ? await _members.FindByAccountAsync(userKey, cancellationToken) : null;
+        var me = await _currentMember.FindAsync(cancellationToken);
         if (me is null)
         {
             return new ServiceResult<IReadOnlyList<MembershipInvitationDto>>(ResultType.Success, []);

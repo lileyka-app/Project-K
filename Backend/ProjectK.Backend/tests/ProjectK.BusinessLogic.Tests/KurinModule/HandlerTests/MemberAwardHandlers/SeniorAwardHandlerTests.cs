@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -288,7 +289,7 @@ public class SeniorAwardHandlerTests
         _directory.Setup(m => m.FindByAccountAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, _kurinKey, null, "Ірина", "Федорів", "i@example.com", null));
         _awards.Setup(a => a.GetByMemberKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
-        var pin = new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommandHandler(_unitOfWork.Object, _directory.Object, _currentUser.Object);
+        var pin = new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommandHandler(_unitOfWork.Object, new CurrentMember(_currentUser.Object, _directory.Object, Mock.Of<IMembershipDirectory>()), _currentUser.Object);
 
         var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
 

@@ -37,7 +37,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
     private readonly IResourceScopeReader _scopeReader;
-    private readonly IMemberDirectory _members;
+    private readonly ICurrentMember _currentMember;
     private readonly IKurinJournalReader _journal;
     private readonly IProbesCatalogReader _probes;
     private readonly IBadgesCatalogReader _badges;
@@ -46,7 +46,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
         IResourceScopeReader scopeReader,
-        IMemberDirectory members,
+        ICurrentMember currentMember,
         IKurinJournalReader journal,
         IProbesCatalogReader probes,
         IBadgesCatalogReader badges)
@@ -54,7 +54,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
         _currentUser = currentUser;
         _permissions = permissions;
         _scopeReader = scopeReader;
-        _members = members;
+        _currentMember = currentMember;
         _journal = journal;
         _probes = probes;
         _badges = badges;
@@ -89,7 +89,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
             }
 
             var ledGroups = await _scopeReader.GetLedGroupKeysAsync(userKey, request.KurinKey, cancellationToken);
-            var self = await _members.FindByAccountAsync(userKey, cancellationToken);
+            var self = await _currentMember.FindAsync(cancellationToken);
             visibility = new JournalVisibility(ledGroups, self?.MemberKey);
         }
 

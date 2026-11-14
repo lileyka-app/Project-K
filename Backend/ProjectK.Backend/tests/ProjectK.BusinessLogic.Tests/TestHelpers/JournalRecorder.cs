@@ -1,8 +1,9 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Records.AuditModule;
@@ -18,7 +19,7 @@ internal sealed class JournalRecorder : IKurinAuditWriter
 {
     private readonly List<MemberSummary> _people = [];
 
-    public JournalRecorder(ICurrentUserContext user, AuditActorResolver? actors = null)
+    public JournalRecorder(ICurrentUserContext user, CurrentMember? actors = null)
     {
         People.Setup(x => x.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid kurinKey, MemberSelection selection, CancellationToken _) =>
@@ -28,7 +29,7 @@ internal sealed class JournalRecorder : IKurinAuditWriter
         People.Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid userKey, CancellationToken _) => _people.FirstOrDefault(p => p.UserKey == userKey));
 
-        Actors = actors ?? new AuditActorResolver(user, People.Object);
+        Actors = actors ?? new CurrentMember(user, People.Object, Mock.Of<IMembershipDirectory>());
         Audit = new KurinAudit(Actors, user, People.Object, this);
     }
 
@@ -38,7 +39,7 @@ internal sealed class JournalRecorder : IKurinAuditWriter
     /// <summary>The directory the journal names people from.</summary>
     public Mock<IMemberDirectory> People { get; } = new();
 
-    public AuditActorResolver Actors { get; }
+    public CurrentMember Actors { get; }
 
     public IKurinAudit Audit { get; }
 

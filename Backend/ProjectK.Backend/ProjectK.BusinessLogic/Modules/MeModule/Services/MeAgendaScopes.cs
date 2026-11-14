@@ -4,6 +4,7 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
@@ -25,7 +26,7 @@ public sealed record MeKurinContext(
 /// </summary>
 public sealed class MeAgendaScopes
 {
-    private readonly ICurrentUserContext _currentUser;
+    private readonly ICurrentMember _currentMember;
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
@@ -33,14 +34,14 @@ public sealed class MeAgendaScopes
     private readonly IUnitOfWork _unitOfWork;
 
     public MeAgendaScopes(
-        ICurrentUserContext currentUser,
+        ICurrentMember currentMember,
         IMembershipDirectory memberships,
         IMemberDirectory members,
         IOfficeDirectory offices,
         IResourceScopeReader scopeReader,
         IUnitOfWork unitOfWork)
     {
-        _currentUser = currentUser;
+        _currentMember = currentMember;
         _memberships = memberships;
         _members = members;
         _offices = offices;
@@ -49,18 +50,20 @@ public sealed class MeAgendaScopes
     }
 
     /// <summary>Empty when nobody is signed in or no person stands behind the account.</summary>
-    public Task<IReadOnlyList<MeKurinContext>> BuildAsync(CancellationToken cancellationToken) =>
-        _currentUser.UserId is { } userKey
-            ? BuildForAsync(userKey, cancellationToken)
-            : Task.FromResult<IReadOnlyList<MeKurinContext>>([]);
+    public async Task<IReadOnlyList<MeKurinContext>> BuildAsync(CancellationToken cancellationToken) =>
+        _currentMember.UserKey is { } userKey
+            ? await BuildAsync(userKey, await _currentMember.FindAsync(cancellationToken), cancellationToken)
+            : [];
 
     /// <summary>
     /// The same for an account named by key rather than by the request's token — the calendar link,
     /// fetched by a calendar app that signs nobody in. Empty when no person stands behind it.
     /// </summary>
     public async Task<IReadOnlyList<MeKurinContext>> BuildForAsync(Guid userKey, CancellationToken cancellationToken)
+        => await BuildAsync(userKey, await _members.FindByAccountAsync(userKey, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyList<MeKurinContext>> BuildAsync(Guid userKey, MemberSummary? person, CancellationToken cancellationToken)
     {
-        var person = await _members.FindByAccountAsync(userKey, cancellationToken);
         if (person is null)
         {
             return [];
