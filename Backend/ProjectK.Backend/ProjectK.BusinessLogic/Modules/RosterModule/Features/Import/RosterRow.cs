@@ -1,10 +1,10 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.RosterModule.Services;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Rules.Shared;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 
 /// <summary>
 /// One row of the file after the mapping has been applied to it — still only what the file said,

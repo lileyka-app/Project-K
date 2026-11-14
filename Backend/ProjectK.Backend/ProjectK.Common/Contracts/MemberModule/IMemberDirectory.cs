@@ -91,6 +91,25 @@ public interface IMemberDirectory
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// A kurin's roster as the caller may see it: the same read the registry screen makes, masked by
+    /// the caller's own view and carrying only the tags the caller may see. A file written from it
+    /// therefore shows nothing the screen would not.
+    /// </summary>
+    Task<IReadOnlyList<MemberDto>> GetVisibleRosterAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The people a roster's rows could be, in one read: anyone with one of these addresses or phone
+    /// numbers, or one of these surnames. Deciding which row is whom is the caller's.
+    /// </summary>
+    Task<IReadOnlyCollection<MemberIdentity>> FindPossibleMatchesAsync(
+        IReadOnlyCollection<string> emails,
+        IReadOnlyCollection<string> phoneNumbers,
+        IReadOnlyCollection<string> lastNames,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Every member in the instance. Exists for the migration preflight report, which has to reason
     /// about the whole table; nothing else should need it.
     /// </summary>

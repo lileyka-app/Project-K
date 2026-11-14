@@ -1,6 +1,6 @@
 using ProjectK.Common.Enums.Shared;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 
 /// <summary>
 /// What a column of someone's roster can mean. The names are the wire contract with the mapping

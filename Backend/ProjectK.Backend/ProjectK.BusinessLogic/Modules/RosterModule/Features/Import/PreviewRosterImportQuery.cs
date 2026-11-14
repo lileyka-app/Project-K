@@ -1,11 +1,11 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.RosterModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 
 /// <summary>Reads an uploaded roster and says what it looks like. Writes nothing.</summary>
 public sealed record PreviewRosterImportQuery(Stream Content) : IRequest<ServiceResult<RosterPreview>>;
@@ -56,13 +56,13 @@ public sealed class PreviewRosterImportQueryHandler
             // Anything the spreadsheet library refuses is the same answer to the person holding
             // the file: this is not a workbook we can read.
             return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, KurinErrors.UnreadableFile, "This file could not be read as a spreadsheet."));
+                ResultType.BadRequest, RosterErrors.UnreadableFile, "This file could not be read as a spreadsheet."));
         }
 
         if (rows.Count == 0)
         {
             return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, KurinErrors.EmptyFile, "The spreadsheet has no rows."));
+                ResultType.BadRequest, RosterErrors.EmptyFile, "The spreadsheet has no rows."));
         }
 
         var header = rows[0];

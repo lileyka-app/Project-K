@@ -6,14 +6,14 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
-using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.BusinessLogic.Modules.RosterModule;
+using ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
+using ProjectK.BusinessLogic.Modules.RosterModule.Features.Registry;
+using ProjectK.Common.Dtos.RosterModule.Requests;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 
-namespace ProjectK.API.Controllers.KurinModule;
+namespace ProjectK.API.Controllers.RosterModule;
 
 /// <summary>
 /// The kurin's roster as a file: an uploaded one read and imported, and the registry written out.
@@ -54,7 +54,7 @@ public class KurinRosterController : ControllerBase
     {
         if (request.File is null || request.File.Length == 0)
         {
-            return this.Failure(ResultType.BadRequest, KurinErrors.NoFile, "No file was uploaded.");
+            return this.Failure(ResultType.BadRequest, RosterErrors.NoFile, "No file was uploaded.");
         }
 
         await using var content = request.File.OpenReadStream();

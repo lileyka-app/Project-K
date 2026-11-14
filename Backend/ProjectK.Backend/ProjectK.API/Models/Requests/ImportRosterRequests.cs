@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+using ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.API.Models.Requests;

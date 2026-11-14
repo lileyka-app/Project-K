@@ -14,6 +14,7 @@ using ProjectK.API.Controllers.KraiModule;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Controllers.MeModule;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
+using ProjectK.API.Controllers.RosterModule;
 using ProjectK.API.Controllers.ScoreModule;
 using ProjectK.API.Controllers.TestModule;
 using ProjectK.API.Controllers.UsersModule;

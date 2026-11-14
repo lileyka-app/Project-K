@@ -1,7 +1,7 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+using ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 using ProjectK.Common.Enums.Shared;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Services;
 
 /// <summary>
 /// A guess at what a column is, from the words in its heading. Only a guess — the провід confirms

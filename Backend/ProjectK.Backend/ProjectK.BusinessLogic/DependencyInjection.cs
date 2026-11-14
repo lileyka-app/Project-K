@@ -153,6 +153,7 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<IMemberImportWriter, MemberImportWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<MembershipMoves>();
         services.AddScoped<MembershipAskRouting>();

@@ -1,12 +1,10 @@
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
-using MediatR;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.RosterModule.Features.Registry;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -16,7 +14,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 
-namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.RegistryHandlers;
+namespace ProjectK.BusinessLogic.Tests.RosterModule.HandlerTests.RegistryHandlers;
 
 /// <summary>
 /// The реєстр as a file. Asserted on the tables handed to the writer rather than on the bytes:
@@ -24,7 +22,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.RegistryHandlers
 /// </summary>
 public class ExportRegistryHandlerTests
 {
-    private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<ISpreadsheetWriter> _writer = new();
@@ -47,7 +45,7 @@ public class ExportRegistryHandlerTests
             .Returns([1, 2, 3]);
 
         _handler = new ExportRegistryQueryHandler(
-            _mediator.Object,
+            _members.Object,
             _uow.Object,
             _writer.Object,
             TimeProvider.System);
@@ -82,9 +80,9 @@ public class ExportRegistryHandlerTests
         };
 
     private void RosterIs(params MemberDto[] people)
-        => _mediator
-            .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, people));
+        => _members
+            .Setup(m => m.GetVisibleRosterAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(people);
 
     private Task<ServiceResult<RegistryFile>> Export(params string[] columnIds)
         => _handler.Handle(new ExportRegistryQuery(_kurinKey, columnIds), CancellationToken.None);

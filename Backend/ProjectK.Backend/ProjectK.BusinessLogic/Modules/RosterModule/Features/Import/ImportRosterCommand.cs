@@ -1,17 +1,16 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
-using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 
 /// <summary>
 /// Takes a roster into a kurin. Ran twice by design: once with <paramref name="DryRun"/> to show
@@ -89,17 +88,17 @@ public sealed record RosterImportReport(
 public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCommand, ServiceResult<RosterImportReport>>
 {
     private readonly IUnitOfWork _kurinData;
-    private readonly IMemberUnitOfWork _memberData;
-    private readonly IMediator _mediator;
+    private readonly IMemberDirectory _members;
+    private readonly IMemberImportWriter _people;
 
     public ImportRosterCommandHandler(
         IUnitOfWork kurinData,
-        IMemberUnitOfWork memberData,
-        IMediator mediator)
+        IMemberDirectory members,
+        IMemberImportWriter people)
     {
         _kurinData = kurinData;
-        _memberData = memberData;
-        _mediator = mediator;
+        _members = members;
+        _people = people;
     }
 
     public async Task<ServiceResult<RosterImportReport>> Handle(
@@ -109,14 +108,14 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         var kurin = await _kurinData.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return KurinErrors.NotFound<RosterImportReport>();
+            return RosterErrors.KurinMissing<RosterImportReport>();
         }
 
         // The roster places every row in a гурток, and a senior kurin has none: it is refused there
         // rather than opening гуртки the kurin cannot have.
         if (KurinBranchSetRules.IsSenior(kurin.Branch))
         {
-            return ServiceResult<RosterImportReport>.Failure(ResultType.BadRequest, KurinErrors.RosterImportNotForSeniorKurin, "A УСП or УПС kurin has no гуртки to import a roster into.");
+            return ServiceResult<RosterImportReport>.Failure(ResultType.BadRequest, RosterErrors.RosterImportNotForSeniorKurin, "A УСП or УПС kurin has no гуртки to import a roster into.");
         }
 
         var rows = request.Rows.Select(row => RosterRow.From(row, request.Mapping)).ToList();
@@ -140,7 +139,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
             .Select(row => row.Number)
             .ToList();
 
-        var candidates = await _memberData.Members.FindPossibleMatchesAsync(
+        var candidates = await _members.FindPossibleMatchesAsync(
             usable.Where(row => row.Email is not null).Select(row => row.Email!).ToList(),
             usable.Where(row => row.PhoneNumber is not null).Select(row => row.PhoneNumber!).ToList(),
             usable.Select(row => row.LastName!).ToList(),
@@ -235,7 +234,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
 
     private async Task<HashSet<Guid>> MemberKeysInKurinAsync(Guid kurinKey, CancellationToken cancellationToken)
     {
-        var summaries = await _memberData.Members.GetSummariesByKurinKeyAsync(kurinKey, cancellationToken);
+        var summaries = await _members.GetByKurinAsync(kurinKey, cancellationToken);
         return summaries.Select(summary => summary.MemberKey).ToHashSet();
     }
 
@@ -279,25 +278,22 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         Action<Guid> created,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new UpsertMemberProfileCommand
-        {
-            MemberKey = Guid.Empty,
-            KurinKey = kurinKey,
-            GroupKey = groupKey == Guid.Empty ? null : groupKey,
-            FirstName = row.FirstName!,
-            MiddleName = row.MiddleName ?? string.Empty,
-            LastName = row.LastName!,
-            Email = row.Email ?? string.Empty,
-            PhoneNumber = row.PhoneNumber ?? string.Empty,
-            DateOfBirth = row.DateOfBirth!.Value,
-            Address = row.Address,
-            School = row.School,
-            PlastLevelHistories = row.Levels()
-        }, cancellationToken);
+        var memberKey = await _people.CreateAsync(new ImportedMember(
+            kurinKey,
+            groupKey == Guid.Empty ? null : groupKey,
+            row.FirstName!,
+            row.MiddleName ?? string.Empty,
+            row.LastName!,
+            row.Email ?? string.Empty,
+            row.PhoneNumber ?? string.Empty,
+            row.DateOfBirth!.Value,
+            row.Address,
+            row.School,
+            row.Levels()), cancellationToken);
 
-        if (result.Type == ResultType.Success && result.Data is not null)
+        if (memberKey is { } key)
         {
-            created(result.Data.MemberKey);
+            created(key);
             return null;
         }
 
@@ -316,7 +312,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
     /// </summary>
     private async Task<Invitation> InviteAsync(Guid memberKey, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ProvisionMemberAccountCommand(memberKey), cancellationToken);
+        var result = await _people.InviteAsync(memberKey, cancellationToken);
         return result.Type switch
         {
             ResultType.Success or ResultType.Created when result.Data is { Sent: false } =>
@@ -333,15 +329,12 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         Guid groupKey,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new JoinKurinCommand(
+        var joined = await _people.JoinKurinAsync(
             person.MemberKey,
             kurinKey,
-            groupKey == Guid.Empty ? null : groupKey), cancellationToken);
+            groupKey == Guid.Empty ? null : groupKey,
+            cancellationToken);
 
-        // Conflict means they were already taken in — by an earlier row of the same file, say.
-        // Nothing went wrong and nothing needs undoing.
-        return result.Type is ResultType.Success or ResultType.Created or ResultType.Conflict
-            ? null
-            : "Не вдалося долучити людину до куреня.";
+        return joined ? null : "Не вдалося долучити людину до куреня.";
     }
 }

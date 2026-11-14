@@ -2,7 +2,7 @@ using System.Globalization;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.Shared;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Services;
 
 /// <summary>
 /// Turning what people write in a roster into what the system stores. Every method here answers
