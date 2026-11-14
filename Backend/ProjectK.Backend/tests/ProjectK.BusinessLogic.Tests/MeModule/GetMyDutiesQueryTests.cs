@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -104,7 +104,7 @@ public class GetMyDutiesQueryTests
             books, _user.Object, _time, Mock.Of<IKraiProfileProvider>(), permissions.Object);
     }
 
-    private async Task<MyDutiesResponse> ReadAsync() =>
+    private async Task<MyDutiesDto> ReadAsync() =>
         (await Handler().Handle(new GetMyDutiesQuery(), CancellationToken.None)).Data!;
 
     private async Task<IReadOnlyList<MyDutyDto>> DutiesAsync() => (await ReadAsync()).Items;

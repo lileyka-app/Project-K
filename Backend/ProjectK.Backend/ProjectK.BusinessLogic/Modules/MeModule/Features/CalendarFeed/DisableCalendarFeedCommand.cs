@@ -1,12 +1,11 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Disable;
+namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 
 /// <summary>Switches the link off at the person's own request. No notification: they did it themselves.</summary>
 public sealed record DisableCalendarFeedCommand : IRequest<ServiceResult<CalendarFeedStatusDto>>;
@@ -28,7 +27,7 @@ public sealed class DisableCalendarFeedCommandHandler : IRequestHandler<DisableC
     {
         if (_currentUser.UserId is not { } userKey)
         {
-            return ServiceResult<CalendarFeedStatusDto>.Failure(ResultType.Unauthorized, "NotSignedIn", "Not signed in.");
+            return MeErrors.SignInRequired<CalendarFeedStatusDto>();
         }
 
         if (await _feeds.RevokeActiveAsync(userKey, CalendarFeedRevokeReason.Disabled, cancellationToken))

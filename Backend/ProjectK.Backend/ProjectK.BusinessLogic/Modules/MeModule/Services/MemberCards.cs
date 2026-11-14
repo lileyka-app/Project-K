@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -63,13 +63,13 @@ public sealed class MemberCards
     /// <summary>The site's public address followed by <paramref name="path"/>.</summary>
     public string SiteUrl(string path) => $"{_site.BaseUrl.TrimEnd('/')}{path}";
 
-    public async Task<CardAllowance> AllowanceAsync(Guid memberKey, CancellationToken cancellationToken)
+    public async Task<CardAllowanceDto> AllowanceAsync(Guid memberKey, CancellationToken cancellationToken)
     {
         var today = DateOnly.FromDateTime(_time.GetUtcNow().UtcDateTime);
         var born = await _members.GetDateOfBirthAsync(memberKey, cancellationToken);
         if (born is { } date && date.AddYears(18) <= today)
         {
-            return new CardAllowance(MayShare: true, IsAdult: true, CardField.All, MayLink: true);
+            return new CardAllowanceDto(MayShare: true, IsAdult: true, CardField.All, MayLink: true);
         }
 
         var kurinKeys = (await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken))
@@ -83,15 +83,15 @@ public sealed class MemberCards
         // Every kurin the person stands in has to allow it: one that never said yes has not said yes.
         if (kurinKeys.Count == 0 || settings.Count < kurinKeys.Count || settings.Any(s => !s.MinorsMayShare))
         {
-            return new CardAllowance(MayShare: false, IsAdult: false, CardField.None, MayLink: false);
+            return new CardAllowanceDto(MayShare: false, IsAdult: false, CardField.None, MayLink: false);
         }
 
         var fields = settings.Aggregate(CardField.All, (all, s) => all & s.MinorFields);
-        return new CardAllowance(MayShare: true, IsAdult: false, fields, MayLink: settings.All(s => s.MinorsMayLink));
+        return new CardAllowanceDto(MayShare: true, IsAdult: false, fields, MayLink: settings.All(s => s.MinorsMayLink));
     }
 
     /// <summary>The fields the person chose, cut to what they are allowed.</summary>
-    public async Task<CardField> ChosenFieldsAsync(Guid memberKey, CardAllowance allowance, CancellationToken cancellationToken)
+    public async Task<CardField> ChosenFieldsAsync(Guid memberKey, CardAllowanceDto allowance, CancellationToken cancellationToken)
     {
         var share = await _unitOfWork.MemberCardShares.GetForMemberAsync(memberKey, cancellationToken);
         return (share?.Fields ?? MemberCardShare.DefaultFields) & allowance.MaxFields;
@@ -111,12 +111,12 @@ public sealed class MemberCards
     }
 
     /// <summary>The card as a scan or a link shows it: what was chosen, cut to what is allowed.</summary>
-    public async Task<ServiceResult<PublicCardDto>> SharedAsync(Guid memberKey, CardAllowance allowance, DateTime? checkedAtUtc, CancellationToken cancellationToken)
+    public async Task<ServiceResult<PublicCardDto>> SharedAsync(Guid memberKey, CardAllowanceDto allowance, DateTime? checkedAtUtc, CancellationToken cancellationToken)
     {
         var fields = await ChosenFieldsAsync(memberKey, allowance, cancellationToken);
         var card = await ReadAsync(memberKey, fields, checkedAtUtc, cancellationToken);
         return card is null
-            ? new ServiceResult<PublicCardDto>(ResultType.NotFound)
+            ? MeErrors.NoCard<PublicCardDto>()
             : new ServiceResult<PublicCardDto>(ResultType.Success, card);
     }
 
@@ -141,13 +141,13 @@ public sealed class MemberCards
             return null;
         }
 
-        IReadOnlyList<PublicCardKurin>? kurins = null;
+        IReadOnlyList<PublicCardKurinDto>? kurins = null;
         if (fields.HasFlag(CardField.Kurin))
         {
             kurins = (await _unitOfWork.Memberships.GetRecordsForMemberAsync(memberKey, cancellationToken))
                 .Where(m => m.IsCurrent)
                 .OrderBy(m => m.KurinNumber)
-                .Select(m => new PublicCardKurin(m.KurinNumber, m.KurinNamedAfter, m.GroupName, m.Numbering))
+                .Select(m => new PublicCardKurinDto(m.KurinNumber, m.KurinNamedAfter, m.GroupName, m.Numbering))
                 .ToList();
         }
 
@@ -158,7 +158,7 @@ public sealed class MemberCards
             level = PlastLevelNames.Of(highest);
         }
 
-        IReadOnlyList<PublicCardAward>? awards = null;
+        IReadOnlyList<PublicCardAwardDto>? awards = null;
         if (fields.HasFlag(CardField.Awards))
         {
             // By default the line the person stands in now: a УСП or УПС member shows the senior
@@ -172,8 +172,8 @@ public sealed class MemberCards
                 .ToList();
         }
 
-        IReadOnlyList<PublicCardBadge>? badges = null;
-        IReadOnlyList<PublicCardProbe>? probes = null;
+        IReadOnlyList<PublicCardBadgeDto>? badges = null;
+        IReadOnlyList<PublicCardProbeDto>? probes = null;
         if (fields.HasFlag(CardField.Badges) || fields.HasFlag(CardField.Probes))
         {
             var progress = await _progress.GetForMemberAsync(memberKey, cancellationToken);
@@ -183,8 +183,8 @@ public sealed class MemberCards
                     .Where(b => b.Status == BadgeProgressStatus.Confirmed)
                     .OrderByDescending(b => b.ReviewedAtUtc)
                     .Select(b => _badges.GetBadgeById(b.BadgeId) is { } badge
-                        ? new PublicCardBadge(badge.Title, badge.ImagePath, b.ReviewedAtUtc)
-                        : new PublicCardBadge(b.BadgeId, null, b.ReviewedAtUtc))
+                        ? new PublicCardBadgeDto(badge.Title, badge.ImagePath, b.ReviewedAtUtc)
+                        : new PublicCardBadgeDto(b.BadgeId, null, b.ReviewedAtUtc))
                     .ToList();
             }
 
@@ -193,7 +193,7 @@ public sealed class MemberCards
                 probes = progress.Probes
                     .Where(p => p.Status == ProbeProgressStatus.Verified)
                     .OrderBy(p => p.VerifiedAtUtc)
-                    .Select(p => new PublicCardProbe(_probes.GetGroupedProbeById(p.ProbeId)?.Title ?? p.ProbeId, p.VerifiedAtUtc))
+                    .Select(p => new PublicCardProbeDto(_probes.GetGroupedProbeById(p.ProbeId)?.Title ?? p.ProbeId, p.VerifiedAtUtc))
                     .ToList();
             }
         }
@@ -209,15 +209,15 @@ public sealed class MemberCards
             checkedAtUtc);
     }
 
-    private PublicCardAward ToPublic(ConfirmedAward award)
+    private PublicCardAwardDto ToPublic(ConfirmedAward award)
     {
         if (award.Level is { } level)
         {
-            return new PublicCardAward((int)level, KurinReportTerminology.AwardLevel(level), null, award.DateAcquired, "UPYu");
+            return new PublicCardAwardDto((int)level, KurinReportTerminology.AwardLevel(level), null, award.DateAcquired, "UPYu");
         }
 
         var item = _honours.GetById(award.CatalogId!);
-        return new PublicCardAward(null, item?.Title ?? award.CatalogId!, item?.ImageUrl, award.DateAcquired, UladOf(item?.Ulad));
+        return new PublicCardAwardDto(null, item?.Title ?? award.CatalogId!, item?.ImageUrl, award.DateAcquired, UladOf(item?.Ulad));
     }
 
     /// <summary>The catalogue's ulad code as the card names it; a senior honour of both lines has none.</summary>

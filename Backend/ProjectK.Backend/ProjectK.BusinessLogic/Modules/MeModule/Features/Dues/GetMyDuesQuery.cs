@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
@@ -37,7 +37,7 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
         var me = await _me.ReadAsync(cancellationToken);
         if (me is null)
         {
-            return new ServiceResult<IReadOnlyList<MyDuesDto>>(ResultType.Forbidden);
+            return MeErrors.NoMember<IReadOnlyList<MyDuesDto>>();
         }
 
         var rows = new List<MyDuesDto>();

@@ -1,8 +1,9 @@
 using System.Globalization;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Models.Enums;
 
-namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
+namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 
 /// <summary>
 /// How a duty is named for hiding, and when a hidden one stays hidden. The key is the same on every

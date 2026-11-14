@@ -7,7 +7,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Security;
 
-namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Issue;
+namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 
 /// <summary>
 /// Issues the account's calendar link, replacing any earlier one: a calendar still subscribed to the
@@ -32,7 +32,7 @@ public sealed class IssueCalendarFeedCommandHandler : IRequestHandler<IssueCalen
     {
         if (_currentUser.UserId is not { } userKey)
         {
-            return ServiceResult<IssuedCalendarFeedDto>.Failure(ResultType.Unauthorized, "NotSignedIn", "Not signed in.");
+            return MeErrors.SignInRequired<IssuedCalendarFeedDto>();
         }
 
         var token = SecretHash.NewToken();

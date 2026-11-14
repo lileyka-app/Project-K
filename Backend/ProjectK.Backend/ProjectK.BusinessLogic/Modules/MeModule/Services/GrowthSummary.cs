@@ -1,6 +1,6 @@
 using ProjectK.Common.Models.Enums;
 
-namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
+namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 
 /// <summary>The one decision the «Проба» tile makes: which проба to show.</summary>
 public static class GrowthSummary

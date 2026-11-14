@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
@@ -19,7 +20,7 @@ using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Common.Security;
 
-namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Render;
+namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 
 /// <summary>
 /// The iCalendar file behind a calendar link, fetched anonymously by Google, Apple or Outlook.
@@ -330,5 +331,5 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         new(ResultType.Success, new CalendarFeedFile(content));
 
     private static ServiceResult<CalendarFeedFile> NotFound() =>
-        ServiceResult<CalendarFeedFile>.Failure(ResultType.NotFound, "CalendarFeedNotFound", "No such calendar link.");
+        ServiceResult<CalendarFeedFile>.Failure(ResultType.NotFound, MeErrors.CalendarFeedNotFound, "No such calendar link.");
 }

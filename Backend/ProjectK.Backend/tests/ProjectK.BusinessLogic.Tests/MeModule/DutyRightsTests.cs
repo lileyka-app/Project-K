@@ -1,5 +1,5 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
+using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Authorization.KurinPolicy;

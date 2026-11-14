@@ -1,12 +1,11 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Get;
+namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 
 /// <summary>Where the signed-in account's calendar link stands: none, live, or switched off and why.</summary>
 public sealed record GetCalendarFeedQuery : IRequest<ServiceResult<CalendarFeedStatusDto>>;
@@ -26,7 +25,7 @@ public sealed class GetCalendarFeedQueryHandler : IRequestHandler<GetCalendarFee
     {
         if (_currentUser.UserId is not { } userKey)
         {
-            return ServiceResult<CalendarFeedStatusDto>.Failure(ResultType.Unauthorized, "NotSignedIn", "Not signed in.");
+            return MeErrors.SignInRequired<CalendarFeedStatusDto>();
         }
 
         var feed = await _feeds.GetLatestForUserAsync(userKey, cancellationToken);

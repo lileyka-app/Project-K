@@ -1,7 +1,7 @@
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 
-namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
+namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 
 /// <summary>
 /// What the person's offices in one kurin let them see to: which гуртки's вмілості, boxes and

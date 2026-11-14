@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Render;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;

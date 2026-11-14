@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Interfaces;
@@ -36,7 +36,7 @@ public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, Se
         var me = await _me.ReadAsync(cancellationToken);
         if (me is null)
         {
-            return new ServiceResult<IReadOnlyList<MyScoreDto>>(ResultType.Forbidden);
+            return MeErrors.NoMember<IReadOnlyList<MyScoreDto>>();
         }
 
         var rows = new List<MyScoreDto>();

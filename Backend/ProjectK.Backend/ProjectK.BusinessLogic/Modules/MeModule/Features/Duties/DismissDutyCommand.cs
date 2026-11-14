@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
@@ -13,7 +14,7 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 /// Takes one duty off the person's own «Справи» as it is now. Hiding it again records its size anew,
 /// so it stays hidden until it outgrows that. Nobody else's list changes.
 /// </summary>
-public sealed record DismissDutyCommand(string Key, string Fingerprint) : IRequest<ServiceResult<object>>;
+public sealed record DismissDutyCommand(string Key, string Fingerprint) : IRequest<ServiceResult<Unit>>;
 
 public sealed class DismissDutyCommandValidator : AbstractValidator<DismissDutyCommand>
 {
@@ -24,7 +25,7 @@ public sealed class DismissDutyCommandValidator : AbstractValidator<DismissDutyC
     }
 }
 
-public sealed class DismissDutyCommandHandler : IRequestHandler<DismissDutyCommand, ServiceResult<object>>
+public sealed class DismissDutyCommandHandler : IRequestHandler<DismissDutyCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
@@ -37,11 +38,11 @@ public sealed class DismissDutyCommandHandler : IRequestHandler<DismissDutyComma
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(DismissDutyCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DismissDutyCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserId is not { } userKey || userKey == Guid.Empty)
         {
-            return ServiceResult<object>.Failure(ResultType.Unauthorized, "NotSignedIn", "Not signed in.");
+            return MeErrors.SignInRequired<Unit>();
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -72,6 +73,6 @@ public sealed class DismissDutyCommandHandler : IRequestHandler<DismissDutyComma
             // The same duty hidden twice at once, from two tabs: one row stands, which is all that was asked.
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }
