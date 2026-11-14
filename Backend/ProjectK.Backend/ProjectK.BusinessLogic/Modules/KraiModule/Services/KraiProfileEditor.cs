@@ -38,7 +38,7 @@ public sealed class KraiProfileEditor
     public async Task<ServiceResult<KraiProfileEditorDto>> SaveAsync(
         string kraiCode, int baseRevision, KraiProfileDocument document, string? note, CancellationToken cancellationToken)
     {
-        var code = kraiCode.Trim().ToLowerInvariant();
+        var code = Krai.NormalizeCode(kraiCode) ?? string.Empty;
         var krai = await _unitOfWork.Krais.GetAsync(code, cancellationToken);
         if (krai is null)
         {

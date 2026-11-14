@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.Shared;
@@ -21,7 +22,7 @@ public sealed class GetKraiProfileRevisionsQueryHandler : IRequestHandler<GetKra
 
     public async Task<ServiceResult<IReadOnlyList<KraiProfileRevisionDto>>> Handle(GetKraiProfileRevisionsQuery request, CancellationToken cancellationToken)
     {
-        var code = request.KraiCode.Trim().ToLowerInvariant();
+        var code = Krai.NormalizeCode(request.KraiCode) ?? string.Empty;
         if (!await _unitOfWork.Krais.ExistsAsync(code, cancellationToken))
         {
             return KraiErrors.NotFound<IReadOnlyList<KraiProfileRevisionDto>>();
