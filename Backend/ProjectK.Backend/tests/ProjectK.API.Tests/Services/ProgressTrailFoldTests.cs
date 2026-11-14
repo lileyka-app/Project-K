@@ -7,6 +7,7 @@ using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Migrations;
 using ProjectK.Infrastructure.Repositories.AuditModule;
 
@@ -31,7 +32,7 @@ public class ProgressTrailFoldTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
-        _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseSqlite(_connection).Options;
 
         using var context = new AppDbContext(_options);
         context.Database.EnsureCreated();

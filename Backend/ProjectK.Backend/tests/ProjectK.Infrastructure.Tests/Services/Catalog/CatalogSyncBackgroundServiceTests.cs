@@ -9,6 +9,7 @@ using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Services.Catalog;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
@@ -34,7 +35,7 @@ public sealed class CatalogSyncBackgroundServiceTests : IDisposable
     // The name is taken once: the options lambda runs for every scope, and a name made inside it
     // would hand each scope a database of its own.
     private static ServiceProvider Database(string name) => new ServiceCollection()
-        .AddDbContext<AppDbContext>(db => db.UseInMemoryDatabase(name))
+        .AddDbContext<AppDbContext>(db => db.UseInMemoryDatabase(name).AddAppDbContextInterceptors())
         .BuildServiceProvider();
 
     [Fact]

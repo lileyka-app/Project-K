@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Tests.InfrastructureModule;
@@ -14,7 +15,7 @@ namespace ProjectK.Infrastructure.Tests.InfrastructureModule;
 public class ResourceScopeReaderMembershipTests
 {
     private static AppDbContext NewContext() =>
-        new(new DbContextOptionsBuilder<AppDbContext>()
+        new(new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
@@ -179,7 +180,7 @@ public class ResourceScopeReaderMembershipTests
 /// </summary>
 public class ResourceScopeReaderSeniorTests
 {
-    private readonly AppDbContext _context = new(new DbContextOptionsBuilder<AppDbContext>()
+    private readonly AppDbContext _context = new(new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
         .UseInMemoryDatabase(Guid.NewGuid().ToString())
         .Options);
 
@@ -227,7 +228,7 @@ public class ResourceScopeReaderTwoMembershipsTests
     [Fact]
     public async Task AnOpenYouthMembershipInAnUpyuKurin_KeepsTheRecordOpen_EvenBesideASeniorOne()
     {
-        await using var context = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        await using var context = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         var upyu = Guid.NewGuid();
         var senior = Guid.NewGuid();
         context.Set<KurinBranchNumber>().AddRange(

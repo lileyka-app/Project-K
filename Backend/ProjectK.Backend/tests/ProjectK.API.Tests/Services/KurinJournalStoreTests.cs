@@ -11,6 +11,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.AuditModule;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
@@ -30,7 +31,7 @@ public class KurinJournalStoreTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
-        _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseSqlite(_connection).Options;
 
         using var context = new AppDbContext(_options);
         context.Database.EnsureCreated();
@@ -221,7 +222,7 @@ public class KurinJournalStoreTests : IDisposable
         await SeedAsync(Entry(now.AddDays(-366)), Entry(now.AddDays(-200)));
 
         var services = new ServiceCollection();
-        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection));
+        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection).AddAppDbContextInterceptors());
         var service = new AuditCleanupBackgroundService(
             services.BuildServiceProvider(), new Mock<ILogger<AuditCleanupBackgroundService>>().Object);
         var cleanup = typeof(AuditCleanupBackgroundService).GetMethod("CleanupOldRecordsAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;

@@ -3,6 +3,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
@@ -14,7 +15,7 @@ namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
 public class MemberReadsFollowMembershipTests
 {
     private static AppDbContext NewContext() =>
-        new(new DbContextOptionsBuilder<AppDbContext>()
+        new(new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 

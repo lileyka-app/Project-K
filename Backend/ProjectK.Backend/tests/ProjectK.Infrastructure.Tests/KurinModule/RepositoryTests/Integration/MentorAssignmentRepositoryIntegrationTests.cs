@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
@@ -10,7 +11,7 @@ public class MentorAssignmentRepositoryIntegrationTests
     [Fact]
     public async Task GetActiveGroupsAsync_NamesOnlyCurrentAssignmentsInThatKurin()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         await using var context = new AppDbContext(options);

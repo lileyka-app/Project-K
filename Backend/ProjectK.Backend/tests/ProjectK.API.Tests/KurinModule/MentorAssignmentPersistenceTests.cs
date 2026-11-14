@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 
 namespace ProjectK.API.Tests.KurinModule;
@@ -23,7 +24,7 @@ public class MentorAssignmentPersistenceTests : IDisposable
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
 
-        _options = new DbContextOptionsBuilder<AppDbContext>()
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseSqlite(_connection)
             .Options;
 

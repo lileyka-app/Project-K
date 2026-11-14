@@ -17,6 +17,7 @@ using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Logging;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Reports;
 using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
@@ -129,6 +130,7 @@ public static class DependencyInjection
             opt.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
                 b => b.MigrationsAssembly("ProjectK.Infrastructure"));
+            opt.AddAppDbContextInterceptors();
         });
     }
 

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule;
@@ -17,7 +18,7 @@ public class KurinArchivePersistenceTests
     private readonly Group _sokoly;
     private readonly Group _vovky;
     private readonly DbContextOptions<AppDbContext> _options =
-        new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     public KurinArchivePersistenceTests()
     {

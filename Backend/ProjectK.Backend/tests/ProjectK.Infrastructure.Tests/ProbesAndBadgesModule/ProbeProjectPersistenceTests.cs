@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Services.BlobStorageService;
 
@@ -14,7 +15,7 @@ namespace ProjectK.Infrastructure.Tests.ProbesAndBadgesModule;
 public class ProbeProjectPersistenceTests
 {
     private static DbContextOptions<AppDbContext> Options() =>
-        new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     private static ProbeProject Project(Guid memberKey, params string[] blobs)
     {
