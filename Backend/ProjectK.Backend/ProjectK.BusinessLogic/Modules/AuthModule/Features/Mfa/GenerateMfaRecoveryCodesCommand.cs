@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -29,7 +30,7 @@ public class GenerateMfaRecoveryCodesCommandHandler
         GenerateMfaRecoveryCodesCommand request,
         CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
+        var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
             return AuthErrors.AccountMissing<MfaRecoveryCodesResponseDto>();

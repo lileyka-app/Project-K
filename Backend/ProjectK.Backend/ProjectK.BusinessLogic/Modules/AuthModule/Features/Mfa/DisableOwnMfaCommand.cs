@@ -33,7 +33,7 @@ public class DisableOwnMfaCommandHandler : IRequestHandler<DisableOwnMfaCommand,
 
     public async Task<ServiceResult<Unit>> Handle(DisableOwnMfaCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
+        var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
             return AuthErrors.AccountMissing<Unit>();

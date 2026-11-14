@@ -32,7 +32,7 @@ public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, Service
 
     public async Task<ServiceResult<MfaEnableResponseDto>> Handle(EnableMfaCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(request.UserKey.ToString());
+        var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
             return AuthErrors.AccountMissing<MfaEnableResponseDto>();
