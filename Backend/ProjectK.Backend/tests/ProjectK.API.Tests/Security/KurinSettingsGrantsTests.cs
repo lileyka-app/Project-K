@@ -1,5 +1,5 @@
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 

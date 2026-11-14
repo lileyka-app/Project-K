@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using MediatR;
-using ProjectK.API.Helpers;
+using ProjectK.API.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

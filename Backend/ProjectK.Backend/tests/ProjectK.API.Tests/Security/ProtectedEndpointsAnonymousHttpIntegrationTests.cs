@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
-using ProjectK.API.Helpers;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;

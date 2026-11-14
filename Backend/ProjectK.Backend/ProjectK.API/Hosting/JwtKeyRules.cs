@@ -1,4 +1,4 @@
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Hosting;
 
 /// <summary>
 /// What a signing key has to be before the API agrees to start. Every access, refresh and MFA

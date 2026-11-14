@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Cookies;
 
 /// <summary>
 /// The cookie that remembers a device finished the second factor. Scoped like the refresh-token

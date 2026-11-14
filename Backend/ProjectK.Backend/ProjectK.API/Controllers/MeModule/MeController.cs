@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Invitations;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Disable;

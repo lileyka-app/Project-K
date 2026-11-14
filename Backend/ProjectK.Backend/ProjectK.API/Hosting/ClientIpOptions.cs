@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Hosting;
 
 /// <summary>
 /// Where the visitor's address is read from, bound from <c>Security:ClientIp</c>. The address is what

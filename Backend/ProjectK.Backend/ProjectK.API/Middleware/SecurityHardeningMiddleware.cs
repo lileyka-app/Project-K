@@ -3,7 +3,7 @@ using System.Net.Sockets;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;

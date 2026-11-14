@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using ProjectK.API.Controllers.TestModule;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Hosting;
 
 /// <summary>
 /// Takes the e2e fixture controller out of the application model. Registered in every environment

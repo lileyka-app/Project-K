@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Uploads;
 
 /// <summary>
 /// What an uploaded picture has to look like before it is read — one rule for member photos and

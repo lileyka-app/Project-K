@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using ProjectK.Common.Models.Records;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Cookies;
 
 /// <summary>
 /// The sessions this browser keeps for the accounts it is signed in to but not using. Scoped like

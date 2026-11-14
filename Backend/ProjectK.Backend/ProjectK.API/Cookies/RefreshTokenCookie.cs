@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Cookies;
 
 /// <summary>
 /// The refresh-token cookie, written and read in one place. Sign-in, refresh, sign-out and the

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Enums;
 

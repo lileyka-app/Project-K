@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using ProjectK.API.Controllers.DevModule;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Hosting;
 
 /// <summary>
 /// Takes the dev tools controller out of the application model. Registered on every tier that is

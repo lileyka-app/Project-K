@@ -3,7 +3,7 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Hosting;
 
 public sealed class HttpCurrentUserContext : ICurrentUserContext
 {

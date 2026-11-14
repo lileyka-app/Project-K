@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.Common.Models.Enums;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Filters;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
 public sealed class ResourceAuthorizeAttribute : TypeFilterAttribute

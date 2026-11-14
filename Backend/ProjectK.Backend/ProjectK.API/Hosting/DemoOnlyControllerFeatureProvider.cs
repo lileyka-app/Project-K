@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using ProjectK.API.Controllers.DemoModule;
 
-namespace ProjectK.API.Helpers;
+namespace ProjectK.API.Hosting;
 
 /// <summary>
 /// Takes the demo entry controller out of the application model. Registered on every tier that is

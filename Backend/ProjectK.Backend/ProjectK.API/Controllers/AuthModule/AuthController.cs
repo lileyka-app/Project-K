@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Cookies;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.LoadTest;

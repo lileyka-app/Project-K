@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.ReportProblem;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.UploadScreenshot;
 using ProjectK.Common.Models.Enums;
