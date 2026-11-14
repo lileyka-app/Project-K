@@ -59,7 +59,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     {
         if (_currentUser.KurinKey is not { } kurinKey)
         {
-            return new ServiceResult<MemberDuesResponse>(ResultType.Forbidden);
+            return DuesErrors.Refused<MemberDuesResponse>();
         }
 
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);

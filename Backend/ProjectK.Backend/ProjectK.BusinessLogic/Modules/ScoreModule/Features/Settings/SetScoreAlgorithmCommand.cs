@@ -12,7 +12,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 
-public sealed record SetScoreAlgorithmCommand(Guid KurinKey, SetScoreAlgorithmRequest Request) : IRequest<ServiceResult<object>>;
+public sealed record SetScoreAlgorithmCommand(Guid KurinKey, SetScoreAlgorithmRequest Request) : IRequest<ServiceResult<Unit>>;
 
 public sealed class SetScoreAlgorithmCommandValidator : AbstractValidator<SetScoreAlgorithmCommand>
 {
@@ -23,7 +23,7 @@ public sealed class SetScoreAlgorithmCommandValidator : AbstractValidator<SetSco
     }
 }
 
-public sealed class SetScoreAlgorithmCommandHandler : IRequestHandler<SetScoreAlgorithmCommand, ServiceResult<object>>
+public sealed class SetScoreAlgorithmCommandHandler : IRequestHandler<SetScoreAlgorithmCommand, ServiceResult<Unit>>
 {
     private readonly ScoreSettingsAccess _access;
     private readonly IScoreUnitOfWork _score;
@@ -38,9 +38,9 @@ public sealed class SetScoreAlgorithmCommandHandler : IRequestHandler<SetScoreAl
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetScoreAlgorithmCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetScoreAlgorithmCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<object>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -59,6 +59,6 @@ public sealed class SetScoreAlgorithmCommandHandler : IRequestHandler<SetScoreAl
         ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Settings, settings.KurinScoreSettingsKey, ScoreTrail.Updated, new { settings.Algorithm }, _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

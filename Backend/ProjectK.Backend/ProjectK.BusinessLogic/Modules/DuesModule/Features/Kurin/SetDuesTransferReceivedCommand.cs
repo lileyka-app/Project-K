@@ -11,9 +11,9 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 /// The курінний скарбник confirms that a гурток's transfer arrived — or takes the confirmation back.
 /// Until it is confirmed the money is in transit: out of the гурток's box, not yet in the kurin's.
 /// </summary>
-public sealed record SetDuesTransferReceivedCommand(Guid KurinKey, Guid EntryKey, bool IsReceived) : IRequest<ServiceResult<object>>;
+public sealed record SetDuesTransferReceivedCommand(Guid KurinKey, Guid EntryKey, bool IsReceived) : IRequest<ServiceResult<Unit>>;
 
-public sealed class SetDuesTransferReceivedCommandHandler : IRequestHandler<SetDuesTransferReceivedCommand, ServiceResult<object>>
+public sealed class SetDuesTransferReceivedCommandHandler : IRequestHandler<SetDuesTransferReceivedCommand, ServiceResult<Unit>>
 {
     private readonly KurinDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -28,9 +28,9 @@ public sealed class SetDuesTransferReceivedCommandHandler : IRequestHandler<SetD
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetDuesTransferReceivedCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetDuesTransferReceivedCommand request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<object>(request.KurinKey) is { } refused)
+        if (_access.Refuse<Unit>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -38,12 +38,12 @@ public sealed class SetDuesTransferReceivedCommandHandler : IRequestHandler<SetD
         var transfer = await _access.TransferAsync(request.KurinKey, request.EntryKey, cancellationToken);
         if (transfer is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "TransferNotFound", "There is no such transfer to this kurin.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, DuesErrors.TransferNotFound, "There is no such transfer to this kurin.");
         }
 
         if (transfer.ReceivedAtUtc.HasValue == request.IsReceived)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -52,6 +52,6 @@ public sealed class SetDuesTransferReceivedCommandHandler : IRequestHandler<SetD
         DuesEntryTrail.Record(transfer, request.IsReceived ? DuesEntryTrail.Received : DuesEntryTrail.Unreceived, _currentUser.UserId, now);
         await _dues.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

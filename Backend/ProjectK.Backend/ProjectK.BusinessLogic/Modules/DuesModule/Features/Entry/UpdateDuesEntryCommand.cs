@@ -11,7 +11,7 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
 
 /// <summary>Rewrites an operation that nobody has verified yet. A verified one is locked (409).</summary>
 public sealed record UpdateDuesEntryCommand(Guid GroupKey, Guid EntryKey, UpsertDuesEntryRequest Request)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
 public sealed class UpdateDuesEntryCommandValidator : AbstractValidator<UpdateDuesEntryCommand>
 {
@@ -23,7 +23,7 @@ public sealed class UpdateDuesEntryCommandValidator : AbstractValidator<UpdateDu
     }
 }
 
-public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEntryCommand, ServiceResult<object>>
+public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEntryCommand, ServiceResult<Unit>>
 {
     private readonly GroupDuesAccess _access;
     private readonly DuesEntryWriter _writer;
@@ -45,9 +45,9 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(UpdateDuesEntryCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(UpdateDuesEntryCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<object>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenAsync<Unit>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -56,7 +56,7 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
         var entry = await _dues.DuesEntries.GetByKeyAsync(request.EntryKey, cancellationToken);
         if (entry is null || entry.GroupKey != group.GroupKey || entry.IsDeleted)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "EntryNotFound", "There is no such operation here.");
+            return DuesErrors.NoEntry<Unit>();
         }
 
         if (DuesEntryLock.Check(entry) is { } locked)
@@ -64,7 +64,7 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
             return locked;
         }
 
-        if (await _writer.CheckForGroupAsync<object>(group, request.Request, cancellationToken) is { } problem)
+        if (await _writer.CheckForGroupAsync<Unit>(group, request.Request, cancellationToken) is { } problem)
         {
             return problem;
         }
@@ -73,6 +73,6 @@ public sealed class UpdateDuesEntryCommandHandler : IRequestHandler<UpdateDuesEn
         DuesEntryTrail.Record(entry, DuesEntryTrail.Updated, _currentUser.UserId, _time.GetUtcNow().UtcDateTime);
         await _dues.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

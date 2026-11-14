@@ -28,6 +28,6 @@ public sealed class ScoreSettingsAccess
             return refused;
         }
 
-        return await _access.MayManageAsync(kurinKey, cancellationToken) ? null : ScoreAccess.Forbidden<T>();
+        return await _access.MayManageAsync(kurinKey, cancellationToken) ? null : ScoreErrors.Refused<T>();
     }
 }

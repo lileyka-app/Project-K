@@ -12,7 +12,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 
-public sealed record SetScoreAttendanceRateCommand(Guid KurinKey, SetScoreAttendanceRateRequest Request) : IRequest<ServiceResult<object>>;
+public sealed record SetScoreAttendanceRateCommand(Guid KurinKey, SetScoreAttendanceRateRequest Request) : IRequest<ServiceResult<Unit>>;
 
 public sealed class SetScoreAttendanceRateCommandValidator : AbstractValidator<SetScoreAttendanceRateCommand>
 {
@@ -27,7 +27,7 @@ public sealed class SetScoreAttendanceRateCommandValidator : AbstractValidator<S
     }
 }
 
-public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetScoreAttendanceRateCommand, ServiceResult<object>>
+public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetScoreAttendanceRateCommand, ServiceResult<Unit>>
 {
     private readonly ScoreSettingsAccess _access;
     private readonly IScoreUnitOfWork _score;
@@ -44,9 +44,9 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetScoreAttendanceRateCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetScoreAttendanceRateCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<object>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -72,7 +72,7 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
                 await _score.SaveChangesAsync(cancellationToken);
             }
 
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         if (rate is null)
@@ -88,23 +88,23 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
             new { rate.AgendaCategoryKey, rate.AgendaItemKey, rate.Points }, _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
-    private async Task<ServiceResult<object>?> MissingTargetAsync(SetScoreAttendanceRateCommand request, CancellationToken cancellationToken)
+    private async Task<ServiceResult<Unit>?> MissingTargetAsync(SetScoreAttendanceRateCommand request, CancellationToken cancellationToken)
     {
         var r = request.Request;
         if (r.AgendaCategoryKey is { } categoryKey)
         {
             var category = await _unitOfWork.AgendaCategories.GetByKeyAsync(categoryKey, cancellationToken);
             return category is null || category.KurinKey != request.KurinKey
-                ? ScoreAccess.NotFound<object>("There is no such group of events here.")
+                ? ScoreErrors.NotFound<Unit>("There is no such group of events here.")
                 : null;
         }
 
         var item = await _unitOfWork.AgendaItems.GetByKeyAsync(r.AgendaItemKey!.Value, cancellationToken);
         return item is null || item.KurinKey != request.KurinKey || item.Kind != AgendaItemKind.Event
-            ? ScoreAccess.NotFound<object>("There is no such event here.")
+            ? ScoreErrors.NotFound<Unit>("There is no such event here.")
             : null;
     }
 }

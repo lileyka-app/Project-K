@@ -33,6 +33,6 @@ public sealed class PrivateScoreAccess
         }
 
         var decision = await _resourceAccess.CheckAccessAsync(ResourceType.KurinScorePrivate, action, kurinKey, cancellationToken);
-        return decision.IsAllowed ? null : ScoreAccess.Forbidden<T>();
+        return decision.IsAllowed ? null : ScoreErrors.Refused<T>();
     }
 }

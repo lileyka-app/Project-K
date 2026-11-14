@@ -11,9 +11,9 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 
 /// <summary>The Звʼязковий's mark on a kurin operation; setting it locks the operation.</summary>
-public sealed record SetKurinDuesEntryVerifiedCommand(Guid KurinKey, Guid EntryKey, bool IsVerified) : IRequest<ServiceResult<object>>;
+public sealed record SetKurinDuesEntryVerifiedCommand(Guid KurinKey, Guid EntryKey, bool IsVerified) : IRequest<ServiceResult<Unit>>;
 
-public sealed class SetKurinDuesEntryVerifiedCommandHandler : IRequestHandler<SetKurinDuesEntryVerifiedCommand, ServiceResult<object>>
+public sealed class SetKurinDuesEntryVerifiedCommandHandler : IRequestHandler<SetKurinDuesEntryVerifiedCommand, ServiceResult<Unit>>
 {
     private readonly KurinDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -28,9 +28,9 @@ public sealed class SetKurinDuesEntryVerifiedCommandHandler : IRequestHandler<Se
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetKurinDuesEntryVerifiedCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetKurinDuesEntryVerifiedCommand request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<object>(request.KurinKey) is { } refused)
+        if (_access.Refuse<Unit>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -38,12 +38,12 @@ public sealed class SetKurinDuesEntryVerifiedCommandHandler : IRequestHandler<Se
         var entry = await _access.OwnEntryAsync(request.KurinKey, request.EntryKey, cancellationToken);
         if (entry is null)
         {
-            return KurinDuesAccess.NotFound<object>();
+            return DuesErrors.NoEntry<Unit>();
         }
 
         if (entry.IsVerified == request.IsVerified)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -52,6 +52,6 @@ public sealed class SetKurinDuesEntryVerifiedCommandHandler : IRequestHandler<Se
         DuesEntryTrail.Record(entry, request.IsVerified ? DuesEntryTrail.Verified : DuesEntryTrail.Unverified, _currentUser.UserId, now);
         await _dues.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

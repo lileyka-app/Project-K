@@ -61,7 +61,7 @@ public sealed class UpsertScoreStageCommandHandler : IRequestHandler<UpsertScore
             var found = await _score.ScoreStages.GetByKeyAsync(key, cancellationToken);
             if (found is null || found.KurinKey != request.KurinKey)
             {
-                return ScoreAccess.NotFound<Guid>("There is no such stage.");
+                return ScoreErrors.NotFound<Guid>("There is no such stage.");
             }
 
             stage = found;

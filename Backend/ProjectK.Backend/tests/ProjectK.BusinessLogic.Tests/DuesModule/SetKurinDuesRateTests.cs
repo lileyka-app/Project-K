@@ -40,7 +40,7 @@ public class SetKurinDuesRateTests
         _user.SetupGet(u => u.UserId).Returns(Guid.NewGuid());
     }
 
-    private Task<Common.Models.Records.ServiceResult<object>> Send(SetKurinDuesRateRequest request) =>
+    private Task<Common.Models.Records.ServiceResult<MediatR.Unit>> Send(SetKurinDuesRateRequest request) =>
         new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object, _unitOfWork.Object, _accrual.Object)
             .Handle(new SetKurinDuesRateCommand(Kurin, request), CancellationToken.None);
 

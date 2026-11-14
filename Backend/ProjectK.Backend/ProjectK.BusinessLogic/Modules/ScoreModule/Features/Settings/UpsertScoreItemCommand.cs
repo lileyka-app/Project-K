@@ -62,7 +62,7 @@ public sealed class UpsertScoreItemCommandHandler : IRequestHandler<UpsertScoreI
             var found = await _score.ScoreItems.GetByKeyAsync(key, cancellationToken);
             if (found is null || found.KurinKey != request.KurinKey)
             {
-                return ScoreAccess.NotFound<Guid>("There is no such position on the list.");
+                return ScoreErrors.NotFound<Guid>("There is no such position on the list.");
             }
 
             item = found;

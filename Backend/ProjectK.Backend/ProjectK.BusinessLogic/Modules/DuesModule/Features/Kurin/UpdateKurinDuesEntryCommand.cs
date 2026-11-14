@@ -10,7 +10,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 
-public sealed record UpdateKurinDuesEntryCommand(Guid KurinKey, Guid EntryKey, UpsertDuesEntryRequest Request) : IRequest<ServiceResult<object>>;
+public sealed record UpdateKurinDuesEntryCommand(Guid KurinKey, Guid EntryKey, UpsertDuesEntryRequest Request) : IRequest<ServiceResult<Unit>>;
 
 public sealed class UpdateKurinDuesEntryCommandValidator : AbstractValidator<UpdateKurinDuesEntryCommand>
 {
@@ -22,7 +22,7 @@ public sealed class UpdateKurinDuesEntryCommandValidator : AbstractValidator<Upd
     }
 }
 
-public sealed class UpdateKurinDuesEntryCommandHandler : IRequestHandler<UpdateKurinDuesEntryCommand, ServiceResult<object>>
+public sealed class UpdateKurinDuesEntryCommandHandler : IRequestHandler<UpdateKurinDuesEntryCommand, ServiceResult<Unit>>
 {
     private readonly KurinDuesAccess _access;
     private readonly DuesEntryWriter _writer;
@@ -39,9 +39,9 @@ public sealed class UpdateKurinDuesEntryCommandHandler : IRequestHandler<UpdateK
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(UpdateKurinDuesEntryCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(UpdateKurinDuesEntryCommand request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<object>(request.KurinKey) is { } refused)
+        if (_access.Refuse<Unit>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -49,15 +49,15 @@ public sealed class UpdateKurinDuesEntryCommandHandler : IRequestHandler<UpdateK
         var entry = await _access.OwnEntryAsync(request.KurinKey, request.EntryKey, cancellationToken);
         if (entry is null)
         {
-            return KurinDuesAccess.NotFound<object>();
+            return DuesErrors.NoEntry<Unit>();
         }
 
         if (entry.IsVerified)
         {
-            return KurinDuesAccess.Locked<object>();
+            return DuesErrors.Locked<Unit>("Звʼязковий");
         }
 
-        if (await _writer.CheckForKurinAsync<object>(request.KurinKey, request.Request, cancellationToken) is { } problem)
+        if (await _writer.CheckForKurinAsync<Unit>(request.KurinKey, request.Request, cancellationToken) is { } problem)
         {
             return problem;
         }
@@ -66,6 +66,6 @@ public sealed class UpdateKurinDuesEntryCommandHandler : IRequestHandler<UpdateK
         DuesEntryTrail.Record(entry, DuesEntryTrail.Updated, _currentUser.UserId, _time.GetUtcNow().UtcDateTime);
         await _dues.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

@@ -50,7 +50,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
-            return ScoreAccess.NotFound<AttendanceSheetResponse>("There is no such event, or it does not meet that day.");
+            return ScoreErrors.NotFound<AttendanceSheetResponse>("There is no such event, or it does not meet that day.");
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
@@ -62,7 +62,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
 
         if (!canScoreUnplaced && !canScoreIn.Values.Any(v => v))
         {
-            return ScoreAccess.Forbidden<AttendanceSheetResponse>();
+            return ScoreErrors.Refused<AttendanceSheetResponse>();
         }
 
         // The answers of this very day: a series' RSVPs are per occurrence, a one-off's sit under null.

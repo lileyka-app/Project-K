@@ -17,7 +17,7 @@ public static class PrivateScoreEntryWriter
     {
         if (!book.Memberships.TryGetValue(request.MembershipKey, out var membership) || membership.Kind != MembershipKind.Youth)
         {
-            return ScoreAccess.NotFound<T>("That person is not a youth of this kurin.");
+            return ScoreErrors.NotFound<T>("That person is not a youth of this kurin.");
         }
 
         if (request.PrivateScoreCriterionKey is { } key)
@@ -25,7 +25,7 @@ public static class PrivateScoreEntryWriter
             var criteria = await score.PrivateScoreCriteria.GetForKurinAsync(book.KurinKey, cancellationToken);
             if (criteria.All(c => c.PrivateScoreCriterionKey != key || c.IsArchived))
             {
-                return ScoreAccess.NotFound<T>("There is no such criterion on the list.");
+                return ScoreErrors.NotFound<T>("There is no such criterion on the list.");
             }
         }
 

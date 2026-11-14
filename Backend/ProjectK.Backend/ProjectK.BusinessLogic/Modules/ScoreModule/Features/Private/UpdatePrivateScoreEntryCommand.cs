@@ -11,7 +11,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 
-public sealed record UpdatePrivateScoreEntryCommand(Guid KurinKey, Guid EntryKey, UpsertPrivateScoreEntryRequest Request) : IRequest<ServiceResult<object>>;
+public sealed record UpdatePrivateScoreEntryCommand(Guid KurinKey, Guid EntryKey, UpsertPrivateScoreEntryRequest Request) : IRequest<ServiceResult<Unit>>;
 
 public sealed class UpdatePrivateScoreEntryCommandValidator : AbstractValidator<UpdatePrivateScoreEntryCommand>
 {
@@ -23,7 +23,7 @@ public sealed class UpdatePrivateScoreEntryCommandValidator : AbstractValidator<
     }
 }
 
-public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<UpdatePrivateScoreEntryCommand, ServiceResult<object>>
+public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<UpdatePrivateScoreEntryCommand, ServiceResult<Unit>>
 {
     private readonly PrivateScoreAccess _access;
     private readonly ScoreBookReader _books;
@@ -40,9 +40,9 @@ public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<Upda
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(UpdatePrivateScoreEntryCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(UpdatePrivateScoreEntryCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<object>(request.KurinKey, ResourceAction.Update, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<Unit>(request.KurinKey, ResourceAction.Update, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -50,16 +50,16 @@ public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<Upda
         var entry = await _score.PrivateScoreEntries.GetByKeyAsync(request.EntryKey, cancellationToken);
         if (entry is null || entry.KurinKey != request.KurinKey || entry.IsDeleted)
         {
-            return ScoreAccess.NotFound<object>("There is no such entry here.");
+            return ScoreErrors.NotFound<Unit>("There is no such entry here.");
         }
 
         if (entry.MembershipKey != request.Request.MembershipKey)
         {
-            return ServiceResult<object>.Failure(ResultType.BadRequest, "EntryTargetFixed", "An entry stays with whom it was written about; write a new one instead.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, ScoreErrors.EntryTargetFixed, "An entry stays with whom it was written about; write a new one instead.");
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await PrivateScoreEntryWriter.CheckAsync<object>(_score, book, request.Request, cancellationToken) is { } problem)
+        if (await PrivateScoreEntryWriter.CheckAsync<Unit>(_score, book, request.Request, cancellationToken) is { } problem)
         {
             return problem;
         }
@@ -71,6 +71,6 @@ public sealed class UpdatePrivateScoreEntryCommandHandler : IRequestHandler<Upda
         ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Updated, PrivateScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

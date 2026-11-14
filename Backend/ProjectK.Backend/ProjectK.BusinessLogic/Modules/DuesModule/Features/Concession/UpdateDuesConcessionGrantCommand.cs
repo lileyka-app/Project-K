@@ -15,7 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
 
 /// <summary>Sets when a given пільга ends, or why it was given. Ending it is how it is taken away.</summary>
 public sealed record UpdateDuesConcessionGrantCommand(Guid BoxKey, Guid GrantKey, UpdateDuesConcessionGrantRequest Request)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
 public sealed class UpdateDuesConcessionGrantCommandValidator : AbstractValidator<UpdateDuesConcessionGrantCommand>
 {
@@ -28,7 +28,7 @@ public sealed class UpdateDuesConcessionGrantCommandValidator : AbstractValidato
     }
 }
 
-public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<UpdateDuesConcessionGrantCommand, ServiceResult<object>>
+public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<UpdateDuesConcessionGrantCommand, ServiceResult<Unit>>
 {
     private readonly GroupDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -47,7 +47,7 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
         _currentUser = currentUser;
     }
 
-    public async Task<ServiceResult<object>> Handle(UpdateDuesConcessionGrantCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(UpdateDuesConcessionGrantCommand request, CancellationToken cancellationToken)
     {
         var (grant, failure) = await DuesConcessionGrants.OpenAsync(_access, _dues, _memberships, request.BoxKey, request.GrantKey, cancellationToken);
         if (grant is null)
@@ -58,13 +58,13 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
         var to = DuesConcessionGrants.Index(request.Request.ToQuarter);
         if (to < grant.FromQuarter)
         {
-            return ServiceResult<object>.Failure(ResultType.BadRequest, "EndsBeforeStart", "Пільга не може закінчитися раніше, ніж почнеться.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "Пільга не може закінчитися раніше, ніж почнеться.");
         }
 
         // A later end may run into another grant of the same пільга, as a new grant would.
         if (await DuesConcessionGrants.OverlapsAsync(_dues, grant.KurinKey, grant.MembershipKey, grant.ConcessionKey, grant.FromQuarter, to, grant.DuesConcessionGrantKey, cancellationToken))
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "ConcessionOverlaps", "Ця пільга вже діє в цих кварталах.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "Ця пільга вже діє в цих кварталах.");
         }
 
         grant.ToQuarter = to;
@@ -73,6 +73,6 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
         grant.UpdatedDate = DateTime.UtcNow;
         await _dues.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

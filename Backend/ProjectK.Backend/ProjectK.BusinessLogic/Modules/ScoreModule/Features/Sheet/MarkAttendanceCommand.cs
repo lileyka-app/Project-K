@@ -77,7 +77,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
         var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
-            return ScoreAccess.NotFound<IReadOnlyList<MarkAttendanceResultDto>>("There is no such event, or it does not meet that day.");
+            return ScoreErrors.NotFound<IReadOnlyList<MarkAttendanceResultDto>>("There is no such event, or it does not meet that day.");
         }
 
         var youths = (await _memberships.GetInKurinAsync(request.KurinKey, cancellationToken))
@@ -111,12 +111,12 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
         {
             if (!youths.TryGetValue(membershipKey, out var membership))
             {
-                return ScoreAccess.NotFound<IReadOnlyList<MarkAttendanceResultDto>>("That person is not a youth of this kurin.");
+                return ScoreErrors.NotFound<IReadOnlyList<MarkAttendanceResultDto>>("That person is not a youth of this kurin.");
             }
 
             if (!await _access.MayScoreAsync(request.KurinKey, membership.GroupKey, ResourceAction.Create, cancellationToken))
             {
-                return ScoreAccess.Forbidden<IReadOnlyList<MarkAttendanceResultDto>>();
+                return ScoreErrors.Refused<IReadOnlyList<MarkAttendanceResultDto>>();
             }
 
             var standing = await _score.ScoreAttendances.GetStandingAsync(membershipKey, request.AgendaItemKey, occurrenceStartUtc, cancellationToken);

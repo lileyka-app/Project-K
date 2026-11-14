@@ -34,7 +34,7 @@ public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQue
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
         if (book.ResolvePeriod(request.Period) is not { } resolved)
         {
-            return ScoreAccess.NotFound<KurinScoreResponse>("There is no such stage.");
+            return ScoreErrors.NotFound<KurinScoreResponse>("There is no such stage.");
         }
 
         var rows = new List<ScoreGroupRowDto>();

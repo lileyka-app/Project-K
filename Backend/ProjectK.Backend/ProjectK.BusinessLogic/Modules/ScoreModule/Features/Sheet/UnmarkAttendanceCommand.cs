@@ -17,9 +17,9 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 
 /// <summary>Takes a mark off. Anyone who may score the person's гурток may, whoever put it there.</summary>
 public sealed record UnmarkAttendanceCommand(Guid KurinKey, Guid AgendaItemKey, DateTime OccurrenceStartUtc, Guid MembershipKey)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
-public sealed class UnmarkAttendanceCommandHandler : IRequestHandler<UnmarkAttendanceCommand, ServiceResult<object>>
+public sealed class UnmarkAttendanceCommandHandler : IRequestHandler<UnmarkAttendanceCommand, ServiceResult<Unit>>
 {
     private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
@@ -36,9 +36,9 @@ public sealed class UnmarkAttendanceCommandHandler : IRequestHandler<UnmarkAtten
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(UnmarkAttendanceCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(UnmarkAttendanceCommand request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<object>(request.KurinKey) is { } refused)
+        if (_access.Refuse<Unit>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -47,14 +47,14 @@ public sealed class UnmarkAttendanceCommandHandler : IRequestHandler<UnmarkAtten
             request.MembershipKey, request.AgendaItemKey, DateTime.SpecifyKind(request.OccurrenceStartUtc, DateTimeKind.Utc), cancellationToken);
         if (mark is null || mark.KurinKey != request.KurinKey)
         {
-            return ScoreAccess.NotFound<object>("Nobody is marked here.");
+            return ScoreErrors.NotFound<Unit>("Nobody is marked here.");
         }
 
         var membership = (await _memberships.GetInKurinAsync(request.KurinKey, cancellationToken))
             .FirstOrDefault(m => m.MembershipKey == request.MembershipKey);
         if (!await _access.MayScoreAsync(request.KurinKey, membership?.LeftAtUtc is null ? membership?.GroupKey : null, ResourceAction.Delete, cancellationToken))
         {
-            return ScoreAccess.Forbidden<object>();
+            return ScoreErrors.Refused<Unit>();
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -66,6 +66,6 @@ public sealed class UnmarkAttendanceCommandHandler : IRequestHandler<UnmarkAtten
             MarkAttendanceCommandHandler.Snapshot(mark), _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

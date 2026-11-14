@@ -42,7 +42,7 @@ public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQue
         var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
         if (group is null)
         {
-            return ScoreAccess.NotFound<GroupScoreResponse>("There is no such гурток.");
+            return ScoreErrors.NotFound<GroupScoreResponse>("There is no such гурток.");
         }
 
         if (_access.Refuse<GroupScoreResponse>(group.KurinKey) is { } refused)
@@ -53,7 +53,7 @@ public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQue
         var book = await _books.OpenAsync(group.KurinKey, cancellationToken);
         if (book.ResolvePeriod(request.Period) is not { } resolved)
         {
-            return ScoreAccess.NotFound<GroupScoreResponse>("There is no such stage.");
+            return ScoreErrors.NotFound<GroupScoreResponse>("There is no such stage.");
         }
 
         var table = book.Ledger.Groups(resolved.Period, book.GroupNames.Keys);

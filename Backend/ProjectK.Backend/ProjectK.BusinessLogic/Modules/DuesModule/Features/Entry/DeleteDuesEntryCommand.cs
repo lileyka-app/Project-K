@@ -8,9 +8,9 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
 
 /// <summary>Marks an unverified operation deleted. The row and its trail stay.</summary>
-public sealed record DeleteDuesEntryCommand(Guid GroupKey, Guid EntryKey) : IRequest<ServiceResult<object>>;
+public sealed record DeleteDuesEntryCommand(Guid GroupKey, Guid EntryKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEntryCommand, ServiceResult<object>>
+public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEntryCommand, ServiceResult<Unit>>
 {
     private readonly GroupDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -25,9 +25,9 @@ public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEn
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeleteDuesEntryCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteDuesEntryCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<object>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenAsync<Unit>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -36,7 +36,7 @@ public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEn
         var entry = await _dues.DuesEntries.GetByKeyAsync(request.EntryKey, cancellationToken);
         if (entry is null || entry.GroupKey != group.GroupKey || entry.IsDeleted)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "EntryNotFound", "There is no such operation here.");
+            return DuesErrors.NoEntry<Unit>();
         }
 
         if (DuesEntryLock.Check(entry) is { } locked)
@@ -50,6 +50,6 @@ public sealed class DeleteDuesEntryCommandHandler : IRequestHandler<DeleteDuesEn
         DuesEntryTrail.Record(entry, DuesEntryTrail.Deleted, _currentUser.UserId, now);
         await _dues.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

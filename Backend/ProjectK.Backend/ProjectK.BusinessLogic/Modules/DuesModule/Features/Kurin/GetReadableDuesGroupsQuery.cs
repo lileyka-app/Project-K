@@ -30,7 +30,7 @@ public sealed class GetReadableDuesGroupsQueryHandler : IRequestHandler<GetReada
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<IReadOnlyList<DuesGroupLinkDto>>(ResultType.Forbidden);
+            return DuesErrors.Refused<IReadOnlyList<DuesGroupLinkDto>>();
         }
 
         var links = new List<DuesGroupLinkDto>();

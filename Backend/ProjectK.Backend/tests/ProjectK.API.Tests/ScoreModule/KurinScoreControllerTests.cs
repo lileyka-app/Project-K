@@ -41,7 +41,7 @@ public class KurinScoreControllerTests
         var agendaItemKey = Guid.NewGuid();
         _mediator
             .Setup(m => m.Send(It.IsAny<SetOccurrenceNotHeldCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<object>(ResultType.Success, new object()));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         await _controller.ClearNotHeld(kurinKey, agendaItemKey, "2026-10-06T16:00:00Z");
 

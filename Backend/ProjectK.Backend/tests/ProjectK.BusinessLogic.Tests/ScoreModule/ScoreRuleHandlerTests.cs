@@ -67,7 +67,7 @@ public sealed class ScoreRuleHandlerTests
         return rule;
     }
 
-    private Task<ServiceResult<object>> Set(int points, DateOnly from) =>
+    private Task<ServiceResult<MediatR.Unit>> Set(int points, DateOnly from) =>
         _handler.Handle(
             new SetScoreRuleCommand(Kurin, new SetScoreRuleRequest { Source = ScoreSource.Skill, Variant = 0, Points = points, FromDate = from }),
             CancellationToken.None);

@@ -12,7 +12,7 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Group;
 
 /// <summary>Sets the гурток's part of the вкладка from a quarter on; a rate already set from that quarter is replaced.</summary>
-public sealed record SetGroupDuesRateCommand(Guid GroupKey, SetGroupDuesRateRequest Request) : IRequest<ServiceResult<object>>;
+public sealed record SetGroupDuesRateCommand(Guid GroupKey, SetGroupDuesRateRequest Request) : IRequest<ServiceResult<Unit>>;
 
 public sealed class SetGroupDuesRateCommandValidator : AbstractValidator<SetGroupDuesRateCommand>
 {
@@ -24,7 +24,7 @@ public sealed class SetGroupDuesRateCommandValidator : AbstractValidator<SetGrou
     }
 }
 
-public sealed class SetGroupDuesRateCommandHandler : IRequestHandler<SetGroupDuesRateCommand, ServiceResult<object>>
+public sealed class SetGroupDuesRateCommandHandler : IRequestHandler<SetGroupDuesRateCommand, ServiceResult<Unit>>
 {
     private readonly GroupDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -37,9 +37,9 @@ public sealed class SetGroupDuesRateCommandHandler : IRequestHandler<SetGroupDue
         _currentUser = currentUser;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetGroupDuesRateCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetGroupDuesRateCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<object>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenAsync<Unit>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -69,6 +69,6 @@ public sealed class SetGroupDuesRateCommandHandler : IRequestHandler<SetGroupDue
         }
 
         await _dues.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

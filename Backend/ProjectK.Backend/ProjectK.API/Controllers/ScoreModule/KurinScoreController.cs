@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
+using ProjectK.BusinessLogic.Modules.ScoreModule;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Entry;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Kurin;
@@ -222,7 +223,7 @@ public class KurinScoreController : ControllerBase
     {
         if (!TryParseOccurrence(occurrence, out var startUtc))
         {
-            return this.Failure(ResultType.BadRequest, "BadOccurrence", "The occurrence is its start, as an ISO 8601 UTC instant.");
+            return this.Failure(ResultType.BadRequest, ScoreErrors.BadOccurrence, "The occurrence is its start, as an ISO 8601 UTC instant.");
         }
 
         var result = await _mediator.Send(request(startUtc));

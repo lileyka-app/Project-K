@@ -12,7 +12,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 
-public sealed record SetScoreRuleCommand(Guid KurinKey, SetScoreRuleRequest Request) : IRequest<ServiceResult<object>>;
+public sealed record SetScoreRuleCommand(Guid KurinKey, SetScoreRuleRequest Request) : IRequest<ServiceResult<Unit>>;
 
 public sealed class SetScoreRuleCommandValidator : AbstractValidator<SetScoreRuleCommand>
 {
@@ -34,7 +34,7 @@ public sealed class SetScoreRuleCommandValidator : AbstractValidator<SetScoreRul
     }
 }
 
-public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCommand, ServiceResult<object>>
+public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCommand, ServiceResult<Unit>>
 {
     private readonly ScoreSettingsAccess _access;
     private readonly IScoreUnitOfWork _score;
@@ -49,9 +49,9 @@ public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCom
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetScoreRuleCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetScoreRuleCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<object>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -87,9 +87,9 @@ public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCom
             var previous = history.Count > 1 ? history[^2] : null;
             if (previous is not null && r.FromDate <= previous.FromDate)
             {
-                return ServiceResult<object>.Failure(
+                return ServiceResult<Unit>.Failure(
                     ResultType.BadRequest,
-                    "ScoreRuleOverlap",
+                    ScoreErrors.ScoreRuleOverlap,
                     "The rule cannot start on or before the day the previous one did.");
             }
 
@@ -106,7 +106,7 @@ public sealed class SetScoreRuleCommandHandler : IRequestHandler<SetScoreRuleCom
         await DropRulesThatChangeNothingAsync(request.KurinKey, history, rule, now, cancellationToken);
 
         await _score.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
     /// <summary>

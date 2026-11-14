@@ -11,9 +11,9 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
 /// The впорядник's mark: "I looked, it is right". Setting it locks the operation; taking it off
 /// opens it again. Both leave a trail.
 /// </summary>
-public sealed record SetDuesEntryVerifiedCommand(Guid GroupKey, Guid EntryKey, bool IsVerified) : IRequest<ServiceResult<object>>;
+public sealed record SetDuesEntryVerifiedCommand(Guid GroupKey, Guid EntryKey, bool IsVerified) : IRequest<ServiceResult<Unit>>;
 
-public sealed class SetDuesEntryVerifiedCommandHandler : IRequestHandler<SetDuesEntryVerifiedCommand, ServiceResult<object>>
+public sealed class SetDuesEntryVerifiedCommandHandler : IRequestHandler<SetDuesEntryVerifiedCommand, ServiceResult<Unit>>
 {
     private readonly GroupDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -28,9 +28,9 @@ public sealed class SetDuesEntryVerifiedCommandHandler : IRequestHandler<SetDues
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetDuesEntryVerifiedCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetDuesEntryVerifiedCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<object>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenAsync<Unit>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -39,12 +39,12 @@ public sealed class SetDuesEntryVerifiedCommandHandler : IRequestHandler<SetDues
         var entry = await _dues.DuesEntries.GetByKeyAsync(request.EntryKey, cancellationToken);
         if (entry is null || entry.GroupKey != group.GroupKey || entry.IsDeleted)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "EntryNotFound", "There is no such operation here.");
+            return DuesErrors.NoEntry<Unit>();
         }
 
         if (entry.IsVerified == request.IsVerified)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -53,6 +53,6 @@ public sealed class SetDuesEntryVerifiedCommandHandler : IRequestHandler<SetDues
         DuesEntryTrail.Record(entry, request.IsVerified ? DuesEntryTrail.Verified : DuesEntryTrail.Unverified, _currentUser.UserId, now);
         await _dues.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

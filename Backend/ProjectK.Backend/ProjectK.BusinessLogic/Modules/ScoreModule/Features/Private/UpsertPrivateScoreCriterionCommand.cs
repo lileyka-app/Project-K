@@ -59,7 +59,7 @@ public sealed class UpsertPrivateScoreCriterionCommandHandler : IRequestHandler<
             var found = await _score.PrivateScoreCriteria.GetByKeyAsync(key, cancellationToken);
             if (found is null || found.KurinKey != request.KurinKey)
             {
-                return ScoreAccess.NotFound<Guid>("There is no such criterion.");
+                return ScoreErrors.NotFound<Guid>("There is no such criterion.");
             }
 
             criterion = found;

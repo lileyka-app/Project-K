@@ -18,7 +18,7 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 /// already set from that quarter is replaced. In a senior kurin every quarter from it that is not
 /// paid in full is priced again: the rate may change whose tag counts.
 /// </summary>
-public sealed record SetKurinDuesRateCommand(Guid KurinKey, SetKurinDuesRateRequest Request) : IRequest<ServiceResult<object>>;
+public sealed record SetKurinDuesRateCommand(Guid KurinKey, SetKurinDuesRateRequest Request) : IRequest<ServiceResult<Unit>>;
 
 public sealed class SetKurinDuesRateCommandValidator : AbstractValidator<SetKurinDuesRateCommand>
 {
@@ -63,7 +63,7 @@ public sealed class SetKurinDuesRateCommandValidator : AbstractValidator<SetKuri
     }
 }
 
-public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDuesRateCommand, ServiceResult<object>>
+public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDuesRateCommand, ServiceResult<Unit>>
 {
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
@@ -88,11 +88,11 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetKurinDuesRateCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetKurinDuesRateCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<object>(ResultType.Forbidden);
+            return DuesErrors.Refused<Unit>();
         }
 
         var tagKey = request.Request.TagKey;
@@ -101,17 +101,17 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             // Tags stand in for гуртки only where there are none.
             if (!await _shape.IsSeniorAsync(request.KurinKey, cancellationToken))
             {
-                return ServiceResult<object>.Failure(ResultType.BadRequest, "TagRatesOff", "Rates by tag are for kurins without гуртки.");
+                return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.TagRatesOff, "Rates by tag are for kurins without гуртки.");
             }
 
             if (!await _shape.TagsOnAsync(request.KurinKey, cancellationToken))
             {
-                return ServiceResult<object>.Failure(ResultType.BadRequest, "TagsOff", "The kurin has its tags off.");
+                return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.TagsOff, "The kurin has its tags off.");
             }
 
             if (!(await _unitOfWork.KurinTags.GetForKurinAsync(request.KurinKey, cancellationToken)).Any(t => t.KurinTagKey == tag))
             {
-                return ServiceResult<object>.Failure(ResultType.BadRequest, "TagNotFound", "The kurin has no such tag.");
+                return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.TagNotFound, "The kurin has no such tag.");
             }
         }
 
@@ -136,7 +136,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             // The край decides where its kurins hand money up; a стаття cannot send it elsewhere.
             if (articles.FirstOrDefault(a => !krai.Takes(a.Recipient)) is { } stray)
             {
-                return ServiceResult<object>.Failure(ResultType.BadRequest, "DuesRecipientOff",
+                return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.DuesRecipientOff,
                     $"The край does not take вкладка that way: «{stray.Name}».");
             }
         }
@@ -146,7 +146,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             var inForce = rates.LastOrDefault(r => r.FromQuarter <= from);
             if (inForce is not null && !KurinDuesArticles.AreStandard(inForce.Articles))
             {
-                return ServiceResult<object>.Failure(ResultType.Conflict, "DuesArticlesInUse",
+                return ServiceResult<Unit>.Failure(ResultType.Conflict, DuesErrors.DuesArticlesInUse,
                     "The kurin has its own статті of the вкладка; change them where they can be named.");
             }
 
@@ -176,6 +176,6 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
 
         await _dues.SaveChangesAsync(cancellationToken);
         await _accrual.RepriceKurinAsync(request.KurinKey, DuesQuarter.FromIndex(from), cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

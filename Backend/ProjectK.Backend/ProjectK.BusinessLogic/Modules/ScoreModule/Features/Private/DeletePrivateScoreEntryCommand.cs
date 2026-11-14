@@ -11,9 +11,9 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 
-public sealed record DeletePrivateScoreEntryCommand(Guid KurinKey, Guid EntryKey) : IRequest<ServiceResult<object>>;
+public sealed record DeletePrivateScoreEntryCommand(Guid KurinKey, Guid EntryKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<DeletePrivateScoreEntryCommand, ServiceResult<object>>
+public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<DeletePrivateScoreEntryCommand, ServiceResult<Unit>>
 {
     private readonly PrivateScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
@@ -28,9 +28,9 @@ public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<Dele
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeletePrivateScoreEntryCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeletePrivateScoreEntryCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<object>(request.KurinKey, ResourceAction.Delete, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<Unit>(request.KurinKey, ResourceAction.Delete, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -38,7 +38,7 @@ public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<Dele
         var entry = await _score.PrivateScoreEntries.GetByKeyAsync(request.EntryKey, cancellationToken);
         if (entry is null || entry.KurinKey != request.KurinKey || entry.IsDeleted)
         {
-            return ScoreAccess.NotFound<object>("There is no such entry here.");
+            return ScoreErrors.NotFound<Unit>("There is no such entry here.");
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -49,6 +49,6 @@ public sealed class DeletePrivateScoreEntryCommandHandler : IRequestHandler<Dele
         ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.PrivateEntry, entry.PrivateScoreEntryKey, ScoreTrail.Deleted, PrivateScoreEntryWriter.Snapshot(entry), _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

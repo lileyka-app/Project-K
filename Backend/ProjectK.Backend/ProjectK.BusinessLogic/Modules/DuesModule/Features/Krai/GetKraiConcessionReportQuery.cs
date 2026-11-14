@@ -39,14 +39,14 @@ public sealed class GetKraiConcessionReportQueryHandler
     {
         if ((request.Year is null) != (request.Number is null) || request.Number is < 1 or > 4 || request.Year is < 2000 or > 2100)
         {
-            return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.BadRequest, "InvalidQuarter", "Квартал задано неправильно.");
+            return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.BadRequest, DuesErrors.InvalidQuarter, "Квартал задано неправильно.");
         }
 
         var code = request.KraiCode.Trim().ToLowerInvariant();
         var profile = await _profiles.GetForKraiAsync(code, cancellationToken);
         if (profile is null)
         {
-            return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.NotFound, "KraiNotFound", "Krai not found.");
+            return ServiceResult<KraiConcessionReportResponse>.Failure(ResultType.NotFound, DuesErrors.KraiNotFound, "Krai not found.");
         }
 
         var quarter = request is { Year: int year, Number: int number }

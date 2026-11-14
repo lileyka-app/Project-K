@@ -36,7 +36,7 @@ public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScor
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
         if (book.ResolvePeriod(request.Period) is not { } resolved)
         {
-            return ScoreAccess.NotFound<PrivateScoreResponse>("There is no such stage.");
+            return ScoreErrors.NotFound<PrivateScoreResponse>("There is no such stage.");
         }
 
         var criteria = await _score.PrivateScoreCriteria.GetForKurinAsync(request.KurinKey, cancellationToken);

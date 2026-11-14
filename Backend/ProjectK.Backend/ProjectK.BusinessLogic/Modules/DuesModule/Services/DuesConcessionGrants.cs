@@ -36,7 +36,7 @@ internal static class DuesConcessionGrants
     }
 
     /// <summary>The grant, when it belongs to someone who stands in the гурток the caller keeps.</summary>
-    public static async Task<(DuesConcessionGrant? Grant, ServiceResult<object>? Failure)> OpenAsync(
+    public static async Task<(DuesConcessionGrant? Grant, ServiceResult<Unit>? Failure)> OpenAsync(
         GroupDuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
@@ -44,7 +44,7 @@ internal static class DuesConcessionGrants
         Guid grantKey,
         CancellationToken cancellationToken)
     {
-        var (group, failure) = await access.OpenBoxAsync<object>(boxKey, cancellationToken);
+        var (group, failure) = await access.OpenBoxAsync<Unit>(boxKey, cancellationToken);
         if (group is null)
         {
             return (null, failure);
@@ -56,7 +56,7 @@ internal static class DuesConcessionGrants
             : (await memberships.GetInKurinAsync(group.KurinKey, cancellationToken)).FirstOrDefault(m => m.MembershipKey == grant.MembershipKey);
         if (grant is null || membership is null || membership.GroupKey != group.GroupKey)
         {
-            return (null, ServiceResult<object>.Failure(ResultType.NotFound, "GrantNotFound", "There is no such пільга in this гурток."));
+            return (null, ServiceResult<Unit>.Failure(ResultType.NotFound, DuesErrors.GrantNotFound, "There is no such пільга in this гурток."));
         }
 
         return (grant, null);

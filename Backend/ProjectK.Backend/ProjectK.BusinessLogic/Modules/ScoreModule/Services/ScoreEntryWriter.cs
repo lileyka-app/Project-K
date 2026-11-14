@@ -32,12 +32,12 @@ public static class ScoreEntryWriter
 
         if (!await access.MayScoreAsync(book.KurinKey, groupKey, ResourceAction.Create, cancellationToken))
         {
-            return ScoreAccess.Forbidden<T>();
+            return ScoreErrors.Refused<T>();
         }
 
         if (request.ScoreItemKey is { } itemKey && book.Items.All(i => i.ScoreItemKey != itemKey || i.IsArchived))
         {
-            return ScoreAccess.NotFound<T>("There is no such position on the list.");
+            return ScoreErrors.NotFound<T>("There is no such position on the list.");
         }
 
         if (request.AgendaItemKey is { } eventKey)
@@ -45,7 +45,7 @@ public static class ScoreEntryWriter
             var occurrence = await EventOccurrence.LoadAsync(unitOfWork, profiles, book.KurinKey, eventKey, request.OccurrenceStartUtc!.Value, cancellationToken);
             if (occurrence is null)
             {
-                return ScoreAccess.NotFound<T>("There is no such event, or it does not meet that day.");
+                return ScoreErrors.NotFound<T>("There is no such event, or it does not meet that day.");
             }
 
             if (request.ScoreItemKey is { } positionKey)
@@ -64,7 +64,7 @@ public static class ScoreEntryWriter
         {
             if (!book.Memberships.TryGetValue(membershipKey, out var membership) || membership.Kind != MembershipKind.Youth)
             {
-                return ScoreAccess.NotFound<T>("That person is not a youth of this kurin.");
+                return ScoreErrors.NotFound<T>("That person is not a youth of this kurin.");
             }
 
             groupKey = membership.LeftAtUtc is null ? membership.GroupKey : null;
@@ -74,7 +74,7 @@ public static class ScoreEntryWriter
             groupKey = request.GroupKey;
             if (!book.GroupNames.ContainsKey(groupKey!.Value))
             {
-                return ScoreAccess.NotFound<T>("There is no such гурток here.");
+                return ScoreErrors.NotFound<T>("There is no such гурток here.");
             }
         }
 
@@ -92,7 +92,7 @@ public static class ScoreEntryWriter
             && e.GroupKey == request.GroupKey);
         if (already is not null)
         {
-            return ServiceResult<T>.Failure(ResultType.Conflict, "ItemAlreadyGiven",
+            return ServiceResult<T>.Failure(ResultType.Conflict, ScoreErrors.ItemAlreadyGiven,
                 $"Уже дав {book.NameOfAccount(already.CreatedByUserKey) ?? "хтось"}.");
         }
 
@@ -104,7 +104,7 @@ public static class ScoreEntryWriter
     /// index caught what the check could not. Said the way the check would have said it.
     /// </summary>
     public static ServiceResult<T> GivenMeanwhile<T>() =>
-        ServiceResult<T>.Failure(ResultType.Conflict, "ItemAlreadyGiven", "Уже дав хтось інший щойно.");
+        ServiceResult<T>.Failure(ResultType.Conflict, ScoreErrors.ItemAlreadyGiven, "Уже дав хтось інший щойно.");
 
     public static void Apply(ScoreEntry entry, UpsertScoreEntryRequest request, ScoreBook book)
     {

@@ -18,9 +18,9 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 /// open the sheet may do either; asking for what already stands changes nothing.
 /// </summary>
 public sealed record SetOccurrenceNotHeldCommand(Guid KurinKey, Guid AgendaItemKey, DateTime OccurrenceStartUtc, bool NotHeld)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
-public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccurrenceNotHeldCommand, ServiceResult<object>>
+public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccurrenceNotHeldCommand, ServiceResult<Unit>>
 {
     private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
@@ -48,9 +48,9 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetOccurrenceNotHeldCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetOccurrenceNotHeldCommand request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<object>(request.KurinKey) is { } refused)
+        if (_access.Refuse<Unit>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -58,26 +58,26 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
         var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
-            return ScoreAccess.NotFound<object>("There is no such event, or it does not meet that day.");
+            return ScoreErrors.NotFound<Unit>("There is no such event, or it does not meet that day.");
         }
 
         var groupKeys = (await _unitOfWork.Groups.GetAllAsync(request.KurinKey, cancellationToken)).Select(g => g.GroupKey);
         if (!await _access.MayMarkAnyoneAsync(request.KurinKey, groupKeys, cancellationToken))
         {
-            return ScoreAccess.Forbidden<object>();
+            return ScoreErrors.Refused<Unit>();
         }
 
         var standing = await _score.ScoreNotHeldOccurrences.FindAsync(request.AgendaItemKey, occurrence.StartUtc, cancellationToken);
         if (request.NotHeld == standing is not null)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         if (request.NotHeld)
         {
             if (await _score.ScoreAttendances.AnyAtOccurrenceAsync(request.AgendaItemKey, occurrence.StartUtc, cancellationToken))
             {
-                return ServiceResult<object>.Failure(ResultType.Conflict, "OccurrenceHasAttendance", "Someone is marked present at this occurrence, so it took place.");
+                return ServiceResult<Unit>.Failure(ResultType.Conflict, ScoreErrors.OccurrenceHasAttendance, "Someone is marked present at this occurrence, so it took place.");
             }
 
             var now = _time.GetUtcNow().UtcDateTime;
@@ -107,7 +107,7 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
             // Someone else said the same a moment earlier: what was asked for stands.
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
     /// <summary>The journal entry for either way, also written when a mark takes «did not take place» back.</summary>

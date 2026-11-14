@@ -13,9 +13,9 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 
 /// <summary>A stage is only a slice: dropping it loses no points, so it goes for good.</summary>
-public sealed record DeleteScoreStageCommand(Guid KurinKey, Guid ScoreStageKey) : IRequest<ServiceResult<object>>;
+public sealed record DeleteScoreStageCommand(Guid KurinKey, Guid ScoreStageKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class DeleteScoreStageCommandHandler : IRequestHandler<DeleteScoreStageCommand, ServiceResult<object>>
+public sealed class DeleteScoreStageCommandHandler : IRequestHandler<DeleteScoreStageCommand, ServiceResult<Unit>>
 {
     private readonly ScoreSettingsAccess _access;
     private readonly IScoreUnitOfWork _score;
@@ -30,9 +30,9 @@ public sealed class DeleteScoreStageCommandHandler : IRequestHandler<DeleteScore
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeleteScoreStageCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteScoreStageCommand request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<object>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<Unit>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -40,7 +40,7 @@ public sealed class DeleteScoreStageCommandHandler : IRequestHandler<DeleteScore
         var stage = await _score.ScoreStages.GetByKeyAsync(request.ScoreStageKey, cancellationToken);
         if (stage is null || stage.KurinKey != request.KurinKey)
         {
-            return ScoreAccess.NotFound<object>("There is no such stage.");
+            return ScoreErrors.NotFound<Unit>("There is no such stage.");
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -49,6 +49,6 @@ public sealed class DeleteScoreStageCommandHandler : IRequestHandler<DeleteScore
             new { stage.Name, stage.FromDate, stage.ToDate }, _currentUser.UserId, now);
 
         await _score.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

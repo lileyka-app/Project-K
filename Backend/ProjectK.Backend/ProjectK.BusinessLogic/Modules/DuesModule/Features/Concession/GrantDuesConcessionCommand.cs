@@ -68,27 +68,27 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
             .FirstOrDefault(m => m.MembershipKey == request.MembershipKey);
         if (membership is null || membership.GroupKey != group.GroupKey || membership.LeftAtUtc.HasValue)
         {
-            return ServiceResult<Guid>.Failure(ResultType.NotFound, "NotInGroup", "They are not a youth of this гурток.");
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, DuesErrors.NotInGroup, "They are not a youth of this гурток.");
         }
 
         var profile = await _profiles.GetForKurinAsync(group.KurinKey, cancellationToken);
         var rule = profile?.Dues.Concessions.FirstOrDefault(c => c.Key == request.Request.ConcessionKey.Trim());
         if (rule is null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "UnknownConcession", "У краю куреня немає такої пільги.");
+            return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.UnknownConcession, "У краю куреня немає такої пільги.");
         }
 
         var from = new DuesQuarter(request.Request.FromQuarter.Year, request.Request.FromQuarter.Number).Index;
         var to = DuesConcessionGrants.Index(request.Request.ToQuarter);
         if (to < from)
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, "EndsBeforeStart", "Пільга не може закінчитися раніше, ніж почнеться.");
+            return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "Пільга не може закінчитися раніше, ніж почнеться.");
         }
 
         // The same пільга twice over the same quarters would only hide which one counts.
         if (await DuesConcessionGrants.OverlapsAsync(_dues, group.KurinKey, request.MembershipKey, rule.Key, from, to, null, cancellationToken))
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, "ConcessionOverlaps", "Ця пільга вже діє в цих кварталах.");
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "Ця пільга вже діє в цих кварталах.");
         }
 
         var grant = new DuesConcessionGrant

@@ -14,7 +14,7 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
 
 /// <summary>Switches a person's пільга on or off from a quarter on. Earlier quarters keep what they had.</summary>
 public sealed record SetDuesConcessionCommand(Guid BoxKey, Guid MembershipKey, SetDuesConcessionRequest Request)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
 public sealed class SetDuesConcessionCommandValidator : AbstractValidator<SetDuesConcessionCommand>
 {
@@ -26,7 +26,7 @@ public sealed class SetDuesConcessionCommandValidator : AbstractValidator<SetDue
     }
 }
 
-public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesConcessionCommand, ServiceResult<object>>
+public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesConcessionCommand, ServiceResult<Unit>>
 {
     private readonly GroupDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -45,9 +45,9 @@ public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesCon
         _currentUser = currentUser;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetDuesConcessionCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetDuesConcessionCommand request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenBoxAsync<object>(request.BoxKey, cancellationToken);
+        var (group, failure) = await _access.OpenBoxAsync<Unit>(request.BoxKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -57,7 +57,7 @@ public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesCon
             .FirstOrDefault(m => m.MembershipKey == request.MembershipKey);
         if (membership is null || membership.GroupKey != group.GroupKey || membership.LeftAtUtc.HasValue)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "NotInGroup", "They are not a youth of this гурток.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, DuesErrors.NotInGroup, "They are not a youth of this гурток.");
         }
 
         var from = new DuesQuarter(request.Request.FromQuarter.Year, request.Request.FromQuarter.Number).Index;
@@ -84,6 +84,6 @@ public sealed class SetDuesConcessionCommandHandler : IRequestHandler<SetDuesCon
         }
 
         await _dues.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

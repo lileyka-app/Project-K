@@ -47,7 +47,7 @@ public sealed class DuesEntryWriter
                     .Any(c => c.MembershipKey == membershipKey && c.GroupKey == group.GroupKey);
             if (!standsHere && !chargedHere)
             {
-                return ServiceResult<T>.Failure(ResultType.BadRequest, "NotOfThisGroup", "They have no вкладка in this гурток.");
+                return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.NotOfThisGroup, "They have no вкладка in this гурток.");
             }
         }
 
@@ -63,14 +63,14 @@ public sealed class DuesEntryWriter
     {
         if (!(await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).Takes(request.Kind))
         {
-            return ServiceResult<T>.Failure(ResultType.BadRequest, "DuesTransferOff", "The край does not take вкладка that way.");
+            return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.DuesTransferOff, "The край does not take вкладка that way.");
         }
 
         if (request.MembershipKey is { } membershipKey)
         {
             if (!await _shape.IsSeniorAsync(kurinKey, cancellationToken))
             {
-                return ServiceResult<T>.Failure(ResultType.BadRequest, "DuesPaidInGroup", "In this kurin people pay their гурток.");
+                return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.DuesPaidInGroup, "In this kurin people pay their гурток.");
             }
 
             var membership = (await _memberships.GetInKurinAsync(kurinKey, cancellationToken))
@@ -81,7 +81,7 @@ public sealed class DuesEntryWriter
                     .Any(c => c.MembershipKey == membershipKey && c.GroupKey is null);
             if (!standsHere && !chargedHere)
             {
-                return ServiceResult<T>.Failure(ResultType.BadRequest, "NotOfThisKurin", "They have no вкладка in this kurin.");
+                return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.NotOfThisKurin, "They have no вкладка in this kurin.");
             }
         }
 
@@ -93,7 +93,7 @@ public sealed class DuesEntryWriter
         if (request.CollectedByMemberKey is { } collector
             && await _members.FindKurinKeyAsync(collector, cancellationToken) != kurinKey)
         {
-            return ServiceResult<T>.Failure(ResultType.BadRequest, "CollectorNotInKurin", "Whoever collected it has to be of this kurin.");
+            return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.CollectorNotInKurin, "Whoever collected it has to be of this kurin.");
         }
 
         return null;
