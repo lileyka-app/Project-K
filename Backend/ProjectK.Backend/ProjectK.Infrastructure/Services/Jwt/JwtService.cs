@@ -5,10 +5,11 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.AuthModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.Infrastructure.Services.Jwt;
 

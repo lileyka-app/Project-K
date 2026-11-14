@@ -3,13 +3,15 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.RefreshToken;
 
@@ -233,13 +235,13 @@ public class RefreshTokenCommandHandlerTests
         return session;
     }
 
-    private Common.Models.Dtos.AuthModule.RefreshToken GivenIssuedTokens(
+    private Common.Dtos.AuthModule.RefreshToken GivenIssuedTokens(
         AppUser user,
         string accessToken,
         string refreshToken,
         List<string>? roles = null)
     {
-        var issued = new Common.Models.Dtos.AuthModule.RefreshToken
+        var issued = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = refreshToken,
             Expires = DateTime.UtcNow.AddDays(7),

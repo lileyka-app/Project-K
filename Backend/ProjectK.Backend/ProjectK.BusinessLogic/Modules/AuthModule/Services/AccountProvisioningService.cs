@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

@@ -1,6 +1,6 @@
 using FluentAssertions;
+using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Interfaces.Modules.AuditModule;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace ProjectK.Architecture.Tests;

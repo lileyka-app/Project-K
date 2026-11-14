@@ -5,17 +5,18 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Exceptions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 
@@ -434,7 +435,7 @@ public class MembershipRequestTests
 
     private void Senior(Guid kurinKey) => _branches[kurinKey] = KurinBranch.USP;
 
-    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.Common.Models.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
+    private Task<ProjectK.Common.Records.Shared.ServiceResult<ProjectK.Common.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
         MembershipRequestKind kind, MembershipKind as_ = MembershipKind.Youth, Guid? from = null) =>
         Create().Handle(new CreateMembershipRequestCommand(_kurinB, Code, null, kind, as_, from), default);
 

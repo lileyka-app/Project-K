@@ -1,5 +1,5 @@
 using FluentAssertions;
-using ProjectK.Common.Phones;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.CommonTests;
 

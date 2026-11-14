@@ -1,8 +1,8 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;

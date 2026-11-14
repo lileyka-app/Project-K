@@ -5,9 +5,9 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
-using ProjectK.Common.Models.Dtos.ScoreModule;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.ScoreModule;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Controllers.ScoreModule;
 

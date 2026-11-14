@@ -1,7 +1,8 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 

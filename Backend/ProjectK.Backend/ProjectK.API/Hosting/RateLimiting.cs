@@ -1,8 +1,8 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Security;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Hosting;
 

@@ -1,9 +1,10 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope;
 

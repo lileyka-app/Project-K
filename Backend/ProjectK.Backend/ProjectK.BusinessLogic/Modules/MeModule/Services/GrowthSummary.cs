@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 

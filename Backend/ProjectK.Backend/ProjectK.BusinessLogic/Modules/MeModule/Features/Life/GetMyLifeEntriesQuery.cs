@@ -1,9 +1,9 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
 

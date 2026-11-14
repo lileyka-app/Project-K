@@ -1,5 +1,5 @@
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

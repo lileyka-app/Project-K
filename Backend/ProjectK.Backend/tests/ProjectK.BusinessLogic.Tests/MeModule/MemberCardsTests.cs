@@ -5,16 +5,20 @@ using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 
@@ -77,7 +81,7 @@ public class MemberCardsTests
         new FakeBlobReadLinks(),
         _scope.Object,
         _honours.Object,
-        Options.Create(new EmailSettings { BaseUrl = "https://lileyka.test" }),
+        Options.Create(new EmailOptions { BaseUrl = "https://lileyka.test" }),
         new FixedTimeProvider(Now));
 
     private ReadCheckedCardQueryHandler Checked() => new(Cards(), _signer.Object, new FixedTimeProvider(Now));
@@ -92,7 +96,7 @@ public class MemberCardsTests
 
         var allowance = await Cards().AllowanceAsync(_person, default);
 
-        allowance.Should().Be(new Common.Models.Dtos.MeModule.CardAllowanceDto(true, true, CardField.All, true));
+        allowance.Should().Be(new Common.Dtos.MeModule.CardAllowanceDto(true, true, CardField.All, true));
     }
 
     [Fact]
@@ -195,7 +199,7 @@ public class MemberCardsTests
         options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 
         var json = System.Text.Json.JsonSerializer.Serialize(
-            new Common.Models.Dtos.MeModule.CardAllowanceDto(true, false, CardField.Kurin | CardField.Level, false), options);
+            new Common.Dtos.MeModule.CardAllowanceDto(true, false, CardField.Kurin | CardField.Level, false), options);
 
         json.Should().Contain("\"maxFields\":6");
     }
@@ -219,7 +223,7 @@ public class MemberCardsTests
 
         var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
 
-        card!.Awards.Should().Equal(new Common.Models.Dtos.MeModule.PublicCardAwardDto(2, "2-е відзначення", null, new DateTime(2019, 5, 1), "UPYu"));
+        card!.Awards.Should().Equal(new Common.Dtos.MeModule.PublicCardAwardDto(2, "2-е відзначення", null, new DateTime(2019, 5, 1), "UPYu"));
     }
 
     [Fact]
@@ -231,7 +235,7 @@ public class MemberCardsTests
 
         var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
 
-        card!.Awards.Should().Equal(new Common.Models.Dtos.MeModule.PublicCardAwardDto(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1), "USP"));
+        card!.Awards.Should().Equal(new Common.Dtos.MeModule.PublicCardAwardDto(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1), "USP"));
     }
 
     [Fact]

@@ -6,10 +6,9 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Feedback;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule.Requests;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.InfrastructureModule;
 

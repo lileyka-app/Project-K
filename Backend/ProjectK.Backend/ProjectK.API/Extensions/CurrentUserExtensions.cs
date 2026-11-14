@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.Common.Extensions;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Extensions;
 

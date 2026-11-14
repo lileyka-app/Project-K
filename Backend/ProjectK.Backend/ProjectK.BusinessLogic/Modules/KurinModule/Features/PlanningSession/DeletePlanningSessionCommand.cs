@@ -1,6 +1,6 @@
 using MediatR;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
 
@@ -22,10 +22,10 @@ public class DeletePlanningSessionCommandHandler : IRequestHandler<DeletePlannin
         var session = await _uow.PlanningSessions.GetByKeyAsync(request.planningSessionKey, cancellationToken);
         if (session == null)
         {
-            return ServiceResult<string>.Failure(Common.Models.Enums.ResultType.NotFound, KurinErrors.PlanningSessionNotFound, "Planning session was not found.");
+            return ServiceResult<string>.Failure(Common.Enums.Shared.ResultType.NotFound, KurinErrors.PlanningSessionNotFound, "Planning session was not found.");
         }
         _uow.PlanningSessions.Delete(session, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<string>(Common.Models.Enums.ResultType.Success, "Planning deleted successfully");
+        return new ServiceResult<string>(Common.Enums.Shared.ResultType.Success, "Planning deleted successfully");
     }
 }

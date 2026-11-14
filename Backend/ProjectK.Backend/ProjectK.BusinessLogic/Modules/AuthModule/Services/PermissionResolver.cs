@@ -1,6 +1,6 @@
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

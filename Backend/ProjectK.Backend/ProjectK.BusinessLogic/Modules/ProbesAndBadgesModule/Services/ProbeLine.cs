@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

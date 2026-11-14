@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

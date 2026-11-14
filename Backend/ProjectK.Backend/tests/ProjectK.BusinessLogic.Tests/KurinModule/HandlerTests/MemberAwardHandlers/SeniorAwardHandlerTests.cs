@@ -2,18 +2,21 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberAwardHandlers;
 
@@ -84,7 +87,7 @@ public class SeniorAwardHandlerTests
         _unitOfWork.Object, _currentUser.Object, _directory.Object, _access.Object,
         (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, _kurinData.Object);
 
-    private Task<Common.Models.Records.ServiceResult<MemberAwardDto>> Record(string? catalogId, MemberAwardLevel? level = null) =>
+    private Task<Common.Records.Shared.ServiceResult<MemberAwardDto>> Record(string? catalogId, MemberAwardLevel? level = null) =>
         Upsert().Handle(new UpsertMemberAwardCommand
         {
             MemberKey = _member.MemberKey,
@@ -202,7 +205,7 @@ public class SeniorAwardHandlerTests
         _honours.Setup(h => h.GetById("orden-sv-yuriia-sribla"))
             .Returns(new CatalogHonour("orden-sv-yuriia-sribla", HonourKind.Award, "Орден святого Юрія в сріблі", "orden-sv-yuriia", "usp", 1, ""));
         await Record("orden-sv-yuriia-bronza");
-        _journal.Entries.Single().Changes.Should().Contain(new Common.Models.Audit.AuditChange("award", null, "Орден святого Юрія в бронзі"));
+        _journal.Entries.Single().Changes.Should().Contain(new Common.Dtos.AuditModule.AuditChange("award", null, "Орден святого Юрія в бронзі"));
 
         await Upsert().Handle(new UpsertMemberAwardCommand
         {
@@ -213,7 +216,7 @@ public class SeniorAwardHandlerTests
         }, CancellationToken.None);
 
         _journal.Entries.Single().Changes.Should().Equal(
-            new Common.Models.Audit.AuditChange("award", "Орден святого Юрія в бронзі", "Орден святого Юрія в сріблі"));
+            new Common.Dtos.AuditModule.AuditChange("award", "Орден святого Юрія в бронзі", "Орден святого Юрія в сріблі"));
         _journal.Entries.SelectMany(e => e.Changes).Should().NotContain(c => c.Field == "catalogId");
     }
 

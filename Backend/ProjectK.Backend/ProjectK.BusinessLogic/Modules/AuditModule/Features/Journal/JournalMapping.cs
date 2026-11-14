@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Models.Dtos.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
 

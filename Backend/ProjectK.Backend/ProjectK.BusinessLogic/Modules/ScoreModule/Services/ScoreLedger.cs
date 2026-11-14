@@ -1,6 +1,6 @@
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Score;
+using ProjectK.Common.Enums.ScoreModule;
+using ProjectK.Common.Records.ScoreModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 

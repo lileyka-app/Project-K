@@ -1,11 +1,15 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 
@@ -24,8 +28,8 @@ public enum ThirdProbeSignPart
 
 /// <summary>
 /// Confirms or takes back one part of the third probe. Confirming is the kurin's
-/// <see cref="Common.Models.Authorization.KurinPolicy.KurinCapability.SignProbe"/>, taking back its
-/// <see cref="Common.Models.Authorization.KurinPolicy.KurinCapability.UnsignProbe"/>, the same pair
+/// <see cref="Common.Enums.AuthModule.KurinCapability.SignProbe"/>, taking back its
+/// <see cref="Common.Enums.AuthModule.KurinCapability.UnsignProbe"/>, the same pair
 /// that signs and unsigns probe points.
 /// </summary>
 public sealed record SignThirdProbeCommand(

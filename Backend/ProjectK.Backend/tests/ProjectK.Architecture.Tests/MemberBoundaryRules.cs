@@ -1,10 +1,10 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace ProjectK.Architecture.Tests;

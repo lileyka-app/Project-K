@@ -13,18 +13,20 @@ using ProjectK.API.Middleware;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.Services.Jwt;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -96,7 +98,7 @@ public class AccessStaleHeaderHttpTests
         leaderships.Setup(r => r.GetByKeyAsync(leadership.LeadershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(leadership);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
-        unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<ProjectK.Common.Interfaces.Modules.KurinModule.IKurinRepository>());
+        unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<ProjectK.Common.Contracts.KurinModule.IKurinRepository>());
         unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
 

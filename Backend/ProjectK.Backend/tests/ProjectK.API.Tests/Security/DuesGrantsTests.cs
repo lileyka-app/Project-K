@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.API.Tests.Security;
 

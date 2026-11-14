@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.InfrastructureModule;

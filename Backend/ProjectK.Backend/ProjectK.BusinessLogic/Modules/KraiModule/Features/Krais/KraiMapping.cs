@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Models.Dtos.KraiModule;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 

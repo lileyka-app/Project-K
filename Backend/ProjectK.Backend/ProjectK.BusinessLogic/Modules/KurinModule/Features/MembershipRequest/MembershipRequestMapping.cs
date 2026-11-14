@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;

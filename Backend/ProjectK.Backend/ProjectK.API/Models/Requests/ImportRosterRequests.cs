@@ -1,5 +1,5 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.API.Models.Requests;
 

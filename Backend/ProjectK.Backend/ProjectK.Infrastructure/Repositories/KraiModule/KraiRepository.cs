@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KraiModule;

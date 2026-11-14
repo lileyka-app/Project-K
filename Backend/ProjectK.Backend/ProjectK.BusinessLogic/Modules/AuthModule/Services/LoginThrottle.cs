@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

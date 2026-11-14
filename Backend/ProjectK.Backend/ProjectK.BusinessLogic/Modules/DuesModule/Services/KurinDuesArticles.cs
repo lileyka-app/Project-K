@@ -1,5 +1,5 @@
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 

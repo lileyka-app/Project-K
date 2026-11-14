@@ -1,5 +1,5 @@
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.API.Tests.TestHelpers;
 

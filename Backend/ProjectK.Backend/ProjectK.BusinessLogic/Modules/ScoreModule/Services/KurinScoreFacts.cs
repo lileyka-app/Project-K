@@ -1,10 +1,11 @@
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Score;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ScoreModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ScoreModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 

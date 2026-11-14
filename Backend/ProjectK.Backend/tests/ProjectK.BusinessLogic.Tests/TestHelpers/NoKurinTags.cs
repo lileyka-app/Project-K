@@ -1,6 +1,6 @@
 using Moq;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 

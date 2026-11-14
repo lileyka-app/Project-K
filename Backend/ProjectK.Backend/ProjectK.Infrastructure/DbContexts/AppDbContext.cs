@@ -11,6 +11,7 @@ using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ScoreModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.Infrastructure.DbContexts;
 

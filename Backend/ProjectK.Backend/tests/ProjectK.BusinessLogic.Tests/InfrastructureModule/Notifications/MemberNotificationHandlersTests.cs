@@ -3,13 +3,15 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 using ProjectK.BusinessLogic.Services.Events;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
+using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
 
@@ -23,7 +25,7 @@ public class MemberNotificationHandlersTests
     private readonly Mock<IReviewNotificationRecipientResolver> _recipients = new();
 
     private static DomainEventNotification<TEvent> Raised<TEvent>(TEvent domainEvent)
-        where TEvent : ProjectK.Common.Interfaces.IDomainEvent
+        where TEvent : ProjectK.Common.Contracts.Shared.IDomainEvent
         => new(domainEvent);
 
 

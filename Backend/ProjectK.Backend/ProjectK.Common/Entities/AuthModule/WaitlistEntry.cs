@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Entities.Shared;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Entities.AuthModule;
 
@@ -95,22 +97,4 @@ public class WaitlistEntry : Entity
     public DateTime? ApprovedAtUtc { get; set; }
     public DateTime? InvitationSentAtUtc { get; set; }
     public DateTime? InvitationAcceptedAtUtc { get; set; }
-}
-
-public enum WaitlistVerificationStatus
-{
-    Submitted = 0,
-    NeedsManualVerification = 1,
-    Verified = 2,
-    Rejected = 3,
-    ApprovedForInvitation = 4
-}
-
-public enum WaitlistEntrySource
-{
-    /// <summary>Submitted through the public waitlist form.</summary>
-    Application = 0,
-
-    /// <summary>Opened on someone's behalf when a провід gave a member an account directly.</summary>
-    DirectAdd = 1
 }

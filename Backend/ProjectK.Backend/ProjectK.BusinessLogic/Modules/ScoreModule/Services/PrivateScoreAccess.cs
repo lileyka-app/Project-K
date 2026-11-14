@@ -1,6 +1,6 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 

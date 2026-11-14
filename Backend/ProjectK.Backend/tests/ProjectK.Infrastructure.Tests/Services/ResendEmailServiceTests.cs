@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.Services.Email;
+using ProjectK.Common.Options.InfrastructureModule;
 using Resend;
 using Xunit.Abstractions;
 
@@ -25,7 +25,7 @@ public class ResendEmailServiceTests
             .Setup(r => r.EmailSendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
             .Callback((EmailMessage message, CancellationToken _) => _sent.Add(message))
             .ReturnsAsync(new ResendResponse<Guid>(Guid.NewGuid(), null!));
-        var settings = Options.Create(new EmailSettings
+        var settings = Options.Create(new EmailOptions
         {
             FromEmail = "lileyka@example.com",
             FromName = "Лілейка",
@@ -98,7 +98,7 @@ public class ResendEmailServiceTests
             .Setup(r => r.EmailSendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
             .Callback((EmailMessage message, CancellationToken _) => sent.Add(message))
             .ReturnsAsync(new ResendResponse<Guid>(Guid.NewGuid(), null!));
-        var service = new ResendEmailService(resend.Object, Options.Create(new EmailSettings
+        var service = new ResendEmailService(resend.Object, Options.Create(new EmailOptions
         {
             FromEmail = "a@example.com",
             BaseUrl = "https://lileyka.example",
@@ -134,7 +134,7 @@ public class ResendEmailServiceTests
             .Setup(r => r.EmailSendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
             .Callback((EmailMessage message, CancellationToken _) => sent.Add(message))
             .ReturnsAsync(new ResendResponse<Guid>(Guid.NewGuid(), null!));
-        var service = new ResendEmailService(resend.Object, Options.Create(new EmailSettings { FromEmail = "a@example.com", BaseUrl = "https://lileyka.example" }));
+        var service = new ResendEmailService(resend.Object, Options.Create(new EmailOptions { FromEmail = "a@example.com", BaseUrl = "https://lileyka.example" }));
 
         await service.SendInvitationEmailAsync("marta@example.com", "t", CancellationToken.None);
 

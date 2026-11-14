@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PhoneApp;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.PhoneApp;
 
@@ -29,7 +29,7 @@ public class GetPhoneAppInstallCodeQueryHandlerTests
     public async Task Handle_ShouldDrawTheCodeOnce_AndServeItAfterwards()
     {
         // A host of its own: the drawn codes live for the process, so other tests must not share it.
-        var site = Options.Create(new EmailSettings { BaseUrl = $"https://{Guid.NewGuid():N}.example" });
+        var site = Options.Create(new EmailOptions { BaseUrl = $"https://{Guid.NewGuid():N}.example" });
         var qrCodes = new CountingQrCodes();
 
         var first = await new GetPhoneAppInstallCodeQueryHandler(qrCodes, site).Handle(new GetPhoneAppInstallCodeQuery(), CancellationToken.None);
@@ -46,7 +46,7 @@ public class GetPhoneAppInstallCodeQueryHandlerTests
     {
         var handler = new GetPhoneAppInstallCodeQueryHandler(
             new EchoQrCodes(),
-            Options.Create(new EmailSettings { BaseUrl = baseUrl }));
+            Options.Create(new EmailOptions { BaseUrl = baseUrl }));
 
         var result = await handler.Handle(new GetPhoneAppInstallCodeQuery(), CancellationToken.None);
 

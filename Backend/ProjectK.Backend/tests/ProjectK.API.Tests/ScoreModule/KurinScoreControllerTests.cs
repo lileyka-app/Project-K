@@ -5,8 +5,8 @@ using Moq;
 using ProjectK.API.Controllers.ScoreModule;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Tests.ScoreModule;
 

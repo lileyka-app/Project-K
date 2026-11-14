@@ -6,21 +6,25 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
-using ProjectK.Common.Security;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 
@@ -105,7 +109,7 @@ public class CalendarFeedTests
         return new RenderCalendarFeedQueryHandler(
             _feeds.Object, userManager.Object, scopes, unitOfWork.Object, members.Object,
             new Mock<IKraiProfileProvider>().Object, new FixedTimeProvider(Now),
-            Options.Create(new EmailSettings { BaseUrl = "https://lileyka.app" }));
+            Options.Create(new EmailOptions { BaseUrl = "https://lileyka.app" }));
     }
 
     private AgendaItem Event(string title, Guid group, Guid? category = null, Guid? createdBy = null)

@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Contracts.KraiModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

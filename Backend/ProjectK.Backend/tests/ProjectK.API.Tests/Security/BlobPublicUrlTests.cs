@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Rules.InfrastructureModule;
 
 namespace ProjectK.API.Tests.Security;
 

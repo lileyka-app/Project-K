@@ -1,11 +1,11 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
 

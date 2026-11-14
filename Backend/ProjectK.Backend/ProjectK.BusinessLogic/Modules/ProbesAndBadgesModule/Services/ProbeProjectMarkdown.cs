@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

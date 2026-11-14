@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
 using Moq;
 using ProjectK.API.Filters;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.API.Tests.Security;
 

@@ -1,5 +1,5 @@
+using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.AuditModule;

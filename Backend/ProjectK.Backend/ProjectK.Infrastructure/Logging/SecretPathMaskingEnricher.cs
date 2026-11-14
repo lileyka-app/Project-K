@@ -1,4 +1,4 @@
-using ProjectK.Common.Security;
+using ProjectK.Common.Rules.Shared;
 using Serilog.Core;
 using Serilog.Events;
 

@@ -1,9 +1,9 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Events;
 using ProjectK.BusinessLogic.Services.Events;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Events;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Events.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 

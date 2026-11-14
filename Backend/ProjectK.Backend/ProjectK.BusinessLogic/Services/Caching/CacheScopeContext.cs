@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Services.Caching;
 

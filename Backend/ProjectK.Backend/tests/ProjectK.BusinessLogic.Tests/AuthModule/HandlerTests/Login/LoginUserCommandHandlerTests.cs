@@ -7,16 +7,17 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.AuthModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Login;
 
@@ -138,7 +139,7 @@ public class LoginUserCommandHandlerTests
         _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<bool>()))
             .Returns("access");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-            .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
+            .Returns(new ProjectK.Common.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
 
         var handler = CreateHandler(BypassConfiguration(), "E2E");
 
@@ -171,7 +172,7 @@ public class LoginUserCommandHandlerTests
 
         var roles = new List<string> { "User" };
         var accessToken = "access-token";
-        var refreshToken = new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken
+        var refreshToken = new ProjectK.Common.Dtos.AuthModule.RefreshToken
         {
             Token = "refresh-token",
             Expires = DateTime.UtcNow.AddDays(7),
@@ -234,7 +235,7 @@ public class LoginUserCommandHandlerTests
 
         var roles = new List<string> { "Admin" };
         var accessToken = "admin-access-token";
-        var refreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
+        var refreshToken = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = "admin-refresh-token",
             Expires = DateTime.UtcNow.AddDays(7),
@@ -453,7 +454,7 @@ public class LoginUserCommandHandlerTests
 
         var roles = new List<string> { "Admin", "Manager", "User" };
         var accessToken = "multi-role-token";
-        var refreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
+        var refreshToken = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = "multi-role-refresh",
             Expires = DateTime.UtcNow.AddDays(7),
@@ -503,7 +504,7 @@ public class LoginUserCommandHandlerTests
         };
 
         var roles = new List<string> { "User" };
-        var newRefreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
+        var newRefreshToken = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = "new-refresh-token",
             Expires = DateTime.UtcNow.AddDays(14),
@@ -593,7 +594,7 @@ public class LoginUserCommandHandlerTests
         _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<bool>()))
             .Returns("access");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-            .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
+            .Returns(new ProjectK.Common.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
         return user;
     }
 

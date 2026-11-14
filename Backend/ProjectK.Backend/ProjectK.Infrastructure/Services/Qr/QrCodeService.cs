@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using QRCoder;
 
 namespace ProjectK.Infrastructure.Services.Qr;

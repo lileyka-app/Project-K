@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.API.Filters;
 

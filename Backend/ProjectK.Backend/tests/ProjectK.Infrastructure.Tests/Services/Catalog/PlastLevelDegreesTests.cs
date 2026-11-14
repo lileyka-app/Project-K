@@ -1,6 +1,8 @@
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.BackgroundServices;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.Services.Catalog;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;

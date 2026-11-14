@@ -1,7 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 

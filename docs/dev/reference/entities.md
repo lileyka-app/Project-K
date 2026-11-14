@@ -37,7 +37,7 @@ sidebar:
 - **Member** — людина. Від 0.20.0 член не належить куреню напряму. Окрім імені, пошти й дати
   народження — `MiddleName`, `Address`, `School`, контакти батьків (`Mother*`, `Father*`) і
   `CardExtras` (значення власних полів краю, JSON). Телефони зберігаються одним виглядом —
-  `+380501234567`, лише «+» і цифри (`ProjectK.Common/Phones/PhoneNumbers.cs`).
+  `+380501234567`, лише «+» і цифри (`ProjectK.Common/Rules/Shared/PhoneNumbers.cs`).
 - **Membership** — належність людини до куреня (з гуртком, датами приходу й виходу). Одна людина
   може стояти в кількох куренях; активний вибирається при вході.
 - **Leadership** / **LeadershipHistory** — провід (КВ, курінний, гуртковий) і хто коли яке діловодство
@@ -72,7 +72,7 @@ sidebar:
 - **KraiProfileRevision** — одна збережена версія профілю краю (JSON у `Json`, `SchemaVersion`).
   Рядки лише додаються: чинна — остання ревізія, відновлення давнішої додає нову.
 
-Сам профіль — не сутність, а модель у `ProjectK.Common/Models/KraiProfiles`: `KraiProfileDocument`
+Сам профіль — не сутність, а модель у `ProjectK.Common/Dtos/KraiModule`: `KraiProfileDocument`
 (як збережено, кожне поле необовʼязкове) і `KraiProfile` (усе заповнено, це читає решта коду через
 `IKraiProfileProvider`). Секції: `Catalog` — з яких країв вмілості й які приховати; `Locale` —
 валюта, часовий пояс, формат чисел (`NumberLocale`, типово `uk-UA`); `CardFields` — які поля картки

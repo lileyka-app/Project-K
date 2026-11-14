@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -21,7 +21,7 @@ public interface IKurinTagVisibility
     /// How far the viewer sees tags on others: the whole kurin for whoever manages them, otherwise the
     /// kurin's <c>SeeTags</c> row; nobody while tags are off. One's own tags are not counted here.
     /// </summary>
-    Task<Common.Models.Authorization.KurinPolicy.CapabilityReach> CarrierReachAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+    Task<Common.Enums.AuthModule.CapabilityReach> CarrierReachAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>Fills the tags the viewer may see on people seen in the kurin.</summary>
     Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberDto> rows, CancellationToken cancellationToken = default);

@@ -1,6 +1,6 @@
 using System.Text.Json;
+using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 

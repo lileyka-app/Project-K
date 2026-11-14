@@ -7,9 +7,9 @@ using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
 using ProjectK.API.Hosting;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
-using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Dtos.AuthModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.AuthModule;
+using ProjectK.Common.Dtos.AuthModule.Requests;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.DevModule;
 

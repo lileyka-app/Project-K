@@ -1,8 +1,8 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Rules.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.Blobs;
 

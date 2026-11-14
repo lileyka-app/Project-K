@@ -1,7 +1,7 @@
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using ProjectK.Common.Security;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Hosting;
 

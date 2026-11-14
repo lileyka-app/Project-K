@@ -2,16 +2,19 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers;
 
@@ -23,7 +26,7 @@ public class UpsertLeadershipHandlerTests
     private readonly Mock<IMemberDirectory> _membersMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
     private readonly Mock<IAccessChangeSignal> _accessChangesMock = new();
-    private readonly Mock<ProjectK.Common.Interfaces.Modules.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
+    private readonly Mock<ProjectK.Common.Contracts.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
     private readonly UpsertLeadershipCommandHandler _handler;
 
     public UpsertLeadershipHandlerTests()
@@ -32,9 +35,9 @@ public class UpsertLeadershipHandlerTests
         _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinsMock.Object);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[]
         {
-            ProjectK.Common.Models.Authorization.SystemRole.ForOffice(
-                ProjectK.Common.Models.Enums.LeadershipType.KV,
-                ProjectK.Common.Models.Enums.LeadershipRole.Zvyazkovyi)
+            ProjectK.Common.Rules.AuthModule.SystemRole.ForOffice(
+                ProjectK.Common.Enums.KurinModule.LeadershipType.KV,
+                ProjectK.Common.Enums.KurinModule.LeadershipRole.Zvyazkovyi)
         });
         _membersMock
             .Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))

@@ -1,10 +1,10 @@
 using MediatR;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.KraiModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.KraiModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 

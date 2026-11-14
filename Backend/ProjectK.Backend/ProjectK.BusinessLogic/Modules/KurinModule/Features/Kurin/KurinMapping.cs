@@ -1,8 +1,9 @@
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.KurinModule;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;

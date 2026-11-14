@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 

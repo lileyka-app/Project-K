@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.Persistence.Configurations.ProbesAndBadgesModule;
 

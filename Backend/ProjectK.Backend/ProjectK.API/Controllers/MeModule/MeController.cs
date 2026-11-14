@@ -15,9 +15,10 @@ using ProjectK.BusinessLogic.Modules.MeModule.Features.Groups;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
-using ProjectK.Common.Models.Dtos.MeModule;
-using ProjectK.Common.Models.Dtos.MeModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.MeModule;
+using ProjectK.Common.Dtos.MeModule.Requests;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.MeModule;
 

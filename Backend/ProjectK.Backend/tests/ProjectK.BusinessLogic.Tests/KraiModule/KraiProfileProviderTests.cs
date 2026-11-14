@@ -6,16 +6,18 @@ using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.KraiModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 
@@ -32,10 +34,10 @@ public class KraiProfileProviderTests
         cache.Setup(c => c.GetOrCreateAsync(
                 It.IsAny<CachePolicy>(),
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<Common.Models.KraiProfiles.KraiProfile?>>>(),
+                It.IsAny<Func<CancellationToken, Task<Common.Dtos.KraiModule.KraiProfile?>>>(),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<CacheScopeContext?>()))
-            .Returns((CachePolicy _, string _, Func<CancellationToken, Task<Common.Models.KraiProfiles.KraiProfile?>> factory, CancellationToken token, CacheScopeContext? _) => factory(token));
+            .Returns((CachePolicy _, string _, Func<CancellationToken, Task<Common.Dtos.KraiModule.KraiProfile?>> factory, CancellationToken token, CacheScopeContext? _) => factory(token));
 
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
@@ -253,7 +255,7 @@ public class KraiProfileProviderTests
         var concessions = (await _provider.GetForKraiAsync("cz"))!.Dues.Concessions;
 
         concessions.Select(c => c.Key).Should().Equal("sibling", "free");
-        concessions[0].Parts.Should().Be(Common.Models.Enums.DuesParts.Stanytsia | Common.Models.Enums.DuesParts.Kurin);
+        concessions[0].Parts.Should().Be(Common.Enums.DuesModule.DuesParts.Stanytsia | Common.Enums.DuesModule.DuesParts.Kurin);
         concessions[0].Value.Should().Be(20);
     }
 }

@@ -3,15 +3,18 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Interfaces.Modules.AuditModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuditModule;
 
@@ -43,7 +46,7 @@ public class GetKurinJournalQueryTests
             .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, _access.KurinKey, _access.GroupKey, "Марта", "Впорядниця", "m@example.com", null));
     }
 
-    private Task<ServiceResult<ProjectK.Common.Models.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(
+    private Task<ServiceResult<ProjectK.Common.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(
         ICurrentUserContext user,
         GetKurinJournalQuery? query = null)
     {

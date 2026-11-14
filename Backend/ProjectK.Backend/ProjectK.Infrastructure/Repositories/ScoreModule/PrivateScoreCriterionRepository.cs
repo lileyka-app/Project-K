@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Common.Contracts.ScoreModule;
 
 namespace ProjectK.Infrastructure.Repositories.ScoreModule;
 

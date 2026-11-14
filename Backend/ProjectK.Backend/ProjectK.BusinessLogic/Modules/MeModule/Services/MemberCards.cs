@@ -1,15 +1,20 @@
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Dtos.MeModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Reports;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
 
@@ -33,7 +38,7 @@ public sealed class MemberCards
     private readonly IBlobReadLinks _links;
     private readonly IResourceScopeReader _scope;
     private readonly IHonoursCatalog _honours;
-    private readonly EmailSettings _site;
+    private readonly EmailOptions _site;
     private readonly TimeProvider _time;
 
     public MemberCards(
@@ -45,7 +50,7 @@ public sealed class MemberCards
         IBlobReadLinks links,
         IResourceScopeReader scope,
         IHonoursCatalog honours,
-        IOptions<EmailSettings> site,
+        IOptions<EmailOptions> site,
         TimeProvider time)
     {
         _scope = scope;

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Rules.InfrastructureModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;

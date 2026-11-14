@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;

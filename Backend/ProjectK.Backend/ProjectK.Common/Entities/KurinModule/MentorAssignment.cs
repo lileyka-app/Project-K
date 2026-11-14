@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ProjectK.Common.Entities.Shared;
 
 namespace ProjectK.Common.Entities.KurinModule;
 

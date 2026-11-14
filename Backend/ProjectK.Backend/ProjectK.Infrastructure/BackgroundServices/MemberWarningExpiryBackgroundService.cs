@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.KurinModule;
 
 namespace ProjectK.Infrastructure.BackgroundServices;
 

@@ -3,8 +3,9 @@ using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.Infrastructure.Seeding;
 

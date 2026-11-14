@@ -6,9 +6,9 @@ using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
-using ProjectK.Common.Models.Dtos.DuesModule;
-using ProjectK.Common.Models.Dtos.KraiModule;
-using ProjectK.Common.Models.Dtos.KraiModule.Requests;
+using ProjectK.Common.Dtos.DuesModule;
+using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Dtos.KraiModule.Requests;
 
 namespace ProjectK.API.Controllers.KraiModule;
 

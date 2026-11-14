@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Services.Events;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Events;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Events.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Events;
 

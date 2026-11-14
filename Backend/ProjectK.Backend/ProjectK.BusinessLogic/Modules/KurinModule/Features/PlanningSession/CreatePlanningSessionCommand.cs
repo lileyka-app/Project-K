@@ -1,10 +1,10 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 using ProjectK.Optimization.Abstractions;
 using PlanningSessionEntity = ProjectK.Common.Entities.KurinModule.Planning.PlanningSession;
 

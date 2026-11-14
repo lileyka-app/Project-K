@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.ProbesAndBadgesModule;
 
 namespace ProjectK.Infrastructure.Services.Catalog;
 

@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
-using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Dtos.AuthModule;
+using ProjectK.Common.Dtos.UsersModule;
 
 namespace ProjectK.API.Tests.Security;
 

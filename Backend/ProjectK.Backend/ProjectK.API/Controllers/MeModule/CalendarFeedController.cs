@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Security;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Controllers.MeModule;
 

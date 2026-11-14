@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
 using MediatR;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PhoneApp;
 
@@ -27,9 +27,9 @@ public class GetPhoneAppInstallCodeQueryHandler : IRequestHandler<GetPhoneAppIns
     private static readonly ConcurrentDictionary<string, string> Drawn = new(StringComparer.Ordinal);
 
     private readonly IQrCodeService _qrCodes;
-    private readonly EmailSettings _site;
+    private readonly EmailOptions _site;
 
-    public GetPhoneAppInstallCodeQueryHandler(IQrCodeService qrCodes, IOptions<EmailSettings> site)
+    public GetPhoneAppInstallCodeQueryHandler(IQrCodeService qrCodes, IOptions<EmailOptions> site)
     {
         _qrCodes = qrCodes;
         _site = site.Value;

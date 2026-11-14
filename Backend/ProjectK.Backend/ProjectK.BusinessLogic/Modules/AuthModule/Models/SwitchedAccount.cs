@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Dtos.AuthModule;
+using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Models;
 

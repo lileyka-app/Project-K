@@ -1,5 +1,5 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
 

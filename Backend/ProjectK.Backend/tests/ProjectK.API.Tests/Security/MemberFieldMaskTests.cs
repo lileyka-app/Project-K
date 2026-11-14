@@ -2,10 +2,13 @@ using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Members;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.API.Tests.Security;
 

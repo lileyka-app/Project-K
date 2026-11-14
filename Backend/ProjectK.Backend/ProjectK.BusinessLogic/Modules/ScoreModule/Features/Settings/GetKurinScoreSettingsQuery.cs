@@ -1,9 +1,9 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.ScoreModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ScoreModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.InfrastructureModule;

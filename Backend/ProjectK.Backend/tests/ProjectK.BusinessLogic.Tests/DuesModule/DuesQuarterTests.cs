@@ -1,5 +1,6 @@
 using FluentAssertions;
-using ProjectK.Common.Models.Dues;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

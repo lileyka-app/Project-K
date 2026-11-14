@@ -1,6 +1,6 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

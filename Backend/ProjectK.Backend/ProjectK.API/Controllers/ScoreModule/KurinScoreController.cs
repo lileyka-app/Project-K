@@ -11,10 +11,11 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
-using ProjectK.Common.Models.Dtos.ScoreModule;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Dtos.ScoreModule;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Controllers.ScoreModule;
 

@@ -1,6 +1,5 @@
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Tags;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 

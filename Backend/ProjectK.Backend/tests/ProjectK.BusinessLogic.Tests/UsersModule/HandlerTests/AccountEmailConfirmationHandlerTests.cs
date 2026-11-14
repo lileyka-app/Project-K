@@ -4,16 +4,16 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
 
@@ -307,7 +307,7 @@ public class AccountEmailConfirmationHandlerTests
             _memberDirectoryMock.Object,
             _mediatorMock.Object,
             _emailServiceMock.Object,
-            Options.Create(new EmailSettings { BaseUrl = "http://localhost:4200/" }),
+            Options.Create(new EmailOptions { BaseUrl = "http://localhost:4200/" }),
             new Mock<IActivityLogger>().Object);
     }
 

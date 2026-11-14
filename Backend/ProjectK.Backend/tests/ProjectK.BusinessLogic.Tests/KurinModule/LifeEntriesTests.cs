@@ -1,8 +1,8 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
+using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;
 

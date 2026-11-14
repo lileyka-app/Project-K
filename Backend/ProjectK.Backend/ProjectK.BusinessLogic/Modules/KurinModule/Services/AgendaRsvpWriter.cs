@@ -1,6 +1,6 @@
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

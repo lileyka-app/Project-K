@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using MemberAwardEntity = ProjectK.Common.Entities.KurinModule.MemberAward;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;

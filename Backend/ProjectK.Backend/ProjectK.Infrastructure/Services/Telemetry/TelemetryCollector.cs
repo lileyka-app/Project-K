@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Models;
+using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Services.Telemetry;
