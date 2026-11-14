@@ -2386,6 +2386,59 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("MemberCardShares");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberLifeEntry", b =>
+                {
+                    b.Property<Guid>("MemberLifeEntryKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Commandant")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int?>("Course")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Place")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MemberLifeEntryKey");
+
+                    b.HasIndex("MemberKey");
+
+                    b.ToTable("MemberLifeEntries");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberWarning", b =>
                 {
                     b.Property<Guid>("MemberWarningKey")
@@ -4047,6 +4100,17 @@ namespace ProjectK.Infrastructure.Migrations
                 {
                     b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
                         .WithMany("MemberAwards")
+                        .HasForeignKey("MemberKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberLifeEntry", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
+                        .WithMany()
                         .HasForeignKey("MemberKey")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

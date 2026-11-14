@@ -4,7 +4,8 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { CdkDrag, CdkDropList, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { Subject, debounceTime } from 'rxjs';
+import { Subject, combineLatest, debounceTime } from 'rxjs';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -51,6 +52,7 @@ const PAGE = 20;
   // ConfirmationService is not provided globally; supply it here for the delete confirm dialog.
   providers: [ConfirmationService],
   imports: [
+    PageTabsComponent,
     DatePipe, FormsModule, CdkDropList, CdkDrag, ButtonModule, TagModule, InputTextModule, IconFieldModule,
     InputIconModule, SelectModule, ToggleSwitchModule, ConfirmDialogModule, EmptyStateComponent, AgendaItemDialogComponent
   ],
@@ -67,6 +69,14 @@ export class AgendaBoardComponent implements OnInit {
 
   protected readonly kurinKey = signal('');
   protected readonly view = signal<'board' | 'archive'>('board');
+  /** Дошка й архів — одна сторінка, архів за `?view=archive`, щоб його можна було відкрити посиланням. */
+  protected readonly tabs = computed<PageTab[]>(() => {
+    const link = `/tasks/${this.kurinKey()}`;
+    return [
+      { label: 'Дошка', link, queryParams: {} as Record<string, string>, testId: 'tab-tasks-board' },
+      { label: 'Архів', link, queryParams: { view: 'archive' }, testId: 'tab-tasks-archive' }
+    ];
+  });
   protected readonly columns = signal<BoardColumn[]>([]);
   protected readonly loaded = signal(false);
   protected readonly loadingMore = signal<AgendaItemStatus | null>(null);
@@ -107,10 +117,16 @@ export class AgendaBoardComponent implements OnInit {
   ngOnInit(): void {
     this.searchChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => this.loadData());
     this.archiveSearchChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => this.loadArchive());
-    this.route.paramMap.subscribe(params => {
-      this.kurinKey.set(params.get('kurinKey') ?? '');
-      this.loadData();
-    });
+    combineLatest([this.route.paramMap, this.route.queryParamMap])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([params, query]) => {
+        this.kurinKey.set(params.get('kurinKey') ?? '');
+        if (query.get('view') === 'archive') {
+          this.openArchive();
+        } else {
+          this.closeArchive();
+        }
+      });
   }
 
   protected hasFilter(): boolean {

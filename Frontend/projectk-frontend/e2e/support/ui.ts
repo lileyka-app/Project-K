@@ -134,6 +134,7 @@ export async function fillMemberRequiredFields(page: Page, data: {
 }
 
 /** «Пластовий життєпис» is the last item under «Ще» in the card head, for everyone who opens the card. */
+/** «Пластовий життєпис» is the person's own: it sits under «Ще» on their own card only. */
 export async function openLifeFromCardMenu(page: Page): Promise<void> {
   await page.locator('.member-actions').getByRole('button', { name: 'Ще' }).click();
   await page.getByRole('menuitem', { name: 'Пластовий життєпис' }).click();

@@ -5,9 +5,6 @@
         <p-toggleswitch inputId="tags-enabled" [ngModel]="current.enabled" (ngModelChange)="set({ enabled: $event })" />
         <span>Курінь користується тегами</span>
       </label>
-      <span class="archive-policy__days">
-        {{ current.enabledByDefault ? 'У старшому курені теги ввімкнені від початку' : 'У юнацькому курені теги доповнюють гуртки' }}
-      </span>
     </div>
     @if (current.enabled) {
       <div class="archive-policy__row">

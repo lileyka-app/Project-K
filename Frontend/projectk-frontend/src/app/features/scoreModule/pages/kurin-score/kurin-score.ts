@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { combineLatest } from 'rxjs';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
-import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { ScorePeriodSelectComponent } from '../../components/score-period-select/score-period-select';
 import { periodParams, periodQueryFromParams, points, score } from '../../functions/score-format.function';
 import { KurinScoreDto, ScoreGroupRowDto, ScorePeriodQuery } from '../../models/score.dto';
@@ -18,7 +19,7 @@ import { ScoreService } from '../../services/score-service/score.service';
  */
 @Component({
   selector: 'app-kurin-score',
-  imports: [RouterLink, ButtonModule, SkeletonModule, TooltipModule, EmptyStateComponent, ScorePeriodSelectComponent],
+  imports: [RouterLink, PageTabsComponent, ButtonModule, SkeletonModule, TooltipModule, EmptyStateComponent, ScorePeriodSelectComponent],
   templateUrl: './kurin-score.html',
   styleUrl: './kurin-score.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -27,7 +28,9 @@ export class KurinScoreComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly scores = inject(ScoreService);
-  private readonly permissions = inject(PermissionService);
+  private readonly pageGroups = inject(PageGroups);
+  /** Таблиця, Книга КВ і Налаштування — одне місце в меню, вкладки вгорі. */
+  tabs: PageTab[] = [];
 
   readonly score = score;
   readonly points = points;
@@ -43,7 +46,6 @@ export class KurinScoreComponent implements OnInit {
   readonly periodParams = computed(() => periodParams(this.period()));
 
   /** The КВ's own book lives behind its own grant, not behind the table's. */
-  readonly canSeePrivate = this.permissions.canSeePrivateScore();
 
   readonly leader = computed(() => Math.max(0, ...(this.data()?.groups ?? []).map(g => g.score)));
 
@@ -54,6 +56,7 @@ export class KurinScoreComponent implements OnInit {
   ngOnInit(): void {
     combineLatest([this.route.paramMap, this.route.queryParamMap]).subscribe(([params, query]) => {
       this.kurinKey = params.get('kurinKey') ?? '';
+      this.tabs = this.kurinKey ? this.pageGroups.score(this.kurinKey) : [];
       this.period.set(periodQueryFromParams(Object.fromEntries(query.keys.map(k => [k, query.get(k)]))));
       this.load();
     });

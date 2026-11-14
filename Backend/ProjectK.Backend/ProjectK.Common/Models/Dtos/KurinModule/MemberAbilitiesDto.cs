@@ -12,12 +12,14 @@ namespace ProjectK.Common.Models.Dtos.KurinModule;
 /// <param name="Probes">Проби.</param>
 /// <param name="Badges">Вмілості.</param>
 /// <param name="Journal">Whether the caller may read this member's entries in the Журнал дій.</param>
+/// <param name="Dues">Whether the caller may read this member's вкладка, so a card does not ask for it in vain.</param>
 public sealed record MemberAbilitiesDto(
     WarningAbilitiesDto Warnings,
     AwardAbilitiesDto Awards,
     ProbeAbilitiesDto Probes,
     BadgeAbilitiesDto Badges,
-    bool Journal);
+    bool Journal,
+    bool Dues);
 
 /// <param name="Give">The levels (1–3) the caller may give.</param>
 /// <param name="Cancel">Whose перестороги the caller may cancel.</param>

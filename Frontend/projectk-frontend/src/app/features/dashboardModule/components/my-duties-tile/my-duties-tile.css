@@ -19,25 +19,48 @@
 }
 
 .duties-tile__row {
+  position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-auto-columns: auto;
+  grid-auto-flow: column;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.625rem;
   border: 1px solid var(--p-content-border-color);
   border-radius: var(--lil-radius-lg);
-  color: inherit;
-  text-decoration: none;
-}
-
-.duties-tile__row--link {
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  cursor: pointer;
 }
 
 .duties-tile__row--link:hover {
   border-color: var(--p-primary-color);
   background: var(--p-primary-50);
+}
+
+/* The whole row opens the duty; the eye sits above that and hides it instead. */
+.duties-tile__stretch {
+  color: inherit;
+  text-decoration: none;
+}
+
+.duties-tile__stretch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.duties-tile__stretch:focus-visible {
+  outline: none;
+}
+
+.duties-tile__row:has(.duties-tile__stretch:focus-visible) {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+:host ::ng-deep .duties-tile__hide {
+  position: relative;
+  z-index: 1;
 }
 
 .duties-tile__icon {

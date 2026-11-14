@@ -21,6 +21,20 @@ export class PageGroups {
     ];
   }
 
+  /** The kurin's table for everyone, the КВ's book and the settings for who may open them; the period goes along. */
+  score(kurinKey: string): PageTab[] {
+    const base = `/kurin/${kurinKey}/score`;
+    return [
+      { label: 'Таблиця', link: base, exact: true, carriesQuery: true, testId: 'tab-score-table' },
+      ...(this.permissions.canSeePrivateScore()
+        ? [{ label: 'Книга КВ', link: `${base}/private`, exact: true, carriesQuery: true, testId: 'tab-score-private' }]
+        : []),
+      ...(this.permissions.canManageScore()
+        ? [{ label: 'Налаштування', link: `${base}/settings`, exact: true, testId: 'tab-score-settings' }]
+        : [])
+    ];
+  }
+
   /** The kurin's box for who keeps it, then each гурток's box the person keeps, by name. */
   dues(kurinKey: string): Observable<PageTab[]> {
     const kurin: PageTab[] = this.permissions.canSeeKurinDues()

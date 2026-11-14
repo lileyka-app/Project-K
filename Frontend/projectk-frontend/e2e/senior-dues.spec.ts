@@ -46,7 +46,7 @@ function rateCell(row: Locator): Locator {
 
 async function openKurinDues(page: Page, kurin: SeniorKurin): Promise<void> {
   await page.goto(`/kurin/${kurin.kurinKey}/dues`);
-  await expect(page.getByRole('heading', { name: 'Реєстр' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'По людях' })).toBeVisible({ timeout: 15_000 });
 }
 
 /** «Ставки куреня»: one rate for one tag (or for everyone), from the running quarter, two статті. */
@@ -214,7 +214,7 @@ test.describe('Senior kurin dues (DUES-06)', () => {
     await test.step('the kurin\'s register stays closed to someone without the treasurer\'s rights', async () => {
       await page.goto(`/kurin/${kurin.kurinKey}/dues`);
       await expect(page).toHaveURL(/\/forbidden/);
-      await expect(page.getByRole('heading', { name: 'Реєстр' })).toHaveCount(0);
+      await expect(page.getByRole('heading', { name: 'По людях' })).toHaveCount(0);
       expect(await getSeniorDuesStatus(request, darka.user, kurin.kurinKey)).toBe(403);
     });
   });

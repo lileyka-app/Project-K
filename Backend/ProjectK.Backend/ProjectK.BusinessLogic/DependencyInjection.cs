@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MePerson>();
+        services.AddScoped<ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Life.LifeStoryOwner>();
         services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();

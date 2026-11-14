@@ -200,7 +200,6 @@ describe('GroupPanelComponent', () => {
 
     expect(component.groupEditMenuItems.map(item => item.label)).toEqual([
       'Редагувати профіль',
-      'Додати учасника',
       'Впорядники',
       'Завантажити сильветку'
     ]);
@@ -208,7 +207,6 @@ describe('GroupPanelComponent', () => {
     component.group = { ...group, silhouetteUrl: 'group-silhouettes/2026/05/27/test.png' };
     expect(component.groupEditMenuItems.map(item => item.label)).toEqual([
       'Редагувати профіль',
-      'Додати учасника',
       'Впорядники',
       'Замінити сильветку',
       'Видалити сильветку'
@@ -294,7 +292,7 @@ describe('GroupPanelComponent', () => {
     component.uploadProcessedSilhouette();
 
     expect(groupServiceSpy.uploadSilhouette).not.toHaveBeenCalled();
-    expect(component.silhouetteError).toBe('Оберіть область зображення перед завантаженням.');
+    expect(component.silhouetteError).toBe('Обери область зображення перед завантаженням.');
   });
 
   it('deleteSilhouette should delete existing image and update group', () => {

@@ -641,6 +641,7 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
               <ion-list [inset]="true" data-testid="dues">
                 <ion-list-header><ion-label>Вкладка</ion-label></ion-list-header>
                 <ion-item-group>
+                  @if (d.hasAccount) {
                   <ion-item>
                     <ion-label class="ion-text-wrap">
                       <span class="balance" [class.ok]="d.balance >= 0" [class.debt]="d.balance < 0">{{ balanceTitle(d) }}</span>
@@ -664,6 +665,13 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
                     </ion-item>
                   } @empty {
                     <ion-item><ion-label>Внесків ще не записано.</ion-label></ion-item>
+                  }
+                  }
+                  @for (other of duesElsewhere(); track other.key) {
+                    <ion-item data-testid="dues-elsewhere">
+                      <ion-label class="ion-text-wrap">{{ other.kurin }}</ion-label>
+                      <ion-note slot="end" [class.debt]="other.balance < 0">{{ other.amount }}</ion-note>
+                    </ion-item>
                   }
                   @if (d.canOpenGroupDues && d.currentGroupKey) {
                     <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/group', d.currentGroupKey, 'dues']">
@@ -1008,8 +1016,19 @@ export class MemberPage implements OnInit {
     return d.balance < 0 ? 'борг — віддай скарбникові' : 'надлишок — піде на наступний квартал';
   }
 
+  /** The person's other kurins, each with their line there and the balance in its own currency (web duesElsewhere). */
+  protected readonly duesElsewhere = computed(() => (this.dues()?.elsewhere ?? []).map((other) => ({
+    key: other.kurinKey,
+    kurin: `${isSeniorBranch(other.branch) && other.kurinNamedAfter ? other.kurinNamedAfter : kurinLabel(other.kurinNumber, other.branch)} · ${BRANCH_LABELS[other.branch] ?? other.branch}`,
+    balance: other.balance,
+    amount: other.balance === 0 ? 'сплачено' : `${other.balance > 0 ? '+' : ''}${duesMoney(other.balance, other.currency, other.numberLocale)}`,
+  })));
+
+  /** Whose вкладка it is, «Орден Хрестоносців · УПС», then the quarter (web duesKurinLine). */
   protected duesLine(d: MemberDuesDto): string {
-    return [quarterLabel(d.currentQuarter), d.quarterRate ? `${this.money(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
+    const here = this.membershipList().find((m) => m.kurinKey === d.kurinKey && m.isCurrent);
+    const line = here ? `${isSeniorBranch(here.branch) ? this.seniorName(here) : kurinLabel(here.kurinNumber)} · ${this.branchLabel(here)}` : null;
+    return [line, quarterLabel(d.currentQuarter), d.quarterRate ? `${this.money(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
       .filter(Boolean)
       .join(' · ');
   }
@@ -1221,7 +1240,7 @@ export class MemberPage implements OnInit {
       ),
       // A youth may read only their own вкладка: for anyone else the server refuses and the tile stays away.
       this.data.dues(key).then(
-        (dues) => this.dues.set(dues?.hasAccount ? dues : null),
+        (dues) => this.dues.set(dues?.hasAccount || dues?.elsewhere?.length ? dues : null),
         () => this.dues.set(null),
       ),
       member.then(() => Promise.all([this.loadVerificationToggle(), this.loadCardFields(), this.loadKurinTags()])),

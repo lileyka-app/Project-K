@@ -2,6 +2,8 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
@@ -31,7 +33,7 @@ import { ScoreService } from '../../services/score-service/score.service';
 @Component({
   selector: 'app-private-score',
   imports: [
-    DatePipe, FormsModule, RouterLink, ButtonModule, TableModule, TagModule, SelectModule, DialogModule, InputTextModule, TextareaModule,
+    DatePipe, FormsModule, RouterLink, PageTabsComponent, ButtonModule, TableModule, TagModule, SelectModule, DialogModule, InputTextModule, TextareaModule,
     DatePickerModule, TooltipModule, SkeletonModule, ConfirmDialogModule, EmptyStateComponent, ScorePeriodSelectComponent
   ],
   providers: [ConfirmationService],
@@ -45,6 +47,9 @@ export class PrivateScoreComponent implements OnInit {
   private readonly scores = inject(ScoreService);
   private readonly messages = inject(MessageService);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly pageGroups = inject(PageGroups);
+  /** Таблиця, Книга КВ і Налаштування — одне місце в меню, вкладки вгорі. */
+  tabs: PageTab[] = [];
 
   readonly points = points;
   readonly today = new Date();
@@ -98,6 +103,7 @@ export class PrivateScoreComponent implements OnInit {
   ngOnInit(): void {
     combineLatest([this.route.paramMap, this.route.queryParamMap]).subscribe(([params, query]) => {
       this.kurinKey = params.get('kurinKey') ?? '';
+      this.tabs = this.kurinKey ? this.pageGroups.score(this.kurinKey) : [];
       this.period.set(periodQueryFromParams(Object.fromEntries(query.keys.map(k => [k, query.get(k)]))));
       this.load();
     });

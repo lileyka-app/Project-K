@@ -50,6 +50,24 @@ public sealed record MembershipRecord(
 
     /// <summary>Every гілка of the kurin with its number there; the main one alone when only that was read.</summary>
     public IReadOnlyList<KurinNumbering> Numbering => KurinBranches ?? [new KurinNumbering(Branch, KurinNumber)];
+
+    /// <summary>
+    /// The same stretch in the person's own line. A kurin in both senior гілки holds a сеніор in its
+    /// УПС and a старший пластун in its УСП, whichever гілка is the kurin's main one; the ступінь
+    /// decides, not the kurin. Unchanged when the kurin has no гілка of that line.
+    /// </summary>
+    public MembershipRecord InLineOf(IEnumerable<PlastLevel> levels)
+    {
+        var line = PlastLadder.Highest(levels) is { } top ? PlastLadder.BranchOf(top) : KurinBranch.UPYu;
+        if (line == Branch || !KurinBranchSet.IsSenior(line) || !KurinBranchSet.IsSenior(Branch))
+        {
+            return this;
+        }
+
+        return Numbering.FirstOrDefault(n => n.Branch == line) is { } numbering
+            ? this with { Branch = numbering.Branch, KurinNumber = numbering.Number }
+            : this;
+    }
 }
 
 /// <summary>One probe, as far as a person has taken it.</summary>

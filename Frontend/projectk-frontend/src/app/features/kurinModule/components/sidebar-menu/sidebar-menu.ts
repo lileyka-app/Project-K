@@ -33,6 +33,12 @@ interface KurinMenuFeatures {
 
 const ALL_FEATURES: KurinMenuFeatures = { youth: true, score: true };
 
+/** Marks the first item of a block so the menu draws a line above it. */
+function startsGroup(block: MenuItem[]): MenuItem[] {
+  const [first, ...rest] = block;
+  return [{ ...first, styleClass: [first.styleClass, 'lil-menu-item--group-start'].filter(Boolean).join(' ') }, ...rest];
+}
+
 @Component({
   selector: 'app-sidebar-menu',
   imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, RouterLink, ReportProblemDialogComponent, AccountSwitcherComponent, InstallOnPhoneDialogComponent],
@@ -190,12 +196,14 @@ export class SidebarMenuComponent implements OnChanges {
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
 
-    return [
-      ...(memberKey ? this.personalItems(memberKey) : []),
-      ...(kurinKey ? this.kurinItems(kurinKey, features, duesGroups, requestsWaiting) : []),
-      ...(isAdmin && !kurinKey ? this.adminItems(pendingWaitlist) : []),
-      ...this.commonItems(kurinKey)
-    ];
+    const blocks = [
+      memberKey ? this.personalItems(memberKey) : [],
+      ...(kurinKey ? this.kurinBlocks(kurinKey, features, duesGroups, requestsWaiting) : []),
+      isAdmin && !kurinKey ? this.adminItems(pendingWaitlist) : [],
+      this.commonItems(kurinKey)
+    ].filter(block => block.length > 0);
+
+    return blocks.flatMap((block, index) => index === 0 ? block : startsGroup(block));
   }
 
   private navItem(item: MenuItem & { routerLink: unknown[] }): MenuItem {
@@ -215,7 +223,11 @@ export class SidebarMenuComponent implements OnChanges {
     ];
   }
 
-  private kurinItems(kurinKey: string, features: KurinMenuFeatures, duesGroups: DuesGroupLinkDto[], requestsWaiting: number): MenuItem[] {
+  /**
+   * The kurin in two blocks: who is in it and what it keeps (курінь, реєстр, вкладка, журнал), then
+   * what it does (календар, задачі, точкування, вмілості).
+   */
+  private kurinBlocks(kurinKey: string, features: KurinMenuFeatures, duesGroups: DuesGroupLinkDto[], requestsWaiting: number): MenuItem[][] {
     const isYouthKurin = features.youth;
     const disabled = !kurinKey;
     const items: MenuItem[] = [
@@ -234,32 +246,33 @@ export class SidebarMenuComponent implements OnChanges {
       }));
     }
 
+    items.push(...this.duesItem(kurinKey, duesGroups));
+
+    if (this.permissionService.canReadJournal()) {
+      items.push(this.navItem({ label: 'Журнал дій', icon: 'pi pi-history', routerLink: ['/kurin', kurinKey, 'journal'] }));
+    }
+
     // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
     // провід керує. Створення обмежене на рівні сторінки/бекенду (canManageAgenda).
     // Таблицю гуртків бачить кожен у курені; хто ставить бали, вирішує сторінка.
     // Календар і Планування — одна сторінка з двома вкладками (PageGroups.calendar).
-    items.push(
+    const activity: MenuItem[] = [];
+    activity.push(
       this.navItem({ label: 'Календар', icon: 'pi pi-calendar', routerLink: ['/calendar', kurinKey], state: { also: [`/planning/${kurinKey}`] } }),
       this.navItem({ label: 'Задачі', icon: 'pi pi-check-square', routerLink: ['/tasks', kurinKey] })
     );
     if (features.score) {
-      items.push(this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] }));
+      activity.push(this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] }));
     }
 
     // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
     // сторінки, разом із іконками pi-sitemap і pi-address-book.
 
     if (this.permissionService.canReviewSkills() && isYouthKurin) {
-      items.push(this.navItem({ label: 'Модерація вмілостей', icon: 'pi pi-verified', routerLink: ['/kurin', kurinKey, 'review', 'skills'] }));
+      activity.push(this.navItem({ label: 'Модерація вмілостей', icon: 'pi pi-verified', routerLink: ['/kurin', kurinKey, 'review', 'skills'] }));
     }
 
-    if (this.permissionService.canReadJournal()) {
-      items.push(this.navItem({ label: 'Журнал дій', icon: 'pi pi-history', routerLink: ['/kurin', kurinKey, 'journal'] }));
-    }
-
-    items.push(...this.duesItem(kurinKey, duesGroups));
-
-    return items;
+    return [items, activity];
   }
 
   /**
@@ -281,10 +294,11 @@ export class SidebarMenuComponent implements OnChanges {
 
   private adminItems(pendingWaitlist: number): MenuItem[] {
     return [
+      this.navItem({ label: 'Адміністрація', icon: 'pi pi-lock', routerLink: ['/panel'] }),
       this.navItem({
-        label: 'Адміністрація',
-        icon: 'pi pi-lock',
-        routerLink: ['/panel'],
+        label: 'Заявки',
+        icon: 'pi pi-inbox',
+        routerLink: ['/waitlist'],
         // The dot, not a number: «there is something to decide» is all the sidebar has to say.
         styleClass: pendingWaitlist > 0 ? 'lil-menu-item--attention' : undefined
       }),

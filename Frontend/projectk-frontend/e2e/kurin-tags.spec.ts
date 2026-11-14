@@ -163,7 +163,7 @@ test.describe('Kurin tags', () => {
       await form.getByLabel('Назва').fill(title);
 
       const assign = form.locator('.agenda-assign-select');
-      await expect(assign).toContainText('Оберіть курінь, гуртки, учасників або теги');
+      await expect(assign).toContainText('Обери курінь, гуртки, учасників або теги');
       await assign.click();
       const tagBranch = page.getByRole('treeitem', { name: 'Теги', exact: true });
       await tagBranch.getByRole('button').first().click();

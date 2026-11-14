@@ -55,6 +55,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IMentorAssignmentRepository _mentorAssignments;
     private IMemberWarningRepository _memberWarnings;
     private IMemberAwardRepository _memberAwards;
+    private IMemberLifeEntryRepository _memberLifeEntries;
     private IWaitlistRepository _waitlistEntries;
     private IKurinBranchRequestRepository _kurinBranchRequests;
     private IInvitationRepository _invitations;
@@ -110,6 +111,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IMentorAssignmentRepository MentorAssignments => _mentorAssignments ??= new MentorAssignmentRepository(_context);
     public IMemberWarningRepository MemberWarnings => _memberWarnings ??= new MemberWarningRepository(_context);
     public IMemberAwardRepository MemberAwards => _memberAwards ??= new MemberAwardRepository(_context);
+    public IMemberLifeEntryRepository MemberLifeEntries => _memberLifeEntries ??= new MemberLifeEntryRepository(_context);
     public IWaitlistRepository WaitlistEntries => _waitlistEntries ??= new WaitlistRepository(_context);
     public IInvitationRepository Invitations => _invitations ??= new InvitationRepository(_context);
     public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);

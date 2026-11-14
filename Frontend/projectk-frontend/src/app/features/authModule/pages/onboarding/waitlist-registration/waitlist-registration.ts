@@ -45,7 +45,7 @@ type Ulad = 'UPYu' | 'USP' | 'UPS';
             <p-message severity="success" styleClass="w-full"
               text="Дякуємо! Заявку надіслано. Ми переглянемо її і напишемо на вказану пошту." />
             <p-message severity="info" styleClass="w-full"
-              text="Наші листи часом потрапляють у «Спам» — якщо відповіді не видно, загляньте туди." />
+              text="Наші листи часом потрапляють у «Спам» — якщо відповіді не видно, заглянь туди." />
           </div>
         } @else {
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
@@ -101,7 +101,7 @@ type Ulad = 'UPYu' | 'USP' | 'UPS';
                   optionValue="code"
                   [filter]="true"
                   filterBy="name"
-                  placeholder="Оберіть край"
+                  placeholder="Обери край"
                   emptyFilterMessage="Такого краю немає"
                   appendTo="body"
                   styleClass="w-full" />
@@ -196,7 +196,7 @@ type Ulad = 'UPYu' | 'USP' | 'UPS';
 
         <ng-template pTemplate="footer">
           <div class="text-center text-sm text-muted-color">
-            Вже маєте доступ?
+            Вже маєш доступ?
             <a routerLink="/login" class="font-semibold text-primary no-underline">Увійти</a>
           </div>
         </ng-template>
@@ -386,7 +386,7 @@ export class WaitlistRegistrationComponent {
         this.messageService.add({
           severity: 'success',
           summary: 'Заявку надіслано',
-          detail: 'Відповідь прийде на пошту. Перевірте й теку «Спам».'
+          detail: 'Відповідь прийде на пошту. Перевір й теку «Спам».'
         });
       },
       error: (err) => {

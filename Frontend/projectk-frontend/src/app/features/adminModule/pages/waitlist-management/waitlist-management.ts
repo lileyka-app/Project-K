@@ -98,9 +98,21 @@ import { kurinBranchesName, kurinGroupTitle } from '../../../../shared/functions
         </ng-template>
     </p-dialog>
 
-    <section class="card p-4 mb-6 branch-requests" aria-labelledby="branch-requests-title">
-      <h2 id="branch-requests-title" class="text-xl font-bold mb-1">Запити куренів</h2>
-      <p class="m-0 mb-4 text-sm text-muted-color">Старші курені просять додати чи прибрати улад або змінити число в ньому.</p>
+    <section class="lil-page">
+    <header class="lil-page-head">
+      <div>
+        <p class="lil-page-head__eyebrow">Адміністрація</p>
+        <h1>Заявки</h1>
+      </div>
+    </header>
+
+    <section class="kurin-tile branch-requests" aria-labelledby="branch-requests-title">
+      <div class="lil-tile-head">
+        <div>
+          <h2 id="branch-requests-title">Запити куренів</h2>
+          <p>Улади й числа старших куренів</p>
+        </div>
+      </div>
       @if (branchRequests.length) {
         <ul class="branch-requests__list">
           @for (request of branchRequests; track request.kurinBranchRequestKey) {
@@ -135,9 +147,11 @@ import { kurinBranchesName, kurinGroupTitle } from '../../../../shared/functions
       }
     </section>
 
-    <div class="card p-4">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Заявки на приєднання</h2>
+    <section class="kurin-tile" aria-labelledby="join-requests-title">
+      <div class="lil-tile-head">
+        <div>
+          <h2 id="join-requests-title">Заявки на приєднання</h2>
+        </div>
         <p-selectButton
           [options]="sourceOptions"
           [(ngModel)]="sourceFilter"
@@ -212,7 +226,8 @@ import { kurinBranchesName, kurinGroupTitle } from '../../../../shared/functions
             </tr>
         </ng-template>
       </p-table>
-    </div>
+    </section>
+    </section>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`

@@ -286,7 +286,7 @@ export class AgendaItemDialogComponent {
 
   save(): void {
     if (!this.canSave() || !this.title.trim()) {
-      this.messages.add({ severity: 'warn', summary: 'Заповніть назву та ціль' });
+      this.messages.add({ severity: 'warn', summary: 'Заповни назву та ціль' });
       return;
     }
 

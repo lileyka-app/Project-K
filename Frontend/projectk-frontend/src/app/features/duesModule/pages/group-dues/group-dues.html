@@ -27,7 +27,7 @@
             styleClass="dues-year" />
         }
         @if (d.viewer.canSetKurinRates) {
-          <p-button label="Ставки куреня" icon="pi pi-flag" severity="secondary" (onClick)="kurinRateDialogVisible.set(true)" />
+          <p-button label="Ставки куреня" icon="pi pi-percentage" severity="secondary" (onClick)="kurinRateDialogVisible.set(true)" />
         }
         @if (d.viewer.canKeep) {
           <p-button label="Ставка гуртка" icon="pi pi-percentage" severity="secondary" (onClick)="openRateDialog()" />

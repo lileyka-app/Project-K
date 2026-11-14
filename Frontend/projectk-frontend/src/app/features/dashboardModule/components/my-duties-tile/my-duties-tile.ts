@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
+import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { dayLabel, timeLabel } from '../../functions/day-label.function';
@@ -55,7 +55,7 @@ function linkOf(duty: MyDutyDto): unknown[] {
  */
 @Component({
   selector: 'app-my-duties-tile',
-  imports: [NgTemplateOutlet, RouterLink, ButtonModule, SkeletonModule, EmptyStateComponent],
+  imports: [RouterLink, ButtonModule, TooltipModule, SkeletonModule, EmptyStateComponent],
   templateUrl: './my-duties-tile.html',
   styleUrl: './my-duties-tile.css',
   changeDetection: ChangeDetectionStrategy.OnPush

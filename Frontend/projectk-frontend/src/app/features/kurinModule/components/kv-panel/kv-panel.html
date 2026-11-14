@@ -8,7 +8,7 @@
 
         <div class="lil-tile-head__actions">
           <div class="kv-archive-toggle">
-            <span>Архів</span>
+            <span>Колишні</span>
             <p-toggleswitch [(ngModel)]="showArchived" />
           </div>
 
@@ -101,7 +101,7 @@
 
   @if (showArchived) {
     <div class="kv-archive">
-      <h4>Архів впорядників</h4>
+      <h4>Колишні впорядники</h4>
       @if (archivedAssignments.length) {
         <div class="kv-archive-list">
           @for (assignment of archivedAssignments; track assignment.mentorAssignmentKey) {
@@ -121,7 +121,7 @@
           }
         </div>
       } @else {
-        <p class="kv-muted">Архів призначень порожній.</p>
+        <p class="kv-muted">Колишніх впорядників немає.</p>
       }
     </div>
   }
@@ -143,7 +143,7 @@
       optionValue="value"
       [filter]="true"
       filterBy="label"
-      placeholder="Оберіть учасника"
+      placeholder="Обери учасника"
       [style]="{ width: '100%' }" />
 
     <label for="groupSelect">Гуртки</label>
@@ -156,7 +156,7 @@
       [filter]="true"
       filterBy="label"
       display="chip"
-      placeholder="Оберіть гуртки"
+      placeholder="Обери гуртки"
       [style]="{ width: '100%' }" />
     <p class="kv-muted">З гуртком людина — впорядник, без гуртка — інструктор КВ.</p>
   </div>
@@ -185,7 +185,7 @@
       optionValue="value"
       [filter]="true"
       filterBy="label"
-      placeholder="Оберіть учасника"
+      placeholder="Обери учасника"
       [style]="{ width: '100%' }" />
     <p class="kv-muted">Поточний Звʼязковий втратить цю роль. У КВ він лишиться впорядником, лише якщо за ним закріплені гуртки.</p>
   </div>

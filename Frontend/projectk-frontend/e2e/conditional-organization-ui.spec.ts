@@ -10,15 +10,12 @@ describeRole('manager', 'Manager conditional organization UI', ({ user }) => {
 
     await expect(page.locator('.edit-profile-button')).toBeVisible();
     await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeVisible();
-    // Named, not just "the button under the list": taking someone in by code sits beside adding
-    // a new person, and a positional selector would match both.
-    await expect(page.locator('app-member-list + div')
-      .getByRole('button', { name: /Додати учасника/ })).toBeVisible();
+    await expect(page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' })).toBeVisible();
     await expect(page.locator('app-kv-panel .lil-tile-head__actions button:has(.pi-plus)')).toBeVisible();
     await expect(page.locator('app-leadership-panel .lil-tile-head__actions button:has(.pi-cog)').first()).toBeVisible();
   });
 
-  test('manager group action menu exposes profile members mentors and silhouette actions', async ({ page, request }) => {
+  test('manager group action menu exposes profile, mentors and silhouette actions; adding sits on the list', async ({ page, request }) => {
     const groupKey = await getSeededGroupKey(request, user, 'Gurtok 1');
 
     await page.goto(`/group/${groupKey}`);
@@ -28,8 +25,10 @@ describeRole('manager', 'Manager conditional organization UI', ({ user }) => {
 
     // expect.poll, not expect(await …count()): the latter reads the count once, and openGroupActionMenu
     // only waits for the first item, so the rest of the menu may still be rendering. Under the load of
-    // a full parallel run that snapshot caught two items instead of four.
-    await expect.poll(() => visibleMenuItems(page).count()).toBeGreaterThanOrEqual(4);
+    // a full parallel run that snapshot caught two items instead of three.
+    await expect.poll(() => visibleMenuItems(page).count()).toBeGreaterThanOrEqual(3);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' })).toBeVisible();
   });
 
   test('manager planning list exposes create and destructive row controls', async ({ page, request }) => {
@@ -51,7 +50,7 @@ describeRole('mentor', 'Mentor conditional organization UI', ({ user }) => {
 
     await expect(page.locator('.edit-profile-button')).toBeHidden();
     await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeHidden();
-    await expect(page.locator('app-member-list + div').getByRole('button')).toBeHidden();
+    await expect(page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' })).toBeHidden();
     await expect(page.locator('app-kv-panel .lil-tile-head__actions button:has(.pi-plus)')).toBeHidden();
     await expect(page.locator('app-leadership-panel .lil-tile-head__actions button:has(.pi-cog)').first()).toBeHidden();
   });
@@ -64,10 +63,10 @@ describeRole('mentor', 'Mentor conditional organization UI', ({ user }) => {
     await expect(page.locator('body')).toContainText('Gurtok 1');
     await openGroupActionMenu(page);
     await expect(page.getByRole('menuitem', { name: 'Редагувати профіль' })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Додати учасника' })).toBeVisible();
     await expect(page.getByRole('menuitem', { name: 'Завантажити сильветку' })).toBeVisible();
+    await page.keyboard.press('Escape');
 
-    await page.getByRole('menuitem', { name: 'Додати учасника' }).click();
+    await page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' }).click();
     await expect(page).toHaveURL(new RegExp(`/group/${groupKey}/member/upsert`));
   });
 
@@ -87,7 +86,7 @@ describeRole('member', 'Member conditional organization UI', ({ user }) => {
     await page.goto('/kurin');
     await expect(page.locator('.edit-profile-button')).toBeHidden();
     await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeHidden();
-    await expect(page.locator('app-member-list + div').getByRole('button')).toBeHidden();
+    await expect(page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' })).toBeHidden();
     await expect(page.locator('app-kv-panel .lil-tile-head__actions button:has(.pi-plus)')).toBeHidden();
     await expect(page.locator('app-leadership-panel .lil-tile-head__actions button:has(.pi-cog)').first()).toBeHidden();
 

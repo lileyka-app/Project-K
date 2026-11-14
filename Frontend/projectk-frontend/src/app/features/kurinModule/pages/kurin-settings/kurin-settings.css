@@ -5,11 +5,44 @@
   gap: 1.5rem;
 }
 
-/* Заголовок блоку всередині плитки — розмір заголовка картки (§3), рівень h2 лишається семантичним. */
-.setting-copy h2 {
+/* Заголовок блоку — розмір заголовка картки (§3); частина блоку на крок менша. */
+.settings-block > h2,
+.settings-block > .setting-copy h2 {
   margin: 0 0 0.5rem;
   font-size: var(--lil-text-h3);
   letter-spacing: var(--lil-tracking-h3);
+}
+
+.setting-copy h3 {
+  margin: 0 0 0.25rem;
+  font-size: var(--lil-text-body);
+  font-weight: 700;
+}
+
+.settings-block {
+  display: grid;
+  gap: 0;
+}
+
+/* Parts of one block, divided by a hairline rather than each sitting in its own tile. */
+.settings-part {
+  padding-block: 1rem;
+}
+
+.settings-part + .settings-part {
+  border-top: 1px solid var(--lil-line);
+}
+
+.settings-part:last-child {
+  padding-bottom: 0;
+}
+
+.settings-part > .setting-copy {
+  margin-bottom: 0.75rem;
+}
+
+.setting-row.settings-part > .setting-copy {
+  margin-bottom: 0;
 }
 
 .setting-copy p {

@@ -171,15 +171,12 @@ describe('KurinPanelComponent', () => {
   });
 
   describe('kurinEditMenuItems', () => {
-    it('exposes kurin profile and report export actions', () => {
+    it('holds only what edits the kurin: its data, and the emblem of a senior kurin', () => {
       component.kurinKey = 'k1';
       component.canEditKurinProfile = true;
       component.canManageGroups = true;
 
-      expect(component.kurinEditMenuItems.map(item => item.label)).toEqual([
-        'Редагування даних куреня',
-        'Експорт звіту куреня'
-      ]);
+      expect(component.kurinEditMenuItems.map(item => item.label)).toEqual(['Дані куреня']);
     });
 
     it('keeps same reference until menu state changes', () => {
@@ -197,16 +194,16 @@ describe('KurinPanelComponent', () => {
       expect(component.kurinEditMenuItems).not.toBe(first);
     });
 
-    it('exposes kurin settings action for managers', () => {
+    it('opens the one thing to edit at once instead of a menu of one', () => {
       component.kurinKey = 'k1';
-      component.canManageKurinSettings = true;
+      component.canEditKurinProfile = true;
+      const menu = { toggle: vi.fn() };
+      const start = vi.spyOn(component, 'startProfileEdit');
 
-      const settingsItem = component.kurinEditMenuItems.find(item => item.label === 'Налаштування куреня');
+      component.onKurinEditClick(new Event('click'), menu);
 
-      expect(settingsItem).toBeTruthy();
-      settingsItem?.command?.({ originalEvent: new Event('click'), item: settingsItem });
-
-      expect(router.navigate).toHaveBeenCalledWith(['/kurin', 'k1', 'settings']);
+      expect(start).toHaveBeenCalled();
+      expect(menu.toggle).not.toHaveBeenCalled();
     });
   });
 

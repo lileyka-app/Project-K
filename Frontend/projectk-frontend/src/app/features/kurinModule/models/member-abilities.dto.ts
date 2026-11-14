@@ -30,6 +30,8 @@ export interface MemberAbilitiesDto {
   };
   /** Read this member's entries in the «Журнал дій». */
   journal: boolean;
+  /** Read this member's вкладка; without it the card does not ask. */
+  dues: boolean;
 }
 
 /** What a viewer may do before the answer arrives, or when it fails: nothing. */
@@ -38,5 +40,6 @@ export const NO_ABILITIES: MemberAbilitiesDto = {
   awards: { confirm: [], remove: false },
   probes: { sign: false, unsign: false },
   badges: { review: false },
-  journal: false
+  journal: false,
+  dues: false
 };

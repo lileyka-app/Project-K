@@ -50,7 +50,7 @@ describeRole('mentor', 'Mentor role access', ({ user }) => {
 
     await expect(page.getByRole('button', { name: 'Редагувати' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Створити' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Додати учасника куреня' })).toBeHidden();
+    await expect(page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' })).toBeHidden();
 
     for (const adminPage of ['/waitlist', '/users', '/panel']) {
       await page.goto(adminPage);
@@ -76,7 +76,7 @@ describeRole('member', 'Member role access', ({ user }) => {
 
     await expect(page.getByRole('button', { name: 'Редагувати' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Створити' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Додати учасника куреня' })).toBeHidden();
+    await expect(page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' })).toBeHidden();
 
     for (const adminPage of ['/panel', '/waitlist', '/users']) {
       await page.goto(adminPage);
@@ -88,8 +88,8 @@ describeRole('member', 'Member role access', ({ user }) => {
     const kurinKey = await getSeededKurinKey(request, user);
     await page.goto(`/planning/${kurinKey}`);
     await expect(page).toHaveURL(new RegExp(`/planning/${kurinKey}`));
-    await expect(page.getByText('Планування таборів')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Створити нове' })).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Планування', level: 1 })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Нове планування' })).toBeHidden();
 
     await page.goto(`/planning/create/${kurinKey}`);
     await expect(page).toHaveURL(/\/forbidden/);

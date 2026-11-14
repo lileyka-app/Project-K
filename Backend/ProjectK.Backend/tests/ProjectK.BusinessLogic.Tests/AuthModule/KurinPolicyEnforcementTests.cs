@@ -232,7 +232,8 @@ public class KurinPolicyEnforcementTests
             new AwardAbilitiesDto([1, 2, 3, 4], Remove: true),
             new ProbeAbilitiesDto(Sign: true, Unsign: true),
             new BadgeAbilitiesDto(Review: true),
-            Journal: true));
+            Journal: true,
+            Dues: true));
     }
 
     [Fact]
@@ -245,7 +246,8 @@ public class KurinPolicyEnforcementTests
             new AwardAbilitiesDto([1, 2, 3, 4], Remove: false),
             new ProbeAbilitiesDto(Sign: true, Unsign: true),
             new BadgeAbilitiesDto(Review: true),
-            Journal: true));
+            Journal: true,
+            Dues: true));
     }
 
     [Fact]
@@ -291,7 +293,8 @@ public class KurinPolicyEnforcementTests
             new AwardAbilitiesDto([], Remove: false),
             new ProbeAbilitiesDto(Sign: false, Unsign: false),
             new BadgeAbilitiesDto(Review: false),
-            Journal: false));
+            Journal: false,
+            Dues: false));
     }
 
     private async Task<ServiceResult<IEnumerable<ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models.BadgeProgressResponse>>> QueueAsync(ICurrentUserContext actor)

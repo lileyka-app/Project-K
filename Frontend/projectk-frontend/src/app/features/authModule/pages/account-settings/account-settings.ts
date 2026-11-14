@@ -178,7 +178,7 @@ export class AccountSettingsComponent implements OnInit {
       },
       error: () => {
         this.savingProfile = false;
-        this.showError('Не вдалося оновити контактні дані. Перевірте email.');
+        this.showError('Не вдалося оновити контактні дані. Перевір email.');
       }
     });
   }
@@ -200,7 +200,7 @@ export class AccountSettingsComponent implements OnInit {
       },
       error: () => {
         this.changingPassword = false;
-        this.showError('Не вдалося змінити пароль. Перевірте поточний пароль і вимоги до нового.');
+        this.showError('Не вдалося змінити пароль. Перевір поточний пароль і вимоги до нового.');
       }
     });
   }
@@ -222,7 +222,7 @@ export class AccountSettingsComponent implements OnInit {
         this.messageService.add({
           severity: 'success',
           summary: 'MFA',
-          detail: 'MFA скинуто. Налаштуйте застосунок-автентифікатор заново.'
+          detail: 'MFA скинуто. Налаштуй застосунок-автентифікатор заново.'
         });
 
         if (this.isPrivileged) {
@@ -258,7 +258,7 @@ export class AccountSettingsComponent implements OnInit {
       },
       error: () => {
         this.resettingMfa = false;
-        this.showError('Не вдалося вимкнути MFA. Перевірте поточний пароль.');
+        this.showError('Не вдалося вимкнути MFA. Перевір поточний пароль.');
       }
     });
   }
@@ -289,7 +289,7 @@ export class AccountSettingsComponent implements OnInit {
       },
       error: () => {
         this.rotatingRecoveryCodes = false;
-        this.showError('Не вдалося оновити recovery codes. Перевірте поточний пароль.');
+        this.showError('Не вдалося оновити recovery codes. Перевір поточний пароль.');
       }
     });
   }

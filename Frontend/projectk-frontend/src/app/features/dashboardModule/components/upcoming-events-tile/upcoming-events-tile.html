@@ -23,7 +23,7 @@
   } @else if (!rows().length) {
     <app-empty-state art="calendar" title="Найближчі два тижні вільні" body="Коли провід призначить сходини чи захід, тут зʼявиться рядок." />
   } @else {
-    <ul class="events-tile__list">
+    <ul class="events-tile__list lil-tile-scroll">
       @for (row of rows(); track row.event.agendaItemKey + row.event.startUtc) {
         <li class="events-tile__row" [class.events-tile__row--awaiting]="row.isAwaiting">
           <span class="events-tile__dot" [style.background]="row.event.categoryColorHex || null" aria-hidden="true"></span>

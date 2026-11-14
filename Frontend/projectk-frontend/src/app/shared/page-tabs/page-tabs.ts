@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 
 /** One tab of a page made of several: where it leads and what it says. */
 export interface PageTab {
@@ -8,6 +8,13 @@ export interface PageTab {
   readonly link: string;
   /** Active only on exactly this address, not on the addresses under it. */
   readonly exact?: boolean;
+  /**
+   * Tabs that split one page rather than lead to another (the admin's улади) differ only here; the
+   * tab is then active on exactly these, and an empty object is the tab without any.
+   */
+  readonly queryParams?: Readonly<Record<string, string>>;
+  /** Sibling pages that read the same query (Точкування's period): it goes along, and does not decide which tab is on. */
+  readonly carriesQuery?: boolean;
   /** A number beside the label, e.g. requests waiting; nothing is shown for zero. */
   readonly count?: number;
   readonly countLabel?: string;
@@ -26,9 +33,10 @@ export interface PageTab {
   template: `
     @if (tabs().length > 1) {
       <nav class="page-tabs" [attr.aria-label]="label()">
-        @for (tab of tabs(); track tab.link) {
-          <a class="page-tabs__tab" [routerLink]="tab.link" routerLinkActive="page-tabs__tab--on"
-            [routerLinkActiveOptions]="{ exact: !!tab.exact }" ariaCurrentWhenActive="page"
+        @for (tab of tabs(); track tab.label) {
+          <a class="page-tabs__tab" [routerLink]="tab.link" [queryParams]="tab.queryParams ?? null"
+            [queryParamsHandling]="tab.carriesQuery ? 'preserve' : null" routerLinkActive="page-tabs__tab--on"
+            [routerLinkActiveOptions]="activeOptions(tab)" ariaCurrentWhenActive="page"
             [attr.data-testid]="tab.testId ?? null">
             {{ tab.label }}
             @if (tab.count) {
@@ -99,4 +107,14 @@ export class PageTabsComponent {
   readonly tabs = input.required<readonly PageTab[]>();
   /** What the row is, for a screen reader: «Режими реєстру», «Розділи налаштувань». */
   readonly label = input.required<string>();
+
+  protected activeOptions(tab: PageTab): { exact: boolean } | IsActiveMatchOptions {
+    if (tab.queryParams) {
+      return { paths: 'exact', queryParams: 'exact', matrixParams: 'ignored', fragment: 'ignored' };
+    }
+    if (tab.carriesQuery) {
+      return { paths: tab.exact ? 'exact' : 'subset', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' };
+    }
+    return { exact: !!tab.exact };
+  }
 }

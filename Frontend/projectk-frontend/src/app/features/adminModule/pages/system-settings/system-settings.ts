@@ -1,6 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { environment } from '../../../../../environments/environment';
 import { ToggleSwitchModule, ToggleSwitchChangeEvent } from '@openng/optimus-ui/toggleswitch';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -19,7 +18,6 @@ const ENFORCE_PRIVILEGED_MFA_KEY = 'Security__EnforcePrivilegedMFA';
 export class SystemSettingsComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly messageService = inject(MessageService);
-  private readonly router = inject(Router);
   private readonly apiUrl = environment.apiUrl;
 
   enforcePrivilegedMfa = false;
@@ -27,10 +25,6 @@ export class SystemSettingsComponent implements OnInit {
 
   ngOnInit() {
     this.loadSettings();
-  }
-
-  back() {
-    this.router.navigate(['/panel']);
   }
 
   loadSettings() {

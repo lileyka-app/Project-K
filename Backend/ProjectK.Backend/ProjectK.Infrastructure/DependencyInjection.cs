@@ -70,6 +70,7 @@ public static class DependencyInjection
         services.AddScoped<IKurinReportSource, KurinReportSource>();
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
         services.AddSingleton<IKurinReportPdfRenderer, KurinReportPdfRenderer>();
+        services.AddSingleton<ILifeStoryPdfRenderer, LifeStoryPdfRenderer>();
         services.AddSingleton<ISpreadsheetWriter, ClosedXmlSpreadsheetWriter>();
         services.AddSingleton<ISpreadsheetReader, ClosedXmlSpreadsheetReader>();
 

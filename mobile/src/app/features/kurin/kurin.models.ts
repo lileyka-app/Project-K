@@ -318,6 +318,16 @@ export interface MemberDuesDto {
   canOpenGroupDues: boolean;
   accounts: { groupKey: string; groupName: string; standing: 'Current' | 'Moved' | 'Left'; balance: number }[];
   entries: DuesEntryDto[];
+  /** The person's вкладка in their other kurins, by their own line there; only on their own card (web MemberDuesDto). */
+  elsewhere?: {
+    kurinKey: string;
+    kurinNumber: number | null;
+    kurinNamedAfter: string | null;
+    branch: KurinBranch;
+    currency: string;
+    numberLocale: string;
+    balance: number;
+  }[];
 }
 
 // ── Writes ───────────────────────────────────────────────────────────────────────────────────────

@@ -11,10 +11,7 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
     await page.goto('/kurin');
     await expect(page.locator('.edit-profile-button')).toBeVisible();
     await expect(page.locator('.group-panel').getByRole('button', { name: 'Створити' })).toBeVisible();
-    // Named, not just "the button under the list": taking someone in by code sits beside adding
-    // a new person, and a positional selector would match both.
-    await expect(page.locator('app-member-list + div')
-      .getByRole('button', { name: /Додати учасника/ })).toBeVisible();
+    await expect(page.locator('app-member-list').getByRole('button', { name: 'Додати учасника' })).toBeVisible();
 
     await page.goto(`/group/${groupKey}`);
     await expect(page.locator('.group-actions button')).toBeVisible();
@@ -80,7 +77,6 @@ describeRole('mentor', 'Mentor role UI controls', ({ user }) => {
     await expect(head.getByRole('button', { name: 'Журнал' })).toHaveCount(0);
     await head.getByRole('button', { name: 'Ще' }).click();
     await expect(page.getByRole('menuitem', { name: 'Перестороги' })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Пластовий життєпис' })).toBeVisible();
     await page.keyboard.press('Escape');
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
@@ -101,7 +97,7 @@ describeRole('member', 'Member role UI controls', ({ user }) => {
     await expect(head.getByRole('button', { name: 'Редагувати' })).toBeVisible();
     await expect(head.getByRole('button')).toHaveCount(2);
     await head.getByRole('button', { name: 'Ще' }).click();
-    await expect(page.getByRole('menuitem')).toHaveText(['Пластовий життєпис']);
+    await expect(page.getByRole('menuitem', { name: 'Пластовий життєпис' })).toBeVisible();
     await page.keyboard.press('Escape');
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);

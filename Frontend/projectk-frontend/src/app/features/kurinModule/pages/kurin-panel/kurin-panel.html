@@ -27,16 +27,29 @@
                     }
                 </div>
 
-                @if (hasKurinEditActions && !profileEditMode) {
-                    <p-menu #kurinEditMenu [model]="kurinEditMenuItems" [popup]="true" appendTo="body" />
-                    <p-button
-                        class="edit-profile-action"
-                        styleClass="edit-profile-button"
-                        label="Редагувати"
-                        icon="pi pi-pencil"
-                        severity="secondary"
-                        [loading]="reportDownloading"
-                        (onClick)="kurinEditMenu.toggle($event)" />
+                @if (!profileEditMode && (hasKurinEditActions || canManageGroups)) {
+                    <div class="kurin-head-actions">
+                        @if (canManageGroups) {
+                            <p-button
+                                label="Звіт PDF"
+                                icon="pi pi-file-pdf"
+                                severity="secondary"
+                                variant="text"
+                                [loading]="reportDownloading"
+                                [disabled]="!kurinKey"
+                                (onClick)="downloadReportPdf()" />
+                        }
+                        @if (hasKurinEditActions) {
+                            <p-menu #kurinEditMenu appMenuEnd [model]="kurinEditMenuItems" [popup]="true" appendTo="body" />
+                            <p-button
+                                class="edit-profile-action"
+                                styleClass="edit-profile-button"
+                                label="Редагувати"
+                                icon="pi pi-pencil"
+                                severity="secondary"
+                                (onClick)="onKurinEditClick($event, kurinEditMenu)" />
+                        }
+                    </div>
                 }
             </div>
 
@@ -174,12 +187,8 @@
     </div>
 
     <section class="kurin-tile">
-        <app-member-list [type]="'kurin'" [typeKey]="kurinKey" />
-        @if (canManageMembers) {
-            <div class="mt-3">
-                <p-button label="Додати учасника куреня" (onClick)="onMemberCreate()" icon="pi pi-plus" />
-            </div>
-        }
+        <app-member-list [type]="'kurin'" [typeKey]="kurinKey"
+            [addLabel]="canManageMembers ? 'Додати учасника' : null" (add)="onMemberCreate()" />
     </section>
 </div>
 </div>

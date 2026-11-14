@@ -27,7 +27,7 @@
                     accept="image/png,image/jpeg,image/webp"
                     (change)="onSilhouetteSelected($event)" />
                 @if (hasGroupEditActions && !profileEditMode) {
-                    <p-menu #groupEditMenu [model]="groupEditMenuItems" [popup]="true" appendTo="body" />
+                    <p-menu #groupEditMenu appMenuEnd [model]="groupEditMenuItems" [popup]="true" appendTo="body" />
                     <p-button
                         label="Редагувати"
                         type="button"
@@ -82,7 +82,8 @@
     </section>
 
     <section class="kurin-tile">
-        <app-member-list [type]="'group'" [typeKey]="groupKey" />
+        <app-member-list [type]="'group'" [typeKey]="groupKey"
+            [addLabel]="canManageMembers ? 'Додати учасника' : null" (add)="onMemberCreate()" />
     </section>
 </div>
 

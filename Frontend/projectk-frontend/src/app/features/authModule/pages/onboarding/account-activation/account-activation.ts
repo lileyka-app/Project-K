@@ -50,7 +50,7 @@ import { passwordRulesValidator } from '../../../../../shared/functions/password
         @if (validationData?.isValid && !activated) {
           <div class="flex flex-col gap-4">
             <p-message severity="info" styleClass="w-full"
-              [text]="'Вітаємо, ' + validationData.firstName + '! Оберіть пароль для акаунта ' + validationData.email + '.'" />
+              [text]="'Вітаємо, ' + validationData.firstName + '! Обери пароль для акаунта ' + validationData.email + '.'" />
 
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
               <div class="flex flex-col gap-2">
@@ -59,7 +59,7 @@ import { passwordRulesValidator } from '../../../../../shared/functions/password
                 <app-password-rules [password]="form.value.password" />
               </div>
               <div class="flex flex-col gap-2">
-                <label for="confirmPassword">Повторіть пароль</label>
+                <label for="confirmPassword">Повтори пароль</label>
                 <p-password inputId="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" autocomplete="new-password" styleClass="w-full" inputStyleClass="w-full" />
                 @if (form.errors?.['mismatch'] && form.get('confirmPassword')?.touched) {
                   <p-message severity="error" text="Паролі не збігаються." />
@@ -143,7 +143,7 @@ export class AccountActivationComponent implements OnInit {
         this.router.navigate(authenticatedHomeRoute(this.authService.getAuthStateValue()));
       },
       error: (err) => {
-        this.messageService.add({ severity: 'error', summary: 'Не вдалося активувати', detail: failureDetail(err, 'Спробуйте ще раз або замовте нове запрошення.') });
+        this.messageService.add({ severity: 'error', summary: 'Не вдалося активувати', detail: failureDetail(err, 'Спробуй ще раз або замов нове запрошення.') });
         this.submitting = false;
       }
     });

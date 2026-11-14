@@ -189,12 +189,4 @@ describe('SkillsReviewPageComponent', () => {
     expect(component.reviewItems).toHaveLength(0);
   });
 
-  it('goBackToKurin should navigate to kurin panel', () => {
-    createComponent();
-    fixture.detectChanges();
-
-    component.goBackToKurin();
-
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/kurin']);
-  });
 });

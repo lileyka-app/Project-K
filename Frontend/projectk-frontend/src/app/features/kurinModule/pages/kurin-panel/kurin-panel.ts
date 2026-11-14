@@ -28,10 +28,12 @@ import { KvPanelComponent } from '../../components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../../components/leadership/leadership-panel/leadership-panel';
 import { MenuItemsCache } from '../../functions/menu-items-cache';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { MenuEndDirective } from '../../../../shared/menu-end/menu-end.directive';
 
 @Component({
   selector: 'app-kurin-panel',
   imports: [
+    MenuEndDirective,
     ReactiveFormsModule,
     TableModule,
     ButtonModule,
@@ -74,7 +76,6 @@ export class KurinPanelComponent implements OnInit {
   canManageGroups = false;
   canManageMembers = false;
   canEditKurinProfile = false;
-  canManageKurinSettings = false;
   profileEditMode = false;
   profileSaving = false;
   reportDownloading = false;
@@ -186,7 +187,17 @@ export class KurinPanelComponent implements OnInit {
   }
 
   get hasKurinEditActions(): boolean {
-    return this.canEditKurinProfile || this.canManageGroups || this.canManageKurinSettings;
+    return this.canEditKurinProfile;
+  }
+
+  /** One thing to edit opens at once; a senior kurin's emblem makes it a menu. */
+  onKurinEditClick(event: Event, menu: { toggle: (event: Event) => void }): void {
+    const items = this.kurinEditMenuItems;
+    if (items.length === 1) {
+      items[0].command?.({ originalEvent: event, item: items[0] });
+      return;
+    }
+    menu.toggle(event);
   }
 
   get kurinEditMenuItems(): MenuItem[] {
@@ -197,7 +208,6 @@ export class KurinPanelComponent implements OnInit {
         this.isSenior,
         this.kurinData?.emblemUrl ?? null,
         this.emblemSaving,
-        this.canManageKurinSettings,
         this.reportDownloading,
         this.kurinKey
       ],
@@ -209,7 +219,7 @@ export class KurinPanelComponent implements OnInit {
 
     if (this.canEditKurinProfile) {
       items.push({
-        label: 'Редагування даних куреня',
+        label: 'Дані куреня',
         icon: 'pi pi-pencil',
         command: () => this.startProfileEdit()
       });
@@ -233,24 +243,6 @@ export class KurinPanelComponent implements OnInit {
       }
     }
 
-    if (this.canManageGroups) {
-      items.push({
-        label: 'Експорт звіту куреня',
-        icon: 'pi pi-file-pdf',
-        disabled: this.reportDownloading || !this.kurinKey,
-        command: () => this.downloadReportPdf()
-      });
-    }
-
-    if (this.canManageKurinSettings) {
-      items.push({
-        label: 'Налаштування куреня',
-        icon: 'pi pi-cog',
-        disabled: !this.kurinKey,
-        command: () => this.openKurinSettings()
-      });
-    }
-
     return items;
   }
 
@@ -261,7 +253,6 @@ export class KurinPanelComponent implements OnInit {
         this.canManageGroups = this.permissionService.canManageGroups();
         this.canManageMembers = this.permissionService.canManageGroups();
         this.canEditKurinProfile = this.permissionService.canManageGroups();
-        this.canManageKurinSettings = this.permissionService.canManageKurinSettings();
         this.refreshData();
       }
     });
@@ -335,11 +326,6 @@ export class KurinPanelComponent implements OnInit {
 
   onMemberCreate(): void {
     this.router.navigate(['/kurin', this.kurinKey, 'member', 'upsert']);
-  }
-
-  openKurinSettings(): void {
-    if (!this.kurinKey || !this.canManageKurinSettings) return;
-    this.router.navigate(['/kurin', this.kurinKey, 'settings']);
   }
 
   downloadReportPdf(): void {

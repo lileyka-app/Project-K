@@ -14,15 +14,11 @@
     @if (data(); as d) {
       <div class="lil-page-head__actions">
         <app-score-period-select [periods]="d.periods" [period]="d.period" (periodChange)="changePeriod($event)" />
-        @if (canSeePrivate) {
-          <p-button label="Точкування КВ" icon="pi pi-lock" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score', 'private']" [queryParams]="periodParams()" />
-        }
-        @if (d.viewer.canManage) {
-          <p-button label="Налаштування" icon="pi pi-sliders-h" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score', 'settings']" />
-        }
       </div>
     }
   </header>
+
+  <app-page-tabs [tabs]="tabs" label="Розділи точкування" />
 
   @if (loading() && !data()) {
     <section class="kurin-tile">

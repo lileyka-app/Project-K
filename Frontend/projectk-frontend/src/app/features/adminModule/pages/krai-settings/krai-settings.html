@@ -4,9 +4,6 @@
       <p class="lil-page-head__eyebrow">Профілі краю</p>
       <h1>Краї</h1>
     </div>
-    <div class="lil-page-head__actions">
-      <p-button label="Назад" icon="pi pi-arrow-left" severity="secondary" variant="text" (onClick)="back()" />
-    </div>
   </header>
 
   <section class="kurin-tile">
@@ -133,11 +130,10 @@
     <div class="lil-tile-head">
       <div>
         <h2 id="concessions-title">Пільги краю</h2>
-        <p>Пільги й знижки, які гуртки краю «{{ e.kraiName }}» можуть надати людині поверх пільги куреня: з якого й до якого кварталу і з якої підстави. Діє найвигідніша з пільг людини. Зміна правила діє лише на пільги, надані після збереження.</p>
+        <p>Поверх пільги куреня; діє найвигідніша.</p>
       </div>
     </div>
     <app-krai-concessions [(value)]="concessions" [currencySymbol]="currencyMark()" [disabled]="saving()" />
-    <small class="krai-muted">Зберігається разом з усім профілем кнопкою «Зберегти» нижче.</small>
   </section>
 
   <section class="kurin-tile" aria-labelledby="locale-title">
@@ -241,7 +237,7 @@
     <div class="lil-tile-head">
       <div>
         <h2 id="history-title">Історія</h2>
-        <p>Кожне збереження — окрема ревізія. Відновлення додає нову ревізію, нічого не стираючи.</p>
+        <p>Кожне збереження — ревізія; відновлення нічого не стирає.</p>
       </div>
       <div class="krai-actions">
         <p-button label="Експорт JSON" icon="pi pi-download" severity="secondary" [disabled]="saving()" (onClick)="exportProfile()" />

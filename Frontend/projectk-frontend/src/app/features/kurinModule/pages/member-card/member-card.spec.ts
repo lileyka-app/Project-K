@@ -32,6 +32,7 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { LifeStoryService } from '../../services/life-story/life-story.service';
 import { actInKurin, rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 describe('MemberCardComponent', () => {
@@ -48,6 +49,7 @@ describe('MemberCardComponent', () => {
   let entityServiceSpy: MockedObject<EntityService>;
   let routerSpy: MockedObject<Router>;
   let duesServiceSpy: MockedObject<DuesService>;
+  let lifeStorySpy: MockedObject<LifeStoryService>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
   let routeStub: { paramMap: Observable<ParamMap>; snapshot: { data: Record<string, unknown>; params: Record<string, string> } };
 
@@ -58,7 +60,8 @@ describe('MemberCardComponent', () => {
     awards: { confirm: [1, 2, 3, 4], remove: false },
     probes: { sign: true, unsign: true },
     badges: { review: true },
-    journal: false
+    journal: false,
+    dues: true
   };
   const member: MemberDto = {
     memberKey,
@@ -114,12 +117,18 @@ describe('MemberCardComponent', () => {
       checkEntityAccess: vi.fn()
     } as MockedObject<EntityService>;
     routerSpy = {
-      navigate: vi.fn()
-    } as MockedObject<Router>;
+      navigate: vi.fn(),
+      // The card's tabs are router links; they read these and change nothing here.
+      events: of(),
+      createUrlTree: vi.fn(() => ({})),
+      serializeUrl: vi.fn(() => ''),
+      isActive: vi.fn(() => false)
+    } as unknown as MockedObject<Router>;
     duesServiceSpy = {
       getMemberDues: vi.fn()
     } as MockedObject<DuesService>;
     duesServiceSpy.getMemberDues.mockReturnValue(of({ hasAccount: false } as MemberDuesDto));
+    lifeStorySpy = { entries: vi.fn().mockReturnValue(of([])), save: vi.fn(), remove: vi.fn(), downloadPdf: vi.fn() } as unknown as MockedObject<LifeStoryService>;
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
     routeStub = { paramMap: paramMapSubject.asObservable(), snapshot: { data: {}, params: { memberKey } } };
 
@@ -207,6 +216,7 @@ describe('MemberCardComponent', () => {
         { provide: EntityService, useValue: entityServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: DuesService, useValue: duesServiceSpy },
+        { provide: LifeStoryService, useValue: lifeStorySpy },
         { provide: ActivatedRoute, useValue: routeStub }
       ]
     }).compileComponents();
@@ -908,15 +918,31 @@ describe('MemberCardComponent', () => {
       expect(component.youthRecordLocked).toBe(false);
     });
 
-    it('життєпис — останній пункт меню «Ще», посиланням', () => {
+    it('життєпис — у «Ще» лише на своїй картці', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, memberKey: 'test-member-key' }));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.moreMenuItems.map(item => item.label)).toContain('Пластовий життєпис');
+    });
+
+    it('на чужій картці життєпису в меню немає', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       createComponent();
       fixture.detectChanges();
 
-      const life = component.moreMenuItems.at(-1)!;
-      expect(life.label).toBe('Пластовий життєпис');
-      expect(life.routerLink).toEqual(['/member', memberKey, 'life']);
-      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="member-life"]')).toBeNull();
+      expect(component.moreMenuItems.map(item => item.label)).not.toContain('Пластовий життєпис');
+    });
+
+    it('у життєписі — свої вишколи й табори', () => {
+      routeStub.snapshot.data = { view: 'life' };
+      lifeStorySpy.entries.mockReturnValue(of([{ memberLifeEntryKey: 'e1', kind: 'Training', course: 'Kvz', title: null, number: 12, startDate: '2024-07-01', endDate: '2024-07-10', place: null, commandant: 'Ярема', role: null }]));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(lifeStorySpy.entries).toHaveBeenCalled();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('12-й КВЗ');
     });
   });
 
@@ -1140,6 +1166,26 @@ describe('MemberCardComponent', () => {
       expect(renderedText()).not.toContain('Каса гуртка');
     });
 
+    it('на своїй картці показує вкладку й в інших куренях, з уладом людини там', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({
+        hasAccount: false,
+        elsewhere: [{
+          kurinKey: 'orden', kurinNumber: 20, kurinNamedAfter: 'Орден Хрестоносців', branch: KurinBranch.UPS,
+          numbering: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }],
+          currency: 'UAH', numberLocale: 'uk-UA', balance: -400
+        }]
+      })));
+
+      createComponent();
+      fixture.detectChanges();
+
+      const elsewhere = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="dues-elsewhere"]')?.textContent ?? '';
+      expect(elsewhere).toContain('Орден Хрестоносців · УПС');
+      expect(elsewhere).toContain('−400 ₴');
+      expect(renderedText()).not.toContain('Сплачено');
+    });
+
     it('сплачено — зелена плашка; впорядникові є кнопка в касу гуртка', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0, canOpenGroupDues: true })));
@@ -1206,6 +1252,17 @@ describe('MemberCardComponent', () => {
 
       expect(component.dues).toBeNull();
       expect(renderedText()).not.toContain('за квартал');
+    });
+
+    it('не питає чужої вкладки, коли права на неї немає', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getAbilities.mockReturnValue(of({ ...leaderAbilities, dues: false }));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(duesServiceSpy.getMemberDues).not.toHaveBeenCalled();
+      expect(component.dues).toBeNull();
     });
   });
 
@@ -1313,7 +1370,7 @@ describe('MemberCardComponent', () => {
 
       expect(component.canEditMember).toBe(false);
       expect(component.canManageWarnings).toBe(true);
-      expect(menuLabels()).toEqual(['Перестороги', 'Пластовий життєпис']);
+      expect(menuLabels()).toEqual(['Перестороги']);
       expect(headButton('Ще')).not.toBeNull();
     });
 
@@ -1339,7 +1396,7 @@ describe('MemberCardComponent', () => {
 
       expect(headButtonLabels()).toEqual(['Редагувати', 'Верифікувати']);
       expect(headButton('Ще')).not.toBeNull();
-      expect(menuLabels()).toEqual(['Перестороги', 'Журнал дій', 'Пластовий життєпис']);
+      expect(menuLabels()).toEqual(['Перестороги', 'Журнал дій']);
     });
 
     it('moves verification under «Ще» once the profile is verified', () => {
@@ -1356,14 +1413,13 @@ describe('MemberCardComponent', () => {
       expect(menuLabels()).not.toContain('Зняти верифікацію');
     });
 
-    it('leaves only «Ще» with the life story to whoever may do nothing to the member', () => {
+    it('leaves no head actions to whoever may do nothing to the member', () => {
       entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
       memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
       createAsReviewer(member);
 
       expect(headButtonLabels()).toEqual([]);
-      expect(headButton('Ще')).not.toBeNull();
-      expect(menuLabels()).toEqual(['Пластовий життєпис']);
+      expect(headButton('Ще')).toBeNull();
     });
 
     it('opens перестороги from the dots for whoever gives them', () => {

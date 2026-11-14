@@ -45,6 +45,9 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
 import { YouthAwardDto, isYouthAward } from '../../models/member-award.dto';
 import { MemberSeniorAwardsTileComponent } from './components/member-senior-awards-tile/member-senior-awards-tile';
+import { LifeEntriesTileComponent, LifeEntrySave } from './components/life-entries-tile/life-entries-tile';
+import { LifeStoryService } from '../../services/life-story/life-story.service';
+import { LifeEntryDto } from '../../models/life-entry.dto';
 import { AwardBlock } from './components/award-blocks/award-blocks.function';
 import { MemberDegreesTileComponent } from './components/member-degrees-tile/member-degrees-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
@@ -85,6 +88,7 @@ import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.
 import { MemberTagsEditorComponent } from '../../components/member-tags-editor/member-tags-editor';
 import { HonoursService } from '../../services/honours-service/honours.service';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
+import { MenuEndDirective } from '../../../../shared/menu-end/menu-end.directive';
 
 /** The stages of a life story and their ladders; the day of joining Пласт opens the УПЮ one. */
 const LIFE_LADDERS: readonly { branch: KurinBranch; ladder: readonly PlastLevel[] }[] = [
@@ -96,6 +100,7 @@ const LIFE_LADDERS: readonly { branch: KurinBranch; ladder: readonly PlastLevel[
 @Component({
   selector: 'app-member-card',
   imports: [
+    MenuEndDirective,
     DatePipe,
     SkeletonModule,
     ProgressBarModule,
@@ -114,6 +119,7 @@ const LIFE_LADDERS: readonly { branch: KurinBranch; ladder: readonly PlastLevel[
     BadgeDetailsDialogComponent,
     MemberAwardsTileComponent,
     MemberSeniorAwardsTileComponent,
+    LifeEntriesTileComponent,
     MemberDegreesTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
@@ -175,6 +181,12 @@ export class MemberCardComponent implements OnInit {
   membershipsLoadFailed = false;
 
   /** Their вкладка here; null until read, and stays null when they have none or it is not ours to see. */
+  /** The вишколи, табори and заходи the person wrote into their own life story. */
+  lifeEntries: LifeEntryDto[] = [];
+  lifeSaving = false;
+  lifePdfLoading = false;
+  private readonly lifeStory = inject(LifeStoryService);
+
   dues: MemberDuesDto | null = null;
   isDuesLoading = false;
   readonly money = (amount: number): string => money(amount, this.dues?.currency, this.dues?.numberLocale);
@@ -263,29 +275,34 @@ export class MemberCardComponent implements OnInit {
     });
 
     this.loadMemberships(memberKey);
-    this.loadDues(memberKey);
+    this.dues = null;
     this.loadAbilities(memberKey);
+    if (this.isLifeView) {
+      this.loadLifeEntries();
+    }
   }
 
-  /** Quietly: without an answer the card simply offers none of the policy's actions. */
+  /** Quietly: without an answer the card simply offers none of the policy's actions. The вкладка waits for it. */
   private loadAbilities(memberKey: string): void {
     this.abilities = NO_ABILITIES;
     this.memberService.getAbilities(memberKey).subscribe({
-      next: abilities => this.abilities = abilities,
+      next: abilities => {
+        this.abilities = abilities;
+        if (abilities.dues) {
+          this.loadDues(memberKey);
+        }
+      },
       error: () => this.abilities = NO_ABILITIES
     });
   }
 
-  /**
-   * Quietly: a youth may read only their own, so for anyone else's card the server answers 403 and
-   * the tile simply does not appear — that is not an error the viewer needs told about.
-   */
+  /** Only when the abilities say the viewer may read it; a refusal after that still stays quiet. */
   private loadDues(memberKey: string): void {
     this.isDuesLoading = true;
     this.dues = null;
     this.duesService.getMemberDues(memberKey).subscribe({
       next: dues => {
-        this.dues = dues.hasAccount ? dues : null;
+        this.dues = dues.hasAccount || dues.elsewhere?.length ? dues : null;
         this.isDuesLoading = false;
       },
       error: () => {
@@ -297,6 +314,35 @@ export class MemberCardComponent implements OnInit {
 
   openGroupDues(groupKey: string): void {
     this.router.navigate(['/group', groupKey, 'dues']);
+  }
+
+  /** Whose вкладка this is: the kurin and the person's line in it, «Орден Хрестоносців · УПС». */
+  get duesKurinLine(): string | null {
+    const here = this.memberships.find(m => m.kurinKey === this.dues?.kurinKey && m.isCurrent)
+      ?? this.memberships.find(m => m.kurinKey === this.dues?.kurinKey);
+    return here ? this.kurinWithLine(here.kurinNumber, here.kurinNamedAfter, here.branch) : null;
+  }
+
+  /** The person's other kurins, each by its name and their line there, with the balance in its own currency. */
+  get duesElsewhere(): { key: string; kurin: string; balance: number; amount: string }[] {
+    return (this.dues?.elsewhere ?? []).map(other => ({
+      key: other.kurinKey,
+      kurin: this.kurinWithLine(other.kurinNumber, other.kurinNamedAfter, other.branch),
+      balance: other.balance,
+      amount: this.signedMoney(other.balance, other.currency, other.numberLocale)
+    }));
+  }
+
+  /** «сплачено», a debt as it is, a surplus with its plus. */
+  private signedMoney(balance: number, currency: string, locale: string): string {
+    if (balance === 0) return 'сплачено';
+    const amount = money(balance, currency, locale);
+    return balance > 0 ? `+${amount}` : amount;
+  }
+
+  private kurinWithLine(number: number | null | undefined, namedAfter: string | null | undefined, branch: KurinBranch): string {
+    const kurin = isSeniorBranch(branch) && namedAfter ? namedAfter : kurinLabel(number ?? null, branch);
+    return `${kurin} · ${KURIN_BRANCH_LABELS[branch]}`;
   }
 
   get duesEntriesPreview(): DuesEntryDto[] {
@@ -596,12 +642,6 @@ export class MemberCardComponent implements OnInit {
       : null;
   }
 
-  openCard(): void {
-    if (this.memberKey) {
-      this.router.navigate(['/member', this.memberKey]);
-    }
-  }
-
   openArchive(): void {
     if (this.archiveKurinKey) {
       this.router.navigate(['/kurin/registry/archive']);
@@ -813,11 +853,11 @@ export class MemberCardComponent implements OnInit {
     return this.canEditMember || this.needsProfileVerification || this.moreMenuItems.length > 0;
   }
 
-  /** The rarer actions on someone: «Зняти верифікацію», «Перестороги», «Журнал дій», then «Пластовий життєпис» for everyone. */
+  /** The rarer actions: «Зняти верифікацію», «Перестороги», «Журнал дій» on someone; «Пластовий життєпис» on one's own card. */
   get moreMenuItems(): MenuItem[] {
     const canUnverify = this.canManageProfileVerification && this.isProfileVerified;
     return this.moreMenuCache.get(
-      [canUnverify, this.profileVerificationSubmitting, this.canManageWarnings, this.journalKurinKey, this.member?.memberKey],
+      [canUnverify, this.profileVerificationSubmitting, this.canManageWarnings, this.journalKurinKey, this.member?.memberKey, this.isOwnCard && !this.isLifeView],
       () => this.buildMoreMenuItems(canUnverify));
   }
 
@@ -837,11 +877,68 @@ export class MemberCardComponent implements OnInit {
     if (this.journalKurinKey) {
       items.push({ label: 'Журнал дій', icon: 'pi pi-history', command: () => this.openJournal() });
     }
-    if (this.member) {
-      // A routerLink, not a command: Ctrl-click still opens the life story in a new tab.
-      items.push({ label: 'Пластовий життєпис', icon: 'pi pi-book', routerLink: ['/member', this.member.memberKey, 'life'] });
+    if (this.isOwnCard && !this.isLifeView) {
+      items.push({ label: 'Пластовий життєпис', icon: 'pi pi-book', command: () => this.openLife() });
     }
     return items;
+  }
+
+  private loadLifeEntries(): void {
+    this.lifeStory.entries().subscribe({
+      next: entries => this.lifeEntries = entries,
+      error: () => this.lifeEntries = []
+    });
+  }
+
+  onSaveLifeEntry({ key, request }: LifeEntrySave): void {
+    this.lifeSaving = true;
+    this.lifeStory.save(key, request).subscribe({
+      next: saved => {
+        this.lifeEntries = [...this.lifeEntries.filter(e => e.memberLifeEntryKey !== saved.memberLifeEntryKey), saved];
+        this.lifeSaving = false;
+      },
+      error: () => this.lifeSaving = false
+    });
+  }
+
+  onDeleteLifeEntry(key: string): void {
+    this.lifeStory.remove(key).subscribe({
+      next: () => this.lifeEntries = this.lifeEntries.filter(e => e.memberLifeEntryKey !== key)
+    });
+  }
+
+  /** The whole life story as one PDF, from where the person started to where they stand. */
+  downloadLifePdf(): void {
+    if (this.lifePdfLoading) return;
+    this.lifePdfLoading = true;
+    this.lifeStory.downloadPdf().subscribe({
+      next: response => {
+        if (response.body) {
+          const match = response.headers.get('content-disposition')?.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
+          const url = window.URL.createObjectURL(response.body);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = match?.[1] ? decodeURIComponent(match[1]) : 'zhyttiepys.pdf';
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          window.URL.revokeObjectURL(url);
+        }
+        this.lifePdfLoading = false;
+      },
+      error: () => this.lifePdfLoading = false
+    });
+  }
+
+  openLife(): void {
+    const key = this.member?.memberKey ?? this.memberKey;
+    this.router.navigate(['/member', key, 'life']);
+  }
+
+  /** Back from the life story to the card it belongs to. */
+  openCard(): void {
+    const key = this.member?.memberKey ?? this.memberKey;
+    this.router.navigate(['/member', key]);
   }
 
   openWarnings(): void {

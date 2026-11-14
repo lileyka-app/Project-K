@@ -148,7 +148,7 @@ export class KurinSettingsComponent implements OnInit {
 
   get numberProblem(): string | null {
     if (this.preparatory || this.loading) return null;
-    if (this.number === null) return 'Впишіть число куреня або позначте його підготовчим.';
+    if (this.number === null) return 'Впиши число куреня або познач його підготовчим.';
     if (!this.keepsOwnNumber && (this.number < this.numberRange.min || this.number > this.numberRange.max)) {
       return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
     }
@@ -233,7 +233,7 @@ export class KurinSettingsComponent implements OnInit {
   private saveFailure(code: string | undefined): string {
     switch (code) {
       case 'KurinNumberTaken':
-        return `Курінь з числом ${this.number} уже є в Лілейці. Перевірте число.`;
+        return `Курінь з числом ${this.number} уже є в Лілейці. Перевір число.`;
       case 'KurinNumberOutOfRange':
         return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
       case 'ProbeEditionNotOffered':

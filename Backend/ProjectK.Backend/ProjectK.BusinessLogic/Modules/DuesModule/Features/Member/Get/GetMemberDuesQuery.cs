@@ -64,13 +64,15 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
 
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var current = krai.QuarterOf(_time.GetUtcNow());
-        var memberships = (await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken))
+        var everywhere = await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken);
+        var elsewhere = await ElsewhereAsync(request.MemberKey, kurinKey, everywhere, cancellationToken);
+        var memberships = everywhere
             .Where(m => m.KurinKey == kurinKey)
             .ToList();
         if (memberships.Count == 0)
         {
             return new ServiceResult<MemberDuesResponse>(ResultType.Success,
-                new MemberDuesResponse { HasAccount = false, KurinKey = kurinKey, CurrentQuarter = Quarter(current) });
+                new MemberDuesResponse { HasAccount = false, KurinKey = kurinKey, CurrentQuarter = Quarter(current), Elsewhere = elsewhere });
         }
 
         var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
@@ -83,7 +85,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         if (accounts.Count == 0)
         {
             return new ServiceResult<MemberDuesResponse>(ResultType.Success,
-                new MemberDuesResponse { HasAccount = false, KurinKey = kurinKey, CurrentQuarter = Quarter(current) });
+                new MemberDuesResponse { HasAccount = false, KurinKey = kurinKey, CurrentQuarter = Quarter(current), Elsewhere = elsewhere });
         }
 
         var standing = memberships.FirstOrDefault(m => m.IsCurrent);
@@ -140,8 +142,58 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
                 .ThenByDescending(e => e.CreatedDate)
                 .Take(RecentEntries)
                 .Select(names.ToDto)
-                .ToList()
+                .ToList(),
+            Elsewhere = elsewhere
         });
+    }
+
+    /// <summary>
+    /// The person's balance in each of their other current kurins, read only for the person themself.
+    /// Each kurin counts in its own край's currency.
+    /// </summary>
+    private async Task<IReadOnlyList<MemberDuesElsewhereDto>> ElsewhereAsync(
+        Guid memberKey,
+        Guid kurinKey,
+        IReadOnlyCollection<MembershipRecord> everywhere,
+        CancellationToken cancellationToken)
+    {
+        var others = everywhere.Where(m => m.IsCurrent && m.KurinKey != kurinKey).ToList();
+        if (others.Count == 0
+            || _currentUser.UserId is not { } caller
+            || await _members.FindAccountKeyAsync(memberKey, cancellationToken) != caller)
+        {
+            return [];
+        }
+
+        var levels = await _members.GetLevelsAsync(memberKey, cancellationToken);
+        var result = new List<MemberDuesElsewhereDto>();
+        foreach (var kurin in others.GroupBy(m => m.KurinKey))
+        {
+            var ledger = await _ledgers.OpenAsync(kurin.Key, cancellationToken);
+            // Every stretch in that kurin, closed ones too: a debt from before a move is still owed there.
+            var mine = everywhere.Where(m => m.KurinKey == kurin.Key).Select(m => m.MembershipKey).ToHashSet();
+            var accounts = ledger.Accounts().Where(a => mine.Contains(a.MembershipKey)).ToList();
+            if (accounts.Count == 0)
+            {
+                continue;
+            }
+
+            var krai = await _profiles.DuesKraiForKurinAsync(kurin.Key, cancellationToken);
+            var line = kurin.First().InLineOf(levels);
+            result.Add(new MemberDuesElsewhereDto
+            {
+                KurinKey = kurin.Key,
+                KurinNumber = line.KurinNumber,
+                KurinNamedAfter = line.KurinNamedAfter,
+                Branch = line.Branch,
+                Numbering = line.Numbering,
+                Currency = krai.Currency,
+                NumberLocale = krai.NumberLocale,
+                Balance = accounts.Sum(a => a.Balance)
+            });
+        }
+
+        return result;
     }
 
     private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };

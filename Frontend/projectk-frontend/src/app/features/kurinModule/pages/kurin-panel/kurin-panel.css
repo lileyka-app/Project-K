@@ -25,6 +25,13 @@
     gap: 1rem;
 }
 
+.kurin-head-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .kurin-title-block {
     display: grid;
     gap: 0.5rem;
@@ -208,6 +215,7 @@
         width: 100%;
     }
 
+    .kurin-head-actions,
     .edit-profile-action {
         width: 100%;
     }

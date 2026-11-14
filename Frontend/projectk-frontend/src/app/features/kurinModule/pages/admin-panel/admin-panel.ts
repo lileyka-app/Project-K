@@ -10,14 +10,15 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { MenuItem, MessageService } from '@openng/optimus-ui/api';
 import { ManageAction, ManagePanelComponent, ManagePanelConfig, ManagePanelField } from '../../components/manage-panel/manage-panel';
 import { ButtonModule } from '@openng/optimus-ui/button';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { HttpErrorResponse } from '@angular/common/http';
-import { isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { isSeniorBranch, KURIN_BRANCH_LABELS, KurinBranch, KurinNumbering } from '../../models/enums/kurin-branch.enum';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
 import { TagModule } from '@openng/optimus-ui/tag';
-import { compareKurinsByBranch, kurinBranchesName, kurinBranchTags, kurinGroupTitle } from '../../../../shared/functions/kurin-label.function';
+import { compareKurinNumbers, compareKurinsByBranch, kurinBranchesName, kurinBranchTags, kurinGroupTitle } from '../../../../shared/functions/kurin-label.function';
 
 /** The create form: the kurin, and optionally the person invited to be its Звʼязковий. */
 type KurinCreateForm = KurinDto & {
@@ -28,7 +29,7 @@ type KurinCreateForm = KurinDto & {
 
 @Component({
   selector: 'app-admin-panel',
-  imports: [TableModule, TagModule, SplitButtonModule, ManagePanelComponent, ButtonModule, EmptyStateComponent, RouterModule],
+  imports: [TableModule, TagModule, SplitButtonModule, ManagePanelComponent, ButtonModule, EmptyStateComponent, RouterModule, PageTabsComponent],
   templateUrl: './admin-panel.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './admin-panel.css'
@@ -39,7 +40,19 @@ export class AdminPanelComponent implements OnInit {
   private readonly kurinService = inject(KurinService);
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
+  private readonly route = inject(ActivatedRoute);
   readonly waitlistAttention = inject(WaitlistAttentionService);
+
+  /** One улад at a time: a kurin in both senior ones is listed under each, by its number there. */
+  readonly uladTabs: readonly PageTab[] = [
+    { label: 'УПЮ', link: '/panel', queryParams: {}, testId: 'admin-ulad-upyu' },
+    { label: 'УСП', link: '/panel', queryParams: { ulad: 'usp' }, testId: 'admin-ulad-usp' },
+    { label: 'УПС', link: '/panel', queryParams: { ulad: 'ups' }, testId: 'admin-ulad-ups' }
+  ];
+  private static readonly uladsByParam: Readonly<Record<string, KurinBranch>> = { usp: KurinBranch.USP, ups: KurinBranch.UPS };
+  ulad: KurinBranch = KurinBranch.UPYu;
+  /** Every kurin in the system; `data` is the улад on screen. */
+  kurins: KurinDto[] = [];
 
   selectedItem: KurinDto | null = null;
   managePanelVisible = false;
@@ -111,10 +124,14 @@ export class AdminPanelComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe(params => {
+      this.ulad = AdminPanelComponent.uladsByParam[params.get('ulad') ?? ''] ?? KurinBranch.UPYu;
+      this.data = this.shownInUlad(this.kurins);
+    });
     this.refreshData();
     this.kurinService.getKrais().subscribe((krais: KraiDto[]) => {
       this.krais = krais ?? [];
-      this.data = this.sortedByKrai(this.data);
+      this.data = this.shownInUlad(this.kurins);
       // A new config object, so the panel rebuilds its form with the choices in it.
       this.managePanelConfig = {
         ...this.managePanelConfig,
@@ -225,16 +242,37 @@ export class AdminPanelComponent implements OnInit {
 
   refreshData(): void {
     this.kurinService.getKurins().subscribe((data: KurinDto[]) => {
-      this.data = this.sortedByKrai(data ?? []);
+      this.kurins = data ?? [];
+      this.data = this.shownInUlad(this.kurins);
     });
   }
 
-  /** The kurins grouped by край: Україна first, then the rest by name; inside a край УПЮ before senior, by number. */
-  private sortedByKrai(kurins: KurinDto[]): KurinDto[] {
+  /**
+   * The kurins of the улад on screen, grouped by край: Україна first, then the rest by name; inside a
+   * край by the kurin's number in this улад, підготовчі last.
+   */
+  private shownInUlad(kurins: KurinDto[]): KurinDto[] {
     const rank = (code?: string) => code === 'ua' ? '' : this.kraiName(code);
-    return [...kurins].sort((a, b) =>
-      rank(a.kraiCode).localeCompare(rank(b.kraiCode), 'uk')
-      || compareKurinsByBranch(a, b));
+    return kurins
+      .filter(kurin => this.ulad === KurinBranch.UPYu ? !this.isSenior(kurin) : this.numberingHere(kurin).length > 0)
+      .sort((a, b) =>
+        rank(a.kraiCode).localeCompare(rank(b.kraiCode), 'uk')
+        || compareKurinsByBranch(a, b)
+        || compareKurinNumbers(this.numberingHere(a)[0]?.number, this.numberingHere(b)[0]?.number));
+  }
+
+  /** The kurin's number in the senior улад on screen; nothing when it is not in it. */
+  private numberingHere(kurin: KurinDto): KurinNumbering[] {
+    const all = kurin.branches?.length ? kurin.branches : [{ branch: kurin.branch ?? KurinBranch.UPYu, number: kurin.number ?? null }];
+    return all.filter(numbering => numbering.branch === this.ulad);
+  }
+
+  get uladLabel(): string {
+    return KURIN_BRANCH_LABELS[this.ulad];
+  }
+
+  get isSeniorUlad(): boolean {
+    return isSeniorBranch(this.ulad);
   }
 
   kraiName(code?: string): string {
@@ -250,8 +288,10 @@ export class AdminPanelComponent implements OnInit {
     return kurinBranchTags(kurin.branches, kurin.branch);
   }
 
+  /** «5-й курінь УСП» in the УСП tab, «20-й курінь УПС» in the УПС one. */
   seniorTitle(kurin: KurinDto): string {
-    return kurinBranchesName(kurin.branches);
+    const here = this.numberingHere(kurin);
+    return kurinBranchesName(here.length ? here : kurin.branches);
   }
 
   kurinCountInKrai(code?: string): number {

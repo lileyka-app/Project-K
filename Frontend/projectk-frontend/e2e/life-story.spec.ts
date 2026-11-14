@@ -1,29 +1,25 @@
 import { expect, Locator, Page, test } from '@playwright/test';
 
 import { getFirstSeededGroupMemberKey } from './support/api-client';
-import { getLifeStoryMemberKey, ordenSkryptor, ordenZvyazkovyi } from './support/life-story';
+import { getLifeStoryMemberKey, ordenKozak, ordenZvyazkovyi } from './support/life-story';
 import { loginThroughUi } from './support/login';
 import { describeRole } from './support/role-test';
 import { openLifeFromCardMenu } from './support/ui';
 
-/** «Пластовий життєпис» (LIFE-01): the whole Plast way on one page, opened from the card. */
+/** «Пластовий життєпис» (LIFE-01): the whole Plast way on one page — the person's own, nobody else's. */
 const levelsTile = (page: Page): Locator => page.getByTestId('life-levels');
 const stageNames = (page: Page): Locator => levelsTile(page).locator('.life-stage .p-tag');
 
-async function openLifeFromCard(page: Page, memberKey: string): Promise<void> {
-  await page.goto(`/member/${memberKey}`);
-  await openLifeFromCardMenu(page);
-  await expect(page).toHaveURL(new RegExp(`/member/${memberKey}/life`));
-  await expect(page.getByTestId('life-head')).toBeVisible();
-}
-
-describeRole('manager', 'Пластовий життєпис юнака', ({ user }) => {
-  test('у юнака лише етап УПЮ', async ({ page, request }) => {
+describeRole('manager', 'Чужий пластовий життєпис', ({ user }) => {
+  test('закритий: пряме посилання веде на картку, у «Ще» його немає', async ({ page, request }) => {
     const youthKey = await getFirstSeededGroupMemberKey(request, user);
 
-    await openLifeFromCard(page, youthKey);
+    await page.goto(`/member/${youthKey}/life`);
 
-    await expect(stageNames(page)).toHaveText(['УПЮ']);
+    await expect(page).toHaveURL(new RegExp(`/member/${youthKey}$`));
+    await page.locator('.member-actions').getByRole('button', { name: 'Ще' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Журнал дій' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Пластовий життєпис' })).toHaveCount(0);
   });
 });
 
@@ -31,28 +27,46 @@ describeRole('manager', 'Пластовий життєпис юнака', ({ use
  * The senior's story is read with the Order's seeded accounts. Signing in as a shared seeded user in
  * the middle of a run takes over that account's session, so this half stays on chromium.
  */
-test.describe('Пластовий життєпис старшого', () => {
+test.describe('Свій пластовий життєпис', () => {
   test.skip(({ isMobile }) => isMobile, 'Signs in as shared seeded accounts; chromium reads it.');
 
-  test('Звʼязковий відкриває з картки всі етапи й ступені і виправляє юнацький запис', async ({ page, request }) => {
+  test('старший відкриває свій з «Ще»: усі етапи, вишкіл і PDF', async ({ page, request }) => {
     const kozakKey = await getLifeStoryMemberKey(request);
-    await loginThroughUi(page, ordenZvyazkovyi);
+    await loginThroughUi(page, ordenKozak);
 
-    await openLifeFromCard(page, kozakKey);
+    await page.goto(`/member/${kozakKey}`);
+    await openLifeFromCardMenu(page);
+    await expect(page).toHaveURL(new RegExp(`/member/${kozakKey}/life`));
 
     await expect(stageNames(page)).toHaveText(['УПЮ', 'УСП']);
     await expect(levelsTile(page).locator('.life-stage__level')).toHaveText(['Вступ до Пласту', 'Пластун учасник', 'Пластун розвідувач', 'Пластун скоб', 'Старший пластун']);
-    await expect(levelsTile(page).getByRole('button', { name: 'Виправити' })).toBeVisible();
+
+    const trainings = page.getByTestId('life-training');
+    await page.getByTestId('life-training-add').click();
+    await page.locator('#life-course').click();
+    await page.getByRole('option', { name: 'КВЗ' }).click();
+    await page.locator('#life-number').fill('12');
+    await page.locator('#life-start').fill('01.07.2024');
+    await page.keyboard.press('Tab');
+    await page.locator('#life-commandant').fill('Ярема Коваль');
+    await page.getByTestId('life-training-save').click();
+    await expect(trainings.getByRole('button', { name: /12-й КВЗ/ })).toContainText('комендант Ярема Коваль');
+
+    const download = page.waitForEvent('download');
+    await page.getByTestId('life-pdf').click();
+    expect((await download).suggestedFilename()).toMatch(/\.pdf$/);
+
+    await trainings.getByRole('button', { name: /12-й КВЗ/ }).click();
+    await page.getByRole('button', { name: 'Видалити' }).click();
+    await expect(trainings.getByRole('button', { name: /12-й КВЗ/ })).toHaveCount(0);
   });
 
-  test('для чужого проводу юнацький запис старшого закритий', async ({ page, request }) => {
+  test('Звʼязковий куреня чужого життєпису не відкриє', async ({ page, request }) => {
     const kozakKey = await getLifeStoryMemberKey(request);
-    await loginThroughUi(page, ordenSkryptor);
+    await loginThroughUi(page, ordenZvyazkovyi);
 
-    await openLifeFromCard(page, kozakKey);
+    await page.goto(`/member/${kozakKey}/life`);
 
-    await expect(stageNames(page)).toHaveText(['УПЮ', 'УСП']);
-    await expect(levelsTile(page).getByRole('button', { name: 'Виправити' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Додати відзначення' })).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`/member/${kozakKey}$`));
   });
 });

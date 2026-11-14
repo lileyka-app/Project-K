@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ClientCacheService } from '../../../kurinModule/services/client-cache/client-cache.service';
 import { DUES_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../../../kurinModule/services/client-cache/cache-policy';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 import {
   GroupDuesDto,
   DuesGroupLinkDto,
@@ -37,7 +38,8 @@ export class DuesService {
     return this.cache.get(
       `${DUES_CACHE_PREFIX}member:${memberKey}`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<MemberDuesDto>(`${environment.apiUrl}/member/${memberKey}/dues`)
+      // A card's side tile: a refusal or a failure there is no news for the viewer.
+      () => this.http.get<MemberDuesDto>(`${environment.apiUrl}/member/${memberKey}/dues`, { context: requestFeedback('silent') })
     );
   }
 

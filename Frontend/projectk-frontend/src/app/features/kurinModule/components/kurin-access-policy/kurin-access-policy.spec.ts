@@ -82,6 +82,25 @@ describe('KurinAccessPolicyComponent', () => {
     expect(el().textContent).toContain('Свої дані людина бачить завжди.');
   });
 
+  it('in a senior kurin leaves out проби й вмілості and speaks of членів, yet sends their cells back', () => {
+    const loaded = policy();
+    loaded.capabilities.push({ key: 'SignProbe', group: 'ProbesBadges', youthConfigurable: false, reaches: ANY_REACH, cells: cells(['Kurin', 'OwnGroup', 'OwnGroup', 'None', 'None', 'OwnGroup', 'None', 'None'], true) });
+    kurins.getAccessPolicy.mockReturnValue(of(loaded));
+    fixture = TestBed.createComponent(KurinAccessPolicyComponent);
+    component = fixture.componentInstance;
+    fixture.componentRef.setInput('kurinKey', 'k1');
+    fixture.componentRef.setInput('youthProgram', false);
+    fixture.detectChanges();
+
+    expect(component.groups().map(group => group.group)).not.toContain('ProbesBadges');
+    expect(component.groups()[0].label).toBe('Особисті дані');
+    expect(component.audiences().find(column => column.audience === 'Youth')?.label).toBe('Члени куреня');
+
+    component.set('SeeContacts', 'Youth', 'OwnGroup');
+    component.save().subscribe();
+    expect(kurins.setAccessPolicy.mock.calls[0][1].grants['SignProbe']).toEqual(expect.objectContaining({ Zvyazkovyi: 'Kurin' }));
+  });
+
   it('marks a cell that differs from the default and says what the default is', () => {
     create(policy('OwnGroup'));
 

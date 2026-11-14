@@ -71,7 +71,7 @@ export class KurinSwitcherComponent implements OnInit {
 
   get currentLabel(): string {
     const current = this.current;
-    if (!current) return 'Оберіть курінь';
+    if (!current) return 'Обери курінь';
     return isSeniorBranch(current.branch) ? kurinHeadline(this.naming(current)) : kurinLabel(current.kurinNumber, current.branch);
   }
 

@@ -359,6 +359,13 @@ a.lil-sidebar-brand:hover {
   padding: 0.6875rem 0.8125rem;
 }
 
+/* Блоки меню: моє, курінь, діяльність куреня, загальне — тонка лінія над першим пунктом блоку. */
+:root .p-panelmenu.lil-menu .lil-menu-item--group-start {
+  border-top: 1px solid var(--lil-line);
+  margin-top: 0.375rem;
+  padding-top: 0.5rem;
+}
+
 :root .p-panelmenu.lil-menu .p-panelmenu-header-active .p-panelmenu-header-link,
 :root .p-panelmenu.lil-menu .lil-menu-item--current .p-panelmenu-header-link {
   font-weight: 700;
@@ -507,6 +514,16 @@ a.lil-sidebar-brand:hover {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+/* A tile list that grows with what it holds up to about six rows, then scrolls, so one long
+   tile does not stretch its row of the board. */
+.lil-tile-scroll {
+  max-height: 22rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 0.25rem;
 }
 
 .lil-tile-head > div:first-child {

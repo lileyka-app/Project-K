@@ -123,6 +123,9 @@
               <span class="text-sm">Картками</span>
               <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
             </div>
+            @if (addLabel()) {
+              <p-button [label]="addLabel()!" icon="pi pi-plus" size="small" (onClick)="add.emit()" data-testid="member-list-add" />
+            }
           </div>
         </div>
 
@@ -152,7 +155,7 @@
         
         <ng-template #caption>
           <div class="lil-tile-head">
-              @if (type() === 'kurin') { <h2 class="member-list-title">Всі учасники куреня</h2> }
+              @if (type() === 'kurin') { <h2 class="member-list-title">Учасники куреня</h2> }
               @else { <h2 class="member-list-title">Учасники гуртка</h2> }
 
               <div class="member-list-controls lil-tile-head__actions">
@@ -169,6 +172,9 @@
                     <span class="text-sm">Картками</span>
                     <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
                   </div>
+                }
+                @if (addLabel()) {
+                  <p-button [label]="addLabel()!" icon="pi pi-plus" size="small" (onClick)="add.emit()" data-testid="member-list-add" />
                 }
               </div>
           </div>

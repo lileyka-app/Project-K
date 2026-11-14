@@ -36,6 +36,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<MembershipGroupStint> MembershipGroupStints { get; set; }
     public DbSet<MembershipRequest> MembershipRequests { get; set; }
     public DbSet<MemberCardShare> MemberCardShares { get; set; }
+    public DbSet<MemberLifeEntry> MemberLifeEntries { get; set; }
     public DbSet<KurinCardSharing> KurinCardSharing { get; set; }
     public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
     public DbSet<Leadership> Leaderships { get; set; }
@@ -647,6 +648,22 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasIndex(e => e.SubjectKey);
             entity.HasIndex(e => e.ActorUserKey);
             entity.HasIndex(e => e.OccurredAtUtc);
+        });
+
+        builder.Entity<MemberLifeEntry>(entity =>
+        {
+            entity.HasKey(e => e.MemberLifeEntryKey);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.Property(e => e.Course).HasConversion<int?>();
+            entity.Property(e => e.Title).HasMaxLength(MemberLifeEntry.TitleMaxLength);
+            entity.Property(e => e.Place).HasMaxLength(MemberLifeEntry.PlaceMaxLength);
+            entity.Property(e => e.Commandant).HasMaxLength(MemberLifeEntry.PersonMaxLength);
+            entity.Property(e => e.Role).HasMaxLength(MemberLifeEntry.RoleMaxLength);
+            entity.HasIndex(e => e.MemberKey);
+            entity.HasOne(e => e.Member)
+                  .WithMany()
+                  .HasForeignKey(e => e.MemberKey)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<MemberAward>(entity =>

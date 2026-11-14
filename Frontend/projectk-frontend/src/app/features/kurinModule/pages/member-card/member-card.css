@@ -474,3 +474,8 @@
   font-size: var(--lil-text-caption);
   font-variant-numeric: tabular-nums;
 }
+
+.dues-tile-elsewhere {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--lil-line);
+}

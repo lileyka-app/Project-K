@@ -35,6 +35,7 @@ public sealed class GetMemberAbilitiesQueryHandler : IRequestHandler<GetMemberAb
         var reachable = await _access.ReachableCapabilitiesAsync(ResourceType.Member, request.MemberKey, cancellationToken);
 
         var give = Levels(WarningLevels, reachable);
+        var dues = await _access.CheckAccessAsync(ResourceType.GroupDues, ResourceAction.Read, ResourceType.Member, request.MemberKey, cancellationToken);
 
         // The issuer may take back what they gave while they could still give it, so anyone who may
         // give some level may cancel at least their own.
@@ -49,7 +50,8 @@ public sealed class GetMemberAbilitiesQueryHandler : IRequestHandler<GetMemberAb
                 new AwardAbilitiesDto(Levels(AwardLevels, reachable), reachable.Contains(KurinCapability.RemoveAward)),
                 new ProbeAbilitiesDto(reachable.Contains(KurinCapability.SignProbe), reachable.Contains(KurinCapability.UnsignProbe)),
                 new BadgeAbilitiesDto(reachable.Contains(KurinCapability.ReviewBadge)),
-                reachable.Contains(KurinCapability.ReadJournal)));
+                reachable.Contains(KurinCapability.ReadJournal),
+                dues.IsAllowed));
     }
 
     private static IReadOnlyList<int> Levels(

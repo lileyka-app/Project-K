@@ -5,6 +5,7 @@ import { setupGuard } from './features/authModule/guards/setup.guard';
 import { capabilityGuard } from './features/authModule/guards/capability.guard';
 import { formerMembersRedirect, legacyArchiveRedirect, registryModeGuard, toRegistryMode } from './features/kurinModule/pages/registry/registry-modes';
 import { youthProgramGuard } from './features/kurinModule/guards/youth-program.guard';
+import { ownLifeGuard } from './features/kurinModule/guards/own-life.guard';
 import { kurinFeatureGuard } from './features/kurinModule/guards/kurin-feature.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
@@ -329,9 +330,9 @@ export const routes: Routes = [
     data: { breadcrumb: 'Проба', parent: '/member/:memberKey', entityType: 'member', titleContext: 'member' }
   },
   {
-    // The same card, about the person's whole history; opened from the card's «Пластовий життєпис».
+    // The same card, about the person's whole history — the person's own only, from «Ще» on their card.
     path: 'member/:memberKey/life',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, ownLifeGuard, kurinAccessGuard('kurin'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/member-card/member-card')
       .then(m => m.MemberCardComponent),
     title: 'Пластовий життєпис',
@@ -384,7 +385,7 @@ export const routes: Routes = [
     canActivate: [authGuard, kurinAccessGuard('kurin'), youthProgramGuard(), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/skills-review-page/skills-review-page')
       .then(m => m.SkillsReviewPageComponent),
-    title: 'Перевірка вмінь',
+    title: 'Модерація вмілостей',
     data: { breadcrumb: 'Модерація вмілостей', parent: '/kurin', entityType: 'kurin', titleContext: 'kurin' }
   },
   {
@@ -426,8 +427,8 @@ export const routes: Routes = [
     canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/private-score/private-score')
       .then(m => m.PrivateScoreComponent),
-    title: 'Точкування КВ',
-    data: { breadcrumb: 'Точкування КВ', parent: '/kurin', entityType: 'KurinScorePrivate', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
+    title: 'Книга КВ',
+    data: { breadcrumb: 'Книга КВ', parent: '/kurin', entityType: 'KurinScorePrivate', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
   },
   {
     path: 'kurin/:kurinKey/score/events/:itemKey/:occurrence',

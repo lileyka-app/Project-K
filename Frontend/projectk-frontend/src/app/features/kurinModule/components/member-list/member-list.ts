@@ -1,6 +1,6 @@
 import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.service';
 import { KurinTagChipsComponent } from '../kurin-tag-chips/kurin-tag-chips';
-import { Component, inject, OnInit, ChangeDetectionStrategy, input, effect, untracked } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, input, output, effect, untracked } from '@angular/core';
 import { MemberService } from '../../services/member-service/member.service';
 import { TableModule } from '@openng/optimus-ui/table';
 import { InputIconModule } from '@openng/optimus-ui/inputicon';
@@ -58,6 +58,9 @@ export class MemberListComponent implements OnInit {
   readonly type = input<'kurin' | 'group' | 'leadership'>('group');
   readonly leadershipType = input<'kurin' | 'group' | 'kv'>('group');
   readonly typeKey = input('');
+  /** The list's own «add» button, beside its search; none when the viewer may not add. */
+  readonly addLabel = input<string | null>(null);
+  readonly add = output<void>();
 
   private readonly groupCardViewStorageKeyPrefix = 'member-list:group-card-view';
   private readonly upcomingBirthdaysWindowDays = 30;

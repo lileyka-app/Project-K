@@ -17,6 +17,7 @@ public interface IMemberUnitOfWork
     IMemberRepository Members { get; }
     IMemberAwardRepository MemberAwards { get; }
     IMemberWarningRepository MemberWarnings { get; }
+    IMemberLifeEntryRepository MemberLifeEntries { get; }
 
     Task<int> SaveChangesAsync(CancellationToken token = default);
 }

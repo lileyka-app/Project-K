@@ -89,8 +89,8 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - a membership with dues and one whose role is still held are refused, each with its message;
   - another tab of the «Реєстр» ends the zone on the server, with a message: its ticket no longer deletes.
 - Check «Пластовий життєпис» (`life-story.spec.ts`):
-  - a youth's story has only the УПЮ stage (both projects);
-  - for the senior from the demo seed: the button on the card, the УПЮ and УСП stages with every ступінь, and the Order's Звʼязковий may correct them while its Скриптор may not (chromium only: it signs in as shared seeded accounts).
+  - someone else's story is closed: the direct link lands on the card and «Ще» has no item for it (both projects);
+  - the senior from the demo seed opens his own from «Ще»: the УПЮ and УСП stages with every ступінь, adds a вишкіл, downloads the PDF and removes the вишкіл; the Order's Звʼязковий is sent back to his card (chromium only: it signs in as shared seeded accounts).
 - Check the third-probe notebook (PROBE-02, `third-probe.spec.ts`, helpers in `support/third-probe.ts`).
   Each test opens a kurin of its own with a гурток, its впорядник and a youth born sixteen years ago, so
   no seeded probe or project is touched:

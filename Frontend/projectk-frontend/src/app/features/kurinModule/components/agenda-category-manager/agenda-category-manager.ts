@@ -87,7 +87,7 @@ export class AgendaCategoryManagerComponent implements OnInit {
 
   save(): void {
     if (!this.form.name.trim()) {
-      this.messages.add({ severity: 'warn', summary: 'Вкажіть назву групи' });
+      this.messages.add({ severity: 'warn', summary: 'Вкажи назву групи' });
       return;
     }
 

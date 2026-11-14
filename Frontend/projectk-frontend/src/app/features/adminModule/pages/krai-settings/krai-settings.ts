@@ -208,10 +208,6 @@ export class KraiSettingsComponent implements OnInit {
     });
   }
 
-  back(): void {
-    this.router.navigate(['/panel']);
-  }
-
   select(code: string): void {
     this.kraiCode.set(code);
     this.router.navigate([], { relativeTo: this.route, queryParams: { code }, replaceUrl: true });

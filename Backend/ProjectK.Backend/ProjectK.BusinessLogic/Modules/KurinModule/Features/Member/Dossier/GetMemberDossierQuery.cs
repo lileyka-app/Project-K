@@ -134,7 +134,7 @@ public sealed class GetMemberDossierQueryHandler
                     new(MemberDossierFolders.Warnings, mapped.Warnings.Count),
                     new(MemberDossierFolders.Progress, progressCount)
                 ],
-                Memberships = memberships,
+                Memberships = memberships?.Select(m => m.InLineOf(LevelsOf(person))).ToList(),
                 Offices = wants.Contains(MemberDossierFolders.Offices)
                     ? [.. mapped.LeadershipHistories]
                     : null,
@@ -149,6 +149,18 @@ public sealed class GetMemberDossierQueryHandler
                     : null,
                 Progress = progress
             });
+    }
+
+    /// <summary>Every ступінь on record and the latest one, which an older record may hold alone.</summary>
+    private static List<PlastLevel> LevelsOf(ProjectK.Common.Entities.KurinModule.Member person)
+    {
+        var levels = person.PlastLevelHistory.Select(h => h.PlastLevel).ToList();
+        if (person.LatestPlastLevel is { } latest)
+        {
+            levels.Add(latest);
+        }
+
+        return levels;
     }
 
     /// <summary>The гурток the person is placed in within the caller's kurin, which the mask is measured against.</summary>

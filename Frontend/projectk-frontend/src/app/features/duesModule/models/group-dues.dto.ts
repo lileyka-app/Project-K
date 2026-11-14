@@ -1,3 +1,4 @@
+import { KurinBranch, KurinNumbering } from '../../kurinModule/models/enums/kurin-branch.enum';
 import { DuesChargeTiming, DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
 import type { DuesConcessionGrantDto, KraiConcessionDto } from './concession.dto';
 
@@ -291,6 +292,20 @@ export interface MemberDuesDto {
   canOpenGroupDues: boolean;
   accounts: MemberDuesAccountDto[];
   entries: DuesEntryDto[];
+  /** The person's вкладка in their other kurins; only on their own card. */
+  elsewhere?: MemberDuesElsewhereDto[];
+}
+
+/** What the person owes or has over in another of their kurins, named by their own line there. */
+export interface MemberDuesElsewhereDto {
+  kurinKey: string;
+  kurinNumber: number | null;
+  kurinNamedAfter: string | null;
+  branch: KurinBranch;
+  numbering: KurinNumbering[];
+  currency: string;
+  numberLocale: string;
+  balance: number;
 }
 
 export interface UpsertDuesEntryRequest {

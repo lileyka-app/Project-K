@@ -186,6 +186,8 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 | `PUT` / `DELETE api/kurin/{key}/score/events/{itemKey}/{occurrence}/not-held` — «Сходин не було» і зняти це | той, хто може відмітити присутність бодай одного юнака куреня (`GroupScore:Create` на гурток або на неприписаних); `PUT` відмовляє 409 `OccurrenceHasAttendance`, поки хтось відмічений |
 | `GET api/me/duties` — справи проводу (`items`, `hiddenCount`) | `RequireUser`; кожна справа — лише там, де офіси людини дають на неї право |
 | `POST api/me/duties/dismissed` `{ key, fingerprint }` — сховати справу для себе; `DELETE api/me/duties/dismissed?key=` — повернути одну чи (без `key`) усі | `RequireUser`; стосується лише рядків самого викликача |
+| `GET` / `POST api/me/life`, `PUT` / `DELETE api/me/life/{key}` — свої вишколи, табори й заходи; `GET api/me/life/pdf` — увесь життєпис одним PDF | `RequireUser`; лише записи самого викликача — чужий ключ відповідає 404 |
+| `GET api/member/{key}/abilities` → `dues` — чи можна читати вкладку людини | той самий `GroupDues:Read` через людину, що й `GET api/member/{key}/dues`; без нього картка вкладку не питає |
 
 ## Журнал дій
 

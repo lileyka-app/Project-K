@@ -10,7 +10,10 @@
                     <h1 class="member-section-title">Пластовий життєпис</h1>
                     <p class="member-section-subtitle text-sm">{{ member.firstName }} {{ member.lastName }}</p>
                 </div>
-                <p-button (onClick)="openCard()" label="Картка" icon="pi pi-arrow-left" severity="secondary" size="small" />
+                <div class="flex flex-wrap gap-2">
+                    <p-button (onClick)="openCard()" label="Назад" icon="pi pi-arrow-left" severity="secondary" variant="text" />
+                    <p-button (onClick)="downloadLifePdf()" label="PDF" icon="pi pi-file-pdf" severity="secondary" [outlined]="true" [loading]="lifePdfLoading" data-testid="life-pdf" />
+                </div>
             </div>
         </section>
         </ng-template>
@@ -210,7 +213,7 @@
                      />
                     }
                     @if (moreMenuItems.length) {
-                    <p-menu #moreMenu [model]="moreMenuItems" [popup]="true" appendTo="body" />
+                    <p-menu #moreMenu appMenuEnd [model]="moreMenuItems" [popup]="true" appendTo="body" />
                     <p-button (onClick)="moreMenu.toggle($event)"
                         icon="pi pi-ellipsis-v"
                         severity="secondary"
@@ -346,7 +349,7 @@
             </section>
         </ng-template>
 
-        <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
+        <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Відзначення УПЮ' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
             <app-member-awards-tile [awards]="youthAwards"
                 [kurinStamps]="kurinStamps"
@@ -481,11 +484,14 @@
                 <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h2 class="member-section-title">Вкладка</h2>
-                        <p class="member-section-subtitle text-sm">
+                        @if (d.hasAccount) {
+                        <p class="member-section-subtitle text-sm" data-testid="dues-tile-kurin">
+                            @if (duesKurinLine; as line) { {{ line }} · }
                             {{ quarterLabel(d.currentQuarter) }}
                             @if (d.quarterRate; as rate) { · {{ money(rate.total) }} за квартал }
                             @if (d.currentGroupName) { · {{ d.currentGroupName }} }
                         </p>
+                        }
                     </div>
                     @if (d.isConcessionNow) {
                         <p-tag value="пільгова" severity="info" />
@@ -495,6 +501,7 @@
                     }
                 </div>
 
+                @if (d.hasAccount) {
                 <div class="dues-tile-balance" [class.dues-tile-balance--ok]="d.balance === 0" [class.dues-tile-balance--debt]="d.balance < 0" [class.dues-tile-balance--surplus]="d.balance > 0">
                     @if (d.balance === 0) {
                         <span class="dues-tile-balance__value">Сплачено</span>
@@ -533,6 +540,19 @@
                 <div class="member-empty-state rounded-xl p-4 text-sm">
                     Внесків ще не записано.
                 </div>
+                }
+
+                }
+
+                @if (duesElsewhere.length) {
+                <ul class="dues-tile-accounts dues-tile-elsewhere" data-testid="dues-elsewhere">
+                    @for (other of duesElsewhere; track other.key) {
+                    <li>
+                        <span>{{ other.kurin }}</span>
+                        <span class="dues-tile-number" [class.dues-tile-number--debt]="other.balance < 0">{{ other.amount }}</span>
+                    </li>
+                    }
+                </ul>
                 }
 
                 @if (d.canOpenGroupDues && d.currentGroupKey) {
@@ -602,6 +622,20 @@
                 } @else {
                 <app-empty-state art="list" title="Ролей ще не було" />
                 }
+            </section>
+        </ng-template>
+
+        <ng-template [appTileDef]="{ key: 'life-trainings', span: 'half', label: 'Вишколи' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+                <app-life-entries-tile mode="training" [entries]="lifeEntries" [saving]="lifeSaving"
+                    (save)="onSaveLifeEntry($event)" (remove)="onDeleteLifeEntry($event)" />
+            </section>
+        </ng-template>
+
+        <ng-template [appTileDef]="{ key: 'life-outings', span: 'half', label: 'Табори й заходи' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+                <app-life-entries-tile mode="outings" [entries]="lifeEntries" [saving]="lifeSaving"
+                    (save)="onSaveLifeEntry($event)" (remove)="onDeleteLifeEntry($event)" />
             </section>
         </ng-template>
         }

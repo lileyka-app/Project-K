@@ -22,18 +22,21 @@ import { PageGroups } from '../../services/page-groups/page-groups.service';
   providers: [ConfirmationService],
   template: `
     <p-confirmdialog />
-    <div class="planning-page">
-      <app-page-tabs [tabs]="tabs" label="Календар і планування" />
-      <section class="kurin-tile">
-        <div class="planning-header">
-          <h1 class="planning-title">Планування таборів</h1>
-          @if (canCreatePlanning && sessions().length) {
-            <p-button
-              label="Створити нове"
-              icon="pi pi-plus"
-              (click)="createNew()" />
-          }
+    <div class="lil-page">
+      <header class="lil-page-head">
+        <div>
+          <h1>Планування</h1>
         </div>
+        @if (canCreatePlanning && sessions().length) {
+          <div class="lil-page-head__actions">
+            <p-button label="Нове планування" icon="pi pi-plus" (click)="createNew()" />
+          </div>
+        }
+      </header>
+
+      <app-page-tabs [tabs]="tabs" label="Календар і планування" />
+
+      <section class="kurin-tile">
 
         <p-table [value]="sessions()" styleClass="project-table planning-table">
           <ng-template pTemplate="header">
@@ -90,28 +93,6 @@ import { PageGroups } from '../../services/page-groups/page-groups.service';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .planning-page {
-      margin-inline: auto;
-      padding-block: 2rem;
-      width: min(100% - 2rem, 72rem);
-    }
-
-    .planning-header {
-      align-items: center;
-      display: flex;
-      gap: 1rem;
-      justify-content: space-between;
-      padding-bottom: 1rem;
-    }
-
-    .planning-title {
-      color: var(--p-text-color);
-      font-size: 1.5rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin: 0;
-    }
-
     .planning-name {
       font-weight: 650;
     }
@@ -130,13 +111,6 @@ import { PageGroups } from '../../services/page-groups/page-groups.service';
     :host ::ng-deep .planning-table .p-datatable-table {
       width: 100% !important;
       min-width: 0 !important;
-    }
-
-    @media (max-width: 768px) {
-      .planning-header {
-        align-items: stretch;
-        flex-direction: column;
-      }
     }
 
     @media (max-width: 640px) {

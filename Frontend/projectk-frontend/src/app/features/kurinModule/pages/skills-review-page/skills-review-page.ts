@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from '@openng/optimus-ui/table';
@@ -58,7 +58,6 @@ interface SkillsReviewItemView {
 })
 export class SkillsReviewPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
   private readonly memberService = inject(MemberService);
@@ -111,10 +110,6 @@ export class SkillsReviewPageComponent implements OnInit {
       this.feedbackMessage = null;
       this.loadReviewQueue();
     });
-  }
-
-  goBackToKurin(): void {
-    this.router.navigate(['/kurin']);
   }
 
   refreshQueue(): void {
