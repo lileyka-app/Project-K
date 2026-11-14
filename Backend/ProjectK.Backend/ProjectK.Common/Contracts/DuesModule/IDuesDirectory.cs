@@ -35,11 +35,4 @@ public interface IDuesDirectory
     /// no longer read.
     /// </summary>
     Task<bool> GroupBoxSettledAsync(Guid kurinKey, Guid groupKey, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Moves every unpaid quarter of the kurin's people to the rate their tags give now. Called once a
-    /// tag is deleted: the running quarter follows on the next read, older ones would stay on a rate
-    /// nobody can see or change. Paid quarters and the deleted tag's rates stay, so history reads the same.
-    /// </summary>
-    Task RepriceUnpaidAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 }

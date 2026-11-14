@@ -12,6 +12,7 @@ using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.UsersModule;
 using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 
@@ -22,7 +23,7 @@ public class AccountEmailConfirmationHandlerTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<IRefreshTokenStore> _refreshTokensMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IMemberDirectory> _memberDirectoryMock = new();
+    private readonly Mock<IDomainEventPublisher> _eventsMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<IEmailService> _emailServiceMock = new();
 
@@ -91,11 +92,11 @@ public class AccountEmailConfirmationHandlerTests
         Assert.Equal(currentEmail, user.Email);
         Assert.Equal(currentEmail, user.UserName);
         Assert.Equal("+380502222222", user.PhoneNumber);
-        _memberDirectoryMock.Verify(
-            x => x.SetPhoneFromAccountAsync(userId, "+380502222222", It.IsAny<CancellationToken>()),
+        _eventsMock.Verify(
+            x => x.PublishAsync(new AccountPhoneChanged(userId, "+380502222222"), It.IsAny<CancellationToken>()),
             Times.Once);
-        _memberDirectoryMock.Verify(
-            x => x.SetEmailFromAccountAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+        _eventsMock.Verify(
+            x => x.PublishAsync(It.IsAny<AccountEmailChanged>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _emailServiceMock.Verify(x => x.SendEmailChangeConfirmationEmailAsync(
@@ -255,8 +256,8 @@ public class AccountEmailConfirmationHandlerTests
         _refreshTokensMock.Verify(
             store => store.RevokeAllAsync(user.Id, It.IsAny<CancellationToken>()),
             Times.Once);
-        _memberDirectoryMock.Verify(
-            x => x.SetEmailFromAccountAsync(userId, newEmail, It.IsAny<CancellationToken>()),
+        _eventsMock.Verify(
+            x => x.PublishAsync(new AccountEmailChanged(userId, newEmail), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -293,8 +294,8 @@ public class AccountEmailConfirmationHandlerTests
         _refreshTokensMock.Verify(
             store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        _memberDirectoryMock.Verify(
-            x => x.SetEmailFromAccountAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+        _eventsMock.Verify(
+            x => x.PublishAsync(It.IsAny<AccountEmailChanged>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _mediatorMock.Verify(x => x.Send(It.IsAny<GetAccountSettingsQuery>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -304,7 +305,7 @@ public class AccountEmailConfirmationHandlerTests
     {
         return new UpdateAccountProfileCommandHandler(
             _userManagerMock.Object,
-            _memberDirectoryMock.Object,
+            _eventsMock.Object,
             _mediatorMock.Object,
             _emailServiceMock.Object,
             Options.Create(new EmailOptions { BaseUrl = "http://localhost:4200/" }),
@@ -315,7 +316,7 @@ public class AccountEmailConfirmationHandlerTests
     {
         return new ConfirmAccountEmailChangeCommandHandler(
             _userManagerMock.Object,
-            _memberDirectoryMock.Object,
+            _eventsMock.Object,
             _mediatorMock.Object,
             new Mock<IActivityLogger>().Object,
             Revocations.Of(_refreshTokensMock.Object));

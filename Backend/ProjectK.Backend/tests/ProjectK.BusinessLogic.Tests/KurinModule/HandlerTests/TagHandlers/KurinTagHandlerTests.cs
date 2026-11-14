@@ -12,6 +12,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuditModule;
@@ -65,10 +66,10 @@ public class KurinTagHandlerTests
         _tags.Setup(t => t.GetWithMembersAsync(tag.KurinTagKey, It.IsAny<CancellationToken>())).ReturnsAsync(tag);
         _uow.Setup(u => u.AgendaItems).Returns(Mock.Of<IAgendaItemRepository>());
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Callback(() => _order.Add("save")).ReturnsAsync(1);
-        var dues = new Mock<IDuesDirectory>();
-        dues.Setup(d => d.RepriceUnpaidAsync(KurinKey, It.IsAny<CancellationToken>())).Callback(() => _order.Add("reprice")).Returns(Task.CompletedTask);
+        var events = new Mock<IDomainEventPublisher>();
+        events.Setup(e => e.PublishAsync(new KurinTagDeleted(KurinKey, tag.KurinTagKey), It.IsAny<CancellationToken>())).Callback(() => _order.Add("reprice")).Returns(Task.CompletedTask);
 
-        var result = await new DeleteKurinTagCommandHandler(_uow.Object, _audit.Object, dues.Object)
+        var result = await new DeleteKurinTagCommandHandler(_uow.Object, _audit.Object, events.Object)
             .Handle(new DeleteKurinTagCommand(KurinKey, tag.KurinTagKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);

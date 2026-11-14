@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.UsersModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
@@ -18,19 +20,19 @@ public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAc
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;
-    private readonly IMemberDirectory _members;
+    private readonly IDomainEventPublisher _events;
     private readonly IMediator _mediator;
     private readonly IActivityLogger _activityLogger;
 
     public ConfirmAccountEmailChangeCommandHandler(
         UserManager<AppUser> userManager,
-        IMemberDirectory members,
+        IDomainEventPublisher events,
         IMediator mediator,
         IActivityLogger activityLogger,
         RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
-        _members = members;
+        _events = events;
         _mediator = mediator;
         _activityLogger = activityLogger;
         _sessions = sessions;
@@ -80,7 +82,7 @@ public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAc
             newEmail: email,
             reason: "Email change confirmed.");
 
-        await _members.SetEmailFromAccountAsync(user.Id, email, cancellationToken);
+        await _events.PublishAsync(new AccountEmailChanged(user.Id, email), cancellationToken);
 
         return await _mediator.Send(new GetAccountSettingsQuery(user.Id), cancellationToken);
     }

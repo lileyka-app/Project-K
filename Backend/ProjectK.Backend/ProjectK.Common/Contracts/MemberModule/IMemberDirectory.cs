@@ -95,27 +95,4 @@ public interface IMemberDirectory
     /// about the whole table; nothing else should need it.
     /// </summary>
     Task<IReadOnlyCollection<MemberSummary>> GetAllAsync(CancellationToken cancellationToken = default);
-
-
-    /// <summary>Removes one person and answers whether there was one to remove.</summary>
-    Task<bool> RemoveAsync(Guid memberKey, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Makes sure an activated account has a member, and answers with its key: links the existing
-    /// record when one already carries that address, otherwise opens a new one from what the account
-    /// knows. The write is left on the caller's unit of work, so it commits with the rest of the
-    /// activation rather than half of it.
-    /// </summary>
-    Task<Guid> EnsureForAccountAsync(
-        MemberForAccount details,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Carries an address change from the account to the member linked to it, and commits it. Does
-    /// nothing when the account has no member. The account is the source of truth for contact details.
-    /// </summary>
-    Task SetEmailFromAccountAsync(Guid userKey, string email, CancellationToken cancellationToken = default);
-
-    /// <summary>The same for the phone number.</summary>
-    Task SetPhoneFromAccountAsync(Guid userKey, string phoneNumber, CancellationToken cancellationToken = default);
 }

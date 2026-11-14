@@ -7,8 +7,10 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuditModule;
 
@@ -23,6 +25,9 @@ public class DeleteMemberHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IMemberUnitOfWork> _memberData = new();
+    private readonly Mock<IMemberRepository> _memberRepository = new();
+    private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock = new();
     private readonly DeleteMemberCommandHandler _handler;
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -38,14 +43,15 @@ public class DeleteMemberHandlerTests
         _memberDirectory
             .Setup(d => d.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        _memberDirectory
-            .Setup(d => d.RemoveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _memberData.SetupGet(m => m.Members).Returns(_memberRepository.Object);
+        _memberRepository
+            .Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid key, CancellationToken _) => new Member { MemberKey = key });
 
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(u => u.KurinKey).Returns(_kurinKey);
         _journal = new JournalRecorder(user.Object);
-        _handler = new DeleteMemberCommandHandler(_unitOfWorkMock.Object, _memberDirectory.Object, _journal.Audit);
+        _handler = new DeleteMemberCommandHandler(_unitOfWorkMock.Object, _memberData.Object, _memberDirectory.Object, _journal.Audit, _events.Object);
     }
 
     [Fact]
@@ -67,8 +73,8 @@ public class DeleteMemberHandlerTests
         var result = await _handler.Handle(new DeleteMemberCommand(Guid.NewGuid()), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.NotFound);
-        _memberDirectory.Verify(
-            d => d.RemoveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+        _memberRepository.Verify(
+            r => r.Delete(It.IsAny<Member>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -85,8 +91,11 @@ public class DeleteMemberHandlerTests
                 It.Is<IReadOnlyCollection<Guid>>(keys => keys.Single() == memberKey),
                 It.IsAny<CancellationToken>()),
             Times.Once);
-        _memberDirectory.Verify(
-            d => d.RemoveAsync(memberKey, It.IsAny<CancellationToken>()),
+        _memberRepository.Verify(
+            r => r.Delete(It.Is<Member>(m => m.MemberKey == memberKey), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _events.Verify(
+            e => e.PublishAsync(It.Is<MembersRemoved>(removed => removed.MemberKeys.Single() == memberKey), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -106,8 +115,8 @@ public class DeleteMemberHandlerTests
     [Fact]
     public async Task Handle_WhenRemovalThrows_ShouldPropagateException()
     {
-        _memberDirectory
-            .Setup(d => d.RemoveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _memberRepository
+            .Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("boom"));
 
         var act = async () => await _handler.Handle(new DeleteMemberCommand(Guid.NewGuid()), CancellationToken.None);
