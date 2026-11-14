@@ -3,7 +3,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Records.KraiModule;
+using ProjectK.Common.Dtos.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 

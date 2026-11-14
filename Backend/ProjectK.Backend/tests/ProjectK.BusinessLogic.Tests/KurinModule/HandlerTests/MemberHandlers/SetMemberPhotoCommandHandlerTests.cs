@@ -4,11 +4,11 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Rules.AuditModule;
 

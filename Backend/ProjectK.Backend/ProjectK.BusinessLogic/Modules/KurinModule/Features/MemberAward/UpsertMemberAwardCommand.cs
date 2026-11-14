@@ -5,6 +5,7 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;

@@ -1,6 +1,6 @@
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.Shared;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Entities.KurinModule;
 

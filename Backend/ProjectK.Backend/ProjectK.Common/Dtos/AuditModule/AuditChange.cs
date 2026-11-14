@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using ProjectK.Common.Rules.AuditModule;
 
-namespace ProjectK.Common.Records.AuditModule;
+namespace ProjectK.Common.Dtos.AuditModule;
 
 /// <summary>
 /// One field of a journal entry: what it was and what it became. A field of a person's private

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuditModule;

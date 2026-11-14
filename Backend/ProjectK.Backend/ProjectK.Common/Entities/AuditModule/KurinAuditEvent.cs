@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.Common.Entities.AuditModule;

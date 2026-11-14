@@ -10,6 +10,7 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
@@ -18,7 +19,6 @@ using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

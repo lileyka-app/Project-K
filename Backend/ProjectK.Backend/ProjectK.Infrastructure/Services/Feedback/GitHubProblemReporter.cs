@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.InfrastructureModule;
 

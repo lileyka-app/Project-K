@@ -1,7 +1,7 @@
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;

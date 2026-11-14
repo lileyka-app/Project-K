@@ -1,8 +1,8 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;

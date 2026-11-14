@@ -7,7 +7,6 @@ using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.KraiModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.KraiModule;

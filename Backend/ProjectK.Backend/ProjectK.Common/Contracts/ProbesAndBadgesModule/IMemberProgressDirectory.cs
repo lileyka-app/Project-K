@@ -1,3 +1,4 @@
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Contracts.ProbesAndBadgesModule;

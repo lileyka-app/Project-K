@@ -1,3 +1,4 @@
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;

@@ -1,7 +1,6 @@
-using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Rules.KraiModule;
 
-namespace ProjectK.Common.Records.KraiModule;
+namespace ProjectK.Common.Dtos.KraiModule;
 
 /// <summary>Every configurable field with its mode, and the край's own fields.</summary>
 public sealed record KraiCardFieldsSettings(

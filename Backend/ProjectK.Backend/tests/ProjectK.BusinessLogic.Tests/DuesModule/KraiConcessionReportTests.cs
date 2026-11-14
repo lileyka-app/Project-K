@@ -7,13 +7,13 @@ using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.DuesModule;
-using ProjectK.Common.Records.KraiModule;
 using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
@@ -101,7 +101,7 @@ public class KraiConcessionReportTests
         free.Kurins.Single().Number.Should().Be(12);
         // The number is the kurin's own in its улад: the row says which улад, so 12 УПЮ and 12 УСП stay apart.
         free.Kurins.Single().Branch.Should().Be(KurinBranch.UPYu);
-        free.Kurins.Single().Branches.Should().Equal(new ProjectK.Common.Records.KurinModule.KurinNumbering(KurinBranch.UPYu, 12));
+        free.Kurins.Single().Branches.Should().Equal(new ProjectK.Common.Dtos.KurinModule.KurinNumbering(KurinBranch.UPYu, 12));
     }
 
     [Fact]

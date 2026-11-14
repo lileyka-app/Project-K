@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Records.KurinModule;
+namespace ProjectK.Common.Dtos.KurinModule;
 
 /// <summary>
 /// Someone who used to belong to a kurin, as that kurin is allowed to remember them.

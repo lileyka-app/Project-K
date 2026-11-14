@@ -1,5 +1,3 @@
-using ProjectK.Common.Records.KraiModule;
-
 namespace ProjectK.Common.Dtos.KraiModule;
 
 /// <summary>

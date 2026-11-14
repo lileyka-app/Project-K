@@ -205,7 +205,7 @@ public class SeniorAwardHandlerTests
         _honours.Setup(h => h.GetById("orden-sv-yuriia-sribla"))
             .Returns(new CatalogHonour("orden-sv-yuriia-sribla", HonourKind.Award, "Орден святого Юрія в сріблі", "orden-sv-yuriia", "usp", 1, ""));
         await Record("orden-sv-yuriia-bronza");
-        _journal.Entries.Single().Changes.Should().Contain(new Common.Records.AuditModule.AuditChange("award", null, "Орден святого Юрія в бронзі"));
+        _journal.Entries.Single().Changes.Should().Contain(new Common.Dtos.AuditModule.AuditChange("award", null, "Орден святого Юрія в бронзі"));
 
         await Upsert().Handle(new UpsertMemberAwardCommand
         {
@@ -216,7 +216,7 @@ public class SeniorAwardHandlerTests
         }, CancellationToken.None);
 
         _journal.Entries.Single().Changes.Should().Equal(
-            new Common.Records.AuditModule.AuditChange("award", "Орден святого Юрія в бронзі", "Орден святого Юрія в сріблі"));
+            new Common.Dtos.AuditModule.AuditChange("award", "Орден святого Юрія в бронзі", "Орден святого Юрія в сріблі"));
         _journal.Entries.SelectMany(e => e.Changes).Should().NotContain(c => c.Field == "catalogId");
     }
 

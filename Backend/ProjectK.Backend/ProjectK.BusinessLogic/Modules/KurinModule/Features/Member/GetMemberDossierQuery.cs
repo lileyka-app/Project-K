@@ -6,7 +6,6 @@ using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
 

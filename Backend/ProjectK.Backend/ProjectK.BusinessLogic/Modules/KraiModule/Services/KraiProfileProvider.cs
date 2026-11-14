@@ -8,7 +8,6 @@ using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Records.DuesModule;
-using ProjectK.Common.Records.KraiModule;
 using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;

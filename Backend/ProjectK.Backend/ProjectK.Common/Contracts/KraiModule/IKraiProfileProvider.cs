@@ -1,4 +1,4 @@
-using ProjectK.Common.Records.KraiModule;
+using ProjectK.Common.Dtos.KraiModule;
 
 namespace ProjectK.Common.Contracts.KraiModule;
 

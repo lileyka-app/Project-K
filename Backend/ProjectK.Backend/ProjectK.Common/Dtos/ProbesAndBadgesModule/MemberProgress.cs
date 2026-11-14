@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Records.ProbesAndBadgesModule;
+namespace ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 /// <summary>What the probes and badges module knows about one person.</summary>
 public sealed record MemberProgress(

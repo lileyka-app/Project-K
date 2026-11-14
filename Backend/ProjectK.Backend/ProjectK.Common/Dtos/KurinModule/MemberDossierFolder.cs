@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Records.KurinModule;
+namespace ProjectK.Common.Dtos.KurinModule;
 
 /// <summary>
 /// One folder on the shelf: what it is called and how much is in it. The index is answered without

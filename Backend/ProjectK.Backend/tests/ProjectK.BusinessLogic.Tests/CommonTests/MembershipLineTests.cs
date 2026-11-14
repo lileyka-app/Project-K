@@ -1,7 +1,7 @@
 using FluentAssertions;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.CommonTests;
 

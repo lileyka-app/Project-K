@@ -3,7 +3,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;
 
-namespace ProjectK.Common.Records.KurinModule;
+namespace ProjectK.Common.Dtos.KurinModule;
 
 /// <summary>
 /// One stretch of belonging, as the kurin module reports it. Carries the kurin's own details so the

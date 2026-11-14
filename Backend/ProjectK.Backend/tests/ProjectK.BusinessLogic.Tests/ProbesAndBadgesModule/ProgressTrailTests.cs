@@ -8,12 +8,12 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuditModule;
 

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.Shared;

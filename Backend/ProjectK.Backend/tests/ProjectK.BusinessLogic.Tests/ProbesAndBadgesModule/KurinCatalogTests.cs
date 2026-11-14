@@ -4,9 +4,9 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 

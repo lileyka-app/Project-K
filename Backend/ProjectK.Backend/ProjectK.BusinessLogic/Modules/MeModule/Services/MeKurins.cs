@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;

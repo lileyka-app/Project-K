@@ -1,4 +1,4 @@
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 
 namespace ProjectK.Common.Dtos.MeModule;
 

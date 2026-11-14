@@ -1,3 +1,4 @@
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Rules.AuditModule;
 

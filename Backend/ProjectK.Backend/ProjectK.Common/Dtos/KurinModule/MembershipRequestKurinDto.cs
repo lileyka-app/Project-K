@@ -1,5 +1,3 @@
-using ProjectK.Common.Records.KurinModule;
-
 namespace ProjectK.Common.Dtos.KurinModule;
 
 /// <summary>

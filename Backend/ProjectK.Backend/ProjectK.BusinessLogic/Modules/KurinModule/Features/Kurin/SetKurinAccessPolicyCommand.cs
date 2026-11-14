@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;

@@ -2,8 +2,8 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Records.AuditModule;
 
 namespace ProjectK.Infrastructure.Persistence.Configurations.AuditModule;
 

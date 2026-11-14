@@ -1,7 +1,7 @@
 using ProjectK.Common.Records.DuesModule;
 using ProjectK.Common.Rules.KraiModule;
 
-namespace ProjectK.Common.Records.KraiModule;
+namespace ProjectK.Common.Dtos.KraiModule;
 
 /// <summary>Where the kurins of the край hand up their вкладка.</summary>
 public sealed record KraiDuesSettings(string Upstream)

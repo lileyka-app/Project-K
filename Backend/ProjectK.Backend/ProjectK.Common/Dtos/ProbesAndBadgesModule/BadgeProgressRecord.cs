@@ -1,6 +1,6 @@
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
-namespace ProjectK.Common.Records.ProbesAndBadgesModule;
+namespace ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 /// <summary>One вмілість, as far as a person has taken it.</summary>
 public sealed record BadgeProgressRecord(

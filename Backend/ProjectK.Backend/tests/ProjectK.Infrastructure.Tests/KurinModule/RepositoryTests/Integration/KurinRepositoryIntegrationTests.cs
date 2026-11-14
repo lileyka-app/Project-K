@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.UnitOfWork;
 

@@ -1,6 +1,6 @@
 using System.Globalization;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.KraiModule;
 using ProjectK.Common.Rules.KraiModule;
 using ProjectK.Common.Rules.KurinModule;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
