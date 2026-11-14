@@ -7,6 +7,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive;
 
@@ -52,9 +53,7 @@ public sealed class GetKurinArchiveQueryHandler : IRequestHandler<GetKurinArchiv
         var people = offices.Select(office => office.MemberKey).Concat(memberships.Select(membership => membership.MemberKey)).Distinct().ToList();
         var names = people.Count == 0
             ? new Dictionary<Guid, string>()
-            : (await _members.GetByKeysAsync(people, cancellationToken))
-                .GroupBy(member => member.MemberKey)
-                .ToDictionary(found => found.Key, found => found.First().FullName);
+            : MemberSummaryNames.ByMember(await _members.GetByKeysAsync(people, cancellationToken));
 
         return new ServiceResult<KurinArchiveDto>(
             ResultType.Success,
@@ -65,7 +64,7 @@ public sealed class GetKurinArchiveQueryHandler : IRequestHandler<GetKurinArchiv
                 deleting?.KurinWide == true));
     }
 
-    private static ArchivedOfficeDto ToDto(ArchivedOffice office, Dictionary<Guid, string> names, ArchiveReachResult reach, ArchiveReachResult? correcting)
+    private static ArchivedOfficeDto ToDto(ArchivedOffice office, IReadOnlyDictionary<Guid, string> names, ArchiveReachResult reach, ArchiveReachResult? correcting)
     {
         var own = reach.IsOwn(office.MemberKey);
         return new ArchivedOfficeDto(
@@ -83,7 +82,7 @@ public sealed class GetKurinArchiveQueryHandler : IRequestHandler<GetKurinArchiv
             own);
     }
 
-    private static ArchivedMembershipDto ToDto(ArchivedMembership membership, Dictionary<Guid, string> names, ArchiveReachResult reach, ArchiveReachResult? correcting)
+    private static ArchivedMembershipDto ToDto(ArchivedMembership membership, IReadOnlyDictionary<Guid, string> names, ArchiveReachResult reach, ArchiveReachResult? correcting)
     {
         var own = reach.IsOwn(membership.MemberKey);
         return new ArchivedMembershipDto(

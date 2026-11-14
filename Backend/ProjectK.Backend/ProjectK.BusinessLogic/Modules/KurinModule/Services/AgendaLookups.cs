@@ -2,7 +2,6 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -35,10 +34,7 @@ public sealed record AgendaLookups(
         var memberNames = members.ToDictionary(m => m.MemberKey, m => m.FullName);
 
         // Creators are app users; resolve their display name through the linked member record.
-        var creatorNames = members
-            .Where(m => m.UserKey.HasValue && m.UserKey.Value != Guid.Empty)
-            .GroupBy(m => m.UserKey!.Value)
-            .ToDictionary(g => g.Key, g => PersonNames.FirstLast(g.First().FirstName, g.First().LastName));
+        var creatorNames = AgendaCreatorNames.FromMembers(members);
 
         var leadershipRefs = await uow.Leaderships.GetLeadershipRefsForKurinAsync(kurinKey, cancellationToken);
         // Проводи and tags are named by the kurin, not by a person or a гурток; one table labels both.

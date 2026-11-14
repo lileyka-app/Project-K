@@ -2,6 +2,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -53,9 +54,8 @@ public sealed class AgendaTargetNames
         var memberKeys = list.Where(target => target.Type == AgendaTargetType.Member).Select(target => target.Key).Distinct().ToList();
         if (memberKeys.Count > 0)
         {
-            members = (await directory.GetByKurinAsync(kurinKey, new MemberSelection(memberKeys, [], []), cancellationToken))
-                .GroupBy(member => member.MemberKey)
-                .ToDictionary(found => found.Key, found => found.First().FullName);
+            members = MemberSummaryNames.ByMember(
+                await directory.GetByKurinAsync(kurinKey, new MemberSelection(memberKeys, [], []), cancellationToken));
         }
 
         IReadOnlyDictionary<Guid, string> leaderships = new Dictionary<Guid, string>();

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -12,6 +14,13 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// </summary>
 public static class AgendaCreatorNames
 {
+    /// <summary>
+    /// The members' names by the account they sign in with — the cheap first pass that
+    /// <see cref="ResolveAsync"/> fills in. An empty account key is never an author, so it is left out.
+    /// </summary>
+    public static IReadOnlyDictionary<Guid, string> FromMembers(IEnumerable<MemberSummary> members)
+        => MemberSummaryNames.ByAccount(members.Where(member => member.UserKey != Guid.Empty));
+
     public static async Task<IReadOnlyDictionary<Guid, string>> ResolveAsync(
         UserManager<AppUser> userManager,
         IReadOnlyDictionary<Guid, string> fromMembers,
