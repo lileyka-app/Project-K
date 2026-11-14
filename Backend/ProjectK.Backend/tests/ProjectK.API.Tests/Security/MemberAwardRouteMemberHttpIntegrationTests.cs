@@ -59,9 +59,9 @@ public class MemberAwardRouteMemberHttpIntegrationTests
     }
 
     [Theory]
-    [InlineData("KV.Vykhovnyk", "POST", "/api/member/{0}/awards/{1}/review", "{\"isApproved\":true}")]
-    [InlineData("Member", "DELETE", "/api/member/{0}/awards/{1}", null)]
-    public async Task AwardOfTheRouteMember_ShouldSucceed(string role, string method, string routeTemplate, string? jsonBody)
+    [InlineData("KV.Vykhovnyk", "POST", "/api/member/{0}/awards/{1}/review", "{\"isApproved\":true}", HttpStatusCode.OK)]
+    [InlineData("Member", "DELETE", "/api/member/{0}/awards/{1}", null, HttpStatusCode.NoContent)]
+    public async Task AwardOfTheRouteMember_ShouldSucceed(string role, string method, string routeTemplate, string? jsonBody, HttpStatusCode expected)
     {
         var routeMemberKey = Guid.NewGuid();
         var award = SubmittedAward(memberKey: routeMemberKey);
@@ -69,7 +69,7 @@ public class MemberAwardRouteMemberHttpIntegrationTests
 
         var response = await SendAsync(host.Client, method, string.Format(routeTemplate, routeMemberKey, award.MemberAwardKey), jsonBody);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(expected, response.StatusCode);
     }
 
     private static MemberAward SubmittedAward(Guid memberKey) => new()
