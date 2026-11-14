@@ -1,19 +1,17 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
-using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 
-public sealed record GetPrivateScoreQuery(Guid KurinKey, ScorePeriodQuery Period) : IRequest<ServiceResult<PrivateScoreResponse>>;
+public sealed record GetPrivateScoreQuery(Guid KurinKey, ScorePeriodQuery Period) : IRequest<ServiceResult<PrivateScoreDto>>;
 
-public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScoreQuery, ServiceResult<PrivateScoreResponse>>
+public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScoreQuery, ServiceResult<PrivateScoreDto>>
 {
     private readonly PrivateScoreAccess _access;
     private readonly ScoreBookReader _books;
@@ -26,9 +24,9 @@ public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScor
         _score = score;
     }
 
-    public async Task<ServiceResult<PrivateScoreResponse>> Handle(GetPrivateScoreQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<PrivateScoreDto>> Handle(GetPrivateScoreQuery request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<PrivateScoreResponse>(request.KurinKey, ResourceAction.Read, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<PrivateScoreDto>(request.KurinKey, ResourceAction.Read, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -36,7 +34,7 @@ public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScor
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
         if (book.ResolvePeriod(request.Period) is not { } resolved)
         {
-            return ScoreErrors.NotFound<PrivateScoreResponse>("There is no such stage.");
+            return ScoreErrors.NotFound<PrivateScoreDto>("There is no such stage.");
         }
 
         var criteria = await _score.PrivateScoreCriteria.GetForKurinAsync(request.KurinKey, cancellationToken);
@@ -67,7 +65,7 @@ public sealed class GetPrivateScoreQueryHandler : IRequestHandler<GetPrivateScor
             .ThenBy(p => p.FullName)
             .ToList();
 
-        return new ServiceResult<PrivateScoreResponse>(ResultType.Success, new PrivateScoreResponse
+        return new ServiceResult<PrivateScoreDto>(ResultType.Success, new PrivateScoreDto
         {
             KurinKey = request.KurinKey,
             Period = resolved.Dto,

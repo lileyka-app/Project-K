@@ -1,8 +1,9 @@
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dues;
+using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -82,13 +83,13 @@ public sealed class DuesAccountRows
                     Grants = grants
                         .Where(g => g.MembershipKey == a.MembershipKey)
                         .OrderByDescending(g => g.FromQuarter)
-                        .Select(g => DuesConcessionGrantDto.From(g, current))
+                        .Select(g => g.ToDto(current))
                         .ToList(),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
-                        Quarter = new QuarterDto { Year = q.Quarter.Year, Number = q.Quarter.Number },
-                        Charged = Amount(q.Charged),
-                        Paid = Amount(q.Paid),
+                        Quarter = q.Quarter.ToDto(),
+                        Charged = q.Charged.ToDto(),
+                        Paid = q.Paid.ToDto(),
                         Balance = q.Balance,
                         IsConcession = q.IsConcession,
                         ConcessionName = q.ConcessionName
@@ -102,9 +103,6 @@ public sealed class DuesAccountRows
             .ThenBy(a => a.FullName)
             .ToList();
     }
-
-    public static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }
 
 /// <summary>The kurin's tags and the ones on each person, as far as the viewer may see them.</summary>

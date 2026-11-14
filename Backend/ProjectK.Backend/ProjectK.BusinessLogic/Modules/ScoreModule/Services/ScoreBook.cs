@@ -1,9 +1,9 @@
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
@@ -201,34 +201,6 @@ public sealed class ScoreBook
             .Select(m => (m, _byMember.GetValueOrDefault(m.MemberKey)))
             .Where(x => x.Item2 is not null)
             .Select(x => (x.m, x.Item2!));
-
-    public ScoreEntryDto ToDto(ScoreEntry e) => new()
-    {
-        ScoreEntryKey = e.ScoreEntryKey,
-        MembershipKey = e.MembershipKey,
-        MemberKey = e.MembershipKey is { } mk ? MemberKeyOf(mk) : null,
-        MemberName = e.MembershipKey is { } mk2 ? NameOfMembership(mk2) : null,
-        GroupKey = e.GroupKey ?? (e.MembershipKey is { } mk3 ? Ledger.GroupOn(mk3, e.OccurredOn) : null),
-        GroupName = GroupName(e.GroupKey ?? (e.MembershipKey is { } mk4 ? Ledger.GroupOn(mk4, e.OccurredOn) : null)),
-        IsForGroup = e.GroupKey.HasValue,
-        ScoreItemKey = e.ScoreItemKey,
-        ItemName = e.ScoreItemKey is { } ik ? Items.FirstOrDefault(i => i.ScoreItemKey == ik)?.Name : null,
-        Points = e.Points,
-        Reason = e.Reason,
-        AgendaItemKey = e.AgendaItemKey,
-        OccurrenceStartUtc = e.OccurrenceStartUtc is { } o ? DateTime.SpecifyKind(o, DateTimeKind.Utc) : null,
-        OccurredOn = e.OccurredOn,
-        CreatedByName = NameOfAccount(e.CreatedByUserKey),
-        CreatedAtUtc = DateTime.SpecifyKind(e.CreatedDate, DateTimeKind.Utc)
-    };
-
-    public static ScoreItemDto ToDto(ScoreItem i) => new()
-    {
-        ScoreItemKey = i.ScoreItemKey,
-        Name = i.Name,
-        Points = i.Points,
-        IsArchived = i.IsArchived
-    };
 
     /// <inheritdoc cref="ScoreAttendanceBook.PointsFor"/>
     public int AttendancePoints(Guid agendaItemKey, Guid? categoryKey) =>

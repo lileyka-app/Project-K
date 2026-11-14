@@ -1,7 +1,7 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -12,9 +12,9 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Group;
 /// One гурток's page: its youths' points by source for a period, with those who have since moved on
 /// but earned something while here, and everything given by hand.
 /// </summary>
-public sealed record GetGroupScoreQuery(Guid GroupKey, ScorePeriodQuery Period) : IRequest<ServiceResult<GroupScoreResponse>>;
+public sealed record GetGroupScoreQuery(Guid GroupKey, ScorePeriodQuery Period) : IRequest<ServiceResult<GroupScoreDto>>;
 
-public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQuery, ServiceResult<GroupScoreResponse>>
+public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQuery, ServiceResult<GroupScoreDto>>
 {
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
@@ -37,15 +37,15 @@ public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQue
         return membership.GroupKey == groupKey ? "Current" : "Moved";
     }
 
-    public async Task<ServiceResult<GroupScoreResponse>> Handle(GetGroupScoreQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<GroupScoreDto>> Handle(GetGroupScoreQuery request, CancellationToken cancellationToken)
     {
         var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
         if (group is null)
         {
-            return ScoreErrors.NotFound<GroupScoreResponse>("There is no such гурток.");
+            return ScoreErrors.NotFound<GroupScoreDto>("There is no such гурток.");
         }
 
-        if (_access.Refuse<GroupScoreResponse>(group.KurinKey) is { } refused)
+        if (_access.Refuse<GroupScoreDto>(group.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -53,7 +53,7 @@ public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQue
         var book = await _books.OpenAsync(group.KurinKey, cancellationToken);
         if (book.ResolvePeriod(request.Period) is not { } resolved)
         {
-            return ScoreErrors.NotFound<GroupScoreResponse>("There is no such stage.");
+            return ScoreErrors.NotFound<GroupScoreDto>("There is no such stage.");
         }
 
         var table = book.Ledger.Groups(resolved.Period, book.GroupNames.Keys);
@@ -92,10 +92,10 @@ public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQue
                 || (e.MembershipKey is { } mk && book.Ledger.GroupOn(mk, e.OccurredOn) == group.GroupKey))
             .OrderByDescending(e => e.OccurredOn)
             .ThenByDescending(e => e.CreatedDate)
-            .Select(book.ToDto)
+            .Select(e => e.ToDto(book))
             .ToList();
 
-        return new ServiceResult<GroupScoreResponse>(ResultType.Success, new GroupScoreResponse
+        return new ServiceResult<GroupScoreDto>(ResultType.Success, new GroupScoreDto
         {
             GroupKey = group.GroupKey,
             KurinKey = group.KurinKey,
@@ -103,11 +103,11 @@ public sealed class GetGroupScoreQueryHandler : IRequestHandler<GetGroupScoreQue
             Algorithm = book.Algorithm,
             Period = resolved.Dto,
             Periods = book.Periods(),
-            Standing = ScoreRows.Group(table[place - 1], place, group.Name, true),
+            Standing = table[place - 1].ToDto(place, group.Name, true),
             GroupCount = table.Count,
             People = people,
             Entries = entries,
-            Items = book.Items.Where(i => !i.IsArchived).Select(ScoreBook.ToDto).ToList(),
+            Items = book.Items.Where(i => !i.IsArchived).Select(i => i.ToDto()).ToList(),
             CanScore = canScore
         });
     }

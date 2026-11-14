@@ -7,7 +7,7 @@ using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -31,7 +31,7 @@ public class GroupDuesController : ControllerBase
 
     [HttpGet]
     [ResourceAuthorize(ResourceType.GroupDues, ResourceAction.Read, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupDuesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDuesDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid groupKey)
     {

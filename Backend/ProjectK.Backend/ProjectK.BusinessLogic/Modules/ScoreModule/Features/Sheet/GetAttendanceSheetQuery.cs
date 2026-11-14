@@ -1,10 +1,10 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -16,9 +16,9 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 /// they were given here. The screen sorts them; the read only says what is true of each.
 /// </summary>
 public sealed record GetAttendanceSheetQuery(Guid KurinKey, Guid AgendaItemKey, DateTime OccurrenceStartUtc)
-    : IRequest<ServiceResult<AttendanceSheetResponse>>;
+    : IRequest<ServiceResult<AttendanceSheetDto>>;
 
-public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendanceSheetQuery, ServiceResult<AttendanceSheetResponse>>
+public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendanceSheetQuery, ServiceResult<AttendanceSheetDto>>
 {
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
@@ -40,9 +40,9 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         _profiles = profiles;
     }
 
-    public async Task<ServiceResult<AttendanceSheetResponse>> Handle(GetAttendanceSheetQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<AttendanceSheetDto>> Handle(GetAttendanceSheetQuery request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<AttendanceSheetResponse>(request.KurinKey) is { } refused)
+        if (_access.Refuse<AttendanceSheetDto>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -50,7 +50,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
-            return ScoreErrors.NotFound<AttendanceSheetResponse>("There is no such event, or it does not meet that day.");
+            return ScoreErrors.NotFound<AttendanceSheetDto>("There is no such event, or it does not meet that day.");
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
@@ -62,7 +62,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
 
         if (!canScoreUnplaced && !canScoreIn.Values.Any(v => v))
         {
-            return ScoreErrors.Refused<AttendanceSheetResponse>();
+            return ScoreErrors.Refused<AttendanceSheetDto>();
         }
 
         // The answers of this very day: a series' RSVPs are per occurrence, a one-off's sit under null.
@@ -105,7 +105,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
                     ? new AttendanceMarkDto { MarkedByName = book.NameOfAccount(mark.MarkedByUserKey), MarkedAtUtc = DateTime.SpecifyKind(mark.MarkedAtUtc, DateTimeKind.Utc) }
                     : null,
                 CanScore = CanScore(y.Membership.GroupKey),
-                Entries = given[y.Membership.MembershipKey].OrderBy(e => e.CreatedDate).Select(book.ToDto).ToList()
+                Entries = given[y.Membership.MembershipKey].OrderBy(e => e.CreatedDate).Select(e => e.ToDto(book)).ToList()
             })
             .OrderBy(p => p.GroupName)
             .ThenBy(p => p.FullName)
@@ -118,14 +118,14 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
                 GroupKey = g.Key,
                 GroupName = g.Value,
                 CanScore = canScoreIn[g.Key],
-                Entries = given[g.Key].OrderBy(e => e.CreatedDate).Select(book.ToDto).ToList()
+                Entries = given[g.Key].OrderBy(e => e.CreatedDate).Select(e => e.ToDto(book)).ToList()
             })
             .ToList();
 
         var category = await CategoryOfAsync(item.AgendaCategoryKey, cancellationToken);
         var notHeld = await _books.NotHeldAsync(item.AgendaItemKey, occurrence.StartUtc, cancellationToken);
 
-        return new ServiceResult<AttendanceSheetResponse>(ResultType.Success, new AttendanceSheetResponse
+        return new ServiceResult<AttendanceSheetDto>(ResultType.Success, new AttendanceSheetDto
         {
             KurinKey = request.KurinKey,
             AgendaItemKey = item.AgendaItemKey,
@@ -142,7 +142,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             HasOwnRate = book.AttendanceRates.Any(r => r.AgendaItemKey == item.AgendaItemKey),
             People = people,
             Groups = groups,
-            Items = book.Items.Where(i => !i.IsArchived).Select(ScoreBook.ToDto).ToList(),
+            Items = book.Items.Where(i => !i.IsArchived).Select(i => i.ToDto()).ToList(),
             CanManage = await _access.MayManageAsync(request.KurinKey, cancellationToken),
             NotHeld = notHeld is null
                 ? null

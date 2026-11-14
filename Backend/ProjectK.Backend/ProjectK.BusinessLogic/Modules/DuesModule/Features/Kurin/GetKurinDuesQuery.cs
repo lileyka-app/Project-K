@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
@@ -7,16 +6,17 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 
-public sealed record GetKurinDuesQuery(Guid KurinKey) : IRequest<ServiceResult<KurinDuesResponse>>;
+public sealed record GetKurinDuesQuery(Guid KurinKey) : IRequest<ServiceResult<KurinDuesDto>>;
 
 /// <summary>The kurin's box in one read, charges brought up to date first.</summary>
-public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery, ServiceResult<KurinDuesResponse>>
+public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery, ServiceResult<KurinDuesDto>>
 {
     private readonly KurinDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -56,9 +56,9 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         _rows = rows;
     }
 
-    public async Task<ServiceResult<KurinDuesResponse>> Handle(GetKurinDuesQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<KurinDuesDto>> Handle(GetKurinDuesQuery request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<KurinDuesResponse>(request.KurinKey) is { } refused)
+        if (_access.Refuse<KurinDuesDto>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -128,17 +128,17 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             .DefaultIfEmpty(current.Index)
             .Min();
 
-        return new ServiceResult<KurinDuesResponse>(ResultType.Success, new KurinDuesResponse
+        return new ServiceResult<KurinDuesDto>(ResultType.Success, new KurinDuesDto
         {
             KurinKey = kurinKey,
             Currency = krai.Currency,
             NumberLocale = krai.NumberLocale,
             Upstream = krai.Dues.Upstream,
-            CurrentQuarter = Quarter(current),
+            CurrentQuarter = current.ToDto(),
             ChargeTiming = (await _dues.KurinDuesSettings.GetForKurinAsync(kurinKey, cancellationToken))?.ChargeTiming ?? DuesChargeTiming.InAdvance,
-            Years = Years(DuesQuarter.FromIndex(first), current),
+            Years = DuesMapping.Years(DuesQuarter.FromIndex(first), current),
             // With tags off, everyone pays the rate for everyone: the tags' rates stand idle and are not shown.
-            Rates = rates.Where(r => r.TagKey is null || tags.All.Count > 0).Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
+            Rates = rates.Where(r => r.TagKey is null || tags.All.Count > 0).Select(r => r.ToDto()).ToList(),
             Box = new DuesBoxDto
             {
                 Cash = kurinBox.Box.Cash,
@@ -158,7 +158,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             IsSenior = isSenior,
             Accounts = DuesAccountRows.Map(accounts, null, ledger, names, grants, current, tags),
             Tags = tags.All,
-            KraiConcessions = krai.Dues.Concessions.Select(KraiConcessionDto.From).ToList(),
+            KraiConcessions = krai.Dues.Concessions.Select(r => r.ToDto()).ToList(),
             Transfers = transfers,
             Entries = entries
                 .Where(e => e.GroupKey is null)
@@ -192,7 +192,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
                 .ToList();
             result.Add(new KurinDuesQuarterDto
             {
-                Quarter = Quarter(DuesQuarter.FromIndex(quarter.Key)),
+                Quarter = DuesQuarter.FromIndex(quarter.Key).ToDto(),
                 Groups = groups,
                 Total = Row(Guid.Empty, "Разом", quarter.Select(x => x.q).ToList())
             });
@@ -219,22 +219,4 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             KraiCollected = quarters.Sum(q => q.Paid.Krai)
         };
     }
-
-    private static IReadOnlyList<PlastYearDto> Years(DuesQuarter first, DuesQuarter current)
-    {
-        var years = new List<PlastYearDto>();
-        for (var year = PlastYear.Of(current); year >= PlastYear.Of(first); year--)
-        {
-            years.Add(new PlastYearDto
-            {
-                StartYear = year,
-                Label = PlastYear.Label(year),
-                Quarters = PlastYear.QuartersOf(year).Select(Quarter).ToList()
-            });
-        }
-
-        return years;
-    }
-
-    private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
 }

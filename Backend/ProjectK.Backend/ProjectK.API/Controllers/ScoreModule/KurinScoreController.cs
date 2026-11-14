@@ -11,7 +11,7 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -38,7 +38,7 @@ public class KurinScoreController : ControllerBase
     /// <summary>The table of гуртки — any member of the kurin.</summary>
     [HttpGet]
     [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinScoreResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinScoreDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(Guid kurinKey, [FromQuery] ScorePeriodQuery period)
     {
         var result = await _mediator.Send(new GetKurinScoreQuery(kurinKey, period));
@@ -47,7 +47,7 @@ public class KurinScoreController : ControllerBase
 
     [HttpGet("groups/{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.GroupScore, ResourceAction.Read, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupScoreResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupScoreDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetGroup(Guid kurinKey, Guid groupKey, [FromQuery] ScorePeriodQuery period)
     {
         var result = await _mediator.Send(new GetGroupScoreQuery(groupKey, period));
@@ -57,7 +57,7 @@ public class KurinScoreController : ControllerBase
     /// <summary>Who may score at least one гурток opens it; the handler says no to everyone else.</summary>
     [HttpGet("events/{agendaItemKey:guid}/{occurrence}")]
     [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(AttendanceSheetResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AttendanceSheetDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<IActionResult> GetSheet(Guid kurinKey, Guid agendaItemKey, string occurrence) =>
         SendAtOccurrenceAsync(occurrence, startUtc => new GetAttendanceSheetQuery(kurinKey, agendaItemKey, startUtc));
@@ -128,7 +128,7 @@ public class KurinScoreController : ControllerBase
 
     [HttpGet("settings")]
     [ResourceAuthorize(ResourceType.KurinScore, ResourceAction.Manage, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinScoreSettingsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinScoreSettingsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSettings(Guid kurinKey)
     {
         var result = await _mediator.Send(new GetKurinScoreSettingsQuery(kurinKey));

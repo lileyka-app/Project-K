@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
@@ -7,19 +6,20 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Member;
 
-public sealed record GetMemberDuesQuery(Guid MemberKey) : IRequest<ServiceResult<MemberDuesResponse>>;
+public sealed record GetMemberDuesQuery(Guid MemberKey) : IRequest<ServiceResult<MemberDuesDto>>;
 
 /// <summary>
 /// A person's вкладка in the kurin the caller acts in. The person may hold several accounts here —
 /// one per гурток they were charged in — and the card adds them up.
 /// </summary>
-public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQuery, ServiceResult<MemberDuesResponse>>
+public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQuery, ServiceResult<MemberDuesDto>>
 {
     private const int RecentEntries = 8;
 
@@ -55,11 +55,11 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         _profiles = profiles;
     }
 
-    public async Task<ServiceResult<MemberDuesResponse>> Handle(GetMemberDuesQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MemberDuesDto>> Handle(GetMemberDuesQuery request, CancellationToken cancellationToken)
     {
         if (_currentUser.KurinKey is not { } kurinKey)
         {
-            return DuesErrors.Refused<MemberDuesResponse>();
+            return DuesErrors.Refused<MemberDuesDto>();
         }
 
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
@@ -71,8 +71,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
             .ToList();
         if (memberships.Count == 0)
         {
-            return new ServiceResult<MemberDuesResponse>(ResultType.Success,
-                new MemberDuesResponse { HasAccount = false, KurinKey = kurinKey, CurrentQuarter = Quarter(current), Elsewhere = elsewhere });
+            return new ServiceResult<MemberDuesDto>(ResultType.Success, NoAccount(kurinKey, current, elsewhere));
         }
 
         var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
@@ -84,8 +83,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         var accounts = ledger.Accounts().Where(a => mine.Contains(a.MembershipKey)).ToList();
         if (accounts.Count == 0)
         {
-            return new ServiceResult<MemberDuesResponse>(ResultType.Success,
-                new MemberDuesResponse { HasAccount = false, KurinKey = kurinKey, CurrentQuarter = Quarter(current), Elsewhere = elsewhere });
+            return new ServiceResult<MemberDuesDto>(ResultType.Success, NoAccount(kurinKey, current, elsewhere));
         }
 
         var standing = memberships.FirstOrDefault(m => m.IsCurrent);
@@ -101,16 +99,16 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         var canOpenGroup = currentGroup is { } groupKey
             && (await _resourceAccess.CheckAccessAsync(ResourceType.GroupDues, ResourceAction.Read, groupKey, cancellationToken)).IsAllowed;
 
-        return new ServiceResult<MemberDuesResponse>(ResultType.Success, new MemberDuesResponse
+        return new ServiceResult<MemberDuesDto>(ResultType.Success, new MemberDuesDto
         {
             HasAccount = true,
             KurinKey = kurinKey,
             Currency = krai.Currency,
             NumberLocale = krai.NumberLocale,
-            CurrentQuarter = Quarter(current),
+            CurrentQuarter = current.ToDto(),
             Balance = accounts.Sum(a => a.Balance),
             OwedToLeave = accounts.SelectMany(a => a.Quarters).Where(q => q.Quarter < current && q.Balance < 0).Sum(q => -q.Balance),
-            QuarterRate = rate is null ? null : Amount(rate),
+            QuarterRate = rate?.ToDto(),
             IsConcessionNow = standing is not null && ledger.IsConcession(standing.MembershipKey, current),
             ConcessionNamesNow = standing is null ? [] : ledger.GrantsIn(standing.MembershipKey, current).Select(g => g.Name).ToList(),
             CurrentGroupKey = currentGroup,
@@ -124,11 +122,12 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
                     Standing = DuesAccountStandings.Of(hasLeft: standing is null, standsInThisGroup: a.GroupKey == currentGroup),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
-                        Quarter = Quarter(q.Quarter),
-                        Charged = Amount(q.Charged),
-                        Paid = Amount(q.Paid),
+                        Quarter = q.Quarter.ToDto(),
+                        Charged = q.Charged.ToDto(),
+                        Paid = q.Paid.ToDto(),
                         Balance = q.Balance,
-                        IsConcession = q.IsConcession
+                        IsConcession = q.IsConcession,
+                        ConcessionName = null
                     }).ToList(),
                     Charged = a.Charged,
                     Payments = a.Payments,
@@ -196,8 +195,27 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         return result;
     }
 
-    private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
-
-    private static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
+    /// <summary>
+    /// The card of someone never charged here. It names no край, so it carries the defaults it always
+    /// carried rather than the kurin's currency.
+    /// </summary>
+    private static MemberDuesDto NoAccount(Guid kurinKey, DuesQuarter current, IReadOnlyList<MemberDuesElsewhereDto> elsewhere) => new()
+    {
+        HasAccount = false,
+        KurinKey = kurinKey,
+        Currency = "UAH",
+        NumberLocale = "uk-UA",
+        CurrentQuarter = current.ToDto(),
+        Balance = 0,
+        OwedToLeave = 0,
+        QuarterRate = null,
+        IsConcessionNow = false,
+        ConcessionNamesNow = [],
+        CurrentGroupKey = null,
+        CurrentGroupName = null,
+        CanOpenGroupDues = false,
+        Accounts = [],
+        Entries = [],
+        Elsewhere = elsewhere
+    };
 }

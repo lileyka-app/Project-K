@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Exceptions;
@@ -9,6 +8,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -140,7 +140,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
             };
             _score.ScoreAttendances.Create(mark, cancellationToken);
             ScoreTrail.Record(_score, request.KurinKey, ScoreTrail.Attendance, mark.ScoreAttendanceKey, ScoreTrail.Created, Snapshot(mark), _currentUser.UserId, now);
-            results.Add(new MarkAttendanceResultDto { MembershipKey = membershipKey, Outcome = "Marked" });
+            results.Add(new MarkAttendanceResultDto { MembershipKey = membershipKey, Outcome = "Marked", MarkedByName = null });
         }
 
         // A meeting someone was at took place, whatever was said of it before.

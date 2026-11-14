@@ -1,20 +1,15 @@
-using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
-using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 
-public sealed record GetKurinScoreSettingsQuery(Guid KurinKey) : IRequest<ServiceResult<KurinScoreSettingsResponse>>;
+public sealed record GetKurinScoreSettingsQuery(Guid KurinKey) : IRequest<ServiceResult<KurinScoreSettingsDto>>;
 
-public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurinScoreSettingsQuery, ServiceResult<KurinScoreSettingsResponse>>
+public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurinScoreSettingsQuery, ServiceResult<KurinScoreSettingsDto>>
 {
     private readonly ScoreSettingsAccess _access;
     private readonly ScoreBookReader _books;
@@ -27,9 +22,9 @@ public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurin
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult<KurinScoreSettingsResponse>> Handle(GetKurinScoreSettingsQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<KurinScoreSettingsDto>> Handle(GetKurinScoreSettingsQuery request, CancellationToken cancellationToken)
     {
-        if (await _access.RefuseAsync<KurinScoreSettingsResponse>(request.KurinKey, cancellationToken) is { } refused)
+        if (await _access.RefuseAsync<KurinScoreSettingsDto>(request.KurinKey, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -37,7 +32,7 @@ public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurin
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
         var categories = await _unitOfWork.AgendaCategories.GetForKurinAsync(request.KurinKey, includeArchived: false, cancellationToken);
 
-        return new ServiceResult<KurinScoreSettingsResponse>(ResultType.Success, new KurinScoreSettingsResponse
+        return new ServiceResult<KurinScoreSettingsDto>(ResultType.Success, new KurinScoreSettingsDto
         {
             KurinKey = request.KurinKey,
             Algorithm = book.Algorithm,
@@ -55,7 +50,7 @@ public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurin
             Rules = book.Rules
                 .Select(r => new ScoreRuleDto { Source = r.Source, Variant = r.Variant, FromDate = r.FromDate, Points = r.Points })
                 .ToList(),
-            Items = book.Items.Select(ScoreBook.ToDto).ToList(),
+            Items = book.Items.Select(i => i.ToDto()).ToList(),
             Stages = book.Stages
                 .OrderByDescending(s => s.FromDate)
                 .Select(s => new ScoreStageDto { ScoreStageKey = s.ScoreStageKey, Name = s.Name, FromDate = s.FromDate, ToDate = s.ToDate })

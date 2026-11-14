@@ -1,7 +1,7 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -9,9 +9,9 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Kurin;
 
 /// <summary>The table of гуртки for a period — what the whole kurin sees.</summary>
-public sealed record GetKurinScoreQuery(Guid KurinKey, ScorePeriodQuery Period) : IRequest<ServiceResult<KurinScoreResponse>>;
+public sealed record GetKurinScoreQuery(Guid KurinKey, ScorePeriodQuery Period) : IRequest<ServiceResult<KurinScoreDto>>;
 
-public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQuery, ServiceResult<KurinScoreResponse>>
+public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQuery, ServiceResult<KurinScoreDto>>
 {
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
@@ -24,9 +24,9 @@ public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQue
         _resourceAccess = resourceAccess;
     }
 
-    public async Task<ServiceResult<KurinScoreResponse>> Handle(GetKurinScoreQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<KurinScoreDto>> Handle(GetKurinScoreQuery request, CancellationToken cancellationToken)
     {
-        if (_access.Refuse<KurinScoreResponse>(request.KurinKey) is { } refused)
+        if (_access.Refuse<KurinScoreDto>(request.KurinKey) is { } refused)
         {
             return refused;
         }
@@ -34,7 +34,7 @@ public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQue
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
         if (book.ResolvePeriod(request.Period) is not { } resolved)
         {
-            return ScoreErrors.NotFound<KurinScoreResponse>("There is no such stage.");
+            return ScoreErrors.NotFound<KurinScoreDto>("There is no such stage.");
         }
 
         var rows = new List<ScoreGroupRowDto>();
@@ -43,12 +43,12 @@ public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQue
         {
             var canOpen = (await _resourceAccess.CheckAccessAsync(ResourceType.GroupScore, ResourceAction.Read, total.GroupKey, cancellationToken)).IsAllowed;
             canScore |= await _access.MayScoreAsync(request.KurinKey, total.GroupKey, ResourceAction.Create, cancellationToken);
-            rows.Add(ScoreRows.Group(total, index + 1, book.GroupName(total.GroupKey), canOpen));
+            rows.Add(total.ToDto(index + 1, book.GroupName(total.GroupKey), canOpen));
         }
 
         canScore |= await _access.MayScoreAsync(request.KurinKey, null, ResourceAction.Create, cancellationToken);
 
-        return new ServiceResult<KurinScoreResponse>(ResultType.Success, new KurinScoreResponse
+        return new ServiceResult<KurinScoreDto>(ResultType.Success, new KurinScoreDto
         {
             KurinKey = request.KurinKey,
             Algorithm = book.Algorithm,

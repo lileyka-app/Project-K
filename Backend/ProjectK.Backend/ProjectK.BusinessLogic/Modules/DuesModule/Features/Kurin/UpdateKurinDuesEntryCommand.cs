@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;

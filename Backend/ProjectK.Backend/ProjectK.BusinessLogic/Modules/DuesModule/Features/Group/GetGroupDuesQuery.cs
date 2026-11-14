@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
@@ -7,19 +6,20 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Group;
 
-public sealed record GetGroupDuesQuery(Guid GroupKey) : IRequest<ServiceResult<GroupDuesResponse>>;
+public sealed record GetGroupDuesQuery(Guid GroupKey) : IRequest<ServiceResult<GroupDuesDto>>;
 
 /// <summary>
 /// A гурток's whole box in one read. Charges are brought up to date first, so a quarter that began
 /// since the last visit is already on the table.
 /// </summary>
-public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery, ServiceResult<GroupDuesResponse>>
+public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery, ServiceResult<GroupDuesDto>>
 {
     private readonly GroupDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
@@ -53,9 +53,9 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         _rows = rows;
     }
 
-    public async Task<ServiceResult<GroupDuesResponse>> Handle(GetGroupDuesQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<GroupDuesDto>> Handle(GetGroupDuesQuery request, CancellationToken cancellationToken)
     {
-        var (group, failure) = await _access.OpenAsync<GroupDuesResponse>(request.GroupKey, cancellationToken);
+        var (group, failure) = await _access.OpenAsync<GroupDuesDto>(request.GroupKey, cancellationToken);
         if (group is null)
         {
             return failure!;
@@ -95,7 +95,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         var canVerify = await _resourceAccess.CheckAccessAsync(ResourceType.GroupDues, ResourceAction.Manage, group.GroupKey, cancellationToken);
         var canSetKurinRates = await _resourceAccess.CheckAccessAsync(ResourceType.KurinDues, ResourceAction.Update, kurinKey, cancellationToken);
 
-        return new ServiceResult<GroupDuesResponse>(ResultType.Success, new GroupDuesResponse
+        return new ServiceResult<GroupDuesDto>(ResultType.Success, new GroupDuesDto
         {
             GroupKey = group.GroupKey,
             KurinKey = kurinKey,
@@ -103,13 +103,13 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             Currency = krai.Currency,
             NumberLocale = krai.NumberLocale,
             Upstream = krai.Dues.Upstream,
-            KraiConcessions = krai.Dues.Concessions.Select(KraiConcessionDto.From).ToList(),
-            CurrentQuarter = Quarter(current),
+            KraiConcessions = krai.Dues.Concessions.Select(r => r.ToDto()).ToList(),
+            CurrentQuarter = current.ToDto(),
             Years = Years(charges, current),
-            KurinRates = kurinRates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
+            KurinRates = kurinRates.Select(r => r.ToDto()).ToList(),
             GroupRates = groupRates.Where(r => r.GroupKey == group.GroupKey).Select(r => new GroupDuesRateDto
             {
-                FromQuarter = Quarter(DuesQuarter.FromIndex(r.FromQuarter)),
+                FromQuarter = DuesQuarter.FromIndex(r.FromQuarter).ToDto(),
                 GroupShare = r.GroupShare
             }).ToList(),
             Accounts = accountDtos,
@@ -121,6 +121,8 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
                 Card = box.Box.Card,
                 Total = box.Box.Total,
                 ToForward = box.Box.ToForward,
+                // Never reported for a гурток's box; only the kurin's shows it.
+                Ahead = 0,
                 Own = box.Box.Own,
                 InTransit = box.InTransit
             },
@@ -137,23 +139,6 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
     }
 
     /// <summary>Every пластовий рік from the first charge to today, newest first.</summary>
-    private static IReadOnlyList<PlastYearDto> Years(IReadOnlyList<DuesCharge> charges, DuesQuarter current)
-    {
-        var first = charges.Count == 0 ? current : DuesQuarter.FromIndex(charges.Min(c => c.Quarter));
-        var years = new List<PlastYearDto>();
-        for (var year = PlastYear.Of(current); year >= PlastYear.Of(first); year--)
-        {
-            years.Add(new PlastYearDto
-            {
-                StartYear = year,
-                Label = PlastYear.Label(year),
-                Quarters = PlastYear.QuartersOf(year).Select(Quarter).ToList()
-            });
-        }
-
-        return years;
-    }
-
-    private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
-
+    private static IReadOnlyList<PlastYearDto> Years(IReadOnlyList<DuesCharge> charges, DuesQuarter current) =>
+        DuesMapping.Years(charges.Count == 0 ? current : DuesQuarter.FromIndex(charges.Min(c => c.Quarter)), current);
 }
