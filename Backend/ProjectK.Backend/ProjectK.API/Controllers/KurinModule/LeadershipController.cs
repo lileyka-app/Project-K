@@ -102,7 +102,7 @@ public class LeadershipController : ControllerBase
     /// Returns who has held an office over time.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("histories/{leadershipKey}")]
+    [HttpGet("histories/{leadershipKey:guid}")]
     [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
     [ProducesResponseType(typeof(IEnumerable<LeadershipHistoryMemberDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)

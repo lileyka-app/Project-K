@@ -43,7 +43,7 @@ public class GroupController : ControllerBase
     /// Returns one group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("{groupKey}")]
+    [HttpGet("{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
     [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -58,7 +58,7 @@ public class GroupController : ControllerBase
     /// Answers whether a group exists, without returning it.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("exists/{groupKey}")]
+    [HttpGet("exists/{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -173,7 +173,7 @@ public class GroupController : ControllerBase
     /// that провід's history stay in the kurin's archive.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpDelete("{groupKey}")]
+    [HttpDelete("{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Delete, "route:groupKey")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -189,7 +189,7 @@ public class GroupController : ControllerBase
     /// Lists the mentors assigned to a group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("{groupKey}/mentors")]
+    [HttpGet("{groupKey:guid}/mentors")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
     [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMentors(Guid groupKey)
@@ -203,7 +203,7 @@ public class GroupController : ControllerBase
     /// Lists mentor assignments across the whole kurin.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("groups/{kurinKey}/mentor-assignments")]
+    [HttpGet("groups/{kurinKey:guid}/mentor-assignments")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<MentorAssignmentDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKurinMentorAssignments(Guid kurinKey)
@@ -217,7 +217,7 @@ public class GroupController : ControllerBase
     /// Assigns a mentor to a group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpPost("{groupKey}/mentors/{mentorUserKey}")]
+    [HttpPost("{groupKey:guid}/mentors/{mentorUserKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     public async Task<IActionResult> AssignMentor(Guid groupKey, Guid mentorUserKey)
@@ -231,7 +231,7 @@ public class GroupController : ControllerBase
     /// Removes a mentor's assignment to a group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpDelete("{groupKey}/mentors/{mentorUserKey}")]
+    [HttpDelete("{groupKey:guid}/mentors/{mentorUserKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     public async Task<IActionResult> RevokeMentor(Guid groupKey, Guid mentorUserKey)

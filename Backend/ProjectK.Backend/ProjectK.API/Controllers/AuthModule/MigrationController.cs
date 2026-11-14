@@ -20,9 +20,9 @@ public class MigrationController : ControllerBase
 {
     private readonly IMediator _mediator;
 
-    public MigrationController(IMediator _mediator)
+    public MigrationController(IMediator mediator)
     {
-        this._mediator = _mediator;
+        _mediator = mediator;
     }
 
     /// <summary>

@@ -87,7 +87,7 @@ public class OnboardingController : ControllerBase
     /// The body is optional: a край in it overrides the one the applicant picked, and the kurin opens there.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("waitlist/{key}/approve")]
+    [HttpPost("waitlist/{key:guid}/approve")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -104,7 +104,7 @@ public class OnboardingController : ControllerBase
     /// The earlier token stops working, so a link forwarded to the wrong address goes dead.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("waitlist/{key}/resend-invitation")]
+    [HttpPost("waitlist/{key:guid}/resend-invitation")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     public async Task<IActionResult> ResendInvitation(Guid key)
     {
@@ -132,7 +132,7 @@ public class OnboardingController : ControllerBase
     /// Rejects a waitlist entry, optionally recording why.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("waitlist/{key}/reject")]
+    [HttpPost("waitlist/{key:guid}/reject")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     public async Task<IActionResult> RejectWaitlistEntry(Guid key, [FromBody] string? note)
     {

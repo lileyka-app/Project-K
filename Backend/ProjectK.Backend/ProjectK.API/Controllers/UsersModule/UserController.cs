@@ -66,7 +66,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetAccountSettings()
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -91,7 +91,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateAccountProfile([FromBody] UpdateAccountProfileRequestDto request)
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -112,7 +112,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ConfirmAccountEmailChange([FromBody] ConfirmAccountEmailChangeRequestDto request)
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -132,7 +132,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -152,7 +152,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ResetMfa([FromBody] ResetMfaRequestDto request)
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -175,7 +175,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> DisableMfa([FromBody] DisableMfaRequestDto request)
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -193,7 +193,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetTileLayouts()
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -212,7 +212,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SaveTileLayout(string boardKey, [FromBody] SaveTileLayoutRequestDto request)
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -232,7 +232,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ResetTileLayout(string boardKey)
     {
-        if (!TryGetCurrentUserKey(out var userKey))
+        if (this.UserKey() is not { } userKey)
         {
             return this.UnreadableIdentity();
         }
@@ -250,7 +250,7 @@ public class UserController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [EnableRateLimiting("AccountSecurityLimit")]
-    [HttpPost("{userId}/mfa/reset")]
+    [HttpPost("{userId:guid}/mfa/reset")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResetUserMfa(Guid userId)
@@ -267,7 +267,7 @@ public class UserController : ControllerBase
     /// An administrator cannot suspend their own account.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("{userId}/suspend")]
+    [HttpPost("{userId:guid}/suspend")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -281,7 +281,7 @@ public class UserController : ControllerBase
     /// Lets a suspended account sign in again. Administrators only.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpPost("{userId}/restore")]
+    [HttpPost("{userId:guid}/restore")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreUser(Guid userId)
@@ -294,7 +294,7 @@ public class UserController : ControllerBase
     /// Deletes an account. Administrators only.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
-    [HttpDelete("{userId}")]
+    [HttpDelete("{userId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUser(Guid userId)
@@ -313,7 +313,7 @@ public class UserController : ControllerBase
     /// endpoints, not here.
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
-    [HttpPost("{userId}/role")]
+    [HttpPost("{userId:guid}/role")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -327,11 +327,5 @@ public class UserController : ControllerBase
         var request = new ChangeUserRoleCommand(userId, newRole);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
-    }
-
-    private bool TryGetCurrentUserKey(out Guid userKey)
-    {
-        userKey = this.UserKey() ?? Guid.Empty;
-        return userKey != Guid.Empty;
     }
 }

@@ -43,7 +43,7 @@ public class MemberController : ControllerBase
     /// Returns one member.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("{memberKey}")]
+    [HttpGet("{memberKey:guid}")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
     [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
