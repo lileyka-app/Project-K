@@ -79,6 +79,11 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Зовнішня система | контракт у `Common/Contracts/`, реалізація в `Infrastructure/Services/<Concept>/` | тека за поняттям: `Email/`, не `EmailService/` |
 | Фонова служба | `Infrastructure/BackgroundServices/` | `…BackgroundService` |
 | Middleware, фільтр, кукі | `API/Middleware/`, `API/Filters/`, `API/Cookies/` | `…Middleware`, `…Filter`, `…Cookie` |
+| Реєстрація хоста, старт, налаштування хоста | `API/Hosting/` | `Add…` / `Use…` розширення, `…Options` |
+| Перевірка завантажених файлів | `API/Uploads/` | `…Rules`, розширення контролера |
+| Запит із файлом (`IFormFile` — у Common його не буває) | `API/Models/Requests/` | `…Request` |
+| Розширення контролера (`ToActionResult`, `UserKey`) | `API/Extensions/` | `…Extensions` |
+| Серіалізація, Swagger, політики авторизації | `API/Serialization/`, `API/Swagger/`, `API/Authorization/` | `…Converter`, `…Filter`, `…Policies` |
 | Налаштування | шар, який їх читає | `…Options` із `SectionName` |
 
 Якщо нового класу немає в цій таблиці — спершу допиши рядок сюди, потім заводь теку чи суфікс.
