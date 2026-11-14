@@ -1,5 +1,5 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 

@@ -4,11 +4,12 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 

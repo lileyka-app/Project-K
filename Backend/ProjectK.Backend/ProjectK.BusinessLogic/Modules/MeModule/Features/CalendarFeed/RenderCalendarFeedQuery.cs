@@ -3,23 +3,22 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.InfrastructureModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AgendaModule;
 using ProjectK.Common.Rules.AuthModule;
-using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
@@ -55,7 +54,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
     private readonly UserManager<AppUser> _userManager;
     private readonly MeAgendaScopes _scopes;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly IAgendaDirectory _agenda;
     private readonly IKraiProfileDirectory _profiles;
     private readonly TimeProvider _time;
     private readonly string _siteUrl;
@@ -65,7 +64,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         UserManager<AppUser> userManager,
         MeAgendaScopes scopes,
         IUnitOfWork unitOfWork,
-        IMemberDirectory members,
+        IAgendaDirectory agenda,
         IKraiProfileDirectory profiles,
         TimeProvider time,
         IOptions<EmailOptions> site)
@@ -74,7 +73,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         _userManager = userManager;
         _scopes = scopes;
         _unitOfWork = unitOfWork;
-        _members = members;
+        _agenda = agenda;
         _profiles = profiles;
         _time = time;
         _siteUrl = site.Value.BaseUrl.TrimEnd('/');
@@ -157,7 +156,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             : new Dictionary<Guid, string>();
         var tasks = items.Where(i => i.Kind == AgendaItemKind.Task).ToList();
         var roster = tasks.Count > 0
-            ? await AgendaRoster.LoadAsync(_unitOfWork, _members, kurinKey, tasks, cancellationToken)
+            ? await _agenda.GetRosterAsync(kurinKey, tasks, cancellationToken)
             : AgendaRoster.Empty;
         var answers = (await _unitOfWork.AgendaResponses.GetForUserAsync(
                 feed.UserId, items.Where(i => i.Kind == AgendaItemKind.Event).Select(i => i.AgendaItemKey).ToList(), from, to, cancellationToken))

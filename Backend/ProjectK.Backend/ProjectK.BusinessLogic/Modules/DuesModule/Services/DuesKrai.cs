@@ -1,8 +1,8 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 

@@ -6,7 +6,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 /// <summary>
 /// The kurin's own rights that a response carries with it. The agenda keeps its own
-/// (<see cref="AgendaAccess"/>) and the archive its reach (<see cref="ArchiveReach"/>), the same split as
+/// (<c>AgendaAccess</c>) and the archive its reach (<see cref="ArchiveReach"/>), the same split as
 /// the kurin's error catalogues.
 /// </summary>
 public static class KurinAccess

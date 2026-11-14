@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.AgendaModule;
 
 namespace ProjectK.Common.Dtos.ScoreModule;
 

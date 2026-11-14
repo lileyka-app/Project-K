@@ -1,14 +1,15 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
 
@@ -26,14 +27,14 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
     private readonly MeAgendaScopes _scopes;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IMemberDirectory _members;
+    private readonly IAgendaDirectory _agenda;
 
-    public GetMyTasksQueryHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, IMemberDirectory members)
+    public GetMyTasksQueryHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, IAgendaDirectory agenda)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
-        _members = members;
+        _agenda = agenda;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MyTaskDto>>> Handle(GetMyTasksQuery request, CancellationToken cancellationToken)
@@ -45,7 +46,7 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
             var kurin = MeKurinMapping.Ref(context.Membership, _currentUser.KurinKey);
             var scope = context.Viewer.ToScope();
             var items = (await _unitOfWork.AgendaItems.GetForViewerAsync(scope, null, null, onlyDated: false, kind: AgendaItemKind.Task, cancellationToken)).ToList();
-            var roster = await AgendaRoster.LoadAsync(_unitOfWork, _members, context.Membership.KurinKey, items, cancellationToken);
+            var roster = await _agenda.GetRosterAsync(context.Membership.KurinKey, items, cancellationToken);
             var viewer = context.Viewer;
 
             foreach (var item in items)
@@ -79,6 +80,6 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
         Status = status,
         StartUtc = item.StartUtc is { } start ? DateTime.SpecifyKind(start, DateTimeKind.Utc) : null,
         EndUtc = item.EndUtc is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null,
-        CanChangeStatus = kurin.IsCurrent && AgendaAccess.CanChangeStatus(item, viewer)
+        CanChangeStatus = kurin.IsCurrent && AgendaCompletionRules.CanChangeStatus(item, viewer)
     };
 }

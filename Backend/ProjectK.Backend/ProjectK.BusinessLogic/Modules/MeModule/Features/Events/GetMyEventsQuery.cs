@@ -1,15 +1,16 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
 
