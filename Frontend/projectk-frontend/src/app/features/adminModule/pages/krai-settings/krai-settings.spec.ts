@@ -109,7 +109,7 @@ describe('KraiSettingsComponent', () => {
     component.setOffered('ua-1', false);
     component.save();
 
-    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Профіль змінили, поки ти його редагував. Онови сторінку.' }));
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Профіль уже змінили. Онови сторінку.' }));
   });
 
   it('falls back to its own text for a code it does not know, never the server message', () => {

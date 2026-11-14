@@ -52,5 +52,5 @@ export const KRAI_ERROR_TEXT: Record<string, string> = {
   KraiNameTaken: 'Край з такою назвою вже є.',
   InvalidProfile: 'У профілі є неправильні значення.',
   ProfileTooLarge: 'Профіль завеликий.',
-  ProfileChanged: 'Профіль змінили, поки ти його редагував. Онови сторінку.'
+  ProfileChanged: 'Профіль уже змінили. Онови сторінку.'
 };
