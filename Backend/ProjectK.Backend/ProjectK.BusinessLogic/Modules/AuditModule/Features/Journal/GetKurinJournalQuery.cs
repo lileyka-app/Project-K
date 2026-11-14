@@ -11,6 +11,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
 
@@ -93,7 +94,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
             visibility = new JournalVisibility(ledGroups, self?.MemberKey);
         }
 
-        var take = Math.Clamp(request.Take, 1, GetKurinJournalQuery.MaxTake);
+        var take = PagingRules.Take(request.Take, GetKurinJournalQuery.MaxTake);
         var filter = new KurinJournalFilter(
             request.KurinKey,
             request.Area,
@@ -104,7 +105,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
             visibility);
 
         // One more than the page, to learn whether another follows without counting them all.
-        var entries = await _journal.ReadAsync(filter, Math.Max(0, request.Skip), take + 1, cancellationToken);
+        var entries = await _journal.ReadAsync(filter, PagingRules.Skip(request.Skip), take + 1, cancellationToken);
 
         return new ServiceResult<KurinJournalPageDto>(
             ResultType.Success,
