@@ -1,0 +1,98 @@
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup;
+
+public record InitializeSetupCommand(
+    string Email,
+    string Password,
+    string FirstName,
+    string LastName,
+    bool EnforcePrivilegedMfa = false,
+    bool SeedDemoData = false
+) : IRequest<ServiceResult<LoginUserDto>>;
+
+public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupCommand, ServiceResult<LoginUserDto>>
+{
+    // Guards against two concurrent initialize calls both passing the "no admins yet" check.
+    private static readonly SemaphoreSlim InitializationLock = new(1, 1);
+
+    private readonly UserManager<AppUser> _userManager;
+    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ISystemSettingsService _systemSettings;
+    private readonly IDemoDataSeeder _demoDataSeeder;
+
+    public InitializeSetupCommandHandler(
+        UserManager<AppUser> userManager,
+        ILoginResponseFactory loginResponseFactory,
+        ISystemSettingsService systemSettings,
+        IDemoDataSeeder demoDataSeeder)
+    {
+        _userManager = userManager;
+        _loginResponseFactory = loginResponseFactory;
+        _systemSettings = systemSettings;
+        _demoDataSeeder = demoDataSeeder;
+    }
+
+    public async Task<ServiceResult<LoginUserDto>> Handle(InitializeSetupCommand request, CancellationToken cancellationToken)
+    {
+        await InitializationLock.WaitAsync(cancellationToken);
+        try
+        {
+            var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
+            if (adminUsers.Any())
+            {
+                return ServiceResult<LoginUserDto>.Failure(
+                    ResultType.Forbidden,
+                    AuthErrors.AlreadyInitialized,
+                    "System is already initialized.");
+            }
+
+            var user = new AppUser
+            {
+                UserName = request.Email,
+                Email = request.Email,
+                EmailConfirmed = true,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                OnboardingStatus = OnboardingStatus.Active
+            };
+
+            var result = await _userManager.CreateAsync(user, request.Password);
+            if (!result.Succeeded)
+            {
+                return ServiceResult<LoginUserDto>.Failure(
+                    ResultType.BadRequest,
+                    AuthErrors.SetupFailed,
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            await _userManager.AddToRoleAsync(user, SystemRole.Admin);
+
+            await _systemSettings.SetValueAsync(
+                SystemSettingKeys.EnforcePrivilegedMfa,
+                request.EnforcePrivilegedMfa ? "true" : "false",
+                cancellationToken);
+
+            if (request.SeedDemoData)
+            {
+                await _demoDataSeeder.SeedAsync(cancellationToken);
+            }
+
+            var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+            return new ServiceResult<LoginUserDto>(ResultType.Success, response);
+        }
+        finally
+        {
+            InitializationLock.Release();
+        }
+    }
+}

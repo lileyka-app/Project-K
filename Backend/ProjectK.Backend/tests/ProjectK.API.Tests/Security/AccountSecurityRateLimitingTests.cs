@@ -2,8 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.UsersModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestPasswordReset;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 

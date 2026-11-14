@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Add;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Switch;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
@@ -128,7 +127,7 @@ public class SavedAccountHandlerTests
 
         factory = new Mock<ILoginResponseFactory>();
         factory.Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse
+            .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with
             {
                 UserKey = user.Id,
                 Email = user.Email!,

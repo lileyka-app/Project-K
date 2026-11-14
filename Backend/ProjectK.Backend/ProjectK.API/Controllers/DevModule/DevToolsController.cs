@@ -6,10 +6,8 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
 using ProjectK.API.Hosting;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.Impersonate;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.ImpersonateMember;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.Return;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -40,7 +38,7 @@ public class DevToolsController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("impersonate")]
-    [ProducesResponseType(typeof(DevImpersonationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DevImpersonationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Impersonate([FromBody] ImpersonateRoleRequest request)
     {
@@ -58,7 +56,7 @@ public class DevToolsController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("impersonate/member")]
-    [ProducesResponseType(typeof(DevImpersonationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DevImpersonationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ImpersonateMember([FromBody] ImpersonateMemberRequest request)
@@ -81,7 +79,7 @@ public class DevToolsController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("return")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Return([FromBody] ReturnFromImpersonationRequest request)
     {

@@ -5,16 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Suspend;
-using ProjectK.BusinessLogic.Modules.UsersModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -45,7 +38,14 @@ public class UserControllerTests
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "john.doe@example.com",
-                Role = "User"
+                Role = "User",
+                KurinNumber = null,
+                KurinBranch = null,
+                KurinBranches = null,
+                KurinNamedAfter = null,
+                KurinKraiCode = null,
+                TwoFactorEnabled = false,
+                IsSuspended = false
             },
             new UserDto
             {
@@ -54,7 +54,14 @@ public class UserControllerTests
                 FirstName = "Jane",
                 LastName = "Smith",
                 Email = "jane.smith@example.com",
-                Role = "Admin"
+                Role = "Admin",
+                KurinNumber = null,
+                KurinBranch = null,
+                KurinBranches = null,
+                KurinNamedAfter = null,
+                KurinKraiCode = null,
+                TwoFactorEnabled = false,
+                IsSuspended = false
             }
         };
         var serviceResult = new ServiceResult<IEnumerable<UserDto>>(ResultType.Success, users);
@@ -246,14 +253,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ChangeOwnPasswordCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.ChangePassword(request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<ChangeOwnPasswordCommand>(cmd =>
             cmd.UserKey == userKey &&
@@ -271,14 +278,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ResetOwnMfaCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.ResetMfa(request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<ResetOwnMfaCommand>(cmd =>
             cmd.UserKey == userKey &&
@@ -295,14 +302,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DisableOwnMfaCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.DisableMfa(request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<DisableOwnMfaCommand>(cmd =>
             cmd.UserKey == userKey &&
@@ -317,14 +324,14 @@ public class UserControllerTests
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ResetUserMfaCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         // Act
         var result = await _controller.ResetUserMfa(targetUserKey);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.True(Assert.IsType<bool>(okResult.Value));
+        Assert.Null(okResult.Value);
 
         _mediatorMock.Verify(m => m.Send(It.Is<ResetUserMfaCommand>(cmd =>
             cmd.TargetUserKey == targetUserKey), It.IsAny<CancellationToken>()), Times.Once);
@@ -336,7 +343,7 @@ public class UserControllerTests
         var targetUserKey = Guid.NewGuid();
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<SuspendUserCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         var result = await _controller.SuspendUser(targetUserKey);
 
@@ -351,7 +358,7 @@ public class UserControllerTests
         var targetUserKey = Guid.NewGuid();
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<RestoreUserCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<bool>(ResultType.Success, true));
+            .ReturnsAsync(new ServiceResult<Unit>(ResultType.Success, Unit.Value));
 
         var result = await _controller.RestoreUser(targetUserKey);
 

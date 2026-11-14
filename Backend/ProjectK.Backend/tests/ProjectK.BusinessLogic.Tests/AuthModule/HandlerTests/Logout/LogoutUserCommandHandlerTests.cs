@@ -1,6 +1,7 @@
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Enums;
@@ -94,7 +95,7 @@ public class LogoutUserCommandHandlerTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        Assert.Equal("User logged out successfully.", result.Data);
+        Assert.Equal(Unit.Value, result.Data);
         // Signing out ends this session only — the account may be signed in elsewhere.
         _refreshTokensMock.Verify(
             store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
@@ -236,7 +237,7 @@ public class LogoutUserCommandHandlerTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        Assert.Equal("User logged out successfully.", result.Data);
+        Assert.Equal(Unit.Value, result.Data);
         // Signing out ends this session only — the account may be signed in elsewhere.
         _refreshTokensMock.Verify(
             store => store.RevokeAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),

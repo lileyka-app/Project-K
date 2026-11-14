@@ -9,26 +9,14 @@ using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Set;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.LoadTest;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Add;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Get;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount.Switch;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaStatus;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos.AuthModule;
@@ -65,7 +53,7 @@ public class AuthController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("register/kurin")]
-    [ProducesResponseType(typeof(KurinFounderInvitation), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(KurinFounderInvitationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterKurin([FromBody] InviteKurinFounderCommand command)
@@ -85,7 +73,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("StrictAuthLimit")]
     [HttpPost("login")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Login([FromBody] LoginUserRequest request, [FromQuery] bool addAccount = false)
     {
         var command = new LoginUserCommand(request.Email, request.Password)
@@ -111,7 +99,7 @@ public class AuthController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("kurin-scope")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetKurinScope([FromBody] SetKurinScopeRequest request)
     {
         if (this.UserKey() is not { } userKey)
@@ -138,7 +126,7 @@ public class AuthController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("kurin-scope/options")]
-    [ProducesResponseType(typeof(IEnumerable<KurinScopeOption>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<KurinScopeOptionDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKurinScopeOptions()
     {
         if (this.UserKey() is not { } userKey)
@@ -209,7 +197,7 @@ public class AuthController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("logout")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()
     {
         var refreshTokens = RefreshTokenCookie.Read(Request);
@@ -267,7 +255,7 @@ public class AuthController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("accounts/switch")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SwitchAccount([FromBody] SwitchAccountRequest request)
     {
@@ -386,7 +374,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("mfa/login-verify")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequestDto request, [FromQuery] bool addAccount = false)
     {
         var command = new VerifyMfaLoginCommand(request.Email, request.Code, request.RememberMe, request.MfaToken);
@@ -413,7 +401,7 @@ public class AuthController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpGet("mfa/status")]
-    [ProducesResponseType(typeof(MfaStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MfaStatusDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMfaStatus()
     {
         var response = await _mediator.Send(new GetMfaStatusQuery());

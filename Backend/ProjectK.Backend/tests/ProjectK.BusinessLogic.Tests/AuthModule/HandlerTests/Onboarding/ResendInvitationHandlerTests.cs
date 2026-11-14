@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvitation;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;

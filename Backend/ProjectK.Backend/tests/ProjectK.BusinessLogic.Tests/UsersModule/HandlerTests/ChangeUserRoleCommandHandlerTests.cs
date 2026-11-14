@@ -1,7 +1,8 @@
 using FluentAssertions;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -44,7 +45,6 @@ public class ChangeUserRoleCommandHandlerTests
         var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Admin), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
-        result.Data.Should().BeFalse();
         _accessChanges.Verify(s => s.MarkUser(It.IsAny<Guid>()), Times.Never);
     }
 
@@ -61,7 +61,7 @@ public class ChangeUserRoleCommandHandlerTests
         var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Admin), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        result.Data.Should().BeTrue();
+        result.Data.Should().Be(Unit.Value);
         _userManagerMock.Verify(m => m.AddToRoleAsync(user, "Admin"), Times.Once);
         _accessChanges.Verify(s => s.MarkUser(targetUserId), Times.Once);
     }
@@ -80,7 +80,7 @@ public class ChangeUserRoleCommandHandlerTests
         var result = await _handler.Handle(new ChangeUserRoleCommand(targetUserId, UserRole.Member), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        result.Data.Should().BeTrue();
+        result.Data.Should().Be(Unit.Value);
         _userManagerMock.Verify(m => m.RemoveFromRoleAsync(user, "Admin"), Times.Once);
     }
 

@@ -6,23 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmEmailChange;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateProfile;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Save;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ChangeRole;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Suspend;
-using ProjectK.BusinessLogic.Modules.UsersModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 
@@ -127,7 +115,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("me/password")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
@@ -147,7 +135,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("me/mfa/reset")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ResetMfa([FromBody] ResetMfaRequestDto request)
@@ -170,7 +158,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("me/mfa/disable")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> DisableMfa([FromBody] DisableMfaRequestDto request)
@@ -228,7 +216,7 @@ public class UserController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("me/layouts/{boardKey}")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ResetTileLayout(string boardKey)
     {
@@ -251,7 +239,7 @@ public class UserController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("{userId:guid}/mfa/reset")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResetUserMfa(Guid userId)
     {
@@ -268,7 +256,7 @@ public class UserController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{userId:guid}/suspend")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SuspendUser(Guid userId)
@@ -282,7 +270,7 @@ public class UserController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("{userId:guid}/restore")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreUser(Guid userId)
     {
@@ -295,7 +283,7 @@ public class UserController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpDelete("{userId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUser(Guid userId)
     {
@@ -314,7 +302,7 @@ public class UserController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpPost("{userId:guid}/role")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangeUserRole(Guid userId, [FromBody] UserRole newRole)

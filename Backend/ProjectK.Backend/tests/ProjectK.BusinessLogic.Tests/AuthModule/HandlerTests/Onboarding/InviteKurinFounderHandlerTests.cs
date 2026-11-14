@@ -2,8 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
@@ -13,6 +12,7 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
@@ -90,7 +90,7 @@ public class InviteKurinFounderHandlerTests
         _entry.Email.Should().Be("founder@example.com");
         _entry.FirstName.Should().Be("Ореста");
         _entry.PhoneNumber.Should().Be("+380501234567");
-        result.Data.Should().Be(new KurinFounderInvitation(_openedKurin.KurinKey, _accountKey, "founder@example.com", InvitationSent: true));
+        result.Data.Should().Be(new KurinFounderInvitationDto(_openedKurin.KurinKey, _accountKey, "founder@example.com", InvitationSent: true));
     }
 
     [Fact]

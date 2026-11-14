@@ -1,5 +1,5 @@
 using FluentValidation.TestHelper;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Save;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;

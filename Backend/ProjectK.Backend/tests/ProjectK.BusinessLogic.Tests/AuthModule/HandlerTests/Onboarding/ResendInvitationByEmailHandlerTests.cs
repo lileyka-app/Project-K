@@ -1,8 +1,9 @@
 using FluentAssertions;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvitation;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -89,7 +90,7 @@ public sealed class ResendInvitationByEmailHandlerTests
             CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        result.Data.Should().BeTrue();
+        result.Data.Should().Be(Unit.Value);
         _emailService.Verify(service => service.SendInvitationEmailAsync(
             It.IsAny<string>(),
             It.IsAny<string>(),

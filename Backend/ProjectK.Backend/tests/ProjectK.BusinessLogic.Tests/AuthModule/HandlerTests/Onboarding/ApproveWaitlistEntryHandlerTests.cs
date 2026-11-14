@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;

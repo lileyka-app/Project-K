@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Identity;
-using ProjectK.Common.Models.Records;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Mfa;
 
@@ -34,7 +34,7 @@ public class MfaRecoveryCodesHandlerTests
             FirstName = "John",
             LastName = "Doe"
         };
-        var response = new LoginUserResponse { UserKey = user.Id, Email = user.Email };
+        var response = Logins.Empty with { UserKey = user.Id, Email = user.Email };
         var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
@@ -53,7 +53,8 @@ public class MfaRecoveryCodesHandlerTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        Assert.Same(response, result.Data);
+        Assert.Equal(response with { MfaTrust = result.Data!.MfaTrust }, result.Data);
+        Assert.NotNull(result.Data.MfaTrust);
         _userManagerMock.Verify(x => x.RedeemTwoFactorRecoveryCodeAsync(user, "recovery-code"), Times.Once);
     }
 
@@ -105,7 +106,7 @@ public class MfaRecoveryCodesHandlerTests
         var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
         loginResponseFactoryMock
             .Setup(x => x.CreateAsync(user, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new LoginUserResponse { UserKey = user.Id, Email = user.Email });
+            .ReturnsAsync(Logins.Empty with { UserKey = user.Id, Email = user.Email });
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
         _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.VerifyTwoFactorTokenAsync(user, provider, "123456")).ReturnsAsync(true);

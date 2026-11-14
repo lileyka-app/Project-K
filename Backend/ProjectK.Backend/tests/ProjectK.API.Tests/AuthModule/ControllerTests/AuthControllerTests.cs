@@ -5,16 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access.Check;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.RefreshToken.Refresh;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GetMfaSetup;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Login;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.Logout;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -45,9 +39,9 @@ public class AuthControllerTests
     {
         // The route takes no password any more: the founder chooses one on activation.
         var command = new InviteKurinFounderCommand("founder@example.com", "Kurin", "Founder", null, 1, null);
-        var invitation = new KurinFounderInvitation(Guid.NewGuid(), Guid.NewGuid(), command.Email, InvitationSent: true);
+        var invitation = new KurinFounderInvitationDto(Guid.NewGuid(), Guid.NewGuid(), command.Email, InvitationSent: true);
         _mediatorMock.Setup(m => m.Send(command, default))
-            .ReturnsAsync(new ServiceResult<KurinFounderInvitation>(ResultType.Created, invitation));
+            .ReturnsAsync(new ServiceResult<KurinFounderInvitationDto>(ResultType.Created, invitation));
 
         var result = await _controller.RegisterKurin(command);
 
@@ -72,7 +66,7 @@ public class AuthControllerTests
             }
         };
 
-        var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens });
+        var serviceResult = new ServiceResult<LoginUserDto>(ResultType.Success, Logins.Empty with { Tokens = tokens });
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
             .ReturnsAsync(serviceResult);
@@ -109,7 +103,7 @@ public class AuthControllerTests
         };
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
-            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens }));
+            .ReturnsAsync(new ServiceResult<LoginUserDto>(ResultType.Success, Logins.Empty with { Tokens = tokens }));
 
         // Act
         var result = await _controller.Login(request);
@@ -127,7 +121,7 @@ public class AuthControllerTests
     {
         // Arrange
         var request = new LoginUserRequest { Email = "bad@test.com", Password = "wrong" };
-        var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
+        var serviceResult = new ServiceResult<LoginUserDto>(ResultType.Unauthorized);
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
             .ReturnsAsync(serviceResult);
@@ -346,10 +340,10 @@ public class AuthControllerTests
                 Created = DateTime.UtcNow
             }
         };
-        var response = new LoginUserResponse { Email = request.Email, Tokens = tokens };
+        var response = Logins.Empty with { Email = request.Email, Tokens = tokens };
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
-            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, response));
+            .ReturnsAsync(new ServiceResult<LoginUserDto>(ResultType.Success, response));
 
         // Act
         var result = await _controller.VerifyMfaLogin(request);
@@ -372,7 +366,7 @@ public class AuthControllerTests
         var request = new MfaLoginRequestDto("user@example.com", "bad-code", false);
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
-            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Unauthorized));
+            .ReturnsAsync(new ServiceResult<LoginUserDto>(ResultType.Unauthorized));
 
         // Act
         var result = await _controller.VerifyMfaLogin(request);

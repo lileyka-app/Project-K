@@ -7,23 +7,13 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccount;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ApproveWaitlistEntry;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.GetWaitlistEntries;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RejectWaitlistEntry;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestPasswordReset;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResendInvitation;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvitationToken;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
-
 using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.API.Controllers.AuthModule;
@@ -122,12 +112,12 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("invitation/resend")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> ResendInvitationByEmail([FromBody] ResendInvitationByEmailCommand command)
     {
         var response = await _mediator.Send(command);
         return response.Type == ResultType.Success
-            ? Accepted(response.Data)
+            ? Accepted()
             : response.ToActionResult(this);
     }
 
@@ -164,7 +154,7 @@ public class OnboardingController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpGet("invitation/{token}/validate")]
-    [ProducesResponseType(typeof(InvitationValidationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(InvitationValidationDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateInvitationToken(string token)
     {
         var response = await _mediator.Send(new ValidateInvitationTokenQuery(token));
@@ -180,7 +170,7 @@ public class OnboardingController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("activate")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ActivateAccount([FromBody] ActivateAccountCommand command)
     {
         var response = await _mediator.Send(command);
@@ -202,7 +192,7 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("password-reset/request")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetCommand command)
     {
         var response = await _mediator.Send(command);
@@ -219,7 +209,7 @@ public class OnboardingController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("password-reset/reset")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
     {
         var response = await _mediator.Send(command);

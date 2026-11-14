@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope.Options;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

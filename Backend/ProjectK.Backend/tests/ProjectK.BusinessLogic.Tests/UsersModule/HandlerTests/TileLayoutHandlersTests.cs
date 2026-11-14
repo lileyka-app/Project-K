@@ -1,8 +1,5 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Get;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Save;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -171,10 +168,39 @@ public class TileLayoutHandlersTests
     }
 
     [Fact]
-    public void Serializer_RoundTrips()
+    public void Mapping_RoundTripsTheKeys()
     {
         var keys = new[] { "profile", "skills", "probes" };
-        var json = TileOrderSerializer.Serialize(keys);
-        Assert.Equal(keys, TileOrderSerializer.Deserialize(json));
+        var json = TileLayoutMapping.WriteKeys(keys);
+        Assert.Equal(keys, TileLayoutMapping.ReadKeys(json));
+    }
+
+    [Fact]
+    public void ApplyTo_WritesOnlyTheLayoutFields()
+    {
+        var owner = Guid.NewGuid();
+        var key = Guid.NewGuid();
+        var now = new DateTime(2026, 11, 14, 10, 0, 0, DateTimeKind.Utc);
+        var layout = new UserTileLayout
+        {
+            UserTileLayoutKey = key,
+            UserKey = owner,
+            BoardKey = TileBoardKeys.MemberCard,
+            TileOrderJson = "[\"old\"]",
+            HiddenTilesJson = "[]",
+            SchemaVersion = 1,
+            UpdatedAtUtc = now.AddDays(-1)
+        };
+        var request = new SaveTileLayoutCommand(Guid.NewGuid(), "another-board", ["profile", "skills"], ["probes"], 0);
+
+        request.ApplyTo(layout, now);
+
+        Assert.Equal(key, layout.UserTileLayoutKey);
+        Assert.Equal(owner, layout.UserKey);
+        Assert.Equal(TileBoardKeys.MemberCard, layout.BoardKey);
+        Assert.Equal(["profile", "skills"], TileLayoutMapping.ReadKeys(layout.TileOrderJson));
+        Assert.Equal(["probes"], TileLayoutMapping.ReadKeys(layout.HiddenTilesJson));
+        Assert.Equal(1, layout.SchemaVersion);
+        Assert.Equal(now, layout.UpdatedAtUtc);
     }
 }

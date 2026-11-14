@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Identity;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.Impersonate;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;

@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using ProjectK.API.Middleware;
+using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Models.Authorization;
 
@@ -88,6 +90,20 @@ public class PrivilegedMfaEnforcementMiddlewareTests
 
         Assert.False(nextCalled);
         Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldRefuseInTheStandardShape_WithAStableCode()
+    {
+        var context = CreateContext("/api/user/me", "KV.Zvyazkovyi", secondFactor: false);
+        context.Request.Method = HttpMethods.Put;
+
+        await Invoke(context, required: true);
+
+        context.Response.Body.Position = 0;
+        using var body = await JsonDocument.ParseAsync(context.Response.Body);
+        Assert.Equal(AuthErrors.PrivilegedMfaRequired, body.RootElement.GetProperty("error").GetString());
+        Assert.Equal("MFA is required for privileged accounts.", body.RootElement.GetProperty("message").GetString());
     }
 
     /// <summary>A token minted before the claim existed says nothing — and nothing is not a second factor.</summary>

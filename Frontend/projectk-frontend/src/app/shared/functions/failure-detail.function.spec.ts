@@ -3,13 +3,13 @@ import {
   failureDetail,
   FORBIDDEN_DETAIL,
   isMfaRequiredRefusal,
+  MFA_REQUIRED_CODE,
   MFA_REQUIRED_DETAIL,
-  MFA_REQUIRED_MESSAGE,
   RETRY_DETAIL
 } from './failure-detail.function';
 
 describe('failureDetail', () => {
-  const mfaRefusal = new HttpErrorResponse({ status: 403, error: { message: MFA_REQUIRED_MESSAGE } });
+  const mfaRefusal = new HttpErrorResponse({ status: 403, error: { error: MFA_REQUIRED_CODE } });
 
   it('names the missing second factor instead of asking to retry', () => {
     expect(isMfaRequiredRefusal(mfaRefusal)).toBe(true);
@@ -31,8 +31,8 @@ describe('failureDetail', () => {
     expect(failureDetail(undefined, 'Не вдалося. Спробуй ще раз.')).toBe('Не вдалося. Спробуй ще раз.');
   });
 
-  it('treats the MFA message as a refusal only on a 403', () => {
-    const wrongStatus = new HttpErrorResponse({ status: 401, error: { message: MFA_REQUIRED_MESSAGE } });
+  it('treats the MFA code as a refusal only on a 403', () => {
+    const wrongStatus = new HttpErrorResponse({ status: 401, error: { error: MFA_REQUIRED_CODE } });
 
     expect(isMfaRequiredRefusal(wrongStatus)).toBe(false);
   });

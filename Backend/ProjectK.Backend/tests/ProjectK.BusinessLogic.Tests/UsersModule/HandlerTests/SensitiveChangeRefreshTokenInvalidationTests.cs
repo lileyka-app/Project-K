@@ -1,14 +1,11 @@
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.EnableMfa;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangePassword;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.DisableMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ResetMfa;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -34,7 +31,7 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         _loginResponsesMock = new Mock<ILoginResponseFactory>();
         _loginResponsesMock
             .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse
+            .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with
             {
                 UserKey = user.Id,
                 Email = user.Email!,
@@ -70,7 +67,7 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        Assert.True(result.Data);
+        Assert.Equal(Unit.Value, result.Data);
         AssertEverySessionRevoked(user, Times.Once());
         _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
     }
@@ -94,7 +91,6 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.BadRequest, result.Type);
-        Assert.False(result.Data);
         AssertEverySessionRevoked(user, Times.Never());
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
     }
@@ -169,7 +165,7 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        Assert.True(result.Data);
+        Assert.Equal(Unit.Value, result.Data);
         AssertEverySessionRevoked(user, Times.Once());
         _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
     }
@@ -193,7 +189,6 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.Unauthorized, result.Type);
-        Assert.False(result.Data);
         AssertEverySessionRevoked(user, Times.Never());
         _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(It.IsAny<AppUser>(), It.IsAny<bool>()), Times.Never);
         _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(It.IsAny<AppUser>()), Times.Never);
@@ -291,7 +286,7 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        Assert.True(result.Data);
+        Assert.Equal(Unit.Value, result.Data);
         AssertEverySessionRevoked(user, Times.Once());
         _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(user, false), Times.Once);
         _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
@@ -322,7 +317,6 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.Forbidden, result.Type);
-        Assert.False(result.Data);
         AssertEverySessionRevoked(user, Times.Never());
         _userManagerMock.Verify(x => x.SetTwoFactorEnabledAsync(It.IsAny<AppUser>(), It.IsAny<bool>()), Times.Never);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
@@ -361,7 +355,7 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.Success, result.Type);
-        Assert.True(result.Data);
+        Assert.Equal(Unit.Value, result.Data);
         AssertEverySessionRevoked(targetUser, Times.Once());
         _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(targetUser), Times.Once);
         _userManagerMock.Verify(x => x.UpdateAsync(targetUser), Times.Once);
@@ -394,7 +388,6 @@ public class SensitiveChangeRefreshTokenInvalidationTests
 
         // Assert
         Assert.Equal(ResultType.Forbidden, result.Type);
-        Assert.False(result.Data);
         _userManagerMock.Verify(x => x.ResetAuthenticatorKeyAsync(It.IsAny<AppUser>()), Times.Never);
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<AppUser>()), Times.Never);
     }

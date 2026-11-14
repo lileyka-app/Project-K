@@ -2,9 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Extensions;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup.Get;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup.Initialize;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.API.Controllers.AuthModule;
 
@@ -36,7 +35,7 @@ public class SetupController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpGet("status")]
-    [ProducesResponseType(typeof(SetupStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SetupStatusDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStatus()
     {
         var response = await _mediator.Send(new GetSetupStatusQuery());
@@ -52,7 +51,7 @@ public class SetupController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("initialize")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Initialize([FromBody] InitializeSetupCommand command)
     {
