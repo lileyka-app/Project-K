@@ -1,12 +1,13 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
 
@@ -32,9 +33,9 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _time;
     private readonly IKraiProfileDirectory _profiles;
-    private readonly AgendaRsvpWriter _rsvps;
+    private readonly IAgendaRsvpWriter _rsvps;
 
-    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileDirectory profiles, AgendaRsvpWriter rsvps)
+    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileDirectory profiles, IAgendaRsvpWriter rsvps)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
@@ -52,7 +53,7 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
         }
 
         var context = (await _scopes.BuildAsync(cancellationToken)).FirstOrDefault(c => c.Membership.KurinKey == item.KurinKey);
-        if (context is null || !AgendaAccess.IsVisibleTo(item, context.Viewer))
+        if (context is null || !AgendaVisibilityRules.IsVisible(item, context.Viewer.ToScope()))
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, MeErrors.AgendaNotVisible, "You cannot respond to this event.");
         }

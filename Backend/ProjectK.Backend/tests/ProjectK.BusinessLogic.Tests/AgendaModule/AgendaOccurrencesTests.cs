@@ -1,0 +1,91 @@
+using FluentAssertions;
+using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Enums.AgendaModule;
+using ProjectK.Common.Rules.AgendaModule;
+
+namespace ProjectK.BusinessLogic.Tests.AgendaModule;
+
+public class AgendaOccurrencesTests
+{
+    // A Monday 16:00.
+    private static readonly DateTime SeriesStart = new(2026, 10, 5, 16, 0, 0, DateTimeKind.Utc);
+
+    private static AgendaItem OneOff() => new()
+    {
+        Kind = AgendaItemKind.Event,
+        StartUtc = DateTime.SpecifyKind(SeriesStart, DateTimeKind.Unspecified),
+        RecurrenceFrequency = RecurrenceFrequency.None
+    };
+
+    private static AgendaItem Weekly() => new()
+    {
+        Kind = AgendaItemKind.Event,
+        StartUtc = DateTime.SpecifyKind(SeriesStart, DateTimeKind.Unspecified),
+        EndUtc = DateTime.SpecifyKind(SeriesStart.AddHours(2), DateTimeKind.Unspecified),
+        RecurrenceFrequency = RecurrenceFrequency.Weekly,
+        RecurrenceInterval = 1,
+        RecurrenceByWeekday = 1 << (int)DayOfWeek.Monday
+    };
+
+    [Fact]
+    public void OneOff_WithoutOccurrence_ResolvesToNull()
+    {
+        AgendaOccurrenceRules.TryResolveKey(OneOff(), null, TimeZoneInfo.Utc, out var key).Should().BeTrue();
+        key.Should().BeNull();
+    }
+
+    [Fact]
+    public void OneOff_NamingItsOwnStart_ResolvesToNull()
+    {
+        AgendaOccurrenceRules.TryResolveKey(OneOff(), SeriesStart, TimeZoneInfo.Utc, out var key).Should().BeTrue();
+        key.Should().BeNull();
+    }
+
+    [Fact]
+    public void OneOff_NamingAnotherDay_IsRefused()
+    {
+        AgendaOccurrenceRules.TryResolveKey(OneOff(), SeriesStart.AddDays(1), TimeZoneInfo.Utc, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Series_WithoutOccurrence_IsRefused()
+    {
+        AgendaOccurrenceRules.TryResolveKey(Weekly(), null, TimeZoneInfo.Utc, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Series_OnARealOccurrence_ResolvesToThatStart()
+    {
+        var thirdMonday = SeriesStart.AddDays(14);
+
+        AgendaOccurrenceRules.TryResolveKey(Weekly(), thirdMonday, TimeZoneInfo.Utc, out var key).Should().BeTrue();
+
+        key.Should().Be(thirdMonday);
+        key!.Value.Kind.Should().Be(DateTimeKind.Utc);
+    }
+
+    [Fact]
+    public void Series_OnADayItDoesNotMeet_IsRefused()
+    {
+        AgendaOccurrenceRules.TryResolveKey(Weekly(), SeriesStart.AddDays(1), TimeZoneInfo.Utc, out _).Should().BeFalse();
+        AgendaOccurrenceRules.TryResolveKey(Weekly(), SeriesStart.AddDays(7).AddMinutes(30), TimeZoneInfo.Utc, out _).Should().BeFalse();
+        AgendaOccurrenceRules.TryResolveKey(Weekly(), SeriesStart.AddDays(-7), TimeZoneInfo.Utc, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Series_PastItsEnd_IsRefused()
+    {
+        var item = Weekly();
+        item.RecurrenceEndUtc = SeriesStart.AddDays(7);
+
+        AgendaOccurrenceRules.TryResolveKey(item, SeriesStart.AddDays(7), TimeZoneInfo.Utc, out _).Should().BeTrue();
+        AgendaOccurrenceRules.TryResolveKey(item, SeriesStart.AddDays(14), TimeZoneInfo.Utc, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void KeyOf_IsNullForOneOff_AndTheStartForSeries()
+    {
+        AgendaOccurrenceRules.KeyOf(OneOff(), SeriesStart).Should().BeNull();
+        AgendaOccurrenceRules.KeyOf(Weekly(), SeriesStart.AddDays(7)).Should().Be(SeriesStart.AddDays(7));
+    }
+}

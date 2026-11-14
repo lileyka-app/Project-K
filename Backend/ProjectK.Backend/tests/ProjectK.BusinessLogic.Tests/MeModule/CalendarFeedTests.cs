@@ -2,12 +2,14 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
@@ -16,15 +18,18 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
@@ -111,7 +116,7 @@ public class CalendarFeedTests
         userManager.Setup(m => m.FindByIdAsync(User.ToString())).ReturnsAsync(() => new AppUser { Id = User, OnboardingStatus = _status });
 
         return new RenderCalendarFeedQueryHandler(
-            _feeds.Object, userManager.Object, scopes, unitOfWork.Object, members.Object,
+            _feeds.Object, userManager.Object, scopes, unitOfWork.Object, new AgendaDirectory(unitOfWork.Object, members.Object, new OfficeDirectory(unitOfWork.Object)),
             new Mock<IKraiProfileDirectory>().Object, new FixedTimeProvider(Now),
             Options.Create(new EmailOptions { BaseUrl = "https://lileyka.app" }));
     }

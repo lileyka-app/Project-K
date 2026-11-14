@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
@@ -18,6 +19,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.DuesModule;
@@ -30,6 +32,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Options.AuthModule;
 using ProjectK.Common.Options.KraiModule;
 using ProjectK.Common.Options.KurinModule;
+using ProjectK.Common.Rules.AgendaModule;
 using ProjectK.Optimization.Extensions;
 
 namespace ProjectK.BusinessLogic;
@@ -77,6 +80,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentPermissions, CurrentPermissions>();
         services.AddScoped<IMemberFieldAccess, MemberFieldAccess>();
         services.AddScoped<IKurinTagVisibility, KurinTagVisibility>();
+        services.AddScoped<IKurinTagDirectory, KurinTagDirectory>();
         services.AddScoped<KraiProfileWriter>();
         services.AddScoped<IMfaEnforcementReader, MfaEnforcementReader>();
         services.AddScoped<ResourceAccessService>();
@@ -93,6 +97,7 @@ public static class DependencyInjection
         services.AddScoped<IKurinAudit, KurinAudit>();
 
         services.AddMemberModule();
+        services.AddAgendaModule();
         services.AddDuesModule();
         services.AddScoreModule();
         services.AddArchiveModule();
@@ -100,9 +105,6 @@ public static class DependencyInjection
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MemberCards>();
 
-        services.AddScoped<IAgendaAccess, AgendaAccess>();
-        services.AddScoped<AgendaStatusWriter>();
-        services.AddScoped<AgendaRsvpWriter>();
         services.AddScoped<KurinReportDataService>();
 
         services.AddScoped<INotificationService, NotificationService>();
@@ -113,8 +115,6 @@ public static class DependencyInjection
         services.AddScoped<IProgressCatalogReader, ProgressCatalogReader>();
         services.AddScoped<IKurinCatalog, KurinCatalog>();
 
-        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
-        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
@@ -125,6 +125,14 @@ public static class DependencyInjection
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
 
         return services;
+    }
+
+    private static void AddAgendaModule(this IServiceCollection services)
+    {
+        services.AddScoped<IAgendaAccess, AgendaAccess>();
+        services.AddScoped<AgendaStatusWriter>();
+        services.AddScoped<IAgendaRsvpWriter, AgendaRsvpWriter>();
+        services.AddScoped<IAgendaDirectory, AgendaDirectory>();
     }
 
     private static void AddDuesModule(this IServiceCollection services)
@@ -160,6 +168,8 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberImportWriter, MemberImportWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<MembershipMoves>();

@@ -2,6 +2,9 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.MemberModule;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.CommonTests;
 

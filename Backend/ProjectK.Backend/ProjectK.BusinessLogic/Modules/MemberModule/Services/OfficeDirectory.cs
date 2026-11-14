@@ -20,4 +20,32 @@ public sealed class OfficeDirectory : IOfficeDirectory
         CancellationToken cancellationToken = default)
         => await _unitOfWork.Leaderships.GetActiveOfficesForAccountInKurinAsync(
             userKey, kurinKey, cancellationToken);
+
+    public Task<IReadOnlyList<Guid>> GetLeadershipKeysForMemberAsync(
+        Guid memberKey,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Leaderships.GetActiveLeadershipKeysForMemberAsync(memberKey, cancellationToken);
+
+    public Task<IReadOnlyList<LeadershipRef>> GetLeadershipsInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Leaderships.GetLeadershipRefsForKurinAsync(kurinKey, cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetHolderMemberKeysAsync(
+        IReadOnlyCollection<Guid> leadershipKeys,
+        CancellationToken cancellationToken = default)
+    {
+        var holders = new Dictionary<Guid, IReadOnlyList<Guid>>();
+        foreach (var leadershipKey in leadershipKeys.Distinct())
+        {
+            holders[leadershipKey] = await _unitOfWork.Leaderships.GetActiveMemberKeysForLeadershipAsync(leadershipKey, cancellationToken);
+        }
+
+        return holders;
+    }
+
+    public Task<IReadOnlyList<Guid>> GetHolderAccountKeysAsync(
+        Guid leadershipKey,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Leaderships.GetActiveMemberUserKeysForLeadershipAsync(leadershipKey, cancellationToken);
 }

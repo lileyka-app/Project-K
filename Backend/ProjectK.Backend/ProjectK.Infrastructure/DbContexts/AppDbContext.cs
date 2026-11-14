@@ -1,18 +1,17 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.Infrastructure.DbContexts;
 

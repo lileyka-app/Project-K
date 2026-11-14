@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;

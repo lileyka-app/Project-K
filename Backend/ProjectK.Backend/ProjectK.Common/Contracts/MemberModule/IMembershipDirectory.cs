@@ -4,9 +4,9 @@ using ProjectK.Common.Records.MemberModule;
 namespace ProjectK.Common.Contracts.MemberModule;
 
 /// <summary>
-/// What the kurin module will tell others about a person's belonging. The counterpart of
+/// What the member module will tell others about a person's belonging. The counterpart of
 /// <c>IMemberDirectory</c>: that one answers "who is this person", this one answers "where have they
-/// been", and neither module reads the other's tables to do it.
+/// been", and no other module reads the membership table to do it.
 /// </summary>
 public interface IMembershipDirectory
 {
