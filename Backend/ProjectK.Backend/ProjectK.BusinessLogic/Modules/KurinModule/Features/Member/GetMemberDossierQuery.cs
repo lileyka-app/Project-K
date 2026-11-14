@@ -1,6 +1,5 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -18,7 +17,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 /// </summary>
 public sealed record GetMemberDossierQuery(
     Guid MemberKey,
-    IReadOnlyCollection<string> Include) : IRequest<ServiceResult<MemberDossierResponse>>;
+    IReadOnlyCollection<string> Include) : IRequest<ServiceResult<MemberDossierDto>>;
 
 /// <summary>
 /// Composes the dossier. Everything the member module owns is read once, from the person's own
@@ -27,12 +26,12 @@ public sealed record GetMemberDossierQuery(
 /// whole point of the shape: the same composition works when those modules answer over a network.
 /// </summary>
 public sealed class GetMemberDossierQueryHandler
-    : IRequestHandler<GetMemberDossierQuery, ServiceResult<MemberDossierResponse>>
+    : IRequestHandler<GetMemberDossierQuery, ServiceResult<MemberDossierDto>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberProgressDirectory _progress;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly ICurrentUserContext _currentUser;
 
@@ -40,25 +39,25 @@ public sealed class GetMemberDossierQueryHandler
         IMemberUnitOfWork unitOfWork,
         IMembershipDirectory memberships,
         IMemberProgressDirectory progress,
-        IMapper mapper,
+        IBlobReadLinks links,
         IMemberFieldAccess fieldAccess,
         ICurrentUserContext currentUser)
     {
         _unitOfWork = unitOfWork;
         _memberships = memberships;
         _progress = progress;
-        _mapper = mapper;
+        _links = links;
         _fieldAccess = fieldAccess;
         _currentUser = currentUser;
     }
 
-    public async Task<ServiceResult<MemberDossierResponse>> Handle(
+    public async Task<ServiceResult<MemberDossierDto>> Handle(
         GetMemberDossierQuery request,
         CancellationToken cancellationToken)
     {
         if (request.MemberKey == Guid.Empty)
         {
-            return ServiceResult<MemberDossierResponse>.Failure(
+            return ServiceResult<MemberDossierDto>.Failure(
                 ResultType.BadRequest,
                 "MemberKeyRequired",
                 "MemberKey cannot be empty.");
@@ -70,7 +69,7 @@ public sealed class GetMemberDossierQueryHandler
 
         if (unknown.Count > 0)
         {
-            return ServiceResult<MemberDossierResponse>.Failure(
+            return ServiceResult<MemberDossierDto>.Failure(
                 ResultType.BadRequest,
                 "UnknownDossierFolder",
                 $"No such folder: {string.Join(", ", unknown)}. Known folders: {string.Join(", ", MemberDossierFolders.All)}.");
@@ -79,12 +78,12 @@ public sealed class GetMemberDossierQueryHandler
         var person = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (person is null)
         {
-            return new ServiceResult<MemberDossierResponse>(ResultType.NotFound);
+            return new ServiceResult<MemberDossierDto>(ResultType.NotFound);
         }
 
         // The person's own record already carries everything the member module keeps about them,
         // and mapping it reuses the profile's own photo and history mapping rather than repeating it.
-        var mapped = _mapper.Map<MemberResponse>(person);
+        var mapped = person.ToDto(_links);
 
         var wants = new HashSet<string>(request.Include, StringComparer.OrdinalIgnoreCase);
 
@@ -109,11 +108,10 @@ public sealed class GetMemberDossierQueryHandler
         var progressCount = progress?.Count
             ?? await _progress.CountForMemberAsync(request.MemberKey, cancellationToken);
 
-        return new ServiceResult<MemberDossierResponse>(
+        return new ServiceResult<MemberDossierDto>(
             ResultType.Success,
-            new MemberDossierResponse
-            {
-                Profile = new MemberDossierProfile(
+            new MemberDossierDto(
+                Profile: new MemberDossierProfileDto(
                     person.MemberKey,
                     isSelf ? person.PublicId : null,
                     person.UserKey,
@@ -125,7 +123,7 @@ public sealed class GetMemberDossierQueryHandler
                     mapped.LatestPlastLevel,
                     person.ProfileVerificationStatus,
                     person.ProfileVerifiedAtUtc),
-                Folders =
+                Folders:
                 [
                     new(MemberDossierFolders.Memberships, membershipCount),
                     new(MemberDossierFolders.Offices, mapped.LeadershipHistories.Count),
@@ -134,21 +132,20 @@ public sealed class GetMemberDossierQueryHandler
                     new(MemberDossierFolders.Warnings, mapped.Warnings.Count),
                     new(MemberDossierFolders.Progress, progressCount)
                 ],
-                Memberships = memberships?.Select(m => m.InLineOf(LevelsOf(person))).ToList(),
-                Offices = wants.Contains(MemberDossierFolders.Offices)
+                Memberships: memberships?.Select(m => m.InLineOf(LevelsOf(person))).ToList(),
+                Offices: wants.Contains(MemberDossierFolders.Offices)
                     ? [.. mapped.LeadershipHistories]
                     : null,
-                Levels = wants.Contains(MemberDossierFolders.Levels)
+                Levels: wants.Contains(MemberDossierFolders.Levels)
                     ? [.. mapped.PlastLevelHistories]
                     : null,
-                Awards = wants.Contains(MemberDossierFolders.Awards)
+                Awards: wants.Contains(MemberDossierFolders.Awards)
                     ? [.. mapped.Awards]
                     : null,
-                Warnings = wants.Contains(MemberDossierFolders.Warnings)
+                Warnings: wants.Contains(MemberDossierFolders.Warnings)
                     ? [.. mapped.Warnings]
                     : null,
-                Progress = progress
-            });
+                Progress: progress));
     }
 
     /// <summary>Every ступінь on record and the latest one, which an older record may hold alone.</summary>

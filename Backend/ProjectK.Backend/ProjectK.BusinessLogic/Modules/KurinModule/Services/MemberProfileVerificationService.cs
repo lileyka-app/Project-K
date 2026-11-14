@@ -1,7 +1,7 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
@@ -21,7 +21,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IUnitOfWork _kurinData;
     private readonly IMembershipRepository _memberships;
@@ -32,7 +32,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMapper mapper,
+        IBlobReadLinks links,
         IResourceScopeReader scopeReader,
         IUnitOfWork kurinData,
         IMemberFieldAccess fieldAccess,
@@ -43,13 +43,13 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
-        _mapper = mapper;
+        _links = links;
         _scopeReader = scopeReader;
         _kurinData = kurinData;
         _memberships = kurinData.Memberships;
     }
 
-    public async Task<ServiceResult<MemberResponse>> VerifyAsync(
+    public async Task<ServiceResult<MemberDto>> VerifyAsync(
         Guid memberKey,
         string? note,
         CancellationToken cancellationToken)
@@ -80,7 +80,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         return result;
     }
 
-    public async Task<ServiceResult<MemberResponse>> ResetAsync(
+    public async Task<ServiceResult<MemberDto>> ResetAsync(
         Guid memberKey,
         CancellationToken cancellationToken)
     {
@@ -107,16 +107,16 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     }
 
     /// <summary>Refuses what may not be done, or answers with the гурток the person is placed in.</summary>
-    private async Task<(ServiceResult<MemberResponse>? Failure, Guid? GroupKey)> ValidateAsync(MemberEntity? member, CancellationToken cancellationToken)
+    private async Task<(ServiceResult<MemberDto>? Failure, Guid? GroupKey)> ValidateAsync(MemberEntity? member, CancellationToken cancellationToken)
     {
         if (!_currentUserContext.UserId.HasValue)
         {
-            return (new ServiceResult<MemberResponse>(ResultType.Unauthorized), null);
+            return (new ServiceResult<MemberDto>(ResultType.Unauthorized), null);
         }
 
         if (member is null)
         {
-            return (new ServiceResult<MemberResponse>(ResultType.NotFound), null);
+            return (new ServiceResult<MemberDto>(ResultType.NotFound), null);
         }
 
         // Whether profiles are checked at all is the asking kurin's own setting, and it is that
@@ -128,7 +128,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
 
         if (here is null)
         {
-            return (ServiceResult<MemberResponse>.Failure(
+            return (ServiceResult<MemberDto>.Failure(
                 ResultType.BadRequest,
                 "MemberBelongsNowhere",
                 "This person does not currently belong to a kurin."), null);
@@ -137,7 +137,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         var kurin = await _kurinData.Kurins.GetByKeyAsync(here.KurinKey, cancellationToken);
         if (kurin is null || !kurin.ProfileVerificationEnabled)
         {
-            return (ServiceResult<MemberResponse>.Failure(
+            return (ServiceResult<MemberDto>.Failure(
                 ResultType.BadRequest,
                 "ProfileVerificationDisabled",
                 "Profile verification is disabled for this kurin."), null);
@@ -145,7 +145,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
 
         if (member.UserKey.HasValue && member.UserKey.Value == _currentUserContext.UserId.Value)
         {
-            return (new ServiceResult<MemberResponse>(ResultType.Forbidden), null);
+            return (new ServiceResult<MemberDto>(ResultType.Forbidden), null);
         }
 
         if (await CanVerifyAsync(here, cancellationToken))
@@ -153,7 +153,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
             return (null, here.GroupKey);
         }
 
-        return (new ServiceResult<MemberResponse>(ResultType.Forbidden), null);
+        return (new ServiceResult<MemberDto>(ResultType.Forbidden), null);
     }
 
     private async Task<bool> CanVerifyAsync(MembershipEntity here, CancellationToken cancellationToken)
@@ -185,17 +185,17 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         return ledGroups.Contains(here.GroupKey.Value);
     }
 
-    private async Task<ServiceResult<MemberResponse>> SaveAsync(MemberEntity member, Guid? groupKey, CancellationToken cancellationToken)
+    private async Task<ServiceResult<MemberDto>> SaveAsync(MemberEntity member, Guid? groupKey, CancellationToken cancellationToken)
     {
         _unitOfWork.Members.Update(member, cancellationToken);
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<MemberResponse>(ResultType.InternalServerError);
+            return new ServiceResult<MemberDto>(ResultType.InternalServerError);
         }
 
         var mask = await _fieldAccess.ForViewerAsync(cancellationToken);
-        return new ServiceResult<MemberResponse>(ResultType.Success, _mapper.Map<MemberResponse>(member).MaskFor(mask, groupKey));
+        return new ServiceResult<MemberDto>(ResultType.Success, member.ToDto(_links).MaskFor(mask, groupKey));
     }
 
     private Task RecordAsync(

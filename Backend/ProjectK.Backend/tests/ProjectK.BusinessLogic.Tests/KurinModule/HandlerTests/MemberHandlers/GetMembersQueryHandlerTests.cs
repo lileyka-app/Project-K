@@ -1,16 +1,12 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Members;
@@ -22,7 +18,7 @@ public class GetMembersHandlerTests
     private readonly Mock<IMemberUnitOfWork> _uowMock;
     private readonly Mock<IMemberRepository> _memberRepoMock;
     private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly GetMembersQueryHandler _handler;
 
@@ -36,16 +32,7 @@ public class GetMembersHandlerTests
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true); // Allow all by default for tests
 
-        var loggerFactory = LoggerFactory.Create(builder => { });
-
-        var mapperConfig = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = mapperConfig.CreateMapper();
-
-        _handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, FieldAccess.SeesEverything(), Mock.Of<IKurinTagVisibility>());
+        _handler = new GetMembersQueryHandler(_uowMock.Object, FakeBlobReadLinks.Instance, FieldAccess.SeesEverything(), Mock.Of<IKurinTagVisibility>());
     }
 
     private static MemberListItemDto MakeItem(Guid groupKey, Guid kurinKey, string first, string last,
@@ -202,7 +189,7 @@ public class GetMembersHandlerTests
         var result = await _handler.Handle(new GetMembersQuery(groupKey, Guid.Empty), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        var direct = _mapper.Map<IEnumerable<MemberResponse>>(members);
+        var direct = members.Select(member => member.ToDto(FakeBlobReadLinks.Instance)).ToList();
         result.Data.Should().BeEquivalentTo(direct);
     }
 
@@ -233,7 +220,7 @@ public class GetMembersHandlerTests
                 [MemberDataGroup.Birthday] = CapabilityReach.Kurin
             },
             [ownGroup]);
-        var handler = new GetMembersQueryHandler(_uowMock.Object, _mapper, FieldAccess.Of(mask), Mock.Of<IKurinTagVisibility>());
+        var handler = new GetMembersQueryHandler(_uowMock.Object, FakeBlobReadLinks.Instance, FieldAccess.Of(mask), Mock.Of<IKurinTagVisibility>());
 
         var result = (await handler.Handle(new GetMembersQuery(Guid.Empty, kurinKey), CancellationToken.None)).Data!.ToList();
 

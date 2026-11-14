@@ -1,13 +1,13 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 
-public class GetLeadershipByKeyQuery : IRequest<ServiceResult<LeadershipResponse>>
+public class GetLeadershipByKeyQuery : IRequest<ServiceResult<LeadershipDto>>
 {
     public Guid LeadershipKey { get; }
     public GetLeadershipByKeyQuery(Guid leadershipKey)
@@ -16,24 +16,24 @@ public class GetLeadershipByKeyQuery : IRequest<ServiceResult<LeadershipResponse
     }
 }
 
-public class GetLeadershipByKeyQueryHandler : IRequestHandler<GetLeadershipByKeyQuery, ServiceResult<LeadershipResponse>>
+public class GetLeadershipByKeyQueryHandler : IRequestHandler<GetLeadershipByKeyQuery, ServiceResult<LeadershipDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
-    public GetLeadershipByKeyQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    private readonly IBlobReadLinks _links;
+    public GetLeadershipByKeyQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
     }
 
-    public async Task<ServiceResult<LeadershipResponse>> Handle(GetLeadershipByKeyQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LeadershipDto>> Handle(GetLeadershipByKeyQuery request, CancellationToken cancellationToken)
     {
         var leadership = await _unitOfWork.Leaderships.GetByKeyAsync(request.LeadershipKey, cancellationToken);
         if (leadership == null)
         {
-            return new ServiceResult<LeadershipResponse>(ResultType.NotFound);
+            return new ServiceResult<LeadershipDto>(ResultType.NotFound);
         }
-        var response = _mapper.Map<LeadershipResponse>(leadership);
-        return new ServiceResult<LeadershipResponse>(ResultType.Success, response);
+        var response = leadership.ToDto(_links);
+        return new ServiceResult<LeadershipDto>(ResultType.Success, response);
     }
 }

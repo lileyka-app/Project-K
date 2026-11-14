@@ -438,7 +438,7 @@ public class MembershipRequestTests
 
     private void Senior(Guid kurinKey) => _branches[kurinKey] = KurinBranch.USP;
 
-    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.BusinessLogic.Modules.KurinModule.Models.MembershipRequestSent>> AskFromB(
+    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.Common.Models.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
         MembershipRequestKind kind, MembershipKind as_ = MembershipKind.Youth, Guid? from = null) =>
         Create().Handle(new CreateMembershipRequestCommand(_kurinB, Code, null, kind, as_, from), default);
 

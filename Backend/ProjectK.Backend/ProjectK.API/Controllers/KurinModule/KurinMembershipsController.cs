@@ -60,7 +60,7 @@ public class KurinMembershipsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("candidate")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Create, "route:kurinKey", ResourceType.Kurin)]
-    [ProducesResponseType(typeof(MembershipCandidate), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MembershipCandidateDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> FindCandidate(Guid kurinKey, [FromQuery] string publicId)

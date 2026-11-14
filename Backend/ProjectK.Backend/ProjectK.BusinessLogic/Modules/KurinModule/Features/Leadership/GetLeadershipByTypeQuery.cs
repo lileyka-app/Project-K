@@ -1,13 +1,13 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 
-public class GetLeadershipByTypeQuery : IRequest<ServiceResult<LeadershipResponse>>
+public class GetLeadershipByTypeQuery : IRequest<ServiceResult<LeadershipDto>>
 {
     public LeadershipType LeadershipType { get; }
     public Guid TypeKey { get; }
@@ -18,18 +18,18 @@ public class GetLeadershipByTypeQuery : IRequest<ServiceResult<LeadershipRespons
     }
 }
 
-public class GetLeadershipByTypeQueryHandler : IRequestHandler<GetLeadershipByTypeQuery, ServiceResult<LeadershipResponse>>
+public class GetLeadershipByTypeQueryHandler : IRequestHandler<GetLeadershipByTypeQuery, ServiceResult<LeadershipDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
 
-    public GetLeadershipByTypeQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public GetLeadershipByTypeQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
     }
 
-    public async Task<ServiceResult<LeadershipResponse>> Handle(GetLeadershipByTypeQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LeadershipDto>> Handle(GetLeadershipByTypeQuery request, CancellationToken cancellationToken)
     {
         var leadership = await _unitOfWork.Leaderships.GetAllByTypeAsync(request.LeadershipType, request.TypeKey, cancellationToken);
         var currentLeadership = leadership.Where(l => l.EndDate == null);
@@ -37,8 +37,8 @@ public class GetLeadershipByTypeQueryHandler : IRequestHandler<GetLeadershipByTy
         {
             throw new ArgumentOutOfRangeException(nameof(request), "Multiple leaderships found for the given type and key.");
         }
-        LeadershipResponse leadershipResponse = _mapper.Map<LeadershipResponse>(currentLeadership.FirstOrDefault());
-        return new ServiceResult<LeadershipResponse>(
+        var leadershipResponse = currentLeadership.FirstOrDefault()?.ToDto(_links);
+        return new ServiceResult<LeadershipDto>(
             ResultType.Success,
             leadershipResponse);
     }

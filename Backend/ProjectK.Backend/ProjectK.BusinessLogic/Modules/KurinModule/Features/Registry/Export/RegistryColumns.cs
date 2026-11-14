@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
@@ -20,7 +20,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 /// </summary>
 internal static class RegistryColumns
 {
-    private sealed record Column(string Header, Func<MemberResponse, SheetCell> ReadCell);
+    private sealed record Column(string Header, Func<MemberDto, SheetCell> ReadCell);
 
     private static readonly IReadOnlyDictionary<string, Column> Named =
         new Dictionary<string, Column>(StringComparer.Ordinal)
@@ -56,7 +56,7 @@ internal static class RegistryColumns
     }
 
     /// <summary>This person's value in that column. <paramref name="tagNames"/> names the kurin's tags.</summary>
-    public static SheetCell Read(string columnId, MemberResponse member, IReadOnlyDictionary<Guid, string> tagNames)
+    public static SheetCell Read(string columnId, MemberDto member, IReadOnlyDictionary<Guid, string> tagNames)
     {
         if (columnId == Tags)
         {

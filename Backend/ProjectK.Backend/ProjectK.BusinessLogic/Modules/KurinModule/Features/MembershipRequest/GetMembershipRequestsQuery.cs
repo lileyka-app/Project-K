@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -14,10 +14,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 /// A kurin's requests both ways: those its Звʼязковий has to answer, and those it sent. The person is
 /// named on both sides — the answering kurin knows them, and the asking one was handed their code.
 /// </summary>
-public sealed record GetMembershipRequestsQuery(Guid KurinKey) : IRequest<ServiceResult<MembershipRequestsResponse>>;
+public sealed record GetMembershipRequestsQuery(Guid KurinKey) : IRequest<ServiceResult<MembershipRequestsDto>>;
 
 public sealed class GetMembershipRequestsQueryHandler
-    : IRequestHandler<GetMembershipRequestsQuery, ServiceResult<MembershipRequestsResponse>>
+    : IRequestHandler<GetMembershipRequestsQuery, ServiceResult<MembershipRequestsDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -39,22 +39,22 @@ public sealed class GetMembershipRequestsQueryHandler
         _time = time;
     }
 
-    public async Task<ServiceResult<MembershipRequestsResponse>> Handle(GetMembershipRequestsQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MembershipRequestsDto>> Handle(GetMembershipRequestsQuery request, CancellationToken cancellationToken)
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<MembershipRequestsResponse>(ResultType.Forbidden);
+            return new ServiceResult<MembershipRequestsDto>(ResultType.Forbidden);
         }
 
         var requests = await _unitOfWork.MembershipRequests.GetForKurinAsync(request.KurinKey, cancellationToken);
         var names = (await _members.GetByKeysAsync(requests.Select(r => r.MemberKey).Distinct().ToList(), cancellationToken))
             .ToDictionary(m => m.MemberKey, m => m.FullName);
 
-        var kurins = new Dictionary<Guid, MembershipRequestKurin>();
+        var kurins = new Dictionary<Guid, MembershipRequestKurinDto>();
         foreach (var kurinKey in requests.SelectMany(r => r.FromKurinKey is { } from ? new[] { from, r.ToKurinKey } : new[] { r.ToKurinKey }).Distinct())
         {
             var kurin = await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
-            kurins[kurinKey] = MembershipRequestKurin.Of(kurinKey, kurin);
+            kurins[kurinKey] = kurin.ToRequestKurinDto(kurinKey);
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -82,7 +82,7 @@ public sealed class GetMembershipRequestsQueryHandler
             (answering ? incoming : outgoing).Add(dto);
         }
 
-        return new ServiceResult<MembershipRequestsResponse>(ResultType.Success, new MembershipRequestsResponse(incoming, outgoing));
+        return new ServiceResult<MembershipRequestsDto>(ResultType.Success, new MembershipRequestsDto(incoming, outgoing));
     }
 
     private static string StatusOf(RequestEntity request, DateTime now) =>

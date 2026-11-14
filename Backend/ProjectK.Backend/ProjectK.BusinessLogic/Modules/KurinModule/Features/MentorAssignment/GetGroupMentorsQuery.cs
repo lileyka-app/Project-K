@@ -1,5 +1,6 @@
-using AutoMapper;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using MediatR;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -14,13 +15,13 @@ public class GetGroupMentorsQueryHandler : IRequestHandler<GetGroupMentorsQuery,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
 
-    public GetGroupMentorsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IMapper mapper)
+    public GetGroupMentorsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBlobReadLinks links)
     {
         _unitOfWork = unitOfWork;
         _members = members;
-        _mapper = mapper;
+        _links = links;
     }
 
     public async Task<ServiceResult<IEnumerable<MemberLookupDto>>> Handle(GetGroupMentorsQuery request, CancellationToken cancellationToken)
@@ -43,7 +44,7 @@ public class GetGroupMentorsQueryHandler : IRequestHandler<GetGroupMentorsQuery,
             .Select(g => g.First())
             .ToList();
 
-        var response = _mapper.Map<IEnumerable<MemberLookupDto>>(uniqueMentors);
+        var response = uniqueMentors.Select(mentor => mentor.ToLookupDto(_links)).ToList();
         return new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, response);
     }
 }

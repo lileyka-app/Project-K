@@ -1,18 +1,21 @@
-using ProjectK.Common.Models.Members;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
+using ProjectK.Common.Models.Records;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
+namespace ProjectK.Common.Models.Dtos.KurinModule;
 
-public class MemberResponse : IHasParentContacts, IMemberPersonalData, IHasCardExtras
+/// <summary>
+/// A person as a card or a roster shows them. The members every read fills are <c>required</c>;
+/// the rest are filled afterwards by whoever knows them — the placement, the mask, the tags.
+/// </summary>
+public sealed record MemberDto : IHasParentContacts, IMemberPersonalData, IHasCardExtras
 {
-    public Guid MemberKey { get; set; }
+    public required Guid MemberKey { get; set; }
 
     /// <summary>
     /// The code a person hands to another kurin's провід so it can take them in. Only ever filled
-    /// in for the person themselves — see <c>MemberResponseMasking</c>, which clears it for everyone else.
+    /// in for the person themselves — <c>MemberMapping.MaskFor</c> clears it for everyone else.
     /// </summary>
     public string? PublicId { get; set; }
     public Guid GroupKey { get; set; }
@@ -39,7 +42,7 @@ public class MemberResponse : IHasParentContacts, IMemberPersonalData, IHasCardE
 
     /// <summary>The same гуртки with their keys, so the card can open them. Filled only by the read of one person.</summary>
     public ICollection<GroupRef> MentoredGroups { get; set; } = [];
-    public Guid? UserKey { get; set; }
+    public required Guid? UserKey { get; set; }
 
     /// <summary>
     /// Where their account stands — whether the invitation is still waiting to be accepted. Filled
@@ -59,20 +62,20 @@ public class MemberResponse : IHasParentContacts, IMemberPersonalData, IHasCardE
     /// </summary>
     public bool? InvitationSent { get; set; }
     public string? UserRole { get; set; }
-    public string FirstName { get; set; }
-    public string MiddleName { get; set; }
-    public string LastName { get; set; }
-    public string Email { get; set; }
-    public string PhoneNumber { get; set; }
-    public DateOnly? DateOfBirth { get; set; }
+    public required string FirstName { get; set; }
+    public required string? MiddleName { get; set; }
+    public required string LastName { get; set; }
+    public required string Email { get; set; }
+    public required string PhoneNumber { get; set; }
+    public required DateOnly? DateOfBirth { get; set; }
 
     /// <inheritdoc />
     public string? Birthday { get; set; }
 
     /// <inheritdoc />
     public IReadOnlyList<string> HiddenData { get; set; } = [];
-    public string? Address { get; set; }
-    public string? School { get; set; }
+    public required string? Address { get; set; }
+    public required string? School { get; set; }
     public string? MotherFirstName { get; set; }
     public string? MotherLastName { get; set; }
     public string? MotherPhone { get; set; }
@@ -82,14 +85,14 @@ public class MemberResponse : IHasParentContacts, IMemberPersonalData, IHasCardE
 
     /// <summary>Values of the край's own card fields, by key; empty when the viewer may not see them.</summary>
     public IDictionary<string, string> CardExtras { get; set; } = new Dictionary<string, string>();
-    public PlastLevel? LatestPlastLevel { get; set; }
-    public ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; } = [];
-    public ICollection<LeadershipHistoryDto> LeadershipHistories { get; set; } = [];
-    public ICollection<MemberWarningDto> Warnings { get; set; } = [];
+    public required PlastLevel? LatestPlastLevel { get; set; }
+    public required ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; }
+    public required ICollection<LeadershipHistoryDto> LeadershipHistories { get; set; }
+    public required ICollection<MemberWarningDto> Warnings { get; set; }
     public ICollection<MemberAwardDto> Awards { get; set; } = [];
-    public string? ProfilePhotoUrl { get; set; }
-    public MemberProfileVerificationStatus ProfileVerificationStatus { get; set; }
-    public DateTime? ProfileVerifiedAtUtc { get; set; }
-    public Guid? ProfileVerifiedByUserKey { get; set; }
-    public string? ProfileVerificationNote { get; set; }
+    public required string? ProfilePhotoUrl { get; set; }
+    public required MemberProfileVerificationStatus ProfileVerificationStatus { get; set; }
+    public required DateTime? ProfileVerifiedAtUtc { get; set; }
+    public required Guid? ProfileVerifiedByUserKey { get; set; }
+    public required string? ProfileVerificationNote { get; set; }
 }

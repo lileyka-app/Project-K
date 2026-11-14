@@ -1,4 +1,3 @@
-using AutoMapper;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 using MediatR;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
@@ -66,7 +65,6 @@ public class UpsertMemberProfileCommandHandler
     // which гурток is meant and telling it where the person now stands.
     private readonly IUnitOfWork _kurinData;
     private readonly IMembershipRepository _memberships;
-    private readonly IMapper _mapper;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IAccountProvisioningService _accounts;
@@ -84,7 +82,6 @@ public class UpsertMemberProfileCommandHandler
     public UpsertMemberProfileCommandHandler(
         IMemberUnitOfWork unitOfWork,
         IUnitOfWork kurinData,
-        IMapper mapper,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IAccountProvisioningService accounts,
@@ -101,7 +98,6 @@ public class UpsertMemberProfileCommandHandler
         _unitOfWork = unitOfWork;
         _kurinData = kurinData;
         _memberships = kurinData.Memberships;
-        _mapper = mapper;
         _currentUserContext = currentUserContext;
         _events = events;
     }
@@ -212,10 +208,11 @@ public class UpsertMemberProfileCommandHandler
 
         if (existing == null)
         {
-            existing = _mapper.Map<MemberEntity>(request);
+            existing = new MemberEntity();
+            request.ApplyTo(existing, DateTime.UtcNow);
             existing.CardExtras = cardExtras;
 
-            // The ступені the request carried. The mapper deliberately leaves the collection
+            // The ступені the request carried. ApplyTo deliberately leaves the collection
             // alone — it cannot tell a new row from an edited one — so a person created with
             // their ступені known arrived with none of them until this ran. The roster import is
             // what made that visible: every imported юнак came in with a blank ступінь.
@@ -292,7 +289,7 @@ public class UpsertMemberProfileCommandHandler
             }
 
             previousPhotoBlobName = existing.ProfilePhotoBlobName;
-            _mapper.Map(request, existing);
+            request.ApplyTo(existing, DateTime.UtcNow);
             existing.CardExtras = cardExtras;
 
             if (preserveLinkedUserEmail)

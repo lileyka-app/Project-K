@@ -1,10 +1,8 @@
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using AutoMapper;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
@@ -35,13 +33,6 @@ public class UpsertMemberHandlerTests
 
     public UpsertMemberHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-
         _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
         _accountProvisioningMock
@@ -51,7 +42,7 @@ public class UpsertMemberHandlerTests
         _handler = new UpsertMemberCommandHandler(
             _mediatorMock.Object,
             _uowMock.Object,
-            mapperConfig.CreateMapper(),
+            FakeBlobReadLinks.Instance,
             _accountProvisioningMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,

@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +12,7 @@ using Moq;
 using ProjectK.API.Middleware;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -101,8 +100,6 @@ public class AccessStaleHeaderHttpTests
         unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<ProjectK.Common.Interfaces.Modules.KurinModule.IKurinRepository>());
         unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var mapper = new Mock<IMapper>();
-        mapper.Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>())).Returns(new LeadershipResponse());
 
         var assigner = new Mock<ICurrentUserContext>();
         assigner.SetupGet(c => c.Roles).Returns([SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
@@ -112,7 +109,7 @@ public class AccessStaleHeaderHttpTests
             .ReturnsAsync([new MemberSummary(memberKey, memberUserKey, kurinKey, null, "A", "B", "a@example.com", null)]);
 
         var handler = new UpsertLeadershipCommandHandler(
-            unitOfWork.Object, mapper.Object, assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);
+            unitOfWork.Object, Mock.Of<IBlobReadLinks>(), assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);
         var request = new UpsertLeadershipRequest
         {
             Type = "kurin",

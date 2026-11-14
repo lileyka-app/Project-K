@@ -1,4 +1,3 @@
-using AutoMapper;
 using FluentValidation;
 using MediatR;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
@@ -35,7 +34,6 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
-    private readonly IMapper _mapper;
     private readonly IMembershipRepository _memberships;
     private readonly IKurinRepository _kurins;
     private readonly IHonoursCatalog _honours;
@@ -47,7 +45,6 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMapper mapper,
         IUnitOfWork kurinData,
         IResourceAccessService access,
         IKurinAudit audit,
@@ -60,7 +57,6 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
-        _mapper = mapper;
         _memberships = kurinData.Memberships;
         _access = access;
         _audit = audit;
@@ -182,7 +178,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
 
         await PublishAwardSubmittedAsync(member, existingAward, actingKurinKey, groupKey, cancellationToken);
 
-        var response = _mapper.Map<MemberAwardDto>(existingAward);
+        var response = existingAward.ToDto();
         return new ServiceResult<MemberAwardDto>(ResultType.Success, response);
     }
 
@@ -267,7 +263,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<MemberAwardDto>(ResultType.Success, _mapper.Map<MemberAwardDto>(existingAward));
+        return new ServiceResult<MemberAwardDto>(ResultType.Success, existingAward.ToDto());
     }
 
     /// <summary>The journal keeps the catalogue's name, not its id.</summary>

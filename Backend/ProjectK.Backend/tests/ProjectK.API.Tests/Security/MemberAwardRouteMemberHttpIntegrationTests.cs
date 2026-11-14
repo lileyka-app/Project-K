@@ -2,7 +2,6 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -59,9 +58,9 @@ public class MemberAwardRouteMemberHttpIntegrationTests
     }
 
     [Theory]
-    [InlineData("KV.Vykhovnyk", "POST", "/api/member/{0}/awards/{1}/review", "{\"isApproved\":true}")]
-    [InlineData("Member", "DELETE", "/api/member/{0}/awards/{1}", null)]
-    public async Task AwardOfTheRouteMember_ShouldSucceed(string role, string method, string routeTemplate, string? jsonBody)
+    [InlineData("KV.Vykhovnyk", "POST", "/api/member/{0}/awards/{1}/review", "{\"isApproved\":true}", HttpStatusCode.OK)]
+    [InlineData("Member", "DELETE", "/api/member/{0}/awards/{1}", null, HttpStatusCode.NoContent)]
+    public async Task AwardOfTheRouteMember_ShouldSucceed(string role, string method, string routeTemplate, string? jsonBody, HttpStatusCode expected)
     {
         var routeMemberKey = Guid.NewGuid();
         var award = SubmittedAward(memberKey: routeMemberKey);
@@ -69,8 +68,7 @@ public class MemberAwardRouteMemberHttpIntegrationTests
 
         var response = await SendAsync(host.Client, method, string.Format(routeTemplate, routeMemberKey, award.MemberAwardKey), jsonBody);
 
-        // A review answers with the award (200); a removal has nothing to say (204).
-        Assert.Equal(method == "DELETE" ? HttpStatusCode.NoContent : HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(expected, response.StatusCode);
     }
 
     private static MemberAward SubmittedAward(Guid memberKey) => new()
@@ -148,8 +146,6 @@ public class MemberAwardRouteMemberHttpIntegrationTests
             unitOfWork.SetupGet(x => x.MemberAwards).Returns(awards.Object);
             unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(x => x.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
             var members = new Mock<IMemberDirectory>();
             members.Setup(x => x.FindAccountKeyAsync(routeMemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(routeMemberUserKey);
 
@@ -162,7 +158,6 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                     members.Object,
                     currentUser,
                     Mock.Of<IDomainEventPublisher>(),
-                    mapper.Object,
                     access,
                     Mock.Of<IKurinAudit>());
                 var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser, members.Object, access, Mock.Of<IKurinAudit>(), Mock.Of<ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule.IHonoursCatalog>(), Mock.Of<ProjectK.Common.Interfaces.IUnitOfWork>());

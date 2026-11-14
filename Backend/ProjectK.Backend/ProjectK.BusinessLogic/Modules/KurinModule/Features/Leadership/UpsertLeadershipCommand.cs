@@ -1,6 +1,5 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
@@ -17,7 +16,7 @@ using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 
-public class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipResponse>>
+public class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipDto>>
 {
     public Guid? LeadershipKey { get; set; }
     public string? Type { get; set; }
@@ -52,10 +51,10 @@ public class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipResponse
     }
 }
 
-public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCommand, ServiceResult<LeadershipResponse>>
+public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCommand, ServiceResult<LeadershipDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IMemberDirectory _members;
     private readonly IBackendCache _cache;
@@ -64,7 +63,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
 
     public UpsertLeadershipCommandHandler(
         IUnitOfWork unitOfWork,
-        IMapper mapper,
+        IBlobReadLinks links,
         ICurrentUserContext currentUserContext,
         IMemberDirectory members,
         IBackendCache cache,
@@ -72,7 +71,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _currentUserContext = currentUserContext;
         _members = members;
         _cache = cache;
@@ -80,7 +79,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         _audit = audit;
     }
 
-    public async Task<ServiceResult<LeadershipResponse>> Handle(UpsertLeadershipCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LeadershipDto>> Handle(UpsertLeadershipCommand request, CancellationToken cancellationToken)
     {
         LeadershipEntity? existing = null;
         bool isCreated = false;
@@ -101,7 +100,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             moved = placedBefore != (existing.Type, existing.KurinKey, existing.GroupKey);
             if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
             {
-                return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
+                return new ServiceResult<LeadershipDto>(ResultType.Forbidden);
             }
 
             officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
@@ -109,8 +108,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         }
         else
         {
-            // Create new Leadership
-            existing = _mapper.Map<LeadershipEntity>(request);
+            existing = new LeadershipEntity();
             if (request.LeadershipKey is Guid leadershipKey && leadershipKey != Guid.Empty)
             {
                 existing.LeadershipKey = leadershipKey;
@@ -120,10 +118,9 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             existing.EndDate = null;
             existing.Type = Enum.Parse<Common.Models.Enums.LeadershipType>(request.Type!, ignoreCase: true);
             PlaceOnEntity(existing, request.EntityKey);
-            existing.LeadershipHistories.Clear();
             if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
             {
-                return new ServiceResult<LeadershipResponse>(ResultType.Forbidden);
+                return new ServiceResult<LeadershipDto>(ResultType.Forbidden);
             }
 
             officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
@@ -147,7 +144,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
 
         if (changes <= 0)
         {
-            return new ServiceResult<LeadershipResponse>(ResultType.InternalServerError);
+            return new ServiceResult<LeadershipDto>(ResultType.InternalServerError);
         }
 
         // What an office grants is worked out from this registry when a token is minted. Whoever
@@ -159,11 +156,11 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             MarkHolders(holders);
         }
 
-        var response = _mapper.Map<LeadershipResponse>(existing);
+        var response = existing.ToDto(_links);
 
         return isCreated
-            ? new ServiceResult<LeadershipResponse>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
-            : new ServiceResult<LeadershipResponse>(ResultType.Success, response);
+            ? new ServiceResult<LeadershipDto>(ResultType.Created, response, CreatedAtActionName: "GetLeadershipByKey", CreatedAtRouteValues: new { leadershipKey = response.LeadershipKey })
+            : new ServiceResult<LeadershipDto>(ResultType.Success, response);
     }
 
     private void MarkHolders(IReadOnlyCollection<MemberSummary> holders)

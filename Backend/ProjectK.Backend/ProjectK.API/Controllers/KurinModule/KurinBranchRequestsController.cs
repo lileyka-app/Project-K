@@ -8,7 +8,7 @@ using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -36,7 +36,7 @@ public class KurinBranchRequestsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/branch-request")]
     [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinBranchRequestResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinBranchRequestDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBranchRequest(Guid kurinKey, CancellationToken cancellationToken)
     {
@@ -51,7 +51,7 @@ public class KurinBranchRequestsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("{kurinKey:guid}/branch-request")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinBranchRequestResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(KurinBranchRequestDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SubmitBranchRequest(Guid kurinKey, [FromBody] SubmitKurinBranchRequest body, CancellationToken cancellationToken)
@@ -63,7 +63,7 @@ public class KurinBranchRequestsController : ControllerBase
     /// <summary>Every kurin's request still waiting, for the administrators' list beside the applications.</summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("branch-requests")]
-    [ProducesResponseType(typeof(IReadOnlyList<KurinBranchRequestResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<KurinBranchRequestDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPendingBranchRequests(CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(new GetPendingKurinBranchRequestsQuery(), cancellationToken);

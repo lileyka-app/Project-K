@@ -1,6 +1,6 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -28,7 +28,7 @@ public sealed record CreateMembershipRequestCommand(
     Guid? MemberKey,
     MembershipRequestKind Kind,
     MembershipKind MembershipKind,
-    Guid? FromKurinKey = null) : IRequest<ServiceResult<MembershipRequestSent>>;
+    Guid? FromKurinKey = null) : IRequest<ServiceResult<MembershipRequestSentDto>>;
 
 public sealed class CreateMembershipRequestCommandValidator : AbstractValidator<CreateMembershipRequestCommand>
 {
@@ -43,7 +43,7 @@ public sealed class CreateMembershipRequestCommandValidator : AbstractValidator<
 }
 
 public sealed class CreateMembershipRequestCommandHandler
-    : IRequestHandler<CreateMembershipRequestCommand, ServiceResult<MembershipRequestSent>>
+    : IRequestHandler<CreateMembershipRequestCommand, ServiceResult<MembershipRequestSentDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -74,32 +74,32 @@ public sealed class CreateMembershipRequestCommandHandler
         _time = time;
     }
 
-    public async Task<ServiceResult<MembershipRequestSent>> Handle(CreateMembershipRequestCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MembershipRequestSentDto>> Handle(CreateMembershipRequestCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.KurinKey != request.ToKurinKey)
         {
-            return new ServiceResult<MembershipRequestSent>(ResultType.Forbidden);
+            return new ServiceResult<MembershipRequestSentDto>(ResultType.Forbidden);
         }
 
         var memberKey = await ResolveAsync(request, cancellationToken);
         var person = memberKey is { } key ? await _members.FindAsync(key, cancellationToken) : null;
         if (person is null)
         {
-            return ServiceResult<MembershipRequestSent>.Failure(
+            return ServiceResult<MembershipRequestSentDto>.Failure(
                 ResultType.NotFound, "NoSuchCode", "No one has that code.");
         }
 
         var standing = await _unitOfWork.Memberships.GetActiveForMemberAsync(person.MemberKey, cancellationToken);
         if (standing.Any(m => m.KurinKey == request.ToKurinKey))
         {
-            return ServiceResult<MembershipRequestSent>.Failure(
+            return ServiceResult<MembershipRequestSentDto>.Failure(
                 ResultType.Conflict, "AlreadyAMember", "They already belong to this kurin.");
         }
 
         var route = await _routing.ResolveAsync(person.MemberKey, request.ToKurinKey, cancellationToken);
         if (route.ToSenior && request.MembershipKind != MembershipKind.Youth)
         {
-            return ServiceResult<MembershipRequestSent>.Failure(
+            return ServiceResult<MembershipRequestSentDto>.Failure(
                 ResultType.BadRequest, "SeniorKurinTakesMembers", "A senior kurin takes people in only as members.");
         }
 
@@ -112,12 +112,12 @@ public sealed class CreateMembershipRequestCommandHandler
                 _accessChanges.MarkUser(userKey);
             }
 
-            return new ServiceResult<MembershipRequestSent>(ResultType.Created, new MembershipRequestSent(null, Joined: true));
+            return new ServiceResult<MembershipRequestSentDto>(ResultType.Created, new MembershipRequestSentDto(null, Joined: true));
         }
 
         if (request.Kind == MembershipRequestKind.Transfer && !route.TransferAllowed)
         {
-            return ServiceResult<MembershipRequestSent>.Failure(
+            return ServiceResult<MembershipRequestSentDto>.Failure(
                 ResultType.BadRequest,
                 "TransferAcrossLines",
                 "Youth and senior kurins do not take people from each other; ask to take them in alongside.");
@@ -130,7 +130,7 @@ public sealed class CreateMembershipRequestCommandHandler
             {
                 if (!route.AskableKurinKeys.Contains(chosen))
                 {
-                    return ServiceResult<MembershipRequestSent>.Failure(
+                    return ServiceResult<MembershipRequestSentDto>.Failure(
                         ResultType.BadRequest, "NotInThatKurin", "That kurin does not answer for them.");
                 }
 
@@ -142,7 +142,7 @@ public sealed class CreateMembershipRequestCommandHandler
             }
             else
             {
-                return ServiceResult<MembershipRequestSent>.Failure(
+                return ServiceResult<MembershipRequestSentDto>.Failure(
                     ResultType.Conflict, "ChooseKurin", "They stand in several kurins; say which one to ask.");
             }
         }
@@ -151,7 +151,7 @@ public sealed class CreateMembershipRequestCommandHandler
         var pending = await _unitOfWork.MembershipRequests.GetPendingAsync(person.MemberKey, request.ToKurinKey, cancellationToken);
         if (pending.Any(r => r.IsOpen(now)))
         {
-            return ServiceResult<MembershipRequestSent>.Failure(
+            return ServiceResult<MembershipRequestSentDto>.Failure(
                 ResultType.Conflict, "RequestPending", "This kurin already waits for an answer about them.");
         }
 
@@ -175,7 +175,7 @@ public sealed class CreateMembershipRequestCommandHandler
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<MembershipRequestSent>(ResultType.Created, new MembershipRequestSent(created.MembershipRequestKey, Joined: false, route.PersonAnswers));
+        return new ServiceResult<MembershipRequestSentDto>(ResultType.Created, new MembershipRequestSentDto(created.MembershipRequestKey, Joined: false, route.PersonAnswers));
     }
 
     /// <summary>

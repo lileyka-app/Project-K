@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -20,12 +19,10 @@ public sealed class GetMemberWarningsQuery : IRequest<ServiceResult<IEnumerable<
 public sealed class GetMemberWarningsQueryHandler : IRequestHandler<GetMemberWarningsQuery, ServiceResult<IEnumerable<MemberWarningDto>>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public GetMemberWarningsQueryHandler(IMemberUnitOfWork unitOfWork, IMapper mapper)
+    public GetMemberWarningsQueryHandler(IMemberUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<ServiceResult<IEnumerable<MemberWarningDto>>> Handle(GetMemberWarningsQuery request, CancellationToken cancellationToken)
@@ -38,9 +35,7 @@ public sealed class GetMemberWarningsQueryHandler : IRequestHandler<GetMemberWar
 
         var warnings = await _unitOfWork.MemberWarnings.GetByMemberKeyAsync(request.MemberKey, cancellationToken);
 
-        var response = _mapper.Map<IEnumerable<MemberWarningDto>>(
-            warnings.OrderByDescending(w => w.IssuedAtUtc)
-        );
+        var response = warnings.OrderByDescending(w => w.IssuedAtUtc).Select(MemberWarningMapping.ToDto).ToList();
 
         return new ServiceResult<IEnumerable<MemberWarningDto>>(ResultType.Success, response);
     }

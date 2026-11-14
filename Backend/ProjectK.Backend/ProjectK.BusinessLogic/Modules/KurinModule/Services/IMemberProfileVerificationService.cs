@@ -1,6 +1,5 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Extensions;
@@ -18,7 +17,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
 public interface IMemberProfileVerificationService
 {
-    Task<ServiceResult<MemberResponse>> VerifyAsync(Guid memberKey, string? note, CancellationToken cancellationToken);
+    Task<ServiceResult<MemberDto>> VerifyAsync(Guid memberKey, string? note, CancellationToken cancellationToken);
 
-    Task<ServiceResult<MemberResponse>> ResetAsync(Guid memberKey, CancellationToken cancellationToken);
+    Task<ServiceResult<MemberDto>> ResetAsync(Guid memberKey, CancellationToken cancellationToken);
 }

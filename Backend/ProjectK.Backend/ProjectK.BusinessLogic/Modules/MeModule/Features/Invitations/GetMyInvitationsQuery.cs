@@ -1,5 +1,7 @@
+using ProjectK.Common.Models.Dtos.MeModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
@@ -17,14 +19,6 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;
 /// lines that no kurin answers for them (<see cref="MembershipAskRouting"/>).
 /// </summary>
 public sealed record GetMyInvitationsQuery : IRequest<ServiceResult<IReadOnlyList<MembershipInvitationDto>>>;
-
-/// <summary>One invitation as the person reads it: who asks, and how they would stand there.</summary>
-public sealed record MembershipInvitationDto(
-    Guid MembershipRequestKey,
-    MembershipRequestKurin Kurin,
-    MembershipKind MembershipKind,
-    DateTime CreatedAtUtc,
-    DateTime ExpiresAtUtc);
 
 public sealed class GetMyInvitationsQueryHandler
     : IRequestHandler<GetMyInvitationsQuery, ServiceResult<IReadOnlyList<MembershipInvitationDto>>>
@@ -57,7 +51,7 @@ public sealed class GetMyInvitationsQueryHandler
             var kurin = await _unitOfWork.Kurins.GetByKeyAsync(invitation.ToKurinKey, cancellationToken);
             result.Add(new MembershipInvitationDto(
                 invitation.MembershipRequestKey,
-                MembershipRequestKurin.Of(invitation.ToKurinKey, kurin),
+                kurin.ToRequestKurinDto(invitation.ToKurinKey),
                 invitation.MembershipKind,
                 invitation.CreatedAtUtc,
                 invitation.ExpiresAtUtc));

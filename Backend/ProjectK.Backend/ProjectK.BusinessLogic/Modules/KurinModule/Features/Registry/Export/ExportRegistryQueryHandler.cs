@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -89,7 +90,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
     private static SheetTable People(
         string name,
         IReadOnlyList<string> columnIds,
-        IReadOnlyList<Models.MemberResponse> people,
+        IReadOnlyList<MemberDto> people,
         IReadOnlyDictionary<Guid, string> tagNames)
     {
         var headers = new List<string> { "Прізвище та ім'я" };
@@ -116,7 +117,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
     /// person, one row — so the column sums to the юнацтво of the kurin and can be read against
     /// the roster above it. Впорядники are left out: they are counted as кадра, not as юнацтво.
     /// </summary>
-    private static SheetTable Tally(KurinBranch branch, IReadOnlyList<Models.MemberResponse> youth)
+    private static SheetTable Tally(KurinBranch branch, IReadOnlyList<MemberDto> youth)
     {
         var rows = new List<IReadOnlyList<SheetCell>>();
 
@@ -143,7 +144,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         return new SheetTable("Чисельність", ["Ступінь", "Кількість"], rows);
     }
 
-    private static string FullName(Models.MemberResponse member)
+    private static string FullName(MemberDto member)
         => string.Join(' ', new[] { member.LastName, member.FirstName, member.MiddleName }
             .Where(part => !string.IsNullOrWhiteSpace(part)));
 }

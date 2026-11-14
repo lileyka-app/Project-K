@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -24,5 +24,5 @@ public interface IKurinTagVisibility
     Task<Common.Models.Authorization.KurinPolicy.CapabilityReach> CarrierReachAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>Fills the tags the viewer may see on people seen in the kurin.</summary>
-    Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberResponse> rows, CancellationToken cancellationToken = default);
+    Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberDto> rows, CancellationToken cancellationToken = default);
 }

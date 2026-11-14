@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -37,7 +36,6 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
-    private readonly IMapper _mapper;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
 
@@ -45,14 +43,12 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMapper mapper,
         IResourceAccessService access,
         IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
-        _mapper = mapper;
         _access = access;
         _audit = audit;
     }
@@ -133,7 +129,7 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
 
         await NotifyMemberOwnerAsync(member, warningEntity, cancellationToken);
 
-        var response = _mapper.Map<MemberWarningDto>(warningEntity);
+        var response = warningEntity.ToDto();
         return new ServiceResult<MemberWarningDto>(ResultType.Created, response);
     }
 

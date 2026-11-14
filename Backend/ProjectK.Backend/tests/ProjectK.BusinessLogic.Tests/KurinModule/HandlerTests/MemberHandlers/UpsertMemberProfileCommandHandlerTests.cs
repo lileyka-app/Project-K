@@ -1,10 +1,8 @@
 using ProjectK.Common.Phones;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -37,18 +35,10 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
     private readonly Mock<IKraiProfileProvider> _profilesMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
-    private readonly IMapper _mapper;
     private readonly JournalRecorder _journal;
 
     public UpsertMemberProfileCommandHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-
         _uowMock = new Mock<IMemberUnitOfWork>();
         _kurinDataMock = new Mock<IUnitOfWork>();
         _memberRepoMock = new Mock<IMemberRepository>();
@@ -65,7 +55,6 @@ public class UpsertMemberProfileCommandHandlerTests
             .ReturnsAsync([]);
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _mapper = mapperConfig.CreateMapper();
         _journal = new JournalRecorder(_currentUserContextMock.Object);
         _access.Setup(a => a.CheckSeniorYouthRecordAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
@@ -75,7 +64,6 @@ public class UpsertMemberProfileCommandHandlerTests
     private UpsertMemberProfileCommandHandler Handler(IMemberFieldAccess fieldAccess) => new(
         _uowMock.Object,
         _kurinDataMock.Object,
-        _mapper,
         _currentUserContextMock.Object,
         _eventsMock.Object,
         _accountsMock.Object,
@@ -282,7 +270,7 @@ public class UpsertMemberProfileCommandHandlerTests
 
     /// <summary>
     /// A person can be created with their ступені already known — the roster import does exactly
-    /// that. The mapper leaves the collection alone by design, so until the create branch applied
+    /// that. The profile write leaves the collection alone by design, so until the create branch applied
     /// the history itself, every such person arrived with a blank ступінь and no dates. A live
     /// import is what surfaced it: four юнаки imported with their скоб and their заприсяження,
     /// and all four showed "—" in the registry.

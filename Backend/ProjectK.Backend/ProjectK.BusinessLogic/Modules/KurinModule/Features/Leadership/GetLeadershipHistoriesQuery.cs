@@ -1,5 +1,5 @@
-using AutoMapper;
 using MediatR;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -19,16 +19,16 @@ public class GetLeadershipHistoriesQuery : IRequest<ServiceResult<IEnumerable<Le
 public class GetLeadershipHistoriesQueryHandler : IRequestHandler<GetLeadershipHistoriesQuery, ServiceResult<IEnumerable<LeadershipHistoryMemberDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
-    public GetLeadershipHistoriesQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    private readonly IBlobReadLinks _links;
+    public GetLeadershipHistoriesQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
     }
     public async Task<ServiceResult<IEnumerable<LeadershipHistoryMemberDto>>> Handle(GetLeadershipHistoriesQuery request, CancellationToken cancellationToken)
     {
         var histories = await _unitOfWork.Leaderships.GetLeadershipHistoriesAsync(request.LeadershipKey, cancellationToken);
-        var historyDtos = _mapper.Map<IEnumerable<LeadershipHistoryMemberDto>>(histories);
+        var historyDtos = histories.Select(history => history.ToHolderDto(_links)).ToList();
         return new ServiceResult<IEnumerable<LeadershipHistoryMemberDto>>(ResultType.Success, historyDtos);
     }
 }

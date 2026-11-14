@@ -18,15 +18,11 @@ public sealed class FakeBlobReadLinks : IBlobReadLinks
         => string.IsNullOrWhiteSpace(blobName) ? null : $"https://cdn.test/{blobName}?sig=shared";
 
     /// <summary>
-    /// For <c>MapperConfiguration.ConstructServicesUsing</c>: builds the photo resolvers over this
+    /// For <c>MapperConfiguration.ConstructServicesUsing</c>: builds the link resolvers over this
     /// fake, and anything else the profiles ask for with its parameterless constructor.
     /// </summary>
     public static object Resolvers(Type type)
     {
-        if (type == typeof(ProfilePhotoUrlResolver)) return new ProfilePhotoUrlResolver(Instance);
-        if (type == typeof(MemberListItemPhotoUrlResolver)) return new MemberListItemPhotoUrlResolver(Instance);
-        if (type == typeof(MemberLookupPhotoUrlResolver)) return new MemberLookupPhotoUrlResolver(Instance);
-        if (type == typeof(MemberSummaryLookupPhotoUrlResolver)) return new MemberSummaryLookupPhotoUrlResolver(Instance);
         if (type == typeof(GroupSilhouetteUrlResolver)) return new GroupSilhouetteUrlResolver(Instance);
         if (type == typeof(KurinEmblemUrlResolver)) return new KurinEmblemUrlResolver(Instance);
         return Activator.CreateInstance(type)!;

@@ -1,5 +1,6 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -27,10 +28,10 @@ public class TransferKurinNamesTests
     {
         var senior = new Kurin(5, KurinBranch.USP);
 
-        var named = MembershipRequestKurin.Of(senior.KurinKey, senior);
+        var named = senior.ToRequestKurinDto(senior.KurinKey);
 
         named.Number.Should().Be(5);
         named.Branches.Should().Equal(new KurinNumbering(KurinBranch.USP, 5));
-        MembershipRequestKurin.Of(Guid.NewGuid(), null).Branches.Should().BeEmpty();
+        MembershipRequestMapping.ToRequestKurinDto(null, Guid.NewGuid()).Branches.Should().BeEmpty();
     }
 }

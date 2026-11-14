@@ -1,8 +1,8 @@
-using AutoMapper;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -33,7 +33,6 @@ public class GetMemberDossierHandlerTests
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IMembershipDirectory> _memberships = new();
     private readonly Mock<IMemberProgressDirectory> _progress = new();
-    private readonly Mock<IMapper> _mapper = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly GetMemberDossierQueryHandler _handler;
 
@@ -51,23 +50,10 @@ public class GetMemberDossierHandlerTests
                 FirstName = "Оксана",
                 LastName = "Тестова",
                 Email = "oksana@example.com",
-                PhoneNumber = "0500000000"
-            });
-
-        _mapper
-            .Setup(m => m.Map<MemberResponse>(It.IsAny<Member>()))
-            .Returns(new MemberResponse
-            {
-                MemberKey = MemberKey,
-                FirstName = "Оксана",
-                LastName = "Тестова",
-                Email = "oksana@example.com",
                 PhoneNumber = "0500000000",
-                MiddleName = string.Empty,
-                LeadershipHistories = [new LeadershipHistoryDto()],
-                PlastLevelHistories = [new PlastLevelHistoryDto(), new PlastLevelHistoryDto()],
-                Awards = [],
-                Warnings = [new MemberWarningDto()]
+                LeadershipHistories = [new LeadershipHistory()],
+                PlastLevelHistory = [new PlastLevelHistory(), new PlastLevelHistory()],
+                MemberWarnings = [new MemberWarning()]
             });
 
         _memberships
@@ -93,7 +79,7 @@ public class GetMemberDossierHandlerTests
         Guid.NewGuid(), Guid.NewGuid(), 42, KurinBranch.UPYu, null,
         null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-2), null);
 
-    private Task<ServiceResult<MemberDossierResponse>> Open(params string[] include)
+    private Task<ServiceResult<MemberDossierDto>> Open(params string[] include)
         => _handler.Handle(new GetMemberDossierQuery(MemberKey, include), CancellationToken.None);
 
     [Fact]
@@ -221,5 +207,5 @@ public class GetMemberDossierHandlerTests
     }
 
     private GetMemberDossierQueryHandler Handler(IMemberFieldAccess fieldAccess) => new(
-        _uow.Object, _memberships.Object, _progress.Object, _mapper.Object, fieldAccess, _currentUser.Object);
+        _uow.Object, _memberships.Object, _progress.Object, FakeBlobReadLinks.Instance, fieldAccess, _currentUser.Object);
 }

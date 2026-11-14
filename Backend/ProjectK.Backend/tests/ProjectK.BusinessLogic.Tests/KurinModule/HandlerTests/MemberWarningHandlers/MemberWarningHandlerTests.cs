@@ -22,7 +22,6 @@ public class MemberWarningHandlerTests
     private readonly Mock<IMemberWarningRepository> _memberWarningRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
-    private readonly Mock<AutoMapper.IMapper> _mapperMock;
     private readonly Mock<IResourceAccessService> _access = new();
 
     private readonly AssignMemberWarningCommandHandler _assignHandler;
@@ -38,7 +37,6 @@ public class MemberWarningHandlerTests
         _memberWarningRepositoryMock = new Mock<IMemberWarningRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _eventsMock = new Mock<IDomainEventPublisher>();
-        _mapperMock = new Mock<AutoMapper.IMapper>();
 
         _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
         _unitOfWorkMock.SetupGet(x => x.MemberWarnings).Returns(_memberWarningRepositoryMock.Object);
@@ -58,11 +56,10 @@ public class MemberWarningHandlerTests
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _mapperMock.Object,
             _access.Object,
             _journal.Audit);
         _clock = new FixedTimeProvider(new DateTimeOffset(2026, 8, 26, 9, 0, 0, TimeSpan.Zero));
-        _cancelHandler = new CancelMemberWarningCommandHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _mapperMock.Object, _clock, _access.Object, _journal.Audit);
+        _cancelHandler = new CancelMemberWarningCommandHandler(_unitOfWorkMock.Object, _currentUserContextMock.Object, _clock, _access.Object, _journal.Audit);
     }
 
     [Fact]

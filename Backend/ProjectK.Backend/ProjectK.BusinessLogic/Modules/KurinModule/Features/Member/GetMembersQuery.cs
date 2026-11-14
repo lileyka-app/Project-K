@@ -1,6 +1,6 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -10,7 +10,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 
-public class GetMembersQuery : IRequest<ServiceResult<IEnumerable<MemberResponse>>>
+public class GetMembersQuery : IRequest<ServiceResult<IEnumerable<MemberDto>>>
 {
     public Guid GroupKey { get; set; }
     public Guid KurinKey { get; set; }
@@ -21,26 +21,26 @@ public class GetMembersQuery : IRequest<ServiceResult<IEnumerable<MemberResponse
     }
 }
 
-public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceResult<IEnumerable<MemberResponse>>>
+public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceResult<IEnumerable<MemberDto>>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly IKurinTagVisibility _tagVisibility;
 
     public GetMembersQueryHandler(
         IMemberUnitOfWork unitOfWork,
-        IMapper mapper,
+        IBlobReadLinks links,
         IMemberFieldAccess fieldAccess,
         IKurinTagVisibility tagVisibility)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _fieldAccess = fieldAccess;
         _tagVisibility = tagVisibility;
     }
 
-    public async Task<ServiceResult<IEnumerable<MemberResponse>>> Handle(GetMembersQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<IEnumerable<MemberDto>>> Handle(GetMembersQuery request, CancellationToken cancellationToken)
     {
         IEnumerable<MemberListItemDto> members;
         if (request.KurinKey == Guid.Empty)
@@ -53,7 +53,7 @@ public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceRe
         }
         else
         {
-            return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.BadRequest);
+            return new ServiceResult<IEnumerable<MemberDto>>(ResultType.BadRequest);
         }
 
         // Read whole and masked here, row by row: the registry export reads through this query too,
@@ -65,8 +65,8 @@ public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceRe
             mask.Apply(row, row.UserKey, row.GroupKey);
         }
 
-        var response = _mapper.Map<List<MemberResponse>>(rows);
+        var response = rows.Select(row => row.ToDto(_links)).ToList();
         await _tagVisibility.FillAsync(request.KurinKey, response, cancellationToken);
-        return new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, response);
+        return new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, response);
     }
 }

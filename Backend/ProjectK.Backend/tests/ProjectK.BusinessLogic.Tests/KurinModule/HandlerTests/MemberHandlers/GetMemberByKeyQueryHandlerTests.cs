@@ -1,9 +1,8 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -14,6 +13,8 @@ using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 
@@ -25,7 +26,6 @@ public class GetMemberByKeyHandlerTests
     private readonly Mock<IMembershipRepository> _membershipsMock = new();
     private readonly Mock<IKurinRepository> _kurinsMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
-    private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IResourceAccessService> _accessMock = new();
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
@@ -37,8 +37,6 @@ public class GetMemberByKeyHandlerTests
         _mentorRepoMock = new Mock<IMentorAssignmentRepository>();
         _uowMock = new Mock<IMemberUnitOfWork>();
         _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
-
-        _mapperMock = new Mock<IMapper>(MockBehavior.Strict);
 
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _currentUserContextMock.Setup(c => c.IsInRole(It.IsAny<string>())).Returns(true);
@@ -86,21 +84,6 @@ public class GetMemberByKeyHandlerTests
             .Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(member);
 
-        // Mock mapper behavior explicitly to avoid invoking real mapping (and its resolver dependencies)
-        _mapperMock
-            .Setup(m => m.Map<MemberResponse>(member))
-            .Returns(new MemberResponse
-            {
-                MemberKey = member.MemberKey,
-                FirstName = member.FirstName,
-                MiddleName = member.MiddleName,
-                LastName = member.LastName,
-                Email = member.Email,
-                PhoneNumber = member.PhoneNumber,
-                DateOfBirth = member.DateOfBirth,
-                ProfilePhotoUrl = null
-            });
-
         var query = new GetMemberByKeyQuery(memberKey);
 
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -114,8 +97,6 @@ public class GetMemberByKeyHandlerTests
         result.Data.LastName.Should().Be("Petrenko");
 
         _memberRepoMock.Verify(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()), Times.Once);
-        _mapperMock.Verify(m => m.Map<MemberResponse>(member), Times.Once);
-        _mapperMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -131,7 +112,6 @@ public class GetMemberByKeyHandlerTests
             .Setup(m => m.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new Membership { MemberKey = memberKey, KurinKey = kurinKey, JoinedAtUtc = DateTime.UtcNow }]);
         _memberRepoMock.Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
-        _mapperMock.Setup(m => m.Map<MemberResponse>(member)).Returns(new MemberResponse { MemberKey = memberKey });
         _mentorRepoMock
             .Setup(r => r.GetActiveGroupsAsync(userKey, kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new GroupRef(groupOne, "Gurtok 1"), new GroupRef(Guid.NewGuid(), "Gurtok 2")]);
@@ -152,7 +132,6 @@ public class GetMemberByKeyHandlerTests
             .Setup(m => m.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new Membership { MemberKey = memberKey, KurinKey = Guid.NewGuid(), JoinedAtUtc = DateTime.UtcNow }]);
         _memberRepoMock.Setup(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(member);
-        _mapperMock.Setup(m => m.Map<MemberResponse>(member)).Returns(new MemberResponse { MemberKey = memberKey });
 
         var result = await _handler.Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
 
@@ -176,7 +155,6 @@ public class GetMemberByKeyHandlerTests
         result.Data.Should().BeNull();
 
         _memberRepoMock.Verify(r => r.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()), Times.Once);
-        _mapperMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -237,7 +215,11 @@ public class GetMemberByKeyHandlerTests
             LastName = "P",
             Email = "i@e.com",
             PhoneNumber = "+380501234567",
-            DateOfBirth = new DateOnly(2010, 5, 17)
+            DateOfBirth = new DateOnly(2010, 5, 17),
+            PublicId = "PL-1",
+            Address = "Street 1",
+            MotherPhone = "+380501112233",
+            CardExtras = MemberCardExtras.Write(new Dictionary<string, string> { ["visa"] = "D" })
         };
 
         _membershipsMock
@@ -247,27 +229,12 @@ public class GetMemberByKeyHandlerTests
         _mentorRepoMock
             .Setup(r => r.GetActiveGroupsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        _mapperMock.Setup(m => m.Map<MemberResponse>(member)).Returns(() => new MemberResponse
-        {
-            MemberKey = memberKey,
-            UserKey = member.UserKey,
-            PublicId = "PL-1",
-            FirstName = member.FirstName,
-            MiddleName = "",
-            LastName = member.LastName,
-            Email = member.Email,
-            PhoneNumber = member.PhoneNumber,
-            DateOfBirth = member.DateOfBirth,
-            Address = "Street 1",
-            MotherPhone = "+380501112233",
-            CardExtras = new Dictionary<string, string> { ["visa"] = "D" }
-        });
         return (memberKey, groupKey, member);
     }
 
     private GetMemberByKeyQueryHandler Handler(IMemberFieldAccess fieldAccess) => new(
         _uowMock.Object,
-        _mapperMock.Object,
+        FakeBlobReadLinks.Instance,
         _currentUserContextMock.Object,
         fieldAccess,
         _accessMock.Object,

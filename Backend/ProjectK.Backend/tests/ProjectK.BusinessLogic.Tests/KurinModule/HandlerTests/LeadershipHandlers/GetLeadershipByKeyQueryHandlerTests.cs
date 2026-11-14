@@ -1,10 +1,7 @@
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using AutoMapper;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -16,21 +13,12 @@ public class GetLeadershipByKeyHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
-    // The real profile: EntityKey is derived by the mapping, so a stubbed IMapper
-    // would assert the stub rather than the behaviour.
-    private readonly IMapper _mapper = new MapperConfiguration(
-        cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        },
-        NullLoggerFactory.Instance).CreateMapper();
     private readonly GetLeadershipByKeyQueryHandler _handler;
 
     public GetLeadershipByKeyHandlerTests()
     {
         _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-        _handler = new GetLeadershipByKeyQueryHandler(_unitOfWorkMock.Object, _mapper);
+        _handler = new GetLeadershipByKeyQueryHandler(_unitOfWorkMock.Object, FakeBlobReadLinks.Instance);
     }
 
     private static Leadership BuildLeadership(LeadershipType type, Guid? kurinKey = null, Guid? groupKey = null) =>
@@ -41,18 +29,6 @@ public class GetLeadershipByKeyHandlerTests
             KurinKey = kurinKey,
             GroupKey = groupKey,
             StartDate = new DateOnly(2024, 1, 1)
-        };
-
-    private static LeadershipResponse BuildDto(Leadership entity) =>
-        new()
-        {
-            LeadershipKey = entity.LeadershipKey,
-            Type = entity.Type,
-            KurinKey = entity.KurinKey,
-            GroupKey = entity.GroupKey,
-            StartDate = entity.StartDate,
-            EndDate = entity.EndDate,
-            LeadershipHistories = []
         };
 
     [Fact]

@@ -1,4 +1,3 @@
-using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
@@ -52,7 +51,7 @@ public class KurinPolicyEnforcementTests
             .Setup(x => x.GetActiveByMemberKeyAsync(_access.MemberKey, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(active.Select(held => new MemberWarning { MemberKey = _access.MemberKey, Level = held }).ToList());
         var handler = new AssignMemberWarningCommandHandler(
-            _unitOfWork.Object, actor, Mock.Of<IDomainEventPublisher>(), Mock.Of<IMapper>(), _access.ServiceFor(actor), Mock.Of<IKurinAudit>());
+            _unitOfWork.Object, actor, Mock.Of<IDomainEventPublisher>(), _access.ServiceFor(actor), Mock.Of<IKurinAudit>());
         return handler.Handle(new AssignMemberWarningCommand(_access.MemberKey, level), CancellationToken.None);
     }
 
@@ -69,7 +68,7 @@ public class KurinPolicyEnforcementTests
             IssuedByUserKey = issuedBy
         };
         _warnings.Setup(x => x.GetByKeyAsync(warning.MemberWarningKey, It.IsAny<CancellationToken>())).ReturnsAsync(warning);
-        var handler = new CancelMemberWarningCommandHandler(_unitOfWork.Object, actor, Mock.Of<IMapper>(), _clock, _access.ServiceFor(actor), Mock.Of<IKurinAudit>());
+        var handler = new CancelMemberWarningCommandHandler(_unitOfWork.Object, actor, _clock, _access.ServiceFor(actor), Mock.Of<IKurinAudit>());
         return handler.Handle(new CancelMemberWarningCommand(_access.MemberKey, warning.MemberWarningKey), CancellationToken.None);
     }
 
@@ -84,7 +83,7 @@ public class KurinPolicyEnforcementTests
         };
         _awards.Setup(x => x.GetByKeyAsync(award.MemberAwardKey, It.IsAny<CancellationToken>())).ReturnsAsync(award);
         var handler = new ReviewMemberAwardCommandHandler(
-            _unitOfWork.Object, Mock.Of<IMemberDirectory>(), actor, Mock.Of<IDomainEventPublisher>(), Mock.Of<IMapper>(), _access.ServiceFor(actor), Mock.Of<IKurinAudit>());
+            _unitOfWork.Object, Mock.Of<IMemberDirectory>(), actor, Mock.Of<IDomainEventPublisher>(), _access.ServiceFor(actor), Mock.Of<IKurinAudit>());
         return handler.Handle(
             new ReviewMemberAwardCommand { MemberKey = _access.MemberKey, MemberAwardKey = award.MemberAwardKey, IsApproved = true },
             CancellationToken.None);

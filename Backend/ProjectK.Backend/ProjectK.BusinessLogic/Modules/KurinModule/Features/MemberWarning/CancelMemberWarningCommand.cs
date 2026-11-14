@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -27,7 +26,6 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
 {
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IMapper _mapper;
     private readonly TimeProvider _timeProvider;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
@@ -35,14 +33,12 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
     public CancelMemberWarningCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUserContext,
-        IMapper mapper,
         TimeProvider timeProvider,
         IResourceAccessService access,
         IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
-        _mapper = mapper;
         _timeProvider = timeProvider;
         _access = access;
         _audit = audit;
@@ -94,7 +90,7 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
             return new ServiceResult<MemberWarningDto>(ResultType.InternalServerError);
         }
 
-        var response = _mapper.Map<MemberWarningDto>(warning);
+        var response = warning.ToDto();
         return new ServiceResult<MemberWarningDto>(ResultType.Success, response);
     }
 

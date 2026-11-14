@@ -1,8 +1,5 @@
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -15,12 +12,6 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule;
 /// </summary>
 public class LeadershipHistoryKurinTests
 {
-    private readonly IMapper _mapper = new MapperConfiguration(cfg =>
-    {
-        cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-        cfg.AddProfile(new KurinModuleProfile());
-    }, LoggerFactory.Create(_ => { })).CreateMapper();
-
     private static LeadershipHistory HeldIn(Leadership office) => new()
     {
         LeadershipHistoryKey = Guid.NewGuid(),
@@ -36,7 +27,7 @@ public class LeadershipHistoryKurinTests
         var kurinKey = Guid.NewGuid();
         var office = new Leadership { LeadershipKey = Guid.NewGuid(), Type = LeadershipType.Kurin, KurinKey = kurinKey };
 
-        _mapper.Map<LeadershipHistoryDto>(HeldIn(office)).KurinKey.Should().Be(kurinKey);
+        HeldIn(office).ToDto().KurinKey.Should().Be(kurinKey);
     }
 
     [Fact]
@@ -46,6 +37,6 @@ public class LeadershipHistoryKurinTests
         var group = new Group("Соколи", kurinKey) { GroupKey = Guid.NewGuid() };
         var office = new Leadership { LeadershipKey = Guid.NewGuid(), Type = LeadershipType.Group, GroupKey = group.GroupKey, Group = group };
 
-        _mapper.Map<LeadershipHistoryDto>(HeldIn(office)).KurinKey.Should().Be(kurinKey);
+        HeldIn(office).ToDto().KurinKey.Should().Be(kurinKey);
     }
 }

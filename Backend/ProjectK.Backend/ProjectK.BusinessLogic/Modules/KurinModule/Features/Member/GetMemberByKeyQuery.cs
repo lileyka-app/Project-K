@@ -1,6 +1,5 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -11,7 +10,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 
-public class GetMemberByKeyQuery : IRequest<ServiceResult<MemberResponse>>
+public class GetMemberByKeyQuery : IRequest<ServiceResult<MemberDto>>
 {
     public Guid MemberKey { get; set; }
     public GetMemberByKeyQuery(Guid memberKey)
@@ -20,10 +19,10 @@ public class GetMemberByKeyQuery : IRequest<ServiceResult<MemberResponse>>
     }
 }
 
-public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, ServiceResult<MemberResponse>>
+public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, ServiceResult<MemberDto>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly IResourceAccessService _resourceAccess;
@@ -34,7 +33,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
 
     public GetMemberByKeyQueryHandler(
         IMemberUnitOfWork unitOfWork,
-        IMapper mapper,
+        IBlobReadLinks links,
         ICurrentUserContext currentUserContext,
         IMemberFieldAccess fieldAccess,
         IResourceAccessService resourceAccess,
@@ -45,7 +44,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         _accounts = accounts;
         _tagVisibility = tagVisibility;
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _currentUserContext = currentUserContext;
         _fieldAccess = fieldAccess;
         _resourceAccess = resourceAccess;
@@ -53,19 +52,19 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         _mentorAssignments = kurinData.MentorAssignments;
     }
 
-    public async Task<ServiceResult<MemberResponse>> Handle(GetMemberByKeyQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MemberDto>> Handle(GetMemberByKeyQuery request, CancellationToken cancellationToken)
     {
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<MemberResponse>(ResultType.NotFound);
+            return new ServiceResult<MemberDto>(ResultType.NotFound);
         }
 
         var placement = await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);
         var here = placement.FirstOrDefault(m => m.KurinKey == _currentUserContext.KurinKey)
             ?? placement.FirstOrDefault();
 
-        var memberResponse = _mapper.Map<MemberResponse>(member);
+        var memberResponse = member.ToDto(_links);
         memberResponse.KurinKey = here?.KurinKey ?? Guid.Empty;
         memberResponse.GroupKey = here?.GroupKey ?? Guid.Empty;
 
@@ -90,6 +89,6 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
             memberResponse.AccountStatus = (await _accounts.FindAsync(member.UserKey.Value, cancellationToken))?.Status;
         }
 
-        return new ServiceResult<MemberResponse>(ResultType.Success, memberResponse);
+        return new ServiceResult<MemberDto>(ResultType.Success, memberResponse);
     }
 }

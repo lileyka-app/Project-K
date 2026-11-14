@@ -1,4 +1,5 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
@@ -36,16 +37,16 @@ public sealed class MembershipAskRouting
     }
 
     /// <summary>The route as the asking kurin's screen reads it, with the kurins to choose from named.</summary>
-    public async Task<MembershipAskOffer> OfferAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)
+    public async Task<MembershipAskOfferDto> OfferAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)
     {
         var route = await ResolveAsync(memberKey, toKurinKey, cancellationToken);
-        var kurins = new List<MembershipRequestKurin>(route.AskableKurinKeys.Count);
+        var kurins = new List<MembershipRequestKurinDto>(route.AskableKurinKeys.Count);
         foreach (var kurinKey in route.AskableKurinKeys)
         {
-            kurins.Add(MembershipRequestKurin.Of(kurinKey, await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken)));
+            kurins.Add((await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken)).ToRequestKurinDto(kurinKey));
         }
 
-        return new MembershipAskOffer(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins);
+        return new MembershipAskOfferDto(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins);
     }
 
     public async Task<MembershipAskRoute> ResolveAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)

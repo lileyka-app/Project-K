@@ -1,9 +1,8 @@
 using ProjectK.Common.Models.Members;
-using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -16,7 +15,7 @@ using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 
-public class UpsertMemberCommand : IRequest<ServiceResult<MemberResponse>>, IHasParentContacts
+public class UpsertMemberCommand : IRequest<ServiceResult<MemberDto>>, IHasParentContacts
 {
     public Guid MemberKey { get; set; }
     public Guid? UserKey { get; set; }
@@ -55,11 +54,11 @@ public class UpsertMemberCommand : IRequest<ServiceResult<MemberResponse>>, IHas
 /// photo and the account. This handler only decides the order and reports the outcome; every
 /// rule about a member's data lives in the use case that owns it.
 /// </summary>
-public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, ServiceResult<MemberResponse>>
+public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, ServiceResult<MemberDto>>
 {
     private readonly IMediator _mediator;
     private readonly IMemberUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IAccountProvisioningService _accountProvisioning;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
@@ -68,7 +67,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
     public UpsertMemberCommandHandler(
         IMediator mediator,
         IMemberUnitOfWork unitOfWork,
-        IMapper mapper,
+        IBlobReadLinks links,
         IAccountProvisioningService accountProvisioning,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
@@ -77,13 +76,13 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         _fieldAccess = fieldAccess;
         _mediator = mediator;
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _accountProvisioning = accountProvisioning;
         _currentUserContext = currentUserContext;
         _events = events;
     }
 
-    public async Task<ServiceResult<MemberResponse>> Handle(
+    public async Task<ServiceResult<MemberDto>> Handle(
         UpsertMemberCommand request,
         CancellationToken cancellationToken)
     {
@@ -99,17 +98,17 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         {
             if (accountLink?.UserKey is not null)
             {
-                return new ServiceResult<MemberResponse>(ResultType.Conflict);
+                return new ServiceResult<MemberDto>(ResultType.Conflict);
             }
 
             var availability = await _accountProvisioning.CheckAvailabilityAsync(request.Email, cancellationToken);
             if (availability != AccountAvailability.Available)
             {
-                return new ServiceResult<MemberResponse>(ResultType.Conflict);
+                return new ServiceResult<MemberDto>(ResultType.Conflict);
             }
         }
 
-        var profile = await _mediator.Send(ToProfileCommand(request), cancellationToken);
+        var profile = await _mediator.Send(request.ToProfileCommand(), cancellationToken);
         if (profile.Type != ResultType.Success || profile.Data is null)
         {
             return Propagate(profile);
@@ -167,7 +166,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         var member = await _unitOfWork.Members.GetByKeyAsync(profile.Data.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<MemberResponse>(ResultType.InternalServerError);
+            return new ServiceResult<MemberDto>(ResultType.InternalServerError);
         }
 
         if (!profile.Data.IsCreated
@@ -178,41 +177,23 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         }
 
         // The writer is answered like any reader: what they may not see stays kept, and unsaid.
-        var response = _mapper.Map<MemberResponse>(member)
+        var response = member.ToDto(_links)
             .MaskFor(await _fieldAccess.ForViewerAsync(cancellationToken), profile.Data.GroupKey);
         response.InvitationSent = invitationSent;
 
         return profile.Data.IsCreated
-            ? new ServiceResult<MemberResponse>(
+            ? new ServiceResult<MemberDto>(
                 ResultType.Created,
                 response,
                 CreatedAtActionName: "GetByKey",
                 CreatedAtRouteValues: new { memberKey = response.MemberKey })
-            : new ServiceResult<MemberResponse>(ResultType.Success, response);
+            : new ServiceResult<MemberDto>(ResultType.Success, response);
     }
 
-    private static UpsertMemberProfileCommand ToProfileCommand(UpsertMemberCommand request) => new UpsertMemberProfileCommand
-    {
-        MemberKey = request.MemberKey,
-        KurinKey = request.KurinKey,
-        GroupKey = request.GroupKey,
-        FirstName = request.FirstName,
-        MiddleName = request.MiddleName,
-        LastName = request.LastName,
-        Email = request.Email,
-        PhoneNumber = request.PhoneNumber,
-        DateOfBirth = request.DateOfBirth,
-        Address = request.Address,
-        School = request.School,
-        PlastLevelHistories = request.PlastLevelHistories,
-        CardExtras = request.CardExtras,
-        ApplyCardFields = request.ApplyCardFields
-    }.WithParentsOf(request);
-
-    private static ServiceResult<MemberResponse> Propagate<T>(ServiceResult<T> step) =>
+    private static ServiceResult<MemberDto> Propagate<T>(ServiceResult<T> step) =>
         step.ErrorCode is null
-            ? new ServiceResult<MemberResponse>(step.Type)
-            : ServiceResult<MemberResponse>.Failure(step.Type, step.ErrorCode, step.ErrorMessage!);
+            ? new ServiceResult<MemberDto>(step.Type)
+            : ServiceResult<MemberDto>.Failure(step.Type, step.ErrorCode, step.ErrorMessage!);
 
     private Task PublishProfileWentStaleAsync(
         MemberEntity member,

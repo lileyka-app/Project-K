@@ -1,6 +1,5 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Extensions;
@@ -16,9 +15,9 @@ using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 
-public sealed record VerifyMemberProfileCommand(Guid MemberKey, string? Note = null) : IRequest<ServiceResult<MemberResponse>>;
+public sealed record VerifyMemberProfileCommand(Guid MemberKey, string? Note = null) : IRequest<ServiceResult<MemberDto>>;
 
-public sealed class VerifyMemberProfileCommandHandler : IRequestHandler<VerifyMemberProfileCommand, ServiceResult<MemberResponse>>
+public sealed class VerifyMemberProfileCommandHandler : IRequestHandler<VerifyMemberProfileCommand, ServiceResult<MemberDto>>
 {
     private readonly IMemberProfileVerificationService _service;
 
@@ -27,6 +26,6 @@ public sealed class VerifyMemberProfileCommandHandler : IRequestHandler<VerifyMe
         _service = service;
     }
 
-    public Task<ServiceResult<MemberResponse>> Handle(VerifyMemberProfileCommand request, CancellationToken cancellationToken)
+    public Task<ServiceResult<MemberDto>> Handle(VerifyMemberProfileCommand request, CancellationToken cancellationToken)
         => _service.VerifyAsync(request.MemberKey, request.Note, cancellationToken);
 }

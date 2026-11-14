@@ -1,6 +1,5 @@
-using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Extensions;
@@ -16,9 +15,9 @@ using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 
-public sealed record ResetMemberProfileVerificationCommand(Guid MemberKey) : IRequest<ServiceResult<MemberResponse>>;
+public sealed record ResetMemberProfileVerificationCommand(Guid MemberKey) : IRequest<ServiceResult<MemberDto>>;
 
-public sealed class ResetMemberProfileVerificationCommandHandler : IRequestHandler<ResetMemberProfileVerificationCommand, ServiceResult<MemberResponse>>
+public sealed class ResetMemberProfileVerificationCommandHandler : IRequestHandler<ResetMemberProfileVerificationCommand, ServiceResult<MemberDto>>
 {
     private readonly IMemberProfileVerificationService _service;
 
@@ -27,6 +26,6 @@ public sealed class ResetMemberProfileVerificationCommandHandler : IRequestHandl
         _service = service;
     }
 
-    public Task<ServiceResult<MemberResponse>> Handle(ResetMemberProfileVerificationCommand request, CancellationToken cancellationToken)
+    public Task<ServiceResult<MemberDto>> Handle(ResetMemberProfileVerificationCommand request, CancellationToken cancellationToken)
         => _service.ResetAsync(request.MemberKey, cancellationToken);
 }

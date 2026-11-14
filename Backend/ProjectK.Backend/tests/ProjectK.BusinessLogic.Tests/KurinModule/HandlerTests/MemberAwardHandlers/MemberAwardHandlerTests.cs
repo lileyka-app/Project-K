@@ -1,6 +1,5 @@
 using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using AutoMapper;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
@@ -30,7 +29,6 @@ public class MemberAwardHandlerTests
     private readonly Mock<IMemberAwardRepository> _memberAwardRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
-    private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IUnitOfWork> _kurinDataMock = new();
     private readonly Mock<IMembershipRepository> _membershipsMock = new();
     private readonly Mock<IResourceAccessService> _access = new();
@@ -50,7 +48,6 @@ public class MemberAwardHandlerTests
         _memberAwardRepositoryMock = new Mock<IMemberAwardRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _eventsMock = new Mock<IDomainEventPublisher>();
-        _mapperMock = new Mock<IMapper>();
 
         _unitOfWorkMock.SetupGet(x => x.Members).Returns(_memberRepositoryMock.Object);
         _unitOfWorkMock.SetupGet(x => x.MemberAwards).Returns(_memberAwardRepositoryMock.Object);
@@ -77,7 +74,6 @@ public class MemberAwardHandlerTests
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _mapperMock.Object,
             _kurinDataMock.Object,
             _access.Object,
             _journal.Audit,
@@ -87,7 +83,6 @@ public class MemberAwardHandlerTests
             _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _mapperMock.Object,
             _access.Object,
             _journal.Audit);
         _deleteHandler = new DeleteMemberAwardCommandHandler(
@@ -125,7 +120,6 @@ public class MemberAwardHandlerTests
         _memberAwardRepositoryMock
             .Setup(x => x.Create(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()))
             .Callback<MemberAward, CancellationToken>((award, _) => created = award);
-        _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
 
         var result = await _upsertHandler.Handle(new UpsertMemberAwardCommand
         {
@@ -188,7 +182,6 @@ public class MemberAwardHandlerTests
             .Setup(x => x.Create(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()))
             .Callback<MemberAward, CancellationToken>((award, _) => created = award);
 
-        _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
 
         var result = await _upsertHandler.Handle(new UpsertMemberAwardCommand
         {
@@ -258,7 +251,6 @@ public class MemberAwardHandlerTests
             .Setup(x => x.GetByKeyAsync(awardKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAward);
 
-        _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
         _currentUserContextMock
             .SetupGet(x => x.Roles)
             .Returns(new[] { SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) });
@@ -449,7 +441,6 @@ public class MemberAwardHandlerTests
         _memberDirectory
             .Setup(x => x.FindAccountKeyAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(memberUserKey);
-        _mapperMock.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
 
         var result = await _reviewHandler.Handle(new ReviewMemberAwardCommand
         {

@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -20,10 +20,10 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
 /// <param name="UspNumber">The wanted number in УСП; null leaves the kurin out of УСП.</param>
 /// <param name="UpsNumber">The wanted number in УПС; null leaves the kurin out of УПС.</param>
 public sealed record SubmitKurinBranchRequestCommand(Guid KurinKey, int? UspNumber, int? UpsNumber, string? Note)
-    : IRequest<ServiceResult<KurinBranchRequestResponse>>;
+    : IRequest<ServiceResult<KurinBranchRequestDto>>;
 
 public sealed class SubmitKurinBranchRequestCommandHandler
-    : IRequestHandler<SubmitKurinBranchRequestCommand, ServiceResult<KurinBranchRequestResponse>>
+    : IRequestHandler<SubmitKurinBranchRequestCommand, ServiceResult<KurinBranchRequestDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
@@ -45,23 +45,23 @@ public sealed class SubmitKurinBranchRequestCommandHandler
         _numbers = numbers.Value;
     }
 
-    public async Task<ServiceResult<KurinBranchRequestResponse>> Handle(SubmitKurinBranchRequestCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<KurinBranchRequestDto>> Handle(SubmitKurinBranchRequestCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserId is not Guid userKey)
         {
-            return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.Unauthorized, "Unauthorized", "Sign in to send a request.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.Unauthorized, "Unauthorized", "Sign in to send a request.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin not found.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin not found.");
         }
 
         // A УПЮ kurin has one number it sets in its own settings; гілки change only for the older ones.
         if (!KurinBranchSet.IsSenior(kurin.Branch))
         {
-            return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.BadRequest, "NotSeniorKurin", "Only a УСП or УПС kurin changes its гілки by request.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, "NotSeniorKurin", "Only a УСП or УПС kurin changes its гілки by request.");
         }
 
         var wanted = new KurinBranchRequest
@@ -83,7 +83,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
         {
             if (await _unitOfWork.Kurins.IsNumberTakenAsync(kurin.KraiCode, numbering.Branch, numbering.Number!.Value, kurin.KurinKey, cancellationToken))
             {
-                return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this край.");
+                return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this край.");
             }
         }
 
@@ -108,25 +108,25 @@ public sealed class SubmitKurinBranchRequestCommandHandler
                 userKey),
             cancellationToken);
 
-        return new ServiceResult<KurinBranchRequestResponse>(ResultType.Created, KurinBranchRequestResponse.From(wanted, kurin, requesterName));
+        return new ServiceResult<KurinBranchRequestDto>(ResultType.Created, wanted.ToDto(kurin, requesterName));
     }
 
-    private ServiceResult<KurinBranchRequestResponse>? Refusal(Common.Entities.KurinModule.Kurin kurin, KurinBranchRequest wanted)
+    private ServiceResult<KurinBranchRequestDto>? Refusal(Common.Entities.KurinModule.Kurin kurin, KurinBranchRequest wanted)
     {
         if (wanted.Note?.Length > KurinBranchRequest.NoteMaxLength)
         {
-            return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.BadRequest, "NoteTooLong", $"A note is up to {KurinBranchRequest.NoteMaxLength} characters.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, "NoteTooLong", $"A note is up to {KurinBranchRequest.NoteMaxLength} characters.");
         }
 
         var branches = wanted.WantedBranches;
         if (branches.Count == 0)
         {
-            return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.BadRequest, KurinBranchSet.InvalidCode, "A senior kurin keeps at least one гілка.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, KurinBranchSet.InvalidCode, "A senior kurin keeps at least one гілка.");
         }
 
         if (branches.Any(b => !_numbers.IsAllowed(b.Number!.Value)))
         {
-            return ServiceResult<KurinBranchRequestResponse>.Failure(
+            return ServiceResult<KurinBranchRequestDto>.Failure(
                 ResultType.BadRequest,
                 "KurinNumberOutOfRange",
                 $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
@@ -134,7 +134,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
 
         if (branches.SequenceEqual(kurin.Numbering))
         {
-            return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.BadRequest, "NothingToChange", "The kurin already has these гілки and numbers.");
+            return ServiceResult<KurinBranchRequestDto>.Failure(ResultType.BadRequest, "NothingToChange", "The kurin already has these гілки and numbers.");
         }
 
         return null;

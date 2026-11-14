@@ -1,4 +1,3 @@
-using AutoMapper;
 using FluentValidation;
 using MediatR;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -31,7 +30,6 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
-    private readonly IMapper _mapper;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
 
@@ -40,7 +38,6 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         IMemberDirectory members,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMapper mapper,
         IResourceAccessService access,
         IKurinAudit audit)
     {
@@ -50,7 +47,6 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         _audit = audit;
         _currentUserContext = currentUserContext;
         _events = events;
-        _mapper = mapper;
     }
 
     public async Task<ServiceResult<MemberAwardDto>> Handle(ReviewMemberAwardCommand request, CancellationToken cancellationToken)
@@ -111,7 +107,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
 
         await NotifyMemberOwnerAsync(award, approved, cancellationToken);
 
-        return new ServiceResult<MemberAwardDto>(ResultType.Success, _mapper.Map<MemberAwardDto>(award));
+        return new ServiceResult<MemberAwardDto>(ResultType.Success, award.ToDto());
     }
 
     private async Task NotifyMemberOwnerAsync(
