@@ -53,7 +53,7 @@ public class AccountEventHandlerTests
         await Activate(Guid.Empty);
 
         created.Should().NotBeNull();
-        created!.UserKey.Should().Be(_userKey);
+        created.UserKey.Should().Be(_userKey);
         _events.Verify(e => e.PublishAsync(It.IsAny<MemberPlaced>(), It.IsAny<CancellationToken>()), Times.Never);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

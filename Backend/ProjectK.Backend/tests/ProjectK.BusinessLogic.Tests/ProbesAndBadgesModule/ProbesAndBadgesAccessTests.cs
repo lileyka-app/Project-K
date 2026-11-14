@@ -13,7 +13,7 @@ namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 /// The person writes their own projects; besides them, whoever the kurin lets sign their probe.
 /// The probe is found by its place in the person's line, never by its id.
 /// </summary>
-public class ProbeProjectAccessTests
+public class ProbesAndBadgesAccessTests
 {
     private readonly Mock<IMemberProbeLine> _line = new();
     private readonly Mock<IMemberDirectory> _members = new();
@@ -23,7 +23,7 @@ public class ProbeProjectAccessTests
     private readonly Guid _userKey = Guid.NewGuid();
     private readonly ProbesAndBadgesAccess _access;
 
-    public ProbeProjectAccessTests()
+    public ProbesAndBadgesAccessTests()
     {
         _user.SetupGet(u => u.UserId).Returns(_userKey);
         _rights.Setup(r => r.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, _memberKey, It.IsAny<CancellationToken>()))

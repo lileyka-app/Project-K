@@ -179,7 +179,7 @@ public class ResourceScopeRepositoryMembershipTests
 /// Whether a person's youth record is closed (LIFE-01): they stand in a УСП or УПС kurin now. A
 /// senior kurin they left, or an УПЮ kurin they serve in as staff, does not make them one.
 /// </summary>
-public class ResourceScopeReaderSeniorTests
+public class ResourceScopeRepositorySeniorTests
 {
     private readonly AppDbContext _context = new(new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
         .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -224,7 +224,7 @@ public class ResourceScopeReaderSeniorTests
 }
 
 /// <summary>The owner's rule on two memberships (LIFE-01): while a юнак in an УПЮ kurin, they are a юнак.</summary>
-public class ResourceScopeReaderTwoMembershipsTests
+public class ResourceScopeRepositoryTwoMembershipsTests
 {
     [Fact]
     public async Task AnOpenYouthMembershipInAnUpyuKurin_KeepsTheRecordOpen_EvenBesideASeniorOne()

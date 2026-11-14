@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -38,19 +37,16 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
 {
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly ICurrentMember _currentMember;
-    private readonly ICurrentUserContext _currentUser;
 
-    public PinMyAwardCommandHandler(IMemberUnitOfWork unitOfWork, ICurrentMember currentMember, ICurrentUserContext currentUser)
+    public PinMyAwardCommandHandler(IMemberUnitOfWork unitOfWork, ICurrentMember currentMember)
     {
         _unitOfWork = unitOfWork;
         _currentMember = currentMember;
-        _currentUser = currentUser;
     }
 
     public async Task<ServiceResult<bool>> Handle(PinMyAwardCommand request, CancellationToken cancellationToken)
     {
-        if (_currentUser.UserId is not { } userKey
-            || await _currentMember.FindAsync(cancellationToken) is not { } me)
+        if (await _currentMember.FindAsync(cancellationToken) is not { } me)
         {
             return ServiceResult<bool>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
         }

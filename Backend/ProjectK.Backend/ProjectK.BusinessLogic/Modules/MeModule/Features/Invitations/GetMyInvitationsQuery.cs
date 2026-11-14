@@ -1,7 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
@@ -21,14 +20,12 @@ public sealed class GetMyInvitationsQueryHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMember _currentMember;
-    private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public GetMyInvitationsQueryHandler(IUnitOfWork unitOfWork, ICurrentMember currentMember, ICurrentUserContext currentUser, TimeProvider time)
+    public GetMyInvitationsQueryHandler(IUnitOfWork unitOfWork, ICurrentMember currentMember, TimeProvider time)
     {
         _unitOfWork = unitOfWork;
         _currentMember = currentMember;
-        _currentUser = currentUser;
         _time = time;
     }
 

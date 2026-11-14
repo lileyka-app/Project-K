@@ -79,10 +79,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IPrivateScoreCriterionRepository _privateScoreCriteria;
     private IPrivateScoreEntryRepository _privateScoreEntries;
 
-    private IResourceScopeRepository _resourceScopes;
-    private IKurinReportRepository _kurinReports;
-    private IKurinAuditRepository _kurinAudit;
-    private IKurinJournalRepository _kurinJournal;
+    private IResourceScopeRepository? _resourceScopes;
+    private IKurinReportRepository? _kurinReports;
+    private IKurinAuditRepository? _kurinAudit;
+    private IKurinJournalRepository? _kurinJournal;
     private IKraiRepository _krais;
 
     public IKraiRepository Krais => _krais ??= new KraiRepository(_context);
