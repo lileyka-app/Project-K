@@ -36,7 +36,7 @@ public class SaveChangesInterceptorsTests
 
         var member = new Member { MemberKey = Guid.NewGuid(), FirstName = "Устим", LastName = "Соловей", Email = "u@example.com", PhoneNumber = "+380501234567" };
         var groupKey = Guid.NewGuid();
-        var joined = new DateTime(2024, 9, 1);
+        var joined = new DateTime(2024, 9, 1, 0, 0, 0, DateTimeKind.Utc);
         var membership = new Membership { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), GroupKey = groupKey, JoinedAtUtc = joined };
         context.Members.Add(member);
         context.Memberships.Add(membership);
