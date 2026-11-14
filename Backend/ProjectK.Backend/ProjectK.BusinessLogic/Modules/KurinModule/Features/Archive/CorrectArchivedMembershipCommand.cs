@@ -19,7 +19,7 @@ public sealed record CorrectArchivedMembershipCommand(
     Guid MembershipKey,
     MembershipKind Kind,
     DateOnly JoinedOn,
-    DateOnly LeftOn) : IRequest<ServiceResult<object>>;
+    DateOnly LeftOn) : IRequest<ServiceResult<Unit>>;
 
 public sealed class CorrectArchivedMembershipCommandValidator : AbstractValidator<CorrectArchivedMembershipCommand>
 {
@@ -32,7 +32,7 @@ public sealed class CorrectArchivedMembershipCommandValidator : AbstractValidato
     }
 }
 
-public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<CorrectArchivedMembershipCommand, ServiceResult<object>>
+public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<CorrectArchivedMembershipCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -49,33 +49,33 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(CorrectArchivedMembershipCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(CorrectArchivedMembershipCommand request, CancellationToken cancellationToken)
     {
         if (await _reach.ResolveAsync(request.KurinKey, ResourceAction.Update, cancellationToken) is not { } reach)
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The archive is not yours to correct.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The archive is not yours to correct.");
         }
 
         var membership = await _unitOfWork.Archive.FindMembershipAsync(request.MembershipKey, cancellationToken);
         if (membership is null || membership.KurinKey != request.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such membership in this kurin.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such membership in this kurin.");
         }
 
         if (membership.LeftAtUtc is not { } leftAt)
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, ArchiveErrors.StillCurrent, "A current membership is changed on the card.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, ArchiveErrors.StillCurrent, "A current membership is changed on the card.");
         }
 
         if (reach.IsOwn(membership.MemberKey))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, ArchiveErrors.OwnRecord, "Nobody corrects their own record.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OwnRecord, "Nobody corrects their own record.");
         }
 
         var groups = await _unitOfWork.Archive.GetStintGroupKeysAsync(membership.MembershipKey, cancellationToken);
         if (!reach.Reaches(groups.Select(group => (Guid?)group).Append(membership.GroupKey)))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The membership is outside your гуртки.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The membership is outside your гуртки.");
         }
 
         var joinedOn = DateOnly.FromDateTime(membership.JoinedAtUtc);
@@ -86,14 +86,14 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
             ("leftOn", leftOn, request.LeftOn));
         if (changes.Count == 0)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         // The dues ledger reads kind and dates on every open: changing them would charge the past
         // again, and the old charges would not go.
         if (await _dues.HasLedgerAsync(request.KurinKey, [membership.MembershipKey], cancellationToken))
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, ArchiveErrors.HasDues, "The membership carries dues; its kind and dates stay.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, ArchiveErrors.HasDues, "The membership carries dues; its kind and dates stay.");
         }
 
         var newJoined = request.JoinedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
@@ -101,7 +101,7 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
         var others = await _unitOfWork.Archive.GetOtherPeriodsAsync(membership.MemberKey, request.KurinKey, membership.MembershipKey, cancellationToken);
         if (others.Any(other => other.JoinedAtUtc <= newLeft && (other.LeftAtUtc ?? DateTime.MaxValue) >= newJoined))
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, ArchiveErrors.Overlap, "The dates overlap another membership of theirs in this kurin.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, ArchiveErrors.Overlap, "The dates overlap another membership of theirs in this kurin.");
         }
 
         // A date that did not change keeps its time of day; a corrected one is that day, and on the
@@ -135,6 +135,6 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

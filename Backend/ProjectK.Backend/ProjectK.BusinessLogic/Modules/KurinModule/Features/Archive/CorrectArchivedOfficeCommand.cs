@@ -19,7 +19,7 @@ public sealed record CorrectArchivedOfficeCommand(
     Guid HistoryKey,
     LeadershipRole Role,
     DateOnly StartDate,
-    DateOnly EndDate) : IRequest<ServiceResult<object>>;
+    DateOnly EndDate) : IRequest<ServiceResult<Unit>>;
 
 public sealed class CorrectArchivedOfficeCommandValidator : AbstractValidator<CorrectArchivedOfficeCommand>
 {
@@ -32,7 +32,7 @@ public sealed class CorrectArchivedOfficeCommandValidator : AbstractValidator<Co
     }
 }
 
-public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<CorrectArchivedOfficeCommand, ServiceResult<object>>
+public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<CorrectArchivedOfficeCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ArchiveReach _reach;
@@ -45,38 +45,38 @@ public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<Correc
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(CorrectArchivedOfficeCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(CorrectArchivedOfficeCommand request, CancellationToken cancellationToken)
     {
         if (await _reach.ResolveAsync(request.KurinKey, ResourceAction.Update, cancellationToken) is not { } reach)
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The archive is not yours to correct.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The archive is not yours to correct.");
         }
 
         var history = await _unitOfWork.Archive.FindOfficeAsync(request.HistoryKey, cancellationToken);
         var leadership = history?.Leadership;
         if (history is null || (leadership!.KurinKey ?? leadership.Group?.KurinKey) != request.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such holding in this kurin.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, ArchiveErrors.NotFound, "No such holding in this kurin.");
         }
 
         if (history.EndDate is null)
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, ArchiveErrors.StillCurrent, "A current holding is changed on the провід.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, ArchiveErrors.StillCurrent, "A current holding is changed on the провід.");
         }
 
         if (reach.IsOwn(history.MemberKey))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, ArchiveErrors.OwnRecord, "Nobody corrects their own record.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OwnRecord, "Nobody corrects their own record.");
         }
 
         if (!reach.Reaches([leadership.GroupKey]))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The holding is outside your гуртки.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, ArchiveErrors.OutOfReach, "The holding is outside your гуртки.");
         }
 
         if (!LeadershipOffices.Grouping[leadership.Type].Contains(request.Role))
         {
-            return ServiceResult<object>.Failure(ResultType.BadRequest, ArchiveErrors.InvalidRole, "The role does not belong to this провід.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, ArchiveErrors.InvalidRole, "The role does not belong to this провід.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
@@ -87,7 +87,7 @@ public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<Correc
             ("endDate", history.EndDate, request.EndDate));
         if (changes.Count == 0)
         {
-            return new ServiceResult<object>(ResultType.Success);
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         history.Role = request.Role;
@@ -106,6 +106,6 @@ public sealed class CorrectArchivedOfficeCommandHandler : IRequestHandler<Correc
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }
