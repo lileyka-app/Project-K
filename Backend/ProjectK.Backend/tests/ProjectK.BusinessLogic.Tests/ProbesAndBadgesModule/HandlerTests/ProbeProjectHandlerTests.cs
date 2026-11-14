@@ -73,10 +73,10 @@ public class ProbeProjectHandlerTests
         _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
 
     private SaveThirdProbeFileCommandHandler FileHandler() => new(
-        _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
 
     private UploadCampCertificateCommandHandler CertificateHandler() => new(
-        _unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object, _reader.Object);
+        _unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
 
     private ProbeProject Given(bool isSpare = false, bool isShared = false, int images = 0, string title = "Похід")
     {
@@ -475,7 +475,7 @@ public class ProbeProjectHandlerTests
     [Fact]
     public async Task Stages_ShouldBeSetByWhoeverMaySign_AndJournaled()
     {
-        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
         var stages = new ThirdProbeStagesInput(new DateOnly(2025, 9, 1), new DateOnly(2025, 9, 20), new DateOnly(2025, 10, 1), new DateOnly(2025, 11, 1), null, null, null);
 
         var result = await handler.Handle(new SetThirdProbeStagesCommand(_memberKey, ProbeId, stages), CancellationToken.None);
@@ -492,7 +492,7 @@ public class ProbeProjectHandlerTests
     [InlineData("2026-01-01", "2026-03-01", "2026-02-01")]
     public async Task Stages_ShouldRefuseAClosingBeforeTheOpeningOrANamingBeforeTheClosing(string opened, string? completed, string? named)
     {
-        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
         var stages = new ThirdProbeStagesInput(null, null, null, DateOnly.Parse(opened),
             completed is null ? null : DateOnly.Parse(completed), named is null ? null : DateOnly.Parse(named), null);
 
@@ -505,7 +505,7 @@ public class ProbeProjectHandlerTests
     public async Task Stages_ShouldBeForbidden_ToTheYouthThemself()
     {
         _access.Setup(a => a.CanSignAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
 
         var result = await handler.Handle(
             new SetThirdProbeStagesCommand(_memberKey, ProbeId, new ThirdProbeStagesInput(null, null, null, null, null, null, null)), CancellationToken.None);

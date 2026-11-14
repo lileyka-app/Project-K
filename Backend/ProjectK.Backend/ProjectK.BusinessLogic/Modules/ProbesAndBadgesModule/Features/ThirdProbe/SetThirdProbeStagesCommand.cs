@@ -38,6 +38,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
+    private readonly ThirdProbeFileWriter _files;
 
     public SetThirdProbeStagesCommandHandler(
         IUnitOfWork unitOfWork,
@@ -45,7 +46,8 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         ICurrentMember actors,
         IKurinAudit audit,
         IProbesCatalogReader probes,
-        IThirdProbeReader reader)
+        IThirdProbeReader reader,
+        ThirdProbeFileWriter files)
     {
         _unitOfWork = unitOfWork;
         _access = access;
@@ -53,6 +55,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         _audit = audit;
         _probes = probes;
         _reader = reader;
+        _files = files;
     }
 
     public async Task<ServiceResult<ThirdProbeDto>> Handle(SetThirdProbeStagesCommand request, CancellationToken cancellationToken)
@@ -72,7 +75,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
             return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.StagesOutOfOrder, message);
         }
 
-        var file = await ThirdProbeFileWriter.GetOrAddAsync(_unitOfWork, memberKey, probeId, cancellationToken);
+        var file = await _files.GetOrAddAsync(memberKey, probeId, cancellationToken);
         var before = ThirdProbeReader.Stages(file);
         var actor = await _actors.ActorAsync(cancellationToken);
         file.MotivationLetterOn = stages.MotivationLetterOn;

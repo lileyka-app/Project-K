@@ -33,7 +33,7 @@ public class AgendaRsvpWriterTests
     [Fact]
     public async Task FirstAnswer_OnAnOccurrence_CreatesARowKeyedByIt()
     {
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday, AgendaRsvpStatus.Going, Now, default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday, AgendaRsvpStatus.Going, Now, default);
 
         _rows.Should().ContainSingle().Which.Should().BeEquivalentTo(new
         {
@@ -48,8 +48,8 @@ public class AgendaRsvpWriterTests
     [Fact]
     public async Task AnswersOnTwoOccurrences_AreTwoRows_NotOneOverwritten()
     {
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday, AgendaRsvpStatus.Going, Now, default);
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday.AddDays(7), AgendaRsvpStatus.NotGoing, Now.AddMinutes(1), default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday, AgendaRsvpStatus.Going, Now, default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday.AddDays(7), AgendaRsvpStatus.NotGoing, Now.AddMinutes(1), default);
 
         _rows.Should().HaveCount(2);
         _rows.Single(r => r.OccurrenceStartUtc == Monday).Status.Should().Be(AgendaRsvpStatus.Going);
@@ -60,10 +60,10 @@ public class AgendaRsvpWriterTests
     [Fact]
     public async Task ChangingTheAnswer_OnTheSameOccurrence_RetimesThatRowOnly()
     {
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday, AgendaRsvpStatus.Maybe, Now, default);
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday.AddDays(7), AgendaRsvpStatus.Maybe, Now, default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday, AgendaRsvpStatus.Maybe, Now, default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday.AddDays(7), AgendaRsvpStatus.Maybe, Now, default);
 
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday, AgendaRsvpStatus.Going, Now.AddHours(1), default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday, AgendaRsvpStatus.Going, Now.AddHours(1), default);
 
         _rows.Should().HaveCount(2);
         var changed = _rows.Single(r => r.OccurrenceStartUtc == Monday);
@@ -76,9 +76,9 @@ public class AgendaRsvpWriterTests
     [Fact]
     public async Task RepeatingTheSameAnswer_TouchesNothing()
     {
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday, AgendaRsvpStatus.Going, Now, default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday, AgendaRsvpStatus.Going, Now, default);
 
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, Monday, AgendaRsvpStatus.Going, Now.AddHours(1), default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, Monday, AgendaRsvpStatus.Going, Now.AddHours(1), default);
 
         _rows.Should().ContainSingle().Which.RespondedAtUtc.Should().Be(Now);
         _responses.Verify(r => r.Update(It.IsAny<AgendaResponse>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -87,8 +87,8 @@ public class AgendaRsvpWriterTests
     [Fact]
     public async Task OneOffEvent_IsKeyedByNull()
     {
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, null, AgendaRsvpStatus.Going, Now, default);
-        await AgendaRsvpWriter.UpsertAsync(_uow.Object, _item, _user, null, AgendaRsvpStatus.NotGoing, Now.AddHours(1), default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, null, AgendaRsvpStatus.Going, Now, default);
+        await new AgendaRsvpWriter(_uow.Object).UpsertAsync(_item, _user, null, AgendaRsvpStatus.NotGoing, Now.AddHours(1), default);
 
         _rows.Should().ContainSingle().Which.Should().BeEquivalentTo(new { OccurrenceStartUtc = (DateTime?)null, Status = AgendaRsvpStatus.NotGoing });
     }

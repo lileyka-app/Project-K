@@ -98,6 +98,8 @@ public static class DependencyInjection
         services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
+        services.AddScoped<AgendaStatusWriter>();
+        services.AddScoped<AgendaRsvpWriter>();
         services.AddScoped<ArchiveReach>();
         services.AddSingleton<ArchiveDangerZoneStore>();
         services.AddScoped<ArchiveDangerZoneService>();
@@ -118,6 +120,7 @@ public static class DependencyInjection
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IProbesAndBadgesAccess, ProbesAndBadgesAccess>();
+        services.AddScoped<ThirdProbeFileWriter>();
         services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();

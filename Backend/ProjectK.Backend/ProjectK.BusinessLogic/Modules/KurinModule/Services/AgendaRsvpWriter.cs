@@ -9,14 +9,21 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// occurrence only. Shared by the calendar and the dashboard so both write the same row the same
 /// way. The occurrence key comes resolved (<see cref="AgendaOccurrenceRules"/>). Does not save.
 /// </summary>
-public static class AgendaRsvpWriter
+public sealed class AgendaRsvpWriter
 {
-    public static async Task UpsertAsync(IUnitOfWork unitOfWork, AgendaItem item, Guid userKey, DateTime? occurrenceKey, AgendaRsvpStatus status, DateTime nowUtc, CancellationToken cancellationToken)
+    private readonly IUnitOfWork _unitOfWork;
+
+    public AgendaRsvpWriter(IUnitOfWork unitOfWork)
     {
-        var existing = await unitOfWork.AgendaResponses.GetForItemAndUserAsync(item.AgendaItemKey, userKey, occurrenceKey, cancellationToken);
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task UpsertAsync(AgendaItem item, Guid userKey, DateTime? occurrenceKey, AgendaRsvpStatus status, DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        var existing = await _unitOfWork.AgendaResponses.GetForItemAndUserAsync(item.AgendaItemKey, userKey, occurrenceKey, cancellationToken);
         if (existing is null)
         {
-            unitOfWork.AgendaResponses.Create(new AgendaResponse
+            _unitOfWork.AgendaResponses.Create(new AgendaResponse
             {
                 AgendaItemKey = item.AgendaItemKey,
                 UserKey = userKey,
@@ -32,7 +39,7 @@ public static class AgendaRsvpWriter
             existing.Status = status;
             existing.RespondedAtUtc = nowUtc;
             existing.UpdatedDate = nowUtc;
-            unitOfWork.AgendaResponses.Update(existing, cancellationToken);
+            _unitOfWork.AgendaResponses.Update(existing, cancellationToken);
         }
     }
 }

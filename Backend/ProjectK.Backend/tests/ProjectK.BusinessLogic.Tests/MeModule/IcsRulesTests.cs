@@ -1,15 +1,16 @@
 using System.Text;
 using FluentAssertions;
+using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 
 /// <summary>The few rules of RFC 5545 a calendar app is strict about.</summary>
-public class IcsWriterTests
+public class IcsRulesTests
 {
     private static readonly DateTime Stamp = new(2026, 10, 20, 8, 0, 0, DateTimeKind.Utc);
 
-    private static string One(IcsEvent item) => IcsWriter.Write("Лілейка", "Europe/Kyiv", [item]);
+    private static string One(IcsEvent item) => IcsRules.Write("Лілейка", "Europe/Kyiv", [item]);
 
     private static IcsEvent Timed(string summary = "Сходини", string? description = null) => new(
         "a@lileyka.app", new DateTime(2026, 10, 27, 16, 30, 0, DateTimeKind.Utc), new DateTime(2026, 10, 27, 18, 0, 0, DateTimeKind.Utc),

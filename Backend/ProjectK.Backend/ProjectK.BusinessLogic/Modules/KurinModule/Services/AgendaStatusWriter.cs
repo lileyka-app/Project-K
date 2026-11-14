@@ -13,10 +13,20 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// Writes one move — a whole target or one person's part — and re-derives what it adds up to, so the
 /// target's and the task's stored states never lag behind the part that moved.
 /// </summary>
-internal static class AgendaStatusWriter
+public sealed class AgendaStatusWriter
 {
-    public static void Apply(
-        IUnitOfWork uow,
+    private readonly IUnitOfWork _uow;
+    private readonly IKurinAudit _audit;
+    private readonly IDomainEventPublisher _events;
+
+    public AgendaStatusWriter(IUnitOfWork uow, IKurinAudit audit, IDomainEventPublisher events)
+    {
+        _uow = uow;
+        _audit = audit;
+        _events = events;
+    }
+
+    public void Apply(
         AgendaItem item,
         AgendaStake stake,
         AgendaItemStatus status,
@@ -35,7 +45,7 @@ internal static class AgendaStatusWriter
                     AgendaAssignmentKey = assignment.AgendaAssignmentKey,
                     MemberKey = memberKey
                 };
-                uow.AgendaItems.AddProgress(part);
+                _uow.AgendaItems.AddProgress(part);
                 // A tracked assignment picks the new row up by fix-up on Add; adding it again would count it twice.
                 if (!assignment.Progress.Contains(part))
                 {
@@ -65,8 +75,7 @@ internal static class AgendaStatusWriter
     /// it. <paramref name="movedFrom"/> is null when the task itself was moved. A move that left
     /// everything where it was is not recorded.
     /// </summary>
-    public static Task RecordAsync(
-        IKurinAudit audit,
+    public Task RecordAsync(
         AgendaItem item,
         string label,
         Guid? memberKey,
@@ -83,20 +92,20 @@ internal static class AgendaStatusWriter
             return Task.CompletedTask;
         }
 
-        return audit.RecordAsync(
+        return _audit.RecordAsync(
             new AuditRecord(AuditArea.Agenda, AuditActions.Agenda.StatusChanged, item.AgendaItemKey, label, memberKey, changes, KurinKey: item.KurinKey),
             cancellationToken);
     }
 
     /// <summary>The author wants to know when the task they set moves as a whole — not when they moved it themselves.</summary>
-    public static async Task PublishAsync(IDomainEventPublisher events, AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
+    public async Task PublishAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
         if (item.CreatedByUserKey == Guid.Empty || item.CreatedByUserKey == actorUserKey)
         {
             return;
         }
 
-        await events.PublishAsync(
+        await _events.PublishAsync(
             new AgendaItemStatusChanged(
                 item.AgendaItemKey,
                 item.KurinKey,

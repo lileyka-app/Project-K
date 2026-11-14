@@ -27,6 +27,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
     private readonly IDomainEventPublisher _events;
     private readonly TimeProvider _time;
     private readonly IKurinAudit _audit;
+    private readonly AgendaStatusWriter _statuses;
 
     public ChangeAgendaTargetStatusCommandHandler(
         IUnitOfWork uow,
@@ -35,7 +36,8 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
         TimeProvider time,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        AgendaStatusWriter statuses)
     {
         _uow = uow;
         _members = members;
@@ -44,6 +46,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         _events = events;
         _time = time;
         _audit = audit;
+        _statuses = statuses;
     }
 
     public async Task<ServiceResult<Unit>> Handle(ChangeAgendaTargetStatusCommand request, CancellationToken cancellationToken)
@@ -90,7 +93,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         var actor = viewer.ViewerUserKey ?? Guid.Empty;
         var stake = new AgendaStake(assignment, request.MemberKey);
         var movedFrom = AgendaCompletionRules.StatusOf(stake);
-        AgendaStatusWriter.Apply(_uow, item, stake, request.Status, actor, roster, _time.GetUtcNow().UtcDateTime);
+        _statuses.Apply(item, stake, request.Status, actor, roster, _time.GetUtcNow().UtcDateTime);
 
         // A person's part names the person; a shared target is named in the label instead.
         var label = item.Title;
@@ -101,12 +104,12 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
             label = $"{item.Title} — {names.Describe(target)}";
         }
 
-        await AgendaStatusWriter.RecordAsync(_audit, item, label, request.MemberKey, movedFrom, request.Status, before, cancellationToken);
+        await _statuses.RecordAsync(item, label, request.MemberKey, movedFrom, request.Status, before, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         if (item.Status != before)
         {
-            await AgendaStatusWriter.PublishAsync(_events, item, actor, cancellationToken);
+            await _statuses.PublishAsync(item, actor, cancellationToken);
         }
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

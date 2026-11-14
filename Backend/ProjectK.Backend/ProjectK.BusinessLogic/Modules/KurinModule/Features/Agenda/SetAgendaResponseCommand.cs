@@ -26,14 +26,16 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IKraiProfileDirectory _profiles;
+    private readonly AgendaRsvpWriter _rsvps;
 
-    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileDirectory profiles)
+    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileDirectory profiles, AgendaRsvpWriter rsvps)
     {
         _uow = uow;
         _members = members;
         _access = access;
         _currentUser = currentUser;
         _profiles = profiles;
+        _rsvps = rsvps;
     }
 
     public async Task<ServiceResult<AgendaResponsesDto>> Handle(SetAgendaResponseCommand request, CancellationToken cancellationToken)
@@ -74,7 +76,7 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
             return ServiceResult<AgendaResponsesDto>.Failure(ResultType.BadRequest, AgendaErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }
 
-        await AgendaRsvpWriter.UpsertAsync(_uow, item, userKey.Value, occurrenceKey, request.Status, DateTime.UtcNow, cancellationToken);
+        await _rsvps.UpsertAsync(item, userKey.Value, occurrenceKey, request.Status, DateTime.UtcNow, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, occurrenceKey, cancellationToken);

@@ -26,6 +26,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
     private readonly IDomainEventPublisher _events;
     private readonly TimeProvider _time;
     private readonly IKurinAudit _audit;
+    private readonly AgendaStatusWriter _statuses;
 
     public ChangeAgendaItemStatusCommandHandler(
         IUnitOfWork uow,
@@ -34,7 +35,8 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
         TimeProvider time,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        AgendaStatusWriter statuses)
     {
         _uow = uow;
         _members = members;
@@ -43,6 +45,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         _events = events;
         _time = time;
         _audit = audit;
+        _statuses = statuses;
     }
 
     public async Task<ServiceResult<Unit>> Handle(ChangeAgendaItemStatusCommand request, CancellationToken cancellationToken)
@@ -73,7 +76,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
 
             AgendaCompletionRules.SetItemStatus(item, request.Status, now);
             item.UpdatedDate = now;
-            await AgendaStatusWriter.RecordAsync(_audit, item, item.Title, null, null, request.Status, before, cancellationToken);
+            await _statuses.RecordAsync(item, item.Title, null, null, request.Status, before, cancellationToken);
         }
         else
         {
@@ -87,11 +90,11 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
             var roster = await AgendaRoster.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
             foreach (var stake in moves)
             {
-                AgendaStatusWriter.Apply(_uow, item, stake, request.Status, actor, roster, now);
+                _statuses.Apply(item, stake, request.Status, actor, roster, now);
             }
 
             var whosePart = moves.Count == 1 ? moves[0].MemberKey : null;
-            await AgendaStatusWriter.RecordAsync(_audit, item, item.Title, whosePart, movedFrom, request.Status, before, cancellationToken);
+            await _statuses.RecordAsync(item, item.Title, whosePart, movedFrom, request.Status, before, cancellationToken);
         }
 
         // The item is tracked (loaded with assignments), so the change is persisted without an explicit
@@ -100,7 +103,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
 
         if (item.Status != before)
         {
-            await AgendaStatusWriter.PublishAsync(_events, item, actor, cancellationToken);
+            await _statuses.PublishAsync(item, actor, cancellationToken);
         }
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

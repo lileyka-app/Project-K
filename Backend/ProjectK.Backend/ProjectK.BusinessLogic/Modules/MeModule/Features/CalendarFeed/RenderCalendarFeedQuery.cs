@@ -96,7 +96,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         var now = _time.GetUtcNow().UtcDateTime;
         if (feed.RevokedAtUtc is { } revokedAt)
         {
-            return File(IcsWriter.Write(CalendarName, null, Notice(feed.CalendarFeedKey, revokedAt, feed.RevokedReason, now)));
+            return File(IcsRules.Write(CalendarName, null, Notice(feed.CalendarFeedKey, revokedAt, feed.RevokedReason, now)));
         }
 
         var user = await _userManager.FindByIdAsync(feed.UserId.ToString());
@@ -107,7 +107,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
 
         if (!user.CanSignIn())
         {
-            return File(IcsWriter.Write(CalendarName, null, Notice(feed.CalendarFeedKey, now, CalendarFeedRevokeReason.Suspended, now)));
+            return File(IcsRules.Write(CalendarName, null, Notice(feed.CalendarFeedKey, now, CalendarFeedRevokeReason.Suspended, now)));
         }
 
         await _feeds.MarkFetchedAsync(feed.CalendarFeedKey, cancellationToken);
@@ -123,7 +123,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             events.AddRange(await EventsOfAsync(context, feed, zone, now, contexts.Count > 1, cancellationToken));
         }
 
-        return File(IcsWriter.Write(CalendarName, zoneId, events.OrderBy(e => e.StartUtc).ThenBy(e => e.Uid, StringComparer.Ordinal)));
+        return File(IcsRules.Write(CalendarName, zoneId, events.OrderBy(e => e.StartUtc).ThenBy(e => e.Uid, StringComparer.Ordinal)));
     }
 
     private async Task<IReadOnlyList<IcsEvent>> EventsOfAsync(

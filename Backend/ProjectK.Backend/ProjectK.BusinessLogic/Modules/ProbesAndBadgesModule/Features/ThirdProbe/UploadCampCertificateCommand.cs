@@ -27,15 +27,19 @@ public sealed record UploadCampCertificateCommand(
 public sealed class UploadCampCertificateCommandHandler
     : CampCertificateHandlerBase, IRequestHandler<UploadCampCertificateCommand, ServiceResult<ThirdProbeDto>>
 {
+    private readonly ThirdProbeFileWriter _files;
+
     public UploadCampCertificateCommandHandler(
         IUnitOfWork unitOfWork,
         IProbesAndBadgesAccess access,
         IPhotoService photos,
         IKurinAudit audit,
         IProbesCatalogReader probes,
-        IThirdProbeReader reader)
+        IThirdProbeReader reader,
+        ThirdProbeFileWriter files)
         : base(unitOfWork, access, photos, audit, probes, reader)
     {
+        _files = files;
     }
 
     public async Task<ServiceResult<ThirdProbeDto>> Handle(UploadCampCertificateCommand request, CancellationToken cancellationToken)
@@ -78,7 +82,7 @@ public sealed class UploadCampCertificateCommandHandler
             return StorageFull();
         }
 
-        var file = await ThirdProbeFileWriter.GetOrAddAsync(UnitOfWork, request.MemberKey, probeId, cancellationToken);
+        var file = await _files.GetOrAddAsync(request.MemberKey, probeId, cancellationToken);
         var previous = file.CampCertificateBlobName;
         file.CampCertificateBlobName = upload.BlobName;
         file.CampCertificateContentType = context.ContentType;

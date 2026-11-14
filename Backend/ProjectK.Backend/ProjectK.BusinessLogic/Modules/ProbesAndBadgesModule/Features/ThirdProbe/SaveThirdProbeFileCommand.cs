@@ -47,6 +47,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
+    private readonly ThirdProbeFileWriter _files;
 
     public SaveThirdProbeFileCommandHandler(
         IUnitOfWork unitOfWork,
@@ -54,7 +55,8 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         ICurrentMember actors,
         IKurinAudit audit,
         IProbesCatalogReader probes,
-        IThirdProbeReader reader)
+        IThirdProbeReader reader,
+        ThirdProbeFileWriter files)
     {
         _unitOfWork = unitOfWork;
         _access = access;
@@ -62,6 +64,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         _audit = audit;
         _probes = probes;
         _reader = reader;
+        _files = files;
     }
 
     public async Task<ServiceResult<ThirdProbeDto>> Handle(SaveThirdProbeFileCommand request, CancellationToken cancellationToken)
@@ -83,7 +86,7 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
             return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.BadgeNotHeld, "The вмілість must be one the person holds, confirmed.");
         }
 
-        var file = await ThirdProbeFileWriter.GetOrAddAsync(_unitOfWork, request.MemberKey, probeId, cancellationToken);
+        var file = await _files.GetOrAddAsync(request.MemberKey, probeId, cancellationToken);
         if (file.ReflectionOn != input.ReflectionOn || file.ReflectionWith != input.ReflectionWith)
         {
             file.ReflectionConfirmedAtUtc = null;

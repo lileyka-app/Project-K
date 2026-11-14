@@ -32,13 +32,15 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _time;
     private readonly IKraiProfileDirectory _profiles;
+    private readonly AgendaRsvpWriter _rsvps;
 
-    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileDirectory profiles)
+    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileDirectory profiles, AgendaRsvpWriter rsvps)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
         _time = time;
         _profiles = profiles;
+        _rsvps = rsvps;
     }
 
     public async Task<ServiceResult<Unit>> Handle(SetMyEventResponseCommand request, CancellationToken cancellationToken)
@@ -61,7 +63,7 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
             return ServiceResult<Unit>.Failure(ResultType.BadRequest, MeErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }
 
-        await AgendaRsvpWriter.UpsertAsync(_unitOfWork, item, context.Viewer.ViewerUserKey!.Value, occurrenceKey, request.Status, _time.GetUtcNow().UtcDateTime, cancellationToken);
+        await _rsvps.UpsertAsync(item, context.Viewer.ViewerUserKey!.Value, occurrenceKey, request.Status, _time.GetUtcNow().UtcDateTime, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
