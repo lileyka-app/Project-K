@@ -56,7 +56,7 @@ internal sealed class CatalogState
 }
 
 /// <summary>
-/// The catalogue in memory. <see cref="CatalogSyncBackgroundService"/> swaps in each new fetch;
+/// The catalogue in memory. <see cref="BackgroundServices.CatalogSyncBackgroundService"/> swaps in each new fetch;
 /// readers always see one whole version.
 /// <para>
 /// The край names on вмілості are laid over the fetch here rather than in

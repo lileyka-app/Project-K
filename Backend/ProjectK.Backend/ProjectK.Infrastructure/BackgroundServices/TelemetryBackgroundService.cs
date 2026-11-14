@@ -6,8 +6,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Models.Settings;
+using ProjectK.Infrastructure.Services.Telemetry;
 
-namespace ProjectK.Infrastructure.Services.Telemetry;
+namespace ProjectK.Infrastructure.BackgroundServices;
 
 /// <summary>
 /// Pings the status service once a day with a <see cref="TelemetryReport"/>: the first ping a few

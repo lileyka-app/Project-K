@@ -5,8 +5,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Services.Catalog;
 
-namespace ProjectK.Infrastructure.Services.Catalog;
+namespace ProjectK.Infrastructure.BackgroundServices;
 
 /// <summary>
 /// Keeps <see cref="CatalogStore"/> current. At startup it loads the copy on disk and, when there is

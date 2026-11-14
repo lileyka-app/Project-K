@@ -1,5 +1,6 @@
 using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Services.Catalog;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;

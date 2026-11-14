@@ -26,7 +26,6 @@ using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Seeding;
 using ProjectK.Infrastructure.Services;
 using ProjectK.Infrastructure.Services.BlobStorageService;
-using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 using ProjectK.Infrastructure.Services.Catalog;
 using ProjectK.Infrastructure.Services.EmailService;
 using ProjectK.Infrastructure.Services.Feedback;
@@ -177,7 +176,7 @@ public static class DependencyInjection
                 sp.GetRequiredService<ILogger<AzureBlobPhotoService>>());
         });
 
-        services.AddHostedService<OrphanPhotoCleanupService>();
+        services.AddHostedService<OrphanPhotoCleanupBackgroundService>();
     }
 
     /// <summary>
