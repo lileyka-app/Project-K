@@ -47,24 +47,63 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 зовнішній світ, інтерфейс оголошується в `Common`, а реалізується в `Infrastructure`:
 `IKurinReportRepository`, `ISpreadsheetWriter`, `ISpreadsheetReader`, `IAppUserRepository`, `IUnitOfWork`.
 
-Розподіл відповідальності — у таблиці в [CONTRIBUTING.md](CONTRIBUTING.md#шари).
+Що лежить у кожному проєкті (шляхи — від `Backend/ProjectK.Backend/`):
+
+| Проєкт | Теки |
+|---|---|
+| `ProjectK.Common` | `Entities/`, `Contracts/`, `Dtos/`, `Records/`, `Events/`, `Enums/`, `Rules/`, `Options/` — і нічого більше |
+| `ProjectK.BusinessLogic` | `Modules/<Module>/` (зрізи), `Behaviors/` (конвеєр MediatR), `Services/` (кеш і публікація подій — спільне для всіх модулів), `DependencyInjection.cs` |
+| `ProjectK.Infrastructure` | `DbContexts/`, `Persistence/` (`Configurations/<Module>/`, `Interceptors/`), `Repositories/<Module>/`, `UnitOfWork/`, `Stores/`, `Services/<Concept>/`, `BackgroundServices/`, `Logging/`, `Seeding/`, `Migrations/`, `DependencyInjection.cs` |
+| `ProjectK.API` | `Controllers/<Module>/`, `Middleware/`, `Filters/`, `Authorization/`, `Cookies/`, `Extensions/`, `Hosting/`, `Serialization/`, `Swagger/`, `Uploads/`, `Models/Requests/`, `Program.cs` |
+
+Кожен шар реєструє своє: `AddInfrastructure()` і `AddBusinessLogic()`; `AddProjectDependencies` в API
+додає лише хостове (`HttpContextAccessor`, `TimeProvider`, `ICurrentUserContext`) і кличе обидва.
+
+### Common: спершу вид, потім модуль
+
+`Common/<Вид>/<Module>/`, простір імен — `ProjectK.Common.<Вид>.<Module>`; спільне для всіх модулів —
+у підтеці `Shared/`. Один публічний тип — один файл.
+
+| Вид | Що там | Приклади |
+|---|---|---|
+| `Entities/` | таблиці | `Member`, `Membership`, `KurinAuditEvent`; базовий клас — `Shared/Entity` |
+| `Contracts/` | інтерфейси: репозиторії, фасади UoW, `I…Directory` для інших модулів, `I…Catalog`, зовнішні системи; винятки репозиторію | `IMemberDirectory`, `IUnitOfWork`, `IEmailService`, `StaleRowException` |
+| `Dtos/` | усе, що бачить клієнт: відповідь `…Dto`, запит `…Request` | `GroupDto`, `LoginUserDto`, `KraiProfileDocument` |
+| `Records/` | внутрішні значення, які клієнту не серіалізуються | `ServiceResult<T>`, `ResourceAccessDecision`, `AgendaViewerScope`, `MemberFieldMask` |
+| `Events/` | доменні події — те, що вже сталося | `MembershipLeft`, `MembershipMovedToGroup`, `AccountActivated` |
+| `Enums/` | перелічення | `AccessScope`, `ResultType`, `AuditArea` |
+| `Rules/` | static-класи: правила (`…Rules`), підписи й сталі рядки (`…Names`), розширення | `RolePermissionRules`, `KurinCapabilityRules`, `PlastLevelNames`, `PhoneNumberRules` |
+| `Options/` | налаштування з `SectionName` | `LoginThrottleOptions`, `CatalogOptions`, `TelemetryOptions` |
+
+Свідомий виняток — Identity: `AppUser : IdentityUser` лежить у `Common/Entities/AuthModule`, тож
+`Common` тягне `Microsoft.AspNetCore.Identity.EntityFrameworkCore`. Чому так і чому далі не
+розширюється — у [CONTRIBUTING.md](CONTRIBUTING.md#шари).
 
 ### Модулі
 
-Однакові по обидва боки межі — і в `BusinessLogic/Modules/`, і в `API/Controllers/`:
+Однакові по обидва боки межі — і в `BusinessLogic/Modules/`, і в `API/Controllers/`. Розміри — на
+14 листопада 2026: області (`Features/<Area>/`), запити (`…Command` і `…Query`) і рядки `.cs` у
+`BusinessLogic/Modules/<Module>/`.
 
-| Модуль | Про що |
-|---|---|
-| `AuthModule` | вхід, MFA, онбординг, скидання пароля, налаштування інстансу, первинна настройка |
-| `UsersModule` | акаунти: безпека, профіль акаунта, збережені розкладки дашборда |
-| `KurinModule` | курінь, гуртки, члени, провід, календар, планування, відзнаки, перестороги, теги куреня (хто їх бачить — `SeeTags`, хто ставить — `ManageTags`; чи курінь ними користується — `KurinTagSettings`, за замовчуванням із гілки в `KurinTagRules.EnabledByDefault`) |
-| `ProbesAndBadgesModule` | каталоги проб і вмілостей; які проби склав і які вмілості здобув конкретний член |
-| `InfrastructureModule` | сповіщення |
-| `DuesModule` | вкладка: ставки, нарахування, операції гурткової й курінної каси, баланс людини; у старшому курені (без гуртків) рахунок людини в касі куреня (нарахування з `GroupKey = null`), ставки за тегом (`KurinDuesRate.TagKey`, тег запамʼятовує `DuesCharge.RateTagKey`, несплачений квартал переоцінюється), там платить і провід; статті для краю й передачі просто краю; годинник кварталів і формат чисел краю (`DuesKrai`); пільги краю, надані людям, і звіт, скільки вони зняли (`GetKraiConcessionReportQuery`, віддає `KraiController`) |
-| `ScoreModule` | точкування: присутність на подіях, бали вручну й автоматично, таблиця гуртків |
-| `KraiModule` | краї й профілі країв: які вмілості бачать курені, валюта, часовий пояс, формат чисел, поля картки, куди курені передають вкладку і які пільги дає край; ревізії профілю й відновлення давнішої; які поля прибирає зі своєї картки курінь. Додати й перейменувати край (`KraiCommands`), публічний список для форми заявки (`GetKraiNamesQuery`); 28 країв засіває міграція |
-| `MeModule` | `api/me` для головної: людина з усіх поточних куренів — події, задачі, проба й вмілості, вкладка, бали, справи проводу. Тільки читає інші модулі через їхні контракти; права в кожному курені рахує з ролей у ньому, а не з токена |
-| `AuditModule` | журнал дій куреня: хто, що й коли змінив (`KurinAuditEvent`). Інші модулі пишуть у нього через `IKurinAudit` перед своїм `SaveChanges`, читають — через `IAuditUnitOfWork.KurinJournal`; таблицю бачить лише цей модуль |
+| Модуль | Області · запити · рядки | Про що |
+|---|---|---|
+| `AuthModule` | 12 · 39 · 5,2 тис. | вхід і сесії, MFA, онбординг і список очікування, скидання пароля, перемикання куреня, налаштування інстансу, первинна настройка, демо- і дев-вхід. Тут і рушій прав: `PermissionResolver`, `AccessContextResolver`, `AccessSnapshotFactory`, `CurrentPermissions`, `ResourceAccessService` |
+| `UsersModule` | 3 · 13 · 1 тис. | акаунти: адміністрування користувачів, безпека й профіль власного акаунта, збережені розкладки дашборда |
+| `KurinModule` | 16 · 105 · 15,8 тис. | курінь, гуртки, члени, членства й заявки на перехід, провід, впорядники, календар і задачі, планування, відзначення, перестороги, імпорт і реєстр, архів, гілки старшого куреня, теги куреня (хто їх бачить — `SeeTags`, хто ставить — `ManageTags`; чи курінь ними користується — `KurinTagSettings`, за замовчуванням із гілки в `KurinTagRules.EnabledByDefault`). Найбільший модуль; каталоги помилок у ньому вже розкладені на майбутні модулі (`KurinErrors`, `MemberErrors`, `MembershipErrors`, `LeadershipErrors`, `AgendaErrors`, `ArchiveErrors`) |
+| `ProbesAndBadgesModule` | 4 · 27 · 4,1 тис. | каталоги проб, вмілостей і відзначень (лише читання); які проби склав і які вмілості здобув конкретний член; третя проба |
+| `InfrastructureModule` | 3 · 10 · 1,9 тис. | сповіщення (в застосунку й на телефон), «Повідомити про проблему», код для встановлення на телефон |
+| `DuesModule` | 6 · 21 · 3,9 тис. | вкладка: ставки, нарахування, операції гурткової й курінної каси, баланс людини; у старшому курені (без гуртків) рахунок людини в касі куреня (нарахування з `GroupKey = null`), ставки за тегом (`KurinDuesRate.TagKey`, тег запамʼятовує `DuesCharge.RateTagKey`, несплачений квартал переоцінюється), там платить і провід; статті для краю й передачі просто краю; годинник кварталів і формат чисел краю (`DuesKrai`); пільги краю, надані людям, і звіт, скільки вони зняли (`GetKraiConcessionReportQuery`, віддає `KraiController`) |
+| `ScoreModule` | 6 · 21 · 3 тис. | точкування: присутність на подіях, бали вручну й автоматично, таблиця гуртків, книга КВ |
+| `KraiModule` | 2 · 11 · 1,2 тис. | краї й профілі країв: які вмілості бачать курені, валюта, часовий пояс, формат чисел, поля картки, куди курені передають вкладку і які пільги дає край; ревізії профілю й відновлення давнішої; які поля прибирає зі своєї картки курінь. Додати й перейменувати край (`CreateKraiCommand`, `RenameKraiCommand`), публічний список для форми заявки (`GetKraiNamesQuery`); 28 країв засіває міграція |
+| `MeModule` | 12 · 30 · 3,2 тис. | «моє»: `api/me` для головної — людина з усіх поточних куренів: події, задачі, проба й вмілості, вкладка, бали, справи проводу. І те, що належить самій людині: життєпис (`Features/Life`, `api/me/life`), запрошення від інших куренів (`Features/Invitations`), закріплені відзначення (`Features/Awards`, `api/me/awards`), своя картка й посилання на неї, посилання на календар. Тільки читає інші модулі через їхні контракти; права в кожному курені рахує з ролей у ньому, а не з токена |
+| `AuditModule` | 1 · 1 · 0,3 тис. | журнал дій куреня: хто, що й коли змінив (`KurinAuditEvent`). Інші модулі пишуть у нього через `IKurinAudit` перед своїм `SaveChanges`, читають — через `IAuditUnitOfWork.KurinJournal`; таблицю бачить лише цей модуль |
+
+У `API/Controllers/` є ще три теки без двійника в `BusinessLogic`: `DemoModule`, `DevModule` і
+`TestModule` — контролери, які існують лише в окремих середовищах і беруть запити з `AuthModule`.
+
+Мембер окремої теки модуля не має: його код лежить у `KurinModule`, сутності — у
+`Common/Entities/KurinModule`, а контракти для решти — у `Common/Contracts/MemberModule/`
+(`IMemberDirectory`, `ICurrentMember`).
 
 **Член ≠ користувач.** Член — це людина; користувач — спосіб увійти. Одне може існувати без
 іншого: людину заводять до того, як вона отримає акаунт, і не кожна його отримує.
@@ -75,20 +114,55 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 із куреня чи його розпуск не стирає нічого з того, що вона здобула: історія належить їй, а курінь на
 цих записах — лише штамп «де це сталося».
 
+### Будова модуля
+
+```
+BusinessLogic/Modules/<Module>/
+    Features/<Area>/
+        <Verb><Thing>Command.cs   запит + валідатор + хендлер
+        Get<Thing>Query.cs        запит + хендлер
+        <Area>Mapping.cs          ToDto / ApplyTo цієї області
+    Events/                       обробники доменних подій (…EventHandler)
+    Services/                     спільне для кількох зрізів: …Service, …Reader, …Writer, <M>Access, …Trail, …Rules, …Names
+    Models/                       внутрішні типи модуля, яких клієнт не бачить
+    <Module>Errors.cs             коди помилок модуля
+```
+
+Область — іменник предметної області (`Group`, `Agenda`, `Life`), тек-дієслів під нею немає.
+Мапінг — явний код (`ToDto`, `ApplyTo`), без бібліотек. Повні правила — у
+[CONTRIBUTING.md](CONTRIBUTING.md), розділ «Що куди лягає».
+
 ### Межі модулів
 
-Модулі не читають таблиць одне одного. Усе, що один модуль питає в іншого, проходить через контракт
-у `Common/Contracts/<Module>/` — рівно ті питання, які колись можна буде поставити по мережі:
+Модулі не читають таблиць одне одного. Три правила, кожне з яких перевіряє
+`ProjectK.Architecture.Tests`:
+
+- **Питання — через контракт.** Усе, що один модуль питає в іншого, проходить через інтерфейс у
+  `Common/Contracts/<Module>/` — рівно ті питання, які колись можна буде поставити по мережі.
+  `I…Directory` **лише відповідає**: змінювати через нього нічого не можна.
+- **Зміна в чужому модулі — через подію.** Модуль, що зробив дію, публікує подію з
+  `Common/Events/<Module>/` через `IDomainEventPublisher`, а модуль, чиї дані міняються, обробляє її
+  сам у своїй теці `Events/`. Так активація акаунта (`AccountActivated`) заводить людину в
+  `KurinModule` (`AccountActivatedEventHandler`), зміна пошти й телефону акаунта (`AccountEmailChanged`,
+  `AccountPhoneChanged`) доходить до картки (`AccountContactSyncEventHandler`), видалений тег
+  (`KurinTagDeleted`) переоцінює вкладку в `DuesModule` (`KurinTagDeletedEventHandler`), а перехід між
+  гуртками (`MembershipMovedToGroup`) записують і вкладка, і точкування.
+- **Ключ замість навігації.** Сутність чужого модуля не буває навігаційною властивістю: тримають
+  `MemberKey`, а не `Member`.
 
 | Контракт | Хто відповідає | На що |
 |---|---|---|
-| `IMemberDirectory` | мембер | хто ця людина; пошук за публічним кодом; її ступені |
+| `IMemberDirectory` | мембер | хто ця людина; пошук за публічним кодом і за акаунтом; її ступені |
+| `ICurrentMember` | мембер | хто я: людина за токеном запиту, прочитана раз на запит |
 | `IMembershipDirectory` | курінь | де людина належить і належала; хто стоїть у курені (для вкладки) |
 | `IOfficeDirectory` | курінь | які діловодства акаунт тримає в цьому курені |
+| `IGroupProbeEditions` | курінь | яку редакцію проб обрав гурток |
 | `IMemberProgressDirectory` | проби й вмілості | як далеко людина зайшла, підписані точки проби; що в курені підтверджено й підписано (для точкування) |
+| `IProbeEditionHolds` | проби й вмілості | де в черзі проб стоїть кожен юнак (для налаштувань редакції) |
+| `IBadgesCatalog`, `IProbesCatalog`, `IHonoursCatalog` | каталог | фіксовані довідники вмілостей, проб і відзначень |
 | `IDuesDirectory` | вкладка | які квартали закриті без боргу (для точкування) |
 | `IKraiProfileDirectory` | край | профіль краю чи куреня з усіма значеннями: вмілості, валюта, пояс, формат чисел, поля картки, вкладка (куди передають, пільги) |
-| `IKurinJournalRepository` | журнал | записи журналу дій за предметами (історія на картці проби й вмілості) і сторінка журналу з фільтрами |
+| `IKurinJournalRepository` | журнал | записи журналу дій за предметами (історія на картці проби й вмілості) і сторінка журналу з фільтрами; доступний лише як `IAuditUnitOfWork.KurinJournal` |
 
 Межі тримає не домовленість, а `ProjectK.Architecture.Tests`: правила читають IL, тож звернення до
 чужого репозиторію чи чужої сутності валить тест навіть тоді, коли воно сховане всередині методу й
@@ -102,7 +176,8 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 Точкування влаштоване так само: фасад `IScoreUnitOfWork`, ключі без зовнішніх ключів. Правила
 «лише раз» (одна присутність на людину й дату, одна тарифна позиція на подію) — унікальні індекси в
 базі, а не перевірки в обробнику. Переходи між гуртками модуль записує сам із події
-`MembershipMovedToGroup`, бо членство памʼятає лише теперішній гурток.
+`MembershipMovedToGroup` (`RecordScoreGroupMoveEventHandler`), бо членство памʼятає лише теперішній
+гурток.
 
 Мембера будували так, щоб його можна було винести в окремий сервіс: контракт замість репозиторію,
 подія замість виклику, ключ замість навігації. Виносити його в 0.20.0 ніхто не збирався — але
@@ -122,16 +197,21 @@ HTTP
   ↓     сесія = рядок у UserRefreshTokens; акаунт може бути в кількох місцях одночасно
   ↓     другий фактор: пароль → короткий mfaToken (5 хв, окрема audience) → код + mfaToken;
   ↓     код без mfaToken відхиляється — другий фактор ніколи не буває єдиним
+  ↓  AccessStaleHeaderMiddleware      X-Access-Stale на токен, виданий до зміни прав
   ↓  гео-блок (SecurityHardeningMiddleware), rate limiting, журнал зміни IP (SecurityActivityMiddleware)
   ↓  гейт MFA для проводу читає клейм amr з токена, не акаунт (PrivilegedMfaEnforcementMiddleware)
   ↓  політика авторизації   AuthorizationPolicies.*   — «якого рівня має бути викликач»
-  ↓  ResourceAuthorize      IResourceAccessService    — «чи саме цей об'єкт йому доступний»
-  ↓  контролер: жодних рішень, лише _mediator.Send(...)
-  ↓  MediatR pipeline: валідація (FluentValidation) → хендлер
-  ↓  хендлер: доменне рішення; дані бере через репозиторії з Common-інтерфейсів
-  ↓  IUnitOfWork.SaveChangesAsync
-  ↓  ServiceResult<T>
-  ↓  ToActionResult(this) → HTTP
+  ↓  ResourceAuthorize      ResourceAuthorizeFilter → IResourceAccessService — «чи саме цей об'єкт йому доступний»
+  ↓  контролер API/Controllers/<Module>/<Resource>Controller: жодних рішень, лише _mediator.Send(...)
+  ↓  поведінки MediatR (BusinessLogic/Behaviors), ззовні всередину:
+  ↓     RequestTimingBehavior → ValidationBehavior (FluentValidation; невдача — 400 ValidationFailed,
+  ↓     хендлер не викликається) → TransactionBehavior (лише для ITransactionalRequest)
+  ↓  хендлер Features/<Area>/…Command.cs або …Query.cs: доменне рішення; дані — через фасади UoW
+  ↓     і контракти інших модулів; людина за токеном — ICurrentMember
+  ↓  <Area>Mapping: ToDto(…) для відповіді, ApplyTo(…) для зміни сутності
+  ↓  IUnitOfWork.SaveChangesAsync → інтерсептори збереження (публічний код, гуртки членства)
+  ↓  ServiceResult<T>; без даних — ServiceResult<Unit>; невдача — код з <Module>Errors
+  ↓  ToActionResult(this) → HTTP: 200 / 201 з даними, Unit — 204, невдача — { error, message }
 ```
 
 Дві сходинки авторизації розділені навмисно. Політика відповідає на питання «чи має ця людина
@@ -143,8 +223,13 @@ HTTP
 суворіша, даючи 403, якого ніщо не пояснює. `PolicyMatchesPermissionMapTests` валиться, якщо читання
 запису колись стане суворішим за його зміну.
 
-**`ServiceResult<T>` — єдина форма відповіді.** Помилка завжди `{ error, message }`; перетворення
-в HTTP живе в одному місці — `ServiceResultExtensions.ToActionResult`.
+**`ServiceResult<T>` — єдина форма відповіді.** Помилка завжди `{ error, message }`: `error` —
+стабільний код з каталогу модуля (`KurinErrors`, `DuesErrors`…), `message` — англійський текст для
+розробника. Перетворення в HTTP живе в одному місці — `ServiceResultExtensions.ToActionResult`
+(`API/Extensions`). Результат без даних — `ServiceResult<Unit>`, і він відповідає `204 No Content`
+так само, як колись `ServiceResult<object>` з `null`, тож клієнт різниці не бачить. Без
+`ToActionResult` відповідають лише ті, хто віддає не JSON: файл календаря (`CalendarFeedController`),
+публічна картка (`PublicCardController`) і `E2ETestController`.
 
 ---
 
@@ -178,8 +263,8 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 
 Ключове тут — слово «активний». Ролі рахуються для одного куреня за раз (`IAccessContextResolver`),
 бо та сама людина може бути виховником в одному курені й звичайним членом у другому. Доки ролі
-писалися в Identity як глобальні, друге членство протягло б права виховника й туди — тому
-`LeadershipRoleSyncService` знято, а в сховищі акаунтів лишились тільки `Admin` і `Member`.
+писалися в Identity як глобальні, друге членство протягло б права виховника й туди — тому ролі
+діловодств у сховище акаунтів більше не пишуться, і там лишились тільки `Admin` і `Member`.
 Перемикання куреня (`POST api/auth/kurin-scope`) — це не фільтр списку, а перевидача токена; воно
 відкрите будь-кому, хто має **активне** членство в тому курені, і лише адміністратор може стояти
 поза всіма.
@@ -222,9 +307,21 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 Авторизація навмисно не знає про мембера: усе, що їй потрібно, вона читає через членства й діловодства за
 ключем акаунта. Це не побажання, а правило `Authorization_ShouldNotKnowAboutMember` в арх-тестах.
 
-Політики оголошені **один раз** — `AuthorizationPolicies.AddProjectPolicies()`; і хост, і тестові
-хости беруть їх звідти. Матриця `AuthorizationBaselineMatrixTests` тримає очікувану політику для
-кожного ендпоінта: новий ендпоінт без запису в матриці валить тест.
+Політики оголошені **один раз** — `AuthorizationPolicies.AddProjectPolicies()` (`API/Authorization`);
+і хост, і тестові хости беруть їх звідти. Матриця `AuthorizationBaselineMatrixTests` тримає очікувану
+політику для кожного ендпоінта: новий ендпоінт без запису в матриці валить тест, а
+`RolePermissionRulesGoldenTests` — зліпок мапи дозволів.
+
+Де що лежить:
+
+| Що | Де |
+|---|---|
+| Чисті правила: мапа ролей на дозволи, можливості куреня, аудиторії політики, діловодства, імена claims | `Common/Rules/AuthModule/`: `RolePermissionRules`, `KurinCapabilityRules`, `PolicyAudienceRules`, `LeadershipOfficeRules`, `SystemRoleNames`, `AccessTokenClaimNames` |
+| Політика куреня, дозвіл, маска полів | `Common/Records/AuthModule/` (`KurinAccessPolicy`, `Permission`, `CapabilityDescriptor`), `Common/Records/KurinModule/MemberFieldMask` |
+| Рушій: хто викликач, які в нього права, чи доступний обʼєкт | `BusinessLogic/Modules/AuthModule/Services/`: `AccessContextResolver`, `PermissionResolver`, `CurrentPermissions`, `AccessSnapshotFactory`, `ResourceAccessService`, `MemberFieldAccess`, `AccessChangeStore` |
+| Права всередині модуля (кого з людей і гуртків зачіпає дія) | один клас на модуль у його `Services/`: `KurinAccess`, `AgendaAccess`, `DuesAccess`, `ScoreAccess`, `ProbesAndBadgesAccess` |
+| Політики й ресурсна перевірка на ендпоінті | `API/Authorization/AuthorizationPolicies`, `API/Filters/ResourceAuthorizeAttribute` і `ResourceAuthorizeFilter` |
+| Хто викликач у хендлері | `ICurrentUserContext` (акаунт і курінь з токена, `API/Hosting/HttpCurrentUserContext`), `ICurrentMember` (людина за ним) |
 
 ---
 
@@ -232,29 +329,32 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 
 | Що | Чим | Де код |
 |---|---|---|
-| База | SQL Server, EF Core 10, міграції в збірці | `Infrastructure/DbContexts`, `Infrastructure/Migrations` |
-| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі. Зміна безпеки (`RefreshTokenInvalidation`) вимикає й посилання на календар (`ICalendarFeedStore`, лише хеш токена) і кладе сповіщення в дзвіночок | `Infrastructure/Stores` |
-| Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsWriter`), повтори розгорнуті на сервері (`AgendaRecurrenceRules`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
-| Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, транзакції через `IUnitOfWork` | `Infrastructure/Repositories` |
+| База | SQL Server, EF Core 10, міграції в збірці. Модель — по класу `IEntityTypeConfiguration` на сутність, `AppDbContext` бере їх зі збірки | `Infrastructure/DbContexts`, `Infrastructure/Persistence/Configurations/<Module>`, `Infrastructure/Migrations` |
+| Інтерсептори збереження | правила, які мають спрацювати на кожному збереженні, хоч би хто зберігав: публічний код нового члена (`MemberPublicIdInterceptor`) і гуртки членства для архіву (`MembershipGroupStintInterceptor`). Підключає їх `AddAppDbContextInterceptors` — у хості, у фабриці для `dotnet ef` і в тестах | `Infrastructure/Persistence/Interceptors` |
+| Доступ до даних | репозиторії поверх `BaseEntityRepository<T>`, по теці на модуль, лише через фасади UoW: `IUnitOfWork` і модульні `IMemberUnitOfWork`, `IDuesUnitOfWork`, `IScoreUnitOfWork`, `IAuditUnitOfWork` (`KurinAudit` пише журнал, `KurinJournal` читає). Усі пʼять реалізує один `UnitOfWork` на запит, тож зміна й запис журналу комітяться одним `SaveChanges`. Транзакцію на весь запит дає `TransactionBehavior` для `ITransactionalRequest` | `Infrastructure/Repositories/<Module>`, `Infrastructure/UnitOfWork` |
+| Сховища | сесії й посилання на календар — `RefreshTokenStore`, `CalendarFeedStore`. Стан у памʼяті процесу тримає модуль, якому він належить: позначки зміни прав (`AccessChangeStore`), живі зони небезпечного режиму архіву (`ArchiveDangerZoneStore`) | `Infrastructure/Stores`; `BusinessLogic/Modules/<Module>/Services` |
+| Сесії | рядок на кожен вхід (`IRefreshTokenStore`); вихід обриває одну, зміна пароля й призупинення акаунта адміністратором — усі; призупинений (`OnboardingStatus.Suspended`) не проходить ні вхід, ні другий фактор, ні оновлення токена. Перемикач акаунтів тримає сесії інших акаунтів цього браузера в httpOnly-cookie `savedSessions` (`SavedSessionsCookie`, до 5, по одній на акаунт): `login?addAccount=true` відкладає поточну, `auth/accounts/switch` міняє місцями, вихід обриває всі. Зміна безпеки (`RefreshTokenInvalidation`) вимикає й посилання на календар (`ICalendarFeedStore`, лише хеш токена) і кладе сповіщення в дзвіночок | `Infrastructure/Stores`, `API/Cookies` |
+| Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsRules`), повтори розгорнуті на сервері (`AgendaRecurrenceRules`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/Blobs` |
-| Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services` |
-| PDF | QuestPDF; звіт куреня збирається з `IKurinReportRepository` | `Infrastructure`, `BusinessLogic` |
+| Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services/Email` |
+| PDF | QuestPDF; звіт куреня збирає `KurinReportDataService` з `IKurinReportRepository`, малює `KurinReportPdfRenderer`; життєпис — `LifeStoryPdfRenderer` | `Infrastructure/Services/Reports`, `BusinessLogic/Modules/KurinModule/Services` |
 | Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів (події безпеки й помилки; читабельний HTML, однотипні за 5 хв — одним зведенням, черга замість відкидання) | `API/Program.cs`, `Infrastructure/Logging/TelegramDevAlerts` |
 | Зворотний звʼязок | «Повідомити про проблему» → GitHub issue токеном сервера (`Feedback:GitHub`), без токена — в лог; скриншоти в `feedback-screenshots` того ж контейнера | `Infrastructure/Services/Feedback`, `API/Controllers/InfrastructureModule/FeedbackController` |
-| Каталог | вмілості, проби й відзначення з сервісу каталогу (`GET /v1/catalog`, секція `Catalog`); тримаються в памʼяті, остання вдала відповідь — на диску, без мережі — копія, вбудована в збірку | `Infrastructure/Services/Catalog` |
+| Каталог | вмілості, проби й відзначення з сервісу каталогу (`GET /v1/catalog`, секція `Catalog`); тримаються в памʼяті (`CatalogStore`), остання вдала відповідь — на диску, без мережі — копія, вбудована в збірку | `Infrastructure/Services/Catalog` |
 | Телеметрія | раз на добу анонімний пінг сервісу статусу (`Telemetry:Endpoint`): id інсталяції, версія, коди країв, кількості, запити й 5xx; у відповідь — останній реліз. Увімкнена в `Production` і `SelfHost` (`Telemetry:Enabled`) | `Infrastructure/Services/Telemetry`, `API/Middleware/TelemetryCountingMiddleware` |
 
-Фонові служби: прибирання аудиту (`AuditCleanupBackgroundService`), закінчення строку пересторог
-(`MemberWarningExpiryBackgroundService`), прибирання осиротілих фото
-(`OrphanPhotoCleanupBackgroundService`), архів задач — зроблені в архів і давні архівні геть, за строками
-кожного куреня (`AgendaArchiveBackgroundService`), оновлення каталогу щогодини
-(`CatalogSyncBackgroundService`, `Catalog:RefreshMinutes`), щоденний пінг телеметрії
+Фонові служби лежать в одній теці, `Infrastructure/BackgroundServices/`: прибирання аудиту
+(`AuditCleanupBackgroundService`), закінчення строку пересторог (`MemberWarningExpiryBackgroundService`),
+прибирання осиротілих фото (`OrphanPhotoCleanupBackgroundService`), архів задач — зроблені в архів і
+давні архівні геть, за строками кожного куреня (`AgendaArchiveBackgroundService`), оновлення каталогу
+щогодини (`CatalogSyncBackgroundService`, `Catalog:RefreshMinutes`), щоденний пінг телеметрії
 (`TelemetryBackgroundService`; без `Telemetry:Enabled` не реєструється), черга сповіщень на телефон
 (`WebPushBackgroundService`, лише з ключами VAPID), нічне повернення демо-бази до сіду
-(`DemoResetBackgroundService`, лише `Demo`), прогрів після старту — MediatR і
-запити дашборда «Я» з порожнім ключем, щоб першу людину після деплою не чекали JIT і компіляція
-запитів EF (`StartupWarmUpService` в `API/Hosting`, `Startup:WarmUp`; локально й під тестами
-вимкнений).
+(`DemoResetBackgroundService`, лише `Demo`).
+
+Окремо від них, у старті хоста, — прогрів після старту: MediatR і запити дашборда «Я» з порожнім
+ключем, щоб першу людину після деплою не чекали JIT і компіляція запитів EF (`StartupWarmUpService` в
+`API/Hosting`, `Startup:WarmUp`; локально й під тестами вимкнений).
 
 ---
 
@@ -324,7 +424,7 @@ HttpOnly-cookie `mfaTrust` (`MfaTrustCookie`, шлях `/api/auth`) з JWT-кв�
 пропускає другий крок, лише коли квиток чинний, виданий цьому акаунту і stamp не змінився — зміна
 пароля чи скидання MFA ротує stamp і знімає довіру з усіх пристроїв. Вихід cookie не чіпає.
 
-**Активація акаунта.** `POST onboarding/activate` відповідає `LoginUserResponse` і ставить refresh-cookie:
+**Активація акаунта.** `POST onboarding/activate` відповідає `LoginUserDto` і ставить refresh-cookie:
 людина, яка щойно обрала пароль, потрапляє одразу в застосунок, а не на форму входу.
 
 **Сайт.** `site/` — візитка, довідка і статичне демо на Astro + Starlight, окрема статика на
@@ -377,7 +477,7 @@ swagger tofile --output swagger.json Backend/ProjectK.Backend/ProjectK.API/bin/R
 | `ProjectK.BusinessLogic.Tests` | хендлери: доменні рішення |
 | `ProjectK.Infrastructure.Tests` | репозиторії, сховища |
 | `ProjectK.API.Tests` | контролери, серіалізація, **і вся авторизація** — матриця політик, ресурсні перевірки, анонімний доступ |
-| `ProjectK.Architecture.Tests` | межі: залежності шарів, чужі репозиторії, події замість прямих викликів |
+| `ProjectK.Architecture.Tests` | межі й імена: залежності шарів (`LayerRules`), суфікси (`NamingRules`), чужі репозиторії й сутності мембера, події замість прямих викликів (`MemberBoundaryRules`), таблиця журналу (`AuditBoundaryRules`) |
 | `ProjectK.LoadTests` | навантаження |
 | `Frontend/.../e2e` | Playwright проти docker-стека |
 
