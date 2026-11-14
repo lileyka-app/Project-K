@@ -241,7 +241,7 @@ export interface SetDuesConcessionRequest {
   isConcession: boolean;
 }
 
-// ── Kurin dues (api/kurin/{kurinKey}/dues; KurinDuesResponse) ─────────────────────────────────
+// ── Kurin dues (api/kurin/{kurinKey}/dues; KurinDuesDto) ─────────────────────────────────
 
 /** How one гурток stands with the kurin. */
 export interface KurinGroupHandoverDto {
