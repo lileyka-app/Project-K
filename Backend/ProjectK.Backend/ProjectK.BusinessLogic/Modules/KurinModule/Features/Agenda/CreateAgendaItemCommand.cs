@@ -110,7 +110,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
 
         _uow.AgendaItems.Create(item, cancellationToken);
 
-        var targets = AgendaAuditFields.TargetsOf(item);
+        var targets = AgendaTrail.TargetsOf(item);
         var names = await AgendaTargetNames.LoadAsync(_uow, _members, item.KurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
@@ -118,7 +118,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
                 AuditActions.Agenda.Created,
                 item.AgendaItemKey,
                 item.Title,
-                Changes: AuditChanges.Added([.. AgendaAuditFields.Of(item), (AgendaAuditFields.Targets, names.Describe(targets))]),
+                Changes: AuditChanges.Added([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
                 KurinKey: item.KurinKey),
             cancellationToken);
 

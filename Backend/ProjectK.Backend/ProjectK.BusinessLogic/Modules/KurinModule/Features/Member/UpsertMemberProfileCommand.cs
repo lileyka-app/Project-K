@@ -106,7 +106,7 @@ public class UpsertMemberProfileCommandHandler
         CancellationToken cancellationToken)
     {
         var existing = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
-        var before = existing is null ? null : MemberAuditFields.Of(existing);
+        var before = existing is null ? null : MemberTrail.Of(existing);
 
         // Where they already stand. The record does not say any more, so it is read from the
         // membership — and it is what the request is measured against. Someone in two kurins is
@@ -353,8 +353,8 @@ public class UpsertMemberProfileCommandHandler
         CancellationToken cancellationToken)
     {
         var changes = before is null
-            ? MemberAuditFields.Added(member)
-            : MemberAuditFields.Between(before, MemberAuditFields.Of(member));
+            ? MemberTrail.Added(member)
+            : MemberTrail.Between(before, MemberTrail.Of(member));
         if (changes.Count == 0)
         {
             return;
@@ -365,7 +365,7 @@ public class UpsertMemberProfileCommandHandler
                 AuditArea.Member,
                 before is null ? AuditActions.Member.Added : AuditActions.Member.Changed,
                 member.MemberKey,
-                MemberAuditFields.LabelOf(member),
+                MemberTrail.LabelOf(member),
                 member.MemberKey,
                 changes,
                 KurinKey: before is null ? kurinKey : _currentUserContext.KurinKey ?? kurinKey),

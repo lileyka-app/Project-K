@@ -66,7 +66,7 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
         var kind = item.Kind;
         var kurinKey = item.KurinKey;
 
-        var targets = AgendaAuditFields.TargetsOf(item);
+        var targets = AgendaTrail.TargetsOf(item);
         var names = await AgendaTargetNames.LoadAsync(_uow, _members, kurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
@@ -74,7 +74,7 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
                 AuditActions.Agenda.Deleted,
                 item.AgendaItemKey,
                 title,
-                Changes: AuditChanges.Removed([.. AgendaAuditFields.Of(item), (AgendaAuditFields.Targets, names.Describe(targets))]),
+                Changes: AuditChanges.Removed([.. AgendaTrail.Of(item), (AgendaTrail.Targets, names.Describe(targets))]),
                 KurinKey: kurinKey),
             cancellationToken);
 

@@ -11,7 +11,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// <see cref="ProjectK.Common.Rules.KurinModule.MemberDataFields"/> recognises the private ones and the
 /// journal records them as changed without their values.
 /// </summary>
-public static class MemberAuditFields
+public static class MemberTrail
 {
     public const string PlastLevels = "plastLevels";
     public const string ProfileVerification = "profileVerification";

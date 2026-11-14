@@ -110,8 +110,8 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
                 "The way this target is done cannot change once someone has moved it; create a new task instead.");
         }
 
-        var before = AgendaAuditFields.Of(item);
-        var targetsBefore = AgendaAuditFields.TargetsOf(item);
+        var before = AgendaTrail.Of(item);
+        var targetsBefore = AgendaTrail.TargetsOf(item);
         var statusBefore = item.Status;
 
         item.Kind = request.Kind;
@@ -156,12 +156,12 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         AgendaItemStatus statusBefore,
         CancellationToken cancellationToken)
     {
-        var targetsAfter = AgendaAuditFields.TargetsOf(item);
-        var changes = AgendaAuditFields.Between(before, AgendaAuditFields.Of(item)).ToList();
+        var targetsAfter = AgendaTrail.TargetsOf(item);
+        var changes = AgendaTrail.Between(before, AgendaTrail.Of(item)).ToList();
         if (!targetsBefore.ToHashSet().SetEquals(targetsAfter))
         {
             var names = await AgendaTargetNames.LoadAsync(_uow, _members, item.KurinKey, targetsBefore.Concat(targetsAfter), cancellationToken);
-            changes.AddRange(AuditChanges.Of((AgendaAuditFields.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
+            changes.AddRange(AuditChanges.Of((AgendaTrail.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
         }
 
         changes.AddRange(AuditChanges.Of(("status", statusBefore, item.Status)));

@@ -211,9 +211,9 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
                 AuditArea.Member,
                 action,
                 member.MemberKey,
-                MemberAuditFields.LabelOf(member),
+                MemberTrail.LabelOf(member),
                 member.MemberKey,
-                AuditChanges.Of((MemberAuditFields.ProfileVerification, statusBefore, member.ProfileVerificationStatus)),
+                AuditChanges.Of((MemberTrail.ProfileVerification, statusBefore, member.ProfileVerificationStatus)),
                 note),
             cancellationToken);
 

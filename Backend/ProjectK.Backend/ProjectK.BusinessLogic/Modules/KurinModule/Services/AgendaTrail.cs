@@ -9,7 +9,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// The fields of a task or event the kurin's journal records, under the names the clients know
 /// them by. Its targets are recorded beside them as <c>targets</c>, named by <see cref="AgendaTargetNames"/>.
 /// </summary>
-public static class AgendaAuditFields
+public static class AgendaTrail
 {
     public const string Targets = "targets";
 

@@ -98,9 +98,9 @@ public class SetMemberPhotoCommandHandler
                 AuditArea.Member,
                 member.ProfilePhotoBlobName is null ? AuditActions.Member.PhotoRemoved : AuditActions.Member.PhotoChanged,
                 member.MemberKey,
-                MemberAuditFields.LabelOf(member),
+                MemberTrail.LabelOf(member),
                 member.MemberKey,
-                AuditChanges.Of((MemberAuditFields.ProfileVerification, verificationBefore, member.ProfileVerificationStatus))),
+                AuditChanges.Of((MemberTrail.ProfileVerification, verificationBefore, member.ProfileVerificationStatus))),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
