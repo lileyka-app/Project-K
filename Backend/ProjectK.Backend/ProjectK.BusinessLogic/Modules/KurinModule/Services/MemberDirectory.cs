@@ -97,6 +97,7 @@ public sealed class MemberDirectory : IMemberDirectory
         CancellationToken cancellationToken = default)
         => (await _unitOfWork.Members.GetMentorCandidatesLookupAsync(kurinKey, cancellationToken)).ToList();
 
+    /// <inheritdoc />
     /// <remarks>
     /// Sent through <see cref="GetMembersQuery"/> rather than read here, so the masking that use case
     /// applies is applied once, in one place, for the screen and the file alike.
