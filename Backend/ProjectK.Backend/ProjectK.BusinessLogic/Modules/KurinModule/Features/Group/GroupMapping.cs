@@ -1,5 +1,5 @@
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;

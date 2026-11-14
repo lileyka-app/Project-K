@@ -1,5 +1,5 @@
 using FluentValidation;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
+using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;

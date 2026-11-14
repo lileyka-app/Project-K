@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;

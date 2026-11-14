@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
-using ProjectK.Common.Models.Dtos.MeModule;
+using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Security;
 

@@ -3,7 +3,7 @@ using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;

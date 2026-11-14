@@ -1,7 +1,7 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;

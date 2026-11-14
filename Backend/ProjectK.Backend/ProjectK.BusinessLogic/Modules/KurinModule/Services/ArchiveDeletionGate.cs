@@ -1,7 +1,7 @@
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

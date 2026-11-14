@@ -2,8 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

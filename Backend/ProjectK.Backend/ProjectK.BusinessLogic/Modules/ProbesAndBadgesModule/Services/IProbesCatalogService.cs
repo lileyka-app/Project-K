@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

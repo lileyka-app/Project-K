@@ -11,10 +11,11 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -296,7 +297,7 @@ public class KurinPolicyEnforcementTests
             Dues: false));
     }
 
-    private async Task<ServiceResult<IEnumerable<ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.BadgeProgressDto>>> QueueAsync(ICurrentUserContext actor)
+    private async Task<ServiceResult<IEnumerable<ProjectK.Common.Dtos.ProbesAndBadgesModule.BadgeProgressDto>>> QueueAsync(ICurrentUserContext actor)
     {
         var inGroup = Guid.NewGuid();
         var inOtherGroup = Guid.NewGuid();

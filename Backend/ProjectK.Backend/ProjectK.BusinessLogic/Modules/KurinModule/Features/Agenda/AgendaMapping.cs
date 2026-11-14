@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Models.Dtos.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 

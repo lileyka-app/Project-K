@@ -32,7 +32,6 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.API.Tests.Security;
 

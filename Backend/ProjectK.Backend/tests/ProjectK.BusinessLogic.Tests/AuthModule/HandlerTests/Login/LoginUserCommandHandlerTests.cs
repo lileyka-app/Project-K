@@ -139,7 +139,7 @@ public class LoginUserCommandHandlerTests
         _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<bool>()))
             .Returns("access");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-            .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
+            .Returns(new ProjectK.Common.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
 
         var handler = CreateHandler(BypassConfiguration(), "E2E");
 
@@ -172,7 +172,7 @@ public class LoginUserCommandHandlerTests
 
         var roles = new List<string> { "User" };
         var accessToken = "access-token";
-        var refreshToken = new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken
+        var refreshToken = new ProjectK.Common.Dtos.AuthModule.RefreshToken
         {
             Token = "refresh-token",
             Expires = DateTime.UtcNow.AddDays(7),
@@ -235,7 +235,7 @@ public class LoginUserCommandHandlerTests
 
         var roles = new List<string> { "Admin" };
         var accessToken = "admin-access-token";
-        var refreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
+        var refreshToken = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = "admin-refresh-token",
             Expires = DateTime.UtcNow.AddDays(7),
@@ -454,7 +454,7 @@ public class LoginUserCommandHandlerTests
 
         var roles = new List<string> { "Admin", "Manager", "User" };
         var accessToken = "multi-role-token";
-        var refreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
+        var refreshToken = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = "multi-role-refresh",
             Expires = DateTime.UtcNow.AddDays(7),
@@ -504,7 +504,7 @@ public class LoginUserCommandHandlerTests
         };
 
         var roles = new List<string> { "User" };
-        var newRefreshToken = new Common.Models.Dtos.AuthModule.RefreshToken
+        var newRefreshToken = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = "new-refresh-token",
             Expires = DateTime.UtcNow.AddDays(14),
@@ -594,7 +594,7 @@ public class LoginUserCommandHandlerTests
         _jwtServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<bool>()))
             .Returns("access");
         _jwtServiceMock.Setup(x => x.GenerateRefreshToken())
-            .Returns(new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
+            .Returns(new ProjectK.Common.Dtos.AuthModule.RefreshToken { Token = "refresh", Expires = DateTime.UtcNow.AddDays(7) });
         return user;
     }
 

@@ -1,8 +1,8 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Members;

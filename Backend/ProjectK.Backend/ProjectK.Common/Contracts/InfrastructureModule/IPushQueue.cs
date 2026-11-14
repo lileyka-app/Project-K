@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
 
 namespace ProjectK.Common.Contracts.InfrastructureModule;
 

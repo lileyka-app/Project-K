@@ -6,8 +6,8 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Infrastructure.Services.JwtService;

@@ -1,8 +1,8 @@
 using MediatR;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

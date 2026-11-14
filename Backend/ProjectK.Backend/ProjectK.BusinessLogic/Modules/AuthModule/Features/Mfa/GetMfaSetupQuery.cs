@@ -2,8 +2,8 @@ using System.Text.Encodings.Web;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

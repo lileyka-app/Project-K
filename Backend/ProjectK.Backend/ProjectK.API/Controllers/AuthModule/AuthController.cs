@@ -17,10 +17,10 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.Common.Dtos.AuthModule;
+using ProjectK.Common.Dtos.AuthModule.Requests;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

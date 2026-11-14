@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Infrastructure.Services.WebPush;

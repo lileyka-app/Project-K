@@ -5,8 +5,8 @@ using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

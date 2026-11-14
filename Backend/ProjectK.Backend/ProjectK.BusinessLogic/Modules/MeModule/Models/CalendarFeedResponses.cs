@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Dtos.MeModule;
+using ProjectK.Common.Dtos.MeModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Models;
 

@@ -3,7 +3,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.ScoreModule;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

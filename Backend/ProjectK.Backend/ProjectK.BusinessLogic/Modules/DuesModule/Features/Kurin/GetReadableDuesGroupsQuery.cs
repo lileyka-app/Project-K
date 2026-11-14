@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Dtos.DuesModule;
+using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

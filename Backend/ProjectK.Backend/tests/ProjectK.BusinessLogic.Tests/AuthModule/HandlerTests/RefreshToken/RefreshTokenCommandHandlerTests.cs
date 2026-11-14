@@ -234,13 +234,13 @@ public class RefreshTokenCommandHandlerTests
         return session;
     }
 
-    private Common.Models.Dtos.AuthModule.RefreshToken GivenIssuedTokens(
+    private Common.Dtos.AuthModule.RefreshToken GivenIssuedTokens(
         AppUser user,
         string accessToken,
         string refreshToken,
         List<string>? roles = null)
     {
-        var issued = new Common.Models.Dtos.AuthModule.RefreshToken
+        var issued = new Common.Dtos.AuthModule.RefreshToken
         {
             Token = refreshToken,
             Expires = DateTime.UtcNow.AddDays(7),

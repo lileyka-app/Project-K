@@ -1,7 +1,7 @@
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 

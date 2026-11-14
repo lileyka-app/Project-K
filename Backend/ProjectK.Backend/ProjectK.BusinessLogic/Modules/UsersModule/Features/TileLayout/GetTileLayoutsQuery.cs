@@ -1,8 +1,9 @@
 using MediatR;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Rules.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 

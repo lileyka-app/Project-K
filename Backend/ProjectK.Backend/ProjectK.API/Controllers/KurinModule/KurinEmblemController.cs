@@ -8,8 +8,8 @@ using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.KurinModule;

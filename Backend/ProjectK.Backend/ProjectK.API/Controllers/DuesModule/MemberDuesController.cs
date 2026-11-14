@@ -5,7 +5,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Member;
-using ProjectK.Common.Models.Dtos.DuesModule;
+using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.DuesModule;

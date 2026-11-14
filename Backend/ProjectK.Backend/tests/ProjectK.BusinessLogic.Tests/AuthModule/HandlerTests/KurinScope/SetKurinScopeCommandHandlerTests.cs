@@ -8,7 +8,6 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope;

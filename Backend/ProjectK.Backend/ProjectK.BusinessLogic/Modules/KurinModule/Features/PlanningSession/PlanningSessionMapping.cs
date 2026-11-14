@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Planning;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using PlanningSessionEntity = ProjectK.Common.Entities.KurinModule.Planning.PlanningSession;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;

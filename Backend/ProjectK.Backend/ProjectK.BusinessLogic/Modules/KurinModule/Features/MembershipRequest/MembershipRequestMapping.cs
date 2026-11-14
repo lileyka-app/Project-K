@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
 

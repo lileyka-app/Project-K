@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;

@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications;
 

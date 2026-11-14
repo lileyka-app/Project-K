@@ -92,7 +92,7 @@ public class MemberCardsTests
 
         var allowance = await Cards().AllowanceAsync(_person, default);
 
-        allowance.Should().Be(new Common.Models.Dtos.MeModule.CardAllowanceDto(true, true, CardField.All, true));
+        allowance.Should().Be(new Common.Dtos.MeModule.CardAllowanceDto(true, true, CardField.All, true));
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class MemberCardsTests
         options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 
         var json = System.Text.Json.JsonSerializer.Serialize(
-            new Common.Models.Dtos.MeModule.CardAllowanceDto(true, false, CardField.Kurin | CardField.Level, false), options);
+            new Common.Dtos.MeModule.CardAllowanceDto(true, false, CardField.Kurin | CardField.Level, false), options);
 
         json.Should().Contain("\"maxFields\":6");
     }
@@ -219,7 +219,7 @@ public class MemberCardsTests
 
         var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
 
-        card!.Awards.Should().Equal(new Common.Models.Dtos.MeModule.PublicCardAwardDto(2, "2-е відзначення", null, new DateTime(2019, 5, 1), "UPYu"));
+        card!.Awards.Should().Equal(new Common.Dtos.MeModule.PublicCardAwardDto(2, "2-е відзначення", null, new DateTime(2019, 5, 1), "UPYu"));
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public class MemberCardsTests
 
         var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
 
-        card!.Awards.Should().Equal(new Common.Models.Dtos.MeModule.PublicCardAwardDto(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1), "USP"));
+        card!.Awards.Should().Equal(new Common.Dtos.MeModule.PublicCardAwardDto(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1), "USP"));
     }
 
     [Fact]

@@ -6,8 +6,8 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 

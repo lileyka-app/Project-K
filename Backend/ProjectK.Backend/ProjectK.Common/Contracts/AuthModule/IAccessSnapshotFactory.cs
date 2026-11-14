@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.Common.Contracts.AuthModule;
 

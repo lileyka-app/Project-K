@@ -4,9 +4,9 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.SavedAccount;
@@ -135,7 +135,7 @@ public class SavedAccountHandlerTests
                 Tokens = new JwtResponse
                 {
                     AccessToken = "access",
-                    RefreshToken = new ProjectK.Common.Models.Dtos.AuthModule.RefreshToken { Token = "issued", Expires = DateTime.UtcNow.AddDays(7) }
+                    RefreshToken = new ProjectK.Common.Dtos.AuthModule.RefreshToken { Token = "issued", Expires = DateTime.UtcNow.AddDays(7) }
                 }
             });
 

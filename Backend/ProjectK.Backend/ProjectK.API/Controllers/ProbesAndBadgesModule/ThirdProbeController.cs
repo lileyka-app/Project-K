@@ -7,8 +7,8 @@ using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

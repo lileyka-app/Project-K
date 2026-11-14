@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Dtos.KraiModule;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

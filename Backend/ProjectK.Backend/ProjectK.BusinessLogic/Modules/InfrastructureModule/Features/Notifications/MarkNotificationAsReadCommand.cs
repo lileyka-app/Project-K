@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

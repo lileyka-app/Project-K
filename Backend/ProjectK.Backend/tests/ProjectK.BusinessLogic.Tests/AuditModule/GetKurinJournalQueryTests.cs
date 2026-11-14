@@ -6,10 +6,10 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -43,7 +43,7 @@ public class GetKurinJournalQueryTests
             .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, _access.KurinKey, _access.GroupKey, "Марта", "Впорядниця", "m@example.com", null));
     }
 
-    private Task<ServiceResult<ProjectK.Common.Models.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(
+    private Task<ServiceResult<ProjectK.Common.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(
         ICurrentUserContext user,
         GetKurinJournalQuery? query = null)
     {

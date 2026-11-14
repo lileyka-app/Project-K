@@ -1,7 +1,7 @@
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;

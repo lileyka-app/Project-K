@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.MeModule;
+using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Card;

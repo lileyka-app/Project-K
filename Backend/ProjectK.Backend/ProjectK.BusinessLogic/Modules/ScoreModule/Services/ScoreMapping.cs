@@ -1,5 +1,5 @@
+using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Score;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;

@@ -3,7 +3,7 @@ using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Models.Dtos.KraiModule;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

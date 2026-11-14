@@ -1,4 +1,4 @@
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
 using MemberWarningEntity = ProjectK.Common.Entities.KurinModule.MemberWarning;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
