@@ -233,7 +233,7 @@ export class AdminPanelComponent implements OnInit {
         return 'Від цієї адреси вже є заявка — схвали її в «Заявках».';
       case 'KurinNumberTaken':
         return 'Курінь з таким числом у цьому краї вже є.';
-      case 'VALIDATION_ERROR':
+      case 'ValidationFailed':
         return 'Перевір адресу, імʼя та число куреня.';
       default:
         return failureDetail(error);

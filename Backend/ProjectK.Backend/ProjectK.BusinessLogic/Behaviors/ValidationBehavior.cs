@@ -17,7 +17,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private const string ValidationErrorCode = "VALIDATION_ERROR";
+    private const string ValidationErrorCode = "ValidationFailed";
 
     private readonly IEnumerable<IValidator<TRequest>> _validators;
 

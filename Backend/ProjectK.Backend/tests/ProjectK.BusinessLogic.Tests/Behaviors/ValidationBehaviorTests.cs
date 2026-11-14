@@ -54,7 +54,7 @@ public class ValidationBehaviorTests
 
         handlerRan.Should().BeFalse();
         result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be("VALIDATION_ERROR");
+        result.ErrorCode.Should().Be("ValidationFailed");
         result.ErrorMessage.Should().NotBeNullOrWhiteSpace();
     }
 }
