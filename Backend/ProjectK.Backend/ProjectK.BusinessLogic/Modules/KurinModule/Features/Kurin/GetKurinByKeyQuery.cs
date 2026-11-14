@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -24,12 +25,14 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;
     private readonly IBackendCache _cache;
+    private readonly IMembershipDirectory _memberships;
 
-    public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
+    public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache, IMembershipDirectory memberships)
     {
         _unitOfWork = unitOfWork;
         _links = links;
         _cache = cache;
+        _memberships = memberships;
     }
 
     public async Task<ServiceResult<KurinDto>> Handle(GetKurinByKeyQuery request, CancellationToken cancellationToken)
@@ -46,8 +49,7 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
                     return KurinErrors.NotFound<KurinDto>();
                 }
 
-                var accountsHere = await _unitOfWork.Memberships
-                    .GetAccountKeysInKurinAsync(request.KurinKey, token);
+                var accountsHere = await _memberships.GetAccountKeysInKurinAsync(request.KurinKey, token);
                 var activeUsersCount = await _unitOfWork.Users
                     .CountActiveAsync(accountsHere, token);
 

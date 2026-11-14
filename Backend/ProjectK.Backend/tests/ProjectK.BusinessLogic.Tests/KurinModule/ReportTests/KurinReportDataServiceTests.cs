@@ -17,6 +17,7 @@ using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
@@ -203,13 +204,52 @@ public sealed class KurinReportDataServiceTests
             .ReturnsAsync(new KurinReportSourceData(
                 _kurin,
                 [_alpha, _beta],
-                _mentorAssignments,
-                _members,
+                _mentorAssignments
+                    .Select(assignment => new KurinReportSourceMentor(assignment.MentorUserKey, assignment.GroupKey, assignment.RevokedAtUtc))
+                    .ToList(),
+                _members.Select(ToSource).ToList(),
                 new Dictionary<Guid, AppUser>(),
-                _memberships.ToDictionary(membership => membership.MemberKey)));
+                _memberships.ToDictionary(
+                    membership => membership.MemberKey,
+                    membership => new KurinMembershipRecord(
+                        membership.MembershipKey,
+                        membership.MemberKey,
+                        membership.GroupKey,
+                        membership.Kind,
+                        membership.JoinedAtUtc,
+                        membership.LeftAtUtc))));
 
         return _service.BuildAsync(_kurinKey, CancellationToken.None);
     }
+
+    /// <summary>The person as the report's repository hands them over: values read off the entity.</summary>
+    private static KurinReportSourceMember ToSource(Member member) => new(
+        member.MemberKey,
+        member.UserKey,
+        member.FirstName,
+        member.MiddleName,
+        member.LastName,
+        member.Email,
+        member.PhoneNumber,
+        member.DateOfBirth,
+        member.Address,
+        member.School,
+        member.ProfilePhotoBlobName,
+        member.LatestPlastLevel,
+        member.PlastLevelHistory.Select(history => new KurinReportPlastLevel(history.PlastLevel, history.DateAchieved)).ToList(),
+        member.MemberWarnings.Select(warning => new KurinReportSourceWarning(warning.Level, warning.IssuedAtUtc, warning.ExpiresAtUtc, warning.RevokedAtUtc)).ToList(),
+        member.MemberAwards.Select(award => new KurinReportSourceAward(award.Level, award.CatalogId, award.DateAcquired, award.Note, award.Status)).ToList(),
+        member.LeadershipHistories
+            .Select(history => new KurinReportSourceOffice(
+                history.Leadership.Type,
+                history.Leadership.KurinKey,
+                history.Leadership.GroupKey,
+                history.Leadership.Name,
+                history.Leadership.EndDate,
+                history.Role,
+                history.StartDate,
+                history.EndDate))
+            .ToList());
 
     /// <summary>
     /// The report is read only by whoever holds the whole kurin, so it names every tag a person

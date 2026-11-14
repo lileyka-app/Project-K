@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Records.Shared;

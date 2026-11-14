@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
@@ -52,13 +51,13 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
         var pending = await _unitOfWork.KurinBranchRequests.GetByKeyAsync(request.KurinBranchRequestKey, cancellationToken);
         if (pending is null || pending.Status != KurinBranchRequestStatus.Pending)
         {
-            return ServiceResult<Unit>.Failure(ResultType.NotFound, MemberErrors.KurinBranchRequestNotFound, "There is no such request waiting.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, KurinErrors.KurinBranchRequestNotFound, "There is no such request waiting.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(pending.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<Unit>.Failure(ResultType.NotFound, MemberErrors.KurinNotFound, "Kurin not found.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin not found.");
         }
 
         // The settlement and the change it makes commit together; disposing the transaction without a
@@ -72,7 +71,7 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
             {
                 if (await _unitOfWork.Kurins.IsNumberTakenAsync(kurin.KraiCode, numbering.Branch, numbering.Number!.Value, kurin.KurinKey, cancellationToken))
                 {
-                    return ServiceResult<Unit>.Failure(ResultType.Conflict, MemberErrors.KurinNumberTaken, "A kurin with this number already exists in this край.");
+                    return ServiceResult<Unit>.Failure(ResultType.Conflict, KurinErrors.KurinNumberTaken, "A kurin with this number already exists in this край.");
                 }
             }
 
@@ -92,7 +91,7 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
 
         if (!await _unitOfWork.KurinBranchRequests.TrySettleAsync(pending.KurinBranchRequestKey, status, _currentUser.UserId, DateTime.UtcNow, cancellationToken))
         {
-            return ServiceResult<Unit>.Failure(ResultType.Conflict, MemberErrors.KurinBranchRequestAlreadySettled, "Someone settled this request a moment ago.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, KurinErrors.KurinBranchRequestAlreadySettled, "Someone settled this request a moment ago.");
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

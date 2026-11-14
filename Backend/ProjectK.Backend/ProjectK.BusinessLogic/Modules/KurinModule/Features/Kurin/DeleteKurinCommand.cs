@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
@@ -19,10 +20,12 @@ public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, Ser
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
-    public DeleteKurinCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache)
+    private readonly IDomainEventPublisher _events;
+    public DeleteKurinCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache, IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
+        _events = events;
     }
     public async Task<ServiceResult<Unit>> Handle(DeleteKurinCommand request, CancellationToken cancellationToken)
     {
@@ -52,13 +55,9 @@ public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, Ser
         //
         // What the database will not clear itself: offices are NO ACTION against both the kurin
         // and its гуртки, and the гуртки's own cascade is refused while an office still points at
-        // one. Everything else — гуртки, agenda with its assignments, planning sessions, mentor
-        // assignments — cascades.
-        await _unitOfWork.Leaderships.DeleteForKurinAsync(request.KurinKey, cancellationToken);
-
-        // Membership rows are the kurin's own record of who was in it, and they name it by a
-        // foreign key, so they go with it. Nothing about the people goes with them.
-        await _unitOfWork.Memberships.RemoveForKurinAsync(request.KurinKey, cancellationToken);
+        // one, so the member module removes them, and the memberships with them. Everything else —
+        // гуртки, agenda with its assignments, planning sessions, mentor assignments — cascades.
+        await _events.PublishAsync(new KurinDeleted(request.KurinKey), cancellationToken);
 
         // Accounts remember which kurin they stood in, and nothing in the schema forgets it for
         // them. Left alone, everyone who had stepped into this kurin would keep signing in to a

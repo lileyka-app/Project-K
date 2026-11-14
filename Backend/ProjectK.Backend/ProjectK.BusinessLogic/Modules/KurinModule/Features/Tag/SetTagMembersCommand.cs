@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -23,11 +24,11 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
     private readonly IKurinTagVisibility _visibility;
     private readonly KurinTagAssignments _assignments;
 
-    public SetTagMembersCommandHandler(IUnitOfWork uow, IKurinTagVisibility visibility, IKurinAudit audit)
+    public SetTagMembersCommandHandler(IUnitOfWork uow, IKurinTagVisibility visibility, IKurinAudit audit, IMembershipDirectory memberships)
     {
         _uow = uow;
         _visibility = visibility;
-        _assignments = new KurinTagAssignments(uow, audit);
+        _assignments = new KurinTagAssignments(uow, audit, memberships);
     }
 
     public async Task<ServiceResult<KurinTagDto>> Handle(SetTagMembersCommand request, CancellationToken cancellationToken)

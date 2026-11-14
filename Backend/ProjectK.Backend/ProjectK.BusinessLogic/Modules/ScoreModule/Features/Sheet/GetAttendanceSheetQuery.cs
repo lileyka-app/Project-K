@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;

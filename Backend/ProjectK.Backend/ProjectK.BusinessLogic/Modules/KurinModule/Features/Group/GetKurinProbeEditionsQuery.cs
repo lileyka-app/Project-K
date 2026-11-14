@@ -26,19 +26,22 @@ public sealed class GetKurinProbeEditionsQueryHandler : IRequestHandler<GetKurin
     private readonly IProbeEditionHolds _holds;
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _access;
+    private readonly IMembershipDirectory _memberships;
 
     public GetKurinProbeEditionsQueryHandler(
         IUnitOfWork unitOfWork,
         IProbesCatalog catalog,
         IProbeEditionHolds holds,
         IMemberDirectory members,
-        IResourceAccessService access)
+        IResourceAccessService access,
+        IMembershipDirectory memberships)
     {
         _unitOfWork = unitOfWork;
         _catalog = catalog;
         _holds = holds;
         _members = members;
         _access = access;
+        _memberships = memberships;
     }
 
     public async Task<ServiceResult<KurinProbeEditionsDto>> Handle(GetKurinProbeEditionsQuery request, CancellationToken cancellationToken)
@@ -54,7 +57,7 @@ public sealed class GetKurinProbeEditionsQueryHandler : IRequestHandler<GetKurin
             .OrderBy(group => group.Name, StringComparer.CurrentCulture)
             .ToList();
 
-        var youthByGroup = (await _unitOfWork.Memberships.GetRecordsInKurinAsync(kurin.KurinKey, cancellationToken))
+        var youthByGroup = (await _memberships.GetInKurinAsync(kurin.KurinKey, cancellationToken))
             .Where(membership => membership.LeftAtUtc is null && membership.Kind == MembershipKind.Youth && membership.GroupKey is not null)
             .GroupBy(membership => membership.GroupKey!.Value)
             .ToDictionary(group => group.Key, group => group.Select(membership => membership.MemberKey).Distinct().ToList());

@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
@@ -26,17 +27,20 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
     private readonly IKurinTagVisibility _visibility;
     private readonly KurinTagAssignments _assignments;
     private readonly ICurrentUserContext _currentUser;
+    private readonly IMembershipDirectory _memberships;
 
     public SetMemberTagsCommandHandler(
         IUnitOfWork uow,
         IKurinTagVisibility visibility,
         IKurinAudit audit,
-        ICurrentUserContext currentUser)
+        ICurrentUserContext currentUser,
+        IMembershipDirectory memberships)
     {
         _uow = uow;
         _visibility = visibility;
-        _assignments = new KurinTagAssignments(uow, audit);
+        _assignments = new KurinTagAssignments(uow, audit, memberships);
         _currentUser = currentUser;
+        _memberships = memberships;
     }
 
     public async Task<ServiceResult<IReadOnlyList<Guid>>> Handle(SetMemberTagsCommand request, CancellationToken cancellationToken)
@@ -111,7 +115,9 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
             return named;
         }
 
-        var standing = await _uow.Memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);
-        return standing.Count == 1 ? standing.First().KurinKey : null;
+        var standing = (await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken))
+            .Where(membership => membership.IsCurrent)
+            .ToList();
+        return standing.Count == 1 ? standing[0].KurinKey : null;
     }
 }

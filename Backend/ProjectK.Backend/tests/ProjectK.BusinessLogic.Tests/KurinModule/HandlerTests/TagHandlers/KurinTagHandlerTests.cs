@@ -3,12 +3,14 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -170,8 +172,8 @@ public class KurinTagHandlerTests
 
         var named = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [tag.KurinTagKey], KurinKey), default);
 
-        _memberships.Setup(m => m.GetActiveForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new Membership { MemberKey = MemberKey, KurinKey = KurinKey }]);
+        _memberships.Setup(m => m.GetRecordsForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([CurrentIn(KurinKey)]);
         var only = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [tag.KurinTagKey]), default);
 
         named.Type.Should().Be(ResultType.Success);
@@ -183,8 +185,8 @@ public class KurinTagHandlerTests
     {
         _currentUser.Setup(c => c.KurinKey).Returns((Guid?)null);
         _currentUser.Setup(c => c.IsInRole(SystemRoleNames.Admin)).Returns(true);
-        _memberships.Setup(m => m.GetActiveForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new Membership { MemberKey = MemberKey, KurinKey = KurinKey }, new Membership { MemberKey = MemberKey, KurinKey = Guid.NewGuid() }]);
+        _memberships.Setup(m => m.GetRecordsForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([CurrentIn(KurinKey), CurrentIn(Guid.NewGuid())]);
 
         var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, []), default);
 
@@ -299,10 +301,13 @@ public class KurinTagHandlerTests
     }
 
     private SetMemberTagsCommandHandler MemberTagsHandler() =>
-        new(_uow.Object, _visibility.Object, _audit.Object, _currentUser.Object);
+        new(_uow.Object, _visibility.Object, _audit.Object, _currentUser.Object, new MembershipDirectory(_uow.Object));
 
     private SetTagMembersCommandHandler TagMembersHandler() =>
-        new(_uow.Object, _visibility.Object, _audit.Object);
+        new(_uow.Object, _visibility.Object, _audit.Object, new MembershipDirectory(_uow.Object));
+
+    private static MembershipRecord CurrentIn(Guid kurinKey) =>
+        new(Guid.NewGuid(), kurinKey, 1, KurinBranch.UPYu, null, null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-1), null);
 
     private void TagsAre(bool enabled) =>
         _visibility.Setup(v => v.SettingsAsync(KurinKey, It.IsAny<CancellationToken>()))

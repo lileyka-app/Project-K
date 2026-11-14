@@ -3,9 +3,11 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
@@ -25,10 +27,21 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
     private readonly IKurinAudit _audit;
     private readonly TimeProvider _time;
     private readonly IDuesDirectory _dues;
+    private readonly IOfficeDirectory _offices;
+    private readonly IDomainEventPublisher _events;
 
-    public DeleteGroupCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache, IKurinAudit audit, TimeProvider time, IDuesDirectory dues)
+    public DeleteGroupCommandHandler(
+        IUnitOfWork unitOfWork,
+        IBackendCache cache,
+        IKurinAudit audit,
+        TimeProvider time,
+        IDuesDirectory dues,
+        IOfficeDirectory offices,
+        IDomainEventPublisher events)
     {
         _dues = dues;
+        _offices = offices;
+        _events = events;
         _unitOfWork = unitOfWork;
         _cache = cache;
         _audit = audit;
@@ -63,18 +76,14 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
-        var leadershipKeys = await _unitOfWork.Leaderships.CloseForGroupAsync(request.GroupKey, DateOnly.FromDateTime(now), cancellationToken);
+        var leadershipKeys = (await _offices.GetLeadershipsInKurinAsync(existing.KurinKey, cancellationToken))
+            .Where(leadership => leadership.GroupKey == request.GroupKey)
+            .Select(leadership => leadership.LeadershipKey)
+            .ToList();
 
-        // A впорядник of a dissolved гурток leads nothing; the revoked row stays as history.
-        foreach (var assignment in await _unitOfWork.MentorAssignments.GetByGroupKeyAsync(request.GroupKey, cancellationToken))
-        {
-            assignment.RevokedAtUtc ??= now;
-        }
-
-        // The people stay, and stay in the kurin — they are simply no longer in a гурток, which
-        // is a state a membership is allowed to be in. Dissolving a гурток is not a reason for
-        // anyone to leave.
-        await _unitOfWork.Memberships.DetachFromGroupAsync(request.GroupKey, cancellationToken);
+        // The people stay, and stay in the kurin — they are simply no longer in a гурток. Its проводи
+        // close and its впорядники lead nothing; the member module does that on this unit of work.
+        await _events.PublishAsync(new GroupDissolved(existing.KurinKey, existing.GroupKey, now), cancellationToken);
 
         // Agenda assignments name their target by a bare key, so nothing in the database clears
         // them: neither the гурток nor its offices can be a target any more.

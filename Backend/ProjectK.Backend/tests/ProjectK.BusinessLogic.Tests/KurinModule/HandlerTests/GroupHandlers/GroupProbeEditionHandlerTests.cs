@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -132,7 +133,7 @@ public class GroupProbeEditionHandlerTests
         access.Setup(x => x.CheckAccessAsync(ResourceType.GroupProbeEdition, ResourceAction.Update, _group.GroupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
 
-        var result = await new GetKurinProbeEditionsQueryHandler(_unitOfWork.Object, _catalog.Object, holds.Object, members.Object, access.Object)
+        var result = await new GetKurinProbeEditionsQueryHandler(_unitOfWork.Object, _catalog.Object, holds.Object, members.Object, access.Object, new MembershipDirectory(_unitOfWork.Object))
             .Handle(new GetKurinProbeEditionsQuery(_kurin.KurinKey), CancellationToken.None);
 
         var dto = result.Data!;
@@ -161,7 +162,7 @@ public class GroupProbeEditionHandlerTests
         access.Setup(x => x.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
 
-        var result = await new GetKurinProbeEditionsQueryHandler(_unitOfWork.Object, _catalog.Object, holds.Object, Mock.Of<IMemberDirectory>(), access.Object)
+        var result = await new GetKurinProbeEditionsQueryHandler(_unitOfWork.Object, _catalog.Object, holds.Object, Mock.Of<IMemberDirectory>(), access.Object, new MembershipDirectory(_unitOfWork.Object))
             .Handle(new GetKurinProbeEditionsQuery(_kurin.KurinKey), CancellationToken.None);
 
         result.Data!.Groups.Single().Edition.Should().BeNull();

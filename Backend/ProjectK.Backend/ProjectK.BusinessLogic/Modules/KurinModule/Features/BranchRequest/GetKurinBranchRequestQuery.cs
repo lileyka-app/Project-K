@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -30,7 +29,7 @@ public sealed class GetKurinBranchRequestQueryHandler
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<KurinBranchRequestDto?>.Failure(ResultType.NotFound, MemberErrors.KurinNotFound, "Kurin not found.");
+            return ServiceResult<KurinBranchRequestDto?>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin not found.");
         }
 
         var open = await _unitOfWork.KurinBranchRequests.GetPendingForKurinAsync(request.KurinKey, cancellationToken);

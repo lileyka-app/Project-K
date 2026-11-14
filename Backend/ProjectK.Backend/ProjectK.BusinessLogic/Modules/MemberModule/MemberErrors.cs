@@ -60,9 +60,6 @@ public static class MemberErrors
     public const string YouthAwardInSeniorKurin = "YouthAwardInSeniorKurin";
     public const string UnknownSeniorAward = "UnknownSeniorAward";
 
-    /// <summary>The caller has no card of their own to pin a відзначення on.</summary>
-    public const string NoOwnCard = "NoOwnCard";
-
     public const string WarningNotFound = "WarningNotFound";
     public const string InvalidWarningLevel = "InvalidWarningLevel";
     public const string WarningLevelNotAllowed = "WarningLevelNotAllowed";
@@ -78,18 +75,6 @@ public static class MemberErrors
     public const string MentorFromAnotherKurin = "MentorFromAnotherKurin";
     public const string MentorAlreadyAssigned = "MentorAlreadyAssigned";
     public const string MentorAssignmentNotFound = "MentorAssignmentNotFound";
-
-    /// <summary>A line of the person's own life story that is not there, or not theirs.</summary>
-    public const string LifeEntryNotFound = "LifeEntryNotFound";
-    public const string LifeStoryFull = "LifeStoryFull";
-
-    public const string KurinBranchRequestNotFound = "KurinBranchRequestNotFound";
-    public const string KurinBranchRequestAlreadySettled = "KurinBranchRequestAlreadySettled";
-    public const string KurinNumberTaken = "KurinNumberTaken";
-    public const string KurinNumberOutOfRange = "KurinNumberOutOfRange";
-    public const string NotSeniorKurin = "NotSeniorKurin";
-    public const string NoteTooLong = "NoteTooLong";
-    public const string NothingToChange = "NothingToChange";
 
     /// <summary>The caller's identity is missing from the token.</summary>
     public const string Unauthorized = "Unauthorized";

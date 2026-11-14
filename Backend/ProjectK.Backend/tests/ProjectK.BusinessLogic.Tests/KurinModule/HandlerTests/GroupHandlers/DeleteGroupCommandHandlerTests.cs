@@ -46,7 +46,19 @@ public class DeleteGroupHandlerTests
             .Setup(r => r.GetByGroupKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object, Mock.Of<IBackendCache>(), _auditMock.Object, new FixedTimeProvider(Now), _dues.Object);
+        var offices = new Mock<IOfficeDirectory>();
+        offices
+            .Setup(o => o.GetLeadershipsInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        _handler = new DeleteGroupCommandHandler(
+            _unitOfWorkMock.Object,
+            Mock.Of<IBackendCache>(),
+            _auditMock.Object,
+            new FixedTimeProvider(Now),
+            _dues.Object,
+            offices.Object,
+            new KurinCleanupEvents(_unitOfWorkMock.Object));
     }
 
     [Fact]

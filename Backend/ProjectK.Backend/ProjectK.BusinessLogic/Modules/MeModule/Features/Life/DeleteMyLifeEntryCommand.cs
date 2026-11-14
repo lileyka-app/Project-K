@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
@@ -23,12 +22,12 @@ public sealed class DeleteMyLifeEntryCommandHandler : IRequestHandler<DeleteMyLi
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return ServiceResult<Unit>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         if (await _unitOfWork.MemberLifeEntries.GetOwnAsync(memberKey, request.Key, cancellationToken) is not { } entry)
         {
-            return ServiceResult<Unit>.Failure(ResultType.NotFound, MemberErrors.LifeEntryNotFound, "No such entry in your life story.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MeErrors.LifeEntryNotFound, "No such entry in your life story.");
         }
 
         _unitOfWork.MemberLifeEntries.Delete(entry, cancellationToken);

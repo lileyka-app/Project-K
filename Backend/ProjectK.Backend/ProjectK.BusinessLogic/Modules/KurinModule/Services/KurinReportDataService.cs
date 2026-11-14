@@ -12,7 +12,6 @@ using ProjectK.Common.Records.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -141,11 +140,11 @@ public sealed class KurinReportDataService
         // хто лише закріплений за гуртком, звіт не рахував зовсім — реєстр і сайдбар рахували.
         var kurinOfGroup = groups.ToDictionary(group => group.GroupKey, group => group.KurinKey);
         var staffKeys = members
-            .Where(member => member.LeadershipHistories.Any(history => KurinRosterRules.IsStaffOffice(
-                    history.Leadership.Type,
-                    history.Leadership.KurinKey,
-                    history.Leadership.EndDate,
-                    history.EndDate,
+            .Where(member => member.Offices.Any(office => KurinRosterRules.IsStaffOffice(
+                    office.Type,
+                    office.KurinKey,
+                    office.OfficeEndDate,
+                    office.EndDate,
                     kurinKey))
                 || (member.UserKey is Guid accountKey && mentorAssignments.Any(assignment =>
                     assignment.MentorUserKey == accountKey
@@ -224,8 +223,8 @@ public sealed class KurinReportDataService
     /// оновлюється записом, і звіт показував би не те, що реєстр, у кожного, кому ступінь додали
     /// заднім числом.
     /// </summary>
-    private static PlastLevel? LatestLevelOf(Member member)
-        => member.PlastLevelHistory
+    private static PlastLevel? LatestLevelOf(KurinReportSourceMember member)
+        => member.Levels
             .OrderByDescending(history => history.DateAchieved)
             .Select(history => (PlastLevel?)history.PlastLevel)
             .FirstOrDefault() ?? member.LatestPlastLevel;
@@ -239,7 +238,7 @@ public sealed class KurinReportDataService
     /// </para>
     /// </summary>
     private static bool BelongsToKurin(
-        Leadership office,
+        KurinReportSourceOffice office,
         Guid kurinKey,
         IReadOnlyDictionary<Guid, string> groupsHere)
         => office.Type == LeadershipType.Group
@@ -247,7 +246,7 @@ public sealed class KurinReportDataService
             : office.KurinKey == kurinKey;
 
     private async Task<KurinReportMember> BuildMemberReportAsync(
-        Member member,
+        KurinReportSourceMember member,
         KurinReportSourceData source,
         MemberProgressDetail progress,
         Guid kurinKey,
@@ -278,7 +277,7 @@ public sealed class KurinReportDataService
                 && mentoredGroupsByUserKey.TryGetValue(mentorUserKey, out var mentoredGroups)
                 ? mentoredGroups
                 : [],
-            member.PlastLevelHistory
+            member.Levels
                 .OrderByDescending(item => item.DateAchieved)
                 .Select(item => new KurinReportPlastLevel(item.PlastLevel, item.DateAchieved))
                 .ToArray(),
@@ -329,7 +328,7 @@ public sealed class KurinReportDataService
                         item.ReviewedByRole);
                 })
                 .ToArray(),
-            member.MemberWarnings
+            member.Warnings
                 .Where(item => item.RevokedAtUtc == null && item.ExpiresAtUtc >= DateTime.UtcNow)
                 .OrderByDescending(item => item.IssuedAtUtc)
                 .Select(item => new KurinReportWarning(
@@ -339,7 +338,7 @@ public sealed class KurinReportDataService
                     item.ExpiresAtUtc,
                     item.RevokedAtUtc.HasValue))
                 .ToArray(),
-            member.MemberAwards
+            member.Awards
                 .OrderByDescending(item => item.DateAcquired)
                 .Select(item => new KurinReportAward(
                     item.Level,
@@ -349,15 +348,15 @@ public sealed class KurinReportDataService
                     item.Status,
                     KurinReportNames.BadgeStatus(item.Status)))
                 .ToArray(),
-            member.LeadershipHistories
-                .Where(item => BelongsToKurin(item.Leadership, kurinKey, groupNamesByKey))
+            member.Offices
+                .Where(item => BelongsToKurin(item, kurinKey, groupNamesByKey))
                 .OrderByDescending(item => item.StartDate)
                 .Select(item => new KurinReportLeadershipHistory(
-                    item.Leadership.Type,
-                    KurinReportNames.LeadershipType(item.Leadership.Type),
+                    item.Type,
+                    KurinReportNames.LeadershipType(item.Type),
                     item.Role,
                     roleNames.GetValueOrDefault(item.Role) ?? KurinReportNames.LeadershipRole(item.Role),
-                    ResolveLeadershipScopeName(item.Leadership, groupNamesByKey),
+                    ResolveLeadershipScopeName(item, groupNamesByKey),
                     item.StartDate,
                     item.EndDate))
                 .ToArray(),
@@ -381,8 +380,8 @@ public sealed class KurinReportDataService
 
     private static IReadOnlyList<string> ResolveMentorNames(
         Guid groupKey,
-        IEnumerable<MentorAssignment> mentorAssignments,
-        IReadOnlyDictionary<Guid, Member> memberByUserKey,
+        IEnumerable<KurinReportSourceMentor> mentorAssignments,
+        IReadOnlyDictionary<Guid, KurinReportSourceMember> memberByUserKey,
         IReadOnlyDictionary<Guid, Common.Entities.AuthModule.AppUser> usersByKey)
     {
         return mentorAssignments
@@ -442,13 +441,13 @@ public sealed class KurinReportDataService
     private static Guid? GroupOf(KurinReportSourceData source, Guid memberKey)
         => source.MembershipByMemberKey.TryGetValue(memberKey, out var membership) ? membership.GroupKey : null;
 
-    private static string BuildInitials(Member member)
+    private static string BuildInitials(KurinReportSourceMember member)
         => string.Concat(new[] { member.FirstName, member.MiddleName, member.LastName }
             .Where(part => !string.IsNullOrWhiteSpace(part))
             .Select(part => char.ToUpperInvariant(part![0])));
 
     private static string? ResolveLeadershipScopeName(
-        Leadership leadership,
+        KurinReportSourceOffice leadership,
         IReadOnlyDictionary<Guid, string> groupNamesByKey)
     {
         if (!string.IsNullOrWhiteSpace(leadership.Name))

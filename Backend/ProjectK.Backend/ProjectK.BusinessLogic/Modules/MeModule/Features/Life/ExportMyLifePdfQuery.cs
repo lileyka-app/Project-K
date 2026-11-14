@@ -1,6 +1,5 @@
 using System.Globalization;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.MemberModule;
@@ -71,7 +70,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return ServiceResult<LifeStoryPdf>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
+            return ServiceResult<LifeStoryPdf>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var dossier = await _sender.Send(new GetMemberDossierQuery(memberKey, Folders), cancellationToken);
@@ -79,7 +78,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         {
             return ServiceResult<LifeStoryPdf>.Failure(
                 dossier.Type == ResultType.Success ? ResultType.NotFound : dossier.Type,
-                dossier.ErrorCode ?? MemberErrors.MemberNotFound,
+                dossier.ErrorCode ?? MeErrors.MemberNotFound,
                 dossier.ErrorMessage ?? "Your record could not be read.");
         }
 

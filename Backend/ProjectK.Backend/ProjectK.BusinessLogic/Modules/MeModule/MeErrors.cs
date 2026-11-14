@@ -30,6 +30,19 @@ public static class MeErrors
     /// <summary>The event has no occurrence starting at the time named.</summary>
     public const string AgendaNotOccurrence = "AgendaNotOccurrence";
 
+    public const string MemberNotFound = "MemberNotFound";
+    public const string AwardNotFound = "AwardNotFound";
+
+    /// <summary>The caller has no card of their own to pin a відзначення on.</summary>
+    public const string NoOwnCard = "NoOwnCard";
+
+    /// <summary>A line of the person's own life story that is not there, or not theirs.</summary>
+    public const string LifeEntryNotFound = "LifeEntryNotFound";
+    public const string LifeStoryFull = "LifeStoryFull";
+
+    public const string RequestNotFound = "RequestNotFound";
+    public const string RequestClosed = "RequestClosed";
+
     public static ServiceResult<T> SignInRequired<T>() =>
         ServiceResult<T>.Failure(ResultType.Unauthorized, NotSignedIn, "Not signed in.");
 
