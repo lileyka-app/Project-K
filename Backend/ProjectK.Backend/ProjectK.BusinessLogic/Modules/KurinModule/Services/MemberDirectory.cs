@@ -1,3 +1,5 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
@@ -15,10 +17,12 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 public sealed class MemberDirectory : IMemberDirectory
 {
     private readonly IMemberUnitOfWork _unitOfWork;
+    private readonly ISender _sender;
 
-    public MemberDirectory(IMemberUnitOfWork unitOfWork)
+    public MemberDirectory(IMemberUnitOfWork unitOfWork, ISender sender)
     {
         _unitOfWork = unitOfWork;
+        _sender = sender;
     }
 
     public Task<bool> ExistsAsync(Guid memberKey, CancellationToken cancellationToken = default)
@@ -92,6 +96,22 @@ public sealed class MemberDirectory : IMemberDirectory
         Guid kurinKey,
         CancellationToken cancellationToken = default)
         => (await _unitOfWork.Members.GetMentorCandidatesLookupAsync(kurinKey, cancellationToken)).ToList();
+
+    /// <remarks>
+    /// Sent through <see cref="GetMembersQuery"/> rather than read here, so the masking that use case
+    /// applies is applied once, in one place, for the screen and the file alike.
+    /// </remarks>
+    public async Task<IReadOnlyList<MemberDto>> GetVisibleRosterAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => (await _sender.Send(new GetMembersQuery(Guid.Empty, kurinKey), cancellationToken)).Data?.ToList() ?? [];
+
+    public Task<IReadOnlyCollection<MemberIdentity>> FindPossibleMatchesAsync(
+        IReadOnlyCollection<string> emails,
+        IReadOnlyCollection<string> phoneNumbers,
+        IReadOnlyCollection<string> lastNames,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Members.FindPossibleMatchesAsync(emails, phoneNumbers, lastNames, cancellationToken);
 
     public Task<IReadOnlyCollection<MemberSummary>> GetAllAsync(CancellationToken cancellationToken = default)
         => _unitOfWork.Members.GetAllSummariesAsync(cancellationToken);
