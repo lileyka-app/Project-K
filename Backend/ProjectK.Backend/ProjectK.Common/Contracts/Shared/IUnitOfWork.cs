@@ -1,3 +1,4 @@
+using ProjectK.Common.Contracts.ArchiveModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;

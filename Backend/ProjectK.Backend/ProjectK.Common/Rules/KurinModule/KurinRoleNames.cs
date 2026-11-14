@@ -33,6 +33,10 @@ public static class KurinRoleNames
     /// </summary>
     public static bool IsAvailableFor(KurinBranch branch) => KurinBranchSetRules.IsSenior(branch);
 
+    /// <summary>A role as the kurin names it: its own name where it gave one.</summary>
+    public static string Label(LeadershipRole role, IReadOnlyDictionary<LeadershipRole, string> kurinNames) =>
+        kurinNames.GetValueOrDefault(role) ?? KurinReportNames.LeadershipRole(role);
+
     /// <summary>The kurin's names by role; whatever it cannot read it skips, so a bad row costs a name, not the page.</summary>
     public static IReadOnlyDictionary<LeadershipRole, string> Read(string? json)
     {

@@ -58,7 +58,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         {
             return ServiceResult<Unit>.Failure(
                 ResultType.Conflict,
-                ArchiveErrors.DissolveWithDues,
+                KurinErrors.DissolveWithDues,
                 "The гурток's box still holds money, owes the kurin or has accounts in debt.");
         }
 

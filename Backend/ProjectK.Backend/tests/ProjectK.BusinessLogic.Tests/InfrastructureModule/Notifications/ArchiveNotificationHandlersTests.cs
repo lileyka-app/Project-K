@@ -4,12 +4,15 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Events.ArchiveModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
