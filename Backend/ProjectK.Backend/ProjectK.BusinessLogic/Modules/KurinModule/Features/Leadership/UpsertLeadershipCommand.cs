@@ -205,7 +205,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
                     AuditArea.Office,
                     seated ? AuditActionNames.Office.Assigned : AuditActionNames.Office.Ended,
                     leadership.LeadershipKey,
-                    ArchiveErrors.RoleLabel(change.Role, kurinNames),
+                    KurinRoleNames.Label(change.Role, kurinNames),
                     subject.Count == 1 ? subject[0] : null,
                     AuditChangeRules.Of(("holder", NamesOf(change.Ended, names), NamesOf(change.Seated, names))),
                     KurinKey: leadership.KurinKey),

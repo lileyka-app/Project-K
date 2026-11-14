@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Authorization;
+using ProjectK.API.Controllers.ArchiveModule;
 using ProjectK.API.Controllers.AuditModule;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.API.Controllers.DemoModule;
