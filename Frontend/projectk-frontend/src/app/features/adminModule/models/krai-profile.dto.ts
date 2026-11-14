@@ -43,3 +43,14 @@ export interface KraiProfileRevisionDto {
   createdByName: string | null;
   note: string | null;
 }
+
+/** Коди помилок краю й профілю → що сказати людині. */
+export const KRAI_ERROR_TEXT: Record<string, string> = {
+  InvalidKraiCode: 'Код краю — від 2 до 8 латинських літер, як pl чи sk.',
+  InvalidKraiName: 'Назва краю — від 1 до 120 символів.',
+  KraiExists: 'Край з таким кодом уже є.',
+  KraiNameTaken: 'Край з такою назвою вже є.',
+  InvalidProfile: 'У профілі є неправильні значення.',
+  ProfileTooLarge: 'Профіль завеликий.',
+  ProfileChanged: 'Профіль змінили, поки ти його редагував. Онови сторінку.'
+};

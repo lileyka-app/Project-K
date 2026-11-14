@@ -22,7 +22,7 @@ public sealed class GetKurinProfileQueryHandler : IRequestHandler<GetKurinProfil
     {
         var profile = await _profiles.GetForKurinAsync(request.KurinKey, cancellationToken);
         return profile is null
-            ? ServiceResult<KraiProfile>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin not found.")
+            ? ServiceResult<KraiProfile>.Failure(ResultType.NotFound, KraiErrors.KurinNotFound, "Kurin not found.")
             : new ServiceResult<KraiProfile>(ResultType.Success, profile);
     }
 }

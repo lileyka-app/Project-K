@@ -17,11 +17,11 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPasswor
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ValidateInvitationToken;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
-using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
-using ProjectK.BusinessLogic.Modules.KraiModule.Models;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
+using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.Common.Models.Enums;
 
 using ProjectK.Common.Models.Settings;
@@ -76,7 +76,7 @@ public class OnboardingController : ControllerBase
     /// </summary>
     [AllowAnonymous]
     [HttpGet("krais")]
-    [ProducesResponseType(typeof(IReadOnlyList<KraiNameResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<KraiNameDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKraiNames()
     {
         var response = await _mediator.Send(new GetKraiNamesQuery());

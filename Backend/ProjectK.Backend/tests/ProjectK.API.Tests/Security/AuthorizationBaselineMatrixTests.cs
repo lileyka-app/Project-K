@@ -16,7 +16,7 @@ using ProjectK.API.Controllers.TestModule;
 using ProjectK.API.Controllers.UsersModule;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.InviteKurinFounder;
-using ProjectK.BusinessLogic.Modules.KraiModule.Models;
+using ProjectK.Common.Models.Dtos.KraiModule.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;

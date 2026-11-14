@@ -6,10 +6,10 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
 using ProjectK.BusinessLogic.Modules.DuesModule.Models;
-using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
-using ProjectK.BusinessLogic.Modules.KraiModule.Features.Manage;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
-using ProjectK.BusinessLogic.Modules.KraiModule.Models;
+using ProjectK.Common.Models.Dtos.KraiModule;
+using ProjectK.Common.Models.Dtos.KraiModule.Requests;
 
 namespace ProjectK.API.Controllers.KraiModule;
 
@@ -28,7 +28,7 @@ public class KraiController : ControllerBase
 
     /// <summary>Lists the краї with how many kurins each holds.</summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<KraiResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<KraiDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
     {
         var response = await _mediator.Send(new GetKraisQuery());
@@ -39,7 +39,7 @@ public class KraiController : ControllerBase
     /// Adds a край, such as one Plast registers later. Refused with 409 when the code is taken.
     /// </summary>
     [HttpPost]
-    [ProducesResponseType(typeof(KraiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KraiDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] CreateKraiRequest request)
@@ -50,7 +50,7 @@ public class KraiController : ControllerBase
 
     /// <summary>Renames a край; its code stays.</summary>
     [HttpPut("{kraiCode}")]
-    [ProducesResponseType(typeof(KraiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KraiDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Rename(string kraiCode, [FromBody] RenameKraiRequest request)
@@ -61,7 +61,7 @@ public class KraiController : ControllerBase
 
     /// <summary>Returns the край's profile document as it is stored, for the editor and for export.</summary>
     [HttpGet("{kraiCode}/profile")]
-    [ProducesResponseType(typeof(KraiProfileEditorResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KraiProfileEditorDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile(string kraiCode)
     {
@@ -74,7 +74,7 @@ public class KraiController : ControllerBase
     /// with 409 when someone saved after the revision the editor started from.
     /// </summary>
     [HttpPut("{kraiCode}/profile")]
-    [ProducesResponseType(typeof(KraiProfileEditorResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KraiProfileEditorDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -86,7 +86,7 @@ public class KraiController : ControllerBase
 
     /// <summary>Lists every saved revision of the край's profile, newest first.</summary>
     [HttpGet("{kraiCode}/profile/revisions")]
-    [ProducesResponseType(typeof(IReadOnlyList<KraiProfileRevisionResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<KraiProfileRevisionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfileRevisions(string kraiCode)
     {
@@ -96,7 +96,7 @@ public class KraiController : ControllerBase
 
     /// <summary>Brings an earlier revision back as the newest one; the history keeps both.</summary>
     [HttpPost("{kraiCode}/profile/revisions/{revision:int}/restore")]
-    [ProducesResponseType(typeof(KraiProfileEditorResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KraiProfileEditorDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreProfileRevision(string kraiCode, int revision)
     {
