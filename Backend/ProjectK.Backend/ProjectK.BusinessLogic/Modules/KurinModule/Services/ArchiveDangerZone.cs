@@ -1,6 +1,9 @@
 using System.Collections.Concurrent;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -76,6 +79,13 @@ public sealed class ArchiveDangerZone
 {
     public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(10);
     public const int Deletions = 10;
+
+    /// <summary>
+    /// The journal entry for a zone entered, refused or ended: about the account, in the kurin, with
+    /// the one detail that says how — <c>method</c> on the way in, <c>reason</c> on the way out.
+    /// </summary>
+    public static AuditRecord JournalEntry(string action, Guid userKey, Guid kurinKey, string field, string value)
+        => new(AuditArea.Archive, action, userKey, "Небезпечний режим", Changes: AuditChanges.Added((field, value)), KurinKey: kurinKey);
 
     private readonly ArchiveDangerZoneRegistry _registry;
     private readonly IJwtService _jwt;

@@ -3,9 +3,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 
@@ -51,7 +49,7 @@ public sealed class EndArchiveDangerZoneCommandHandler : IRequestHandler<EndArch
 
         var reason = timedOut ? "time" : request.Reason == ArchiveDangerZoneEnd.Left ? "left" : "manual";
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Archive, AuditActions.Archive.DangerZoneEnded, userKey, "Небезпечний режим", Changes: AuditChanges.Added(("reason", reason)), KurinKey: request.KurinKey),
+            ArchiveDangerZone.JournalEntry(AuditActions.Archive.DangerZoneEnded, userKey, request.KurinKey, "reason", reason),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

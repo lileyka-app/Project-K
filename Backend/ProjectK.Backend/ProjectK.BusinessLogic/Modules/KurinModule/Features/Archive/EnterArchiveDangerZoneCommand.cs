@@ -6,11 +6,9 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.KurinModule;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 
@@ -72,13 +70,13 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
                 return ServiceResult<ArchiveDangerZoneDto>.Failure(ResultType.BadRequest, ArchiveErrors.NoSecondFactor, "The account has no second factor; use the password.");
             case ReauthenticationOutcome.Wrong:
                 // Not 401: the session is fine, and the client would take a 401 for a lost one.
-                await RecordAsync(AuditActions.Archive.DangerZoneRefused, userKey, request.KurinKey, method, cancellationToken);
+                await _audit.RecordAsync(ArchiveDangerZone.JournalEntry(AuditActions.Archive.DangerZoneRefused, userKey, request.KurinKey, "method", method), cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return ServiceResult<ArchiveDangerZoneDto>.Failure(ResultType.BadRequest, ArchiveErrors.WrongCredentials, "Wrong password or code.");
         }
 
         var (ticket, entry) = _zone.Open(userKey, request.KurinKey, proof.SecurityStamp!);
-        await RecordAsync(AuditActions.Archive.DangerZoneEntered, userKey, request.KurinKey, method, cancellationToken);
+        await _audit.RecordAsync(ArchiveDangerZone.JournalEntry(AuditActions.Archive.DangerZoneEntered, userKey, request.KurinKey, "method", method), cancellationToken);
         // An administrator acting in the kurin has no member card; the leadership is told the account's name.
         var actor = (await _members.FindByAccountAsync(userKey, cancellationToken))?.FullName ?? proof.AccountName ?? string.Empty;
         await _events.PublishAsync(new ArchiveDangerZoneEntered(request.KurinKey, actor, userKey), cancellationToken);
@@ -86,9 +84,4 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
 
         return new ServiceResult<ArchiveDangerZoneDto>(ResultType.Success, new ArchiveDangerZoneDto(ticket, entry.ExpiresUtc, entry.DeletionsLeft));
     }
-
-    private Task RecordAsync(string action, Guid userKey, Guid kurinKey, string method, CancellationToken cancellationToken) =>
-        _audit.RecordAsync(
-            new AuditRecord(AuditArea.Archive, action, userKey, "Небезпечний режим", Changes: AuditChanges.Added(("method", method)), KurinKey: kurinKey),
-            cancellationToken);
 }
