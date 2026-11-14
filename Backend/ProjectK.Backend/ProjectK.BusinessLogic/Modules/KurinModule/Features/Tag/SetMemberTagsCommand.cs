@@ -43,30 +43,30 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
         // Tags are a kurin's, and the person may be in several: these are the ones of where the caller acts.
         if ((_currentUser.KurinKey ?? await UnscopedAdminKurinAsync(request, cancellationToken)) is not { } kurinKey)
         {
-            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinTagErrors.NotInKurin, "Tags are set from inside a kurin.");
+            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinErrors.NotInKurin, "Tags are set from inside a kurin.");
         }
 
         var settings = await _visibility.SettingsAsync(kurinKey, cancellationToken);
         if (settings is not { Enabled: true })
         {
-            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.Conflict, KurinTagErrors.TagsDisabled, "The kurin has tags turned off.");
+            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.Conflict, KurinErrors.TagsDisabled, "The kurin has tags turned off.");
         }
 
         var wanted = request.TagKeys.Distinct().ToHashSet();
         if (wanted.Count > KurinTagRules.MaxTagsPerMember)
         {
-            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinTagErrors.TooManyTags, "A person would carry more tags than the limit.");
+            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinErrors.TooManyTags, "A person would carry more tags than the limit.");
         }
 
         if ((await _assignments.OutsideKurinAsync(kurinKey, [request.MemberKey], cancellationToken)).Count > 0)
         {
-            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinTagErrors.NotInKurin, "The person is not in the kurin now.");
+            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinErrors.NotInKurin, "The person is not in the kurin now.");
         }
 
         var tags = (await _uow.KurinTags.GetForKurinAsync(kurinKey, cancellationToken)).ToDictionary(t => t.KurinTagKey);
         if (wanted.Any(key => !tags.ContainsKey(key)))
         {
-            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinTagErrors.TagNotFound, "A tag was not found in this kurin.");
+            return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinErrors.TagNotFound, "A tag was not found in this kurin.");
         }
 
         await using var transaction = await _assignments.HoldAsync([request.MemberKey], cancellationToken);
@@ -89,7 +89,7 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
         }
         catch (DuplicateRowException)
         {
-            return KurinTagErrors.ChangedMeanwhile<IReadOnlyList<Guid>>();
+            return KurinErrors.ChangedMeanwhile<IReadOnlyList<Guid>>();
         }
 
         await transaction.CommitAsync(cancellationToken);

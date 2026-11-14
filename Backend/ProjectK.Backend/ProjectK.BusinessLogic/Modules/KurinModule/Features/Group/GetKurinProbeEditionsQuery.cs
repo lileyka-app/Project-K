@@ -43,7 +43,7 @@ public sealed class GetKurinProbeEditionsQueryHandler : IRequestHandler<GetKurin
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<KurinProbeEditionsDto>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin was not found.");
+            return ServiceResult<KurinProbeEditionsDto>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin was not found.");
         }
 
         var editions = OfferedProbeEditions.OfferedTo(_catalog, kurin.KraiCode);

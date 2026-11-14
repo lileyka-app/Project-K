@@ -30,7 +30,7 @@ public sealed class GetKurinTagsQueryHandler : IRequestHandler<GetKurinTagsQuery
         var settings = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
         if (settings is null)
         {
-            return ServiceResult<KurinTagsDto>.Failure(ResultType.NotFound, KurinTagErrors.KurinNotFound, "Kurin was not found.");
+            return ServiceResult<KurinTagsDto>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin was not found.");
         }
 
         if (!settings.Enabled)

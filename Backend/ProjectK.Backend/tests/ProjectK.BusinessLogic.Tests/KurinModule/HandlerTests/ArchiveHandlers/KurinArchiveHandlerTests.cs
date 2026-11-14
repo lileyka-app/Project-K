@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;

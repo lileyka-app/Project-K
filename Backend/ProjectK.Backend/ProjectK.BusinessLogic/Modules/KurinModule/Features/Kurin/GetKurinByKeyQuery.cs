@@ -1,14 +1,15 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 
-public class GetKurinByKeyQuery : IRequest<ServiceResult<KurinResponse>>
+public class GetKurinByKeyQuery : IRequest<ServiceResult<KurinDto>>
 {
     public Guid KurinKey { get; set; }
 
@@ -18,20 +19,20 @@ public class GetKurinByKeyQuery : IRequest<ServiceResult<KurinResponse>>
     }
 }
 
-public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, ServiceResult<KurinResponse>>
+public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, ServiceResult<KurinDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly IBackendCache _cache;
 
-    public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IMapper mapper, IBackendCache cache)
+    public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _links = links;
         _cache = cache;
     }
 
-    public async Task<ServiceResult<KurinResponse>> Handle(GetKurinByKeyQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<KurinDto>> Handle(GetKurinByKeyQuery request, CancellationToken cancellationToken)
     {
         return await _cache.GetOrCreateAsync(
             BackendCachePolicies.KurinReads,
@@ -42,7 +43,7 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
 
                 if (kurin is null)
                 {
-                    return new ServiceResult<KurinResponse>(ResultType.NotFound);
+                    return KurinErrors.NotFound<KurinDto>();
                 }
 
                 var accountsHere = await _unitOfWork.Memberships
@@ -50,10 +51,9 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
                 var activeUsersCount = await _unitOfWork.Users
                     .CountActiveAsync(accountsHere, token);
 
-                var kurinResponse = _mapper.Map<KurinResponse>(kurin);
-                kurinResponse.CurrentUserCount = activeUsersCount;
+                var kurinResponse = kurin.ToDto(_links, activeUsersCount);
 
-                return new ServiceResult<KurinResponse>(ResultType.Success, kurinResponse);
+                return new ServiceResult<KurinDto>(ResultType.Success, kurinResponse);
             },
             cancellationToken);
     }

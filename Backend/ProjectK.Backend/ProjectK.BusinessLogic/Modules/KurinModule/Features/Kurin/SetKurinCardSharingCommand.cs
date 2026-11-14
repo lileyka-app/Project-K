@@ -3,24 +3,11 @@ using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
-
-/// <summary>What the kurin lets its people under 18 share. A kurin that never set it lets them share nothing.</summary>
-public sealed record KurinCardSharingDto(
-    bool MinorsMayShare,
-    [property: JsonConverter(typeof(JsonNumberEnumConverter<CardField>))] CardField MinorFields,
-    bool MinorsMayLink)
-{
-    public static KurinCardSharingDto Of(KurinCardSharing? settings) =>
-        settings is null
-            ? new KurinCardSharingDto(false, MemberCardShare.DefaultFields, false)
-            : new KurinCardSharingDto(settings.MinorsMayShare, settings.MinorFields, settings.MinorsMayLink);
-}
-
-public sealed record GetKurinCardSharingQuery(Guid KurinKey) : IRequest<ServiceResult<KurinCardSharingDto>>;
 
 /// <summary>
 /// Sets what the kurin lets its people under 18 share. Takes effect on the next scan of any card:
@@ -28,22 +15,6 @@ public sealed record GetKurinCardSharingQuery(Guid KurinKey) : IRequest<ServiceR
 /// </summary>
 public sealed record SetKurinCardSharingCommand(Guid KurinKey, bool MinorsMayShare, CardField MinorFields, bool MinorsMayLink)
     : IRequest<ServiceResult<KurinCardSharingDto>>;
-
-public sealed class GetKurinCardSharingQueryHandler : IRequestHandler<GetKurinCardSharingQuery, ServiceResult<KurinCardSharingDto>>
-{
-    private readonly IUnitOfWork _unitOfWork;
-
-    public GetKurinCardSharingQueryHandler(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
-
-    public async Task<ServiceResult<KurinCardSharingDto>> Handle(GetKurinCardSharingQuery request, CancellationToken cancellationToken)
-    {
-        var settings = await _unitOfWork.KurinCardSharing.GetForKurinAsync(request.KurinKey, cancellationToken);
-        return new ServiceResult<KurinCardSharingDto>(ResultType.Success, KurinCardSharingDto.Of(settings));
-    }
-}
 
 public sealed class SetKurinCardSharingCommandHandler : IRequestHandler<SetKurinCardSharingCommand, ServiceResult<KurinCardSharingDto>>
 {
@@ -60,7 +31,7 @@ public sealed class SetKurinCardSharingCommandHandler : IRequestHandler<SetKurin
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<KurinCardSharingDto>(ResultType.Forbidden);
+            return ServiceResult<KurinCardSharingDto>.Failure(ResultType.Forbidden, KurinErrors.CardSharingOtherKurin, "Card sharing is set from inside the kurin.");
         }
 
         var settings = await _unitOfWork.KurinCardSharing.GetForKurinAsync(request.KurinKey, cancellationToken);
@@ -76,6 +47,6 @@ public sealed class SetKurinCardSharingCommandHandler : IRequestHandler<SetKurin
         settings.SetByUserKey = _currentUser.UserId;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<KurinCardSharingDto>(ResultType.Success, KurinCardSharingDto.Of(settings));
+        return new ServiceResult<KurinCardSharingDto>(ResultType.Success, settings.ToDto());
     }
 }

@@ -10,6 +10,7 @@ using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.KurinModule;
@@ -37,7 +38,7 @@ public class KurinEmblemController : ControllerBase
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<IActionResult> UploadEmblem(Guid kurinKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken) =>
@@ -50,7 +51,7 @@ public class KurinEmblemController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteEmblem(Guid kurinKey, CancellationToken cancellationToken)
     {

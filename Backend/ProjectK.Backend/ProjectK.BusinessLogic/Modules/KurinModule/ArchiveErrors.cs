@@ -1,7 +1,7 @@
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Reports;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
+namespace ProjectK.BusinessLogic.Modules.KurinModule;
 
 /// <summary>The archive's error codes, which the client tells apart, and how its records are named in the journal.</summary>
 public static class ArchiveErrors

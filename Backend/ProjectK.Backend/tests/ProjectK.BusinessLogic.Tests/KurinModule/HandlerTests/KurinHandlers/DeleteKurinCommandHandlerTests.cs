@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -69,7 +70,7 @@ public class DeleteKurinHandlerTests
 
         // Assert
         result.Type.Should().Be(ResultType.Success);
-        result.Data.Should().BeNull();
+        result.Data.Should().Be(Unit.Value);
         _kurinRepositoryMock.Verify(r => r.Delete(kurin, default), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }

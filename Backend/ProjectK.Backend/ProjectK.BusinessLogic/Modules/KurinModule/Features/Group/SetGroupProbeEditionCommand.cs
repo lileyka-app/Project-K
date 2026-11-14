@@ -34,7 +34,7 @@ public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGrou
         var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
         if (group is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "GroupNotFound", "Group was not found.");
+            return ServiceResult<object>.Failure(ResultType.NotFound, KurinErrors.GroupNotFound, "Group was not found.");
         }
 
         var edition = string.IsNullOrWhiteSpace(request.Edition) ? null : request.Edition.Trim();
@@ -49,7 +49,7 @@ public sealed class SetGroupProbeEditionCommandHandler : IRequestHandler<SetGrou
         {
             return ServiceResult<object>.Failure(
                 ResultType.BadRequest,
-                "ProbeEditionNotOffered",
+                KurinErrors.ProbeEditionNotOffered,
                 "The catalogue offers this kurin no such edition of the probe programme.");
         }
 

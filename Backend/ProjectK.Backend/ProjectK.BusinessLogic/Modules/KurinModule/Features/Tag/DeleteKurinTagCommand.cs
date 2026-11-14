@@ -32,7 +32,7 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
         var tag = await _uow.KurinTags.GetWithMembersAsync(request.KurinTagKey, cancellationToken);
         if (tag is null || tag.KurinKey != request.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, KurinTagErrors.TagNotFound, "Tag was not found in this kurin.");
+            return ServiceResult<object>.Failure(ResultType.NotFound, KurinErrors.TagNotFound, "Tag was not found in this kurin.");
         }
 
         await _audit.RecordAsync(

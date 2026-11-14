@@ -6,7 +6,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 
-public class DeleteKurinCommand : IRequest<ServiceResult<object>>
+public class DeleteKurinCommand : IRequest<ServiceResult<Unit>>
 {
     public Guid KurinKey { get; set; }
     public DeleteKurinCommand(Guid kurinKey)
@@ -15,7 +15,7 @@ public class DeleteKurinCommand : IRequest<ServiceResult<object>>
     }
 }
 
-public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, ServiceResult<object>>
+public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
@@ -24,13 +24,13 @@ public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, Ser
         _unitOfWork = unitOfWork;
         _cache = cache;
     }
-    public async Task<ServiceResult<object>> Handle(DeleteKurinCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteKurinCommand request, CancellationToken cancellationToken)
     {
         if (request.KurinKey == Guid.Empty)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.BadRequest,
-                "KurinKeyRequired",
+                KurinErrors.KurinKeyRequired,
                 "KurinKey cannot be empty.");
         }
 
@@ -38,9 +38,9 @@ public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, Ser
 
         if (existing is null)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.NotFound,
-                "KurinNotFound",
+                KurinErrors.KurinNotFound,
                 $"Kurin with key {request.KurinKey} not found.");
         }
 
@@ -71,15 +71,15 @@ public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, Ser
 
         if (changes <= 0)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.InternalServerError,
-                "KurinDeleteFailed",
+                KurinErrors.KurinDeleteFailed,
                 "Failed to delete Kurin due to internal error.");
         }
 
         _cache.Invalidate(BackendCachePolicies.KurinReads);
         _cache.Invalidate(BackendCachePolicies.GroupReads);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

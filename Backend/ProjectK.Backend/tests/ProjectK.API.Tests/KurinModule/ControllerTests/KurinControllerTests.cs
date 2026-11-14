@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -25,7 +25,7 @@ public class KurinControllerTests
     public async Task GetByKey_ShouldReturnOk_WhenSuccess()
     {
         var key = Guid.NewGuid();
-        var serviceResult = new ServiceResult<KurinResponse>(ResultType.Success, new KurinResponse { KurinKey = key, Number = 1 });
+        var serviceResult = new ServiceResult<KurinDto>(ResultType.Success, Kurin(key, 1));
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetKurinByKeyQuery>(), It.IsAny<CancellationToken>()))
@@ -34,7 +34,7 @@ public class KurinControllerTests
         var result = await _controller.GetByKey(key);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<KurinResponse>(ok.Value);
+        var data = Assert.IsType<KurinDto>(ok.Value);
         Assert.Equal(key, data.KurinKey);
     }
 
@@ -42,7 +42,7 @@ public class KurinControllerTests
     public async Task GetByKey_ShouldReturnNotFound_WhenNotFound()
     {
         var key = Guid.NewGuid();
-        var serviceResult = new ServiceResult<KurinResponse>(ResultType.NotFound);
+        var serviceResult = new ServiceResult<KurinDto>(ResultType.NotFound);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetKurinByKeyQuery>(), It.IsAny<CancellationToken>()))
@@ -56,18 +56,18 @@ public class KurinControllerTests
     [Fact]
     public async Task GetAll_ShouldReturnOk_WhenSuccess()
     {
-        var kurins = new List<KurinResponse>
+        var kurins = new List<KurinDto>
         {
-            new KurinResponse { KurinKey = Guid.NewGuid(), Number = 1 },
-            new KurinResponse { KurinKey = Guid.NewGuid(), Number = 2 }
+            Kurin(Guid.NewGuid(), 1),
+            Kurin(Guid.NewGuid(), 2)
         };
-        var serviceResult = new ServiceResult<IEnumerable<KurinResponse>>(ResultType.Success, kurins);
+        var serviceResult = new ServiceResult<IEnumerable<KurinDto>>(ResultType.Success, kurins);
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetKurinsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
         var result = await _controller.GetAll();
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<List<KurinResponse>>(ok.Value);
+        var data = Assert.IsType<List<KurinDto>>(ok.Value);
         Assert.Equal(kurins.Count, data.Count);
     }
 
@@ -76,9 +76,9 @@ public class KurinControllerTests
     {
         var key = Guid.NewGuid();
         var kurinNumber = 5;
-        var serviceResult = new ServiceResult<KurinResponse>(
+        var serviceResult = new ServiceResult<KurinDto>(
             ResultType.Created,
-            new KurinResponse { KurinKey = key, Number = kurinNumber },
+            Kurin(key, kurinNumber),
             "GetByKey",
             new { kurinKey = key });
 
@@ -89,7 +89,7 @@ public class KurinControllerTests
         var result = await _controller.Create(new CreateKurinRequest { Number = kurinNumber });
 
         var created = Assert.IsType<CreatedAtActionResult>(result);
-        var data = Assert.IsType<KurinResponse>(created.Value);
+        var data = Assert.IsType<KurinDto>(created.Value);
         Assert.Equal(kurinNumber, data.Number);
     }
 
@@ -97,7 +97,7 @@ public class KurinControllerTests
     public async Task Upsert_ShouldReturnBadRequest_WhenInvalid()
     {
         var key = Guid.NewGuid();
-        var serviceResult = new ServiceResult<KurinResponse>(ResultType.BadRequest, new KurinResponse());
+        var serviceResult = new ServiceResult<KurinDto>(ResultType.BadRequest, Kurin(Guid.Empty, null));
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
@@ -113,13 +113,13 @@ public class KurinControllerTests
     {
         var key = Guid.NewGuid();
         UpsertKurinCommand? sentCommand = null;
-        var serviceResult = new ServiceResult<KurinResponse>(
+        var serviceResult = new ServiceResult<KurinDto>(
             ResultType.Success,
-            new KurinResponse { KurinKey = key, Number = 10, ProfileVerificationEnabled = true });
+            Kurin(key, 10, profileVerificationEnabled: true));
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
-            .Callback<IRequest<ServiceResult<KurinResponse>>, CancellationToken>((command, _) => sentCommand = (UpsertKurinCommand)command)
+            .Callback<IRequest<ServiceResult<KurinDto>>, CancellationToken>((command, _) => sentCommand = (UpsertKurinCommand)command)
             .ReturnsAsync(serviceResult);
 
         var result = await _controller.Upsert(key, new UpdateKurinRequest
@@ -137,7 +137,7 @@ public class KurinControllerTests
     public async Task Delete_ShouldReturnOk_WhenSuccess()
     {
         var key = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>(ResultType.Success);
+        var serviceResult = new ServiceResult<Unit>(ResultType.Success, Unit.Value);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteKurinCommand>(), It.IsAny<CancellationToken>()))
@@ -152,7 +152,7 @@ public class KurinControllerTests
     public async Task Delete_ShouldReturnInternalServerError_WhenUnexpected()
     {
         var key = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>((ResultType)999); // невідомий тип
+        var serviceResult = new ServiceResult<Unit>((ResultType)999); // невідомий тип
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteKurinCommand>(), It.IsAny<CancellationToken>()))
@@ -163,4 +163,8 @@ public class KurinControllerTests
         var objectResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, objectResult.StatusCode);
     }
+
+    private static KurinDto Kurin(Guid key, int? number, bool profileVerificationEnabled = false) => new(
+        key, number, KurinBranch.UPYu, [], "ua", null, null, null, null, 0, profileVerificationEnabled, true,
+        new Dictionary<string, string>(), null, false);
 }

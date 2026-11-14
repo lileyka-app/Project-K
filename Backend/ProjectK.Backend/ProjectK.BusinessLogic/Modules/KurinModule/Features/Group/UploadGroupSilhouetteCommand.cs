@@ -65,7 +65,7 @@ public sealed class UploadGroupSilhouetteCommandHandler : IRequestHandler<Upload
         {
             return ServiceResult<GroupResponse>.Failure(
                 ResultType.BadRequest,
-                "InvalidImageContent",
+                KurinErrors.InvalidImageContent,
                 "Uploaded file is not a valid image.");
         }
 

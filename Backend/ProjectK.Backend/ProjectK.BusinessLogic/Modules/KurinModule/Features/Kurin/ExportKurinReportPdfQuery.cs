@@ -39,7 +39,7 @@ public sealed class ExportKurinReportPdfQueryHandler
         if (report is null)
         {
             return ServiceResult<KurinReportPdf>.Failure(
-                ResultType.NotFound, "KurinNotFound", "No report data exists for this kurin.");
+                ResultType.NotFound, KurinErrors.KurinNotFound, "No report data exists for this kurin.");
         }
 
         var bytes = _renderer.Render(report, request.TimeZone);

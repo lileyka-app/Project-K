@@ -9,28 +9,6 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 
-/// <summary>The kurin's tag switches for its settings page. Gated as kurin settings.</summary>
-public sealed record GetKurinTagSettingsQuery(Guid KurinKey) : IRequest<ServiceResult<KurinTagSettingsDto>>;
-
-public sealed class GetKurinTagSettingsQueryHandler : IRequestHandler<GetKurinTagSettingsQuery, ServiceResult<KurinTagSettingsDto>>
-{
-    private readonly IKurinTagVisibility _visibility;
-
-    public GetKurinTagSettingsQueryHandler(IKurinTagVisibility visibility)
-    {
-        _visibility = visibility;
-    }
-
-    public async Task<ServiceResult<KurinTagSettingsDto>> Handle(GetKurinTagSettingsQuery request, CancellationToken cancellationToken)
-    {
-        var settings = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
-        return settings is null
-            ? ServiceResult<KurinTagSettingsDto>.Failure(ResultType.NotFound, KurinTagErrors.KurinNotFound, "Kurin was not found.")
-            : new ServiceResult<KurinTagSettingsDto>(ResultType.Success,
-                new KurinTagSettingsDto(settings.Enabled, settings.EnabledByDefault, settings.OwnTagsVisible));
-    }
-}
-
 /// <summary>
 /// Turns tags on or off and says whether people see their own. Turning them off hides them
 /// everywhere but keeps them: on again, everything is where it was. A choice equal to the branch's
@@ -60,7 +38,7 @@ public sealed class SetKurinTagSettingsCommandHandler : IRequestHandler<SetKurin
         var before = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
         if (before is null)
         {
-            return ServiceResult<KurinTagSettingsDto>.Failure(ResultType.NotFound, KurinTagErrors.KurinNotFound, "Kurin was not found.");
+            return ServiceResult<KurinTagSettingsDto>.Failure(ResultType.NotFound, KurinErrors.KurinNotFound, "Kurin was not found.");
         }
 
         var stored = await _uow.KurinTags.GetSettingsAsync(request.KurinKey, cancellationToken);

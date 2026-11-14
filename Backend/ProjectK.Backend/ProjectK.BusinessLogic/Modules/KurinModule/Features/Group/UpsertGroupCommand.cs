@@ -47,7 +47,7 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
         var description = NormalizeOptionalText(request.Description);
         if (description?.Length > 1000)
         {
-            return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, "DescriptionTooLong", "Description must be 1000 characters or fewer.");
+            return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, KurinErrors.DescriptionTooLong, "Description must be 1000 characters or fewer.");
         }
 
         var existing = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
@@ -64,7 +64,7 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
             // A senior kurin has no гуртки at all: its people are told apart by tags.
             if (KurinBranchSet.IsSenior(kurin.Branch))
             {
-                return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, "NoGroupsInSeniorKurin", "A УСП or УПС kurin has no гуртки.");
+                return ServiceResult<GroupResponse>.Failure(ResultType.BadRequest, KurinErrors.NoGroupsInSeniorKurin, "A УСП or УПС kurin has no гуртки.");
             }
 
             // Create new Group

@@ -1,9 +1,6 @@
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -11,6 +8,7 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 
@@ -18,7 +16,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
 public class GetKurinByKeyHandlerTests
 {
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
@@ -28,13 +26,7 @@ public class GetKurinByKeyHandlerTests
 
     public GetKurinByKeyHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var config = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = config.CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
 
         _kurinRepositoryMock = new Mock<IKurinRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -53,7 +45,7 @@ public class GetKurinByKeyHandlerTests
             .ReturnsAsync(Array.Empty<Guid>());
         _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
 
-        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _links, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>
@@ -140,8 +132,7 @@ public class GetKurinByKeyHandlerTests
         result.Data.KurinKey.Should().Be(kurinKey);
         result.Data.Number.Should().Be(456);
 
-        var directlyMapped = _mapper.Map<KurinResponse>(kurin);
-        result.Data.Should().BeEquivalentTo(directlyMapped);
+        result.Data.Should().BeEquivalentTo(new { KurinKey = kurinKey, Number = 456, kurin.KraiCode, kurin.Branch, CurrentUserCount = 0, EmblemUrl = (string?)null, IsPreparatory = false });
     }
 
     [Fact]

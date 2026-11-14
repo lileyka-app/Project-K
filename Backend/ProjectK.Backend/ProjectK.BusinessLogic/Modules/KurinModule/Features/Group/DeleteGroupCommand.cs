@@ -38,7 +38,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         {
             return ServiceResult<object>.Failure(
                 ResultType.BadRequest,
-                "GROUP_KEY_EMPTY",
+                KurinErrors.GroupKeyEmpty,
                 "GroupKey cannot be empty.");
         }
         var existing = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
@@ -46,7 +46,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         {
             return ServiceResult<object>.Failure(
                 ResultType.NotFound,
-                "GROUP_NOT_FOUND",
+                KurinErrors.GroupNotFound,
                 $"Group with key {request.GroupKey} not found.");
         }
 
@@ -89,7 +89,7 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         {
             return ServiceResult<object>.Failure(
                 ResultType.InternalServerError,
-                "GROUP_DELETE_FAILED",
+                KurinErrors.GroupDeleteFailed,
                 "Failed to delete Group due to internal error.");
         }
         _cache.Invalidate(BackendCachePolicies.GroupReads);

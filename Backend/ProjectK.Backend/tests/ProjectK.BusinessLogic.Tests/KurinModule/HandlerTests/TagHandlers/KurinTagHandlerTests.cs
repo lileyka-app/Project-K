@@ -1,10 +1,11 @@
-using ProjectK.Common.Exceptions;
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -103,7 +104,7 @@ public class KurinTagHandlerTests
         var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [tag.KurinTagKey]), default);
 
         result.Type.Should().Be(ResultType.Conflict);
-        result.ErrorCode.Should().Be(KurinTagErrors.TagsChangedMeanwhile);
+        result.ErrorCode.Should().Be(KurinErrors.TagsChangedMeanwhile);
         _transaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -118,7 +119,7 @@ public class KurinTagHandlerTests
             .Handle(new UpsertKurinTagCommand(KurinKey, null, "Новики", KurinTagRules.Palette[0]), default);
 
         result.Type.Should().Be(ResultType.Conflict);
-        result.ErrorCode.Should().Be(KurinTagErrors.TagNameTaken);
+        result.ErrorCode.Should().Be(KurinErrors.TagNameTaken);
     }
 
     [Fact]
@@ -181,7 +182,7 @@ public class KurinTagHandlerTests
 
         var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, []), default);
 
-        result.ErrorCode.Should().Be(KurinTagErrors.NotInKurin);
+        result.ErrorCode.Should().Be(KurinErrors.NotInKurin);
     }
 
     [Fact]
@@ -191,7 +192,7 @@ public class KurinTagHandlerTests
 
         var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [], KurinKey), default);
 
-        result.ErrorCode.Should().Be(KurinTagErrors.NotInKurin);
+        result.ErrorCode.Should().Be(KurinErrors.NotInKurin);
     }
 
     [Fact]
@@ -201,7 +202,7 @@ public class KurinTagHandlerTests
 
         var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, keys), default);
 
-        result.ErrorCode.Should().Be(KurinTagErrors.TooManyTags);
+        result.ErrorCode.Should().Be(KurinErrors.TooManyTags);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -212,7 +213,7 @@ public class KurinTagHandlerTests
 
         var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, []), default);
 
-        result.ErrorCode.Should().Be(KurinTagErrors.TagsDisabled);
+        result.ErrorCode.Should().Be(KurinErrors.TagsDisabled);
     }
 
     [Fact]
@@ -223,7 +224,7 @@ public class KurinTagHandlerTests
 
         var result = await TagMembersHandler().Handle(new SetTagMembersCommand(KurinKey, tag.KurinTagKey, [MemberKey, Guid.NewGuid()]), default);
 
-        result.ErrorCode.Should().Be(KurinTagErrors.NotInKurin);
+        result.ErrorCode.Should().Be(KurinErrors.NotInKurin);
         _tags.Verify(t => t.AddAssignment(It.IsAny<MemberTag>()), Times.Never);
     }
 
@@ -237,7 +238,7 @@ public class KurinTagHandlerTests
 
         var result = await TagMembersHandler().Handle(new SetTagMembersCommand(KurinKey, tag.KurinTagKey, [MemberKey]), default);
 
-        result.ErrorCode.Should().Be(KurinTagErrors.TooManyTags);
+        result.ErrorCode.Should().Be(KurinErrors.TooManyTags);
     }
 
     [Fact]
