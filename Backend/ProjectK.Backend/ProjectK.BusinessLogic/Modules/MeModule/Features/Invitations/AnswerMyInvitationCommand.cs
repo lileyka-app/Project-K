@@ -1,6 +1,5 @@
-using ProjectK.BusinessLogic.Modules.KurinModule;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;

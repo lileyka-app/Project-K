@@ -1,6 +1,6 @@
-using ProjectK.Common.Models.Members;
 using System.Globalization;
 using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Models.Members;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;

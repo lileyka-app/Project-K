@@ -1,10 +1,8 @@
-using ProjectK.BusinessLogic.Modules.KurinModule;
 using FluentValidation;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;

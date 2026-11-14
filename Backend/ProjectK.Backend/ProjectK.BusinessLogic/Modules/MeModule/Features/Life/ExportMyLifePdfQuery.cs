@@ -1,6 +1,6 @@
-using ProjectK.BusinessLogic.Modules.KurinModule;
 using System.Globalization;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Interfaces;

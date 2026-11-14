@@ -167,7 +167,7 @@ public class MemberMappingTests
         {
             var source = typeof(UpsertMemberCommand).GetProperty(property.Name);
             source.Should().NotBeNull($"the form carries {property.Name}");
-            property.GetValue(profile).Should().BeEquivalentTo(source!.GetValue(command), property.Name);
+            property.GetValue(profile).Should().BeEquivalentTo(source.GetValue(command), property.Name);
         }
     }
 

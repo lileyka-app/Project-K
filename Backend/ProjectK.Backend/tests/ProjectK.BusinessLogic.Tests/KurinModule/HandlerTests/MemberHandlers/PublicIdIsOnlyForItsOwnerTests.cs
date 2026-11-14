@@ -1,9 +1,8 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;

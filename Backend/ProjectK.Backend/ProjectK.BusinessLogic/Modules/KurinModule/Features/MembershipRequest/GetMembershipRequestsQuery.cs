@@ -1,9 +1,9 @@
 using MediatR;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using RequestEntity = ProjectK.Common.Entities.KurinModule.MembershipRequest;

@@ -1,6 +1,6 @@
-using ProjectK.BusinessLogic.Modules.KurinModule;
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

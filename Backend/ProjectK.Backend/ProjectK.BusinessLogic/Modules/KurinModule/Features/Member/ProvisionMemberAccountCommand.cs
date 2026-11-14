@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;

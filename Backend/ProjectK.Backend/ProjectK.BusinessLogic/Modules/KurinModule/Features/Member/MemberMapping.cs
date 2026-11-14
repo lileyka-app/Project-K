@@ -91,6 +91,30 @@ public static class MemberMapping
         ProfileVerificationNote = row.ProfileVerificationNote
     };
 
+    public static PlastLevelHistoryDto ToDto(this PlastLevelHistory history) => new()
+    {
+        MemberKey = history.MemberKey,
+        PlastLevelHistoryKey = history.PlastLevelHistoryKey,
+        PlastLevel = history.PlastLevel,
+        DateAchieved = history.DateAchieved,
+        IsPlastunka = history.IsPlastunka,
+        CatalogId = PlastLevelDegrees.CatalogId(history.PlastLevel, history.IsPlastunka)
+    };
+
+    /// <summary>An office the person held, named by its провід: the type, the гурток and the kurin it is in.</summary>
+    public static LeadershipHistoryDto ToDto(this LeadershipHistory history) => new()
+    {
+        LeadershipHistoryKey = history.LeadershipHistoryKey,
+        MemberKey = history.MemberKey,
+        LeadershipKey = history.LeadershipKey,
+        Role = history.Role,
+        LeadershipType = history.Leadership?.Type,
+        GroupName = history.Leadership?.Group?.Name,
+        KurinKey = history.Leadership?.KurinKey ?? history.Leadership?.Group?.KurinKey,
+        StartDate = history.StartDate,
+        EndDate = history.EndDate
+    };
+
     /// <summary>A person in a picker. Which office they hold is the reader's to say, so <c>UserRole</c> stays empty.</summary>
     public static MemberLookupDto ToLookupDto(this MemberEntity member, IBlobReadLinks links) => new()
     {
@@ -119,30 +143,6 @@ public static class MemberMapping
         LastName = member.LastName,
         ProfilePhotoBlobName = member.ProfilePhotoBlobName,
         ProfilePhotoUrl = links.For(member.ProfilePhotoBlobName)
-    };
-
-    public static PlastLevelHistoryDto ToDto(this PlastLevelHistory history) => new()
-    {
-        MemberKey = history.MemberKey,
-        PlastLevelHistoryKey = history.PlastLevelHistoryKey,
-        PlastLevel = history.PlastLevel,
-        DateAchieved = history.DateAchieved,
-        IsPlastunka = history.IsPlastunka,
-        CatalogId = PlastLevelDegrees.CatalogId(history.PlastLevel, history.IsPlastunka)
-    };
-
-    /// <summary>An office the person held, named by its провід: the type, the гурток and the kurin it is in.</summary>
-    public static LeadershipHistoryDto ToDto(this LeadershipHistory history) => new()
-    {
-        LeadershipHistoryKey = history.LeadershipHistoryKey,
-        MemberKey = history.MemberKey,
-        LeadershipKey = history.LeadershipKey,
-        Role = history.Role,
-        LeadershipType = history.Leadership?.Type,
-        GroupName = history.Leadership?.Group?.Name,
-        KurinKey = history.Leadership?.KurinKey ?? history.Leadership?.Group?.KurinKey,
-        StartDate = history.StartDate,
-        EndDate = history.EndDate
     };
 
     /// <summary>

@@ -1,14 +1,14 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -106,7 +106,7 @@ public class UpsertLeadershipHandlerTests
         Assert.Equal(ResultType.Created, result.Type);
         Assert.NotNull(result.Data);
         Assert.NotNull(added);
-        Assert.Equal(added!.LeadershipKey, result.Data!.LeadershipKey);
+        Assert.Equal(added.LeadershipKey, result.Data.LeadershipKey);
         Assert.Equal("GetLeadershipByKey", result.CreatedAtActionName);
         Assert.NotNull(result.CreatedAtRouteValues);
 

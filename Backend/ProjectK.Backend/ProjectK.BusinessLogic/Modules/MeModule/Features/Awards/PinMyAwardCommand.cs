@@ -1,6 +1,6 @@
-using ProjectK.BusinessLogic.Modules.KurinModule;
 using FluentValidation;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;

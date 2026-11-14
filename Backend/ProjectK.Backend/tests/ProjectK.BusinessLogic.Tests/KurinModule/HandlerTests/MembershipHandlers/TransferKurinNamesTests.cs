@@ -1,6 +1,5 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using FluentAssertions;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

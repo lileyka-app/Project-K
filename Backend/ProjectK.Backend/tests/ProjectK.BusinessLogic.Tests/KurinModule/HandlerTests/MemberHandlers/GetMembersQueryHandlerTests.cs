@@ -1,13 +1,13 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Members;
 
@@ -18,7 +18,6 @@ public class GetMembersHandlerTests
     private readonly Mock<IMemberUnitOfWork> _uowMock;
     private readonly Mock<IMemberRepository> _memberRepoMock;
     private readonly Mock<IMentorAssignmentRepository> _mentorRepoMock;
-    private readonly IBlobReadLinks _links;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly GetMembersQueryHandler _handler;
 

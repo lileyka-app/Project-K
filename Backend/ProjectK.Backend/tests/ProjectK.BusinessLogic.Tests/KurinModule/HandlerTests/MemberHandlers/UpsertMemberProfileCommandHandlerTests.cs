@@ -1,10 +1,8 @@
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.Common.Phones;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -13,13 +11,14 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Phones;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 

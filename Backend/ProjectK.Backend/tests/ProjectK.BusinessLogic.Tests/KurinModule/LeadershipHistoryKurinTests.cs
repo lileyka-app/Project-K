@@ -1,7 +1,6 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;

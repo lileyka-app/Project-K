@@ -1,10 +1,9 @@
-using ProjectK.BusinessLogic.Modules.KurinModule;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using MediatR;
-using Microsoft.Extensions.Logging;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;

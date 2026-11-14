@@ -1,7 +1,6 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
-using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;

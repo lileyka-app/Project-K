@@ -1,8 +1,8 @@
 using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

@@ -3,9 +3,11 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Models.Dtos.KurinModule;
 
-/// <summary>A kurin's request to change its гілки, as the kurin and the administrator see it.</summary>
-/// <param name="CurrentBranches">What the kurin has now, main гілка first.</param>
-/// <param name="WantedBranches">What it asks to have instead.</param>
+/// <summary>
+/// A kurin's request to change its гілки, as the kurin and the administrator see it.
+/// <c>CurrentBranches</c> is what the kurin has now, main гілка first; <c>WantedBranches</c> is what it
+/// asks to have instead.
+/// </summary>
 public sealed record KurinBranchRequestDto(
     Guid KurinBranchRequestKey,
     Guid KurinKey,

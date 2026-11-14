@@ -1,10 +1,9 @@
 using FluentValidation;
 using MediatR;
-using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Catalog;
@@ -13,6 +12,7 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Reports;
+using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 
