@@ -1,16 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Former;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
-using ProjectK.Common.Extensions;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -60,7 +55,7 @@ public class KurinMembershipsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("candidate")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Create, "route:kurinKey", ResourceType.Kurin)]
-    [ProducesResponseType(typeof(MembershipCandidate), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MembershipCandidateDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> FindCandidate(Guid kurinKey, [FromQuery] string publicId)

@@ -1,9 +1,6 @@
-using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -31,7 +28,6 @@ public class SeniorAwardHandlerTests
     private readonly Mock<IMemberAwardRepository> _awards = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
-    private readonly Mock<IMapper> _mapper = new();
     private readonly Mock<IUnitOfWork> _kurinData = new();
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IKurinRepository> _kurins = new();
@@ -55,7 +51,6 @@ public class SeniorAwardHandlerTests
             .Callback((MemberAward award, CancellationToken _) => _stored.Add(award));
         _awards.Setup(a => a.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid key, CancellationToken _) => _stored.FirstOrDefault(a => a.MemberAwardKey == key));
-        _mapper.Setup(m => m.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
         _currentUser.SetupGet(c => c.KurinKey).Returns(_kurinKey);
         _currentUser.SetupGet(c => c.UserId).Returns(_ownerUserKey);
         _kurinData.SetupGet(k => k.Memberships).Returns(_memberships.Object);
@@ -82,7 +77,7 @@ public class SeniorAwardHandlerTests
             .ReturnsAsync(ResourceAccessDecision.Deny("Refused by the test."));
 
     private UpsertMemberAwardCommandHandler Upsert() => new(
-        _unitOfWork.Object, _currentUser.Object, _events.Object, _mapper.Object, _kurinData.Object, _access.Object,
+        _unitOfWork.Object, _currentUser.Object, _events.Object, _kurinData.Object, _access.Object,
         (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, _scope.Object);
 
     private DeleteMemberAwardCommandHandler Delete() => new(
@@ -247,7 +242,7 @@ public class SeniorAwardHandlerTests
     {
         await Record("orden-sv-yuriia-bronza");
         var review = new ReviewMemberAwardCommandHandler(
-            _unitOfWork.Object, _directory.Object, _currentUser.Object, _events.Object, _mapper.Object, _access.Object,
+            _unitOfWork.Object, _directory.Object, _currentUser.Object, _events.Object, _access.Object,
             new JournalRecorder(_currentUser.Object).Audit);
 
         var result = await review.Handle(
@@ -273,13 +268,7 @@ public class SeniorAwardHandlerTests
     [Fact]
     public void ASeniorAward_IsReadWithItsCatalogueId_AndNoLevelPicture()
     {
-        var mapper = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new ProjectK.BusinessLogic.MappingProfiles.KurinModuleProfile());
-        }, Microsoft.Extensions.Logging.LoggerFactory.Create(_ => { })).CreateMapper();
-
-        var dto = mapper.Map<MemberAwardDto>(new MemberAward { CatalogId = "orden-sv-yuriia-bronza", Status = BadgeProgressStatus.Confirmed });
+        var dto = new MemberAward { CatalogId = "orden-sv-yuriia-bronza", Status = BadgeProgressStatus.Confirmed }.ToDto();
 
         dto.CatalogId.Should().Be("orden-sv-yuriia-bronza");
         dto.Level.Should().BeNull();
@@ -293,18 +282,18 @@ public class SeniorAwardHandlerTests
         _stored.Add(new MemberAward { MemberKey = _member.MemberKey, CatalogId = "usp-hramota-podiaky" });
         _stored.Add(new MemberAward { MemberKey = _member.MemberKey, CatalogId = "usp-hramota-podiaky" });
         _stored.Add(other);
-        _members.Setup(m => m.GetSummaryByUserKeyAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
+        _directory.Setup(m => m.FindByAccountAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, _kurinKey, null, "Ірина", "Федорів", "i@example.com", null));
         _awards.Setup(a => a.GetByMemberKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
-        var pin = new ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin.PinMyAwardCommandHandler(_unitOfWork.Object, _currentUser.Object);
+        var pin = new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommandHandler(_unitOfWork.Object, _directory.Object, _currentUser.Object);
 
-        var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
+        var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _stored.Where(a => a.CatalogId == "usp-hramota-podiaky").Should().OnlyContain(a => a.IsPinned);
         other.IsPinned.Should().BeFalse();
 
-        (await pin.Handle(new ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin.PinMyAwardCommand { CatalogId = "nema", Pinned = true }, CancellationToken.None))
+        (await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "nema", Pinned = true }, CancellationToken.None))
             .Type.Should().Be(ResultType.NotFound);
     }
 }

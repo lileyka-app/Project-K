@@ -1,15 +1,16 @@
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using MediatR;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -55,13 +56,13 @@ public class ExportRegistryHandlerTests
             .Setup(k => k.GetByKeyAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Kurin(3, branch) { KurinKey = _kurinKey });
 
-    private static MemberResponse Person(
+    private static MemberDto Person(
         string lastName,
         PlastLevel? level,
         bool isStaff = false,
         string? groupName = null,
         params string[] mentored)
-        => new()
+        => TestMemberDto.Blank with
         {
             MemberKey = Guid.NewGuid(),
             FirstName = "Тест",
@@ -78,10 +79,10 @@ public class ExportRegistryHandlerTests
                 : [new PlastLevelHistoryDto { PlastLevel = level.Value, DateAchieved = new DateOnly(2024, 5, 1) }]
         };
 
-    private void RosterIs(params MemberResponse[] people)
+    private void RosterIs(params MemberDto[] people)
         => _mediator
             .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, people));
+            .ReturnsAsync(new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, people));
 
     private Task<ServiceResult<RegistryFile>> Export(params string[] columnIds)
         => _handler.Handle(new ExportRegistryQuery(_kurinKey, columnIds), CancellationToken.None);

@@ -1,11 +1,8 @@
-using ProjectK.Common.Phones;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -14,13 +11,14 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Phones;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 
@@ -37,18 +35,10 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
     private readonly Mock<IKraiProfileProvider> _profilesMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
-    private readonly IMapper _mapper;
     private readonly JournalRecorder _journal;
 
     public UpsertMemberProfileCommandHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-
         _uowMock = new Mock<IMemberUnitOfWork>();
         _kurinDataMock = new Mock<IUnitOfWork>();
         _memberRepoMock = new Mock<IMemberRepository>();
@@ -65,7 +55,6 @@ public class UpsertMemberProfileCommandHandlerTests
             .ReturnsAsync([]);
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _mapper = mapperConfig.CreateMapper();
         _journal = new JournalRecorder(_currentUserContextMock.Object);
         _access.Setup(a => a.CheckSeniorYouthRecordAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());
@@ -75,7 +64,6 @@ public class UpsertMemberProfileCommandHandlerTests
     private UpsertMemberProfileCommandHandler Handler(IMemberFieldAccess fieldAccess) => new(
         _uowMock.Object,
         _kurinDataMock.Object,
-        _mapper,
         _currentUserContextMock.Object,
         _eventsMock.Object,
         _accountsMock.Object,
@@ -275,14 +263,14 @@ public class UpsertMemberProfileCommandHandlerTests
         var saved = await _handler.Handle(cmd, CancellationToken.None);
 
         refused.Type.Should().Be(ResultType.BadRequest);
-        refused.ErrorCode.Should().Be(MemberCardFields.ErrorCode);
+        refused.ErrorCode.Should().Be(MemberErrors.CardFieldRequired);
         saved.Type.Should().Be(ResultType.Success);
         created!.CardExtras.Should().Be("""{"visaType":"D"}""");
     }
 
     /// <summary>
     /// A person can be created with their ступені already known — the roster import does exactly
-    /// that. The mapper leaves the collection alone by design, so until the create branch applied
+    /// that. The profile write leaves the collection alone by design, so until the create branch applied
     /// the history itself, every such person arrived with a blank ступінь and no dates. A live
     /// import is what surfaced it: four юнаки imported with their скоб and their заприсяження,
     /// and all four showed "—" in the registry.
@@ -360,7 +348,7 @@ public class UpsertMemberProfileCommandHandlerTests
         }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
-        result.ErrorCode.Should().Be(UpsertMemberProfileCommandHandler.SeniorYouthRecord);
+        result.ErrorCode.Should().Be(MemberErrors.SeniorYouthRecord);
         existing.PlastLevelHistory.Select(entry => entry.PlastLevel).Should().Equal(PlastLevel.Starshoplastun);
         existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
         _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -908,7 +896,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be(UpsertMemberProfileCommandHandler.EmailRequired);
+        result.ErrorCode.Should().Be(MemberErrors.EmailRequired);
         existing.Email.Should().Be("old@example.com");
     }
 }

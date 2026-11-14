@@ -2,7 +2,7 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Events;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Events;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.DuesModule;

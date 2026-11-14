@@ -1,9 +1,8 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -27,7 +26,6 @@ public class PublicIdIsOnlyForItsOwnerTests
     private readonly Mock<IUnitOfWork> _kurinData = new();
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
-    private readonly Mock<IMapper> _mapper = new();
 
     private readonly Guid _memberKey = Guid.NewGuid();
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -35,20 +33,6 @@ public class PublicIdIsOnlyForItsOwnerTests
 
     public PublicIdIsOnlyForItsOwnerTests()
     {
-        _mapper
-            .Setup(m => m.Map<MemberResponse>(It.IsAny<object>()))
-            .Returns(() => new MemberResponse
-            {
-                MemberKey = _memberKey,
-                PublicId = Code,
-                UserKey = _ownerUserKey,
-                FirstName = "Оксана",
-                MiddleName = string.Empty,
-                LastName = "Тестова",
-                Email = "o@example.com",
-                PhoneNumber = "0000000000"
-            });
-
         _memberData.SetupGet(u => u.Members).Returns(_members.Object);
         _kurinData.SetupGet(u => u.Memberships).Returns(_memberships.Object);
         var mentorAssignments = new Mock<IMentorAssignmentRepository>();
@@ -105,7 +89,7 @@ public class PublicIdIsOnlyForItsOwnerTests
             .ReturnsAsync(ResourceAccessDecision.Allow());
         return new(
             _memberData.Object,
-            _mapper.Object,
+            FakeBlobReadLinks.Instance,
             _currentUser.Object,
             FieldAccess.SeesEverything(_currentUser.Object.UserId),
             access.Object,

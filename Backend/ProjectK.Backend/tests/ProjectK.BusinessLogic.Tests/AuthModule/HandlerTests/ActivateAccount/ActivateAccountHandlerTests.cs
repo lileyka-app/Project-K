@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -191,7 +192,7 @@ public class ActivateAccountHandlerTests
         _mediator
             .Setup(x => x.Send(It.IsAny<UpsertLeadershipCommand>(), It.IsAny<CancellationToken>()))
             .Callback<object, CancellationToken>((request, _) => seated = (UpsertLeadershipCommand)request)
-            .ReturnsAsync(new ServiceResult<LeadershipResponse>(ResultType.Success));
+            .ReturnsAsync(new ServiceResult<LeadershipDto>(ResultType.Success));
 
         var result = await _handler.Handle(new ActivateAccountCommand("token", "Password@1"), CancellationToken.None);
 

@@ -1,18 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Waiting;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Extensions;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -39,7 +32,7 @@ public class KurinMembershipRequestsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpGet]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(MembershipRequestsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MembershipRequestsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> MembershipRequests(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetMembershipRequestsQuery(kurinKey));
@@ -63,7 +56,7 @@ public class KurinMembershipRequestsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpGet("former")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(IReadOnlyList<FormerMemberStanding>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<FormerMemberStandingDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> FormerStanding(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetFormerStandingQuery(kurinKey));
@@ -77,7 +70,7 @@ public class KurinMembershipRequestsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
     [HttpPost]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(MembershipRequestSent), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(MembershipRequestSentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

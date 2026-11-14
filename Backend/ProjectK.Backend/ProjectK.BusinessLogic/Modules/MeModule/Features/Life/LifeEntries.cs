@@ -1,0 +1,33 @@
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.Common.Models.Enums;
+
+namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
+
+public static class LifeEntries
+{
+    /// <summary>How many lines one life story may hold, so a script cannot fill the table.</summary>
+    public const int MaxPerPerson = 500;
+
+    public static MemberLifeEntryDto ToDto(MemberLifeEntry entry) => new(
+        entry.MemberLifeEntryKey, entry.Kind, entry.Course, entry.Title, entry.Number,
+        entry.StartDate, entry.EndDate, entry.Place, entry.Commandant, entry.Role);
+
+    /// <summary>Copies what the person wrote, trimmed, dropping what does not belong to the kind.</summary>
+    public static void Apply(MemberLifeEntry entry, SaveLifeEntryRequest request)
+    {
+        var training = request.Kind == LifeEntryKind.Training;
+        entry.Kind = request.Kind;
+        entry.Course = training ? request.Course : null;
+        entry.Title = training && request.Course != TrainingCourse.Other ? null : Clean(request.Title);
+        entry.Number = training ? request.Number : null;
+        entry.StartDate = request.StartDate;
+        entry.EndDate = request.EndDate;
+        entry.Place = Clean(request.Place);
+        entry.Commandant = Clean(request.Commandant);
+        entry.Role = Clean(request.Role);
+    }
+
+    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}

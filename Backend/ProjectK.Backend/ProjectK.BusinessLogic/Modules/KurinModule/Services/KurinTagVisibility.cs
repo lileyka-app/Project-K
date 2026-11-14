@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -66,11 +66,11 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
     }
 
     /// <summary>
-    /// Fills <see cref="MemberResponse.TagKeys"/> of people seen in <paramref name="kurinKey"/> with
+    /// Fills <see cref="MemberDto.TagKeys"/> of people seen in <paramref name="kurinKey"/> with
     /// the tags the viewer may see, in one read. Leaves them empty in a kurin with tags off. An empty
     /// <paramref name="kurinKey"/> is the kurin the viewer acts in — a гурток's list knows no other.
     /// </summary>
-    public async Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberResponse> rows, CancellationToken cancellationToken = default)
+    public async Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberDto> rows, CancellationToken cancellationToken = default)
     {
         foreach (var row in rows)
         {

@@ -1,14 +1,13 @@
-using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
@@ -26,7 +25,6 @@ public class MemberProfileVerificationHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
-    private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IResourceScopeReader> _scopeReaderMock;
     private readonly MemberProfileVerificationService _service;
     private readonly JournalRecorder _journal;
@@ -41,10 +39,6 @@ public class MemberProfileVerificationHandlerTests
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _journal = new JournalRecorder(_currentUserContextMock.Object);
         _eventsMock = new Mock<IDomainEventPublisher>();
-        _mapperMock = new Mock<IMapper>();
-        _mapperMock
-            .Setup(x => x.Map<MemberResponse>(It.IsAny<object>()))
-            .Returns(() => new MemberResponse());
         _scopeReaderMock = new Mock<IResourceScopeReader>();
         _scopeReaderMock
             .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -59,7 +53,7 @@ public class MemberProfileVerificationHandlerTests
             _uowMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _mapperMock.Object,
+            FakeBlobReadLinks.Instance,
             _scopeReaderMock.Object,
             _kurinDataMock.Object,
             FieldAccess.SeesEverything(),
@@ -261,9 +255,6 @@ public class MemberProfileVerificationHandlerTests
         _memberRepoMock
             .Setup(x => x.GetByKeyAsync(member.MemberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(member);
-        _mapperMock
-            .Setup(x => x.Map<MemberResponse>(member))
-            .Returns(() => MapMember(member));
     }
 
     /// <summary>
@@ -304,23 +295,5 @@ public class MemberProfileVerificationHandlerTests
             });
 
         return member;
-    }
-
-    private static MemberResponse MapMember(Member member)
-    {
-        return new MemberResponse
-        {
-            MemberKey = member.MemberKey,
-            FirstName = member.FirstName,
-            MiddleName = member.MiddleName,
-            LastName = member.LastName,
-            Email = member.Email,
-            PhoneNumber = member.PhoneNumber,
-            DateOfBirth = member.DateOfBirth,
-            ProfileVerificationStatus = member.ProfileVerificationStatus,
-            ProfileVerifiedAtUtc = member.ProfileVerifiedAtUtc,
-            ProfileVerifiedByUserKey = member.ProfileVerifiedByUserKey,
-            ProfileVerificationNote = member.ProfileVerificationNote
-        };
     }
 }

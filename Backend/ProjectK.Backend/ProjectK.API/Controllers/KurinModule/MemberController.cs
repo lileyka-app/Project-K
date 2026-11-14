@@ -1,21 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Abilities;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Extensions;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -45,7 +36,7 @@ public class MemberController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{memberKey:guid}")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
-    [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MemberDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByKey(Guid memberKey)
     {
@@ -78,7 +69,7 @@ public class MemberController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{memberKey:guid}/dossier")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Read, "route:memberKey")]
-    [ProducesResponseType(typeof(MemberDossierResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MemberDossierDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDossier(Guid memberKey, [FromQuery] string? include)
@@ -137,7 +128,7 @@ public class MemberController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("groups/{groupKey:guid}/members")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
-    [ProducesResponseType(typeof(IEnumerable<MemberResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAllByGroup(Guid groupKey)
     {
@@ -152,7 +143,7 @@ public class MemberController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("kurins/{kurinKey:guid}/members")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<MemberResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAllByKurin(Guid kurinKey)
     {
@@ -169,7 +160,7 @@ public class MemberController : ControllerBase
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Create, "arg:request.GroupKey")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(MemberDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromForm] UpsertMemberRequest request,
@@ -217,7 +208,7 @@ public class MemberController : ControllerBase
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "route:kurinKey")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(MemberDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateByKurin(Guid kurinKey,
@@ -265,7 +256,7 @@ public class MemberController : ControllerBase
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MemberDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -329,7 +320,7 @@ public class MemberController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpPut("{memberKey:guid}/profile-verification")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
-    [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MemberDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -352,7 +343,7 @@ public class MemberController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireGroupLeadership)]
     [HttpDelete("{memberKey:guid}/profile-verification")]
     [ResourceAuthorize(ResourceType.Member, ResourceAction.Update, "route:memberKey")]
-    [ProducesResponseType(typeof(MemberResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MemberDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

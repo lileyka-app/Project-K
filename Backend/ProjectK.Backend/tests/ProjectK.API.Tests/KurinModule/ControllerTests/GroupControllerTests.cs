@@ -5,7 +5,7 @@ using Moq;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;

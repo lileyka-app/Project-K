@@ -1,13 +1,9 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Invitations;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Waiting;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Exceptions;
@@ -438,7 +434,7 @@ public class MembershipRequestTests
 
     private void Senior(Guid kurinKey) => _branches[kurinKey] = KurinBranch.USP;
 
-    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.BusinessLogic.Modules.KurinModule.Models.MembershipRequestSent>> AskFromB(
+    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.Common.Models.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
         MembershipRequestKind kind, MembershipKind as_ = MembershipKind.Youth, Guid? from = null) =>
         Create().Handle(new CreateMembershipRequestCommand(_kurinB, Code, null, kind, as_, from), default);
 

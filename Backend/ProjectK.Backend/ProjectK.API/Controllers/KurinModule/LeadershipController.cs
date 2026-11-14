@@ -4,10 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Extensions;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -38,7 +35,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("type/{leadershipType}/{typeKey:guid}")]
     [ResourceAuthorize("route:leadershipType", ResourceAction.Read, "route:typeKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipByType(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
     {
         var request = new GetLeadershipByTypeQuery(leadershipType, typeKey);
@@ -58,7 +55,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{leadershipKey:guid}")]
     [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
     {
         var request = new GetLeadershipByKeyQuery(leadershipKey);
@@ -76,7 +73,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost]
     [ResourceAuthorize("arg:dto.Type", ResourceAction.Create, "arg:dto.EntityKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
     {
         var request = new UpsertLeadershipCommand(dto);
@@ -90,7 +87,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("{leadershipKey:guid}")]
     [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Update, "route:leadershipKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)
     {
         var request = new UpsertLeadershipCommand(dto, leadershipKey);

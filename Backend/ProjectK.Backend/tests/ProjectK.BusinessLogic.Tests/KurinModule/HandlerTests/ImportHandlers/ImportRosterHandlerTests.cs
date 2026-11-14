@@ -1,11 +1,11 @@
 using FluentAssertions;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;

@@ -2,7 +2,6 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -17,8 +16,7 @@ using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -147,8 +145,6 @@ public class MemberAwardRouteMemberHttpIntegrationTests
             unitOfWork.SetupGet(x => x.MemberAwards).Returns(awards.Object);
             unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(x => x.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
             var members = new Mock<IMemberDirectory>();
             members.Setup(x => x.FindAccountKeyAsync(routeMemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(routeMemberUserKey);
 
@@ -161,7 +157,6 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                     members.Object,
                     currentUser,
                     Mock.Of<IDomainEventPublisher>(),
-                    mapper.Object,
                     access,
                     Mock.Of<IKurinAudit>());
                 var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser, members.Object, access, Mock.Of<IKurinAudit>(), Mock.Of<ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule.IHonoursCatalog>(), Mock.Of<ProjectK.Common.Interfaces.IUnitOfWork>());

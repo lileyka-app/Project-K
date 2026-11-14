@@ -2,8 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -26,18 +25,20 @@ public class MemberDossierControllerTests
         _mediator
             .Setup(m => m.Send(It.IsAny<GetMemberDossierQuery>(), It.IsAny<CancellationToken>()))
             .Callback<object, CancellationToken>((request, _) => _sent = (GetMemberDossierQuery)request)
-            .ReturnsAsync(() => new ServiceResult<MemberDossierResponse>(ResultType.Success, Box()));
+            .ReturnsAsync(() => new ServiceResult<MemberDossierDto>(ResultType.Success, Box()));
     }
 
-    private static MemberDossierResponse Box() => new()
-    {
-        Profile = new MemberDossierProfile(
+    private static MemberDossierDto Box() => new(
+        Profile: new MemberDossierProfileDto(
             Guid.NewGuid(), "PL-ABCDE-12345", null, "Оксана", null, "Тестова",
             null, null, null, MemberProfileVerificationStatus.Unverified, null),
-        Folders = [new(MemberDossierFolders.Warnings, 1)],
-        Warnings = [new MemberWarningDto()],
-        Memberships = []
-    };
+        Folders: [new(MemberDossierFolders.Warnings, 1)],
+        Memberships: [],
+        Offices: null,
+        Levels: null,
+        Awards: null,
+        Warnings: [new MemberWarningDto()],
+        Progress: null);
 
     [Theory]
     [InlineData(null, 0)]
@@ -69,7 +70,7 @@ public class MemberDossierControllerTests
     {
         _mediator
             .Setup(m => m.Send(It.IsAny<GetMemberDossierQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MemberDossierResponse>.Failure(
+            .ReturnsAsync(ServiceResult<MemberDossierDto>.Failure(
                 ResultType.BadRequest, "UnknownDossierFolder", "No such folder: salary."));
 
         var result = await _controller.GetDossierFolder(Guid.NewGuid(), "salary");

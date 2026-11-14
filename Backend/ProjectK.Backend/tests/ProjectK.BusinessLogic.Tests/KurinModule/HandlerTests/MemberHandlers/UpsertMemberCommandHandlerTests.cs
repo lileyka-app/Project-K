@@ -1,13 +1,9 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using AutoMapper;
 using FluentAssertions;
 using MediatR;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -35,13 +31,6 @@ public class UpsertMemberHandlerTests
 
     public UpsertMemberHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var mapperConfig = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-
         _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
         _accountProvisioningMock
@@ -51,7 +40,7 @@ public class UpsertMemberHandlerTests
         _handler = new UpsertMemberCommandHandler(
             _mediatorMock.Object,
             _uowMock.Object,
-            mapperConfig.CreateMapper(),
+            FakeBlobReadLinks.Instance,
             _accountProvisioningMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
@@ -178,7 +167,7 @@ public class UpsertMemberHandlerTests
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<MoveMemberAccountEmailCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Guid>.Failure(
-                ResultType.InternalServerError, ResendMemberInvitationCommandHandler.InvitationNotSent, "not sent"));
+                ResultType.InternalServerError, MemberErrors.InvitationNotSent, "not sent"));
 
         var result = await _handler.Handle(
             new UpsertMemberCommand { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), Email = "fixed@example.com" },

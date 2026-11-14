@@ -3,11 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Models.Requests;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.API.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -30,7 +27,7 @@ public class MemberControllerTests
     public async Task GetByKey_ShouldReturnOk_WhenSuccess()
     {
         var key = Guid.NewGuid();
-        var dto = new MemberResponse
+        var dto = TestMemberDto.Blank with
         {
             MemberKey = key,
             GroupKey = Guid.NewGuid(),
@@ -42,7 +39,7 @@ public class MemberControllerTests
             PhoneNumber = "123",
             DateOfBirth = new DateOnly(2000, 1, 1)
         };
-        var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success, dto);
+        var serviceResult = new ServiceResult<MemberDto>(ResultType.Success, dto);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetMemberByKeyQuery>(), It.IsAny<CancellationToken>()))
@@ -51,7 +48,7 @@ public class MemberControllerTests
         var result = await _controller.GetByKey(key);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<MemberResponse>(ok.Value);
+        var data = Assert.IsType<MemberDto>(ok.Value);
         Assert.Equal(key, data.MemberKey);
     }
 
@@ -59,7 +56,7 @@ public class MemberControllerTests
     public async Task GetByKey_ShouldReturnNotFound_WhenNotFound()
     {
         var key = Guid.NewGuid();
-        var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
+        var serviceResult = new ServiceResult<MemberDto>(ResultType.NotFound);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetMemberByKeyQuery>(), It.IsAny<CancellationToken>()))
@@ -74,12 +71,12 @@ public class MemberControllerTests
     public async Task GetAllByGroup_ShouldReturnOk_WhenSuccess()
     {
         var groupKey = Guid.NewGuid();
-        var members = new List<MemberResponse>
+        var members = new List<MemberDto>
         {
-            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
-            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
+            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
+            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
         };
-        var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
+        var serviceResult = new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, members);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
@@ -88,7 +85,7 @@ public class MemberControllerTests
         var result = await _controller.GetAllByGroup(groupKey);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<List<MemberResponse>>(ok.Value);
+        var data = Assert.IsType<List<MemberDto>>(ok.Value);
         Assert.Equal(members.Count, data.Count);
 
         _mediatorMock.Verify(m => m.Send(
@@ -101,13 +98,13 @@ public class MemberControllerTests
     public async Task GetAllByKurin_ShouldReturnOk_WhenSuccess()
     {
         var kurinKey = Guid.NewGuid();
-        var members = new List<MemberResponse>
+        var members = new List<MemberDto>
         {
-            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
-            new() { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
+            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
+            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
         };
 
-        var serviceResult = new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, members);
+        var serviceResult = new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, members);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
@@ -116,7 +113,7 @@ public class MemberControllerTests
         var result = await _controller.GetAllByKurin(kurinKey);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<List<MemberResponse>>(ok.Value);
+        var data = Assert.IsType<List<MemberDto>>(ok.Value);
         Assert.Equal(members.Count, data.Count);
 
         _mediatorMock.Verify(m => m.Send(
@@ -140,9 +137,9 @@ public class MemberControllerTests
             DateOfBirth = new DateOnly(2000, 5, 10)
         };
 
-        var serviceResult = new ServiceResult<MemberResponse>(
+        var serviceResult = new ServiceResult<MemberDto>(
             ResultType.Created,
-            new MemberResponse
+            TestMemberDto.Blank with
             {
                 MemberKey = key,
                 GroupKey = request.GroupKey!.Value,
@@ -164,7 +161,7 @@ public class MemberControllerTests
         var result = await _controller.Create(request, CancellationToken.None);
 
         var created = Assert.IsType<CreatedAtActionResult>(result);
-        var data = Assert.IsType<MemberResponse>(created.Value);
+        var data = Assert.IsType<MemberDto>(created.Value);
         Assert.Equal(key, data.MemberKey);
 
         _mediatorMock.Verify(m => m.Send(
@@ -190,7 +187,7 @@ public class MemberControllerTests
             DateOfBirth = new DateOnly(1999, 1, 1)
         };
 
-        var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
+        var serviceResult = new ServiceResult<MemberDto>(ResultType.BadRequest, TestMemberDto.Blank);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
@@ -220,8 +217,8 @@ public class MemberControllerTests
             RemoveProfilePhoto = false
         };
 
-        var serviceResult = new ServiceResult<MemberResponse>(ResultType.Success,
-            new MemberResponse
+        var serviceResult = new ServiceResult<MemberDto>(ResultType.Success,
+            TestMemberDto.Blank with
             {
                 MemberKey = memberKey,
                 GroupKey = request.GroupKey!.Value,
@@ -241,7 +238,7 @@ public class MemberControllerTests
         var result = await _controller.Update(memberKey, request, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<MemberResponse>(ok.Value);
+        var data = Assert.IsType<MemberDto>(ok.Value);
         Assert.Equal(memberKey, data.MemberKey);
 
         _mediatorMock.Verify(m => m.Send(
@@ -266,7 +263,7 @@ public class MemberControllerTests
             DateOfBirth = new DateOnly(1990, 1, 1)
         };
 
-        var serviceResult = new ServiceResult<MemberResponse>(ResultType.NotFound);
+        var serviceResult = new ServiceResult<MemberDto>(ResultType.NotFound);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
@@ -292,7 +289,7 @@ public class MemberControllerTests
             DateOfBirth = new DateOnly(1999, 1, 1)
         };
 
-        var serviceResult = new ServiceResult<MemberResponse>(ResultType.BadRequest, new MemberResponse());
+        var serviceResult = new ServiceResult<MemberDto>(ResultType.BadRequest, TestMemberDto.Blank);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpsertMemberCommand>(), It.IsAny<CancellationToken>()))
@@ -308,9 +305,9 @@ public class MemberControllerTests
     {
         var memberKey = Guid.NewGuid();
         var request = new VerifyMemberProfileRequest { Note = "Checked by phone." };
-        var serviceResult = new ServiceResult<MemberResponse>(
+        var serviceResult = new ServiceResult<MemberDto>(
             ResultType.Success,
-            new MemberResponse
+            TestMemberDto.Blank with
             {
                 MemberKey = memberKey,
                 ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent,
@@ -324,7 +321,7 @@ public class MemberControllerTests
         var result = await _controller.VerifyProfile(memberKey, request, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<MemberResponse>(ok.Value);
+        var data = Assert.IsType<MemberDto>(ok.Value);
         Assert.Equal(MemberProfileVerificationStatus.VerifiedCurrent, data.ProfileVerificationStatus);
 
         _mediatorMock.Verify(m => m.Send(
@@ -337,9 +334,9 @@ public class MemberControllerTests
     public async Task VerifyProfile_ShouldSendCommandWithNullNote_WhenRequestIsNull()
     {
         var memberKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<MemberResponse>(
+        var serviceResult = new ServiceResult<MemberDto>(
             ResultType.Success,
-            new MemberResponse { MemberKey = memberKey });
+            TestMemberDto.Blank with { MemberKey = memberKey });
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<VerifyMemberProfileCommand>(), It.IsAny<CancellationToken>()))
@@ -357,9 +354,9 @@ public class MemberControllerTests
     public async Task ResetProfileVerification_ShouldSendCommand_WhenSuccess()
     {
         var memberKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<MemberResponse>(
+        var serviceResult = new ServiceResult<MemberDto>(
             ResultType.Success,
-            new MemberResponse
+            TestMemberDto.Blank with
             {
                 MemberKey = memberKey,
                 ProfileVerificationStatus = MemberProfileVerificationStatus.Unverified
@@ -372,7 +369,7 @@ public class MemberControllerTests
         var result = await _controller.ResetProfileVerification(memberKey, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<MemberResponse>(ok.Value);
+        var data = Assert.IsType<MemberDto>(ok.Value);
         Assert.Equal(MemberProfileVerificationStatus.Unverified, data.ProfileVerificationStatus);
 
         _mediatorMock.Verify(m => m.Send(
@@ -385,7 +382,7 @@ public class MemberControllerTests
     public async Task Delete_ShouldReturnOk_WhenSuccess()
     {
         var memberKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>(ResultType.Success);
+        var serviceResult = new ServiceResult<Unit>(ResultType.Success, Unit.Value);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))
@@ -400,7 +397,7 @@ public class MemberControllerTests
     public async Task Delete_ShouldReturnInternalServerError_WhenUnexpected()
     {
         var memberKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>((ResultType)999);
+        var serviceResult = new ServiceResult<Unit>((ResultType)999);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))
