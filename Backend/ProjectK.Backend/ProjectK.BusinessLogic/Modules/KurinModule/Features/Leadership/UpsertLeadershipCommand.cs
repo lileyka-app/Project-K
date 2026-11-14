@@ -157,7 +157,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         // next request; the cached led-group sets are read from offices too and must not lag.
         if (touchedHolders.Count > 0)
         {
-            _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+            _cache.Invalidate(BackendCacheRules.MentorScopeReads);
             MarkHolders(holders);
         }
 

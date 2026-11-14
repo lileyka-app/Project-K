@@ -460,7 +460,7 @@ public class ResourceAccessServiceTests
             .ReturnsAsync(new ResourceScope(kurinKey, groupKey, null));
 
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
-        cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        cache.Invalidate(BackendCacheRules.MentorScopeReads);
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(

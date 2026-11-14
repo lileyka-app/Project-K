@@ -1,6 +1,6 @@
 namespace ProjectK.BusinessLogic.Services.Caching;
 
-public static class BackendCachePolicies
+public static class BackendCacheRules
 {
     public static readonly TimeSpan EntityReadTtl = TimeSpan.FromMinutes(1);
 

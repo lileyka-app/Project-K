@@ -63,7 +63,7 @@ public class KraiProfileProviderTests
         profile.Catalog.BadgeSources.Should().Equal("ua");
         profile.Catalog.HiddenBadges.Should().BeEmpty();
         profile.Locale.Currency.Should().Be("UAH");
-        profile.Locale.TimeZone.Should().Be(AgendaRecurrence.DefaultZone.Id);
+        profile.Locale.TimeZone.Should().Be(AgendaRecurrenceRules.DefaultZone.Id);
         profile.Locale.NumberLocale.Should().Be("uk-UA");
     }
 

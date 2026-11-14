@@ -35,7 +35,7 @@ public sealed record EventOccurrence(AgendaItem Item, DateTime StartUtc, DateTim
 
         var wanted = DateTime.SpecifyKind(occurrenceStartUtc, DateTimeKind.Utc);
         var zone = await profiles.ForKurinAsync(kurinKey, cancellationToken);
-        var occurrence = AgendaRecurrence.Expand(item, wanted.AddDays(-1), wanted.AddDays(1), zone)
+        var occurrence = AgendaRecurrenceRules.Expand(item, wanted.AddDays(-1), wanted.AddDays(1), zone)
             .FirstOrDefault(o => DateTime.SpecifyKind(o.StartUtc, DateTimeKind.Utc) == wanted);
 
         if (occurrence == default)

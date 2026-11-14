@@ -58,7 +58,7 @@ public static class DependencyInjection
         services.Configure<LoginThrottleOptions>(configuration.GetSection("LoginThrottle"));
 
         // The clock a kurin's week repeats by (DST-safe recurrence); Kyiv unless configured.
-        AgendaRecurrence.DefaultZone = AgendaRecurrence.ResolveZone(configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");
+        AgendaRecurrenceRules.DefaultZone = AgendaRecurrenceRules.ResolveZone(configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");
 
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
         services.AddScoped<ILoginResponseService, LoginResponseService>();

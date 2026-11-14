@@ -160,8 +160,8 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         }
 
         var kurinResponse = existing.ToDto(_links);
-        _cache.Invalidate(BackendCachePolicies.KurinReads);
-        _cache.Invalidate(BackendCachePolicies.GroupReads);
+        _cache.Invalidate(BackendCacheRules.KurinReads);
+        _cache.Invalidate(BackendCacheRules.GroupReads);
 
         return isCreated
             ? new ServiceResult<KurinDto>(

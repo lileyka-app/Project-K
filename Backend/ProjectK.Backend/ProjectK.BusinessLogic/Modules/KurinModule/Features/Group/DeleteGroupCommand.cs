@@ -95,8 +95,8 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
                 KurinErrors.GroupDeleteFailed,
                 "Failed to delete Group due to internal error.");
         }
-        _cache.Invalidate(BackendCachePolicies.GroupReads);
-        _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _cache.Invalidate(BackendCacheRules.GroupReads);
+        _cache.Invalidate(BackendCacheRules.MentorScopeReads);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }

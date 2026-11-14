@@ -55,7 +55,7 @@ public sealed class MemberFieldAccess : IMemberFieldAccess
             && _currentUser.KurinKey is { } kurinKey)
         {
             ownGroups = await _cache.GetOrCreateAsync(
-                BackendCachePolicies.MentorScopeReads,
+                BackendCacheRules.MentorScopeReads,
                 $"ledgroups:kurin:{kurinKey}",
                 token => _scopeReader.GetLedGroupKeysAsync(userKey, kurinKey, token),
                 cancellationToken,

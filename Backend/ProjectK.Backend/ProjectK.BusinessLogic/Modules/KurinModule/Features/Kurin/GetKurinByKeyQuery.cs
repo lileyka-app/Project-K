@@ -35,7 +35,7 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
     public async Task<ServiceResult<KurinDto>> Handle(GetKurinByKeyQuery request, CancellationToken cancellationToken)
     {
         return await _cache.GetOrCreateAsync(
-            BackendCachePolicies.KurinReads,
+            BackendCacheRules.KurinReads,
             $"by-key:{request.KurinKey}",
             async token =>
             {

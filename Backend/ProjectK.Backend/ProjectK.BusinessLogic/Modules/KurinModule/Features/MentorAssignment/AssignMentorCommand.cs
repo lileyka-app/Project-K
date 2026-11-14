@@ -93,7 +93,7 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
 
         // The assignment itself is what grants гуртковий access — it is read when access is
         // decided. Only the cached scope set has to go, so the next check sees it at once.
-        _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _cache.Invalidate(BackendCacheRules.MentorScopeReads);
         _accessChanges.MarkUser(request.MentorUserKey);
 
         return new ServiceResult<Guid>(ResultType.Success, assignment.MentorAssignmentKey);

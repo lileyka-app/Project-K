@@ -34,7 +34,7 @@ public class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, ServiceResu
     public async Task<ServiceResult<IEnumerable<GroupDto>>> Handle(GetGroupsQuery request, CancellationToken cancellationToken)
     {
         return await _cache.GetOrCreateAsync(
-            BackendCachePolicies.GroupReads,
+            BackendCacheRules.GroupReads,
             $"list:kurin:{request.KurinKey}",
             async token =>
             {

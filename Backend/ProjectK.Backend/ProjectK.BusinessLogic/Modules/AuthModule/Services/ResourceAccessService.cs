@@ -366,7 +366,7 @@ public class ResourceAccessService : IResourceAccessService
         }
 
         var ledGroupKeys = await _cache.GetOrCreateAsync(
-            BackendCachePolicies.MentorScopeReads,
+            BackendCacheRules.MentorScopeReads,
             $"ledgroups:kurin:{currentKurinKey}",
             token => _scopeReader.GetLedGroupKeysAsync(currentUserId.Value, currentKurinKey, token),
             cancellationToken,

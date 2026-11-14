@@ -33,7 +33,7 @@ public class GetGroupByKeyQueryHandler : IRequestHandler<GetGroupByKeyQuery, Ser
     public async Task<ServiceResult<GroupDto>> Handle(GetGroupByKeyQuery request, CancellationToken cancellationToken)
     {
         return await _cache.GetOrCreateAsync(
-            BackendCachePolicies.GroupReads,
+            BackendCacheRules.GroupReads,
             $"by-key:{request.GroupKey}",
             async token =>
             {

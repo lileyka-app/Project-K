@@ -91,7 +91,7 @@ public sealed class CreateKraiCommandHandler : IRequestHandler<CreateKraiCommand
         }
 
         // A read of this code before it existed may have cached "no such край".
-        _cache.Invalidate(BackendCachePolicies.KraiProfileReads);
+        _cache.Invalidate(BackendCacheRules.KraiProfileReads);
         _catalogNames.Name(code, name);
 
         return new ServiceResult<KraiDto>(ResultType.Success, krai.ToDto(kurinCount: 0));

@@ -406,7 +406,7 @@ public class UpsertLeadershipHandlerTests
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(oldMemberKey)), Times.Once);
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(newMemberKey)), Times.Once);
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(stayingMemberKey)), Times.Never);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.MentorScopeReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.MentorScopeReads), Times.Once);
     }
 
     [Fact]
@@ -499,7 +499,7 @@ public class UpsertLeadershipHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         _accessChangesMock.Verify(s => s.MarkUser(AccountOf(memberKey)), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.MentorScopeReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.MentorScopeReads), Times.Once);
         Assert.Empty(_journal.Entries);
     }
 

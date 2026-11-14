@@ -211,7 +211,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
 
         foreach (var item in items.Where(candidate => book.AttendancePoints(candidate.AgendaItemKey, candidate.AgendaCategoryKey) > 0))
         {
-            var unmarkedStarts = AgendaRecurrence.Expand(item, from, now, zone)
+            var unmarkedStarts = AgendaRecurrenceRules.Expand(item, from, now, zone)
                 .Select(occurrence => occurrence.StartUtc)
                 .Where(startUtc => startUtc <= now && !settled.Contains((item.AgendaItemKey, startUtc)));
             foreach (var startUtc in unmarkedStarts)

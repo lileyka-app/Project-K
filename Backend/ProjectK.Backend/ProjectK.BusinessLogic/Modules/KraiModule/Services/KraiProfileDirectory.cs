@@ -33,7 +33,7 @@ public sealed class KraiProfileDirectory : IKraiProfileDirectory
     public Task<KraiProfile?> GetForKraiAsync(string kraiCode, CancellationToken cancellationToken = default)
     {
         return _cache.GetOrCreateAsync(
-            BackendCachePolicies.KraiProfileReads,
+            BackendCacheRules.KraiProfileReads,
             kraiCode,
             token => BuildAsync(kraiCode, token),
             cancellationToken);
@@ -101,7 +101,7 @@ public sealed class KraiProfileDirectory : IKraiProfileDirectory
                 HiddenBadges: Ids(catalog?.HiddenBadges)),
             new KraiLocaleSettings(
                 Currency: TextRules.TrimOrNull(locale?.Currency)?.ToUpperInvariant() ?? "UAH",
-                TimeZone: TextRules.TrimOrNull(locale?.TimeZone) ?? AgendaRecurrence.DefaultZone.Id,
+                TimeZone: TextRules.TrimOrNull(locale?.TimeZone) ?? AgendaRecurrenceRules.DefaultZone.Id,
                 NumberLocale: TextRules.TrimOrNull(locale?.NumberLocale) ?? "uk-UA"),
             CardFields(document.CardFields),
             new KraiDuesSettings(TextRules.TrimOrNull(document.Dues?.Upstream)?.ToLowerInvariant() is { } upstream && KraiDuesNames.Upstreams.Contains(upstream)

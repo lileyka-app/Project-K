@@ -100,7 +100,7 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
 
         if (request.Approve)
         {
-            _cache.Invalidate(BackendCachePolicies.KurinReads);
+            _cache.Invalidate(BackendCacheRules.KurinReads);
         }
 
         await _events.PublishAsync(

@@ -61,7 +61,7 @@ public class KraiProfileEditorTests
         saved.CreatedByUserKey.Should().Be(_admin);
         saved.Note.Should().Be("перше налаштування");
         saved.Json.Should().Be("""{"catalog":{"badgeSources":["cz","ua"]},"locale":{"currency":"CZK"},"dues":{"upstream":"krai"}}""");
-        _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _cache.Verify(c => c.Invalidate(BackendCacheRules.KraiProfileReads), Times.Once);
     }
 
     [Fact]

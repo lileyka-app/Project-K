@@ -78,8 +78,8 @@ public class UpsertKurinHandlerTests
         _kurinRepositoryMock.Verify(r => r.Create(It.IsAny<Kurin>(), default), Times.Once);
         _kurinRepositoryMock.Verify(r => r.Update(It.IsAny<Kurin>(), default), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.KurinReads), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.KurinReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.GroupReads), Times.Once);
     }
 
     [Fact]

@@ -66,7 +66,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
             {
                 var category = item.AgendaCategoryKey is { } key ? categories.GetValueOrDefault(key) : null;
 
-                foreach (var occurrence in AgendaRecurrence.Expand(item, now, until, zone))
+                foreach (var occurrence in AgendaRecurrenceRules.Expand(item, now, until, zone))
                 {
                     var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc)), out var status)
                         ? status

@@ -89,7 +89,7 @@ public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, Ser
         }
 
         var response = existing.ToDto(_links);
-        _cache.Invalidate(BackendCachePolicies.GroupReads);
+        _cache.Invalidate(BackendCacheRules.GroupReads);
 
         return isCreated
             ? new ServiceResult<GroupDto>(

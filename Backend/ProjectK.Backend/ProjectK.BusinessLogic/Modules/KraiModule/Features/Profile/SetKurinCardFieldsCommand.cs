@@ -62,7 +62,7 @@ public sealed class SetKurinCardFieldsCommandHandler : IRequestHandler<SetKurinC
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        _cache.Invalidate(BackendCachePolicies.KurinReads);
+        _cache.Invalidate(BackendCacheRules.KurinReads);
 
         return new ServiceResult<IReadOnlyList<KurinCardFieldDto>>(ResultType.Success, profile.CardFields.ToCardFieldDtos(kurin.HiddenCardFields));
     }

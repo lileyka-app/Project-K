@@ -158,7 +158,7 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
 
             case CapabilityReach.OwnGroup:
                 var ledGroups = await _cache.GetOrCreateAsync(
-                    BackendCachePolicies.MentorScopeReads,
+                    BackendCacheRules.MentorScopeReads,
                     $"ledgroups:kurin:{kurinKey}",
                     token => _scopeReader.GetLedGroupKeysAsync(viewer.Value, kurinKey, token),
                     cancellationToken,

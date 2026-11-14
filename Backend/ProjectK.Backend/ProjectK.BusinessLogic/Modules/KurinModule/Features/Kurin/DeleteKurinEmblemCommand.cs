@@ -49,7 +49,7 @@ public sealed class DeleteKurinEmblemCommandHandler : IRequestHandler<DeleteKuri
         }
 
         await _photoService.DeletePhotoAsync(oldBlobName, cancellationToken);
-        _cache.Invalidate(BackendCachePolicies.KurinReads);
+        _cache.Invalidate(BackendCacheRules.KurinReads);
         return new ServiceResult<KurinDto>(ResultType.Success, kurin.ToDto(_links));
     }
 }

@@ -114,7 +114,7 @@ public class KurinAccessPolicyHandlerTests
         Cell(result.Data!, KurinCapability.SeeBirthDate, PolicyAudience.Youth).Effective.Should().Be(CapabilityReach.OwnGroup);
         _kurins.Verify(r => r.Update(_kurin, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _cache.Verify(c => c.Invalidate(BackendCachePolicies.KurinAccessPolicyReads), Times.Once);
+        _cache.Verify(c => c.Invalidate(BackendCacheRules.KurinAccessPolicyReads), Times.Once);
         _accessChanges.Verify(s => s.MarkKurin(_kurin.KurinKey), Times.Once);
 
         // One change per cell that moved, from the reach it had to the new one; filed under the kurin.
@@ -188,7 +188,7 @@ public class KurinAccessPolicyHandlerTests
 
         policy.Reach(KurinCapability.ReadJournal, PolicyAudience.Kurinnyy).Should().Be(CapabilityReach.Kurin);
         _cache.Verify(c => c.GetOrCreateAsync(
-            BackendCachePolicies.KurinAccessPolicyReads,
+            BackendCacheRules.KurinAccessPolicyReads,
             _kurin.KurinKey.ToString(),
             It.IsAny<Func<CancellationToken, Task<KurinAccessPolicy>>>(),
             It.IsAny<CancellationToken>(),

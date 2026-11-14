@@ -19,7 +19,7 @@ public readonly record struct AgendaOccurrence(DateTime StartUtc, DateTime? EndU
 /// (the spring gap) lands an hour later.
 /// </para>
 /// </summary>
-public static class AgendaRecurrence
+public static class AgendaRecurrenceRules
 {
     // Guards an open-ended weekly series with a distant window from spinning forever.
     private const int SafetyCap = 1000;

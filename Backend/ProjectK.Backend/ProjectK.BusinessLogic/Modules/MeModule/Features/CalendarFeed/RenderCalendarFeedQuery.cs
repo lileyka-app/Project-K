@@ -187,7 +187,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             }
 
             var summary = own ? item.Title : ScheduleTitle(item, groupNames);
-            foreach (var occurrence in AgendaRecurrence.Expand(item, from, to, zone))
+            foreach (var occurrence in AgendaRecurrenceRules.Expand(item, from, to, zone))
             {
                 var occurrenceKey = AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc);
                 AgendaRsvpStatus? answer = answers.TryGetValue((item.AgendaItemKey, occurrenceKey), out var status) ? status : null;

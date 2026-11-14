@@ -171,7 +171,7 @@ public sealed class InviteKurinFounderCommandHandler
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         // The admin's list of kurins is cached; without this the new one turns up only a minute later.
-        _cache.Invalidate(BackendCachePolicies.KurinReads);
+        _cache.Invalidate(BackendCacheRules.KurinReads);
 
         // Everything is stored by now, so a letter that does not go is reported, not failed on:
         // a retry would only meet a taken address. It goes again by address (invitation/resend,

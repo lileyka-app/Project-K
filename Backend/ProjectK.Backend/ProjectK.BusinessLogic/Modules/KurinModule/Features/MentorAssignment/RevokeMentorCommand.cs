@@ -72,7 +72,7 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
 
         // Revocation must take effect at once, not after the TTL — otherwise the
         // mentor keeps write access to the group until the cached set expires.
-        _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        _cache.Invalidate(BackendCacheRules.MentorScopeReads);
         _accessChanges.MarkUser(request.MentorUserKey);
 
         return new ServiceResult<Unit>(ResultType.Success, Unit.Value);

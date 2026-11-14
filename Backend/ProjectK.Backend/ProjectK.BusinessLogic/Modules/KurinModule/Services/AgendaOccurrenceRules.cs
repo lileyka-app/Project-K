@@ -29,7 +29,7 @@ public static class AgendaOccurrenceRules
         }
 
         var wanted = DateTime.SpecifyKind(requestedStartUtc.Value, DateTimeKind.Utc);
-        var found = AgendaRecurrence.Expand(item, wanted.AddDays(-1), wanted.AddDays(1), zone)
+        var found = AgendaRecurrenceRules.Expand(item, wanted.AddDays(-1), wanted.AddDays(1), zone)
             .Any(o => SameInstant(o.StartUtc, wanted));
         if (!found)
         {

@@ -53,7 +53,7 @@ public class KraiCommandsTests
         revision.Revision.Should().Be(1);
         revision.CreatedByUserKey.Should().Be(_admin);
         revision.Json.Should().Be("""{"catalog":{"badgeSources":["ua"]}}""");
-        _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _cache.Verify(c => c.Invalidate(BackendCacheRules.KraiProfileReads), Times.Once);
         _catalogNames.Verify(n => n.Name("sk", "Словаччина"), Times.Once);
     }
 
@@ -114,7 +114,7 @@ public class KraiCommandsTests
         result.Type.Should().Be(ResultType.Success);
         krai.Name.Should().Be("Пласт Чехія");
         result.Data!.KurinCount.Should().Be(1);
-        _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _cache.Verify(c => c.Invalidate(BackendCacheRules.KraiProfileReads), Times.Once);
         _catalogNames.Verify(n => n.Name("cz", "Пласт Чехія"), Times.Once);
     }
 

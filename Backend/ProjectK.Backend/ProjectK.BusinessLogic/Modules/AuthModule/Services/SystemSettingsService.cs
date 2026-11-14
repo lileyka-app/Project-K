@@ -25,7 +25,7 @@ public class SystemSettingsService : ISystemSettingsService
     public Task<string?> GetValueAsync(string key, CancellationToken cancellationToken = default)
     {
         return _cache.GetOrCreateAsync(
-            BackendCachePolicies.SystemSettingReads,
+            BackendCacheRules.SystemSettingReads,
             key,
             async token =>
             {
@@ -57,6 +57,6 @@ public class SystemSettingsService : ISystemSettingsService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        _cache.InvalidateByPrefix(BackendCachePolicies.SystemSettingReads.Prefix);
+        _cache.InvalidateByPrefix(BackendCacheRules.SystemSettingReads.Prefix);
     }
 }
