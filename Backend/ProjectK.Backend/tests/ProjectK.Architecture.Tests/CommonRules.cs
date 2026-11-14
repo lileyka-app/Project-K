@@ -16,17 +16,6 @@ public class CommonRules
 
     private static readonly string[] Kinds = ["Entities", "Contracts", "Dtos", "Records", "Events", "Enums", "Rules", "Options"];
 
-    /// <summary>
-    /// Settings the host binds before anything else is up, read by nobody but the host: the
-    /// client-address source the rate limiter partitions on, and the security-patch switch. The
-    /// table in CONTRIBUTING still lists <c>…Options</c> under <c>API/Hosting/</c> for them.
-    /// </summary>
-    private static readonly string[] OptionsOutsideCommon =
-    [
-        "ProjectK.API.Hosting.ClientIpOptions",
-        "ProjectK.API.Hosting.SecurityPatchOptions",
-    ];
-
     private static readonly Regex PublicTopLevelType = new(
         @"^public\s+(?:(?:sealed|static|abstract|partial|readonly|unsafe|new)\s+)*(?:record\s+(?:class|struct)|class|record|struct|interface|enum|delegate\s+[\w<>\[\],? ]+?)\s+(?<name>\w+)",
         RegexOptions.Multiline | RegexOptions.CultureInvariant);
@@ -75,13 +64,14 @@ public class CommonRules
                 && !type.GetInterfaces().Any(i => i.IsGenericType
                     && (i.GetGenericTypeDefinition() == typeof(IConfigureOptions<>)
                         || i.GetGenericTypeDefinition() == typeof(IPostConfigureOptions<>))))
-            .Where(type => !type.Namespace!.StartsWith("ProjectK.Common.Options.", StringComparison.Ordinal))
+            // Host settings that lean on ASP.NET types (ForwardedHeadersOptions) cannot live in Common.
+            .Where(type => !type.Namespace!.StartsWith("ProjectK.Common.Options.", StringComparison.Ordinal)
+                && type.Namespace != "ProjectK.API.Hosting")
             .Select(type => type.FullName!);
 
-        Baseline.Hold(
+        Baseline.None(
             offenders,
-            OptionsOutsideCommon,
-            $"Options types outside Common/Options/<Module>/, whichever layer reads them ({WhatGoesWhere}):");
+            $"Options types outside Common/Options/<Module>/ (host-only settings go to API/Hosting/) ({WhatGoesWhere}):");
     }
 
     [Fact]

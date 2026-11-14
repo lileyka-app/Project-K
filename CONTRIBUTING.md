@@ -83,14 +83,12 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Зовнішня система | контракт у `Common/Contracts/`, реалізація в `Infrastructure/Services/<Concept>/` | тека за поняттям: `Email/`, не `EmailService/` |
 | Фонова служба | `Infrastructure/BackgroundServices/` | `…BackgroundService` |
 | Middleware, фільтр, кукі | `API/Middleware/`, `API/Filters/`, `API/Cookies/` | `…Middleware`, `…Filter`, `…Cookie` |
-| Реєстрація хоста, старт, налаштування хоста | `API/Hosting/` | `Add…` / `Use…` розширення, `…Options` |
+| Реєстрація хоста, старт; налаштування, які читає лише хост і які спираються на ASP.NET-типи | `API/Hosting/` | `Add…` / `Use…` розширення, `…Options` |
 | Перевірка завантажених файлів | `API/Uploads/` | `…Rules`, розширення контролера |
 | Запит із файлом (`IFormFile` — у Common його не буває) | `API/Models/Requests/` | `…Request` |
 | Розширення контролера (`ToActionResult`, `UserKey`) | `API/Extensions/` | `…Extensions` |
 | Серіалізація, Swagger, політики авторизації | `API/Serialization/`, `API/Swagger/`, `API/Authorization/` | `…Converter`, `…Filter`, `…Policies` |
-| Налаштування | `Common/Options/<Module>/` (усі, хоч би який шар читав) | `…Options` із `SectionName` |
-
-<!-- POL-12: рядок «Налаштування → Common/Options/<Module>/ (усі, хоч би який шар читав)» суперечить рядку «Реєстрація хоста, старт, налаштування хоста → API/Hosting/, …Options». У коді ClientIpOptions і SecurityPatchOptions лежать в API/Hosting/, решта — в Common/Options/. -->
+| Налаштування | `Common/Options/<Module>/` (усі, хоч би який шар читав; виняток — налаштування хоста вище) | `…Options` із `SectionName` |
 
 Якщо нового класу немає в цій таблиці — спершу допиши рядок сюди, потім заводь теку чи суфікс.
 
@@ -268,9 +266,7 @@ Directory лише відповідає на питання; запис у чу�
 
 ### DTO проти Records
 
-<!-- POL-12: «і тільки тут» суперечить рядку «Запит із файлом (`IFormFile` — у Common його не буває) → `API/Models/Requests/`» у таблиці «Що куди лягає». У коді такі запити лежать в `API/Models/Requests/`. Яке з правил головне — вирішує власник. -->
-
-- **`Common/Dtos/<Module>/`** — усе, що перетинає межу API, і **тільки тут**: відповідь зветься
+- **`Common/Dtos/<Module>/`** — усе, що перетинає межу API, і **тільки тут** (єдиний виняток — запит із файлом: `IFormFile` у Common не буває, тож такі запити лежать в `API/Models/Requests/`): відповідь зветься
   `…Dto`, запит — `…Request`. Не в контролері, не в `BusinessLogic/…/Models` — Infrastructure теж
   проєктує запити просто в DTO, а BusinessLogic вона не бачить.
 - **`Common/Records/<Module>/`** — внутрішні типи-значення, які **ніколи не серіалізуються клієнту**:
@@ -641,8 +637,8 @@ GitHub. Скрипт `site/scripts/sync-docs.mjs` копіює обидві те
 dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
-- бекенд — **1166** тестів (BusinessLogic 572 · API 489 · Infrastructure 92 · Architecture 13)
-- фронт — **990** тестів, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
+- бекенд — **2796** тестів (BusinessLogic 1558 · API 939 · Infrastructure 262 · Architecture 37)
+- фронт — **1281** тест, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
 - e2e — **101** тест
 
 ```bash
