@@ -9,6 +9,7 @@ using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 
@@ -89,6 +90,6 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
         return members
             .Where(m => m.UserKey.HasValue && m.UserKey.Value != Guid.Empty)
             .GroupBy(m => m.UserKey!.Value)
-            .ToDictionary(g => g.Key, g => $"{g.First().FirstName} {g.First().LastName}".Trim());
+            .ToDictionary(g => g.Key, g => PersonNames.FirstLast(g.First().FirstName, g.First().LastName));
     }
 }

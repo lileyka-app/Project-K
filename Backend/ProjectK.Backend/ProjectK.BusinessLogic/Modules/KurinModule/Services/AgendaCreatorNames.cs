@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -28,7 +29,7 @@ public static class AgendaCreatorNames
                 continue;
             }
 
-            var fullName = $"{user.FirstName} {user.LastName}".Trim();
+            var fullName = PersonNames.FirstLast(user.FirstName, user.LastName);
             names[key] = string.IsNullOrWhiteSpace(fullName) ? (user.Email ?? "—") : fullName;
         }
 

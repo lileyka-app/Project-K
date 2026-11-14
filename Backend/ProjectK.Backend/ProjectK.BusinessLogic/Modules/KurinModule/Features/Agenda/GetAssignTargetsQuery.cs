@@ -57,7 +57,7 @@ public sealed class GetAssignTargetsQueryHandler
         AgendaMemberTargetDto Person(MemberSummary m) => new()
         {
             MemberKey = m.MemberKey,
-            FullName = $"{m.FirstName} {m.LastName}".Trim(),
+            FullName = m.FullName,
             CanTarget = reach.ReachesMember(m.GroupKey, m.UserKey)
         };
         var unplaced = members.Where(m => m.GroupKey is null).OrderBy(m => m.LastName).ToList();
@@ -102,7 +102,7 @@ public sealed class GetAssignTargetsQueryHandler
                     .Select(m => new AgendaMemberTargetDto
                     {
                         MemberKey = m.MemberKey,
-                        FullName = $"{m.FirstName} {m.LastName}".Trim(),
+                        FullName = m.FullName,
                         CanTarget = reach.ReachesMember(m.GroupKey, m.UserKey)
                     })
                     .ToList()

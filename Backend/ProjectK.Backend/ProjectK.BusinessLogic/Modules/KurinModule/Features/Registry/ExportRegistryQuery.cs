@@ -162,6 +162,5 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
     }
 
     private static string FullName(MemberDto member)
-        => string.Join(' ', new[] { member.LastName, member.FirstName, member.MiddleName }
-            .Where(part => !string.IsNullOrWhiteSpace(part)));
+        => PersonNames.SurnameFirst(member.LastName, member.FirstName, member.MiddleName);
 }
