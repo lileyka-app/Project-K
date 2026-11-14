@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using FluentValidation;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
@@ -48,7 +49,7 @@ public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEn
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return new ServiceResult<MemberLifeEntryDto>(ResultType.Forbidden);
+            return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         MemberLifeEntry entry;
@@ -57,7 +58,7 @@ public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEn
             // Someone else's entry answers as missing: whether it exists is not the caller's to learn.
             if (await _unitOfWork.MemberLifeEntries.GetOwnAsync(memberKey, key, cancellationToken) is not { } own)
             {
-                return new ServiceResult<MemberLifeEntryDto>(ResultType.NotFound);
+                return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.NotFound, MemberErrors.LifeEntryNotFound, "No such entry in your life story.");
             }
 
             entry = own;
@@ -70,7 +71,7 @@ public sealed class SaveMyLifeEntryCommandHandler : IRequestHandler<SaveMyLifeEn
             var count = (await _unitOfWork.MemberLifeEntries.GetForMemberAsync(memberKey, cancellationToken)).Count;
             if (count >= LifeEntries.MaxPerPerson)
             {
-                return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.BadRequest, "LifeStoryFull", "The life story holds no more entries.");
+                return ServiceResult<MemberLifeEntryDto>.Failure(ResultType.BadRequest, MemberErrors.LifeStoryFull, "The life story holds no more entries.");
             }
 
             entry = new MemberLifeEntry { MemberKey = memberKey };

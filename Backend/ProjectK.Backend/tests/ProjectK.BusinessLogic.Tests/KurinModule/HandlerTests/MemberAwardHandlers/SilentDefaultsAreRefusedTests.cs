@@ -1,6 +1,5 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Models.Enums;

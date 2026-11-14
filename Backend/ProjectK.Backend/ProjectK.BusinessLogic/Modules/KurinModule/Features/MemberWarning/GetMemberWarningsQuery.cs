@@ -30,7 +30,7 @@ public sealed class GetMemberWarningsQueryHandler : IRequestHandler<GetMemberWar
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<IEnumerable<MemberWarningDto>>(ResultType.NotFound);
+            return ServiceResult<IEnumerable<MemberWarningDto>>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         var warnings = await _unitOfWork.MemberWarnings.GetByMemberKeyAsync(request.MemberKey, cancellationToken);

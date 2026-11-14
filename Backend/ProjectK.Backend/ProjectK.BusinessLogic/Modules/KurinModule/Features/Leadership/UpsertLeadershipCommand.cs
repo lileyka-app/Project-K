@@ -8,7 +8,6 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -100,7 +99,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             moved = placedBefore != (existing.Type, existing.KurinKey, existing.GroupKey);
             if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
             {
-                return new ServiceResult<LeadershipDto>(ResultType.Forbidden);
+                return ServiceResult<LeadershipDto>.Failure(ResultType.Forbidden, LeadershipErrors.OfficeNotAssignable, "You may not assign one of the roles this change touches.");
             }
 
             officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
@@ -120,7 +119,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
             PlaceOnEntity(existing, request.EntityKey);
             if (!request.SeatedBySystem && !MayAssignTouchedOffices(existing, request.LeadershipHistoryMembers, existing.Type))
             {
-                return new ServiceResult<LeadershipDto>(ResultType.Forbidden);
+                return ServiceResult<LeadershipDto>.Failure(ResultType.Forbidden, LeadershipErrors.OfficeNotAssignable, "You may not assign one of the roles this change touches.");
             }
 
             officeChanges = ApplyLeadershipHistoryChanges(existing, request.LeadershipHistoryMembers, today);
@@ -144,7 +143,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
 
         if (changes <= 0)
         {
-            return new ServiceResult<LeadershipDto>(ResultType.InternalServerError);
+            return ServiceResult<LeadershipDto>.Failure(ResultType.InternalServerError, LeadershipErrors.LeadershipNotSaved, "The leadership could not be saved.");
         }
 
         // What an office grants is worked out from this registry when a token is minted. Whoever

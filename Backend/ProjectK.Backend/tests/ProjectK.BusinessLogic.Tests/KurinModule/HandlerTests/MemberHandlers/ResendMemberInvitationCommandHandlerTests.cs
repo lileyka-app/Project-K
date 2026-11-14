@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
@@ -70,7 +71,7 @@ public class ResendMemberInvitationCommandHandlerTests
 
         var result = await _handler.Handle(new ResendMemberInvitationCommand(member.MemberKey), CancellationToken.None);
 
-        result.ErrorCode.Should().Be(ResendMemberInvitationCommandHandler.InvitationNotSent);
+        result.ErrorCode.Should().Be(MemberErrors.InvitationNotSent);
         _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 

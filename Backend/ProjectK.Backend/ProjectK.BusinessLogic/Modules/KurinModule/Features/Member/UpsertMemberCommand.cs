@@ -1,13 +1,11 @@
 using ProjectK.Common.Models.Members;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
@@ -98,13 +96,13 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         {
             if (accountLink?.UserKey is not null)
             {
-                return new ServiceResult<MemberDto>(ResultType.Conflict);
+                return ServiceResult<MemberDto>.Failure(ResultType.Conflict, MemberErrors.AccountAlreadyLinked, "This member already has an account.");
             }
 
             var availability = await _accountProvisioning.CheckAvailabilityAsync(request.Email, cancellationToken);
             if (availability != AccountAvailability.Available)
             {
-                return new ServiceResult<MemberDto>(ResultType.Conflict);
+                return ServiceResult<MemberDto>.Failure(ResultType.Conflict, MemberErrors.AccountEmailTaken, "This email is already used by another account or registration.");
             }
         }
 
@@ -139,7 +137,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
                 cancellationToken);
 
             // The profile is already written; a letter that did not go is reported, not failed on.
-            if (moved.ErrorCode == ResendMemberInvitationCommandHandler.InvitationNotSent)
+            if (moved.ErrorCode == MemberErrors.InvitationNotSent)
             {
                 invitationSent = false;
             }
@@ -166,7 +164,7 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
         var member = await _unitOfWork.Members.GetByKeyAsync(profile.Data.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<MemberDto>(ResultType.InternalServerError);
+            return ServiceResult<MemberDto>.Failure(ResultType.InternalServerError, MemberErrors.MemberNotSaved, "The saved member could not be read back.");
         }
 
         if (!profile.Data.IsCreated
@@ -191,9 +189,10 @@ public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, S
     }
 
     private static ServiceResult<MemberDto> Propagate<T>(ServiceResult<T> step) =>
-        step.ErrorCode is null
-            ? new ServiceResult<MemberDto>(step.Type)
-            : ServiceResult<MemberDto>.Failure(step.Type, step.ErrorCode, step.ErrorMessage!);
+        ServiceResult<MemberDto>.Failure(
+            step.Type,
+            step.ErrorCode ?? MemberErrors.MemberNotSaved,
+            step.ErrorMessage ?? "The member could not be saved.");
 
     private Task PublishProfileWentStaleAsync(
         MemberEntity member,

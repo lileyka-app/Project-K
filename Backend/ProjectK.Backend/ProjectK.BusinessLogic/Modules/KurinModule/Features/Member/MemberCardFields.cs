@@ -12,8 +12,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 /// </summary>
 public static class MemberCardFields
 {
-    public const string ErrorCode = "CardFieldRequired";
-
     private const int MaxValueLength = 200;
 
     /// <summary>The member's values of the край's own fields once this write lands.</summary>

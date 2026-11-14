@@ -33,7 +33,7 @@ public sealed class GetFormerStandingQueryHandler
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<IReadOnlyList<FormerMemberStandingDto>>(ResultType.Forbidden);
+            return ServiceResult<IReadOnlyList<FormerMemberStandingDto>>.Failure(ResultType.Forbidden, MembershipErrors.OtherKurin, "A kurin reads and answers only its own requests.");
         }
 
         var former = await _unitOfWork.Memberships.GetFormerInKurinAsync(request.KurinKey, cancellationToken);

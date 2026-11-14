@@ -56,19 +56,19 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         // answers as missing.
         if (award is null || award.MemberKey != request.MemberKey)
         {
-            return new ServiceResult<MemberAwardDto>(ResultType.NotFound);
+            return ServiceResult<MemberAwardDto>.Failure(ResultType.NotFound, MemberErrors.AwardNotFound, "No such award on this member.");
         }
 
         var fromStatus = award.Status;
         // A senior відзначення has no level and nobody confirms it: it stands as recorded.
         if (fromStatus != BadgeProgressStatus.Submitted || award.Level is not { } awardLevel)
         {
-            return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
+            return ServiceResult<MemberAwardDto>.Failure(ResultType.Conflict, MemberErrors.AwardNotSubmitted, "Only a submitted youth award is reviewed.");
         }
 
         if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, award.MemberKey, cancellationToken: cancellationToken, capability: KurinCapabilities.ConfirmAward(awardLevel)) is { IsAllowed: false } senior)
         {
-            return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
+            return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, MemberErrors.SeniorYouthRecord, senior.Reason);
         }
 
         // The permission at the endpoint is shared by every level; which levels this person may
@@ -79,7 +79,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         {
             return ServiceResult<MemberAwardDto>.Failure(
                 ResultType.Forbidden,
-                "AwardLevelNotAllowed",
+                MemberErrors.AwardLevelNotAllowed,
                 "The kurin's policy does not let you confirm an award of this level.");
         }
 

@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.Common.Phones;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
@@ -263,7 +264,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var saved = await _handler.Handle(cmd, CancellationToken.None);
 
         refused.Type.Should().Be(ResultType.BadRequest);
-        refused.ErrorCode.Should().Be(MemberCardFields.ErrorCode);
+        refused.ErrorCode.Should().Be(MemberErrors.CardFieldRequired);
         saved.Type.Should().Be(ResultType.Success);
         created!.CardExtras.Should().Be("""{"visaType":"D"}""");
     }
@@ -348,7 +349,7 @@ public class UpsertMemberProfileCommandHandlerTests
         }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
-        result.ErrorCode.Should().Be(UpsertMemberProfileCommandHandler.SeniorYouthRecord);
+        result.ErrorCode.Should().Be(MemberErrors.SeniorYouthRecord);
         existing.PlastLevelHistory.Select(entry => entry.PlastLevel).Should().Equal(PlastLevel.Starshoplastun);
         existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
         _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -896,7 +897,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be(UpsertMemberProfileCommandHandler.EmailRequired);
+        result.ErrorCode.Should().Be(MemberErrors.EmailRequired);
         existing.Email.Should().Be("old@example.com");
     }
 }

@@ -5,10 +5,6 @@ using Moq;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -386,7 +382,7 @@ public class MemberControllerTests
     public async Task Delete_ShouldReturnOk_WhenSuccess()
     {
         var memberKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>(ResultType.Success);
+        var serviceResult = new ServiceResult<Unit>(ResultType.Success, Unit.Value);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))
@@ -401,7 +397,7 @@ public class MemberControllerTests
     public async Task Delete_ShouldReturnInternalServerError_WhenUnexpected()
     {
         var memberKey = Guid.NewGuid();
-        var serviceResult = new ServiceResult<object>((ResultType)999);
+        var serviceResult = new ServiceResult<Unit>((ResultType)999);
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DeleteMemberCommand>(), It.IsAny<CancellationToken>()))

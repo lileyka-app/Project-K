@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

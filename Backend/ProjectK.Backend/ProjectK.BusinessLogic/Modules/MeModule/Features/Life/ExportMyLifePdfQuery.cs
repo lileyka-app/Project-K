@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using System.Globalization;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
@@ -64,13 +65,16 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return new ServiceResult<LifeStoryPdf>(ResultType.Forbidden);
+            return ServiceResult<LifeStoryPdf>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var dossier = await _sender.Send(new GetMemberDossierQuery(memberKey, Folders), cancellationToken);
         if (dossier.Type != ResultType.Success || dossier.Data is not { } box)
         {
-            return new ServiceResult<LifeStoryPdf>(dossier.Type == ResultType.Success ? ResultType.NotFound : dossier.Type);
+            return ServiceResult<LifeStoryPdf>.Failure(
+                dossier.Type == ResultType.Success ? ResultType.NotFound : dossier.Type,
+                dossier.ErrorCode ?? MemberErrors.MemberNotFound,
+                dossier.ErrorMessage ?? "Your record could not be read.");
         }
 
         var memberships = box.Memberships ?? [];

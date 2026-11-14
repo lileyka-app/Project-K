@@ -35,14 +35,14 @@ public sealed class GetFormerMembersQueryHandler
         if (request.KurinKey == Guid.Empty)
         {
             return ServiceResult<IReadOnlyCollection<FormerMember>>.Failure(
-                ResultType.BadRequest, "KurinKeyRequired", "A kurin is required.");
+                ResultType.BadRequest, MembershipErrors.KurinKeyRequired, "A kurin is required.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
             return ServiceResult<IReadOnlyCollection<FormerMember>>.Failure(
-                ResultType.NotFound, "KurinNotFound", "No such kurin.");
+                ResultType.NotFound, MembershipErrors.KurinNotFound, "No such kurin.");
         }
 
         var former = await _unitOfWork.Memberships.GetFormerInKurinAsync(request.KurinKey, cancellationToken);

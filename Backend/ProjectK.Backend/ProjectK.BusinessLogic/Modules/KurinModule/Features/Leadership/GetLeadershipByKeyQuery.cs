@@ -31,7 +31,7 @@ public class GetLeadershipByKeyQueryHandler : IRequestHandler<GetLeadershipByKey
         var leadership = await _unitOfWork.Leaderships.GetByKeyAsync(request.LeadershipKey, cancellationToken);
         if (leadership == null)
         {
-            return new ServiceResult<LeadershipDto>(ResultType.NotFound);
+            return ServiceResult<LeadershipDto>.Failure(ResultType.NotFound, LeadershipErrors.LeadershipNotFound, "No such leadership.");
         }
         var response = leadership.ToDto(_links);
         return new ServiceResult<LeadershipDto>(ResultType.Success, response);

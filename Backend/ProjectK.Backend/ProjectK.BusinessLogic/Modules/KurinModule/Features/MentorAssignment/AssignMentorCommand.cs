@@ -34,13 +34,13 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
         var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey, cancellationToken);
         if (group == null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.NotFound, "GroupNotFound", "Group not found.");
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, MemberErrors.GroupNotFound, "Group not found.");
         }
 
         var mentorMember = await _members.FindByAccountAsync(request.MentorUserKey, cancellationToken);
         if (mentorMember == null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.NotFound, "MentorNotFound", "Mentor member profile not found.");
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, MemberErrors.MentorNotFound, "Mentor member profile not found.");
         }
 
         // A person can belong to several kurins, and the summary above names only the newest one.
@@ -51,7 +51,7 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
             cancellationToken);
         if (belongsHere.Count == 0)
         {
-            return ServiceResult<Guid>.Failure(ResultType.Forbidden, "MentorFromAnotherKurin", "Mentor must belong to the same Kurin as the Group.");
+            return ServiceResult<Guid>.Failure(ResultType.Forbidden, MemberErrors.MentorFromAnotherKurin, "Mentor must belong to the same Kurin as the Group.");
         }
 
         var existingAssignment = await _unitOfWork.MentorAssignments.GetSpecificAssignmentAsync(request.MentorUserKey, request.GroupKey, cancellationToken);
@@ -61,7 +61,7 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
             // client never read it; the message is what the caller needs.
             return ServiceResult<Guid>.Failure(
                 ResultType.Conflict,
-                "MentorAlreadyAssigned",
+                MemberErrors.MentorAlreadyAssigned,
                 "Mentor is already assigned to this group.");
         }
 

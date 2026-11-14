@@ -46,18 +46,18 @@ public class ProvisionMemberAccountCommandHandler
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<MemberInvitation>(ResultType.NotFound);
+            return ServiceResult<MemberInvitation>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         if (member.UserKey.HasValue)
         {
-            return new ServiceResult<MemberInvitation>(ResultType.Conflict);
+            return ServiceResult<MemberInvitation>.Failure(ResultType.Conflict, MemberErrors.AccountAlreadyLinked, "This member already has an account.");
         }
 
         var availability = await _accountProvisioning.CheckAvailabilityAsync(member.Email, cancellationToken);
         if (availability != AccountAvailability.Available)
         {
-            return new ServiceResult<MemberInvitation>(ResultType.Conflict);
+            return ServiceResult<MemberInvitation>.Failure(ResultType.Conflict, MemberErrors.AccountEmailTaken, "This email is already used by another account or registration.");
         }
 
         var provisioned = await _accountProvisioning.ProvisionAsync(
@@ -74,7 +74,7 @@ public class ProvisionMemberAccountCommandHandler
         {
             return ServiceResult<MemberInvitation>.Failure(
                 provisioned.Type,
-                provisioned.ErrorCode ?? "UserNotCreated",
+                provisioned.ErrorCode ?? MemberErrors.UserNotCreated,
                 provisioned.ErrorMessage ?? "Failed to create user account for member.");
         }
 
@@ -87,7 +87,7 @@ public class ProvisionMemberAccountCommandHandler
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<MemberInvitation>(ResultType.InternalServerError);
+            return ServiceResult<MemberInvitation>.Failure(ResultType.InternalServerError, MemberErrors.MemberNotSaved, "The account link could not be saved.");
         }
 
         // Everything above is already committed, so a send that throws must not turn into a

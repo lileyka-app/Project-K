@@ -78,7 +78,7 @@ public sealed class CreateMembershipRequestCommandHandler
     {
         if (_currentUser.KurinKey != request.ToKurinKey)
         {
-            return new ServiceResult<MembershipRequestSentDto>(ResultType.Forbidden);
+            return ServiceResult<MembershipRequestSentDto>.Failure(ResultType.Forbidden, MembershipErrors.OtherKurin, "A kurin reads and answers only its own requests.");
         }
 
         var memberKey = await ResolveAsync(request, cancellationToken);
@@ -86,21 +86,21 @@ public sealed class CreateMembershipRequestCommandHandler
         if (person is null)
         {
             return ServiceResult<MembershipRequestSentDto>.Failure(
-                ResultType.NotFound, "NoSuchCode", "No one has that code.");
+                ResultType.NotFound, MembershipErrors.NoSuchCode, "No one has that code.");
         }
 
         var standing = await _unitOfWork.Memberships.GetActiveForMemberAsync(person.MemberKey, cancellationToken);
         if (standing.Any(m => m.KurinKey == request.ToKurinKey))
         {
             return ServiceResult<MembershipRequestSentDto>.Failure(
-                ResultType.Conflict, "AlreadyAMember", "They already belong to this kurin.");
+                ResultType.Conflict, MembershipErrors.AlreadyAMember, "They already belong to this kurin.");
         }
 
         var route = await _routing.ResolveAsync(person.MemberKey, request.ToKurinKey, cancellationToken);
         if (route.ToSenior && request.MembershipKind != MembershipKind.Youth)
         {
             return ServiceResult<MembershipRequestSentDto>.Failure(
-                ResultType.BadRequest, "SeniorKurinTakesMembers", "A senior kurin takes people in only as members.");
+                ResultType.BadRequest, MembershipErrors.SeniorKurinTakesMembers, "A senior kurin takes people in only as members.");
         }
 
         if (route.JoinsAtOnce)
@@ -119,7 +119,7 @@ public sealed class CreateMembershipRequestCommandHandler
         {
             return ServiceResult<MembershipRequestSentDto>.Failure(
                 ResultType.BadRequest,
-                "TransferAcrossLines",
+                MembershipErrors.TransferAcrossLines,
                 "Youth and senior kurins do not take people from each other; ask to take them in alongside.");
         }
 
@@ -131,7 +131,7 @@ public sealed class CreateMembershipRequestCommandHandler
                 if (!route.AskableKurinKeys.Contains(chosen))
                 {
                     return ServiceResult<MembershipRequestSentDto>.Failure(
-                        ResultType.BadRequest, "NotInThatKurin", "That kurin does not answer for them.");
+                        ResultType.BadRequest, MembershipErrors.NotInThatKurin, "That kurin does not answer for them.");
                 }
 
                 fromKurinKey = chosen;
@@ -143,7 +143,7 @@ public sealed class CreateMembershipRequestCommandHandler
             else
             {
                 return ServiceResult<MembershipRequestSentDto>.Failure(
-                    ResultType.Conflict, "ChooseKurin", "They stand in several kurins; say which one to ask.");
+                    ResultType.Conflict, MembershipErrors.ChooseKurin, "They stand in several kurins; say which one to ask.");
             }
         }
 
@@ -152,7 +152,7 @@ public sealed class CreateMembershipRequestCommandHandler
         if (pending.Any(r => r.IsOpen(now)))
         {
             return ServiceResult<MembershipRequestSentDto>.Failure(
-                ResultType.Conflict, "RequestPending", "This kurin already waits for an answer about them.");
+                ResultType.Conflict, MembershipErrors.RequestPending, "This kurin already waits for an answer about them.");
         }
 
         var created = new RequestEntity

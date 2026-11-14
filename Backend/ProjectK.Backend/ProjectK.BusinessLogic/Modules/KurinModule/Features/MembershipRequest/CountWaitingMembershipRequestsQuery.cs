@@ -30,7 +30,7 @@ public sealed class CountWaitingMembershipRequestsQueryHandler
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<int>(ResultType.Forbidden);
+            return ServiceResult<int>.Failure(ResultType.Forbidden, MembershipErrors.OtherKurin, "A kurin reads and answers only its own requests.");
         }
 
         var waiting = await _unitOfWork.MembershipRequests.CountOpenToAnswerAsync(

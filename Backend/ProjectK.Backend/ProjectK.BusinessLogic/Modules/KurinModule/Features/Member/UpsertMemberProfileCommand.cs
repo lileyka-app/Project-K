@@ -73,12 +73,6 @@ public class UpsertMemberProfileCommandHandler
     private readonly IKurinAudit _audit;
     private readonly IResourceAccessService _access;
 
-    /// <summary>The error a write without an email is refused with.</summary>
-    public const string EmailRequired = "EmailRequired";
-
-    /// <summary>The error a change to a senior's ступені is refused with, by whoever may not make it.</summary>
-    public const string SeniorYouthRecord = "SeniorYouthRecord";
-
     public UpsertMemberProfileCommandHandler(
         IMemberUnitOfWork unitOfWork,
         IUnitOfWork kurinData,
@@ -138,7 +132,7 @@ public class UpsertMemberProfileCommandHandler
 
         if (string.IsNullOrWhiteSpace(request.Email))
         {
-            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, EmailRequired, "An email is required.");
+            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberErrors.EmailRequired, "An email is required.");
         }
 
         GroupEntity? group = null;
@@ -149,7 +143,7 @@ public class UpsertMemberProfileCommandHandler
 
         if (group == null && (!request.KurinKey.HasValue || request.KurinKey.Value == Guid.Empty))
         {
-            return new ServiceResult<MemberProfileWriteResult>(ResultType.NotFound);
+            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.NotFound, MemberErrors.KurinNotFound, "There is no group or kurin to place the member in.");
         }
 
         // Where they are to stand once this is written.
@@ -162,7 +156,7 @@ public class UpsertMemberProfileCommandHandler
             var card = MemberCardFields.Apply(profile.CardFields, request, existing, hiddenFromWriter);
             if (card.Error is not null)
             {
-                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberCardFields.ErrorCode, card.Error);
+                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, MemberErrors.CardFieldRequired, card.Error);
             }
 
             cardExtras = card.CardExtras;
@@ -241,7 +235,7 @@ public class UpsertMemberProfileCommandHandler
                 && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory)
                 && await _access.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, existing.MemberKey, ownerMayChange: true, cancellationToken) is { IsAllowed: false } senior)
             {
-                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.Forbidden, SeniorYouthRecord, senior.Reason);
+                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.Forbidden, MemberErrors.SeniorYouthRecord, senior.Reason);
             }
 
             var shouldMarkProfileStale = wasProfileVerifiedCurrent
@@ -260,7 +254,7 @@ public class UpsertMemberProfileCommandHandler
                 {
                     return ServiceResult<MemberProfileWriteResult>.Failure(
                         ResultType.BadRequest,
-                        "ContactInfoLinked",
+                        MemberErrors.ContactInfoLinked,
                         "Cannot change email or phone number for a member linked to an active user account. The user must update this via their account settings.");
                 }
 
@@ -279,7 +273,7 @@ public class UpsertMemberProfileCommandHandler
                     {
                         return ServiceResult<MemberProfileWriteResult>.Failure(
                             ResultType.Conflict,
-                            "EmailTaken",
+                            MemberErrors.EmailTaken,
                             "This email is already used by another account or registration.");
                     }
                 }
@@ -327,7 +321,7 @@ public class UpsertMemberProfileCommandHandler
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<MemberProfileWriteResult>(ResultType.InternalServerError);
+            return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.InternalServerError, MemberErrors.MemberNotSaved, "The member could not be saved.");
         }
 
         return new ServiceResult<MemberProfileWriteResult>(

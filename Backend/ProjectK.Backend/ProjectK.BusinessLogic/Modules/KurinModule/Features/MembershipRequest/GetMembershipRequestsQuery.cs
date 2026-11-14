@@ -43,7 +43,7 @@ public sealed class GetMembershipRequestsQueryHandler
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<MembershipRequestsDto>(ResultType.Forbidden);
+            return ServiceResult<MembershipRequestsDto>.Failure(ResultType.Forbidden, MembershipErrors.OtherKurin, "A kurin reads and answers only its own requests.");
         }
 
         var requests = await _unitOfWork.MembershipRequests.GetForKurinAsync(request.KurinKey, cancellationToken);

@@ -67,7 +67,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<MemberAwardDto>(ResultType.NotFound);
+            return ServiceResult<MemberAwardDto>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         // Where the award happened: the kurin the провід is acting in. Reaching this person at
@@ -92,19 +92,19 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             return inSeniorKurin || (ownsCard && await IsSeniorAsync(member, cancellationToken))
                 ? await UpsertSeniorAsync(request, member, actingKurinKey, existingAward, cancellationToken)
                 : ServiceResult<MemberAwardDto>.Failure(
-                    ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "A senior відзначення is recorded in a УСП or УПС kurin, or by a senior person on their own card.");
+                    ResultType.BadRequest, MemberErrors.SeniorAwardOutsideSeniorKurin, "A senior відзначення is recorded in a УСП or УПС kurin, or by a senior person on their own card.");
         }
 
         if (inSeniorKurin || existingAward?.CatalogId is not null)
         {
             return ServiceResult<MemberAwardDto>.Failure(
-                ResultType.BadRequest, "YouthAwardInSeniorKurin", "An УПЮ відзначення is recorded in an УПЮ kurin.");
+                ResultType.BadRequest, MemberErrors.YouthAwardInSeniorKurin, "An УПЮ відзначення is recorded in an УПЮ kurin.");
         }
 
         var action = existingAward is null ? ResourceAction.Create : ResourceAction.Update;
         if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, action, request.MemberKey, cancellationToken: cancellationToken) is { IsAllowed: false } senior)
         {
-            return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
+            return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, MemberErrors.SeniorYouthRecord, senior.Reason);
         }
 
         if (existingAward != null && existingAward.MemberKey == request.MemberKey)
@@ -116,7 +116,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             {
                 return ServiceResult<MemberAwardDto>.Failure(
                     ResultType.Forbidden,
-                    "ConfirmedAwardEditNotAllowed",
+                    MemberErrors.ConfirmedAwardEditNotAllowed,
                     "Only those the kurin lets remove awards may change a confirmed award.");
             }
 
@@ -198,7 +198,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         if (item is not { Kind: HonourKind.Award })
         {
             return ServiceResult<MemberAwardDto>.Failure(
-                ResultType.BadRequest, "UnknownSeniorAward", "The catalogue has no such senior відзначення.");
+                ResultType.BadRequest, MemberErrors.UnknownSeniorAward, "The catalogue has no such senior відзначення.");
         }
 
         var now = DateTime.UtcNow;
@@ -208,7 +208,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             if (existingAward.CatalogId is null)
             {
                 return ServiceResult<MemberAwardDto>.Failure(
-                    ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "An УПЮ відзначення stays one.");
+                    ResultType.BadRequest, MemberErrors.SeniorAwardOutsideSeniorKurin, "An УПЮ відзначення stays one.");
             }
 
             var owner = member.UserKey is { } account && account == userKey;
@@ -216,7 +216,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             {
                 return ServiceResult<MemberAwardDto>.Failure(
                     ResultType.Forbidden,
-                    "ConfirmedAwardEditNotAllowed",
+                    MemberErrors.ConfirmedAwardEditNotAllowed,
                     "Only the person or those the kurin lets remove awards may change a senior відзначення.");
             }
 

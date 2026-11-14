@@ -60,7 +60,7 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
         // answers as missing.
         if (award is null || award.MemberKey != request.MemberKey)
         {
-            return new ServiceResult<Unit>(ResultType.NotFound);
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MemberErrors.AwardNotFound, "No such award on this member.");
         }
 
         if (award.CatalogId is not null
@@ -68,13 +68,13 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
             && await _members.FindAccountKeyAsync(award.MemberKey, cancellationToken) != _currentUser.UserId)
         {
             return ServiceResult<Unit>.Failure(
-                ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "A senior відзначення is removed in a УСП or УПС kurin.");
+                ResultType.BadRequest, MemberErrors.SeniorAwardOutsideSeniorKurin, "A senior відзначення is removed in a УСП or УПС kurin.");
         }
 
         if (award.CatalogId is null
             && await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Delete, award.MemberKey, cancellationToken: cancellationToken, capability: KurinCapability.RemoveAward) is { IsAllowed: false } senior)
         {
-            return ServiceResult<Unit>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, MemberErrors.SeniorYouthRecord, senior.Reason);
         }
 
         if (!await MayWithdrawAsync(award, cancellationToken))
@@ -85,7 +85,7 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
             {
                 return ServiceResult<Unit>.Failure(
                     ResultType.Forbidden,
-                    "AwardRemovalNotAllowed",
+                    MemberErrors.AwardRemovalNotAllowed,
                     "Only those the kurin lets remove awards may remove a confirmed award or someone else's submission.");
             }
         }

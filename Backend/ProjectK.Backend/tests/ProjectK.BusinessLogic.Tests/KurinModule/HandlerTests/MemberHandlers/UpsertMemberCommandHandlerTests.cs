@@ -1,10 +1,9 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -169,7 +168,7 @@ public class UpsertMemberHandlerTests
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<MoveMemberAccountEmailCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Guid>.Failure(
-                ResultType.InternalServerError, ResendMemberInvitationCommandHandler.InvitationNotSent, "not sent"));
+                ResultType.InternalServerError, MemberErrors.InvitationNotSent, "not sent"));
 
         var result = await _handler.Handle(
             new UpsertMemberCommand { MemberKey = member.MemberKey, KurinKey = Guid.NewGuid(), Email = "fixed@example.com" },

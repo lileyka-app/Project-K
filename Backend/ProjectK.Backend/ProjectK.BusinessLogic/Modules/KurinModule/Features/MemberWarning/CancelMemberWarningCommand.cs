@@ -48,23 +48,23 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
     {
         if (!_currentUserContext.UserId.HasValue)
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.Unauthorized);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.Unauthorized, MemberErrors.Unauthorized, "The access token carries no readable user identity.");
         }
 
         var warning = await _unitOfWork.MemberWarnings.GetByKeyAsync(request.WarningKey, cancellationToken);
         if (warning is null || warning.MemberKey != request.MemberKey)
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.NotFound);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.NotFound, MemberErrors.WarningNotFound, "No such warning on this member.");
         }
 
         if (warning.RevokedAtUtc.HasValue || warning.ExpiresAtUtc <= _timeProvider.GetUtcNow().UtcDateTime)
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.Conflict);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.Conflict, MemberErrors.WarningNotActive, "The warning is already cancelled or has expired.");
         }
 
         if (!await MayCancelAsync(warning, _currentUserContext.UserId.Value, cancellationToken))
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.Forbidden);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.Forbidden, MemberErrors.WarningCancelNotAllowed, "You may not cancel this warning.");
         }
 
         warning.RevokedAtUtc = DateTime.UtcNow;
@@ -87,7 +87,7 @@ public sealed class CancelMemberWarningCommandHandler : IRequestHandler<CancelMe
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.InternalServerError);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.InternalServerError, MemberErrors.MemberNotSaved, "The cancellation could not be saved.");
         }
 
         var response = warning.ToDto();

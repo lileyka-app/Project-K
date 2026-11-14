@@ -17,7 +17,6 @@ using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

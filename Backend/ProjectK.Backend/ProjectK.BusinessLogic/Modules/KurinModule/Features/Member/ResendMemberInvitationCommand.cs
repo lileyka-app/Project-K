@@ -19,9 +19,6 @@ public sealed record ResendMemberInvitationCommand(Guid MemberKey) : IRequest<Se
 public class ResendMemberInvitationCommandHandler
     : IRequestHandler<ResendMemberInvitationCommand, ServiceResult<Guid>>
 {
-    /// <summary>The error code of a send that failed, so a caller can tell it from a refusal.</summary>
-    public const string InvitationNotSent = "InvitationNotSent";
-
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IAccountProvisioningService _accounts;
     private readonly IEmailService _emailService;
@@ -46,12 +43,12 @@ public class ResendMemberInvitationCommandHandler
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<Guid>(ResultType.NotFound);
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         if (!member.UserKey.HasValue)
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, "NoAccount", "This member has no account to invite to.");
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, MemberErrors.NoAccount, "This member has no account to invite to.");
         }
 
         var reissued = await _accounts.ReissueInvitationAsync(member.UserKey.Value, member.Email, cancellationToken);
@@ -59,7 +56,7 @@ public class ResendMemberInvitationCommandHandler
         {
             return ServiceResult<Guid>.Failure(
                 reissued.Type,
-                reissued.ErrorCode ?? "InvitationNotIssued",
+                reissued.ErrorCode ?? MemberErrors.InvitationNotIssued,
                 reissued.ErrorMessage ?? "Could not issue a new invitation.");
         }
 
@@ -74,14 +71,14 @@ public class ResendMemberInvitationCommandHandler
             _logger.LogError(exception, "A replacement invitation for a member could not be sent; no invitation was changed.");
             return ServiceResult<Guid>.Failure(
                 ResultType.InternalServerError,
-                InvitationNotSent,
+                MemberErrors.InvitationNotSent,
                 "The invitation letter could not be sent.");
         }
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<Guid>(ResultType.InternalServerError);
+            return ServiceResult<Guid>.Failure(ResultType.InternalServerError, MemberErrors.MemberNotSaved, "The new invitation could not be saved.");
         }
 
         return new ServiceResult<Guid>(ResultType.Success, reissued.Data.UserKey);

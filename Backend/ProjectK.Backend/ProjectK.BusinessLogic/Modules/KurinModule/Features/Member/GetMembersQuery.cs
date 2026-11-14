@@ -4,7 +4,6 @@ using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -53,7 +52,7 @@ public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceRe
         }
         else
         {
-            return new ServiceResult<IEnumerable<MemberDto>>(ResultType.BadRequest);
+            return ServiceResult<IEnumerable<MemberDto>>.Failure(ResultType.BadRequest, MemberErrors.RosterScopeRequired, "A roster is read for a group or for a kurin, not both.");
         }
 
         // Read whole and masked here, row by row: the registry export reads through this query too,

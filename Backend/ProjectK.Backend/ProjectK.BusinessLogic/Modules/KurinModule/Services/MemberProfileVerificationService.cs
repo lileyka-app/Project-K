@@ -111,12 +111,12 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     {
         if (!_currentUserContext.UserId.HasValue)
         {
-            return (new ServiceResult<MemberDto>(ResultType.Unauthorized), null);
+            return (ServiceResult<MemberDto>.Failure(ResultType.Unauthorized, MemberErrors.Unauthorized, "The access token carries no readable user identity."), null);
         }
 
         if (member is null)
         {
-            return (new ServiceResult<MemberDto>(ResultType.NotFound), null);
+            return (ServiceResult<MemberDto>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member."), null);
         }
 
         // Whether profiles are checked at all is the asking kurin's own setting, and it is that
@@ -130,7 +130,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         {
             return (ServiceResult<MemberDto>.Failure(
                 ResultType.BadRequest,
-                "MemberBelongsNowhere",
+                MemberErrors.MemberBelongsNowhere,
                 "This person does not currently belong to a kurin."), null);
         }
 
@@ -139,13 +139,13 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         {
             return (ServiceResult<MemberDto>.Failure(
                 ResultType.BadRequest,
-                "ProfileVerificationDisabled",
+                MemberErrors.ProfileVerificationDisabled,
                 "Profile verification is disabled for this kurin."), null);
         }
 
         if (member.UserKey.HasValue && member.UserKey.Value == _currentUserContext.UserId.Value)
         {
-            return (new ServiceResult<MemberDto>(ResultType.Forbidden), null);
+            return (ServiceResult<MemberDto>.Failure(ResultType.Forbidden, MemberErrors.ProfileVerificationNotAllowed, "Nobody verifies their own profile."), null);
         }
 
         if (await CanVerifyAsync(here, cancellationToken))
@@ -153,7 +153,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
             return (null, here.GroupKey);
         }
 
-        return (new ServiceResult<MemberDto>(ResultType.Forbidden), null);
+        return (ServiceResult<MemberDto>.Failure(ResultType.Forbidden, MemberErrors.ProfileVerificationNotAllowed, "You may not verify this member's profile."), null);
     }
 
     private async Task<bool> CanVerifyAsync(MembershipEntity here, CancellationToken cancellationToken)
@@ -191,7 +191,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<MemberDto>(ResultType.InternalServerError);
+            return ServiceResult<MemberDto>.Failure(ResultType.InternalServerError, MemberErrors.MemberNotSaved, "The verification could not be saved.");
         }
 
         var mask = await _fieldAccess.ForViewerAsync(cancellationToken);

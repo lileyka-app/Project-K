@@ -7,7 +7,7 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 
-public class DeleteMemberCommand : IRequest<ServiceResult<object>>
+public class DeleteMemberCommand : IRequest<ServiceResult<Unit>>
 {
     public Guid MemberKey { get; set; }
     public DeleteMemberCommand(Guid memberKey)
@@ -16,7 +16,7 @@ public class DeleteMemberCommand : IRequest<ServiceResult<object>>
     }
 }
 
-public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, ServiceResult<object>>
+public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -28,21 +28,21 @@ public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, S
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeleteMemberCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteMemberCommand request, CancellationToken cancellationToken)
     {
         if (request.MemberKey == Guid.Empty)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.BadRequest,
-                "MemberKeyRequired",
+                MemberErrors.MemberKeyRequired,
                 "MemberKey cannot be empty.");
         }
         var exists = await _members.ExistsAsync(request.MemberKey, cancellationToken);
         if (!exists)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.NotFound,
-                "MemberNotFound",
+                MemberErrors.MemberNotFound,
                 $"Member with key {request.MemberKey} not found.");
         }
         // Recorded while the person can still be named and placed; their card goes with them.
@@ -62,11 +62,11 @@ public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, S
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.InternalServerError,
-                "MemberDeleteFailed",
+                MemberErrors.MemberDeleteFailed,
                 "Failed to delete Member due to internal error.");
         }
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

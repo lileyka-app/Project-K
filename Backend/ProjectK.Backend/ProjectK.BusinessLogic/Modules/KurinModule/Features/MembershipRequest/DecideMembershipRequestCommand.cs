@@ -18,9 +18,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 /// kurin nothing for quarters already behind them.
 /// </summary>
 public sealed record DecideMembershipRequestCommand(Guid KurinKey, Guid MembershipRequestKey, bool Approve)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
-public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<DecideMembershipRequestCommand, ServiceResult<object>>
+public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<DecideMembershipRequestCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -48,29 +48,29 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(DecideMembershipRequestCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DecideMembershipRequestCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.KurinKey != request.KurinKey)
         {
-            return new ServiceResult<object>(ResultType.Forbidden);
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, MembershipErrors.OtherKurin, "A kurin reads and answers only its own requests.");
         }
 
         var asked = await _unitOfWork.MembershipRequests.GetAsync(request.MembershipRequestKey, cancellationToken);
         if (asked is null || asked.FromKurinKey != request.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "RequestNotFound", "No such request to this kurin.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MembershipErrors.RequestNotFound, "No such request to this kurin.");
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
         if (!asked.IsOpen(now))
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "RequestClosed", "The request was already answered, withdrawn or has lapsed.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, MembershipErrors.RequestClosed, "The request was already answered, withdrawn or has lapsed.");
         }
 
         var person = await _members.FindAsync(asked.MemberKey, cancellationToken);
         if (person is null)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "MemberNotFound", "No such member.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MembershipErrors.MemberNotFound, "No such member.");
         }
 
         if (request.Approve)
@@ -82,15 +82,15 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
             {
                 asked.Lapse(now);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
-                return ServiceResult<object>.Failure(ResultType.Conflict, "MemberNotHere", "They no longer stand in this kurin.");
+                return ServiceResult<Unit>.Failure(ResultType.Conflict, MembershipErrors.MemberNotHere, "They no longer stand in this kurin.");
             }
 
             if (asked.Kind == MembershipRequestKind.Transfer
                 && await _moves.OwedToLeaveAsync(asked.MemberKey, request.KurinKey, cancellationToken) > 0)
             {
-                return ServiceResult<object>.Failure(
+                return ServiceResult<Unit>.Failure(
                     ResultType.Conflict,
-                    "MemberOwesDues",
+                    MembershipErrors.MemberOwesDues,
                     "They owe this kurin dues; «перевести» waits until they are paid in full.");
             }
 
@@ -124,7 +124,7 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
         }
         catch (StaleRowException)
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "RequestClosed", "The request was already answered, withdrawn or has lapsed.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, MembershipErrors.RequestClosed, "The request was already answered, withdrawn or has lapsed.");
         }
 
         if (request.Approve && person.UserKey is { } userKey)
@@ -132,6 +132,6 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
             _accessChanges.MarkUser(userKey);
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

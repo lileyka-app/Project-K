@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using FluentValidation;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
@@ -29,7 +30,7 @@ public sealed class GetMyLifeEntriesQueryHandler : IRequestHandler<GetMyLifeEntr
     {
         if (await _owner.MemberKeyAsync(cancellationToken) is not { } memberKey)
         {
-            return new ServiceResult<IReadOnlyList<MemberLifeEntryDto>>(ResultType.Forbidden);
+            return ServiceResult<IReadOnlyList<MemberLifeEntryDto>>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var entries = await _unitOfWork.MemberLifeEntries.GetForMemberAsync(memberKey, cancellationToken);

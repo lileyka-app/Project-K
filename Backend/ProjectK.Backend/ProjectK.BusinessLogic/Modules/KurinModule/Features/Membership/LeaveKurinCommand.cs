@@ -14,9 +14,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 /// there, and the levels, вмілості, awards and перестороги they earned there stay theirs and go
 /// on saying where they came from.
 /// </summary>
-public sealed record LeaveKurinCommand(Guid MemberKey, Guid KurinKey) : IRequest<ServiceResult<object>>;
+public sealed record LeaveKurinCommand(Guid MemberKey, Guid KurinKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand, ServiceResult<object>>
+public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAccessChangeSignal _accessChanges;
@@ -33,13 +33,13 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
         _moves = moves;
     }
 
-    public async Task<ServiceResult<object>> Handle(LeaveKurinCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(LeaveKurinCommand request, CancellationToken cancellationToken)
     {
         if (request.MemberKey == Guid.Empty || request.KurinKey == Guid.Empty)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.BadRequest,
-                "MembershipKeysRequired",
+                MembershipErrors.MembershipKeysRequired,
                 "Both a member and a kurin are required.");
         }
 
@@ -48,21 +48,21 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
 
         if (membership is null)
         {
-            return ServiceResult<object>.Failure(
-                ResultType.NotFound, "NotAMember", "They do not currently belong to this kurin.");
+            return ServiceResult<Unit>.Failure(
+                ResultType.NotFound, MembershipErrors.NotAMember, "They do not currently belong to this kurin.");
         }
 
         if (membership.UserKey is { } holder && holder == _currentUser.UserId)
         {
-            return ServiceResult<object>.Failure(
-                ResultType.Forbidden, "OwnMembership", "Nobody takes themselves out of a kurin.");
+            return ServiceResult<Unit>.Failure(
+                ResultType.Forbidden, MembershipErrors.OwnMembership, "Nobody takes themselves out of a kurin.");
         }
 
         if (await _moves.OwedToLeaveAsync(request.MemberKey, request.KurinKey, cancellationToken) > 0)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.Conflict,
-                "MemberOwesDues",
+                MembershipErrors.MemberOwesDues,
                 "They owe the kurin dues; a person is released only once paid in full.");
         }
 
@@ -79,6 +79,6 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
             _accessChanges.MarkUser(userKey);
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

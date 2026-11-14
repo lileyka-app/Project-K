@@ -51,7 +51,7 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         {
             return ServiceResult<Guid>.Failure(
                 ResultType.BadRequest,
-                "MembershipKeysRequired",
+                MembershipErrors.MembershipKeysRequired,
                 "A kurin and either a member or a public code are required.");
         }
 
@@ -62,7 +62,7 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
             if (card is null)
             {
                 return ServiceResult<Guid>.Failure(
-                    ResultType.NotFound, "NoSuchCode", "No one has that code.");
+                    ResultType.NotFound, MembershipErrors.NoSuchCode, "No one has that code.");
             }
 
             memberKey = card.MemberKey;
@@ -72,14 +72,14 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         if (person is null)
         {
             return ServiceResult<Guid>.Failure(
-                ResultType.NotFound, "MemberNotFound", "No such member.");
+                ResultType.NotFound, MembershipErrors.MemberNotFound, "No such member.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
             return ServiceResult<Guid>.Failure(
-                ResultType.NotFound, "KurinNotFound", "No such kurin.");
+                ResultType.NotFound, MembershipErrors.KurinNotFound, "No such kurin.");
         }
 
         // A гурток of another kurin would place them somewhere their kurin does not reach.
@@ -91,7 +91,7 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
             if (group is null || group.KurinKey != request.KurinKey)
             {
                 return ServiceResult<Guid>.Failure(
-                    ResultType.BadRequest, "GroupNotInKurin", "That гурток does not belong to this kurin.");
+                    ResultType.BadRequest, MembershipErrors.GroupNotInKurin, "That гурток does not belong to this kurin.");
             }
         }
 
@@ -100,14 +100,14 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         if (already is not null)
         {
             return ServiceResult<Guid>.Failure(
-                ResultType.Conflict, "AlreadyAMember", "They already belong to this kurin.");
+                ResultType.Conflict, MembershipErrors.AlreadyAMember, "They already belong to this kurin.");
         }
 
         if (request.OnlyIfStandingNowhere
             && (await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken)).Count > 0)
         {
             return ServiceResult<Guid>.Failure(
-                ResultType.Conflict, "StandsInAnotherKurin", "They stand in another kurin; ask that kurin with a membership request.");
+                ResultType.Conflict, MembershipErrors.StandsInAnotherKurin, "They stand in another kurin; ask that kurin with a membership request.");
         }
 
         var membership = new MembershipEntity

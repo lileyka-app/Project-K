@@ -16,14 +16,6 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 public sealed record FindMemberByPublicIdQuery(Guid KurinKey, string PublicId)
     : IRequest<ServiceResult<MembershipCandidateDto>>;
 
-/// <summary>
-/// The card, whether this kurin already has them, and the kurins they stand in now. Those kurins are
-/// named only by number: the person handed over their code so this kurin could ask for them, and
-/// asking means asking a particular kurin — «перевести» from it, or «прийняти ще й до нас» alongside it.
-/// No contact details, and nothing about kurins they once left.
-/// </summary>
-public sealed record MembershipCandidateDto(MemberCard Member, bool AlreadyInThisKurin, IReadOnlyList<MembershipRequestKurinDto> CurrentKurins, MembershipAskOfferDto Offer);
-
 public sealed class FindMemberByPublicIdQueryHandler
     : IRequestHandler<FindMemberByPublicIdQuery, ServiceResult<MembershipCandidateDto>>
 {
@@ -45,7 +37,7 @@ public sealed class FindMemberByPublicIdQueryHandler
         if (string.IsNullOrWhiteSpace(request.PublicId))
         {
             return ServiceResult<MembershipCandidateDto>.Failure(
-                ResultType.BadRequest, "PublicIdRequired", "A public code is required.");
+                ResultType.BadRequest, MembershipErrors.PublicIdRequired, "A public code is required.");
         }
 
         var card = await _members.FindByPublicIdAsync(request.PublicId, cancellationToken);
@@ -54,7 +46,7 @@ public sealed class FindMemberByPublicIdQueryHandler
             // The same answer whether the code is malformed or simply nobody's — a lookup that
             // distinguished them would let someone map out which codes exist.
             return ServiceResult<MembershipCandidateDto>.Failure(
-                ResultType.NotFound, "NoSuchCode", "No one has that code.");
+                ResultType.NotFound, MembershipErrors.NoSuchCode, "No one has that code.");
         }
 
         var standing = await _kurinData.Memberships.GetActiveForMemberAsync(card.MemberKey, cancellationToken);

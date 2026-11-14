@@ -57,7 +57,7 @@ public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, S
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<MemberDto>(ResultType.NotFound);
+            return ServiceResult<MemberDto>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         var placement = await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);

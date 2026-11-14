@@ -59,7 +59,7 @@ public sealed class GetMemberDossierQueryHandler
         {
             return ServiceResult<MemberDossierDto>.Failure(
                 ResultType.BadRequest,
-                "MemberKeyRequired",
+                MemberErrors.MemberKeyRequired,
                 "MemberKey cannot be empty.");
         }
 
@@ -71,14 +71,14 @@ public sealed class GetMemberDossierQueryHandler
         {
             return ServiceResult<MemberDossierDto>.Failure(
                 ResultType.BadRequest,
-                "UnknownDossierFolder",
+                MemberErrors.UnknownDossierFolder,
                 $"No such folder: {string.Join(", ", unknown)}. Known folders: {string.Join(", ", MemberDossierFolders.All)}.");
         }
 
         var person = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (person is null)
         {
-            return new ServiceResult<MemberDossierDto>(ResultType.NotFound);
+            return ServiceResult<MemberDossierDto>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         // The person's own record already carries everything the member module keeps about them,

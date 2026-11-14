@@ -10,9 +10,9 @@ using ProjectK.Common.Models.Reports;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 
-public record RevokeMentorCommand(Guid MentorUserKey, Guid GroupKey) : IRequest<ServiceResult<bool>>;
+public record RevokeMentorCommand(Guid MentorUserKey, Guid GroupKey) : IRequest<ServiceResult<Unit>>;
 
-public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, ServiceResult<bool>>
+public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
@@ -34,18 +34,18 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
         _audit = audit;
     }
 
-    public async Task<ServiceResult<bool>> Handle(RevokeMentorCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(RevokeMentorCommand request, CancellationToken cancellationToken)
     {
         var existingAssignment = await _unitOfWork.MentorAssignments.GetSpecificAssignmentAsync(request.MentorUserKey, request.GroupKey, cancellationToken);
 
         if (existingAssignment == null)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, "MentorAssignmentNotFound", "Mentor assignment not found.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MemberErrors.MentorAssignmentNotFound, "Mentor assignment not found.");
         }
 
         if (existingAssignment.RevokedAtUtc != null)
         {
-            return new ServiceResult<bool>(ResultType.Success, true, "Assignment was already revoked.");
+            return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
         }
 
         existingAssignment.RevokedAtUtc = DateTime.UtcNow;
@@ -71,6 +71,6 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
         _cache.Invalidate(BackendCachePolicies.MentorScopeReads);
         _accessChanges.MarkUser(request.MentorUserKey);
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

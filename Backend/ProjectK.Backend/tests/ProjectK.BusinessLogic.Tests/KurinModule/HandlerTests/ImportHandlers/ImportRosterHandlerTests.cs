@@ -3,7 +3,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

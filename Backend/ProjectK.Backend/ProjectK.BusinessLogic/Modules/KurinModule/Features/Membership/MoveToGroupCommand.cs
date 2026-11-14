@@ -15,9 +15,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 /// to a kurin and to no гурток is a state a membership is allowed to be in.
 /// </summary>
 public sealed record MoveToGroupCommand(Guid MemberKey, Guid KurinKey, Guid? GroupKey)
-    : IRequest<ServiceResult<object>>;
+    : IRequest<ServiceResult<Unit>>;
 
-public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupCommand, ServiceResult<object>>
+public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAccessChangeSignal _accessChanges;
@@ -42,13 +42,13 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
         _audit = audit;
     }
 
-    public async Task<ServiceResult<object>> Handle(MoveToGroupCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(MoveToGroupCommand request, CancellationToken cancellationToken)
     {
         if (request.MemberKey == Guid.Empty || request.KurinKey == Guid.Empty)
         {
-            return ServiceResult<object>.Failure(
+            return ServiceResult<Unit>.Failure(
                 ResultType.BadRequest,
-                "MembershipKeysRequired",
+                MembershipErrors.MembershipKeysRequired,
                 "Both a member and a kurin are required.");
         }
 
@@ -57,14 +57,14 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
 
         if (membership is null)
         {
-            return ServiceResult<object>.Failure(
-                ResultType.NotFound, "NotAMember", "They do not currently belong to this kurin.");
+            return ServiceResult<Unit>.Failure(
+                ResultType.NotFound, MembershipErrors.NotAMember, "They do not currently belong to this kurin.");
         }
 
         if (membership.UserKey is { } holder && holder == _currentUser.UserId)
         {
-            return ServiceResult<object>.Failure(
-                ResultType.Forbidden, "OwnMembership", "Nobody moves themselves between гуртки.");
+            return ServiceResult<Unit>.Failure(
+                ResultType.Forbidden, MembershipErrors.OwnMembership, "Nobody moves themselves between гуртки.");
         }
 
         string? toGroup = null;
@@ -73,8 +73,8 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
             var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey.Value, cancellationToken);
             if (group is null || group.KurinKey != request.KurinKey)
             {
-                return ServiceResult<object>.Failure(
-                    ResultType.BadRequest, "GroupNotInKurin", "That гурток does not belong to this kurin.");
+                return ServiceResult<Unit>.Failure(
+                    ResultType.BadRequest, MembershipErrors.GroupNotInKurin, "That гурток does not belong to this kurin.");
             }
 
             toGroup = group.Name;
@@ -113,6 +113,6 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
             _accessChanges.MarkUser(userKey);
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

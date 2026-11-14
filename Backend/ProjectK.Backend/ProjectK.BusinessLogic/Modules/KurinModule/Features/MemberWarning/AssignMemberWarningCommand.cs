@@ -57,18 +57,18 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
     {
         if (!Enum.IsDefined(typeof(MemberWarningLevel), request.Level))
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.BadRequest);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.BadRequest, MemberErrors.InvalidWarningLevel, "No such warning level.");
         }
 
         if (!_currentUserContext.UserId.HasValue)
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.Unauthorized);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.Unauthorized, MemberErrors.Unauthorized, "The access token carries no readable user identity.");
         }
 
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.NotFound);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         // The permission at the endpoint covers every level; which levels this person may give is
@@ -79,7 +79,7 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
         {
             return ServiceResult<MemberWarningDto>.Failure(
                 ResultType.Forbidden,
-                "WarningLevelNotAllowed",
+                MemberErrors.WarningLevelNotAllowed,
                 "The kurin's policy does not let you give a warning of this level.");
         }
 
@@ -91,7 +91,7 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
 
         if (!CanAssignLevel(request.Level, activeLevels))
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.Conflict);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.Conflict, MemberErrors.WarningLevelOutOfOrder, "This level does not follow the warnings in force.");
         }
 
         var expiresAtUtc = now.AddMonths(LevelDurationsInMonths[request.Level]);
@@ -124,7 +124,7 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)
         {
-            return new ServiceResult<MemberWarningDto>(ResultType.InternalServerError);
+            return ServiceResult<MemberWarningDto>.Failure(ResultType.InternalServerError, MemberErrors.MemberNotSaved, "The warning could not be saved.");
         }
 
         await NotifyMemberOwnerAsync(member, warningEntity, cancellationToken);

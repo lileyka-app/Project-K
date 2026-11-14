@@ -39,7 +39,7 @@ public class SetMemberPhotoCommandHandler
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member is null)
         {
-            return new ServiceResult<string?>(ResultType.NotFound);
+            return ServiceResult<string?>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member.");
         }
 
         var previousBlobName = member.ProfilePhotoBlobName;
@@ -57,7 +57,7 @@ public class SetMemberPhotoCommandHandler
                 // mistake, not the server's.
                 return ServiceResult<string?>.Failure(
                     ResultType.BadRequest,
-                    "InvalidImage",
+                    MemberErrors.InvalidImage,
                     "The uploaded file is not a valid image.");
             }
 

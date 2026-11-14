@@ -1,8 +1,6 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

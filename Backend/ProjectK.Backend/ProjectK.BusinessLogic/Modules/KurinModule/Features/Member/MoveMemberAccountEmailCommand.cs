@@ -38,13 +38,13 @@ public class MoveMemberAccountEmailCommandHandler
         var member = await _unitOfWork.Members.GetByKeyAsync(request.MemberKey, cancellationToken);
         if (member?.UserKey is not { } userKey)
         {
-            return new ServiceResult<Guid>(ResultType.NotFound);
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, MemberErrors.MemberNotFound, "No such member with an account.");
         }
 
         var account = await _accounts.FindAsync(userKey, cancellationToken);
         if (account is null)
         {
-            return new ServiceResult<Guid>(ResultType.NotFound);
+            return ServiceResult<Guid>.Failure(ResultType.NotFound, MemberErrors.AccountNotFound, "The member's account does not exist.");
         }
 
         return account.Status == OnboardingStatus.PendingActivation

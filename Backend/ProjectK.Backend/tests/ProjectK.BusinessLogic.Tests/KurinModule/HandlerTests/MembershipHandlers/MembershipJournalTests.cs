@@ -2,7 +2,6 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

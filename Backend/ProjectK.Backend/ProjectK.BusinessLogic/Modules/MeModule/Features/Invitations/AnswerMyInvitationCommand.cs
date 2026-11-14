@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -16,9 +17,9 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;
 /// The person accepts or declines a kurin's invitation. Accepting only adds a membership: nothing
 /// they hold elsewhere closes.
 /// </summary>
-public sealed record AnswerMyInvitationCommand(Guid MembershipRequestKey, bool Accept) : IRequest<ServiceResult<object>>;
+public sealed record AnswerMyInvitationCommand(Guid MembershipRequestKey, bool Accept) : IRequest<ServiceResult<Unit>>;
 
-public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyInvitationCommand, ServiceResult<object>>
+public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyInvitationCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -46,19 +47,19 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         _time = time;
     }
 
-    public async Task<ServiceResult<object>> Handle(AnswerMyInvitationCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(AnswerMyInvitationCommand request, CancellationToken cancellationToken)
     {
         var me = _currentUser.UserId is { } userKey ? await _members.FindByAccountAsync(userKey, cancellationToken) : null;
         var asked = await _unitOfWork.MembershipRequests.GetAsync(request.MembershipRequestKey, cancellationToken);
         if (me is null || asked is null || asked.FromKurinKey is not null || asked.MemberKey != me.MemberKey)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "RequestNotFound", "No such invitation for you.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MembershipErrors.RequestNotFound, "No such invitation for you.");
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
         if (!asked.IsOpen(now))
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "RequestClosed", "The invitation was already answered, withdrawn or has lapsed.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, MembershipErrors.RequestClosed, "The invitation was already answered, withdrawn or has lapsed.");
         }
 
         if (request.Accept)
@@ -85,7 +86,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         }
         catch (StaleRowException)
         {
-            return ServiceResult<object>.Failure(ResultType.Conflict, "RequestClosed", "The invitation was already answered, withdrawn or has lapsed.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, MembershipErrors.RequestClosed, "The invitation was already answered, withdrawn or has lapsed.");
         }
 
         if (request.Accept && me.UserKey is { } account)
@@ -93,6 +94,6 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
             _accessChanges.MarkUser(account);
         }
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

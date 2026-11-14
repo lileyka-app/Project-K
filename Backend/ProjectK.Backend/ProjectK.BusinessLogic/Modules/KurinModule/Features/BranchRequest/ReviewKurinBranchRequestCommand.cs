@@ -14,9 +14,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
 /// An administrator settles a kurin's request to change its гілки. Approving gives the kurin exactly
 /// the гілки it asked for, provided each number is still free in its гілка of the край.
 /// </summary>
-public sealed record ReviewKurinBranchRequestCommand(Guid KurinBranchRequestKey, bool Approve) : IRequest<ServiceResult<bool>>;
+public sealed record ReviewKurinBranchRequestCommand(Guid KurinBranchRequestKey, bool Approve) : IRequest<ServiceResult<Unit>>;
 
-public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<ReviewKurinBranchRequestCommand, ServiceResult<bool>>
+public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<ReviewKurinBranchRequestCommand, ServiceResult<Unit>>
 {
     /// <summary>What the kurin's journal calls the change.</summary>
     public const string Label = "Гілки куреня";
@@ -41,18 +41,18 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
         _cache = cache;
     }
 
-    public async Task<ServiceResult<bool>> Handle(ReviewKurinBranchRequestCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(ReviewKurinBranchRequestCommand request, CancellationToken cancellationToken)
     {
         var pending = await _unitOfWork.KurinBranchRequests.GetByKeyAsync(request.KurinBranchRequestKey, cancellationToken);
         if (pending is null || pending.Status != KurinBranchRequestStatus.Pending)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, "KurinBranchRequestNotFound", "There is no such request waiting.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MemberErrors.KurinBranchRequestNotFound, "There is no such request waiting.");
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(pending.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin not found.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MemberErrors.KurinNotFound, "Kurin not found.");
         }
 
         // The settlement and the change it makes commit together; disposing the transaction without a
@@ -66,7 +66,7 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
             {
                 if (await _unitOfWork.Kurins.IsNumberTakenAsync(kurin.KraiCode, numbering.Branch, numbering.Number!.Value, kurin.KurinKey, cancellationToken))
                 {
-                    return ServiceResult<bool>.Failure(ResultType.Conflict, "KurinNumberTaken", "A kurin with this number already exists in this край.");
+                    return ServiceResult<Unit>.Failure(ResultType.Conflict, MemberErrors.KurinNumberTaken, "A kurin with this number already exists in this край.");
                 }
             }
 
@@ -86,7 +86,7 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
 
         if (!await _unitOfWork.KurinBranchRequests.TrySettleAsync(pending.KurinBranchRequestKey, status, _currentUser.UserId, DateTime.UtcNow, cancellationToken))
         {
-            return ServiceResult<bool>.Failure(ResultType.Conflict, "KurinBranchRequestAlreadySettled", "Someone settled this request a moment ago.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, MemberErrors.KurinBranchRequestAlreadySettled, "Someone settled this request a moment ago.");
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -107,7 +107,7 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
                 pending.RequestedByUserKey,
                 _currentUser.UserId),
             cancellationToken);
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 
 }

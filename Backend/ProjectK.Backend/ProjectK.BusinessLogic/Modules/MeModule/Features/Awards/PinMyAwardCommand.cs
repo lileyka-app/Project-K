@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using FluentValidation;
 using MediatR;
 using ProjectK.Common.Interfaces;
@@ -50,7 +51,7 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
         if (_currentUser.UserId is not { } userKey
             || await _members.FindByAccountAsync(userKey, cancellationToken) is not { } me)
         {
-            return new ServiceResult<bool>(ResultType.Forbidden);
+            return ServiceResult<bool>.Failure(ResultType.Forbidden, MemberErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var catalogId = request.CatalogId?.Trim();
@@ -59,7 +60,7 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
             .ToList();
         if (grants.Count == 0)
         {
-            return new ServiceResult<bool>(ResultType.NotFound);
+            return ServiceResult<bool>.Failure(ResultType.NotFound, MemberErrors.AwardNotFound, "You hold no such award.");
         }
 
         foreach (var award in grants)
