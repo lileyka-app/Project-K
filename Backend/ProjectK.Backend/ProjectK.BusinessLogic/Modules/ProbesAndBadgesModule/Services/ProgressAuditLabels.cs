@@ -8,11 +8,11 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 public static class ProgressAuditLabels
 {
     /// <summary>The проба's title.</summary>
-    public static string Probe(IProbesCatalogService probes, string probeId) =>
+    public static string Probe(IProbesCatalogReader probes, string probeId) =>
         probes.GetGroupedProbeById(probeId)?.Title is { Length: > 0 } title ? title : probeId;
 
     /// <summary>The point's title within its проба.</summary>
-    public static string ProbePoint(IProbesCatalogService probes, string probeId, string pointId)
+    public static string ProbePoint(IProbesCatalogReader probes, string probeId, string pointId)
     {
         var point = probes.GetGroupedProbeById(probeId)?.Sections
             .SelectMany(section => section.Points)
@@ -22,6 +22,6 @@ public static class ProgressAuditLabels
     }
 
     /// <summary>The вмілість's title.</summary>
-    public static string Badge(IBadgesCatalogService badges, string badgeId) =>
+    public static string Badge(IBadgesCatalogReader badges, string badgeId) =>
         badges.GetBadgeById(badgeId)?.Title is { Length: > 0 } title ? title : badgeId;
 }

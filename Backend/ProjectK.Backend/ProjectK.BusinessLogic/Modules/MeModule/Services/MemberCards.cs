@@ -33,8 +33,8 @@ public sealed class MemberCards
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly IMemberProgressDirectory _progress;
-    private readonly IProbesCatalogService _probes;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IProbesCatalogReader _probes;
+    private readonly IBadgesCatalogReader _badges;
     private readonly IBlobReadLinks _links;
     private readonly IResourceScopeReader _scope;
     private readonly IHonoursCatalog _honours;
@@ -45,8 +45,8 @@ public sealed class MemberCards
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         IMemberProgressDirectory progress,
-        IProbesCatalogService probes,
-        IBadgesCatalogService badges,
+        IProbesCatalogReader probes,
+        IBadgesCatalogReader badges,
         IBlobReadLinks links,
         IResourceScopeReader scope,
         IHonoursCatalog honours,

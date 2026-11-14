@@ -24,14 +24,14 @@ public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSparePr
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProbeProjectAccess _access;
     private readonly IKurinAudit _audit;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public SwapSpareProjectCommandHandler(
         IUnitOfWork unitOfWork,
         IProbeProjectAccess access,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;

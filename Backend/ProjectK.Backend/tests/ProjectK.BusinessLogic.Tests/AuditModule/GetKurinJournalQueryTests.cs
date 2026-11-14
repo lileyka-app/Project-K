@@ -27,8 +27,8 @@ public class GetKurinJournalQueryTests
     private readonly PolicyAccess _access = new();
     private readonly Mock<IKurinJournalReader> _reader = new();
     private readonly Mock<IMemberDirectory> _members = new();
-    private readonly Mock<IProbesCatalogService> _probes = new();
-    private readonly Mock<IBadgesCatalogService> _badges = new();
+    private readonly Mock<IProbesCatalogReader> _probes = new();
+    private readonly Mock<IBadgesCatalogReader> _badges = new();
     private readonly Guid _ownMemberKey = Guid.NewGuid();
     private KurinJournalFilter? _filter;
     private (int Skip, int Take) _page;

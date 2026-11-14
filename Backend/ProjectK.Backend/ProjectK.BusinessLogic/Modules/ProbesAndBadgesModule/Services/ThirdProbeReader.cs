@@ -25,7 +25,7 @@ public sealed class ThirdProbeReader : IThirdProbeReader
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProbeProjectAccess _access;
     private readonly IMemberProbeLine _line;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IBadgesCatalogReader _badges;
     private readonly IBlobReadLinks _links;
     private readonly IMemberDirectory _members;
 
@@ -33,7 +33,7 @@ public sealed class ThirdProbeReader : IThirdProbeReader
         IUnitOfWork unitOfWork,
         IProbeProjectAccess access,
         IMemberProbeLine line,
-        IBadgesCatalogService badges,
+        IBadgesCatalogReader badges,
         IBlobReadLinks links,
         IMemberDirectory members)
     {

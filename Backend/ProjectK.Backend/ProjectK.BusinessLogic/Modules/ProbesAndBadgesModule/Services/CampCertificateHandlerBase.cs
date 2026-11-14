@@ -22,7 +22,7 @@ public abstract class CampCertificateHandlerBase
         IProbeProjectAccess access,
         IPhotoService photos,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         UnitOfWork = unitOfWork;
@@ -37,7 +37,7 @@ public abstract class CampCertificateHandlerBase
     protected IProbeProjectAccess Access { get; }
     protected IPhotoService Photos { get; }
     protected IKurinAudit Audit { get; }
-    protected IProbesCatalogService Probes { get; }
+    protected IProbesCatalogReader Probes { get; }
     protected IThirdProbeReader Reader { get; }
 
     protected Task RecordAsync(string action, ThirdProbeFile file, Guid memberKey, string probeId, CancellationToken cancellationToken) =>

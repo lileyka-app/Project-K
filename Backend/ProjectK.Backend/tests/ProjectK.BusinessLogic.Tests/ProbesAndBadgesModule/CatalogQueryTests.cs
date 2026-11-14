@@ -18,7 +18,7 @@ public class CatalogQueryTests
     [InlineData(10_000, 500)]
     public async Task GetBadges_ShouldAnswerTheDefaultPage_ForANonPositiveTake_AndCapALargeOne(int take, int expectedPage)
     {
-        var catalog = new Mock<IBadgesCatalogService>();
+        var catalog = new Mock<IBadgesCatalogReader>();
         catalog.Setup(c => c.GetBadges(It.IsAny<int>())).Returns([]);
 
         var result = await new GetBadgesQueryHandler(catalog.Object).Handle(new GetBadgesQuery(take), CancellationToken.None);
@@ -30,7 +30,7 @@ public class CatalogQueryTests
     [Fact]
     public async Task GetBadge_ShouldAnswerNotFound_ForAnIdTheCatalogueDoesNotHave()
     {
-        var catalog = new Mock<IBadgesCatalogService>();
+        var catalog = new Mock<IBadgesCatalogReader>();
 
         var result = await new GetBadgeQueryHandler(catalog.Object).Handle(new GetBadgeQuery("nope"), CancellationToken.None);
 
@@ -41,7 +41,7 @@ public class CatalogQueryTests
     [Fact]
     public async Task GetGroupedProbe_ShouldAnswerNotFound_ForAnIdTheCatalogueDoesNotHave()
     {
-        var catalog = new Mock<IProbesCatalogService>();
+        var catalog = new Mock<IProbesCatalogReader>();
 
         var result = await new GetGroupedProbeQueryHandler(catalog.Object).Handle(new GetGroupedProbeQuery("nope"), CancellationToken.None);
 

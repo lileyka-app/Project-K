@@ -32,7 +32,7 @@ public class ProbeProjectHandlerTests
     private readonly Mock<IProbeProjectAccess> _access = new();
     private readonly Mock<IBlobReadLinks> _links = new();
     private readonly Mock<IPhotoService> _photos = new();
-    private readonly Mock<IProbesCatalogService> _probes = new();
+    private readonly Mock<IProbesCatalogReader> _probes = new();
     private readonly Mock<IThirdProbeReader> _reader = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly JournalRecorder _journal;

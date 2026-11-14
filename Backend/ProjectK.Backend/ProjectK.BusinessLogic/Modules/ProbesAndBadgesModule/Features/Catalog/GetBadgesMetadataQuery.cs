@@ -11,9 +11,9 @@ public sealed record GetBadgesMetadataQuery : IRequest<ServiceResult<BadgesMetad
 
 public sealed class GetBadgesMetadataQueryHandler : IRequestHandler<GetBadgesMetadataQuery, ServiceResult<BadgesMetadata>>
 {
-    private readonly IBadgesCatalogService _catalog;
+    private readonly IBadgesCatalogReader _catalog;
 
-    public GetBadgesMetadataQueryHandler(IBadgesCatalogService catalog)
+    public GetBadgesMetadataQueryHandler(IBadgesCatalogReader catalog)
     {
         _catalog = catalog;
     }

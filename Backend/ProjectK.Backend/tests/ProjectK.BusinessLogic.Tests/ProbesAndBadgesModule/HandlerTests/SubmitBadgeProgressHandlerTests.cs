@@ -30,7 +30,7 @@ public class SubmitBadgeProgressHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
     private readonly Mock<IDomainEventPublisher> _eventsMock = new();
     private readonly Mock<IKurinCatalog> _kurinCatalogMock = new();
-    private readonly Mock<IBadgesCatalogService> _badges = new();
+    private readonly Mock<IBadgesCatalogReader> _badges = new();
     private readonly SubmitBadgeProgressCommandHandler _handler;
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly JournalRecorder _journal;

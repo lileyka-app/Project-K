@@ -20,15 +20,15 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
 
     private readonly MePerson _me;
     private readonly IMemberProgressDirectory _progress;
-    private readonly IProbesCatalogService _probes;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IProbesCatalogReader _probes;
+    private readonly IBadgesCatalogReader _badges;
     private readonly IMemberProbeLine _line;
 
     public GetMyGrowthQueryHandler(
         MePerson me,
         IMemberProgressDirectory progress,
-        IProbesCatalogService probes,
-        IBadgesCatalogService badges,
+        IProbesCatalogReader probes,
+        IBadgesCatalogReader badges,
         IMemberProbeLine line)
     {
         _me = me;

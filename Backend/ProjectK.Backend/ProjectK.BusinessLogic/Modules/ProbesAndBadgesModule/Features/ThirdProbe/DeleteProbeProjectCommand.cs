@@ -26,7 +26,7 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
     private readonly IProbeProjectAccess _access;
     private readonly IPhotoService _photos;
     private readonly IKurinAudit _audit;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public DeleteProbeProjectCommandHandler(
@@ -34,7 +34,7 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
         IProbeProjectAccess access,
         IPhotoService photos,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;

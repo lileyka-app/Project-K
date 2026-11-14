@@ -40,7 +40,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalReader _journal;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IMemberProbeLine _line;
 
     public UpdateProbePointSignatureCommandHandler(
@@ -49,7 +49,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         AuditActorResolver actors,
         IKurinAudit audit,
         IKurinJournalReader journal,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IMemberProbeLine line)
     {
         _line = line;

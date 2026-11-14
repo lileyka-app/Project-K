@@ -5,7 +5,7 @@ using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
-public sealed class BadgesCatalogService : IBadgesCatalogService
+public sealed class BadgesCatalogReader : IBadgesCatalogReader
 {
     // Every key carries the catalogue's version: the catalogue changes under this cache (a new
     // fetch, a renamed край), and a six-hour entry would keep serving the old one.
@@ -13,12 +13,12 @@ public sealed class BadgesCatalogService : IBadgesCatalogService
 
     private readonly IBadgesCatalog _badgesCatalog;
     private readonly IMemoryCache _cache;
-    private readonly ILogger<BadgesCatalogService> _logger;
+    private readonly ILogger<BadgesCatalogReader> _logger;
 
-    public BadgesCatalogService(
+    public BadgesCatalogReader(
         IBadgesCatalog badgesCatalog,
         IMemoryCache cache,
-        ILogger<BadgesCatalogService> logger)
+        ILogger<BadgesCatalogReader> logger)
     {
         _badgesCatalog = badgesCatalog;
         _cache = cache;

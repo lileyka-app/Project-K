@@ -57,7 +57,7 @@ public class ReviewBadgeProgressHandlerTests
             _journal.Actors,
             _journal.Audit,
             _journal.Reader,
-            Mock.Of<IBadgesCatalogService>());
+            Mock.Of<IBadgesCatalogReader>());
     }
 
     [Theory]

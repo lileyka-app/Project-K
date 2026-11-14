@@ -32,7 +32,7 @@ public sealed class UploadCampCertificateCommandHandler
         IProbeProjectAccess access,
         IPhotoService photos,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
         : base(unitOfWork, access, photos, audit, probes, reader)
     {

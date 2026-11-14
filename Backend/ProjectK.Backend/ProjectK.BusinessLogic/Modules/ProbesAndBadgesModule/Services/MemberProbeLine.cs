@@ -39,13 +39,13 @@ public interface IMemberProbeLine
 public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IProbesCatalogService _catalog;
+    private readonly IProbesCatalogReader _catalog;
     private readonly IMemberDirectory _members;
     private readonly IGroupProbeEditions _groupEditions;
 
     public MemberProbeLine(
         IUnitOfWork unitOfWork,
-        IProbesCatalogService catalog,
+        IProbesCatalogReader catalog,
         IMemberDirectory members,
         IGroupProbeEditions groupEditions)
     {

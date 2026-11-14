@@ -111,8 +111,8 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IReviewNotificationRecipientReader, ReviewNotificationRecipientReader>();
 
-        services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
-        services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
+        services.AddScoped<IBadgesCatalogReader, BadgesCatalogReader>();
+        services.AddScoped<IProbesCatalogReader, ProbesCatalogReader>();
         services.AddScoped<IProgressCatalogReader, ProgressCatalogReader>();
         services.AddScoped<IKurinCatalog, KurinCatalog>();
 

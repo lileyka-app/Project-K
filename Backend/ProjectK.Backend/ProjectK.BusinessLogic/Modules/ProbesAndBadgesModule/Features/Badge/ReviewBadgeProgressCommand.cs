@@ -44,7 +44,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalReader _journal;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IBadgesCatalogReader _badges;
 
     public ReviewBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
@@ -54,7 +54,7 @@ public sealed class ReviewBadgeProgressCommandHandler : IRequestHandler<ReviewBa
         AuditActorResolver actors,
         IKurinAudit audit,
         IKurinJournalReader journal,
-        IBadgesCatalogService badges)
+        IBadgesCatalogReader badges)
     {
         _unitOfWork = unitOfWork;
         _members = members;

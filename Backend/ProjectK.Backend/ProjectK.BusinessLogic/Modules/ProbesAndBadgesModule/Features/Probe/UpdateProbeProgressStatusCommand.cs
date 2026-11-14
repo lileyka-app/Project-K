@@ -40,7 +40,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalReader _journal;
-    private readonly IProbesCatalogService _probesCatalogService;
+    private readonly IProbesCatalogReader _probesCatalogReader;
     private readonly IResourceAccessService _access;
     private readonly IMemberProbeLine _line;
 
@@ -50,7 +50,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         AuditActorResolver actors,
         IKurinAudit audit,
         IKurinJournalReader journal,
-        IProbesCatalogService probesCatalogService,
+        IProbesCatalogReader probesCatalogReader,
         IResourceAccessService access,
         IMemberProbeLine line)
     {
@@ -60,7 +60,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         _actors = actors;
         _audit = audit;
         _journal = journal;
-        _probesCatalogService = probesCatalogService;
+        _probesCatalogReader = probesCatalogReader;
         _access = access;
     }
 
@@ -140,7 +140,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
                 AuditArea.Probe,
                 JournalAction(currentStatus, request.Status),
                 progress.ProbeProgressKey,
-                ProgressAuditLabels.Probe(_probesCatalogService, progress.ProbeId),
+                ProgressAuditLabels.Probe(_probesCatalogReader, progress.ProbeId),
                 request.MemberKey,
                 AuditChanges.Of(("status", currentStatus, request.Status)),
                 request.Note),
@@ -195,7 +195,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
         string probeId,
         CancellationToken cancellationToken)
     {
-        var groupedProbe = _probesCatalogService.GetGroupedProbeById(probeId.Trim());
+        var groupedProbe = _probesCatalogReader.GetGroupedProbeById(probeId.Trim());
         if (groupedProbe is null || groupedProbe.PointsCount <= 0)
         {
             return true;

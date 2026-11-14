@@ -14,9 +14,9 @@ public sealed class GetBadgesQueryHandler : IRequestHandler<GetBadgesQuery, Serv
     public const int DefaultPage = 200;
     public const int MaxPage = 500;
 
-    private readonly IBadgesCatalogService _catalog;
+    private readonly IBadgesCatalogReader _catalog;
 
-    public GetBadgesQueryHandler(IBadgesCatalogService catalog)
+    public GetBadgesQueryHandler(IBadgesCatalogReader catalog)
     {
         _catalog = catalog;
     }

@@ -11,9 +11,9 @@ public sealed record GetGroupedProbeQuery(string ProbeId) : IRequest<ServiceResu
 
 public sealed class GetGroupedProbeQueryHandler : IRequestHandler<GetGroupedProbeQuery, ServiceResult<GroupedProbeDto>>
 {
-    private readonly IProbesCatalogService _catalog;
+    private readonly IProbesCatalogReader _catalog;
 
-    public GetGroupedProbeQueryHandler(IProbesCatalogService catalog)
+    public GetGroupedProbeQueryHandler(IProbesCatalogReader catalog)
     {
         _catalog = catalog;
     }

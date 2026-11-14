@@ -53,7 +53,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
     private readonly IPhotoService _photos;
     private readonly AuditActorResolver _actors;
     private readonly IKurinAudit _audit;
-    private readonly IProbesCatalogService _probes;
+    private readonly IProbesCatalogReader _probes;
     private readonly IThirdProbeReader _reader;
 
     public SaveProbeProjectCommandHandler(
@@ -62,7 +62,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         IPhotoService photos,
         AuditActorResolver actors,
         IKurinAudit audit,
-        IProbesCatalogService probes,
+        IProbesCatalogReader probes,
         IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;

@@ -39,8 +39,8 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
     private readonly IMemberUnitOfWork _members;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHonoursCatalog _honours;
-    private readonly IProbesCatalogService _probes;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IProbesCatalogReader _probes;
+    private readonly IBadgesCatalogReader _badges;
     private readonly ILifeStoryPdfRenderer _renderer;
     private readonly TimeProvider _time;
 
@@ -50,8 +50,8 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         IMemberUnitOfWork members,
         IUnitOfWork unitOfWork,
         IHonoursCatalog honours,
-        IProbesCatalogService probes,
-        IBadgesCatalogService badges,
+        IProbesCatalogReader probes,
+        IBadgesCatalogReader badges,
         ILifeStoryPdfRenderer renderer,
         TimeProvider time)
     {

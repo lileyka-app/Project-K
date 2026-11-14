@@ -21,8 +21,8 @@ public sealed class KurinReportDataService
     private readonly ICurrentUserContext _currentUser;
     private readonly IBlobReadLinks _links;
     private readonly IKurinReportMedia _media;
-    private readonly IProbesCatalogService _probesCatalogService;
-    private readonly IBadgesCatalogService _badgesCatalogService;
+    private readonly IProbesCatalogReader _probesCatalogReader;
+    private readonly IBadgesCatalogReader _badgesCatalogReader;
     private readonly IConfiguration _configuration;
     // What people have earned belongs to another module; the report asks for it, all at once.
     private readonly IMemberProgressDirectory _progress;
@@ -35,8 +35,8 @@ public sealed class KurinReportDataService
         ICurrentUserContext currentUser,
         IBlobReadLinks links,
         IKurinReportMedia media,
-        IProbesCatalogService probesCatalogService,
-        IBadgesCatalogService badgesCatalogService,
+        IProbesCatalogReader probesCatalogReader,
+        IBadgesCatalogReader badgesCatalogReader,
         IConfiguration configuration,
         IMemberProgressDirectory progress,
         IUnitOfWork unitOfWork,
@@ -48,8 +48,8 @@ public sealed class KurinReportDataService
         _currentUser = currentUser;
         _links = links;
         _media = media;
-        _probesCatalogService = probesCatalogService;
-        _badgesCatalogService = badgesCatalogService;
+        _probesCatalogReader = probesCatalogReader;
+        _badgesCatalogReader = badgesCatalogReader;
         _configuration = configuration;
         _progress = progress;
         _unitOfWork = unitOfWork;
@@ -285,7 +285,7 @@ public sealed class KurinReportDataService
                 .OrderBy(item => item.ProbeId)
                 .Select(item =>
                 {
-                    var probe = _probesCatalogService.GetGroupedProbeById(item.ProbeId);
+                    var probe = _probesCatalogReader.GetGroupedProbeById(item.ProbeId);
                     return new KurinReportProbe(
                         item.ProbeId,
                         ResolveProbeTitle(item.ProbeId, probe),
@@ -302,7 +302,7 @@ public sealed class KurinReportDataService
                 .ThenBy(item => item.PointId)
                 .Select(item =>
                 {
-                    var probe = _probesCatalogService.GetGroupedProbeById(item.ProbeId);
+                    var probe = _probesCatalogReader.GetGroupedProbeById(item.ProbeId);
                     return new KurinReportProbePoint(
                         item.ProbeId,
                         ResolveProbeTitle(item.ProbeId, probe),
@@ -317,7 +317,7 @@ public sealed class KurinReportDataService
                 .OrderBy(item => item.BadgeId)
                 .Select(item =>
                 {
-                    var badge = _badgesCatalogService.GetBadgeById(item.BadgeId);
+                    var badge = _badgesCatalogReader.GetBadgeById(item.BadgeId);
                     return new KurinReportBadge(
                         item.BadgeId,
                         badge?.Title ?? item.BadgeId,

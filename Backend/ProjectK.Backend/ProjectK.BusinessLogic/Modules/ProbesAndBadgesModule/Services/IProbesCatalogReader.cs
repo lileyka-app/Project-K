@@ -2,7 +2,7 @@ using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
-public interface IProbesCatalogService
+public interface IProbesCatalogReader
 {
     IReadOnlyList<ProbeSummaryDto> GetProbes();
 

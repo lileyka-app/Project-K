@@ -5,14 +5,14 @@ using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
-public sealed class ProbesCatalogService : IProbesCatalogService
+public sealed class ProbesCatalogReader : IProbesCatalogReader
 {
     private static readonly TimeSpan CatalogCacheTtl = TimeSpan.FromHours(6);
 
     private readonly IProbesCatalog _probesCatalog;
     private readonly IMemoryCache _cache;
 
-    public ProbesCatalogService(IProbesCatalog probesCatalog, IMemoryCache cache)
+    public ProbesCatalogReader(IProbesCatalog probesCatalog, IMemoryCache cache)
     {
         _probesCatalog = probesCatalog;
         _cache = cache;

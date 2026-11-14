@@ -40,7 +40,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     private readonly IKurinCatalog _kurinCatalog;
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalReader _journal;
-    private readonly IBadgesCatalogService _badges;
+    private readonly IBadgesCatalogReader _badges;
 
     public SubmitBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
@@ -50,7 +50,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
         IKurinCatalog kurinCatalog,
         IKurinAudit audit,
         IKurinJournalReader journal,
-        IBadgesCatalogService badges)
+        IBadgesCatalogReader badges)
     {
         _unitOfWork = unitOfWork;
         _members = members;
