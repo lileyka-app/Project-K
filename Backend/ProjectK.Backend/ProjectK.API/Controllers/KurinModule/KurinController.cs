@@ -6,15 +6,13 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
@@ -55,7 +53,7 @@ public class KurinController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByKey(Guid kurinKey)
     {
@@ -101,7 +99,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("kurins")]
-    [ProducesResponseType(typeof(IEnumerable<KurinResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<KurinDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAll()
     {
@@ -115,7 +113,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost]
-    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(KurinDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] CreateKurinRequest body)
@@ -145,7 +143,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPut("{kurinKey:guid}/krai")]
-    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -161,7 +159,7 @@ public class KurinController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

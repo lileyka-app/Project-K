@@ -1,0 +1,67 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
+
+/// <summary>Moves a kurin to another край. Admin-only: the край decides what the kurin sees.</summary>
+public sealed record SetKurinKraiCommand(Guid KurinKey, string KraiCode) : IRequest<ServiceResult<KurinDto>>;
+
+public sealed class SetKurinKraiCommandHandler : IRequestHandler<SetKurinKraiCommand, ServiceResult<KurinDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IBlobReadLinks _links;
+    private readonly IBackendCache _cache;
+
+    public SetKurinKraiCommandHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
+    {
+        _unitOfWork = unitOfWork;
+        _links = links;
+        _cache = cache;
+    }
+
+    public async Task<ServiceResult<KurinDto>> Handle(SetKurinKraiCommand request, CancellationToken cancellationToken)
+    {
+        var kraiCode = request.KraiCode?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
+        if (kurin is null)
+        {
+            return KurinErrors.NotFound<KurinDto>();
+        }
+
+        if (kurin.KraiCode == kraiCode)
+        {
+            return new ServiceResult<KurinDto>(ResultType.Success, kurin.ToDto(_links));
+        }
+
+        if (!await _unitOfWork.Krais.ExistsAsync(kraiCode, cancellationToken))
+        {
+            return ServiceResult<KurinDto>.Failure(ResultType.BadRequest, KurinErrors.UnknownKrai, $"There is no край '{kraiCode}'.");
+        }
+
+        // The numbers travel with the kurin, so each has to be free in its гілка of the край it moves to.
+        foreach (var numbering in kurin.Numbering)
+        {
+            if (numbering.Number is int number
+                && await _unitOfWork.Kurins.IsNumberTakenAsync(kraiCode, numbering.Branch, number, kurin.KurinKey, cancellationToken))
+            {
+                return ServiceResult<KurinDto>.Failure(ResultType.Conflict, KurinErrors.KurinNumberTaken, "A kurin with this number already exists in that край.");
+            }
+        }
+
+        kurin.KraiCode = kraiCode;
+        _unitOfWork.Kurins.Update(kurin, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _cache.Invalidate(BackendCachePolicies.KurinReads);
+        _cache.Invalidate(BackendCachePolicies.GroupReads);
+
+        return new ServiceResult<KurinDto>(ResultType.Success, kurin.ToDto(_links));
+    }
+}

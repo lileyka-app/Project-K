@@ -149,10 +149,10 @@ function row(targetType: AgendaTargetType, targetKey: string, label: string): Ta
 let formCount = 0;
 
 const ERRORS: Record<string, string> = {
-  AGENDA_MODE_LOCKED: 'Хтось уже почав — спосіб виконання не змінити.',
-  AGENDA_TARGET_FORBIDDEN: 'Цю ціль тобі не можна призначати.',
-  AGENDA_AUTHOR_FORBIDDEN: 'Курінь не дає тобі призначати події й задачі.',
-  AGENDA_EDIT_FORBIDDEN: 'Це може змінити лише автор або провід.',
+  AgendaModeLocked: 'Хтось уже почав — спосіб виконання не змінити.',
+  AgendaTargetForbidden: 'Цю ціль тобі не можна призначати.',
+  AgendaAuthorForbidden: 'Курінь не дає тобі призначати події й задачі.',
+  AgendaEditForbidden: 'Це може змінити лише автор або провід.',
 };
 
 /**

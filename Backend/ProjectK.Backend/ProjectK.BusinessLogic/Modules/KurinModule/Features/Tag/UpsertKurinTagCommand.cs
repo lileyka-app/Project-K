@@ -1,7 +1,8 @@
-using ProjectK.Common.Exceptions;
+using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -36,12 +37,12 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
         var settings = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
         if (settings is null)
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.NotFound, KurinTagErrors.KurinNotFound, "Kurin was not found.");
+            return KurinErrors.NotFound<KurinTagDto>();
         }
 
         if (!settings.Enabled)
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinTagErrors.TagsDisabled, "The kurin has tags turned off.");
+            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinErrors.TagsDisabled, "The kurin has tags turned off.");
         }
 
         var name = request.Name.Trim();
@@ -51,7 +52,7 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
 
         if (await _uow.KurinTags.NameTakenAsync(request.KurinKey, name, isNew ? null : request.KurinTagKey, cancellationToken))
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinTagErrors.TagNameTaken, "The kurin already has a tag with this name.");
+            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinErrors.TagNameTaken, "The kurin already has a tag with this name.");
         }
 
         KurinTag tag;
@@ -69,7 +70,7 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
             var existing = await _uow.KurinTags.GetByKeyAsync(request.KurinTagKey!.Value, cancellationToken);
             if (existing is null || existing.KurinKey != request.KurinKey)
             {
-                return ServiceResult<KurinTagDto>.Failure(ResultType.NotFound, KurinTagErrors.TagNotFound, "Tag was not found in this kurin.");
+                return ServiceResult<KurinTagDto>.Failure(ResultType.NotFound, KurinErrors.TagNotFound, "Tag was not found in this kurin.");
             }
 
             tag = existing;
@@ -92,11 +93,24 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
         catch (DuplicateRowException)
         {
             // Someone saved a tag of that name between the check above and this save.
-            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinTagErrors.TagNameTaken, "The kurin already has a tag with this name.");
+            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinErrors.TagNameTaken, "The kurin already has a tag with this name.");
         }
 
         return new ServiceResult<KurinTagDto>(
             isNew ? ResultType.Created : ResultType.Success,
             new KurinTagDto(tag.KurinTagKey, tag.Name, tag.ColorHex, null));
+    }
+}
+
+public sealed class UpsertKurinTagCommandValidator : AbstractValidator<UpsertKurinTagCommand>
+{
+    public UpsertKurinTagCommandValidator()
+    {
+        RuleFor(c => c.KurinKey).NotEmpty();
+        RuleFor(c => c.Name)
+            .Must(name => !string.IsNullOrWhiteSpace(name) && name.Trim().Length <= KurinTagRules.MaxNameLength);
+        RuleFor(c => c.ColorHex)
+            .Must(KurinTagRules.IsPaletteColor)
+            .WithErrorCode(KurinErrors.TagColorNotInPalette);
     }
 }

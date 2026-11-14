@@ -1,15 +1,15 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -72,7 +72,7 @@ public class CreateAgendaItemHandlerTests
         var result = await _handler.Handle(CommandWith(kurinKey, group), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
-        result.ErrorCode.Should().Be("AGENDA_TARGET_FORBIDDEN");
+        result.ErrorCode.Should().Be("AgendaTargetForbidden");
         _agendaRepo.Verify(r => r.Create(It.IsAny<AgendaItem>(), It.IsAny<CancellationToken>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _journal.Entries.Should().BeEmpty();
@@ -153,7 +153,7 @@ public class CreateAgendaItemHandlerTests
         var result = await _handler.Handle(CommandWith(Guid.NewGuid(), target), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
-        result.ErrorCode.Should().Be("AGENDA_AUTHOR_FORBIDDEN");
+        result.ErrorCode.Should().Be("AgendaAuthorForbidden");
         _access.Verify(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), It.IsAny<CancellationToken>()), Times.Never);
         _agendaRepo.Verify(r => r.Create(It.IsAny<AgendaItem>(), It.IsAny<CancellationToken>()), Times.Never);
     }

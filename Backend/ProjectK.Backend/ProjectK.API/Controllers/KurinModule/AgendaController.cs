@@ -5,16 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Archive;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Categories;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Create;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Responses;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Status;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -45,7 +39,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<AgendaItemResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<AgendaItemDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCalendar(Guid kurinKey, [FromQuery] DateTime? fromUtc, [FromQuery] DateTime? toUtc, [FromQuery] bool includeSchedules = false)
     {
         var response = await _mediator.Send(new GetAgendaItemsQuery(kurinKey, fromUtc, toUtc, includeSchedules));
@@ -59,7 +53,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/board")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(AgendaBoardResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AgendaBoardDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBoard(
         Guid kurinKey,
         [FromQuery] string? search,
@@ -89,7 +83,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/archive")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(AgendaArchivePageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AgendaArchivePageDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetArchive(Guid kurinKey, [FromQuery] string? search, [FromQuery] int skip = 0, [FromQuery] int take = AgendaBoardPaging.DefaultTake)
     {
         var response = await _mediator.Send(new GetAgendaArchiveQuery(kurinKey, search, skip, take));
@@ -121,7 +115,7 @@ public class AgendaController : ControllerBase
     /// <summary>One item as the viewer sees it; not found when it is not theirs to see.</summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("item/{agendaItemKey:guid}")]
-    [ProducesResponseType(typeof(AgendaItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AgendaItemDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetItem(Guid agendaItemKey)
     {
@@ -148,7 +142,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/assign-targets")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(AgendaAssignTargetsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AgendaAssignTargetsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAssignTargets(Guid kurinKey)
     {
@@ -244,7 +238,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/categories")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<AgendaCategoryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<AgendaCategoryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategories(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetAgendaCategoriesQuery(kurinKey, IncludeArchived: false));
@@ -257,7 +251,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/categories/manage")]
     [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<AgendaCategoryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<AgendaCategoryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategoriesForManagement(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetAgendaCategoriesQuery(kurinKey, IncludeArchived: true));
@@ -270,7 +264,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("categories")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "arg:request.KurinKey")]
-    [ProducesResponseType(typeof(AgendaCategoryResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(AgendaCategoryDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpsertCategory([FromBody] UpsertAgendaCategoryCommand request)
@@ -285,7 +279,7 @@ public class AgendaController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("categories/{categoryKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "arg:request.KurinKey")]
-    [ProducesResponseType(typeof(AgendaCategoryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AgendaCategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -319,7 +313,7 @@ public class AgendaController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{agendaItemKey:guid}/responses")]
-    [ProducesResponseType(typeof(AgendaResponsesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AgendaResponsesDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetResponses(Guid agendaItemKey, [FromQuery] DateTime? occurrenceStartUtc = null)
@@ -337,7 +331,7 @@ public class AgendaController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("{agendaItemKey:guid}/response")]
-    [ProducesResponseType(typeof(AgendaResponsesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AgendaResponsesDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

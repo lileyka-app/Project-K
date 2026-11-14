@@ -12,9 +12,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 /// entry per person would bury the journal for a single click. Allowed with tags off too, so a kurin
 /// can clear what it no longer wants.
 /// </summary>
-public sealed record DeleteKurinTagCommand(Guid KurinKey, Guid KurinTagKey) : IRequest<ServiceResult<object>>;
+public sealed record DeleteKurinTagCommand(Guid KurinKey, Guid KurinTagKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTagCommand, ServiceResult<object>>
+public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTagCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IKurinAudit _audit;
@@ -27,12 +27,12 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
         _dues = dues;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeleteKurinTagCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteKurinTagCommand request, CancellationToken cancellationToken)
     {
         var tag = await _uow.KurinTags.GetWithMembersAsync(request.KurinTagKey, cancellationToken);
         if (tag is null || tag.KurinKey != request.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, KurinTagErrors.TagNotFound, "Tag was not found in this kurin.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, KurinErrors.TagNotFound, "Tag was not found in this kurin.");
         }
 
         await _audit.RecordAsync(
@@ -49,6 +49,6 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
         // A rate by this tag can no longer be seen or changed: nobody's debt may stay on it.
         await _dues.RepriceUnpaidAsync(request.KurinKey, cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

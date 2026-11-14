@@ -54,13 +54,13 @@ public sealed class PreviewRosterImportQueryHandler
             // Anything the spreadsheet library refuses is the same answer to the person holding
             // the file: this is not a workbook we can read.
             return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, "UnreadableFile", "This file could not be read as a spreadsheet."));
+                ResultType.BadRequest, KurinErrors.UnreadableFile, "This file could not be read as a spreadsheet."));
         }
 
         if (rows.Count == 0)
         {
             return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, "EmptyFile", "The spreadsheet has no rows."));
+                ResultType.BadRequest, KurinErrors.EmptyFile, "The spreadsheet has no rows."));
         }
 
         var header = rows[0];

@@ -7,16 +7,11 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.ProbeEdition;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Revoke;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
@@ -45,7 +40,7 @@ public class GroupController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByKey(Guid groupKey)
     {
@@ -75,7 +70,7 @@ public class GroupController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("groups")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "query:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<GroupResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<GroupDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAll(Guid kurinKey)
     {
@@ -90,7 +85,7 @@ public class GroupController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "arg:request.KurinKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] CreateGroupRequest request)
@@ -106,7 +101,7 @@ public class GroupController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -144,7 +139,7 @@ public class GroupController : ControllerBase
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken) =>
@@ -159,7 +154,7 @@ public class GroupController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("{groupKey:guid}/silhouette")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSilhouette(Guid groupKey, CancellationToken cancellationToken)
     {

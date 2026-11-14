@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.AuthModule;
@@ -10,6 +10,7 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -72,10 +73,10 @@ public class GetAgendaBoardHandlerTests
         return item;
     }
 
-    private async Task<AgendaBoardResponse> Board(AgendaBoardFilter filter) =>
+    private async Task<AgendaBoardDto> Board(AgendaBoardFilter filter) =>
         (await _handler.Handle(new GetAgendaBoardQuery(_kurinKey, filter), CancellationToken.None)).Data!;
 
-    private static List<string> Titles(AgendaBoardResponse board, AgendaItemStatus status) =>
+    private static List<string> Titles(AgendaBoardDto board, AgendaItemStatus status) =>
         board.Columns.Single(c => c.Status == status).Items.Select(i => i.Title).ToList();
 
     [Fact]

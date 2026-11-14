@@ -1,0 +1,60 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
+
+public class GetKurinByKeyQuery : IRequest<ServiceResult<KurinDto>>
+{
+    public Guid KurinKey { get; set; }
+
+    public GetKurinByKeyQuery(Guid kurinKey)
+    {
+        KurinKey = kurinKey;
+    }
+}
+
+public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, ServiceResult<KurinDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IBlobReadLinks _links;
+    private readonly IBackendCache _cache;
+
+    public GetKurinByKeyQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
+    {
+        _unitOfWork = unitOfWork;
+        _links = links;
+        _cache = cache;
+    }
+
+    public async Task<ServiceResult<KurinDto>> Handle(GetKurinByKeyQuery request, CancellationToken cancellationToken)
+    {
+        return await _cache.GetOrCreateAsync(
+            BackendCachePolicies.KurinReads,
+            $"by-key:{request.KurinKey}",
+            async token =>
+            {
+                var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, token);
+
+                if (kurin is null)
+                {
+                    return KurinErrors.NotFound<KurinDto>();
+                }
+
+                var accountsHere = await _unitOfWork.Memberships
+                    .GetAccountKeysInKurinAsync(request.KurinKey, token);
+                var activeUsersCount = await _unitOfWork.Users
+                    .CountActiveAsync(accountsHere, token);
+
+                var kurinResponse = kurin.ToDto(_links, activeUsersCount);
+
+                return new ServiceResult<KurinDto>(ResultType.Success, kurinResponse);
+            },
+            cancellationToken);
+    }
+}
