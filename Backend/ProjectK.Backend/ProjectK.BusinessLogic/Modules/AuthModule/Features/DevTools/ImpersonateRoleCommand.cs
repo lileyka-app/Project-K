@@ -9,6 +9,7 @@ using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -19,9 +20,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
 /// ticket that brings them back. A testing tool: it exists only on the local tiers, where the
 /// controller that sends it is part of the application at all.
 /// </summary>
-public record ImpersonateRoleCommand(DevRole Role, Guid? KurinKey) : IRequest<ServiceResult<DevImpersonationResponse>>;
+public record ImpersonateRoleCommand(DevRole Role, Guid? KurinKey) : IRequest<ServiceResult<DevImpersonationDto>>;
 
-public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleCommand, ServiceResult<DevImpersonationResponse>>
+public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleCommand, ServiceResult<DevImpersonationDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
@@ -52,11 +53,11 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
         _activityLogger = activityLogger;
     }
 
-    public async Task<ServiceResult<DevImpersonationResponse>> Handle(ImpersonateRoleCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<DevImpersonationDto>> Handle(ImpersonateRoleCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserId is not { } actorKey || !_currentUser.IsAdmin())
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.Forbidden, AuthErrors.AdminOnly, "Only an administrator can step into another role.");
+            return ServiceResult<DevImpersonationDto>.Failure(ResultType.Forbidden, AuthErrors.AdminOnly, "Only an administrator can step into another role.");
         }
 
         // The kurin the admin is looking at, else the demo kurin: the tool is for testing a
@@ -70,14 +71,14 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
 
         if (kurinKey is null)
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(ResultType.NotFound, AuthErrors.NoKurin, "There is no kurin to step into.");
+            return ServiceResult<DevImpersonationDto>.Failure(ResultType.NotFound, AuthErrors.NoKurin, "There is no kurin to step into.");
         }
 
         var target = await new DemoSeatLocator(_userManager, _unitOfWork, _members, _memberships)
             .FindAsync(request.Role, kurinKey.Value, actorKey, cancellationToken);
         if (target is null)
         {
-            return ServiceResult<DevImpersonationResponse>.Failure(
+            return ServiceResult<DevImpersonationDto>.Failure(
                 ResultType.NotFound,
                 AuthErrors.NoAccountForRole,
                 $"Nobody in this kurin holds {request.Role} with an account to sign in as.");
@@ -96,8 +97,8 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
             targetUserId: target.Id,
             reason: $"Dev role switcher: {request.Role} in kurin {kurinKey}.");
 
-        return new ServiceResult<DevImpersonationResponse>(
+        return new ServiceResult<DevImpersonationDto>(
             ResultType.Success,
-            new DevImpersonationResponse(login, ticket, request.Role.ToString(), kurinKey.Value));
+            new DevImpersonationDto(login, ticket, request.Role.ToString(), kurinKey.Value));
     }
 }

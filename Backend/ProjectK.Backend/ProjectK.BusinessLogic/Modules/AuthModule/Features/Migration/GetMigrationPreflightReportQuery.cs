@@ -2,14 +2,15 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration;
 
-public record GetMigrationPreflightReportQuery : IRequest<ServiceResult<MigrationPreflightReport>>;
+public record GetMigrationPreflightReportQuery : IRequest<ServiceResult<MigrationPreflightReportDto>>;
 
-public class GetMigrationPreflightReportQueryHandler : IRequestHandler<GetMigrationPreflightReportQuery, ServiceResult<MigrationPreflightReport>>
+public class GetMigrationPreflightReportQueryHandler : IRequestHandler<GetMigrationPreflightReportQuery, ServiceResult<MigrationPreflightReportDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -22,49 +23,40 @@ public class GetMigrationPreflightReportQueryHandler : IRequestHandler<GetMigrat
         _members = members;
     }
 
-    public async Task<ServiceResult<MigrationPreflightReport>> Handle(GetMigrationPreflightReportQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MigrationPreflightReportDto>> Handle(GetMigrationPreflightReportQuery request, CancellationToken cancellationToken)
     {
-        var report = new MigrationPreflightReport();
-
         var members = (await _members.GetAllAsync(cancellationToken)).ToList();
         var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
 
-        report.TotalMembers = members.Count;
-        report.TotalUsers = users.Count;
-
-        // 1. Duplicate Email Conflicts
-        var memberEmails = members.GroupBy(m => m.Email.ToLowerInvariant())
+        // Identity keeps account addresses unique, so only members can share one.
+        var duplicateEmails = members.GroupBy(m => m.Email.ToLowerInvariant())
             .Where(g => g.Count() > 1)
-            .Select(g => new DuplicateEmailConflict(g.Key, g.Select(m => m.MemberKey).ToList(), new List<Guid>()))
+            .Select(g => new DuplicateEmailConflictDto(g.Key, g.Select(m => m.MemberKey).ToList(), []))
             .ToList();
 
-        report.DuplicateEmailConflicts.AddRange(memberEmails);
-        // Combine with cross-table duplicates if needed, but usually email is unique in Identity
+        var orphanMembers = members
+            .Where(m => m.UserKey.HasValue && !users.Any(u => u.Id == m.UserKey.Value))
+            .Select(member => new OrphanMemberDto(member.MemberKey, member.FullName, member.Email, member.UserKey))
+            .ToList();
 
-        // 2. Orphan Members
-        foreach (var member in members.Where(m => m.UserKey.HasValue && !users.Any(u => u.Id == m.UserKey.Value)))
-        {
-            report.OrphanMembers.Add(new OrphanMemberInfo(
-                member.MemberKey,
-                member.FullName,
-                member.Email,
-                member.UserKey));
-        }
-
-        // 3. Orphan Users (Users not linked to any member)
         var linkedUserIds = members.Where(m => m.UserKey.HasValue).Select(m => m.UserKey!.Value).ToHashSet();
-        foreach (var user in users.Where(u => !linkedUserIds.Contains(u.Id)))
-        {
-            // Check if user is Admin - maybe admins don't need members? 
-            // But for this project, every user should ideally have a member profile.
-            report.OrphanUsers.Add(new OrphanUserInfo(user.Id, user.UserName!, user.Email!));
-        }
+        var orphanUsers = users
+            .Where(u => !linkedUserIds.Contains(u.Id))
+            .Select(user => new OrphanUserDto(user.Id, user.UserName!, user.Email!))
+            .ToList();
 
-        // 4. Inconsistent links used to compare the kurin snapshot on the account with where the
+        // Inconsistent links used to compare the kurin snapshot on the account with where the
         // person stands. The snapshot is gone (DEBT-10): membership is the only place belonging is
         // written, so there is nothing left for it to contradict. The list stays in the report,
         // empty, so the admin page keeps its shape.
+        var report = new MigrationPreflightReportDto(
+            duplicateEmails,
+            orphanMembers,
+            orphanUsers,
+            InconsistentLinks: [],
+            TotalMembers: members.Count,
+            TotalUsers: users.Count);
 
-        return new ServiceResult<MigrationPreflightReport>(ResultType.Success, report);
+        return new ServiceResult<MigrationPreflightReportDto>(ResultType.Success, report);
     }
 }

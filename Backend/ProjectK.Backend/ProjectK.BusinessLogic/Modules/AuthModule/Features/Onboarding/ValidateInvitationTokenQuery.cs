@@ -1,15 +1,14 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record ValidateInvitationTokenQuery(string Token) : IRequest<ServiceResult<InvitationValidationResponse>>;
+public record ValidateInvitationTokenQuery(string Token) : IRequest<ServiceResult<InvitationValidationDto>>;
 
-public record InvitationValidationResponse(string Email, string FirstName, string LastName, bool IsValid);
-
-public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvitationTokenQuery, ServiceResult<InvitationValidationResponse>>
+public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvitationTokenQuery, ServiceResult<InvitationValidationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
@@ -20,7 +19,7 @@ public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvit
         _timeProvider = timeProvider;
     }
 
-    public async Task<ServiceResult<InvitationValidationResponse>> Handle(ValidateInvitationTokenQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<InvitationValidationDto>> Handle(ValidateInvitationTokenQuery request, CancellationToken cancellationToken)
     {
         var invitation = await _unitOfWork.Invitations.GetByTokenAsync(request.Token, cancellationToken);
 
@@ -28,7 +27,7 @@ public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvit
         {
             // The placeholder response carried no information; the message is what the activation
             // page shows, and it was being dropped into CreatedAtActionName.
-            return ServiceResult<InvitationValidationResponse>.Failure(
+            return ServiceResult<InvitationValidationDto>.Failure(
                 ResultType.NotFound,
                 AuthErrors.InvalidInvitationToken,
                 "Invalid or expired invitation token.");
@@ -39,14 +38,14 @@ public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvit
         {
             // The placeholder response carried no information; the message is what the activation
             // page shows, and it was being dropped into CreatedAtActionName.
-            return ServiceResult<InvitationValidationResponse>.Failure(
+            return ServiceResult<InvitationValidationDto>.Failure(
                 ResultType.NotFound,
                 AuthErrors.WaitlistEntryNotFound,
                 "Associated waitlist entry not found.");
         }
 
-        return new ServiceResult<InvitationValidationResponse>(
+        return new ServiceResult<InvitationValidationDto>(
             ResultType.Success,
-            new InvitationValidationResponse(entry.Email, entry.FirstName, entry.LastName, true));
+            new InvitationValidationDto(entry.Email, entry.FirstName, entry.LastName, true));
     }
 }

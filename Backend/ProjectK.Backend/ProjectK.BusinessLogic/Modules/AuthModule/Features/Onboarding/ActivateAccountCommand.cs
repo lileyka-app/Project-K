@@ -9,6 +9,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -20,7 +21,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 /// Turns an invitation into a usable account and answers with a signed-in session, so the person
 /// lands inside the app rather than on the sign-in form they have never used.
 /// </summary>
-public record ActivateAccountCommand(string Token, string Password) : IRequest<ServiceResult<LoginUserResponse>>;
+public record ActivateAccountCommand(string Token, string Password) : IRequest<ServiceResult<LoginUserDto>>;
 
 public sealed class ActivateAccountCommandValidator : AbstractValidator<ActivateAccountCommand>
 {
@@ -32,7 +33,7 @@ public sealed class ActivateAccountCommandValidator : AbstractValidator<Activate
     }
 }
 
-public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<LoginUserResponse>>
+public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<LoginUserDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
@@ -51,26 +52,26 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         _timeProvider = timeProvider;
     }
 
-    public async Task<ServiceResult<LoginUserResponse>> Handle(ActivateAccountCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LoginUserDto>> Handle(ActivateAccountCommand request, CancellationToken cancellationToken)
     {
         // 1. Validate Token
         var invitation = await _unitOfWork.Invitations.GetByTokenAsync(request.Token, cancellationToken);
 
         if (invitation == null || invitation.ExpiresAtUtc < _timeProvider.GetUtcNow().UtcDateTime)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.InvalidInvitationToken, "Invalid or expired invitation token.");
+            return ServiceResult<LoginUserDto>.Failure(ResultType.BadRequest, AuthErrors.InvalidInvitationToken, "Invalid or expired invitation token.");
         }
 
         // 2. Get User
         if (!invitation.TargetUserKey.HasValue)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.InvitationHasNoUser, "Invitation is not linked to a user.");
+            return ServiceResult<LoginUserDto>.Failure(ResultType.BadRequest, AuthErrors.InvitationHasNoUser, "Invitation is not linked to a user.");
         }
 
         var user = await _userManager.FindByIdAsync(invitation.TargetUserKey.Value.ToString());
         if (user == null)
         {
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "Target user not found.");
+            return ServiceResult<LoginUserDto>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "Target user not found.");
         }
 
         // 3. Set Password and Activate
@@ -78,7 +79,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         if (!addPasswordResult.Succeeded)
         {
             var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.PasswordNotSet, $"Failed to set password: {errors}");
+            return ServiceResult<LoginUserDto>.Failure(ResultType.BadRequest, AuthErrors.PasswordNotSet, $"Failed to set password: {errors}");
         }
 
         user.OnboardingStatus = OnboardingStatus.Active;
@@ -88,7 +89,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         if (!updateResult.Succeeded)
         {
             var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.BadRequest, AuthErrors.UserNotUpdated, $"Failed to update user status: {errors}");
+            return ServiceResult<LoginUserDto>.Failure(ResultType.BadRequest, AuthErrors.UserNotUpdated, $"Failed to update user status: {errors}");
         }
 
         // 3.5. Assign the baseline system role. Kurin authority comes from a діловодський office,
@@ -164,6 +165,6 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
 
         // Signed in on the spot: the password was just chosen, asking for it again is a wall.
         var session = await _loginResponseFactory.CreateAsync(user, cancellationToken);
-        return new ServiceResult<LoginUserResponse>(ResultType.Success, session);
+        return new ServiceResult<LoginUserDto>(ResultType.Success, session);
     }
 }

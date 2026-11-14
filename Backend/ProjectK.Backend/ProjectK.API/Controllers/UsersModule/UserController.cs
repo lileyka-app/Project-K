@@ -10,7 +10,6 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
-using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;

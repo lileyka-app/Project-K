@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -18,9 +19,9 @@ public record InitializeSetupCommand(
     string LastName,
     bool EnforcePrivilegedMfa = false,
     bool SeedDemoData = false
-) : IRequest<ServiceResult<LoginUserResponse>>;
+) : IRequest<ServiceResult<LoginUserDto>>;
 
-public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupCommand, ServiceResult<LoginUserResponse>>
+public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupCommand, ServiceResult<LoginUserDto>>
 {
     // Guards against two concurrent initialize calls both passing the "no admins yet" check.
     private static readonly SemaphoreSlim InitializationLock = new(1, 1);
@@ -42,7 +43,7 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
         _demoDataSeeder = demoDataSeeder;
     }
 
-    public async Task<ServiceResult<LoginUserResponse>> Handle(InitializeSetupCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LoginUserDto>> Handle(InitializeSetupCommand request, CancellationToken cancellationToken)
     {
         await InitializationLock.WaitAsync(cancellationToken);
         try
@@ -50,7 +51,7 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
             var adminUsers = await _userManager.GetUsersInRoleAsync(SystemRole.Admin);
             if (adminUsers.Any())
             {
-                return ServiceResult<LoginUserResponse>.Failure(
+                return ServiceResult<LoginUserDto>.Failure(
                     ResultType.Forbidden,
                     AuthErrors.AlreadyInitialized,
                     "System is already initialized.");
@@ -69,7 +70,7 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
             var result = await _userManager.CreateAsync(user, request.Password);
             if (!result.Succeeded)
             {
-                return ServiceResult<LoginUserResponse>.Failure(
+                return ServiceResult<LoginUserDto>.Failure(
                     ResultType.BadRequest,
                     AuthErrors.SetupFailed,
                     string.Join(", ", result.Errors.Select(e => e.Description)));
@@ -88,7 +89,7 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
             }
 
             var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
-            return new ServiceResult<LoginUserResponse>(ResultType.Success, response);
+            return new ServiceResult<LoginUserDto>(ResultType.Success, response);
         }
         finally
         {

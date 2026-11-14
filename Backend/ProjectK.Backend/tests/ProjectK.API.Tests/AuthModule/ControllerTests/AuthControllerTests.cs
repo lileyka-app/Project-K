@@ -40,9 +40,9 @@ public class AuthControllerTests
     {
         // The route takes no password any more: the founder chooses one on activation.
         var command = new InviteKurinFounderCommand("founder@example.com", "Kurin", "Founder", null, 1, null);
-        var invitation = new KurinFounderInvitation(Guid.NewGuid(), Guid.NewGuid(), command.Email, InvitationSent: true);
+        var invitation = new KurinFounderInvitationDto(Guid.NewGuid(), Guid.NewGuid(), command.Email, InvitationSent: true);
         _mediatorMock.Setup(m => m.Send(command, default))
-            .ReturnsAsync(new ServiceResult<KurinFounderInvitation>(ResultType.Created, invitation));
+            .ReturnsAsync(new ServiceResult<KurinFounderInvitationDto>(ResultType.Created, invitation));
 
         var result = await _controller.RegisterKurin(command);
 
@@ -67,7 +67,7 @@ public class AuthControllerTests
             }
         };
 
-        var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens });
+        var serviceResult = new ServiceResult<LoginUserDto>(ResultType.Success, Logins.Empty with { Tokens = tokens });
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
             .ReturnsAsync(serviceResult);
@@ -104,7 +104,7 @@ public class AuthControllerTests
         };
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
-            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, new LoginUserResponse { Tokens = tokens }));
+            .ReturnsAsync(new ServiceResult<LoginUserDto>(ResultType.Success, Logins.Empty with { Tokens = tokens }));
 
         // Act
         var result = await _controller.Login(request);
@@ -122,7 +122,7 @@ public class AuthControllerTests
     {
         // Arrange
         var request = new LoginUserRequest { Email = "bad@test.com", Password = "wrong" };
-        var serviceResult = new ServiceResult<LoginUserResponse>(ResultType.Unauthorized);
+        var serviceResult = new ServiceResult<LoginUserDto>(ResultType.Unauthorized);
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<LoginUserCommand>(), default))
             .ReturnsAsync(serviceResult);
@@ -341,10 +341,10 @@ public class AuthControllerTests
                 Created = DateTime.UtcNow
             }
         };
-        var response = new LoginUserResponse { Email = request.Email, Tokens = tokens };
+        var response = Logins.Empty with { Email = request.Email, Tokens = tokens };
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
-            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Success, response));
+            .ReturnsAsync(new ServiceResult<LoginUserDto>(ResultType.Success, response));
 
         // Act
         var result = await _controller.VerifyMfaLogin(request);
@@ -367,7 +367,7 @@ public class AuthControllerTests
         var request = new MfaLoginRequestDto("user@example.com", "bad-code", false);
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
-            .ReturnsAsync(new ServiceResult<LoginUserResponse>(ResultType.Unauthorized));
+            .ReturnsAsync(new ServiceResult<LoginUserDto>(ResultType.Unauthorized));
 
         // Act
         var result = await _controller.VerifyMfaLogin(request);

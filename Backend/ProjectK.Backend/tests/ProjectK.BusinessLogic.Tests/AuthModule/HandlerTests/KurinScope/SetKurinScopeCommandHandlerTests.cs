@@ -3,11 +3,13 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.KurinScope;
@@ -31,7 +33,7 @@ public class SetKurinScopeCommandHandlerTests
 
         _loginResponseFactoryMock
             .Setup(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new LoginUserResponse { Email = "admin@projectk.com", IsAdmin = true });
+            .ReturnsAsync(Logins.Empty with { Email = "admin@projectk.com", IsAdmin = true });
 
         _handler = new SetKurinScopeCommandHandler(
             _userManagerMock.Object,

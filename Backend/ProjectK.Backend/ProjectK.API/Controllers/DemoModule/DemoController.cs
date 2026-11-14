@@ -8,6 +8,7 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Hosting;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Demo;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 
@@ -36,7 +37,7 @@ public class DemoController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("StrictAuthLimit")]
     [HttpPost("login")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Enter([FromBody] EnterDemoRequest request, CancellationToken cancellationToken)

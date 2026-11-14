@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -16,9 +17,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 /// challenge the password step handed out for this account; the handler refuses without it.
 /// </summary>
 public record VerifyMfaLoginCommand(string Email, string Code, bool RememberMe, string? MfaToken = null)
-    : IRequest<ServiceResult<LoginUserResponse>>;
+    : IRequest<ServiceResult<LoginUserDto>>;
 
-public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginCommand, ServiceResult<LoginUserResponse>>
+public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginCommand, ServiceResult<LoginUserDto>>
 {
     private const string InvalidCredentialsCode = AuthErrors.InvalidCredentials;
     private const string InvalidCredentialsMessage = "Invalid verification code or recovery code.";
@@ -43,14 +44,14 @@ public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginComman
         _jwtService = jwtService;
     }
 
-    public async Task<ServiceResult<LoginUserResponse>> Handle(VerifyMfaLoginCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LoginUserDto>> Handle(VerifyMfaLoginCommand request, CancellationToken cancellationToken)
     {
         // Suspended between the password step and this one is still suspended.
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || !user.CanSignIn())
         {
             _activityLogger.TrackFailedMfa(request.Email);
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
+            return ServiceResult<LoginUserDto>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
         }
 
         // The second factor is only ever the second one. The challenge is minted by the password
@@ -63,7 +64,7 @@ public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginComman
         if (challengedUserKey is null || challengedUserKey.Value != user.Id)
         {
             _activityLogger.TrackFailedMfa(request.Email);
-            return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
+            return ServiceResult<LoginUserDto>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
         }
 
         var verificationCode = request.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
@@ -78,7 +79,7 @@ public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginComman
             if (!recoveryCodeResult.Succeeded)
             {
                 _activityLogger.TrackFailedMfa(request.Email);
-                return ServiceResult<LoginUserResponse>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
+                return ServiceResult<LoginUserDto>.Failure(ResultType.Unauthorized, InvalidCredentialsCode, InvalidCredentialsMessage);
             }
 
             _logger.LogInformation("Audit: User {UserId} successfully logged in using a recovery code.", user.Id);
@@ -88,8 +89,8 @@ public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginComman
 
         // The code was right once on this device; the browser keeps that, so the next sign-ins
         // here skip the second factor until the trust runs out or the account's stamp changes.
-        response.MfaTrust = _jwtService.GenerateMfaTrustToken(user.Id, user.SecurityStamp ?? string.Empty);
+        var trusted = response with { MfaTrust = _jwtService.GenerateMfaTrustToken(user.Id, user.SecurityStamp ?? string.Empty) };
 
-        return new ServiceResult<LoginUserResponse>(ResultType.Success, response);
+        return new ServiceResult<LoginUserDto>(ResultType.Success, trusted);
     }
 }

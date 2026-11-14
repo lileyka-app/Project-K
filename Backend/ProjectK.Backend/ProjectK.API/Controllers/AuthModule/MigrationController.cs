@@ -7,6 +7,7 @@ using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.API.Controllers.AuthModule;
 
@@ -29,7 +30,7 @@ public class MigrationController : ControllerBase
     /// Reports what the legacy role migration would change, without changing anything.
     /// </summary>
     [HttpGet("preflight")]
-    [ProducesResponseType(typeof(MigrationPreflightReport), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MigrationPreflightReportDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPreflightReport()
     {
         var query = new GetMigrationPreflightReportQuery();

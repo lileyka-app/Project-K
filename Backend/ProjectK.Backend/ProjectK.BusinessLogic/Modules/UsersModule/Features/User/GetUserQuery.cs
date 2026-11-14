@@ -1,10 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -43,6 +43,10 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<U
             UserId = user.Id,
             KurinKey = here?.KurinKey,
             KurinNumber = here?.KurinNumber,
+            KurinBranch = null,
+            KurinBranches = null,
+            KurinNamedAfter = null,
+            KurinKraiCode = null,
             Email = user.Email!,
             Role = isAdmin ? SystemRole.Admin : SystemRole.Member,
             TwoFactorEnabled = user.TwoFactorEnabled,

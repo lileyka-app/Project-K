@@ -10,6 +10,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
@@ -28,7 +29,7 @@ public sealed record InviteKurinFounderCommand(
     string LastName,
     string? PhoneNumber,
     int? KurinNumber,
-    string? KraiCode) : IRequest<ServiceResult<KurinFounderInvitation>>;
+    string? KraiCode) : IRequest<ServiceResult<KurinFounderInvitationDto>>;
 
 public sealed class InviteKurinFounderCommandValidator : AbstractValidator<InviteKurinFounderCommand>
 {
@@ -59,7 +60,7 @@ public sealed class InviteKurinFounderCommandValidator : AbstractValidator<Invit
 /// application — so there is one path by which a kurin gets its first Зв'язковий, not two.
 /// </summary>
 public sealed class InviteKurinFounderCommandHandler
-    : IRequestHandler<InviteKurinFounderCommand, ServiceResult<KurinFounderInvitation>>
+    : IRequestHandler<InviteKurinFounderCommand, ServiceResult<KurinFounderInvitationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAccountProvisioningService _accountProvisioning;
@@ -90,7 +91,7 @@ public sealed class InviteKurinFounderCommandHandler
         _logger = logger;
     }
 
-    public async Task<ServiceResult<KurinFounderInvitation>> Handle(
+    public async Task<ServiceResult<KurinFounderInvitationDto>> Handle(
         InviteKurinFounderCommand request,
         CancellationToken cancellationToken)
     {
@@ -104,23 +105,23 @@ public sealed class InviteKurinFounderCommandHandler
         switch (await _accountProvisioning.CheckAvailabilityAsync(email, cancellationToken))
         {
             case AccountAvailability.EmailTaken:
-                return ServiceResult<KurinFounderInvitation>.Failure(
+                return ServiceResult<KurinFounderInvitationDto>.Failure(
                     ResultType.Conflict, AuthErrors.EmailTaken, "За цією адресою вже є акаунт.");
             case AccountAvailability.WaitlistPending:
-                return ServiceResult<KurinFounderInvitation>.Failure(
+                return ServiceResult<KurinFounderInvitationDto>.Failure(
                     ResultType.Conflict, AuthErrors.WaitlistPending, "Від цієї адреси вже є заявка — схвали її в «Заявках».");
         }
 
         var kraiCode = Krai.NormalizeCode(request.KraiCode) ?? _krai.Default;
         if (!await _unitOfWork.Krais.ExistsAsync(kraiCode, cancellationToken))
         {
-            return ServiceResult<KurinFounderInvitation>.Failure(
+            return ServiceResult<KurinFounderInvitationDto>.Failure(
                 ResultType.BadRequest, AuthErrors.KraiNotFound, "Такого краю немає в списку.");
         }
 
         if (request.KurinNumber is int number && await _unitOfWork.Kurins.ExistsAsync(kraiCode, number, cancellationToken))
         {
-            return ServiceResult<KurinFounderInvitation>.Failure(
+            return ServiceResult<KurinFounderInvitationDto>.Failure(
                 ResultType.Conflict, AuthErrors.KurinNumberTaken, "Курінь з таким числом у цьому краї вже є.");
         }
 
@@ -160,7 +161,7 @@ public sealed class InviteKurinFounderCommandHandler
 
         if (provisioned.Type != ResultType.Success || provisioned.Data is null)
         {
-            return ServiceResult<KurinFounderInvitation>.Failure(
+            return ServiceResult<KurinFounderInvitationDto>.Failure(
                 provisioned.Type,
                 provisioned.ErrorCode ?? AuthErrors.UserNotCreated,
                 provisioned.ErrorMessage ?? "Failed to create user.");
@@ -184,8 +185,8 @@ public sealed class InviteKurinFounderCommandHandler
             sent = false;
         }
 
-        return new ServiceResult<KurinFounderInvitation>(
+        return new ServiceResult<KurinFounderInvitationDto>(
             ResultType.Created,
-            new KurinFounderInvitation(kurin.KurinKey, provisioned.Data.UserKey, email, sent));
+            new KurinFounderInvitationDto(kurin.KurinKey, provisioned.Data.UserKey, email, sent));
     }
 }

@@ -12,6 +12,7 @@ using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Settings;
@@ -154,7 +155,7 @@ public class OnboardingController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpGet("invitation/{token}/validate")]
-    [ProducesResponseType(typeof(InvitationValidationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(InvitationValidationDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateInvitationToken(string token)
     {
         var response = await _mediator.Send(new ValidateInvitationTokenQuery(token));
@@ -170,7 +171,7 @@ public class OnboardingController : ControllerBase
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("activate")]
-    [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ActivateAccount([FromBody] ActivateAccountCommand command)
     {
         var response = await _mediator.Send(command);

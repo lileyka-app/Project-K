@@ -9,7 +9,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 public interface ILoginResponseFactory
 {
-    Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken);
+    Task<LoginUserDto> CreateAsync(AppUser user, CancellationToken cancellationToken);
 }
 
 public class LoginResponseFactory : ILoginResponseFactory
@@ -34,7 +34,7 @@ public class LoginResponseFactory : ILoginResponseFactory
         _snapshots = snapshots;
     }
 
-    public async Task<LoginUserResponse> CreateAsync(AppUser user, CancellationToken cancellationToken)
+    public async Task<LoginUserDto> CreateAsync(AppUser user, CancellationToken cancellationToken)
     {
         // What this person may do is answered for the kurin they are in, not for the account.
         // Sign in, refresh and switching kurin all ask the same question here.
@@ -54,7 +54,7 @@ public class LoginResponseFactory : ILoginResponseFactory
 
         var snapshot = await _snapshots.CreateAsync(access, cancellationToken);
 
-        return new LoginUserResponse
+        return new LoginUserDto
         {
             UserKey = user.Id,
             MemberKey = member?.MemberKey,

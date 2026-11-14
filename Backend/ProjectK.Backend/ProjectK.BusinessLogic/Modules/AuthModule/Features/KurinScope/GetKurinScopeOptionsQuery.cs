@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -10,20 +11,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope;
 /// shown and the choice the server would allow are the same list.
 /// </summary>
 public sealed record GetKurinScopeOptionsQuery(Guid UserKey)
-    : IRequest<ServiceResult<IReadOnlyCollection<KurinScopeOption>>>;
-
-/// <param name="Kind">Юнацьке членство чи виховний склад — the same person may be either, in different kurins.</param>
-/// <param name="Branches">Every гілка with the kurin's number there, main one first.</param>
-public sealed record KurinScopeOption(
-    Guid KurinKey,
-    int? KurinNumber,
-    KurinBranch Branch,
-    string? NamedAfter,
-    MembershipKind Kind,
-    IReadOnlyList<KurinNumbering> Branches);
+    : IRequest<ServiceResult<IReadOnlyCollection<KurinScopeOptionDto>>>;
 
 public sealed class GetKurinScopeOptionsQueryHandler
-    : IRequestHandler<GetKurinScopeOptionsQuery, ServiceResult<IReadOnlyCollection<KurinScopeOption>>>
+    : IRequestHandler<GetKurinScopeOptionsQuery, ServiceResult<IReadOnlyCollection<KurinScopeOptionDto>>>
 {
     private readonly IMembershipDirectory _memberships;
 
@@ -32,7 +23,7 @@ public sealed class GetKurinScopeOptionsQueryHandler
         _memberships = memberships;
     }
 
-    public async Task<ServiceResult<IReadOnlyCollection<KurinScopeOption>>> Handle(
+    public async Task<ServiceResult<IReadOnlyCollection<KurinScopeOptionDto>>> Handle(
         GetKurinScopeOptionsQuery request,
         CancellationToken cancellationToken)
     {
@@ -41,15 +32,15 @@ public sealed class GetKurinScopeOptionsQueryHandler
         // offered here — that is what the admin panel is.
         var memberships = await _memberships.GetCurrentForAccountAsync(request.UserKey, cancellationToken);
 
-        IReadOnlyCollection<KurinScopeOption> options =
+        IReadOnlyCollection<KurinScopeOptionDto> options =
         [
             .. memberships
                 .OrderBy(m => m.KurinNumber)
-                .Select(m => new KurinScopeOption(
+                .Select(m => new KurinScopeOptionDto(
                     m.KurinKey, m.KurinNumber, m.Branch, m.KurinNamedAfter, m.Kind,
                     [.. KurinBranchSet.Ordered(m.Numbering, n => n.Branch)]))
         ];
 
-        return new ServiceResult<IReadOnlyCollection<KurinScopeOption>>(ResultType.Success, options);
+        return new ServiceResult<IReadOnlyCollection<KurinScopeOptionDto>>(ResultType.Success, options);
     }
 }

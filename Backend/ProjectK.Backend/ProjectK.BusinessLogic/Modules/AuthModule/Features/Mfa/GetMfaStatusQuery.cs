@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -14,11 +15,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 /// policy decision, not an account setting: holding a privileged office can make the second factor
 /// mandatory for an account that had it switched off.
 /// </summary>
-public sealed record GetMfaStatusQuery : IRequest<ServiceResult<MfaStatusResponse>>;
+public sealed record GetMfaStatusQuery : IRequest<ServiceResult<MfaStatusDto>>;
 
-public sealed record MfaStatusResponse(bool IsMfaEnabled, bool IsMfaRequired);
-
-public sealed class GetMfaStatusQueryHandler : IRequestHandler<GetMfaStatusQuery, ServiceResult<MfaStatusResponse>>
+public sealed class GetMfaStatusQueryHandler : IRequestHandler<GetMfaStatusQuery, ServiceResult<MfaStatusDto>>
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly UserManager<AppUser> _userManager;
@@ -34,24 +33,24 @@ public sealed class GetMfaStatusQueryHandler : IRequestHandler<GetMfaStatusQuery
         _policy = policy;
     }
 
-    public async Task<ServiceResult<MfaStatusResponse>> Handle(GetMfaStatusQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MfaStatusDto>> Handle(GetMfaStatusQuery request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserId is not { } userKey)
         {
-            return AuthErrors.AccountMissing<MfaStatusResponse>();
+            return AuthErrors.AccountMissing<MfaStatusDto>();
         }
 
         var user = await _userManager.FindByIdAsync(userKey.ToString());
         if (user is null)
         {
-            return ServiceResult<MfaStatusResponse>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "User not found.");
+            return ServiceResult<MfaStatusDto>.Failure(ResultType.NotFound, AuthErrors.UserNotFound, "User not found.");
         }
 
         var isPrivileged = RolePermissionMap.GrantsWholeKurinManagement(_currentUser.Roles ?? []);
         var isMfaRequired = isPrivileged && await _policy.IsPrivilegedMfaRequiredAsync(cancellationToken);
 
-        return new ServiceResult<MfaStatusResponse>(
+        return new ServiceResult<MfaStatusDto>(
             ResultType.Success,
-            new MfaStatusResponse(user.TwoFactorEnabled, isMfaRequired));
+            new MfaStatusDto(user.TwoFactorEnabled, isMfaRequired));
     }
 }

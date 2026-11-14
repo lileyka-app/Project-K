@@ -32,7 +32,7 @@ public class SensitiveChangeRefreshTokenInvalidationTests
         _loginResponsesMock = new Mock<ILoginResponseFactory>();
         _loginResponsesMock
             .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse
+            .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with
             {
                 UserKey = user.Id,
                 Email = user.Email!,

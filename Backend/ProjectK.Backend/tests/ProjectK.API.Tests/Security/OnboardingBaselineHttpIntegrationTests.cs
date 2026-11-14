@@ -15,6 +15,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
+using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
@@ -31,6 +32,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -290,7 +292,7 @@ public class OnboardingBaselineHttpIntegrationTests
             var mockLoginResponses = new Mock<ILoginResponseFactory>();
             mockLoginResponses
                 .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email ?? string.Empty });
+                .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with { UserKey = user.Id, Email = user.Email ?? string.Empty });
             builder.Services.AddSingleton(mockLoginResponses.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
             builder.Services.AddSingleton(TimeProvider.System);

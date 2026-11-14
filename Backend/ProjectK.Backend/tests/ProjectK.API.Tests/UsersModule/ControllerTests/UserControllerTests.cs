@@ -8,7 +8,6 @@ using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
-using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -39,7 +38,14 @@ public class UserControllerTests
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "john.doe@example.com",
-                Role = "User"
+                Role = "User",
+                KurinNumber = null,
+                KurinBranch = null,
+                KurinBranches = null,
+                KurinNamedAfter = null,
+                KurinKraiCode = null,
+                TwoFactorEnabled = false,
+                IsSuspended = false
             },
             new UserDto
             {
@@ -48,7 +54,14 @@ public class UserControllerTests
                 FirstName = "Jane",
                 LastName = "Smith",
                 Email = "jane.smith@example.com",
-                Role = "Admin"
+                Role = "Admin",
+                KurinNumber = null,
+                KurinBranch = null,
+                KurinBranches = null,
+                KurinNamedAfter = null,
+                KurinKraiCode = null,
+                TwoFactorEnabled = false,
+                IsSuspended = false
             }
         };
         var serviceResult = new ServiceResult<IEnumerable<UserDto>>(ResultType.Success, users);

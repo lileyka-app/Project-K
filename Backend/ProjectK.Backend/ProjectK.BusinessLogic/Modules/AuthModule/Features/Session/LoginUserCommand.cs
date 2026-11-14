@@ -7,12 +7,13 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 
-public class LoginUserCommand : IRequest<ServiceResult<LoginUserResponse>>
+public class LoginUserCommand : IRequest<ServiceResult<LoginUserDto>>
 {
     public string Email { get; set; }
     public string Password { get; set; }
@@ -30,7 +31,7 @@ public class LoginUserCommand : IRequest<ServiceResult<LoginUserResponse>>
     }
 }
 
-public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, ServiceResult<LoginUserResponse>>
+public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, ServiceResult<LoginUserDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly SignInManager<AppUser> _signInManager;
@@ -61,13 +62,13 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         _throttle = throttle;
     }
 
-    public async Task<ServiceResult<LoginUserResponse>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<LoginUserDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
         // Checked before the address is looked up, and counted for unknown addresses too: a pause
         // answers the same whether or not anyone is registered under it.
         if (_throttle.IsPaused(request.Email))
         {
-            return ServiceResult<LoginUserResponse>.Failure(
+            return ServiceResult<LoginUserDto>.Failure(
                 ResultType.TooManyRequests,
                 AuthErrors.TooManyAttempts,
                 "Too many failed sign-ins for this email. Try again later or reset the password.");
@@ -80,7 +81,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         {
             _activityLogger.TrackFailedLogin(request.Email);
             _throttle.RecordFailure(request.Email);
-            return ServiceResult<LoginUserResponse>.Failure(
+            return ServiceResult<LoginUserDto>.Failure(
                 ResultType.Unauthorized,
                 AuthErrors.InvalidCredentials,
                 "Email or password is incorrect.");
@@ -94,7 +95,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
         {
             _activityLogger.TrackFailedLogin(request.Email);
             _throttle.RecordFailure(request.Email);
-            return ServiceResult<LoginUserResponse>.Failure(
+            return ServiceResult<LoginUserDto>.Failure(
                 ResultType.Unauthorized,
                 AuthErrors.InvalidCredentials,
                 "Email or password is incorrect.");
@@ -112,21 +113,27 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
 
         if (user.TwoFactorEnabled && !bypassMfa && !IsTrustedDevice(request.MfaTrustToken, user))
         {
-            return new ServiceResult<LoginUserResponse>(
+            return new ServiceResult<LoginUserDto>(
                 ResultType.Success,
-                new LoginUserResponse
+                new LoginUserDto
                 {
                     UserKey = user.Id,
+                    MemberKey = null,
                     Email = user.Email!,
+                    IsAdmin = false,
+                    Permissions = [],
+                    Roles = [],
+                    KurinKey = null,
                     RequiresMfa = true,
                     // What the second step has to bring back: proof that this password step happened.
-                    MfaToken = _jwtService.GenerateMfaChallengeToken(user.Id)
+                    MfaToken = _jwtService.GenerateMfaChallengeToken(user.Id),
+                    Tokens = null
                 });
         }
 
         var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
 
-        return new ServiceResult<LoginUserResponse>(
+        return new ServiceResult<LoginUserDto>(
             ResultType.Success,
             response);
     }
