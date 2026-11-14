@@ -3,7 +3,6 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
@@ -11,9 +10,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
 

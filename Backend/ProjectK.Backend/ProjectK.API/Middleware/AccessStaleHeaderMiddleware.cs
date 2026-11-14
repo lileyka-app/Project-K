@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Http;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Models.Authorization;

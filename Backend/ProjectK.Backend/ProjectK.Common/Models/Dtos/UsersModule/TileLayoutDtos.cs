@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace ProjectK.Common.Models.Dtos.UsersModule;
 
 public record TileLayoutDto(

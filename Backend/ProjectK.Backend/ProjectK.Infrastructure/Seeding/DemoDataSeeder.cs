@@ -11,7 +11,6 @@ using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization;

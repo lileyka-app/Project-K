@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +12,6 @@ using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.AuditModule;
-using Xunit;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace ProjectK.API.Tests.Services;

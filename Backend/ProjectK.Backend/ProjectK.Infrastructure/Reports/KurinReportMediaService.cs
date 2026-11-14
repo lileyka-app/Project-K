@@ -2,9 +2,7 @@ using Azure;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Settings;
-using ProjectK.Infrastructure.Services.BlobStorageService;
 
 namespace ProjectK.Infrastructure.Reports;
 

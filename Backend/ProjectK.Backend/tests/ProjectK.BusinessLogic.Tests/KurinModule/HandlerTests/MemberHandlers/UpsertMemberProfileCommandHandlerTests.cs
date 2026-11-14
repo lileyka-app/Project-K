@@ -5,7 +5,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -22,8 +21,6 @@ using ProjectK.Common.Models.Members;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 

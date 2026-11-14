@@ -1,6 +1,5 @@
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Reports;
-using Xunit;
 
 namespace ProjectK.API.Tests.Reports;
 

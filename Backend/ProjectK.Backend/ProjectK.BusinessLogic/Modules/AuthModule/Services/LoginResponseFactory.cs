@@ -1,12 +1,8 @@
-using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;

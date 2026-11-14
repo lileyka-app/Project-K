@@ -4,7 +4,6 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

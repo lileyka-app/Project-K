@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -11,7 +7,6 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;

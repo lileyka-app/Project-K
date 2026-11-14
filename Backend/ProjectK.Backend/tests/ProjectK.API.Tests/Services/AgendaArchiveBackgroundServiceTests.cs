@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +9,6 @@ using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
 
 namespace ProjectK.API.Tests.Services;
 

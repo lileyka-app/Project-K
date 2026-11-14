@@ -1,4 +1,3 @@
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;

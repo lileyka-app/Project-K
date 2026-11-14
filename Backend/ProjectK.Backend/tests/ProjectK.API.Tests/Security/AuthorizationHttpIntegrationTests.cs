@@ -2,10 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,9 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Tests.Security;
 

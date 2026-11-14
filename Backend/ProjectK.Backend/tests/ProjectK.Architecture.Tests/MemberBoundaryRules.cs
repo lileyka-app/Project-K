@@ -2,7 +2,6 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;

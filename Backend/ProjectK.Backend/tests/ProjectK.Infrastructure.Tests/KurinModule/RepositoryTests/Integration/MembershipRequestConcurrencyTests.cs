@@ -3,7 +3,6 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Exceptions;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;

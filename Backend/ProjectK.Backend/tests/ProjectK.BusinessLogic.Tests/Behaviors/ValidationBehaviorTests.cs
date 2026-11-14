@@ -4,7 +4,6 @@ using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.Behaviors;
 

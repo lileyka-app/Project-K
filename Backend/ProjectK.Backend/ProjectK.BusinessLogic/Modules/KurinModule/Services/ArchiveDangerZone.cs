@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

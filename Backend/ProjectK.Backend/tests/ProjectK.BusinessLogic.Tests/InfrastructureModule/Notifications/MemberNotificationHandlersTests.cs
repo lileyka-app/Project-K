@@ -10,7 +10,6 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
 

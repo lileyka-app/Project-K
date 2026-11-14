@@ -4,13 +4,11 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 

@@ -1,7 +1,4 @@
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;

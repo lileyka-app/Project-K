@@ -2,7 +2,6 @@ using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using Microsoft.Extensions.Logging.Abstractions;
 using ProjectK.BusinessLogic.MappingProfiles;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.MappingProfiles;
 

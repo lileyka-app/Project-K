@@ -8,7 +8,6 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
 

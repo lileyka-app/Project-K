@@ -10,7 +10,6 @@ using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

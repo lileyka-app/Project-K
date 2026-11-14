@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Models.Enums;

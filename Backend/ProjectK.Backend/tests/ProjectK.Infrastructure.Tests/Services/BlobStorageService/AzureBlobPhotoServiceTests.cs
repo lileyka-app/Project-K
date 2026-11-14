@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -12,7 +8,6 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService;
 

@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Delete;
@@ -11,7 +6,6 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
 

@@ -1,5 +1,3 @@
-using System;
-
 namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
 public interface IActivityLogger

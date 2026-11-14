@@ -3,7 +3,6 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule;
 

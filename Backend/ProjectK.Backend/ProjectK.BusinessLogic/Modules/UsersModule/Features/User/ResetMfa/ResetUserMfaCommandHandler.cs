@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;

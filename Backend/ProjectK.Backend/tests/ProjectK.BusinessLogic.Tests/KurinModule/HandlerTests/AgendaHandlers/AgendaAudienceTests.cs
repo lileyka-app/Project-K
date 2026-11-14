@@ -3,7 +3,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;
 

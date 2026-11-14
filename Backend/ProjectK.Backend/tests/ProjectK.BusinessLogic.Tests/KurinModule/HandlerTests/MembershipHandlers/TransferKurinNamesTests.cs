@@ -3,7 +3,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 

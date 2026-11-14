@@ -1,7 +1,4 @@
 using ProjectK.Common.Phones;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Entities.KraiModule;

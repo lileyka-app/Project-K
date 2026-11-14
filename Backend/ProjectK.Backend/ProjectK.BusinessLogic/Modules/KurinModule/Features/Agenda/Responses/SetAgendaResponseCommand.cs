@@ -1,7 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;

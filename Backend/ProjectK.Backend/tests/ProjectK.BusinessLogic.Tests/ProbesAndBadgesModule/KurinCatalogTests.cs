@@ -7,7 +7,6 @@ using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 

@@ -2,7 +2,6 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests;
 

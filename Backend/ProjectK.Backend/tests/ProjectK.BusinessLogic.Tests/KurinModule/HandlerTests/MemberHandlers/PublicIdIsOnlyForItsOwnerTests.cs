@@ -7,10 +7,8 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 using MemberEntity = ProjectK.Common.Entities.KurinModule.Member;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 

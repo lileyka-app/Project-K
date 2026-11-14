@@ -1,7 +1,6 @@
 using System.Text;
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

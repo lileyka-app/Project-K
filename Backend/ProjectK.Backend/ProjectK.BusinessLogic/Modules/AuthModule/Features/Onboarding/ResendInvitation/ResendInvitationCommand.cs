@@ -1,4 +1,3 @@
-using System;
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.Common.Models.Records;

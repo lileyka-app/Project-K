@@ -8,7 +8,6 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests;
 

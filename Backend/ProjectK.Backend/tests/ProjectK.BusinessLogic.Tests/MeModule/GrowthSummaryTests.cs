@@ -1,7 +1,6 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

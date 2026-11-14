@@ -1,5 +1,4 @@
 using ProjectK.Common.Models;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.CommonTests;
 

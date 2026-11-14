@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
@@ -10,8 +6,6 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.UsersModule.HandlerTests;
 

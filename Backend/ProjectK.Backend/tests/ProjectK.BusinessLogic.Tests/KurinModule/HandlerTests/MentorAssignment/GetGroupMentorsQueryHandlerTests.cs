@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;

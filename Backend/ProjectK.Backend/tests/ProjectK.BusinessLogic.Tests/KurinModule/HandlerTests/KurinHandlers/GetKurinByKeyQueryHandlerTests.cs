@@ -1,7 +1,4 @@
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
@@ -11,13 +8,11 @@ using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 

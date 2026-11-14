@@ -2,7 +2,6 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

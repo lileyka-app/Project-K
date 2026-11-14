@@ -1,8 +1,4 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;

@@ -16,7 +16,6 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.ResetMfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Suspend;
 using ProjectK.BusinessLogic.Modules.UsersModule.Models;
 using ProjectK.Common.Models.Dtos.UsersModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

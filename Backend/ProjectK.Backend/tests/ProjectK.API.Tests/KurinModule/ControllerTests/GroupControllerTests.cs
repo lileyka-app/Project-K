@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,15 +8,12 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests;
 

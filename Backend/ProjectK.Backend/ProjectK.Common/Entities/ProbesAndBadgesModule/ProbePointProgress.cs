@@ -1,5 +1,3 @@
-using ProjectK.Common.Entities;
-
 namespace ProjectK.Common.Entities.ProbesAndBadgesModule;
 
 public class ProbePointProgress : Entity

@@ -6,7 +6,6 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Models.Events;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 

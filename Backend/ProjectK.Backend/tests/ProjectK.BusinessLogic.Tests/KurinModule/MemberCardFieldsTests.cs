@@ -2,7 +2,6 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;
 

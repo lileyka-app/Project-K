@@ -1,8 +1,4 @@
 using ProjectK.Common.Phones;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;

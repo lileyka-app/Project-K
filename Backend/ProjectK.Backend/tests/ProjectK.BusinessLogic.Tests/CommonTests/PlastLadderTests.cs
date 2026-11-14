@@ -1,6 +1,5 @@
 using FluentAssertions;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.CommonTests;
 

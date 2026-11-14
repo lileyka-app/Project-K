@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using ProjectK.API.Helpers;
 using ProjectK.BusinessLogic;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;

@@ -1,6 +1,5 @@
 using ProjectK.Common.Models.Catalog;
 using ProjectK.Infrastructure.Services.Catalog;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
 

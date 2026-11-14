@@ -13,7 +13,6 @@ using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

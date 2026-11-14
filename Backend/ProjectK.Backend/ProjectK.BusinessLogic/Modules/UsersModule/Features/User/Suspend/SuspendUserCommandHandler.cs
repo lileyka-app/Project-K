@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

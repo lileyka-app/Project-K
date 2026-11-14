@@ -1,7 +1,6 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 

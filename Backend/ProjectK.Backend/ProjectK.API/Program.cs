@@ -19,7 +19,6 @@ using ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 using QuestPDF.Infrastructure;
 using Serilog;
 using Serilog.Enrichers.Sensitive;
-using Serilog.Filters.Expressions;
 
 namespace ProjectK.API;
 

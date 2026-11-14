@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Models;
 
 public class MigrationPreflightReport

@@ -1,7 +1,4 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic;
-using ProjectK.Common.Entities;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

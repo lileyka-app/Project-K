@@ -1,7 +1,6 @@
 using ProjectK.Infrastructure.Logging;
 using Serilog.Events;
 using Serilog.Parsing;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Logging;
 

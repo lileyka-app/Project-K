@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
@@ -13,12 +8,10 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.API.Tests.KurinModule.ControllerTests;
 

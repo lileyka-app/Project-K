@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule;
 

@@ -2,7 +2,6 @@ using AutoMapper;
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

@@ -21,7 +21,6 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Common.Security;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

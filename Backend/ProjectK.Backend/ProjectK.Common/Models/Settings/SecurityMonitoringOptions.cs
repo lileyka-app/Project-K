@@ -1,5 +1,3 @@
-using System;
-
 namespace ProjectK.Common.Models.Settings;
 
 public sealed class SecurityMonitoringOptions

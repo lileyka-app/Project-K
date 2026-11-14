@@ -1,29 +1,19 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.MappingProfiles.Resolvers;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Members;
-using ProjectK.Common.Models.Settings;
-using ProjectK.Infrastructure.Services.BlobStorageService;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 

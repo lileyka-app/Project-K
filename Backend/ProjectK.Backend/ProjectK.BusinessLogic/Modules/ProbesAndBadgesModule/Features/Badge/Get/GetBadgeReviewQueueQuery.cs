@@ -8,7 +8,6 @@ using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Member = ProjectK.Common.Entities.KurinModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 

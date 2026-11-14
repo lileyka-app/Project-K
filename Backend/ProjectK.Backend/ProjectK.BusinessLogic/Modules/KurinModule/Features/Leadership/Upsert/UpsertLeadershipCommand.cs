@@ -1,6 +1,5 @@
 using AutoMapper;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -10,12 +9,10 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Reports;
 using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;

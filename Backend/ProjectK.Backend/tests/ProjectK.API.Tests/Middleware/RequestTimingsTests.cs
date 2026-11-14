@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using ProjectK.API.Middleware;
-using Xunit;
 
 namespace ProjectK.API.Tests.Middleware;
 
