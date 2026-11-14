@@ -12,8 +12,8 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -42,7 +42,7 @@ public class KurinController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/badges/review")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<BadgeProgressDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBadgeReviewQueue(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetBadgeReviewQueueQuery(kurinKey));

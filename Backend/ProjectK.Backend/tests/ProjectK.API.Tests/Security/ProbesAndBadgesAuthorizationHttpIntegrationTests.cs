@@ -12,7 +12,7 @@ using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Models.Catalog;
 
@@ -114,15 +114,19 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
             probesCatalogService.Setup(x => x.GetProbes())
                 .Returns([
-                    new ProbeSummaryResponse(
+                    new ProbeSummaryDto(
                         Id: "probe-1",
                         Title: "Probe 1",
                         PointsCount: 1,
-                        SectionsCount: 0)
+                        SectionsCount: 0,
+                        Edition: null,
+                        Order: 0,
+                        KraiCode: "",
+                        StatusCode: "")
                 ]);
 
             probesCatalogService.Setup(x => x.GetGroupedProbeById(It.IsAny<string>()))
-                .Returns(new GroupedProbeResponse(
+                .Returns(new GroupedProbeDto(
                     Id: "probe-1",
                     Title: "Probe 1",
                     PointsCount: 1,

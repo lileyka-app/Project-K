@@ -1,10 +1,10 @@
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
 public interface IProbesCatalogService
 {
-    IReadOnlyList<ProbeSummaryResponse> GetProbes();
+    IReadOnlyList<ProbeSummaryDto> GetProbes();
 
-    GroupedProbeResponse? GetGroupedProbeById(string probeId);
+    GroupedProbeDto? GetGroupedProbeById(string probeId);
 }

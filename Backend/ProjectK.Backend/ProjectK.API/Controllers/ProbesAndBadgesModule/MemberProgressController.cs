@@ -5,13 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -39,7 +35,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("badges/progress")]
     [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(IEnumerable<BadgeProgressResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<BadgeProgressDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBadgeProgresses(Guid memberKey)
     {
@@ -56,7 +52,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("badges/{badgeId}/submit")]
     [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Create, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadgeProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -72,7 +68,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("badges/{badgeId}/review")]
     [ResourceAuthorize(ResourceType.BadgeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(BadgeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadgeProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -92,7 +88,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("probes/line")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(IReadOnlyList<ProbeSummaryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<ProbeSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProbeLine(Guid memberKey)
     {
         var response = await _mediator.Send(new GetMemberProbeLineQuery(memberKey));
@@ -105,7 +101,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("probes/{probeId}/progress")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProbeProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProbeProgress(Guid memberKey, string probeId)
@@ -120,7 +116,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/progress/status")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProbeProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -142,7 +138,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/points/{pointId}/sign")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Update, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProbeProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SignProbePoint(
@@ -161,7 +157,7 @@ public class MemberProgressController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("probes/{probeId}/points/{pointId}/unsign")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Delete, "route:memberKey", ResourceType.Member)]
-    [ProducesResponseType(typeof(ProbeProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProbeProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UnsignProbePoint(

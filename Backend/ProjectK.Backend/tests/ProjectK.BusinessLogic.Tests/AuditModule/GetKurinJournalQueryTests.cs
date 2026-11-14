@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuditModule;
@@ -150,7 +150,7 @@ public class GetKurinJournalQueryTests
     public async Task FoldedProbeHistory_ReadsAsTheCatalogueTitle_WhileOtherLabelsStay()
     {
         _probes.Setup(x => x.GetGroupedProbeById("probe-1"))
-            .Returns(new GroupedProbeResponse("probe-1", "Перша проба", 0, 0, []));
+            .Returns(new GroupedProbeDto("probe-1", "Перша проба", 0, 0, []));
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [

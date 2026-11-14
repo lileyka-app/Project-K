@@ -1,5 +1,5 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;

@@ -1,4 +1,5 @@
 using System.Net;
+using ProjectK.API.Tests.TestHelpers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -16,8 +17,8 @@ using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Hosting;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -166,9 +167,9 @@ public class KurinPolicyHttpIntegrationTests
             var mediator = new Mock<IMediator>();
             mediator
                 .Setup(x => x.Send(It.IsAny<UpdateProbePointSignatureCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
+                .ReturnsAsync(new ServiceResult<ProbeProgressDto>(
                     ResultType.Success,
-                    ProbeProgressResponse.CreateNotStarted(memberKey, kurin.KurinKey, "probe-1")));
+                    ProgressDtos.Probe(memberKey, kurin.KurinKey, "probe-1")));
 
             builder.Services.AddSingleton(unitOfWork.Object);
             builder.Services.AddScoped(_ => scopeReader.Object);

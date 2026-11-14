@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -28,7 +28,7 @@ public enum ProbeStart
 public interface IMemberProbeLine
 {
     /// <summary>Empty when the member does not exist.</summary>
-    Task<IReadOnlyList<ProbeSummaryResponse>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ProbeSummaryDto>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>Asked only for a probe the person has not started: one already under way may go on.</summary>
     Task<ProbeStart> CanStartAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
@@ -53,7 +53,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         _groupEditions = groupEditions;
     }
 
-    public async Task<IReadOnlyList<ProbeSummaryResponse>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ProbeSummaryDto>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         return (await ReadAsync(memberKey, cancellationToken))?.Line ?? [];
     }
@@ -116,7 +116,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         return standings;
     }
 
-    private async Task<(IReadOnlyList<ProbeSummaryResponse> Line, IReadOnlyDictionary<string, ProbeProgressStatus> Progress)?> ReadAsync(
+    private async Task<(IReadOnlyList<ProbeSummaryDto> Line, IReadOnlyDictionary<string, ProbeProgressStatus> Progress)?> ReadAsync(
         Guid memberKey,
         CancellationToken cancellationToken)
     {

@@ -1,7 +1,8 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -52,7 +53,7 @@ public class ProbeProjectHandlerTests
         _user.SetupGet(u => u.KurinKey).Returns(Guid.NewGuid());
         _journal = new JournalRecorder(_user.Object, new AuditActorResolver(_user.Object, new Mock<IMemberDirectory>().Object));
         _reader.Setup(r => r.ReadAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ThirdProbeResponse(true, true, true, true, null, [], [], null!));
+            .ReturnsAsync(new ThirdProbeDto(true, true, true, true, null, [], [], null!));
         _projects.Setup(r => r.GetForMemberProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
         _projects.Setup(r => r.Create(It.IsAny<ProbeProject>(), It.IsAny<CancellationToken>())).Callback<ProbeProject, CancellationToken>((p, _) => _stored.Add(p));
         _projects.Setup(r => r.GetWithImagesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))

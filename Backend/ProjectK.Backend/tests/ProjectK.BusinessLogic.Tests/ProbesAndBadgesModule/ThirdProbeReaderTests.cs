@@ -6,8 +6,9 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
@@ -44,9 +45,9 @@ public class ThirdProbeReaderTests
         _projects.Setup(p => p.GetForMemberProbeAsync(_memberKey, "probe-3", It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _line.Setup(l => l.ForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new ProbeSummaryResponse("probe-1", "Перша", 10, 2, null, 1),
-            new ProbeSummaryResponse("probe-2", "Друга", 10, 2, null, 2),
-            new ProbeSummaryResponse("probe-3", "Третя", 0, 0, null, 3)
+            new ProbeSummaryDto("probe-1", "Перша", 10, 2, null, 1, "", ""),
+            new ProbeSummaryDto("probe-2", "Друга", 10, 2, null, 2, "", ""),
+            new ProbeSummaryDto("probe-3", "Третя", 0, 0, null, 3, "", "")
         ]);
         _progress.Setup(p => p.GetByMemberAndProbeIdAsync(_memberKey, "probe-2", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProbeProgress { ProbeId = "probe-2", Status = ProbeProgressStatus.Completed, CompletedAtUtc = new DateTime(2026, 3, 1, 12, 0, 0, DateTimeKind.Utc) });

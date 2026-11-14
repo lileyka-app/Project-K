@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -31,10 +31,10 @@ public class ProbeProjectAccessTests
             .ReturnsAsync(ResourceAccessDecision.Deny("no"));
         _line.Setup(l => l.ForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new ProbeSummaryResponse("upyu-2026-0", "Прихильник", 3, 1, "upyu-2026", 0),
-            new ProbeSummaryResponse("upyu-2026-1", "Перша", 10, 2, "upyu-2026", 1),
-            new ProbeSummaryResponse("upyu-2026-2", "Друга", 10, 2, "upyu-2026", 2),
-            new ProbeSummaryResponse("upyu-2026-3", "Третя", 0, 0, "upyu-2026", 3)
+            new ProbeSummaryDto("upyu-2026-0", "Прихильник", 3, 1, "upyu-2026", 0, "", ""),
+            new ProbeSummaryDto("upyu-2026-1", "Перша", 10, 2, "upyu-2026", 1, "", ""),
+            new ProbeSummaryDto("upyu-2026-2", "Друга", 10, 2, "upyu-2026", 2, "", ""),
+            new ProbeSummaryDto("upyu-2026-3", "Третя", 0, 0, "upyu-2026", 3, "", "")
         ]);
         _access = new ProbeProjectAccess(_line.Object, _members.Object, _user.Object, _rights.Object);
     }
