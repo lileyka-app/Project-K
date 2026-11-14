@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Photo;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Audit;

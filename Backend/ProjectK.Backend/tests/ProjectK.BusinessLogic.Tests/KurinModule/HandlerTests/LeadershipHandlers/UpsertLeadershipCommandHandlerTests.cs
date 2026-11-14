@@ -1,6 +1,6 @@
 using AutoMapper;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;

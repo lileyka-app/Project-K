@@ -10,7 +10,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
@@ -100,7 +100,7 @@ public static class DependencyInjection
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MePerson>();
-        services.AddScoped<ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Life.LifeStoryOwner>();
+        services.AddScoped<ProjectK.BusinessLogic.Modules.MeModule.Features.Life.LifeStoryOwner>();
         services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();

@@ -1,7 +1,7 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

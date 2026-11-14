@@ -1,7 +1,7 @@
 using FluentAssertions;
 using MediatR;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;

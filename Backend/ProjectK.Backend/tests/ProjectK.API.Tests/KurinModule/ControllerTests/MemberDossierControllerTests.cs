@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProjectK.API.Controllers.KurinModule;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;

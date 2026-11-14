@@ -17,8 +17,8 @@ using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -69,7 +69,8 @@ public class MemberAwardRouteMemberHttpIntegrationTests
 
         var response = await SendAsync(host.Client, method, string.Format(routeTemplate, routeMemberKey, award.MemberAwardKey), jsonBody);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // A review answers with the award (200); a removal has nothing to say (204).
+        Assert.Equal(method == "DELETE" ? HttpStatusCode.NoContent : HttpStatusCode.OK, response.StatusCode);
     }
 
     private static MemberAward SubmittedAward(Guid memberKey) => new()

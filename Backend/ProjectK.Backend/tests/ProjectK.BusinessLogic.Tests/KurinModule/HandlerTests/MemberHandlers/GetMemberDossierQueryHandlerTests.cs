@@ -1,7 +1,7 @@
 using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Dossier;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

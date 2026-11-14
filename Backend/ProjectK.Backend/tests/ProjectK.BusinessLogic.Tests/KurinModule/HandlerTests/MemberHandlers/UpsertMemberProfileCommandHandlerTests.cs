@@ -5,7 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

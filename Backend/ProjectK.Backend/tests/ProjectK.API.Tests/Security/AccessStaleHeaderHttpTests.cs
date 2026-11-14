@@ -12,7 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using ProjectK.API.Middleware;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;

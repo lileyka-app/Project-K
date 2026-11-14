@@ -1,10 +1,10 @@
 using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Abilities;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;

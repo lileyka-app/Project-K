@@ -3,7 +3,7 @@ using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;

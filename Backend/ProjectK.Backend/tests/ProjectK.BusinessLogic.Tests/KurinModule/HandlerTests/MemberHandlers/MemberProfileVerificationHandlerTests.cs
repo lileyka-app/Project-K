@@ -1,8 +1,9 @@
 using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Audit;
