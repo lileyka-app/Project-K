@@ -60,6 +60,7 @@ public class SuffixRules
     private static readonly string[] DomainNouns =
     [
         "ProjectK.BusinessLogic.Modules.ArchiveModule.Services.ArchiveReach",
+        "ProjectK.BusinessLogic.Modules.AgendaModule.Services.AgendaTargetNames",
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.LoginThrottle",
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.Reauthentication",
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.RefreshTokenInvalidation",
@@ -71,8 +72,6 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesLedger",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesNames",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesTagLens",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaRoster",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaTargetNames",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.CampDateProblem",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.GroupProbeEditions",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagAssignments",
@@ -97,13 +96,11 @@ public class SuffixRules
     /// </summary>
     private static readonly string[] RecordsAwayFromModels =
     [
+        "ProjectK.BusinessLogic.Modules.AgendaModule.Services.AgendaAssignReach",
+        "ProjectK.BusinessLogic.Modules.AgendaModule.Services.AgendaNames",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesBox",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesKrai",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesPrice",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaAssignReach",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaNames",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaStake",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaViewerContext",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagSettingsState",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipAskRoute",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MeKurinContext",

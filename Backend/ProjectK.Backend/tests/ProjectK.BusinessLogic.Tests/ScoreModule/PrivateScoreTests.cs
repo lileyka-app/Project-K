@@ -3,6 +3,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;

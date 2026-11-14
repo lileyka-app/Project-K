@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
@@ -8,6 +7,7 @@ using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.AgendaModule;
 using ProjectK.Common.Rules.KraiModule;
 using ProjectK.Common.Rules.Shared;
 

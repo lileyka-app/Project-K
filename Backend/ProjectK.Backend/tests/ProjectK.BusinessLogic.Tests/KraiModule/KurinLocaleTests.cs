@@ -1,9 +1,9 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 
@@ -65,11 +65,11 @@ public class KurinLocaleTests
         // 18:00 in Toronto on Monday 26 October 2026, a week before Canada's clocks go back.
         var zone = await Profile("America/Toronto").Object.ForKurinAsync(Kurin, default);
         var start = new DateTime(2026, 10, 26, 22, 0, 0, DateTimeKind.Unspecified);
-        var item = new Common.Entities.KurinModule.Agenda.AgendaItem
+        var item = new Common.Entities.AgendaModule.AgendaItem
         {
-            Kind = Common.Enums.KurinModule.AgendaItemKind.Event,
+            Kind = Common.Enums.AgendaModule.AgendaItemKind.Event,
             StartUtc = start,
-            RecurrenceFrequency = Common.Enums.KurinModule.RecurrenceFrequency.Weekly,
+            RecurrenceFrequency = Common.Enums.AgendaModule.RecurrenceFrequency.Weekly,
             RecurrenceInterval = 1,
             RecurrenceByWeekday = 1 << (int)DayOfWeek.Monday
         };
