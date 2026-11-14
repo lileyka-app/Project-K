@@ -4,7 +4,6 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Events;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 

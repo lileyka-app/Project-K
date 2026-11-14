@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Records;
 

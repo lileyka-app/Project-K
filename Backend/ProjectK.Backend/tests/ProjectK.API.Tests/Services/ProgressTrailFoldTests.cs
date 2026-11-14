@@ -1,7 +1,4 @@
-using System;
 using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
@@ -12,7 +9,6 @@ using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Migrations;
 using ProjectK.Infrastructure.Repositories.AuditModule;
-using Xunit;
 
 namespace ProjectK.API.Tests.Services;
 

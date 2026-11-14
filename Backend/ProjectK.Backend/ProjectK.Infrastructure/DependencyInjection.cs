@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
@@ -11,16 +15,17 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.BackgroundServices;
+using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Logging;
 using ProjectK.Infrastructure.Reports;
-using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Seeding;
 using ProjectK.Infrastructure.Services;
+using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Infrastructure.Services.BlobStorageService.OrphanCleanup;
 using ProjectK.Infrastructure.Services.Catalog;
 using ProjectK.Infrastructure.Services.EmailService;
 using ProjectK.Infrastructure.Services.Feedback;
@@ -29,7 +34,6 @@ using ProjectK.Infrastructure.Services.JwtService;
 using ProjectK.Infrastructure.Services.Spreadsheets;
 using ProjectK.Infrastructure.Services.Telemetry;
 using ProjectK.Infrastructure.Services.WebPush;
-using ProjectK.Infrastructure.UnitOfWork;
 using Resend;
 
 namespace ProjectK.Infrastructure;
@@ -39,8 +43,22 @@ namespace ProjectK.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Registers the database, Identity, blob storage and every other outside system this project talks
+    /// to, with the options they read.
+    /// </summary>
+    /// <remarks>
+    /// Call it before the host's <c>AddAuthentication</c>: <c>AddIdentity</c> sets the default schemes to
+    /// its cookies, and only a later <c>AddAuthentication</c> puts the bearer scheme back on top.
+    /// </remarks>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        AddPersistence(services, configuration);
+        AddBlobStorage(services, configuration);
+
+        services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
+        services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
+
         // Data access. Repositories are reached only through IUnitOfWork, which owns their lifetime
         // and shares the request DbContext, so they are deliberately not registered individually.
         services.AddScoped<UnitOfWork.UnitOfWork>();
@@ -85,6 +103,79 @@ public static class DependencyInjection
         AddTelemetry(services, configuration);
 
         return services;
+    }
+
+    private static void AddPersistence(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddIdentity<AppUser, AppRole>(options =>
+        {
+            // Strict unless a local config opts out explicitly. A missing key used to read as
+            // "no digit, no upper case, no symbol" — which is what a fresh self-host got, since
+            // its appsettings never mentioned the key at all.
+            var securePasswordOption =
+                !bool.TryParse(configuration["DebugMode:SecurePasswordOptions"], out var configured)
+                || configured;
+
+            options.Password.RequiredLength = 8;
+            options.Password.RequireDigit = securePasswordOption;
+            options.Password.RequireNonAlphanumeric = securePasswordOption;
+            options.Password.RequireUppercase = securePasswordOption;
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
+
+        services.AddDbContext<AppDbContext>(opt =>
+        {
+            opt.UseSqlServer(
+                configuration.GetConnectionString("DefaultConnection"),
+                b => b.MigrationsAssembly("ProjectK.Infrastructure"));
+        });
+    }
+
+    /// <summary>
+    /// Photos, emblems, silhouettes and project images live in one blob container. What the database
+    /// still points at is gathered from every reference provider, so the orphan cleanup knows what to keep.
+    /// </summary>
+    private static void AddBlobStorage(IServiceCollection services, IConfiguration configuration)
+    {
+        var blobOptions = new BlobStorageOptions
+        {
+            ConnectionString = configuration.GetConnectionString("BlobStorage") ?? "UseDevelopmentStorage=true",
+            ContainerName = configuration["BlobStorage:ContainerName"] ?? "photos",
+            PublicBaseUrl = configuration["BlobStorage:PublicBaseUrl"]
+        };
+        services.AddScoped<MemberPhotoReferenceProvider>();
+        services.AddScoped<GroupSilhouetteReferenceProvider>();
+        services.AddScoped<KurinEmblemReferenceProvider>();
+        services.AddScoped<ProbeProjectImageReferenceProvider>();
+        services.AddScoped<IPhotoReferenceProvider>(sp =>
+        {
+            var providers = new IPhotoReferenceProvider[]
+            {
+                sp.GetRequiredService<MemberPhotoReferenceProvider>(),
+                sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
+                sp.GetRequiredService<KurinEmblemReferenceProvider>(),
+                sp.GetRequiredService<ProbeProjectImageReferenceProvider>()
+            };
+
+            return new CompositePhotoReferenceProvider(providers);
+        });
+
+        services.AddSingleton(blobOptions);
+        services.AddSingleton<IBlobReadLinks, SignedBlobReadLinks>();
+
+        services.Configure<OrphanCleanupOptions>(configuration.GetSection("OrphanCleanup"));
+
+        services.AddScoped<IPhotoService, AzureBlobPhotoService>(sp =>
+        {
+            var opts = sp.GetRequiredService<BlobStorageOptions>();
+            return new AzureBlobPhotoService(
+                opts,
+                sp.GetRequiredService<IBlobReadLinks>(),
+                sp.GetRequiredService<ILogger<AzureBlobPhotoService>>());
+        });
+
+        services.AddHostedService<OrphanPhotoCleanupService>();
     }
 
     /// <summary>
@@ -172,6 +263,9 @@ public static class DependencyInjection
 
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)
     {
+        // The business logic reads it too: BaseUrl is the frontend address its links are built on.
+        services.Configure<EmailSettings>(configuration.GetSection("Email"));
+
         var provider = configuration["Email:Provider"] ?? "Mock";
         if (!provider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
         {

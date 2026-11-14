@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +7,6 @@ using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
 
 namespace ProjectK.API.Tests.Services;
 

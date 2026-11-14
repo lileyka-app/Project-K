@@ -1,5 +1,4 @@
 using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Interfaces;
 
 namespace ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 

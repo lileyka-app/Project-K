@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.ScoreModule;
 

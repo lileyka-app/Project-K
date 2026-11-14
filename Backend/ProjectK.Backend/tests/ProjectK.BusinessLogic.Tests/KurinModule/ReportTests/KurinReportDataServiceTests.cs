@@ -13,8 +13,6 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
 

@@ -9,7 +9,6 @@ using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Score;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 

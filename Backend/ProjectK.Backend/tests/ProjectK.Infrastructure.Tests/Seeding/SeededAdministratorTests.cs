@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Infrastructure.Seeding;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Seeding;
 

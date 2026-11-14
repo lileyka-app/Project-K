@@ -1,6 +1,5 @@
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Reports;
-using ProjectK.Infrastructure.Reports;
 
 namespace ProjectK.API.Tests.Services.Reports;
 

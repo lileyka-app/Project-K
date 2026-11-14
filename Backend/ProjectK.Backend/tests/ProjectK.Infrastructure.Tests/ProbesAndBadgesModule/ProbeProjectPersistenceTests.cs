@@ -4,7 +4,6 @@ using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Services.BlobStorageService;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.ProbesAndBadgesModule;
 

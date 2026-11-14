@@ -15,7 +15,6 @@ using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Score;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 

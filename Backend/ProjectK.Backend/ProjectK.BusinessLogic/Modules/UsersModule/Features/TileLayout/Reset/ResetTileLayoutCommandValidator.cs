@@ -1,6 +1,5 @@
 using FluentValidation;
 using ProjectK.Common.Models.Dtos.UsersModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout.Reset;
 

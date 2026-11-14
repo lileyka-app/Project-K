@@ -11,7 +11,6 @@ using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
 

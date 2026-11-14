@@ -3,7 +3,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Life;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;
 

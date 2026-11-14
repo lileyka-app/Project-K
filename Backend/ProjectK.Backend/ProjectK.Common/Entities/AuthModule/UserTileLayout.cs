@@ -1,5 +1,3 @@
-using System;
-
 namespace ProjectK.Common.Entities.AuthModule;
 
 public class UserTileLayout

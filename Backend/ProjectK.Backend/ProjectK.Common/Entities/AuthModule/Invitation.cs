@@ -1,6 +1,4 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using ProjectK.Common.Entities;
 
 namespace ProjectK.Common.Entities.AuthModule;
 

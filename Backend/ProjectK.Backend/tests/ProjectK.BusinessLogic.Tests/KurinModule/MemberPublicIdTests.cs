@@ -1,6 +1,5 @@
 using FluentAssertions;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;
 

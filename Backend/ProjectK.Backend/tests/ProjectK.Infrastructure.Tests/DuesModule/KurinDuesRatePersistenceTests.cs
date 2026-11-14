@@ -3,7 +3,6 @@ using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.DuesModule;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.DuesModule;
 

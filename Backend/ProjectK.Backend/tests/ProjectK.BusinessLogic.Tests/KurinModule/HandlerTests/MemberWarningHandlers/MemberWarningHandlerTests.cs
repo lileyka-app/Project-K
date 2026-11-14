@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -10,8 +9,6 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;

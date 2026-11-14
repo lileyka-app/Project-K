@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using ProjectK.Common.Entities.AuthModule;
 
 namespace ProjectK.Common.Interfaces.Modules.AuthModule;

@@ -20,7 +20,6 @@ using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
 

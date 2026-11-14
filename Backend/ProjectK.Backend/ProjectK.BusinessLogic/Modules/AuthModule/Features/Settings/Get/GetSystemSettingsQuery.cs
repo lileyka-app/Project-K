@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using MediatR;
 using ProjectK.Common.Models.Records;
 

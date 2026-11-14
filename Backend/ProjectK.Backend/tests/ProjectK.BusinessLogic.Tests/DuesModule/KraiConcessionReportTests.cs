@@ -12,7 +12,6 @@ using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

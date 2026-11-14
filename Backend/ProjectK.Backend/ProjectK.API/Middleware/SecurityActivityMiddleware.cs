@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 

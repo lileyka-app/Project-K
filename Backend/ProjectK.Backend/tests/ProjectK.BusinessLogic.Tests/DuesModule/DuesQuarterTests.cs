@@ -1,6 +1,5 @@
 using FluentAssertions;
 using ProjectK.Common.Models.Dues;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

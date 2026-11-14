@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using FluentAssertions;
 using ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 using Serilog;
 using Serilog.Context;
 using Serilog.Core;
 using Serilog.Events;
-using Xunit;
 
 namespace ProjectK.API.Tests.Services;
 

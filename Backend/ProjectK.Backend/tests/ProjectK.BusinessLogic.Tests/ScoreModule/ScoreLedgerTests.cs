@@ -3,7 +3,6 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Score;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 

@@ -1,5 +1,3 @@
-using System;
-
 namespace ProjectK.Common.Models.Dtos.KurinModule;
 
 public class MentorAssignmentDto

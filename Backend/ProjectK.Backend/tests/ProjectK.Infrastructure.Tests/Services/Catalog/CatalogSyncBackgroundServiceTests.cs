@@ -10,7 +10,6 @@ using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.Catalog;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
 

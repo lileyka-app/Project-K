@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +8,6 @@ using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
 
 namespace ProjectK.API.Tests.Services;
 

@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
 

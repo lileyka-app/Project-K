@@ -1,4 +1,3 @@
-using System;
 using FluentValidation.TestHelper;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -7,7 +6,6 @@ using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Settings;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;
 

@@ -1,6 +1,5 @@
 using FluentAssertions;
 using ProjectK.Common.Phones;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.CommonTests;
 

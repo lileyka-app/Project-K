@@ -3,7 +3,6 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.InfrastructureModule;
 

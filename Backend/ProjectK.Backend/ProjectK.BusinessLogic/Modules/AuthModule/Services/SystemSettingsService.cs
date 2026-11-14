@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces;

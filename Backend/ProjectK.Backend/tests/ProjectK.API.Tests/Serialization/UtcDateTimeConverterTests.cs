@@ -1,6 +1,5 @@
 using System.Text.Json;
 using ProjectK.API.Serialization;
-using Xunit;
 
 namespace ProjectK.API.Tests.Serialization;
 

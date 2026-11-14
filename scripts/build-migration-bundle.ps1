@@ -4,7 +4,7 @@
 
 .DESCRIPTION
   In Production/Staging the app does NOT auto-migrate on startup (see
-  Program.cs -> ShouldRunMigrationsOnStartup) so multiple instances can boot without
+  API/Hosting/StartupTasks.cs -> ShouldRunMigrationsOnStartup) so multiple instances can boot without
   racing each other. Apply the schema out-of-band with this bundle before/at rollout:
 
     scripts/build-migration-bundle.ps1                # -> .\efbundle.exe

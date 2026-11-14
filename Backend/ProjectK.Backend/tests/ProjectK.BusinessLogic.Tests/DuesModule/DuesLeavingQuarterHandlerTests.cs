@@ -7,7 +7,6 @@ using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

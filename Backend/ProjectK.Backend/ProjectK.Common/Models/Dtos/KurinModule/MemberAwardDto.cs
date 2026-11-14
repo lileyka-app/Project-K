@@ -1,4 +1,3 @@
-using System;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Models.Dtos.KurinModule;

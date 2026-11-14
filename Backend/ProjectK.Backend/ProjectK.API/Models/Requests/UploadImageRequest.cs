@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace ProjectK.API.Models.Requests;
 
 /// <summary>
