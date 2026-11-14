@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Dtos.KurinModule.Requests;
+namespace ProjectK.Common.Dtos.RosterModule.Requests;
 
 /// <summary>
 /// Which registry columns to write, in the order they are shown. Sent in a body rather than a

@@ -1,6 +1,6 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.BusinessLogic.Modules.RosterModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
@@ -11,7 +11,7 @@ using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Features.Registry;
 
 /// <summary>
 /// The kurin's roster as a spreadsheet, in the columns the caller asked for and in their order.
@@ -31,26 +31,26 @@ public sealed record RegistryFile(byte[] Content, string FileName);
 /// Writes the roster the caller can already see, as the three sheets the screen shows: юнаки,
 /// впорядники, and how many юнаки stand at each ступінь.
 /// <para>
-/// The people come from <see cref="GetMembersQuery"/> rather than from a read of its own, and that is
-/// the point: whatever that use case decides to hide — Address and School are masked in SQL from
-/// the caller's own visibility — is hidden here too, without this handler knowing the rule. An
+/// The people come from <see cref="IMemberDirectory.GetVisibleRosterAsync"/> — the read the screen
+/// makes — rather than from a read of its own, and that is the point: whatever the member module
+/// decides to hide from the caller is hidden here too, without this handler knowing the rule. An
 /// export that read the table directly would be a way around it.
 /// </para>
 /// </summary>
 public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQuery, ServiceResult<RegistryFile>>
 {
-    private readonly IMediator _mediator;
+    private readonly IMemberDirectory _members;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISpreadsheetWriter _spreadsheet;
     private readonly TimeProvider _timeProvider;
 
     public ExportRegistryQueryHandler(
-        IMediator mediator,
+        IMemberDirectory members,
         IUnitOfWork unitOfWork,
         ISpreadsheetWriter spreadsheet,
         TimeProvider timeProvider)
     {
-        _mediator = mediator;
+        _members = members;
         _unitOfWork = unitOfWork;
         _spreadsheet = spreadsheet;
         _timeProvider = timeProvider;
@@ -63,20 +63,16 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return KurinErrors.NotFound<RegistryFile>();
+            return RosterErrors.KurinMissing<RegistryFile>();
         }
 
-        var members = await _mediator.Send(new GetMembersQuery(Guid.Empty, request.KurinKey), cancellationToken);
-        if (members.Type != ResultType.Success || members.Data is null)
-        {
-            return new ServiceResult<RegistryFile>(members.Type);
-        }
+        var members = await _members.GetVisibleRosterAsync(request.KurinKey, cancellationToken);
 
         var chosen = request.ColumnIds
             .Where(id => RegistryColumnRules.HeaderFor(id) is not null)
             .ToList();
 
-        var people = members.Data
+        var people = members
             .OrderBy(member => $"{member.LastName} {member.FirstName}", StringComparer.CurrentCulture)
             .ToList();
 

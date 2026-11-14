@@ -4,9 +4,9 @@ using ProjectK.Common.Records.Shared;
 namespace ProjectK.BusinessLogic.Modules.KurinModule;
 
 /// <summary>
-/// The codes the kurin's own requests fail with — the kurin, its гуртки, tags, planning and roster
-/// import. The client picks its wording by them, so a code is a contract: rename one only together
-/// with the clients.
+/// The codes the kurin's own requests fail with — the kurin, its гуртки, tags and planning. The
+/// client picks its wording by them, so a code is a contract: rename one only together with the
+/// clients.
 /// </summary>
 public static class KurinErrors
 {
@@ -62,15 +62,6 @@ public static class KurinErrors
     public const string TagsChangedMeanwhile = "TagsChangedMeanwhile";
 
     public const string PlanningSessionNotFound = "PlanningSessionNotFound";
-
-    /// <summary>A senior kurin has no гуртки to import a roster into.</summary>
-    public const string RosterImportNotForSeniorKurin = "RosterImportNotForSeniorKurin";
-
-    /// <summary>The roster upload carried no file.</summary>
-    public const string NoFile = "NoFile";
-
-    public const string EmptyFile = "EmptyFile";
-    public const string UnreadableFile = "UnreadableFile";
 
     public static ServiceResult<T> NotFound<T>() =>
         ServiceResult<T>.Failure(ResultType.NotFound, KurinNotFound, "Kurin was not found.");

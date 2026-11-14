@@ -3,7 +3,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Rules.Shared;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
+namespace ProjectK.BusinessLogic.Modules.RosterModule.Services;
 
 /// <summary>
 /// What each registry column id means. The ids are the frontend's — the screen owns which columns
