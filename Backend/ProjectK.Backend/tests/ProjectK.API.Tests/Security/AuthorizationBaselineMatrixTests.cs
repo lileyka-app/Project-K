@@ -295,6 +295,11 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<BadgesCatalogController, string>>(nameof(BadgesCatalogController.GetById), "RequireUser");
         yield return Row<Action<HonoursCatalogController>>(nameof(HonoursCatalogController.GetAll), "RequireUser");
         yield return Row<Action<MyAwardsController, PinMyAwardCommand>>(nameof(MyAwardsController.Pin), "RequireUser");
+        yield return Row<Action<MyLifeController>>(nameof(MyLifeController.GetEntries), "RequireUser");
+        yield return Row<Action<MyLifeController, SaveLifeEntryRequest>>(nameof(MyLifeController.AddEntry), "RequireUser");
+        yield return Row<Action<MyLifeController, Guid, SaveLifeEntryRequest>>(nameof(MyLifeController.UpdateEntry), "RequireUser");
+        yield return Row<Action<MyLifeController, Guid>>(nameof(MyLifeController.DeleteEntry), "RequireUser");
+        yield return Row<Action<MyLifeController, string?, CancellationToken>>(nameof(MyLifeController.ExportPdf), "RequireUser");
 
         yield return Row<Action<ProbesCatalogController>>(nameof(ProbesCatalogController.GetAll), "RequireUser");
         yield return Row<Action<ProbesCatalogController, string>>(nameof(ProbesCatalogController.GetGroupedById), "RequireUser");
