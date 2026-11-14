@@ -7,7 +7,6 @@ using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Records.ScoreModule;
 using ProjectK.Common.Rules.MemberModule;
 
-
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
 /// <summary>Opens a kurin's <see cref="ScoreBook"/>: the one place that knows what a read needs.</summary>

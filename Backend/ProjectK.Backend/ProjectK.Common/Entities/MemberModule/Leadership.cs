@@ -1,7 +1,6 @@
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Entities.MemberModule;
 
 public class Leadership

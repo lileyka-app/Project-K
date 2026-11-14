@@ -1,9 +1,10 @@
+using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
+namespace ProjectK.Common.Contracts.KurinModule;
 
-namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
-
-/// <summary>Whose tags the viewer sees, and the kurin's tag switches. See <see cref="KurinTagVisibility"/>.</summary>
+/// <summary>Whose tags the viewer sees, and the kurin's tag switches. See <c>KurinTagVisibility</c>.</summary>
 public interface IKurinTagVisibility
 {
     /// <summary>The kurin's switches with its defaults filled in; null when there is no such kurin.</summary>
@@ -22,7 +23,7 @@ public interface IKurinTagVisibility
     /// How far the viewer sees tags on others: the whole kurin for whoever manages them, otherwise the
     /// kurin's <c>SeeTags</c> row; nobody while tags are off. One's own tags are not counted here.
     /// </summary>
-    Task<Common.Enums.AuthModule.CapabilityReach> CarrierReachAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+    Task<CapabilityReach> CarrierReachAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>Fills the tags the viewer may see on people seen in the kurin.</summary>
     Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberDto> rows, CancellationToken cancellationToken = default);

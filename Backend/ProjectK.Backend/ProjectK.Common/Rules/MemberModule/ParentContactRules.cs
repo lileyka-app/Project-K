@@ -1,6 +1,5 @@
 using ProjectK.Common.Contracts.MemberModule;
 
-
 namespace ProjectK.Common.Rules.MemberModule;
 
 /// <summary>The parents' contacts as one set of values, for whatever is done to all of them alike.</summary>

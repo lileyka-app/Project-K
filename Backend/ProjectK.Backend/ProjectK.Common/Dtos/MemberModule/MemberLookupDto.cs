@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Dtos.MemberModule;
 
 public class MemberLookupDto

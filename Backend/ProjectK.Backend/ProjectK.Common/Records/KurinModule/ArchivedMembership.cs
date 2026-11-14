@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Records.KurinModule;
 
 /// <summary>A membership that has ended, with the гуртки it passed through.</summary>

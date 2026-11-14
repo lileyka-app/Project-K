@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Entities.MemberModule;
 
 public class LeadershipHistory

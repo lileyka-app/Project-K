@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
@@ -12,6 +13,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.AgendaHandlers;

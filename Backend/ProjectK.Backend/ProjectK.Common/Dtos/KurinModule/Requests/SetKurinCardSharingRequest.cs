@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Dtos.KurinModule.Requests;
 
 /// <summary>Body of <c>PUT api/kurin/{kurinKey}/card-sharing</c>.</summary>

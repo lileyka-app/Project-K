@@ -1,6 +1,5 @@
 using ProjectK.Common.Records.MemberModule;
 
-
 namespace ProjectK.Common.Rules.MemberModule;
 
 /// <summary>

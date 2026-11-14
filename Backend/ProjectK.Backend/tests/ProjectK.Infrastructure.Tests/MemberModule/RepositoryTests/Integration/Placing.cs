@@ -1,7 +1,6 @@
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Infrastructure.Tests.MemberModule.RepositoryTests.Integration;
 
 /// <summary>

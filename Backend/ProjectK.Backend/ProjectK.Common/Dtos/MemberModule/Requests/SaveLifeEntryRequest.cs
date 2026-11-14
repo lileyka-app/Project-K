@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Dtos.MemberModule.Requests;
 
 /// <summary>A line of the person's life story as they write it.</summary>

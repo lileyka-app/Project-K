@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Dtos.KurinModule;
 
 /// <param name="HistoryKey"></param>

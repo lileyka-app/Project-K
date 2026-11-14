@@ -1,3 +1,4 @@
+using ProjectK.Common.Records.KurinModule;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -106,7 +107,6 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaStake",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.AgendaViewerContext",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.ArchiveReachResult",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagSettingsState",
         "ProjectK.BusinessLogic.Modules.MemberModule.Services.MembershipAskRoute",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MeKurinContext",
         "ProjectK.BusinessLogic.Modules.ScoreModule.Services.EventOccurrence",

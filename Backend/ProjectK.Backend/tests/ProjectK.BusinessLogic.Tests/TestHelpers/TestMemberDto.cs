@@ -1,7 +1,6 @@
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 
 /// <summary>

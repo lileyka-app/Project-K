@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Dtos.MemberModule;
 
 /// <summary>A вишкіл, табір or захід from the person's own life story.</summary>

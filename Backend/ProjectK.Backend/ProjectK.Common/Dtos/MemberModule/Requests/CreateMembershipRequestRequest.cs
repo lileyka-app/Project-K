@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.MemberModule;
 
-
 namespace ProjectK.Common.Dtos.MemberModule.Requests;
 
 /// <summary>Body of <c>POST api/kurin/{kurinKey}/membership-requests</c>.</summary>
