@@ -84,19 +84,22 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Запит із файлом (`IFormFile` — у Common його не буває) | `API/Models/Requests/` | `…Request` |
 | Розширення контролера (`ToActionResult`, `UserKey`) | `API/Extensions/` | `…Extensions` |
 | Серіалізація, Swagger, політики авторизації | `API/Serialization/`, `API/Swagger/`, `API/Authorization/` | `…Converter`, `…Filter`, `…Policies` |
-| Налаштування | шар, який їх читає | `…Options` із `SectionName` |
+| Налаштування | `Common/Options/<Module>/` (усі, хоч би який шар читав) | `…Options` із `SectionName` |
 
 Якщо нового класу немає в цій таблиці — спершу допиши рядок сюди, потім заводь теку чи суфікс.
 
 ### Схема тек Common
 
-Спершу **вид**, потім модуль: `Common/<Вид>/<Module>/`. Видів сім, інших розділів у `Common` немає:
+Спершу **вид**, потім модуль: `Common/<Вид>/<Module>/`. Видів вісім, інших розділів у `Common` немає:
 
 ```
-Entities/   Contracts/   Dtos/   Records/   Events/   Enums/   Rules/
+Entities/   Contracts/   Dtos/   Records/   Events/   Enums/   Rules/   Options/
 ```
 
 Спільне для всіх модулів лягає в підтеку `Shared/` відповідного виду (`Rules/Shared/PhoneNumbers.cs`).
+Модуль у шляху зветься так само, як у `Entities/` (`KurinModule`, `AuthModule`). Винятки репозиторію
+(`StaleRowException`, `DuplicateRowException`) — частина обіцянки Infrastructure бізнес-логіці, тож лежать у
+`Contracts/Shared/`; розширення `ClaimsPrincipal` і користувача — `Rules/AuthModule/`.
 Один публічний тип — один файл. Те, що зараз лежить у `Models/<Тема>/`, `Interfaces/Modules/`,
 `Phones/`, `Security/` чи `Extensions/`, розходиться по цих видах у `POL-09`.
 
