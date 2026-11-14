@@ -10,7 +10,7 @@ namespace ProjectK.Infrastructure.Persistence.Interceptors;
 /// the tests. A context built without it saves members with no public code and memberships with no
 /// гурток stints, and nothing fails to say so.
 /// </remarks>
-public static class AppDbContextInterceptors
+public static class AppDbContextInterceptorExtensions
 {
     private static readonly MemberPublicIdInterceptor PublicIds = new();
     private static readonly MembershipGroupStintInterceptor GroupStints = new();

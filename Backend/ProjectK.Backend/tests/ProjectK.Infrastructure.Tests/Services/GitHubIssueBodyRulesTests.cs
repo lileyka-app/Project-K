@@ -7,7 +7,7 @@ namespace ProjectK.Infrastructure.Tests.Services;
 /// The issue a report becomes: the person's words first, defused of mentions, then the context
 /// the maintainer reproduces from.
 /// </summary>
-public class GitHubIssueBodyTests
+public class GitHubIssueBodyRulesTests
 {
     private static ProblemReport Report(string description = "Не зберігається", string? steps = "1. Натиснути", string? expected = null, params string[] screenshots) =>
         new("Заголовок", description, steps, expected, "/member/1", "v1.0.0", "Mozilla | Chrome", Guid.Parse("11111111-1111-1111-1111-111111111111"),
@@ -16,7 +16,7 @@ public class GitHubIssueBodyTests
     [Fact]
     public void Compose_ShouldPutTheWordsFirst_ThenScreenshots_ThenContext()
     {
-        var body = GitHubIssueBody.Compose(Report(expected: "Має зберегтись", screenshots: "https://blob/feedback-screenshots/a.png"), "v1.0.0-api");
+        var body = GitHubIssueBodyRules.Compose(Report(expected: "Має зберегтись", screenshots: "https://blob/feedback-screenshots/a.png"), "v1.0.0-api");
 
         var words = body.IndexOf("Не зберігається", StringComparison.Ordinal);
         var steps = body.IndexOf("## Кроки, щоб відтворити", StringComparison.Ordinal);
@@ -40,7 +40,7 @@ public class GitHubIssueBodyTests
     public void Compose_ShouldNotRepeatAPictureAlreadyInTheText()
     {
         var inline = "https://blob/feedback-screenshots/inline.png";
-        var body = GitHubIssueBody.Compose(
+        var body = GitHubIssueBodyRules.Compose(
             Report(description: $"Ось:\n![скриншот]({inline})", screenshots: [inline, "https://blob/feedback-screenshots/other.png"]),
             null);
 
@@ -51,7 +51,7 @@ public class GitHubIssueBodyTests
     [Fact]
     public void Compose_ShouldSkipEmptySections()
     {
-        var body = GitHubIssueBody.Compose(Report(steps: null), null);
+        var body = GitHubIssueBodyRules.Compose(Report(steps: null), null);
 
         Assert.DoesNotContain("## Кроки", body);
         Assert.DoesNotContain("## Що мало статися", body);
@@ -63,7 +63,7 @@ public class GitHubIssueBodyTests
     [Fact]
     public void Compose_ShouldDefuseMentions_ButKeepTheTextReadable()
     {
-        var body = GitHubIssueBody.Compose(Report(description: "Пише @iamavasya і @all про це"), null);
+        var body = GitHubIssueBodyRules.Compose(Report(description: "Пише @iamavasya і @all про це"), null);
 
         Assert.DoesNotContain("@iamavasya", body, StringComparison.Ordinal);
         Assert.Contains("@‍iamavasya", body);

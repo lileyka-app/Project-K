@@ -11,7 +11,7 @@ namespace ProjectK.Infrastructure.Services.Reports;
 /// throw, and a <see cref="DateTimeKind.Unspecified"/> value must be read as UTC.
 /// </para>
 /// </summary>
-public static class ReportClock
+public static class ReportClockRules
 {
     /// <summary>
     /// The zone behind an IANA id, or UTC when it is missing or unknown. .NET reads IANA ids on

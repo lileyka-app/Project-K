@@ -24,7 +24,7 @@ public static class StartupTasks
                 if (ShouldRunMigrationsOnStartup(app.Configuration))
                 {
                     ctx.Status("Summoning database goblins...");
-                    await DatabaseMigrations.ApplyAsync(scope.ServiceProvider);
+                    await DatabaseMigrationRules.ApplyAsync(scope.ServiceProvider);
                 }
                 else
                 {

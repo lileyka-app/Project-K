@@ -21,7 +21,7 @@ public sealed record TelegramAlert(
 /// who and where, only the fields that carry something, and for an error where in our code it broke.
 /// HTML parse mode; everything taken from the event is escaped.
 /// </summary>
-public static class TelegramAlertFormatter
+public static class TelegramAlertRules
 {
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(250);
 
@@ -104,7 +104,7 @@ public static class TelegramAlertFormatter
 
         var groupKey = GroupKeyOf(logEvent, isSecurity, action, ip, path);
 
-        return new TelegramAlert(groupKey, Redaction.Apply(text.ToString()), title, logEvent.Level, ip, country, path, traceId, isRequestLog);
+        return new TelegramAlert(groupKey, RedactionRules.Apply(text.ToString()), title, logEvent.Level, ip, country, path, traceId, isRequestLog);
     }
 
     private static string TitleOf(LogEvent logEvent, bool isSecurity, string? action)
@@ -220,7 +220,7 @@ public static class TelegramAlertFormatter
             }
         }
 
-        return Redaction.Apply(text.ToString().TrimEnd());
+        return RedactionRules.Apply(text.ToString().TrimEnd());
     }
 
     public const int DigestPaths = 8;

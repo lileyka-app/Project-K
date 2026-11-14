@@ -136,7 +136,7 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
             }
 
             var (body, etag) = fetched.Value;
-            var state = CatalogMapper.ToState(CatalogClient.Parse(body), _options.BaseUrl, DateTimeOffset.UtcNow);
+            var state = CatalogMapping.ToState(CatalogClient.Parse(body), _options.BaseUrl, DateTimeOffset.UtcNow);
             if (state.Badges.Count == 0 && state.Probes.Count == 0 && _store.IsLoaded)
             {
                 _logger.LogWarning("The catalogue answered with no вмілості and no проби; keeping revision {Revision}.", _store.State.Revision);
@@ -196,7 +196,7 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
         {
             var body = File.ReadAllBytes(_snapshotPath);
             var fetchedAt = new DateTimeOffset(File.GetLastWriteTimeUtc(_snapshotPath), TimeSpan.Zero);
-            _store.Replace(CatalogMapper.ToState(CatalogClient.Parse(body), _options.BaseUrl, fetchedAt));
+            _store.Replace(CatalogMapping.ToState(CatalogClient.Parse(body), _options.BaseUrl, fetchedAt));
             _etag = File.Exists(EtagPath) ? File.ReadAllText(EtagPath).Trim() : null;
             _hasServiceCopy = _store.IsLoaded;
             _logger.LogInformation("Catalogue revision {Revision} loaded from {Path}.", _store.State.Revision, _snapshotPath);
@@ -234,7 +234,7 @@ internal sealed class CatalogSyncBackgroundService : BackgroundService
             ?? throw new InvalidOperationException($"The assembly carries no {SeedResourceName}.");
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);
-        store.Replace(CatalogMapper.ToState(CatalogClient.Parse(buffer.ToArray()), baseUrl, null));
+        store.Replace(CatalogMapping.ToState(CatalogClient.Parse(buffer.ToArray()), baseUrl, null));
     }
 
     private void SaveSnapshot(byte[] body, string? etag)

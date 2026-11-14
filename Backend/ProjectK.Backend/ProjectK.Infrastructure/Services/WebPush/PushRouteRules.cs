@@ -10,7 +10,7 @@ namespace ProjectK.Infrastructure.Services.WebPush;
 /// <c>mobile/src/app/features/leader/notification-route.ts</c>, which does the same for a tap in the
 /// in-app inbox. Anything the phone has no screen for opens that inbox instead of nothing.
 /// </summary>
-public static partial class PushRoutes
+public static partial class PushRouteRules
 {
     public const string Base = "/m/";
     public const string Inbox = Base + "tabs/home/notifications";

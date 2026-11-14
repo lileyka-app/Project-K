@@ -8,7 +8,7 @@ namespace ProjectK.Infrastructure.Services.Feedback;
 /// verbatim, but with every <c>@name</c> defused: the tracker is public and a report must not be
 /// able to page somebody. The context table at the end is what the maintainer needs to reproduce.
 /// </summary>
-public static class GitHubIssueBody
+public static class GitHubIssueBodyRules
 {
     /// <summary>Zero-width joiner after the at-sign: reads the same, no longer a mention.</summary>
     private const string DefusedAt = "@\u200D";

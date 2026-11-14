@@ -10,7 +10,7 @@ namespace ProjectK.Infrastructure.Tests.Services.WebPush;
 /// The payload encryption against RFC 8291's own worked example, a round trip to a device's private
 /// key, and the VAPID header's JWT read back and verified with the public key it names.
 /// </summary>
-public class WebPushCryptoTests
+public class WebPushCryptoRulesTests
 {
     // RFC 8291, Appendix A.
     private const string RfcPlaintext = "When I grow up, I want to be a watermelon";
@@ -28,14 +28,14 @@ public class WebPushCryptoTests
     {
         using var serverKey = ImportPrivate(RfcServerPrivate, RfcServerPublic);
 
-        var body = WebPushCrypto.Encrypt(
+        var body = WebPushCryptoRules.Encrypt(
             Encoding.UTF8.GetBytes(RfcPlaintext),
-            WebPushBase64.Decode(RfcDevicePublic),
-            WebPushBase64.Decode(RfcAuth),
+            WebPushBase64Rules.Decode(RfcDevicePublic),
+            WebPushBase64Rules.Decode(RfcAuth),
             serverKey,
-            WebPushBase64.Decode(RfcSalt));
+            WebPushBase64Rules.Decode(RfcSalt));
 
-        Assert.Equal(RfcBody, WebPushBase64.Encode(body));
+        Assert.Equal(RfcBody, WebPushBase64Rules.Encode(body));
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class WebPushCryptoTests
     {
         using var device = ImportPrivate(RfcDevicePrivate, RfcDevicePublic);
 
-        var plaintext = Decrypt(WebPushBase64.Decode(RfcBody), device, WebPushBase64.Decode(RfcAuth));
+        var plaintext = Decrypt(WebPushBase64Rules.Decode(RfcBody), device, WebPushBase64Rules.Decode(RfcAuth));
 
         Assert.Equal(RfcPlaintext, Encoding.UTF8.GetString(plaintext));
     }
@@ -55,10 +55,10 @@ public class WebPushCryptoTests
         var auth = RandomNumberGenerator.GetBytes(16);
         var payload = Encoding.UTF8.GetBytes("{\"notification\":{\"title\":\"Задачу призначено вам\"}}");
 
-        var body = WebPushCrypto.Encrypt(
+        var body = WebPushCryptoRules.Encrypt(
             payload,
-            WebPushBase64.Encode(WebPushCrypto.ExportPublicKey(device)),
-            WebPushBase64.Encode(auth));
+            WebPushBase64Rules.Encode(WebPushCryptoRules.ExportPublicKey(device)),
+            WebPushBase64Rules.Encode(auth));
 
         Assert.Equal(payload, Decrypt(body, device, auth));
     }
@@ -67,12 +67,12 @@ public class WebPushCryptoTests
     public void Encrypt_ShouldUseAFreshKeyAndSaltForEveryMessage()
     {
         using var device = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-        var p256dh = WebPushBase64.Encode(WebPushCrypto.ExportPublicKey(device));
+        var p256dh = WebPushBase64Rules.Encode(WebPushCryptoRules.ExportPublicKey(device));
         var auth = RandomNumberGenerator.GetBytes(16);
         var payload = Encoding.UTF8.GetBytes("same");
 
-        var first = WebPushCrypto.Encrypt(payload, p256dh, WebPushBase64.Encode(auth));
-        var second = WebPushCrypto.Encrypt(payload, p256dh, WebPushBase64.Encode(auth));
+        var first = WebPushCryptoRules.Encrypt(payload, p256dh, WebPushBase64Rules.Encode(auth));
+        var second = WebPushCryptoRules.Encrypt(payload, p256dh, WebPushBase64Rules.Encode(auth));
 
         Assert.NotEqual(first[..16], second[..16]);
         Assert.NotEqual(first[21..86], second[21..86]);
@@ -84,22 +84,22 @@ public class WebPushCryptoTests
     public void Encrypt_ShouldFillExactlyOneRecordAtMostAndRefuseMore()
     {
         using var device = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-        var p256dh = WebPushBase64.Encode(WebPushCrypto.ExportPublicKey(device));
-        var auth = WebPushBase64.Encode(RandomNumberGenerator.GetBytes(16));
+        var p256dh = WebPushBase64Rules.Encode(WebPushCryptoRules.ExportPublicKey(device));
+        var auth = WebPushBase64Rules.Encode(RandomNumberGenerator.GetBytes(16));
 
-        var largest = WebPushCrypto.Encrypt(new byte[WebPushCrypto.MaxPayloadSize], p256dh, auth);
+        var largest = WebPushCryptoRules.Encrypt(new byte[WebPushCryptoRules.MaxPayloadSize], p256dh, auth);
 
         Assert.Equal(4096, largest.Length);
-        Assert.Throws<ArgumentException>(() => WebPushCrypto.Encrypt(new byte[WebPushCrypto.MaxPayloadSize + 1], p256dh, auth));
+        Assert.Throws<ArgumentException>(() => WebPushCryptoRules.Encrypt(new byte[WebPushCryptoRules.MaxPayloadSize + 1], p256dh, auth));
     }
 
     [Fact]
     public void Encrypt_ShouldRefuseAKeyThatIsNotAnUncompressedPoint()
     {
-        var auth = WebPushBase64.Encode(RandomNumberGenerator.GetBytes(16));
+        var auth = WebPushBase64Rules.Encode(RandomNumberGenerator.GetBytes(16));
 
         Assert.Throws<ArgumentException>(() =>
-            WebPushCrypto.Encrypt([1, 2, 3], WebPushBase64.Encode(RandomNumberGenerator.GetBytes(33)), auth));
+            WebPushCryptoRules.Encrypt([1, 2, 3], WebPushBase64Rules.Encode(RandomNumberGenerator.GetBytes(33)), auth));
     }
 
     [Fact]
@@ -107,11 +107,11 @@ public class WebPushCryptoTests
     {
         using var signer = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var parameters = signer.ExportParameters(includePrivateParameters: true);
-        var publicKey = WebPushBase64.Encode([0x04, .. parameters.Q.X!, .. parameters.Q.Y!]);
-        var privateKey = WebPushBase64.Encode(parameters.D!);
+        var publicKey = WebPushBase64Rules.Encode([0x04, .. parameters.Q.X!, .. parameters.Q.Y!]);
+        var privateKey = WebPushBase64Rules.Encode(parameters.D!);
         var expires = new DateTimeOffset(2026, 10, 11, 20, 0, 0, TimeSpan.Zero);
 
-        var header = WebPushCrypto.CreateVapidAuthorization(
+        var header = WebPushCryptoRules.CreateVapidAuthorization(
             new Uri("https://fcm.googleapis.com/fcm/send/abc:def"),
             "mailto:push@example.com",
             publicKey,
@@ -126,17 +126,17 @@ public class WebPushCryptoTests
         var jwt = parts[0].Split('.');
         Assert.Equal(3, jwt.Length);
 
-        using var head = JsonDocument.Parse(WebPushBase64.Decode(jwt[0]));
+        using var head = JsonDocument.Parse(WebPushBase64Rules.Decode(jwt[0]));
         Assert.Equal("ES256", head.RootElement.GetProperty("alg").GetString());
         Assert.Equal("JWT", head.RootElement.GetProperty("typ").GetString());
 
-        using var claims = JsonDocument.Parse(WebPushBase64.Decode(jwt[1]));
+        using var claims = JsonDocument.Parse(WebPushBase64Rules.Decode(jwt[1]));
         Assert.Equal("https://fcm.googleapis.com", claims.RootElement.GetProperty("aud").GetString());
         Assert.Equal(expires.ToUnixTimeSeconds(), claims.RootElement.GetProperty("exp").GetInt64());
         Assert.Equal("mailto:push@example.com", claims.RootElement.GetProperty("sub").GetString());
 
         // JWS ES256: r ‖ s, 32 bytes each, over "header.claims".
-        var signature = WebPushBase64.Decode(jwt[2]);
+        var signature = WebPushBase64Rules.Decode(jwt[2]);
         Assert.Equal(64, signature.Length);
         using var verifier = ECDsa.Create(new ECParameters { Curve = ECCurve.NamedCurves.nistP256, Q = parameters.Q });
         Assert.True(verifier.VerifyData(Encoding.ASCII.GetBytes($"{jwt[0]}.{jwt[1]}"), signature, HashAlgorithmName.SHA256));
@@ -148,15 +148,15 @@ public class WebPushCryptoTests
         using var signer = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var parameters = signer.ExportParameters(includePrivateParameters: true);
 
-        var header = WebPushCrypto.CreateVapidAuthorization(
+        var header = WebPushCryptoRules.CreateVapidAuthorization(
             new Uri("https://push.example.test:8443/send/1"),
             "mailto:push@example.com",
-            WebPushBase64.Encode([0x04, .. parameters.Q.X!, .. parameters.Q.Y!]),
-            WebPushBase64.Encode(parameters.D!),
+            WebPushBase64Rules.Encode([0x04, .. parameters.Q.X!, .. parameters.Q.Y!]),
+            WebPushBase64Rules.Encode(parameters.D!),
             DateTimeOffset.UtcNow.AddHours(1));
 
         var claims = header["vapid t=".Length..].Split(", k=")[0].Split('.')[1];
-        using var json = JsonDocument.Parse(WebPushBase64.Decode(claims));
+        using var json = JsonDocument.Parse(WebPushBase64Rules.Decode(claims));
         Assert.Equal("https://push.example.test:8443", json.RootElement.GetProperty("aud").GetString());
     }
 
@@ -165,19 +165,19 @@ public class WebPushCryptoTests
     [InlineData("BTBZMqHH6r4Tts7J_aSIgg==")]
     public void Base64Url_ShouldReadKeysWithOrWithoutPadding(string text)
     {
-        var bytes = WebPushBase64.Decode(text);
+        var bytes = WebPushBase64Rules.Decode(text);
 
         Assert.Equal(16, bytes.Length);
-        Assert.Equal("BTBZMqHH6r4Tts7J_aSIgg", WebPushBase64.Encode(bytes));
+        Assert.Equal("BTBZMqHH6r4Tts7J_aSIgg", WebPushBase64Rules.Encode(bytes));
     }
 
     private static ECDiffieHellman ImportPrivate(string privateKey, string publicKey)
     {
-        var point = WebPushBase64.Decode(publicKey);
+        var point = WebPushBase64Rules.Decode(publicKey);
         return ECDiffieHellman.Create(new ECParameters
         {
             Curve = ECCurve.NamedCurves.nistP256,
-            D = WebPushBase64.Decode(privateKey),
+            D = WebPushBase64Rules.Decode(privateKey),
             Q = new ECPoint { X = point[1..33], Y = point[33..] }
         });
     }
@@ -191,10 +191,10 @@ public class WebPushCryptoTests
         var serverPublic = body[21..(21 + keyIdLength)];
         var record = body[(21 + keyIdLength)..];
 
-        using var server = WebPushCrypto.ImportPublicKey(serverPublic);
+        using var server = WebPushCryptoRules.ImportPublicKey(serverPublic);
         var secret = device.DeriveRawSecretAgreement(server.PublicKey);
-        var (contentKey, nonce) = WebPushCrypto.DeriveContentKey(
-            secret, auth, salt, WebPushCrypto.ExportPublicKey(device), serverPublic);
+        var (contentKey, nonce) = WebPushCryptoRules.DeriveContentKey(
+            secret, auth, salt, WebPushCryptoRules.ExportPublicKey(device), serverPublic);
 
         var plaintext = new byte[record.Length - 16];
         using (var aes = new AesGcm(contentKey, 16))

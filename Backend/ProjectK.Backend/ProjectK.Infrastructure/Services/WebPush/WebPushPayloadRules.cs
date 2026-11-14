@@ -10,9 +10,9 @@ namespace ProjectK.Infrastructure.Services.WebPush;
 /// <c>notification</c> as is and, on a tap, runs <c>data.onActionClick.default</c> — here it opens
 /// the screen (or brings the open app there). Kept small: push services cap the body at 4 KB.
 /// </summary>
-public static class WebPushPayload
+public static class WebPushPayloadRules
 {
-    public const string Icon = PushRoutes.Base + "icons/icon-192.png";
+    public const string Icon = PushRouteRules.Base + "icons/icon-192.png";
     private const int MaxTitle = 120;
     private const int MaxBody = 500;
 
@@ -26,7 +26,7 @@ public static class WebPushPayload
     {
         var payload = Build(notification, url, MaxBody);
         // Only a body in an unusual alphabet can still overflow; the screen it opens has it all.
-        return payload.Length <= WebPushCrypto.MaxPayloadSize ? payload : Build(notification, url, 80);
+        return payload.Length <= WebPushCryptoRules.MaxPayloadSize ? payload : Build(notification, url, 80);
     }
 
     private static byte[] Build(AppNotificationDto notification, string url, int maxBody)

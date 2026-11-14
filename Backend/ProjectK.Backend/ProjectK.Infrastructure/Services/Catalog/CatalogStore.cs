@@ -60,7 +60,7 @@ internal sealed class CatalogState
 /// readers always see one whole version.
 /// <para>
 /// The край names on вмілості are laid over the fetch here rather than in
-/// <see cref="CatalogMapper"/>: they come from the <c>Krais</c> table, which changes without a new
+/// <see cref="CatalogMapping"/>: they come from the <c>Krais</c> table, which changes without a new
 /// fetch, and the fetch arrives without the table. Each of the two rebuilds what readers see.
 /// </para>
 /// </summary>

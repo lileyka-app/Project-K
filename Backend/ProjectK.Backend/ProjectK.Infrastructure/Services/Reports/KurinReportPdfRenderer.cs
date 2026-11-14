@@ -26,7 +26,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
     /// </param>
     public byte[] Render(KurinReportData report, string? timeZoneId = null)
     {
-        var zone = ReportClock.Resolve(timeZoneId);
+        var zone = ReportClockRules.Resolve(timeZoneId);
 
         return Document.Create(document =>
         {
@@ -171,7 +171,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     column.Item().Text(report.Kurin.SeniorBranches!).FontSize(9).FontColor(Colors.Grey.Darken1);
                 }
                 column.Item().Text("Beta export звіту").FontSize(8).SemiBold().FontColor(Colors.Orange.Darken2);
-                column.Item().Text($"Звіт сформовано: {ReportClock.Format(report.Header.GeneratedAtUtc, zone)} {ReportClock.Label(zone)}").FontSize(8).FontColor(Colors.Grey.Darken1);
+                column.Item().Text($"Звіт сформовано: {ReportClockRules.Format(report.Header.GeneratedAtUtc, zone)} {ReportClockRules.Label(zone)}").FontSize(8).FontColor(Colors.Grey.Darken1);
             });
 
             row.RelativeItem().AlignRight().Column(column =>
@@ -551,7 +551,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 column.Item().PaddingTop(2).Text("Підписані точки").SemiBold();
                 foreach (var point in member.SignedProbePoints)
                 {
-                    column.Item().Text($"{point.ProbeTitle}, {point.PointLabel}: {ReportClock.Format(point.SignedAtUtc, zone)}; {point.SignedByName ?? "-"} ({point.SignedByRole ?? "-"})");
+                    column.Item().Text($"{point.ProbeTitle}, {point.PointLabel}: {ReportClockRules.Format(point.SignedAtUtc, zone)}; {point.SignedByName ?? "-"} ({point.SignedByRole ?? "-"})");
                 }
             }
         });
@@ -592,7 +592,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             {
                 foreach (var warning in member.ActiveWarnings)
                 {
-                    column.Item().Text($"{warning.LevelLabel}: {ReportClock.Format(warning.IssuedAtUtc, zone)} - {ReportClock.Format(warning.ExpiresAtUtc, zone)}");
+                    column.Item().Text($"{warning.LevelLabel}: {ReportClockRules.Format(warning.IssuedAtUtc, zone)} - {ReportClockRules.Format(warning.ExpiresAtUtc, zone)}");
                 }
             }
 
@@ -604,7 +604,7 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             {
                 foreach (var award in member.Awards)
                 {
-                    column.Item().Text($"{award.LevelLabel}: {ReportClock.Format(award.DateAcquired, zone)}; {award.StatusLabel}; {award.Note ?? "-"}");
+                    column.Item().Text($"{award.LevelLabel}: {ReportClockRules.Format(award.DateAcquired, zone)}; {award.StatusLabel}; {award.Note ?? "-"}");
                 }
             }
         });

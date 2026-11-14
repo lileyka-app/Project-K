@@ -9,7 +9,7 @@ namespace ProjectK.Infrastructure.Services.Catalog;
 /// Turns the catalogue document into the shapes Lilejka's clients already read. Nothing is made up:
 /// a field the catalogue leaves out stays empty.
 /// </summary>
-internal static class CatalogMapper
+internal static class CatalogMapping
 {
     private static readonly Dictionary<string, string> KraiNames = KraiSeed.All.ToDictionary(
         seed => seed.Code, seed => seed.Name, StringComparer.OrdinalIgnoreCase);

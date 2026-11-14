@@ -5,7 +5,7 @@ using ProjectK.Infrastructure.Services.WebPush;
 namespace ProjectK.Infrastructure.Tests.Services.WebPush;
 
 /// <summary>The same table as the PWA's notification-route.spec.ts, with /m/ in front and the inbox for the rest.</summary>
-public class PushRoutesTests
+public class PushRouteRulesTests
 {
     private static readonly Guid Kurin = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid Item = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -25,7 +25,7 @@ public class PushRoutesTests
     [Fact]
     public void Member_ShouldOpenTheMembersCard()
     {
-        var url = PushRoutes.For(Notification(AppNotificationType.MemberAwardReviewed, "/member/m-7?tab=awards"), null);
+        var url = PushRouteRules.For(Notification(AppNotificationType.MemberAwardReviewed, "/member/m-7?tab=awards"), null);
 
         Assert.Equal("/m/tabs/kurin/member/m-7", url);
     }
@@ -35,10 +35,10 @@ public class PushRoutesTests
     {
         var notification = Notification(AppNotificationType.MemberSkillSubmittedForReview, $"/kurin/{Kurin}/review/skills");
 
-        Assert.Equal("/m/tabs/kurin/review/skills", PushRoutes.For(notification, Kurin));
-        Assert.Equal("/m/tabs/kurin/review/skills", PushRoutes.For(notification, null));
-        Assert.Equal(PushRoutes.Inbox, PushRoutes.For(notification, Guid.NewGuid()));
-        Assert.True(PushRoutes.NeedsActiveKurin(notification));
+        Assert.Equal("/m/tabs/kurin/review/skills", PushRouteRules.For(notification, Kurin));
+        Assert.Equal("/m/tabs/kurin/review/skills", PushRouteRules.For(notification, null));
+        Assert.Equal(PushRouteRules.Inbox, PushRouteRules.For(notification, Guid.NewGuid()));
+        Assert.True(PushRouteRules.NeedsActiveKurin(notification));
     }
 
     [Theory]
@@ -48,7 +48,7 @@ public class PushRoutesTests
     [InlineData("/calendar/k1", AppNotificationType.AgendaItemDeleted, "/m/tabs/calendar")]
     public void Agenda_ShouldOpenTheItemOrItsListWhenItIsGone(string route, AppNotificationType type, string expected)
     {
-        var url = PushRoutes.For(Notification(type, route, "AgendaItem", Item), null);
+        var url = PushRouteRules.For(Notification(type, route, "AgendaItem", Item), null);
 
         Assert.Equal(expected, url);
     }
@@ -56,7 +56,7 @@ public class PushRoutesTests
     [Fact]
     public void ACalendarLinkGoneOff_ShouldOpenTheAccountPage()
     {
-        var url = PushRoutes.For(Notification(AppNotificationType.CalendarFeedRevoked, "/settings/account#calendar"), null);
+        var url = PushRouteRules.For(Notification(AppNotificationType.CalendarFeedRevoked, "/settings/account#calendar"), null);
 
         Assert.Equal("/m/tabs/more/account", url);
     }
@@ -69,7 +69,7 @@ public class PushRoutesTests
     {
         var notification = Notification(AppNotificationType.WaitlistEntrySubmitted, route);
 
-        Assert.Equal("/m/tabs/home/notifications", PushRoutes.For(notification, null));
-        Assert.False(PushRoutes.NeedsActiveKurin(notification));
+        Assert.Equal("/m/tabs/home/notifications", PushRouteRules.For(notification, null));
+        Assert.False(PushRouteRules.NeedsActiveKurin(notification));
     }
 }

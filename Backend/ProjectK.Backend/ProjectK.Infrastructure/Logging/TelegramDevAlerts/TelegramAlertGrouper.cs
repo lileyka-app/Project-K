@@ -68,7 +68,7 @@ public sealed class TelegramAlertGrouper
 
                 if (group.More > 0)
                 {
-                    digests.Add(TelegramAlertFormatter.Digest(environmentName, group.First, group.More, group.Paths, _window));
+                    digests.Add(TelegramAlertRules.Digest(environmentName, group.First, group.More, group.Paths, _window));
                 }
                 _groups.Remove(key);
             }
@@ -100,7 +100,7 @@ public sealed class TelegramAlertGrouper
 }
 
 /// <summary>Emails and secrets never leave in an alert, whatever field they hid in.</summary>
-public static class Redaction
+public static class RedactionRules
 {
     // A message that takes longer than this to redact is dropped rather than sent half-redacted.
     private static readonly TimeSpan RedactTimeout = TimeSpan.FromMilliseconds(250);

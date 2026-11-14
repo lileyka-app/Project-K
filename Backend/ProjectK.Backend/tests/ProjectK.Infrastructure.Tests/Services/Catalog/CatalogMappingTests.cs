@@ -4,10 +4,10 @@ using ProjectK.Infrastructure.Services.Catalog;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
 
-public class CatalogMapperTests
+public class CatalogMappingTests
 {
     private static CatalogState Map() =>
-        CatalogMapper.ToState(CatalogClient.Parse(CatalogTestData.Bytes), "https://catalog.test", DateTimeOffset.UnixEpoch);
+        CatalogMapping.ToState(CatalogClient.Parse(CatalogTestData.Bytes), "https://catalog.test", DateTimeOffset.UnixEpoch);
 
     [Fact]
     public void Badge_KeepsTheShapeClientsRead()

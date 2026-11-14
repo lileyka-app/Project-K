@@ -18,7 +18,7 @@ public class PlastLevelDegreeRulesTests
         using var stream = typeof(CatalogSyncBackgroundService).Assembly.GetManifestResourceStream(CatalogSyncBackgroundService.SeedResourceName)!;
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);
-        return CatalogMapper.ToState(CatalogClient.Parse(buffer.ToArray()), "seed", null).HonoursById;
+        return CatalogMapping.ToState(CatalogClient.Parse(buffer.ToArray()), "seed", null).HonoursById;
     }
 
     [Fact]

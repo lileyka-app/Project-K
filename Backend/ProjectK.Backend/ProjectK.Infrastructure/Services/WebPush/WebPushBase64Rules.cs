@@ -4,7 +4,7 @@ namespace ProjectK.Infrastructure.Services.WebPush;
 /// Base64url without padding (RFC 4648 §5), the alphabet every Web Push key and JWT part uses.
 /// Decoding accepts padding too: browsers leave it out, but a key pasted into configuration may not.
 /// </summary>
-internal static class WebPushBase64
+internal static class WebPushBase64Rules
 {
     public static string Encode(ReadOnlySpan<byte> bytes) =>
         Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');

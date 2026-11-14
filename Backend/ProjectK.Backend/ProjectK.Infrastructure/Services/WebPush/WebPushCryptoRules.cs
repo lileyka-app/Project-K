@@ -12,7 +12,7 @@ namespace ProjectK.Infrastructure.Services.WebPush;
 /// AES-128-GCM) and the VAPID header that identifies this server to the push service (RFC 8292, an
 /// ES256 JWT). Kept apart from sending so both can be checked against the RFC's own example.
 /// </summary>
-public static class WebPushCrypto
+public static class WebPushCryptoRules
 {
     /// <summary>One record carries the whole payload; push services accept at most 4096 bytes.</summary>
     private const int RecordSize = 4096;
@@ -40,7 +40,7 @@ public static class WebPushCrypto
     public static byte[] Encrypt(byte[] payload, string p256dh, string auth)
     {
         using var serverKey = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-        return Encrypt(payload, WebPushBase64.Decode(p256dh), WebPushBase64.Decode(auth), serverKey, RandomNumberGenerator.GetBytes(SaltSize));
+        return Encrypt(payload, WebPushBase64Rules.Decode(p256dh), WebPushBase64Rules.Decode(auth), serverKey, RandomNumberGenerator.GetBytes(SaltSize));
     }
 
     /// <summary>The same with the server's key pair and the salt given, so a test can replay RFC 8291's example.</summary>
@@ -123,17 +123,17 @@ public static class WebPushCrypto
         string privateKey,
         DateTimeOffset expiresAt)
     {
-        var publicBytes = WebPushBase64.Decode(publicKey);
-        var header = WebPushBase64.Encode(Encoding.UTF8.GetBytes("{\"typ\":\"JWT\",\"alg\":\"ES256\"}"));
-        var claims = WebPushBase64.Encode(JsonSerializer.SerializeToUtf8Bytes(
+        var publicBytes = WebPushBase64Rules.Decode(publicKey);
+        var header = WebPushBase64Rules.Encode(Encoding.UTF8.GetBytes("{\"typ\":\"JWT\",\"alg\":\"ES256\"}"));
+        var claims = WebPushBase64Rules.Encode(JsonSerializer.SerializeToUtf8Bytes(
             new VapidClaims(endpoint.GetLeftPart(UriPartial.Authority), expiresAt.ToUnixTimeSeconds(), subject)));
         var signingInput = $"{header}.{claims}";
 
-        using var key = ImportSigningKey(publicBytes, WebPushBase64.Decode(privateKey));
+        using var key = ImportSigningKey(publicBytes, WebPushBase64Rules.Decode(privateKey));
         // .NET signs in the IEEE P1363 form (r‖s, 64 bytes), which is what JWS ES256 wants.
         var signature = key.SignData(Encoding.ASCII.GetBytes(signingInput), HashAlgorithmName.SHA256);
 
-        return $"vapid t={signingInput}.{WebPushBase64.Encode(signature)}, k={WebPushBase64.Encode(publicBytes)}";
+        return $"vapid t={signingInput}.{WebPushBase64Rules.Encode(signature)}, k={WebPushBase64Rules.Encode(publicBytes)}";
     }
 
     internal static ECDiffieHellman ImportPublicKey(byte[] uncompressedPoint)

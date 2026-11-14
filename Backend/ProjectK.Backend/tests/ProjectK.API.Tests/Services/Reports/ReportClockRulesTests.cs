@@ -6,7 +6,7 @@ namespace ProjectK.API.Tests.Services.Reports;
 /// The звіт prints the reader's hours, not the server's. The zone arrives from the browser, so half
 /// of what is asserted here is about surviving what a client might send.
 /// </summary>
-public sealed class ReportClockTests
+public sealed class ReportClockRulesTests
 {
     private static readonly DateTime WinterNoonUtc = new(2026, 1, 15, 12, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime SummerNoonUtc = new(2026, 7, 15, 12, 0, 0, DateTimeKind.Utc);
@@ -14,18 +14,18 @@ public sealed class ReportClockTests
     [Fact]
     public void Format_ShouldPrintTheHoursOfTheGivenZone()
     {
-        var kyiv = ReportClock.Resolve("Europe/Kyiv");
+        var kyiv = ReportClockRules.Resolve("Europe/Kyiv");
 
-        Assert.Equal("2026-01-15 14:00", ReportClock.Format(WinterNoonUtc, kyiv));
+        Assert.Equal("2026-01-15 14:00", ReportClockRules.Format(WinterNoonUtc, kyiv));
     }
 
     /// <summary>Kyiv is two hours ahead in winter and three in summer, and each timestamp is its own moment.</summary>
     [Fact]
     public void Format_ShouldFollowDaylightSaving()
     {
-        var kyiv = ReportClock.Resolve("Europe/Kyiv");
+        var kyiv = ReportClockRules.Resolve("Europe/Kyiv");
 
-        Assert.Equal("2026-07-15 15:00", ReportClock.Format(SummerNoonUtc, kyiv));
+        Assert.Equal("2026-07-15 15:00", ReportClockRules.Format(SummerNoonUtc, kyiv));
     }
 
     /// <summary>
@@ -35,16 +35,16 @@ public sealed class ReportClockTests
     [Fact]
     public void Format_ShouldReadAnUnspecifiedTimestampAsUtc()
     {
-        var kyiv = ReportClock.Resolve("Europe/Kyiv");
+        var kyiv = ReportClockRules.Resolve("Europe/Kyiv");
         var fromDatabase = DateTime.SpecifyKind(WinterNoonUtc, DateTimeKind.Unspecified);
 
-        Assert.Equal(ReportClock.Format(WinterNoonUtc, kyiv), ReportClock.Format(fromDatabase, kyiv));
+        Assert.Equal(ReportClockRules.Format(WinterNoonUtc, kyiv), ReportClockRules.Format(fromDatabase, kyiv));
     }
 
     [Fact]
     public void Format_ShouldSayNothingHappenedRatherThanPrintAZeroDate()
     {
-        Assert.Equal("-", ReportClock.Format(null, TimeZoneInfo.Utc));
+        Assert.Equal("-", ReportClockRules.Format(null, TimeZoneInfo.Utc));
     }
 
     /// <summary>
@@ -59,16 +59,16 @@ public sealed class ReportClockTests
     [InlineData("../../etc/passwd")]
     public void Resolve_ShouldFallBackToUtc_WhenTheZoneIsNotOne(string? id)
     {
-        var zone = ReportClock.Resolve(id);
+        var zone = ReportClockRules.Resolve(id);
 
         Assert.Equal(TimeZoneInfo.Utc, zone);
-        Assert.Equal("UTC", ReportClock.Label(zone));
-        Assert.Equal("2026-01-15 12:00", ReportClock.Format(WinterNoonUtc, zone));
+        Assert.Equal("UTC", ReportClockRules.Label(zone));
+        Assert.Equal("2026-01-15 12:00", ReportClockRules.Format(WinterNoonUtc, zone));
     }
 
     [Fact]
     public void Label_ShouldNameTheZoneSoTheHoursAreNotAmbiguous()
     {
-        Assert.Equal("Europe/Kyiv", ReportClock.Label(ReportClock.Resolve("Europe/Kyiv")));
+        Assert.Equal("Europe/Kyiv", ReportClockRules.Label(ReportClockRules.Resolve("Europe/Kyiv")));
     }
 }
