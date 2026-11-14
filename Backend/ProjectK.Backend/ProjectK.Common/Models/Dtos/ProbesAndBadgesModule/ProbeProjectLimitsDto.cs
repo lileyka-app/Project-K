@@ -1,5 +1,3 @@
-using ProjectK.Common.Models.Enums;
-
 namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 /// <summary>The limits as numbers, so a client says the same thing the server enforces.</summary>

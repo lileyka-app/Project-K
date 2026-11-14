@@ -1,5 +1,4 @@
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Models.Dtos.MeModule;
 

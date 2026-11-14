@@ -2,12 +2,11 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

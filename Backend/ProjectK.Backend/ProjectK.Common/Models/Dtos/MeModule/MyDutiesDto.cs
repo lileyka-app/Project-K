@@ -1,6 +1,3 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-
 namespace ProjectK.Common.Models.Dtos.MeModule;
 
 /// <summary>«Справи»: what waits on the person, less what they hid, and how many they hid.</summary>

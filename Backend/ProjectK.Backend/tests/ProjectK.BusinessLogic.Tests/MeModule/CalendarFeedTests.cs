@@ -40,7 +40,10 @@ public class CalendarFeedTests
 
     private static readonly AgendaCategory Skhodyny = new()
     {
-        AgendaCategoryKey = Guid.NewGuid(), KurinKey = Kurin, Name = "Сходини", IsKurinSchedule = true
+        AgendaCategoryKey = Guid.NewGuid(),
+        KurinKey = Kurin,
+        Name = "Сходини",
+        IsKurinSchedule = true
     };
 
     private readonly Mock<ICalendarFeedStore> _feeds = new();
@@ -195,8 +198,10 @@ public class CalendarFeedTests
         Event("Сходини", Sokoly, Skhodyny.AgendaCategoryKey);
         _feed = new CalendarFeed
         {
-            UserId = User, TokenHash = SecretHash.Sha256Hex(Token),
-            RevokedAtUtc = Now.UtcDateTime.AddDays(-2), RevokedReason = CalendarFeedRevokeReason.SecurityChange
+            UserId = User,
+            TokenHash = SecretHash.Sha256Hex(Token),
+            RevokedAtUtc = Now.UtcDateTime.AddDays(-2),
+            RevokedReason = CalendarFeedRevokeReason.SecurityChange
         };
 
         var lines = await Render();

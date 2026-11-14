@@ -12,7 +12,7 @@ internal static class ProfileMapping
         Revision: revision,
         Document: document);
 
-    /// <param name="authorName">Who saved it, as the history names them; <c>null</c> when unknown.</param>
+    /// <summary>A revision for the history list, under <paramref name="authorName"/>: who saved it, or <c>null</c> when unknown.</summary>
     public static KraiProfileRevisionDto ToDto(this KraiProfileRevision revision, string? authorName) => new(
         Revision: revision.Revision,
         CreatedAtUtc: revision.CreatedAtUtc,

@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
-using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -18,6 +17,7 @@ using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

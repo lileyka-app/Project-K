@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuditModule;
@@ -10,6 +9,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

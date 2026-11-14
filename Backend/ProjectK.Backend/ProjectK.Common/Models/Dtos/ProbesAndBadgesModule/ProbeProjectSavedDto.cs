@@ -1,5 +1,7 @@
 namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
-/// <param name="ProjectKey">The project just saved, so a client can upload into a new one.</param>
-/// <param name="Tab">The whole «Третя проба» tab after the save.</param>
+/// <summary>
+/// A saved project: <see cref="ProjectKey"/> so a client can upload into a new one, and the whole
+/// «Третя проба» tab after the save.
+/// </summary>
 public sealed record ProbeProjectSavedDto(Guid ProjectKey, ThirdProbeDto Tab);

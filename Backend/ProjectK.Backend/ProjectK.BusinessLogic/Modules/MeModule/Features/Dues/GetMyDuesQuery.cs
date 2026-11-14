@@ -1,9 +1,9 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

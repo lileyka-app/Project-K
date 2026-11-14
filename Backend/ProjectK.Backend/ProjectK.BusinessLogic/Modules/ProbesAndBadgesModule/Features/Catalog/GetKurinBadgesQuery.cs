@@ -1,8 +1,8 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using CatalogBadge = ProjectK.Common.Models.Catalog.Badge;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using CatalogBadge = ProjectK.Common.Models.Catalog.Badge;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 

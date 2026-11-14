@@ -14,23 +14,23 @@ internal static class ProbeMapping
         Guid kurinKey,
         string probeId,
         IReadOnlyCollection<ProbePointProgressDto>? pointSignatures = null) => new()
-    {
-        ProbeProgressKey = null,
-        MemberKey = memberKey,
-        KurinKey = kurinKey,
-        ProbeId = probeId,
-        Status = ProbeProgressStatus.NotStarted,
-        CompletedAtUtc = null,
-        CompletedByUserKey = null,
-        CompletedByName = null,
-        CompletedByRole = null,
-        VerifiedAtUtc = null,
-        VerifiedByUserKey = null,
-        VerifiedByName = null,
-        VerifiedByRole = null,
-        AuditTrail = [],
-        PointSignatures = pointSignatures ?? []
-    };
+        {
+            ProbeProgressKey = null,
+            MemberKey = memberKey,
+            KurinKey = kurinKey,
+            ProbeId = probeId,
+            Status = ProbeProgressStatus.NotStarted,
+            CompletedAtUtc = null,
+            CompletedByUserKey = null,
+            CompletedByName = null,
+            CompletedByRole = null,
+            VerifiedAtUtc = null,
+            VerifiedByUserKey = null,
+            VerifiedByName = null,
+            VerifiedByRole = null,
+            AuditTrail = [],
+            PointSignatures = pointSignatures ?? []
+        };
 
     /// <summary>The проба as the clients read it, its status history taken from the journal.</summary>
     /// <param name="entity">The проба.</param>
@@ -40,21 +40,21 @@ internal static class ProbeMapping
         this ProbeProgress entity,
         IEnumerable<KurinAuditEvent> journal,
         IReadOnlyCollection<ProbePointProgressDto>? pointSignatures = null) => new()
-    {
-        ProbeProgressKey = entity.ProbeProgressKey,
-        MemberKey = entity.MemberKey,
-        KurinKey = entity.KurinKey,
-        ProbeId = entity.ProbeId,
-        Status = entity.Status,
-        CompletedAtUtc = entity.CompletedAtUtc,
-        CompletedByUserKey = entity.CompletedByUserKey,
-        CompletedByName = entity.CompletedByName,
-        CompletedByRole = entity.CompletedByRole,
-        VerifiedAtUtc = entity.VerifiedAtUtc,
-        VerifiedByUserKey = entity.VerifiedByUserKey,
-        VerifiedByName = entity.VerifiedByName,
-        VerifiedByRole = entity.VerifiedByRole,
-        AuditTrail = ProgressTrail.ForProbe(entity.ProbeProgressKey, journal),
-        PointSignatures = pointSignatures ?? []
-    };
+        {
+            ProbeProgressKey = entity.ProbeProgressKey,
+            MemberKey = entity.MemberKey,
+            KurinKey = entity.KurinKey,
+            ProbeId = entity.ProbeId,
+            Status = entity.Status,
+            CompletedAtUtc = entity.CompletedAtUtc,
+            CompletedByUserKey = entity.CompletedByUserKey,
+            CompletedByName = entity.CompletedByName,
+            CompletedByRole = entity.CompletedByRole,
+            VerifiedAtUtc = entity.VerifiedAtUtc,
+            VerifiedByUserKey = entity.VerifiedByUserKey,
+            VerifiedByName = entity.VerifiedByName,
+            VerifiedByRole = entity.VerifiedByRole,
+            AuditTrail = ProgressTrail.ForProbe(entity.ProbeProgressKey, journal),
+            PointSignatures = pointSignatures ?? []
+        };
 }

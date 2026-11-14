@@ -1,12 +1,5 @@
-using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

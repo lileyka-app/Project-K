@@ -15,13 +15,13 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

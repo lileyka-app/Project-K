@@ -1,6 +1,6 @@
 using FluentAssertions;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;

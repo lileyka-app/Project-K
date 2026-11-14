@@ -1,6 +1,3 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-
 namespace ProjectK.Common.Models.Dtos.MeModule;
 
 /// <summary>A гурток the person belongs to as a youth, or leads, in one of their kurins.</summary>

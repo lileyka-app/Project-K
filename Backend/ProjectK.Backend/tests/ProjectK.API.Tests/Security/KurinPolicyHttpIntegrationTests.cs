@@ -1,5 +1,4 @@
 using System.Net;
-using ProjectK.API.Tests.TestHelpers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -15,10 +14,10 @@ using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.API.Hosting;
+using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -27,6 +26,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

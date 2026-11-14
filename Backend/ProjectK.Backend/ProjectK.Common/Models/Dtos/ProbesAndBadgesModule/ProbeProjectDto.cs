@@ -2,6 +2,7 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
+/// <summary>One project of the third probe, laid out as the УПЮ template asks.</summary>
 /// <param name="Description">Markdown, like the goal, plan and results; pictures are
 /// <c>project-image:{key}</c>, their links in <paramref name="Images"/>.</param>
 public sealed record ProbeProjectDto(

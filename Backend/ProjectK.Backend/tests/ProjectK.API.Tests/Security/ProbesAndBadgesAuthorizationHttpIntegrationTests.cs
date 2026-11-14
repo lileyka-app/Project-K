@@ -12,9 +12,9 @@ using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Models.Catalog;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Tests.Security;
 

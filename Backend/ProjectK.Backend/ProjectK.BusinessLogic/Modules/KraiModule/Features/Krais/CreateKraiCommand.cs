@@ -1,11 +1,11 @@
 using MediatR;
-using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;

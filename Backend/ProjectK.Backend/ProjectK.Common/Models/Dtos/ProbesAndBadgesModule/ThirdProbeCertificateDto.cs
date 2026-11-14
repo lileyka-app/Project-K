@@ -1,6 +1,5 @@
-using ProjectK.Common.Models.Enums;
-
 namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
+/// <summary>The camp посвідка attached to the third probe.</summary>
 /// <param name="Url">A signed link that expires.</param>
 public sealed record ThirdProbeCertificateDto(string Url, string ContentType, string? FileName);

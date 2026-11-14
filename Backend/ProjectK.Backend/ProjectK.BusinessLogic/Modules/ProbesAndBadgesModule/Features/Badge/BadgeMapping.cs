@@ -18,21 +18,21 @@ internal static class BadgeMapping
         IEnumerable<KurinAuditEvent> journal,
         MemberSummary? member = null,
         string? memberPhotoUrl = null) => new()
-    {
-        BadgeProgressKey = entity.BadgeProgressKey,
-        MemberKey = entity.MemberKey,
-        KurinKey = entity.KurinKey,
-        BadgeId = entity.BadgeId,
-        Status = entity.Status,
-        SubmittedAtUtc = entity.SubmittedAtUtc,
-        ReviewedAtUtc = entity.ReviewedAtUtc,
-        ReviewedByUserKey = entity.ReviewedByUserKey,
-        ReviewedByName = entity.ReviewedByName,
-        ReviewedByRole = entity.ReviewedByRole,
-        ReviewNote = entity.ReviewNote,
-        AuditTrail = ProgressTrail.ForBadge(entity.BadgeProgressKey, journal),
-        MemberFirstName = member?.FirstName,
-        MemberLastName = member?.LastName,
-        MemberPhotoUrl = memberPhotoUrl
-    };
+        {
+            BadgeProgressKey = entity.BadgeProgressKey,
+            MemberKey = entity.MemberKey,
+            KurinKey = entity.KurinKey,
+            BadgeId = entity.BadgeId,
+            Status = entity.Status,
+            SubmittedAtUtc = entity.SubmittedAtUtc,
+            ReviewedAtUtc = entity.ReviewedAtUtc,
+            ReviewedByUserKey = entity.ReviewedByUserKey,
+            ReviewedByName = entity.ReviewedByName,
+            ReviewedByRole = entity.ReviewedByRole,
+            ReviewNote = entity.ReviewNote,
+            AuditTrail = ProgressTrail.ForBadge(entity.BadgeProgressKey, journal),
+            MemberFirstName = member?.FirstName,
+            MemberLastName = member?.LastName,
+            MemberPhotoUrl = memberPhotoUrl
+        };
 }

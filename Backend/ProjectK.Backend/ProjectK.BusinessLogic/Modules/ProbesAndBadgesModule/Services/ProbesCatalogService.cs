@@ -1,7 +1,7 @@
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using Microsoft.Extensions.Caching.Memory;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 

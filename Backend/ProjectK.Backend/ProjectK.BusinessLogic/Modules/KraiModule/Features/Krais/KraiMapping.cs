@@ -10,7 +10,7 @@ internal static class KraiMapping
         Name: krai.Name,
         KurinCount: kurinCount);
 
-    /// <param name="defaultCode">The край a kurin opens in when nobody picks one.</param>
+    /// <summary>The край for a picker, marked when it is <paramref name="defaultCode"/>, the one a kurin opens in when nobody picks one.</summary>
     public static KraiNameDto ToNameDto(this Krai krai, string? defaultCode) => new(
         Code: krai.Code,
         Name: krai.Name,

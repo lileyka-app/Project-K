@@ -1,5 +1,3 @@
-using ProjectK.Common.Models.Enums;
-
 namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 /// <summary>Everything the «Третя проба» tab shows.</summary>

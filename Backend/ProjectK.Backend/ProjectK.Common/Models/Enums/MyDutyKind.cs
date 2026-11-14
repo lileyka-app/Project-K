@@ -1,6 +1,3 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-
 namespace ProjectK.Common.Models.Enums;
 
 /// <summary>What a duty is about; the dashboard knows where each kind is done.</summary>

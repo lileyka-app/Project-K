@@ -2,8 +2,6 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -12,6 +10,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -340,8 +339,12 @@ public class ProbeProjectHandlerTests
     {
         _file = new ThirdProbeFile
         {
-            MemberKey = _memberKey, ProbeId = ProbeId, ReflectionOn = new DateOnly(2026, 3, 1), ReflectionWith = "Звʼязковий",
-            ReflectionConfirmedAtUtc = DateTime.UtcNow, ReflectionConfirmedByName = "Звʼязковий"
+            MemberKey = _memberKey,
+            ProbeId = ProbeId,
+            ReflectionOn = new DateOnly(2026, 3, 1),
+            ReflectionWith = "Звʼязковий",
+            ReflectionConfirmedAtUtc = DateTime.UtcNow,
+            ReflectionConfirmedByName = "Звʼязковий"
         };
 
         await FileHandler().Handle(

@@ -1,11 +1,8 @@
 using MediatR;
-using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;

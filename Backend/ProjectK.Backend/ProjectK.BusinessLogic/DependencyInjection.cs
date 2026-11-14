@@ -15,7 +15,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;

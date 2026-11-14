@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
@@ -8,9 +7,7 @@ using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

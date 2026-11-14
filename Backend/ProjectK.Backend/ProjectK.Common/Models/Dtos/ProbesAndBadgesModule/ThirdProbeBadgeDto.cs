@@ -1,5 +1,3 @@
-using ProjectK.Common.Models.Enums;
-
 namespace ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 /// <summary>A вмілість the person holds, confirmed.</summary>

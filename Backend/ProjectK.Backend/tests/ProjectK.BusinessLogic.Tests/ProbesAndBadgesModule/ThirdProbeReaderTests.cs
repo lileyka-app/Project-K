@@ -1,21 +1,19 @@
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Catalog;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 

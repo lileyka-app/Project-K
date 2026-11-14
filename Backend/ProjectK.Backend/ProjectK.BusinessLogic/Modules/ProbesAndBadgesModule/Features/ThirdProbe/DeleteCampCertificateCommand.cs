@@ -1,7 +1,5 @@
 using MediatR;
-using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Audit;
@@ -43,7 +41,7 @@ public sealed class DeleteCampCertificateCommandHandler
             file.CampCertificateContentType = null;
             file.CampCertificateFileName = null;
             file.CampCertificateBytes = 0;
-                await RecordAsync(AuditActions.Probe.CertificateRemoved, file, request.MemberKey, probeId, cancellationToken);
+            await RecordAsync(AuditActions.Probe.CertificateRemoved, file, request.MemberKey, probeId, cancellationToken);
             await UnitOfWork.SaveChangesAsync(cancellationToken);
             await Photos.DeletePhotoAsync(blob, cancellationToken);
         }

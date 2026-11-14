@@ -1,6 +1,3 @@
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-
 namespace ProjectK.Common.Models.Dtos.MeModule;
 
 /// <summary>The person's вкладка in one kurin: what they owe or have over, and what this quarter costs.</summary>
