@@ -160,9 +160,13 @@ Modules/<Module>/Features/<Area>/
 - **Журнал змін сутності — `…Trail`**, не `…AuditFields`.
 - **«Поточна людина» — один клас** на весь бекенд, `ICurrentMember`: людину читає раз на запит; нових «хто я»
   поруч не заводимо. Чужого за ключем акаунта питають `IMemberDirectory.FindByAccountAsync`.
-- **Доменні іменники** (`DuesLedger`, `ScoreBook`, `AgendaRecurrence`) лишаються, якщо клас моделює
+- **Доменні іменники** (`DuesLedger`, `ScoreBook`) лишаються, якщо клас (не static) моделює
   саме це поняття. Це не суфікс ролі.
-- **Static-клас** — або `…Rules` (рішення без стану), або `…Names` (підписи для людей).
+- **Static-клас** — завжди з суфіксом, і без винятків для «відомих» імен (`PhoneNumbers` став `PhoneNumberRules`):
+  `…Rules` — рішення й обчислення без стану; `…Names` — підписи для людей і сталі рядки (коди дій, імена claims, ключі);
+  `…Mapping` — `ToDto`/`ApplyTo`; `…Extensions` — лише методи-розширення (`Add…`/`Use…` хоста теж). Свої суфікси
+  з таблиці зберігають `…Cookie`, `…Policies`, `…Trail`, `…Errors`, `<M>Access`, `Program` і `DependencyInjection`;
+  дані сідування в `Infrastructure/Seeding/` — окремий борг (F-11).
 
 ### Межі модулів
 
