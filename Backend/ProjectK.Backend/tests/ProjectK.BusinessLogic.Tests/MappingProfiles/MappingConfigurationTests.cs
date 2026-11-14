@@ -20,7 +20,6 @@ public class MappingConfigurationTests
         var configuration = new MapperConfiguration(cfg =>
         {
             cfg.AddCollectionMappers();
-            cfg.AddProfile(new AuthModuleProfile());
             cfg.AddProfile(new KurinModuleProfile());
         }, NullLoggerFactory.Instance);
 

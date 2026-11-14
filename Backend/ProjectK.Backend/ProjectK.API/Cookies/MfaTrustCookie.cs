@@ -13,14 +13,13 @@ public static class MfaTrustCookie
 
     public static void Set(HttpContext context, string token, DateTime expiresUtc)
     {
-        var isSecureRequest = IsSecureRequest(context.Request);
         context.Response.Cookies.Append(Name, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecureRequest,
-            SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
+            Secure = AuthCookie.IsSecure(context.Request),
+            SameSite = AuthCookie.SameSiteFor(context.Request),
             Expires = expiresUtc,
-            Path = "/api/auth"
+            Path = AuthCookie.Path
         });
     }
 
@@ -28,11 +27,5 @@ public static class MfaTrustCookie
     {
         var value = request.Cookies[Name];
         return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
-
-    private static bool IsSecureRequest(HttpRequest request)
-    {
-        return request.IsHttps
-            || string.Equals(request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
     }
 }

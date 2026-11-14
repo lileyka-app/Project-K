@@ -53,7 +53,7 @@ public class DevToolsController : ControllerBase
         var response = await _mediator.Send(new ImpersonateRoleCommand(request.Role, request.KurinKey));
         if (response.Type == ResultType.Success && response.Data?.Login.Tokens is { } tokens)
         {
-            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken);
         }
 
         return response.ToActionResult(this);
@@ -72,7 +72,7 @@ public class DevToolsController : ControllerBase
         var response = await _mediator.Send(new ImpersonateMemberCommand(request.MemberKey));
         if (response.Type == ResultType.Success && response.Data?.Login.Tokens is { } tokens)
         {
-            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken);
         }
 
         return response.ToActionResult(this);
@@ -94,7 +94,7 @@ public class DevToolsController : ControllerBase
         var response = await _mediator.Send(new ReturnFromImpersonationCommand(request.Ticket, RefreshTokenCookie.Read(Request)));
         if (response.Type == ResultType.Success && response.Data?.Tokens is { } tokens)
         {
-            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken);
         }
 
         return response.ToActionResult(this);

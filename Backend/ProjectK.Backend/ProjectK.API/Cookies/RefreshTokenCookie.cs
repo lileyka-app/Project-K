@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using ProjectK.Common.Models.Dtos.AuthModule;
 
 namespace ProjectK.API.Cookies;
 
@@ -11,32 +12,34 @@ public static class RefreshTokenCookie
 {
     public const string Name = "refreshToken";
 
+    /// <summary>Hands out the session a sign-in, refresh or switch just issued.</summary>
+    public static void Set(HttpContext context, RefreshToken token) => Set(context, token.Token, token.Expires);
+
     public static void Set(HttpContext context, string token, DateTime expires)
     {
         Delete(context);
 
-        var isSecureRequest = IsSecureRequest(context.Request);
         context.Response.Cookies.Append(Name, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecureRequest,
-            SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
+            Secure = AuthCookie.IsSecure(context.Request),
+            SameSite = AuthCookie.SameSiteFor(context.Request),
             Expires = expires,
-            Path = "/api/auth"
+            Path = AuthCookie.Path
         });
     }
 
     /// <summary>Deletes under every path the cookie has ever been written with, so an old copy cannot linger.</summary>
     public static void Delete(HttpContext context)
     {
-        var isSecureRequest = IsSecureRequest(context.Request);
-        foreach (var path in new[] { "/api/auth", "/api", "/" })
+        var isSecureRequest = AuthCookie.IsSecure(context.Request);
+        foreach (var path in new[] { AuthCookie.Path, "/api", "/" })
         {
             context.Response.Cookies.Delete(Name, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = isSecureRequest,
-                SameSite = isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax,
+                SameSite = AuthCookie.SameSiteFor(context.Request),
                 Path = path
             });
         }
@@ -57,11 +60,5 @@ public static class RefreshTokenCookie
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Select(value => Uri.UnescapeDataString(value.Trim('"')))
             .ToList();
-    }
-
-    private static bool IsSecureRequest(HttpRequest request)
-    {
-        return request.IsHttps
-            || string.Equals(request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
     }
 }

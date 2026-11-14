@@ -1,7 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text.Json.Serialization;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -49,12 +47,10 @@ namespace ProjectK.API.Controllers.AuthModule;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IMapper _mapper;
 
-    public AuthController(IMediator mediator, IMapper mapper)
+    public AuthController(IMediator mediator)
     {
         _mediator = mediator;
-        _mapper = mapper;
     }
 
     /// <summary>
@@ -92,18 +88,18 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(LoginUserResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> Login([FromBody] LoginUserRequest request, [FromQuery] bool addAccount = false)
     {
-        var command = _mapper.Map<LoginUserCommand>(request);
-        command.MfaTrustToken = MfaTrustCookie.Read(Request);
+        var command = new LoginUserCommand(request.Email, request.Password)
+        {
+            MfaTrustToken = MfaTrustCookie.Read(Request)
+        };
         var response = await _mediator.Send(command);
         if (response.Type == ResultType.Success && response.Data.Tokens != null)
         {
             await KeepPreviousSessionIf(addAccount, response.Data.UserKey);
-            SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, response.Data.Tokens.RefreshToken);
         }
         return response.ToActionResult(this);
     }
-
-    public class SetKurinScopeRequest { public Guid? KurinKey { get; set; } }
 
     /// <summary>
     /// Points the session at a particular kurin and issues tokens scoped to it.
@@ -127,7 +123,7 @@ public class AuthController : ControllerBase
         var response = await _mediator.Send(command);
         if (response.Type == ResultType.Success && response.Data?.Tokens != null)
         {
-            SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, response.Data.Tokens.RefreshToken);
         }
 
         return response.ToActionResult(this);
@@ -153,8 +149,6 @@ public class AuthController : ControllerBase
         var response = await _mediator.Send(new GetKurinScopeOptionsQuery(userKey));
         return response.ToActionResult(this);
     }
-
-    public class LoadTestLoginRequest { public string ApiKey { get; set; } = string.Empty; }
 
     /// <summary>
     /// Mints a token for the load-test account without a password.
@@ -185,7 +179,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> Refresh()
     {
-        var refreshTokens = GetRefreshTokenCookieValues();
+        var refreshTokens = RefreshTokenCookie.Read(Request);
         if (refreshTokens.Count == 0)
         {
             return this.UnreadableIdentity();
@@ -197,12 +191,12 @@ public class AuthController : ControllerBase
             var response = await _mediator.Send(command);
             if (response.Type == ResultType.Success && response.Data?.RefreshToken != null)
             {
-                SetRefreshTokenCookie(response.Data.RefreshToken.Token, response.Data.RefreshToken.Expires);
+                RefreshTokenCookie.Set(HttpContext, response.Data.RefreshToken);
                 return response.ToActionResult(this);
             }
         }
 
-        DeleteRefreshTokenCookie();
+        RefreshTokenCookie.Delete(HttpContext);
         return this.UnreadableIdentity();
     }
 
@@ -218,13 +212,13 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout()
     {
-        var refreshTokens = GetRefreshTokenCookieValues();
+        var refreshTokens = RefreshTokenCookie.Read(Request);
         var savedTokens = SavedSessionsCookie.Read(Request);
         var command = new LogoutUserCommand(this.UserKey()?.ToString(), refreshTokens, savedTokens);
         var response = await _mediator.Send(command);
         if (refreshTokens.Count > 0)
         {
-            DeleteRefreshTokenCookie();
+            RefreshTokenCookie.Delete(HttpContext);
         }
         if (savedTokens.Count > 0)
         {
@@ -251,7 +245,7 @@ public class AuthController : ControllerBase
             return Ok(Array.Empty<SavedAccountDto>());
         }
 
-        var response = await _mediator.Send(new GetSavedAccountsQuery(savedTokens, GetRefreshTokenCookieValues()));
+        var response = await _mediator.Send(new GetSavedAccountsQuery(savedTokens, RefreshTokenCookie.Read(Request)));
         if (response.Type != ResultType.Success || response.Data is null)
         {
             return response.ToActionResult(this);
@@ -263,8 +257,6 @@ public class AuthController : ControllerBase
         }
         return Ok(response.Data.Accounts);
     }
-
-    public class SwitchAccountRequest { [JsonRequired] public Guid UserKey { get; set; } }
 
     /// <summary>
     /// Makes a kept account the one in use; the account that was in use is kept in its place.
@@ -279,14 +271,14 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SwitchAccount([FromBody] SwitchAccountRequest request)
     {
-        var command = new SwitchSavedAccountCommand(request.UserKey, SavedSessionsCookie.Read(Request), GetRefreshTokenCookieValues());
+        var command = new SwitchSavedAccountCommand(request.UserKey, SavedSessionsCookie.Read(Request), RefreshTokenCookie.Read(Request));
         var response = await _mediator.Send(command);
         if (response.Type != ResultType.Success || response.Data?.Login.Tokens is not { } tokens)
         {
             return response.ToActionResult(this);
         }
 
-        SetRefreshTokenCookie(tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+        RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken);
         SavedSessionsCookie.Write(HttpContext, response.Data.Saved);
         return Ok(response.Data.Login);
     }
@@ -358,7 +350,7 @@ public class AuthController : ControllerBase
         var response = await _mediator.Send(command);
         if (response.Type == ResultType.Success && response.Data?.Tokens != null)
         {
-            SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, response.Data.Tokens.RefreshToken);
         }
         return response.ToActionResult(this);
     }
@@ -402,7 +394,7 @@ public class AuthController : ControllerBase
         if (response.Type == ResultType.Success && response.Data.Tokens != null)
         {
             await KeepPreviousSessionIf(addAccount, response.Data.UserKey);
-            SetRefreshTokenCookie(response.Data.Tokens.RefreshToken.Token, response.Data.Tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, response.Data.Tokens.RefreshToken);
         }
         if (response.Type == ResultType.Success && response.Data.MfaTrust is { } trust)
         {
@@ -434,7 +426,7 @@ public class AuthController : ControllerBase
     /// </summary>
     private async Task KeepPreviousSessionIf(bool addAccount, Guid signedInUserKey)
     {
-        var previous = GetRefreshTokenCookieValues();
+        var previous = RefreshTokenCookie.Read(Request);
         if (!addAccount || previous.Count == 0)
         {
             return;
@@ -446,10 +438,4 @@ public class AuthController : ControllerBase
             SavedSessionsCookie.Write(HttpContext, saved.Data);
         }
     }
-
-    private void SetRefreshTokenCookie(string token, DateTime expires) => RefreshTokenCookie.Set(HttpContext, token, expires);
-
-    private void DeleteRefreshTokenCookie() => RefreshTokenCookie.Delete(HttpContext);
-
-    private List<string> GetRefreshTokenCookieValues() => RefreshTokenCookie.Read(Request);
 }

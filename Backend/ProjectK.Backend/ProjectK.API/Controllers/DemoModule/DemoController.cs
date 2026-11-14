@@ -46,7 +46,7 @@ public class DemoController : ControllerBase
         var response = await _mediator.Send(new EnterDemoCommand(request.Seat), cancellationToken);
         if (response.Type == ResultType.Success && response.Data?.Tokens is { } tokens)
         {
-            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken.Token, tokens.RefreshToken.Expires);
+            RefreshTokenCookie.Set(HttpContext, tokens.RefreshToken);
         }
 
         return response.ToActionResult(this);

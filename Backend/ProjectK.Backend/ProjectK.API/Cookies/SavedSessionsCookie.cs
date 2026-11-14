@@ -16,7 +16,6 @@ public static class SavedSessionsCookie
 {
     public const string Name = "savedSessions";
     private const char Separator = ',';
-    private const string Path = "/api/auth";
 
     public static void Write(HttpContext context, IReadOnlyCollection<SavedSession> sessions)
     {
@@ -30,9 +29,9 @@ public static class SavedSessionsCookie
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteFor(context.Request),
+            SameSite = AuthCookie.SameSiteFor(context.Request),
             Expires = sessions.Max(session => session.ExpiresAtUtc),
-            Path = Path
+            Path = AuthCookie.Path
         });
     }
 
@@ -42,8 +41,8 @@ public static class SavedSessionsCookie
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteFor(context.Request),
-            Path = Path
+            SameSite = AuthCookie.SameSiteFor(context.Request),
+            Path = AuthCookie.Path
         });
     }
 
@@ -53,16 +52,5 @@ public static class SavedSessionsCookie
         return request.Cookies.TryGetValue(Name, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value.Split(Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
             : [];
-    }
-
-    /// <summary>
-    /// Cross-site over HTTPS, where the web and the API sit on different hosts; same-site over
-    /// local HTTP, where a browser refuses <c>None</c> without a secure origin.
-    /// </summary>
-    private static SameSiteMode SameSiteFor(HttpRequest request)
-    {
-        var isSecureRequest = request.IsHttps
-            || string.Equals(request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
-        return isSecureRequest ? SameSiteMode.None : SameSiteMode.Lax;
     }
 }
