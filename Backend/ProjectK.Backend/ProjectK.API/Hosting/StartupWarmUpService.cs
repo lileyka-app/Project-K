@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
@@ -8,7 +7,7 @@ namespace ProjectK.API.Hosting;
 
 /// <summary>
 /// Pays the first-request cost once the server is listening, instead of on the first person who
-/// opens the dashboard. <c>/health</c> touches neither MediatR, AutoMapper nor a single EF query, so
+/// opens the dashboard. <c>/health</c> touches neither MediatR nor a single EF query, so
 /// an instance could serve probes for a day and still be cold: on one B1 core the first dashboard
 /// after a deploy took 13 s, almost all of it JIT and EF query compilation between fast SQL calls.
 /// The reads use an empty key: EF caches a compiled query by its shape, not its parameter values.
@@ -54,7 +53,6 @@ public sealed class StartupWarmUpService : BackgroundService
             using var scope = _services.CreateScope();
             var provider = scope.ServiceProvider;
 
-            provider.GetRequiredService<IMapper>().ConfigurationProvider.CompileMappings();
             provider.GetRequiredService<IMediator>();
 
             // The dashboard path: who the person is, where they belong, and the score book that

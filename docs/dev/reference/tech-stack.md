@@ -27,7 +27,7 @@ sidebar:
 - **ASP.NET Core (.NET 10)**.
 - **EF Core 10** + **SQL Server**.
 - **MediatR** — CQRS: кожна дія — `Command`/`Query` з хендлером, вертикальні зрізи в `Features/`.
-- **AutoMapper** з профілями на модуль.
+- **Явний мапінг** — `<Area>Mapping.cs` з `ToDto` / `ApplyTo` поруч із запитами області, без бібліотек.
 - **ASP.NET Identity** + **JWT Bearer**; MFA (TOTP) для проводу; refresh-сесії в `UserRefreshTokens`.
 - **Serilog** — структуровані логи (File, Application Insights, енрічер, що ховає чутливе).
 - **QuestPDF** — PDF-звіти куреня.

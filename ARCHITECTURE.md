@@ -251,7 +251,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 (`CatalogSyncBackgroundService`, `Catalog:RefreshMinutes`), щоденний пінг телеметрії
 (`TelemetryBackgroundService`; без `Telemetry:Enabled` не реєструється), черга сповіщень на телефон
 (`WebPushBackgroundService`, лише з ключами VAPID), нічне повернення демо-бази до сіду
-(`DemoResetBackgroundService`, лише `Demo`), прогрів після старту — AutoMapper, MediatR і
+(`DemoResetBackgroundService`, лише `Demo`), прогрів після старту — MediatR і
 запити дашборда «Я» з порожнім ключем, щоб першу людину після деплою не чекали JIT і компіляція
 запитів EF (`StartupWarmUpService` в `API/Hosting`, `Startup:WarmUp`; локально й під тестами
 вимкнений).

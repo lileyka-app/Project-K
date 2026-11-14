@@ -1,10 +1,8 @@
-using AutoMapper.EquivalencyExpression;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.BusinessLogic.MappingProfiles;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
@@ -41,7 +39,6 @@ public static class DependencyInjection
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services, IConfiguration configuration)
     {
         var assembly = typeof(DependencyInjection).Assembly;
-        services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(assembly);

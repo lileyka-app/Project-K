@@ -15,13 +15,4 @@ public sealed class FakeBlobReadLinks : IBlobReadLinks
 
     public string? ForSharing(string? blobName)
         => string.IsNullOrWhiteSpace(blobName) ? null : $"https://cdn.test/{blobName}?sig=shared";
-
-    /// <summary>
-    /// For <c>MapperConfiguration.ConstructServicesUsing</c>: builds the link resolvers over this
-    /// fake, and anything else the profiles ask for with its parameterless constructor.
-    /// </summary>
-    public static object Resolvers(Type type)
-    {
-        return Activator.CreateInstance(type)!;
-    }
 }

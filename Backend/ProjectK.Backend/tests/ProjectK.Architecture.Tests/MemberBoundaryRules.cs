@@ -60,9 +60,6 @@ public class MemberBoundaryRules
             // a foreign key across the boundary, and the join it promises disappears with the module.
             .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.KurinModule(\..*)?")
             .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.KurinModule(\..*)?")
-            // AutoMapper profiles translate between an entity and its response, so naming both sides
-            // is what they are for; they are not one module reading another's data.
-            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.MappingProfiles.*")
             .Should().NotDependOnAny(typeof(Member), typeof(IMemberRepository));
 
         ProjectKArchitecture.Violations(rule).Should().BeSubsetOf(
@@ -97,7 +94,6 @@ public class MemberBoundaryRules
             .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.Modules\.ProbesAndBadgesModule(\..*)?")
             .And().DoNotResideInNamespaceMatching(@"ProjectK\.Common\.Entities\.ProbesAndBadgesModule(\..*)?")
             .And().DoNotResideInNamespaceMatching(@"ProjectK\.API\.Controllers\.ProbesAndBadgesModule(\..*)?")
-            .And().DoNotResideInNamespaceMatching(@"ProjectK\.BusinessLogic\.MappingProfiles.*")
             .Should().NotDependOnAny(
                 typeof(ProbeProgress),
                 typeof(BadgeProgress),
