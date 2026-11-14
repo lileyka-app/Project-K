@@ -22,10 +22,10 @@ public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, S
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly IBackendCache _cache;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly IKurinAudit _audit;
 
-    public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache, IAccessChangeSignal accessChanges, IKurinAudit audit)
+    public AssignMentorCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBackendCache cache, IAccessChangeStore accessChanges, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;

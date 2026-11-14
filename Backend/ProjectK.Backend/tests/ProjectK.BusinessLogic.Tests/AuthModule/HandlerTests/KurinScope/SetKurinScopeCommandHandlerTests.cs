@@ -16,7 +16,7 @@ public class SetKurinScopeCommandHandlerTests
 {
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<IKurinRepository> _kurinsMock = new();
-    private readonly Mock<ILoginResponseFactory> _loginResponseFactoryMock = new();
+    private readonly Mock<ILoginResponseService> _loginResponseFactoryMock = new();
     private readonly Mock<IMembershipDirectory> _membershipsMock = new();
     private readonly SetKurinScopeCommandHandler _handler;
 

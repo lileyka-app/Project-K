@@ -29,7 +29,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _resourceAccess;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly DuesAccountRows _rows;
 
     public GetGroupDuesQueryHandler(
@@ -40,7 +40,7 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
         TimeProvider time,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         DuesAccountRows rows)
     {
         _access = access;

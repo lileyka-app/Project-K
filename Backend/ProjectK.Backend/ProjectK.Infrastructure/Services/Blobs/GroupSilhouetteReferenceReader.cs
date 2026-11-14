@@ -3,20 +3,24 @@ using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Services.Blobs;
 
-public class MemberPhotoReferenceProvider : IPhotoReferenceProvider
+public sealed class GroupSilhouetteReferenceReader : IPhotoReferenceReader
 {
     private readonly AppDbContext _db;
-    public MemberPhotoReferenceProvider(AppDbContext db) => _db = db;
+
+    public GroupSilhouetteReferenceReader(AppDbContext db)
+    {
+        _db = db;
+    }
 
     public async Task<IReadOnlyCollection<string>> GetAllReferencedBlobNamesAsync(CancellationToken cancellationToken)
     {
-        var memberPhotoBlobNames = await _db.Members
+        var silhouetteBlobNames = await _db.Groups
             .AsNoTracking()
-            .Where(m => m.ProfilePhotoBlobName != null && m.ProfilePhotoBlobName != "")
-            .Select(m => m.ProfilePhotoBlobName!)
+            .Where(g => g.SilhouetteBlobName != null && g.SilhouetteBlobName != "")
+            .Select(g => g.SilhouetteBlobName!)
             .ToListAsync(cancellationToken);
 
-        return memberPhotoBlobNames
+        return silhouetteBlobNames
             .Distinct(StringComparer.Ordinal)
             .ToList();
     }

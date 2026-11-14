@@ -263,7 +263,7 @@ public class MemberProgressAuthorizationHttpIntegrationTests
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
             builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
-            builder.Services.AddSingleton<IKurinAccessPolicyProvider>(new FixedKurinAccessPolicyProvider());
+            builder.Services.AddSingleton<IKurinAccessPolicyReader>(new FixedKurinAccessPolicyProvider());
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
 

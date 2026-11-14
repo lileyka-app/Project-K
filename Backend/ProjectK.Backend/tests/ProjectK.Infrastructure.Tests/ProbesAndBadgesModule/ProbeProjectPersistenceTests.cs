@@ -52,7 +52,7 @@ public class ProbeProjectPersistenceTests
 
         await using (var context = new AppDbContext(options))
         {
-            var referenced = await new ProbeProjectImageReferenceProvider(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
+            var referenced = await new ProbeProjectImageReferenceReader(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
             Assert.Equal(["probe-project-images/a.jpg", "third-probe-certificates/p.pdf"], referenced.Order());
         }
     }
@@ -89,7 +89,7 @@ public class ProbeProjectPersistenceTests
 
         await using (var context = new AppDbContext(options))
         {
-            var referenced = await new ProbeProjectImageReferenceProvider(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
+            var referenced = await new ProbeProjectImageReferenceReader(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
             Assert.Equal(["probe-project-images/a.jpg", "probe-project-images/b.jpg"], referenced.Order());
         }
     }

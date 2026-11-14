@@ -25,9 +25,9 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
     private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileProvider profiles)
+    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileDirectory profiles)
     {
         _uow = uow;
         _members = members;

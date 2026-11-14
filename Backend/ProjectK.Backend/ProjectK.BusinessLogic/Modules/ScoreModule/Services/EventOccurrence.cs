@@ -21,7 +21,7 @@ public sealed record EventOccurrence(AgendaItem Item, DateTime StartUtc, DateTim
     /// </summary>
     public static async Task<EventOccurrence?> LoadAsync(
         IUnitOfWork unitOfWork,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         Guid kurinKey,
         Guid agendaItemKey,
         DateTime occurrenceStartUtc,

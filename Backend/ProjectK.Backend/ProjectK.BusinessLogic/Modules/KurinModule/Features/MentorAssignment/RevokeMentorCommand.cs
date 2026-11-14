@@ -20,14 +20,14 @@ public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, S
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly IMemberDirectory _members;
     private readonly IKurinAudit _audit;
 
     public RevokeMentorCommandHandler(
         IUnitOfWork unitOfWork,
         IBackendCache cache,
-        IAccessChangeSignal accessChanges,
+        IAccessChangeStore accessChanges,
         IMemberDirectory members,
         IKurinAudit audit)
     {

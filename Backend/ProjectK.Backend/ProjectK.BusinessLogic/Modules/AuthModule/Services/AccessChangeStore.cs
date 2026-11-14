@@ -5,7 +5,7 @@ using ProjectK.Common.Contracts.AuthModule;
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 /// <inheritdoc />
-public sealed class AccessChangeSignal : IAccessChangeSignal
+public sealed class AccessChangeStore : IAccessChangeStore
 {
     private const int DefaultTokenMinutes = 10;
 
@@ -18,7 +18,7 @@ public sealed class AccessChangeSignal : IAccessChangeSignal
     private readonly TimeProvider _time;
     private readonly TimeSpan _retention;
 
-    public AccessChangeSignal(TimeProvider time, IConfiguration configuration)
+    public AccessChangeStore(TimeProvider time, IConfiguration configuration)
     {
         _time = time;
         var minutes = int.TryParse(configuration["Jwt:ExpiresInMinutes"], out var configured) && configured > 0

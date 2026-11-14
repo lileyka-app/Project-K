@@ -8,17 +8,17 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
 /// <summary>
 /// Scoped to the request: the roles and kurin come from the token, the policy from
-/// <see cref="IKurinAccessPolicyProvider"/>, and both are worked out on first use only.
+/// <see cref="IKurinAccessPolicyReader"/>, and both are worked out on first use only.
 /// </summary>
 public sealed class CurrentPermissions : ICurrentPermissions
 {
     private readonly ICurrentUserContext _currentUser;
-    private readonly IKurinAccessPolicyProvider _policies;
+    private readonly IKurinAccessPolicyReader _policies;
 
     private KurinAccessPolicy? _policy;
     private IReadOnlyCollection<Permission>? _permissions;
 
-    public CurrentPermissions(ICurrentUserContext currentUser, IKurinAccessPolicyProvider policies)
+    public CurrentPermissions(ICurrentUserContext currentUser, IKurinAccessPolicyReader policies)
     {
         _currentUser = currentUser;
         _policies = policies;

@@ -17,7 +17,7 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 /// <c>Member:Update</c>. Derived, never listed, because a hardcoded list here kept notifying
 /// Курінний and Гуртковий after the офіс model took their member rights away.
 /// </summary>
-public sealed class ReviewNotificationRecipientResolver : IReviewNotificationRecipientResolver
+public sealed class ReviewNotificationRecipientReader : IReviewNotificationRecipientReader
 {
     private static readonly KurinCapability[] AwardCapabilities =
     [
@@ -27,12 +27,12 @@ public sealed class ReviewNotificationRecipientResolver : IReviewNotificationRec
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly IKurinAccessPolicyProvider _policies;
+    private readonly IKurinAccessPolicyReader _policies;
 
-    public ReviewNotificationRecipientResolver(
+    public ReviewNotificationRecipientReader(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        IKurinAccessPolicyProvider policies)
+        IKurinAccessPolicyReader policies)
     {
         _unitOfWork = unitOfWork;
         _members = members;

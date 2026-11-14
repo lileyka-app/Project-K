@@ -108,7 +108,7 @@ public class CalendarFeedTests
 
         return new RenderCalendarFeedQueryHandler(
             _feeds.Object, userManager.Object, scopes, unitOfWork.Object, members.Object,
-            new Mock<IKraiProfileProvider>().Object, new FixedTimeProvider(Now),
+            new Mock<IKraiProfileDirectory>().Object, new FixedTimeProvider(Now),
             Options.Create(new EmailOptions { BaseUrl = "https://lileyka.app" }));
     }
 

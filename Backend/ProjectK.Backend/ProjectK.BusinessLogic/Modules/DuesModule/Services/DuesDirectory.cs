@@ -15,10 +15,10 @@ public sealed class DuesDirectory : IDuesDirectory
 {
     private readonly DuesLedgerReader _ledgers;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IDuesAccrual _accrual;
 
-    public DuesDirectory(DuesLedgerReader ledgers, TimeProvider time, IKraiProfileProvider profiles, IDuesAccrual accrual)
+    public DuesDirectory(DuesLedgerReader ledgers, TimeProvider time, IKraiProfileDirectory profiles, IDuesAccrual accrual)
     {
         _accrual = accrual;
         _ledgers = ledgers;

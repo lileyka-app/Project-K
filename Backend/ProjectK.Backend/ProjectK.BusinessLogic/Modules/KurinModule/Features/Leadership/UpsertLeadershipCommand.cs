@@ -63,7 +63,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IMemberDirectory _members;
     private readonly IBackendCache _cache;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly IKurinAudit _audit;
 
     public UpsertLeadershipCommandHandler(
@@ -72,7 +72,7 @@ public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCo
         ICurrentUserContext currentUserContext,
         IMemberDirectory members,
         IBackendCache cache,
-        IAccessChangeSignal accessChanges,
+        IAccessChangeStore accessChanges,
         IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;

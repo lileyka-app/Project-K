@@ -42,11 +42,11 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
     private readonly UserManager<AppUser> _userManager;
     private readonly IMediator _mediator;
     private readonly TimeProvider _timeProvider;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
 
-    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider, ILoginResponseFactory loginResponseFactory)
+    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider, ILoginResponseService loginResponseService)
     {
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _unitOfWork = unitOfWork;
         _members = members;
         _userManager = userManager;
@@ -166,7 +166,7 @@ public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountComm
         }
 
         // Signed in on the spot: the password was just chosen, asking for it again is a wall.
-        var session = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+        var session = await _loginResponseService.CreateAsync(user, cancellationToken);
         return new ServiceResult<LoginUserDto>(ResultType.Success, session);
     }
 }

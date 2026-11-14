@@ -21,9 +21,9 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
     private readonly DuesLedgerReader _ledgers;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public GetMyDuesQueryHandler(MePerson me, DuesLedgerReader ledgers, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
+    public GetMyDuesQueryHandler(MePerson me, DuesLedgerReader ledgers, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _me = me;
         _ledgers = ledgers;

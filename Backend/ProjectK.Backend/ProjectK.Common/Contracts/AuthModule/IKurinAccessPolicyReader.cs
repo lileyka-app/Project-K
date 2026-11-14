@@ -6,7 +6,7 @@ namespace ProjectK.Common.Contracts.AuthModule;
 /// The one place code asks what a kurin has set in «Права й видимість». Nothing else reads
 /// <c>Kurin.AccessPolicy</c>.
 /// </summary>
-public interface IKurinAccessPolicyProvider
+public interface IKurinAccessPolicyReader
 {
     /// <summary>The kurin's policy; the defaults when it has set nothing or is not there.</summary>
     Task<KurinAccessPolicy> GetAsync(Guid kurinKey, CancellationToken cancellationToken = default);

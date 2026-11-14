@@ -28,7 +28,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly IMembershipDirectory _memberships;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly IJwtService _jwtService;
     private readonly ICurrentUserContext _currentUser;
     private readonly IActivityLogger _activityLogger;
@@ -38,7 +38,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         IMembershipDirectory memberships,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         IJwtService jwtService,
         ICurrentUserContext currentUser,
         IActivityLogger activityLogger)
@@ -47,7 +47,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
         _unitOfWork = unitOfWork;
         _members = members;
         _memberships = memberships;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _jwtService = jwtService;
         _currentUser = currentUser;
         _activityLogger = activityLogger;
@@ -74,7 +74,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
             return ServiceResult<DevImpersonationDto>.Failure(ResultType.NotFound, AuthErrors.NoKurin, "There is no kurin to step into.");
         }
 
-        var target = await new DemoSeatLocator(_userManager, _unitOfWork, _members, _memberships)
+        var target = await new DemoSeatReader(_userManager, _unitOfWork, _members, _memberships)
             .FindAsync(request.Role, kurinKey.Value, actorKey, cancellationToken);
         if (target is null)
         {
@@ -88,7 +88,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
         target.ActiveKurinKey = kurinKey;
         await _userManager.UpdateAsync(target);
 
-        var login = await _loginResponseFactory.CreateAsync(target, cancellationToken);
+        var login = await _loginResponseService.CreateAsync(target, cancellationToken);
         var ticket = _jwtService.GenerateDevReturnTicket(actorKey);
 
         _activityLogger.LogAudit(

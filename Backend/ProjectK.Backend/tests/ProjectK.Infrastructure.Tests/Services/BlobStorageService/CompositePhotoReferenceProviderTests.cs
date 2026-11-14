@@ -8,7 +8,7 @@ public class CompositePhotoReferenceProviderTests
     public async Task GetAllReferencedBlobNamesAsync_ShouldMergeDistinctReferences()
     {
         // Arrange
-        var provider = new CompositePhotoReferenceProvider(
+        var provider = new CompositePhotoReferenceReader(
         [
             new StaticPhotoReferenceProvider("member-photos/2026/05/27/a.jpg", "photos/legacy.jpg"),
             new StaticPhotoReferenceProvider("member-photos/2026/05/27/a.jpg", "group-silhouettes/2026/05/27/b.png")
@@ -27,7 +27,7 @@ public class CompositePhotoReferenceProviderTests
             result);
     }
 
-    private sealed class StaticPhotoReferenceProvider : IPhotoReferenceProvider
+    private sealed class StaticPhotoReferenceProvider : IPhotoReferenceReader
     {
         private readonly IReadOnlyCollection<string> _references;
 

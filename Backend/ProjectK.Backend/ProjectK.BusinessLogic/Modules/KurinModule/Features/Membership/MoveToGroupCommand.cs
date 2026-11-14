@@ -23,7 +23,7 @@ public sealed record MoveToGroupCommand(Guid MemberKey, Guid KurinKey, Guid? Gro
 public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly IDomainEventPublisher _events;
     private readonly IMemberDirectory _members;
     private readonly IKurinAudit _audit;
@@ -32,7 +32,7 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
     public MoveToGroupCommandHandler(
         IUnitOfWork unitOfWork,
         IDomainEventPublisher events,
-        IAccessChangeSignal accessChanges,
+        IAccessChangeStore accessChanges,
         IMemberDirectory members,
         IKurinAudit audit,
         ICurrentUserContext currentUser)

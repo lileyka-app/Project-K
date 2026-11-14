@@ -81,7 +81,7 @@ internal sealed class PolicyAccess
 }
 
 /// <summary>A policy provider holding whatever policy the test last set.</summary>
-internal sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyProvider
+internal sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyReader
 {
     public KurinAccessPolicy Policy { get; set; } = KurinAccessPolicy.Default;
 

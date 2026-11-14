@@ -19,10 +19,10 @@ public sealed class DuesEntryWriter
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IDuesKurinShape _shape;
 
-    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IMemberDirectory members, IKraiProfileProvider profiles, IDuesKurinShape shape)
+    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IMemberDirectory members, IKraiProfileDirectory profiles, IDuesKurinShape shape)
     {
         _dues = dues;
         _memberships = memberships;

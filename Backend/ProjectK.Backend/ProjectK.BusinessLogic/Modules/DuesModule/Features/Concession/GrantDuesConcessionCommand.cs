@@ -39,14 +39,14 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
     private readonly GroupDuesAccess _access;
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly ICurrentUserContext _currentUser;
 
     public GrantDuesConcessionCommandHandler(
         GroupDuesAccess access,
         IDuesUnitOfWork dues,
         IMembershipDirectory memberships,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         ICurrentUserContext currentUser)
     {
         _access = access;

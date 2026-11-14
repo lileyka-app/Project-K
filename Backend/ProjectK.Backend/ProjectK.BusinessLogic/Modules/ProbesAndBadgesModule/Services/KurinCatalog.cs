@@ -33,10 +33,10 @@ public sealed class KurinCatalogView
 
 public sealed class KurinCatalog : IKurinCatalog
 {
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IBadgesCatalog _badges;
 
-    public KurinCatalog(IKraiProfileProvider profiles, IBadgesCatalog badges)
+    public KurinCatalog(IKraiProfileDirectory profiles, IBadgesCatalog badges)
     {
         _profiles = profiles;
         _badges = badges;

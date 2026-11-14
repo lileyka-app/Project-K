@@ -45,7 +45,7 @@ public sealed record DuesKrai(string Currency, string NumberLocale, TimeZoneInfo
 
 public static class DuesKrais
 {
-    public static async Task<DuesKrai> DuesKraiForKurinAsync(this IKraiProfileProvider profiles, Guid kurinKey, CancellationToken cancellationToken)
+    public static async Task<DuesKrai> DuesKraiForKurinAsync(this IKraiProfileDirectory profiles, Guid kurinKey, CancellationToken cancellationToken)
     {
         var profile = await profiles.GetForKurinAsync(kurinKey, cancellationToken);
         return profile is null ? DuesKrai.Default : profile.ToDuesKrai();

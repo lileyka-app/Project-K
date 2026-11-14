@@ -7,9 +7,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 /// <inheritdoc />
 public sealed class PermissionResolver : IPermissionResolver
 {
-    private readonly IKurinAccessPolicyProvider _policies;
+    private readonly IKurinAccessPolicyReader _policies;
 
-    public PermissionResolver(IKurinAccessPolicyProvider policies)
+    public PermissionResolver(IKurinAccessPolicyReader policies)
     {
         _policies = policies;
     }

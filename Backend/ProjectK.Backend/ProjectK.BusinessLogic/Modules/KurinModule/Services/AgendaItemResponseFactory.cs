@@ -169,7 +169,7 @@ public static class AgendaItemResponseFactory
             AgendaTargetType.Group => groupNames.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
             AgendaTargetType.Member => memberNames.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
             AgendaTargetType.Leadership => targetLabels.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
-            AgendaTargetType.Tag => targetLabels.TryGetValue(assignment.TargetKey, out var name) ? name : AgendaLookups.TagLabel(null),
+            AgendaTargetType.Tag => targetLabels.TryGetValue(assignment.TargetKey, out var name) ? name : AgendaNames.TagLabel(null),
             _ => "—"
         };
     }

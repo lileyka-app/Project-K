@@ -11,13 +11,13 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 /// <see cref="BackendCachePolicies.KurinAccessPolicyReads"/>. A document it cannot read gives the
 /// defaults and a warning in the log, never a failed request.
 /// </summary>
-public sealed class KurinAccessPolicyProvider : IKurinAccessPolicyProvider
+public sealed class KurinAccessPolicyReader : IKurinAccessPolicyReader
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
-    private readonly ILogger<KurinAccessPolicyProvider> _logger;
+    private readonly ILogger<KurinAccessPolicyReader> _logger;
 
-    public KurinAccessPolicyProvider(IUnitOfWork unitOfWork, IBackendCache cache, ILogger<KurinAccessPolicyProvider> logger)
+    public KurinAccessPolicyReader(IUnitOfWork unitOfWork, IBackendCache cache, ILogger<KurinAccessPolicyReader> logger)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;

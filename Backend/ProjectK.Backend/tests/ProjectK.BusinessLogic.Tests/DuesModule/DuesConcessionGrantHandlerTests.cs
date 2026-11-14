@@ -69,7 +69,7 @@ public class DuesConcessionGrantHandlerTests
         return memberships.Object;
     }
 
-    private IKraiProfileProvider Profiles()
+    private IKraiProfileDirectory Profiles()
     {
         var profile = new KraiProfile(
             "cz", "Чехія", 2,
@@ -77,7 +77,7 @@ public class DuesConcessionGrantHandlerTests
             new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
             KraiCardFieldsSettings.Default,
             new KraiDuesSettings(KraiDues.Stanytsia) { Concessions = [Sibling] });
-        var profiles = new Mock<IKraiProfileProvider>();
+        var profiles = new Mock<IKraiProfileDirectory>();
         profiles.Setup(p => p.GetForKurinAsync(_kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(profile);
         return profiles.Object;
     }

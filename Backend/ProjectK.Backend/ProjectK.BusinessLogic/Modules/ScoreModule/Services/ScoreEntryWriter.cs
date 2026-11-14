@@ -16,7 +16,7 @@ public static class ScoreEntryWriter
     public static async Task<ServiceResult<T>?> CheckAsync<T>(
         ScoreAccess access,
         IUnitOfWork unitOfWork,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         ScoreBook book,
         UpsertScoreEntryRequest request,
         Guid? editingKey,

@@ -27,7 +27,7 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ArchiveReach _reach;
-    private readonly ArchiveDangerZone _zone;
+    private readonly ArchiveDangerZoneService _zone;
     private readonly IReauthentication _reauthentication;
     private readonly ICurrentUserContext _currentUser;
     private readonly IMemberDirectory _members;
@@ -37,7 +37,7 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
     public EnterArchiveDangerZoneCommandHandler(
         IUnitOfWork unitOfWork,
         ArchiveReach reach,
-        ArchiveDangerZone zone,
+        ArchiveDangerZoneService zone,
         IReauthentication reauthentication,
         ICurrentUserContext currentUser,
         IMemberDirectory members,

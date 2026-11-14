@@ -33,10 +33,10 @@ public sealed class DuesAccrual : IDuesAccrual
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IDuesKurinShape _shape;
 
-    public DuesAccrual(IDuesUnitOfWork dues, IMembershipDirectory memberships, TimeProvider time, IKraiProfileProvider profiles, IDuesKurinShape shape)
+    public DuesAccrual(IDuesUnitOfWork dues, IMembershipDirectory memberships, TimeProvider time, IKraiProfileDirectory profiles, IDuesKurinShape shape)
     {
         _dues = dues;
         _memberships = memberships;

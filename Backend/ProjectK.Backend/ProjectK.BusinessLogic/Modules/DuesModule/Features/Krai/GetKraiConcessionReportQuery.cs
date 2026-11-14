@@ -25,10 +25,10 @@ public sealed class GetKraiConcessionReportQueryHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DuesLedgerReader _ledgers;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly TimeProvider _time;
 
-    public GetKraiConcessionReportQueryHandler(IUnitOfWork unitOfWork, DuesLedgerReader ledgers, IKraiProfileProvider profiles, TimeProvider time)
+    public GetKraiConcessionReportQueryHandler(IUnitOfWork unitOfWork, DuesLedgerReader ledgers, IKraiProfileDirectory profiles, TimeProvider time)
     {
         _unitOfWork = unitOfWork;
         _ledgers = ledgers;

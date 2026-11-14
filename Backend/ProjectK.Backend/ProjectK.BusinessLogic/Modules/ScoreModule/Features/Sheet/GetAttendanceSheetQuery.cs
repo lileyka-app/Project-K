@@ -25,14 +25,14 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IKurinTagVisibility _tags;
 
     public GetAttendanceSheetQueryHandler(
         ScoreAccess access,
         ScoreBookReader books,
         IUnitOfWork unitOfWork,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IKurinTagVisibility tags)
     {
         _tags = tags;

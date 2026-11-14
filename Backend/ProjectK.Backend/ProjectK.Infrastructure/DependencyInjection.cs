@@ -147,21 +147,21 @@ public static class DependencyInjection
             ContainerName = configuration["BlobStorage:ContainerName"] ?? "photos",
             PublicBaseUrl = configuration["BlobStorage:PublicBaseUrl"]
         };
-        services.AddScoped<MemberPhotoReferenceProvider>();
-        services.AddScoped<GroupSilhouetteReferenceProvider>();
-        services.AddScoped<KurinEmblemReferenceProvider>();
-        services.AddScoped<ProbeProjectImageReferenceProvider>();
-        services.AddScoped<IPhotoReferenceProvider>(sp =>
+        services.AddScoped<MemberPhotoReferenceReader>();
+        services.AddScoped<GroupSilhouetteReferenceReader>();
+        services.AddScoped<KurinEmblemReferenceReader>();
+        services.AddScoped<ProbeProjectImageReferenceReader>();
+        services.AddScoped<IPhotoReferenceReader>(sp =>
         {
-            var providers = new IPhotoReferenceProvider[]
+            var providers = new IPhotoReferenceReader[]
             {
-                sp.GetRequiredService<MemberPhotoReferenceProvider>(),
-                sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
-                sp.GetRequiredService<KurinEmblemReferenceProvider>(),
-                sp.GetRequiredService<ProbeProjectImageReferenceProvider>()
+                sp.GetRequiredService<MemberPhotoReferenceReader>(),
+                sp.GetRequiredService<GroupSilhouetteReferenceReader>(),
+                sp.GetRequiredService<KurinEmblemReferenceReader>(),
+                sp.GetRequiredService<ProbeProjectImageReferenceReader>()
             };
 
-            return new CompositePhotoReferenceProvider(providers);
+            return new CompositePhotoReferenceReader(providers);
         });
 
         services.AddSingleton(blobOptions);

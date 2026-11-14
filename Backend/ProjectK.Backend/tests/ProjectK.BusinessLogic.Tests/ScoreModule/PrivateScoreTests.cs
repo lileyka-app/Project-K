@@ -117,7 +117,7 @@ public class PrivateScoreTests
             g.GetAllAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult<IEnumerable<Group>>(new[] { new Group("Соколи", Kurin, null) { GroupKey = Sokoly } })));
         unitOfWork.SetupGet(u => u.AgendaItems).Returns(new Mock<IAgendaItemRepository>().Object);
         IReadOnlyList<ScoreFact> none = [];
-        var facts = Mock.Of<IScoreFactSource>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
+        var facts = Mock.Of<IScoreFactReader>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
         return new ScoreBookReader(_score.Object, unitOfWork.Object, memberships.Object, members.Object, facts, _time);
     }
 

@@ -36,7 +36,7 @@ public class ReviewNotificationRecipientResolverTests
     private readonly Mock<IMentorAssignmentRepository> _mentors = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly FixedKurinAccessPolicyProvider _policies = new();
-    private readonly ReviewNotificationRecipientResolver _resolver;
+    private readonly ReviewNotificationRecipientReader _resolver;
 
     public ReviewNotificationRecipientResolverTests()
     {
@@ -72,7 +72,7 @@ public class ReviewNotificationRecipientResolverTests
                 new MentorAssignment { GroupKey = _groupKey, MentorUserKey = _revoked, RevokedAtUtc = DateTime.UtcNow }
             ]);
 
-        _resolver = new ReviewNotificationRecipientResolver(_unitOfWork.Object, _members.Object, _policies);
+        _resolver = new ReviewNotificationRecipientReader(_unitOfWork.Object, _members.Object, _policies);
     }
 
     private static MemberLookupDto Holder(Guid userKey, LeadershipType type, LeadershipRole role) =>

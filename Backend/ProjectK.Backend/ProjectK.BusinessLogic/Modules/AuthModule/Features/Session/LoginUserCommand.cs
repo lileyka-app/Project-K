@@ -34,7 +34,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly SignInManager<AppUser> _signInManager;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly IActivityLogger _activityLogger;
     private readonly IConfiguration _configuration;
     private readonly IJwtService _jwtService;
@@ -44,7 +44,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
     public LoginUserCommandHandler(
         UserManager<AppUser> userManager,
         SignInManager<AppUser> signInManager,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         IActivityLogger activityLogger,
         IConfiguration configuration,
         IJwtService jwtService,
@@ -53,7 +53,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
     {
         _userManager = userManager;
         _signInManager = signInManager;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _activityLogger = activityLogger;
         _configuration = configuration;
         _jwtService = jwtService;
@@ -104,7 +104,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
 
         // The e2e switch lets the fixture accounts sign in without a second factor, and only on
         // the test tiers: a deployed environment ignores it outright, exactly as
-        // MfaEnforcementPolicy does for the enforcement gate. Read without that guard, one config
+        // MfaEnforcementReader does for the enforcement gate. Read without that guard, one config
         // key turned every account's second factor off in production.
         var bypassMfa = !_environment.IsProduction()
             && !_environment.IsStaging()
@@ -130,7 +130,7 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Service
                 });
         }
 
-        var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+        var response = await _loginResponseService.CreateAsync(user, cancellationToken);
 
         return new ServiceResult<LoginUserDto>(
             ResultType.Success,

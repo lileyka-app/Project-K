@@ -25,7 +25,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
     private readonly MembershipMoves _moves;
     private readonly IDomainEventPublisher _events;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly TimeProvider _time;
 
     public AnswerMyInvitationCommandHandler(
@@ -34,7 +34,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         MembershipMoves moves,
         IDomainEventPublisher events,
         ICurrentUserContext currentUser,
-        IAccessChangeSignal accessChanges,
+        IAccessChangeStore accessChanges,
         TimeProvider time)
     {
         _unitOfWork = unitOfWork;

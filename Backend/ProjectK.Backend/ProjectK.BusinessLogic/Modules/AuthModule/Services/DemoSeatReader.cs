@@ -14,14 +14,14 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 /// Finds an account in a kurin that holds a given seat: an office, or none at all. Shared by the
 /// dev role switcher and the public demo, which answer the same question for different reasons.
 /// </summary>
-public sealed class DemoSeatLocator
+public sealed class DemoSeatReader
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly IMembershipDirectory _memberships;
 
-    public DemoSeatLocator(
+    public DemoSeatReader(
         UserManager<AppUser> userManager,
         IUnitOfWork unitOfWork,
         IMemberDirectory members,

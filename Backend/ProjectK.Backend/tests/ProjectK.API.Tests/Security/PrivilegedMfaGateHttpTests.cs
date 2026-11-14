@@ -98,7 +98,7 @@ public class PrivilegedMfaGateHttpTests
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing" });
             builder.WebHost.UseTestServer();
 
-            var policy = new Mock<IMfaEnforcementPolicy>();
+            var policy = new Mock<IMfaEnforcementReader>();
             policy.Setup(p => p.IsPrivilegedMfaRequiredAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
             builder.Services.AddSingleton(policy.Object);
 

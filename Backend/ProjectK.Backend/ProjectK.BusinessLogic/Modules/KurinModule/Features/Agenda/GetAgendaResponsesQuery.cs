@@ -24,9 +24,9 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
     private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public GetAgendaResponsesQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileProvider profiles)
+    public GetAgendaResponsesQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileDirectory profiles)
     {
         _uow = uow;
         _members = members;

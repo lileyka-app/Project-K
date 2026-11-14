@@ -62,22 +62,22 @@ public static class DependencyInjection
         AgendaRecurrence.DefaultZone = AgendaRecurrence.ResolveZone(configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");
 
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
-        services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
+        services.AddScoped<ILoginResponseService, LoginResponseService>();
         services.AddSingleton<ILoginThrottle, LoginThrottle>();
         services.AddScoped<IReauthentication, Reauthentication>();
         services.AddScoped<ISavedSessionList, SavedSessionList>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
-        services.AddScoped<IKraiProfileProvider, KraiProfileProvider>();
-        services.AddScoped<IKurinAccessPolicyProvider, KurinAccessPolicyProvider>();
+        services.AddScoped<IKraiProfileDirectory, KraiProfileDirectory>();
+        services.AddScoped<IKurinAccessPolicyReader, KurinAccessPolicyReader>();
         services.AddScoped<IPermissionResolver, PermissionResolver>();
         services.AddScoped<IAccessSnapshotFactory, AccessSnapshotFactory>();
-        services.AddSingleton<IAccessChangeSignal, AccessChangeSignal>();
+        services.AddSingleton<IAccessChangeStore, AccessChangeStore>();
         services.AddScoped<ICurrentPermissions, CurrentPermissions>();
         services.AddScoped<IMemberFieldAccess, MemberFieldAccess>();
         services.AddScoped<IKurinTagVisibility, KurinTagVisibility>();
-        services.AddScoped<KraiProfileEditor>();
-        services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
+        services.AddScoped<KraiProfileWriter>();
+        services.AddScoped<IMfaEnforcementReader, MfaEnforcementReader>();
         services.AddScoped<ResourceAccessService>();
         services.AddScoped<IResourceAccessService>(sp =>
             new ResourceAccessServiceInstrumentationDecorator(
@@ -103,13 +103,13 @@ public static class DependencyInjection
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
         services.AddScoped<ArchiveReach>();
-        services.AddSingleton<ArchiveDangerZoneRegistry>();
-        services.AddScoped<ArchiveDangerZone>();
-        services.AddScoped<ArchiveDeletionGate>();
+        services.AddSingleton<ArchiveDangerZoneStore>();
+        services.AddScoped<ArchiveDangerZoneService>();
+        services.AddScoped<ArchiveDeletionService>();
         services.AddScoped<KurinReportDataService>();
 
         services.AddScoped<INotificationService, NotificationService>();
-        services.AddScoped<IReviewNotificationRecipientResolver, ReviewNotificationRecipientResolver>();
+        services.AddScoped<IReviewNotificationRecipientReader, ReviewNotificationRecipientReader>();
 
         services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
         services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
@@ -147,7 +147,7 @@ public static class DependencyInjection
         services.AddScoped<ScoreSettingsAccess>();
         services.AddScoped<PrivateScoreAccess>();
         services.AddScoped<ScoreBookReader>();
-        services.AddScoped<IScoreFactSource, KurinScoreFacts>();
+        services.AddScoped<IScoreFactReader, ScoreFactReader>();
     }
 
     /// <summary>

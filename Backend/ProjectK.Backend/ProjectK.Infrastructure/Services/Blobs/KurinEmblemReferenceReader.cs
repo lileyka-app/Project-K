@@ -4,11 +4,11 @@ using ProjectK.Infrastructure.DbContexts;
 namespace ProjectK.Infrastructure.Services.Blobs;
 
 /// <summary>The emblems senior kurins point at, so the orphan cleanup leaves them and sweeps the replaced ones.</summary>
-public sealed class KurinEmblemReferenceProvider : IPhotoReferenceProvider
+public sealed class KurinEmblemReferenceReader : IPhotoReferenceReader
 {
     private readonly AppDbContext _db;
 
-    public KurinEmblemReferenceProvider(AppDbContext db)
+    public KurinEmblemReferenceReader(AppDbContext db)
     {
         _db = db;
     }

@@ -4,18 +4,18 @@ using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
-public interface IMfaEnforcementPolicy
+public interface IMfaEnforcementReader
 {
     Task<bool> IsPrivilegedMfaRequiredAsync(CancellationToken cancellationToken = default);
 }
 
-public class MfaEnforcementPolicy : IMfaEnforcementPolicy
+public class MfaEnforcementReader : IMfaEnforcementReader
 {
     private readonly IHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly ISystemSettingsService _systemSettings;
 
-    public MfaEnforcementPolicy(
+    public MfaEnforcementReader(
         IHostEnvironment environment,
         IConfiguration configuration,
         ISystemSettingsService systemSettings)

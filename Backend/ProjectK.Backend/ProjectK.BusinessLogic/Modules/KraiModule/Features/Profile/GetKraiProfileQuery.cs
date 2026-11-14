@@ -30,7 +30,7 @@ public sealed class GetKraiProfileQueryHandler : IRequestHandler<GetKraiProfileQ
 
         var revision = await _unitOfWork.Krais.GetLatestProfileRevisionAsync(code, cancellationToken);
         // A revision that does not parse is shown empty: saving over it is how it gets fixed.
-        var document = KraiProfileEditor.TryParse(revision?.Json);
+        var document = KraiProfileWriter.TryParse(revision?.Json);
         return new ServiceResult<KraiProfileEditorDto>(ResultType.Success, krai.ToEditorDto(revision?.Revision ?? 0, document));
     }
 }

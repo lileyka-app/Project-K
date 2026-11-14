@@ -37,7 +37,7 @@ public class CreatePlanningSessionCommandHandler : IRequestHandler<CreatePlannin
         var session = request.ToEntity();
         session.CreatedByUserKey = _currentUserContext.UserId;
 
-        var problem = new CampDateSolver(
+        var problem = new CampDateProblem(
             session.SearchStart,
             session.SearchEnd,
             session.DurationDays,

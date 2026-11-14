@@ -88,7 +88,7 @@ public class AccessStaleHeaderHttpTests
     }
 
     /// <summary>Seats the member behind <paramref name="memberUserKey"/> as курінний, through the real handler.</summary>
-    private static async Task SeatAsync(IAccessChangeSignal signal, Guid memberUserKey)
+    private static async Task SeatAsync(IAccessChangeStore signal, Guid memberUserKey)
     {
         var memberKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
@@ -164,7 +164,7 @@ public class AccessStaleHeaderHttpTests
             _client = app.GetTestClient();
         }
 
-        public IAccessChangeSignal Signal => _app.Services.GetRequiredService<IAccessChangeSignal>();
+        public IAccessChangeStore Signal => _app.Services.GetRequiredService<IAccessChangeStore>();
 
         public static async Task<StaleHost> StartAsync()
         {
@@ -172,7 +172,7 @@ public class AccessStaleHeaderHttpTests
             builder.WebHost.UseTestServer();
             builder.Configuration.AddConfiguration(Configuration());
             builder.Services.AddSingleton(TimeProvider.System);
-            builder.Services.AddSingleton<IAccessChangeSignal, AccessChangeSignal>();
+            builder.Services.AddSingleton<IAccessChangeStore, AccessChangeStore>();
 
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

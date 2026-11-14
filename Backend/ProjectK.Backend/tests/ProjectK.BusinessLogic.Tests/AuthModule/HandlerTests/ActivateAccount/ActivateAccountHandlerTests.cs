@@ -36,7 +36,7 @@ public class ActivateAccountHandlerTests
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IMemberRepository> _members = new();
     private readonly Mock<IMediator> _mediator = new();
-    private readonly Mock<ILoginResponseFactory> _loginResponses = new();
+    private readonly Mock<ILoginResponseService> _loginResponses = new();
     private readonly Mock<UserManager<AppUser>> _userManager;
     private readonly FixedTimeProvider _clock = new(Now);
     private readonly ActivateAccountCommandHandler _handler;

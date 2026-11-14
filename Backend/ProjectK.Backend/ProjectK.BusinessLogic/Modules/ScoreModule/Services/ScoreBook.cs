@@ -82,7 +82,7 @@ public sealed class ScoreBook
         IUnitOfWork unitOfWork,
         IMembershipDirectory memberships,
         IMemberDirectory members,
-        IScoreFactSource facts,
+        IScoreFactReader facts,
         TimeProvider time,
         CancellationToken cancellationToken)
     {

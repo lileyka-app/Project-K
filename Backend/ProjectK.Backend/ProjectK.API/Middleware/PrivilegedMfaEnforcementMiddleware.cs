@@ -19,7 +19,7 @@ public class PrivilegedMfaEnforcementMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IMfaEnforcementPolicy mfaEnforcementPolicy)
+    public async Task InvokeAsync(HttpContext context, IMfaEnforcementReader mfaEnforcementReader)
     {
         if (!RequiresMfaEnforcement(context))
         {
@@ -27,7 +27,7 @@ public class PrivilegedMfaEnforcementMiddleware
             return;
         }
 
-        if (!await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(context.RequestAborted))
+        if (!await mfaEnforcementReader.IsPrivilegedMfaRequiredAsync(context.RequestAborted))
         {
             await _next(context);
             return;

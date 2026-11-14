@@ -1,10 +1,10 @@
 namespace ProjectK.Infrastructure.Services.Blobs;
 
-public sealed class CompositePhotoReferenceProvider : IPhotoReferenceProvider
+public sealed class CompositePhotoReferenceReader : IPhotoReferenceReader
 {
-    private readonly IReadOnlyCollection<IPhotoReferenceProvider> _providers;
+    private readonly IReadOnlyCollection<IPhotoReferenceReader> _providers;
 
-    public CompositePhotoReferenceProvider(IEnumerable<IPhotoReferenceProvider> providers)
+    public CompositePhotoReferenceReader(IEnumerable<IPhotoReferenceReader> providers)
     {
         _providers = providers.ToList();
     }

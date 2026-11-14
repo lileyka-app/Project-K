@@ -28,7 +28,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _resourceAccess;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IDuesKurinShape _shape;
     private readonly DuesAccountRows _rows;
 
@@ -41,7 +41,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         IMemberDirectory members,
         IResourceAccessService resourceAccess,
         TimeProvider time,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IDuesKurinShape shape,
         DuesAccountRows rows)
     {

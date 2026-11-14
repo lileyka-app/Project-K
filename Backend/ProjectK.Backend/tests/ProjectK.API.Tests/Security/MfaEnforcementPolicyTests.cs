@@ -11,7 +11,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeFalse_InDevelopment()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment(Environments.Development),
             CreateConfiguration(),
             CreateSystemSettings(enforce: true).Object);
@@ -22,7 +22,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeFalse_WhenE2EBypassEnabled()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("E2E"),
             CreateConfiguration(bypassE2E: true),
             CreateSystemSettings(enforce: true).Object);
@@ -33,7 +33,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeTrue_InNonSelfHostProduction()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("Production"),
             CreateConfiguration(),
             CreateSystemSettings(enforce: false).Object);
@@ -44,7 +44,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeFalse_InSelfHostWhenSettingDisabled()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("SelfHost"),
             CreateConfiguration(),
             CreateSystemSettings(enforce: false).Object);
@@ -55,7 +55,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeTrue_InSelfHostWhenSettingEnabled()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("SelfHost"),
             CreateConfiguration(),
             CreateSystemSettings(enforce: true).Object);

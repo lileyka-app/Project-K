@@ -8,11 +8,11 @@ namespace ProjectK.Infrastructure.Services.Blobs;
 /// a text loses its row on save, a replaced посвідка its column, and a removed project or person
 /// takes theirs along; what is left without a reference is swept.
 /// </summary>
-public sealed class ProbeProjectImageReferenceProvider : IPhotoReferenceProvider
+public sealed class ProbeProjectImageReferenceReader : IPhotoReferenceReader
 {
     private readonly AppDbContext _db;
 
-    public ProbeProjectImageReferenceProvider(AppDbContext db)
+    public ProbeProjectImageReferenceReader(AppDbContext db)
     {
         _db = db;
     }

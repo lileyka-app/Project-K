@@ -25,7 +25,7 @@ public class UpsertLeadershipHandlerTests
     private readonly Mock<IKurinRepository> _kurinsMock = new();
     private readonly Mock<IMemberDirectory> _membersMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
-    private readonly Mock<IAccessChangeSignal> _accessChangesMock = new();
+    private readonly Mock<IAccessChangeStore> _accessChangesMock = new();
     private readonly Mock<ProjectK.Common.Contracts.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
     private readonly UpsertLeadershipCommandHandler _handler;
 

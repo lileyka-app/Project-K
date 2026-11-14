@@ -12,7 +12,7 @@ namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 
 public class KurinCatalogTests
 {
-    private readonly Mock<IKraiProfileProvider> _profiles = new();
+    private readonly Mock<IKraiProfileDirectory> _profiles = new();
     private readonly Mock<IBadgesCatalog> _badges = new();
     private readonly KurinCatalog _catalog;
     private readonly Guid _kurinKey = Guid.NewGuid();

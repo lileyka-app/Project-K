@@ -52,7 +52,7 @@ public sealed class CreateMembershipRequestCommandHandler
     private readonly MembershipAskRouting _routing;
     private readonly IDomainEventPublisher _events;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly TimeProvider _time;
 
     public CreateMembershipRequestCommandHandler(
@@ -62,7 +62,7 @@ public sealed class CreateMembershipRequestCommandHandler
         MembershipAskRouting routing,
         IDomainEventPublisher events,
         ICurrentUserContext currentUser,
-        IAccessChangeSignal accessChanges,
+        IAccessChangeStore accessChanges,
         TimeProvider time)
     {
         _unitOfWork = unitOfWork;

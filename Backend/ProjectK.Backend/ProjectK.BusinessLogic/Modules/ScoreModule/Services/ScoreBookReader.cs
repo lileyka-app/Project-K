@@ -13,7 +13,7 @@ public sealed class ScoreBookReader
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
-    private readonly IScoreFactSource _facts;
+    private readonly IScoreFactReader _facts;
     private readonly TimeProvider _time;
 
     public ScoreBookReader(
@@ -21,7 +21,7 @@ public sealed class ScoreBookReader
         IUnitOfWork unitOfWork,
         IMembershipDirectory memberships,
         IMemberDirectory members,
-        IScoreFactSource facts,
+        IScoreFactReader facts,
         TimeProvider time)
     {
         _score = score;

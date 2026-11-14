@@ -16,7 +16,7 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 /// kurin on that day, or their latest one here when the day falls outside every stay. Nothing is
 /// kept — a пересторога revoked or a вмілість taken back is simply not here next time.
 /// </remarks>
-public sealed class KurinScoreFacts : IScoreFactSource
+public sealed class ScoreFactReader : IScoreFactReader
 {
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberProgressDirectory _progress;
@@ -24,7 +24,7 @@ public sealed class KurinScoreFacts : IScoreFactSource
     private readonly IDuesDirectory _dues;
     private readonly TimeProvider _time;
 
-    public KurinScoreFacts(
+    public ScoreFactReader(
         IMembershipDirectory memberships,
         IMemberProgressDirectory progress,
         IMemberDirectory members,

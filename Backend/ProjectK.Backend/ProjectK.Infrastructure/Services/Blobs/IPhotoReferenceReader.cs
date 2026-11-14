@@ -1,6 +1,6 @@
 namespace ProjectK.Infrastructure.Services.Blobs;
 
-public interface IPhotoReferenceProvider
+public interface IPhotoReferenceReader
 {
     Task<IReadOnlyCollection<string>> GetAllReferencedBlobNamesAsync(CancellationToken cancellationToken);
 }

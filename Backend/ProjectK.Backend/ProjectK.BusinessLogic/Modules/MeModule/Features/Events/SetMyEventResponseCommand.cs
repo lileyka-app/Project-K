@@ -31,9 +31,9 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
     private readonly MeAgendaScopes _scopes;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileProvider profiles)
+    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;

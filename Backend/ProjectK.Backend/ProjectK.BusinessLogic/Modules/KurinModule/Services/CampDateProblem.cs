@@ -3,11 +3,11 @@ using ProjectK.Optimization.Scheduling;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
-public class CampDateSolver : BaseCampDateProblem
+public class CampDateProblem : BaseCampDateProblem
 {
     private readonly List<PlanningParticipant> _participants;
 
-    public CampDateSolver(DateTime searchStart, DateTime searchEnd, int durationDays, List<PlanningParticipant> participants)
+    public CampDateProblem(DateTime searchStart, DateTime searchEnd, int durationDays, List<PlanningParticipant> participants)
         : base(searchStart, searchEnd, durationDays)
     {
         _participants = participants;

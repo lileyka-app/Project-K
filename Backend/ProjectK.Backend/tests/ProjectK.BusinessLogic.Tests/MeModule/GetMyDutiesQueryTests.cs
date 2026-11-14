@@ -100,11 +100,11 @@ public class GetMyDutiesQueryTests
         var permissions = new Mock<IPermissionResolver>();
         permissions.Setup(p => p.ResolveAsync(It.IsAny<IEnumerable<string>>(), Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _permissions);
 
-        var books = new ScoreBookReader(_score.Object, _unitOfWork.Object, memberships.Object, members.Object, Mock.Of<IScoreFactSource>(), _time);
+        var books = new ScoreBookReader(_score.Object, _unitOfWork.Object, memberships.Object, members.Object, Mock.Of<IScoreFactReader>(), _time);
 
         return new GetMyDutiesQueryHandler(
             scopes, _unitOfWork.Object, Mock.Of<IDuesUnitOfWork>(), members.Object, _progress.Object,
-            books, _user.Object, _time, Mock.Of<IKraiProfileProvider>(), permissions.Object);
+            books, _user.Object, _time, Mock.Of<IKraiProfileDirectory>(), permissions.Object);
     }
 
     private async Task<MyDutiesDto> ReadAsync() =>

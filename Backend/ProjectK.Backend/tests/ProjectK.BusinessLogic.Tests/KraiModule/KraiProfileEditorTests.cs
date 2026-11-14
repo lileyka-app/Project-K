@@ -19,7 +19,7 @@ public class KraiProfileEditorTests
     private readonly Mock<IBackendCache> _cache = new();
     private readonly Guid _admin = Guid.NewGuid();
     private readonly List<KraiProfileRevision> _added = [];
-    private readonly KraiProfileEditor _editor;
+    private readonly KraiProfileWriter _editor;
 
     public KraiProfileEditorTests()
     {
@@ -29,7 +29,7 @@ public class KraiProfileEditorTests
         _krais.Setup(r => r.AddProfileRevision(It.IsAny<KraiProfileRevision>())).Callback<KraiProfileRevision>(_added.Add);
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _editor = new KraiProfileEditor(_unitOfWork.Object, user.Object, _cache.Object);
+        _editor = new KraiProfileWriter(_unitOfWork.Object, user.Object, _cache.Object);
     }
 
     private void Latest(int revision, string json = "{}")

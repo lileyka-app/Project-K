@@ -19,12 +19,12 @@ public sealed record LeaveKurinCommand(Guid MemberKey, Guid KurinKey) : IRequest
 public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly IMemberDirectory _members;
     private readonly MembershipMoves _moves;
     private readonly ICurrentUserContext _currentUser;
 
-    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, MembershipMoves moves, ICurrentUserContext currentUser)
+    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeStore accessChanges, IMemberDirectory members, MembershipMoves moves, ICurrentUserContext currentUser)
     {
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;

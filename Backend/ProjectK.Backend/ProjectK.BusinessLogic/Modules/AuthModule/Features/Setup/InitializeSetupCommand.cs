@@ -27,18 +27,18 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
     private static readonly SemaphoreSlim InitializationLock = new(1, 1);
 
     private readonly UserManager<AppUser> _userManager;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly ISystemSettingsService _systemSettings;
     private readonly IDemoDataSeeder _demoDataSeeder;
 
     public InitializeSetupCommandHandler(
         UserManager<AppUser> userManager,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         ISystemSettingsService systemSettings,
         IDemoDataSeeder demoDataSeeder)
     {
         _userManager = userManager;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _systemSettings = systemSettings;
         _demoDataSeeder = demoDataSeeder;
     }
@@ -88,7 +88,7 @@ public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupComm
                 await _demoDataSeeder.SeedAsync(cancellationToken);
             }
 
-            var response = await _loginResponseFactory.CreateAsync(user, cancellationToken);
+            var response = await _loginResponseService.CreateAsync(user, cancellationToken);
             return new ServiceResult<LoginUserDto>(ResultType.Success, response);
         }
         finally

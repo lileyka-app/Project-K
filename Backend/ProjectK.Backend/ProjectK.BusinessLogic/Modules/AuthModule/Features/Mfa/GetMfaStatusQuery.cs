@@ -21,12 +21,12 @@ public sealed class GetMfaStatusQueryHandler : IRequestHandler<GetMfaStatusQuery
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly UserManager<AppUser> _userManager;
-    private readonly IMfaEnforcementPolicy _policy;
+    private readonly IMfaEnforcementReader _policy;
 
     public GetMfaStatusQueryHandler(
         ICurrentUserContext currentUser,
         UserManager<AppUser> userManager,
-        IMfaEnforcementPolicy policy)
+        IMfaEnforcementReader policy)
     {
         _currentUser = currentUser;
         _userManager = userManager;

@@ -15,14 +15,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// kurin and a live danger zone on the way in, one deletion counted off on the way out. The zone
 /// that has none left ends there and then, and the journal says why.
 /// </summary>
-public sealed class ArchiveDeletionGate
+public sealed class ArchiveDeletionService
 {
     private readonly ArchiveReach _reach;
-    private readonly ArchiveDangerZone _zone;
+    private readonly ArchiveDangerZoneService _zone;
     private readonly ICurrentUserContext _currentUser;
     private readonly IKurinAudit _audit;
 
-    public ArchiveDeletionGate(ArchiveReach reach, ArchiveDangerZone zone, ICurrentUserContext currentUser, IKurinAudit audit)
+    public ArchiveDeletionService(ArchiveReach reach, ArchiveDangerZoneService zone, ICurrentUserContext currentUser, IKurinAudit audit)
     {
         _reach = reach;
         _zone = zone;

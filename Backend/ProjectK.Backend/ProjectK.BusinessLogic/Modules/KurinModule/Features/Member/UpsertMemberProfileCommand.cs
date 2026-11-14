@@ -73,7 +73,7 @@ public class UpsertMemberProfileCommandHandler
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IAccountProvisioningService _accounts;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly IKurinAudit _audit;
     private readonly IResourceAccessService _access;
@@ -84,7 +84,7 @@ public class UpsertMemberProfileCommandHandler
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IAccountProvisioningService accounts,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IMemberFieldAccess fieldAccess,
         IKurinAudit audit,
         IResourceAccessService access)

@@ -10,13 +10,13 @@ using ProjectK.Common.Records.Shared;
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
 
 /// <summary>The one way a profile revision is written, so a save, an import and a restore check the same.</summary>
-public sealed class KraiProfileEditor
+public sealed class KraiProfileWriter
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly IBackendCache _cache;
 
-    public KraiProfileEditor(IUnitOfWork unitOfWork, ICurrentUserContext currentUser, IBackendCache cache)
+    public KraiProfileWriter(IUnitOfWork unitOfWork, ICurrentUserContext currentUser, IBackendCache cache)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;

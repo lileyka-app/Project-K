@@ -53,9 +53,9 @@ public sealed class CreateScoreEntryCommandHandler : IRequestHandler<CreateScore
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public CreateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
+    public CreateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _access = access;
         _books = books;

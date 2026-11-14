@@ -14,9 +14,9 @@ public sealed record RestoreKraiProfileRevisionCommand(string KraiCode, int Revi
 public sealed class RestoreKraiProfileRevisionCommandHandler : IRequestHandler<RestoreKraiProfileRevisionCommand, ServiceResult<KraiProfileEditorDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly KraiProfileEditor _editor;
+    private readonly KraiProfileWriter _editor;
 
-    public RestoreKraiProfileRevisionCommandHandler(IUnitOfWork unitOfWork, KraiProfileEditor editor)
+    public RestoreKraiProfileRevisionCommandHandler(IUnitOfWork unitOfWork, KraiProfileWriter editor)
     {
         _unitOfWork = unitOfWork;
         _editor = editor;
@@ -35,7 +35,7 @@ public sealed class RestoreKraiProfileRevisionCommandHandler : IRequestHandler<R
         return await _editor.SaveAsync(
             code,
             latest?.Revision ?? 0,
-            KraiProfileEditor.TryParse(source.Json),
+            KraiProfileWriter.TryParse(source.Json),
             $"Відновлено ревізію {source.Revision}",
             cancellationToken);
     }

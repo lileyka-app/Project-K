@@ -35,7 +35,7 @@ public class MfaRecoveryCodesHandlerTests
             LastName = "Doe"
         };
         var response = Logins.Empty with { UserKey = user.Id, Email = user.Email };
-        var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
+        var loginResponseFactoryMock = new Mock<ILoginResponseService>();
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
         _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
@@ -72,7 +72,7 @@ public class MfaRecoveryCodesHandlerTests
             FirstName = "John",
             LastName = "Doe"
         };
-        var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
+        var loginResponseFactoryMock = new Mock<ILoginResponseService>();
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
 
         _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
@@ -103,7 +103,7 @@ public class MfaRecoveryCodesHandlerTests
             SecurityStamp = "stamp-1",
             OnboardingStatus = OnboardingStatus.Active
         };
-        var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
+        var loginResponseFactoryMock = new Mock<ILoginResponseService>();
         loginResponseFactoryMock
             .Setup(x => x.CreateAsync(user, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Logins.Empty with { UserKey = user.Id, Email = user.Email });
@@ -130,7 +130,7 @@ public class MfaRecoveryCodesHandlerTests
             LastName = "Doe",
             OnboardingStatus = OnboardingStatus.Suspended
         };
-        var loginResponseFactoryMock = new Mock<ILoginResponseFactory>();
+        var loginResponseFactoryMock = new Mock<ILoginResponseService>();
         var provider = _userManagerMock.Object.Options.Tokens.AuthenticatorTokenProvider;
         _userManagerMock.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.VerifyTwoFactorTokenAsync(user, provider, "123456")).ReturnsAsync(true);
@@ -143,7 +143,7 @@ public class MfaRecoveryCodesHandlerTests
         loginResponseFactoryMock.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    private VerifyMfaLoginCommandHandler CreateVerifyHandler(ILoginResponseFactory loginResponseFactory, Guid challengeFor)
+    private VerifyMfaLoginCommandHandler CreateVerifyHandler(ILoginResponseService loginResponseService, Guid challengeFor)
     {
         var jwtServiceMock = new Mock<IJwtService>();
         jwtServiceMock.Setup(x => x.ReadMfaChallenge("challenge")).Returns(challengeFor);
@@ -154,7 +154,7 @@ public class MfaRecoveryCodesHandlerTests
 
         return new VerifyMfaLoginCommandHandler(
             _userManagerMock.Object,
-            loginResponseFactory,
+            loginResponseService,
             new Mock<ILogger<VerifyMfaLoginCommandHandler>>().Object,
             new Mock<IActivityLogger>().Object,
             jwtServiceMock.Object);

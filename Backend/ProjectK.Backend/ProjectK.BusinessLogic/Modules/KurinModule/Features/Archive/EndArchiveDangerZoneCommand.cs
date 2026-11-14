@@ -30,11 +30,11 @@ public sealed record EndArchiveDangerZoneCommand(Guid KurinKey, ArchiveDangerZon
 public sealed class EndArchiveDangerZoneCommandHandler : IRequestHandler<EndArchiveDangerZoneCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ArchiveDangerZone _zone;
+    private readonly ArchiveDangerZoneService _zone;
     private readonly ICurrentUserContext _currentUser;
     private readonly IKurinAudit _audit;
 
-    public EndArchiveDangerZoneCommandHandler(IUnitOfWork unitOfWork, ArchiveDangerZone zone, ICurrentUserContext currentUser, IKurinAudit audit)
+    public EndArchiveDangerZoneCommandHandler(IUnitOfWork unitOfWork, ArchiveDangerZoneService zone, ICurrentUserContext currentUser, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _zone = zone;

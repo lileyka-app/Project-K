@@ -45,7 +45,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IKurinAudit _audit;
 
     public MarkAttendanceCommandHandler(
@@ -56,7 +56,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
         ScoreBookReader books,
         ICurrentUserContext currentUser,
         TimeProvider time,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IKurinAudit audit)
     {
         _access = access;

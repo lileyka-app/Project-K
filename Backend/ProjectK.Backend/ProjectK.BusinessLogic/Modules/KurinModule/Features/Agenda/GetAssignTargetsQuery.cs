@@ -72,7 +72,7 @@ public sealed class GetAssignTargetsQueryHandler
             .Select(l => new AgendaLeadershipTargetDto
             {
                 LeadershipKey = l.LeadershipKey,
-                Label = AgendaLookups.LabelFor(l.Type, l.GroupKey, groupNames),
+                Label = AgendaNames.LabelFor(l.Type, l.GroupKey, groupNames),
                 CanTarget = reach.ReachesProvid(null),
                 Members = l.Type == LeadershipType.KV
                     ? unplaced.Where(m => kvMembers.Contains(m.MemberKey)).Select(Person).ToList()
@@ -91,7 +91,7 @@ public sealed class GetAssignTargetsQueryHandler
                     ? new AgendaLeadershipTargetDto
                     {
                         LeadershipKey = office.LeadershipKey,
-                        Label = AgendaLookups.LabelFor(office.Type, office.GroupKey, groupNames),
+                        Label = AgendaNames.LabelFor(office.Type, office.GroupKey, groupNames),
                         CanTarget = reach.ReachesProvid(g.GroupKey),
                         Members = []
                     }
@@ -123,7 +123,7 @@ public sealed class GetAssignTargetsQueryHandler
         {
             CanTargetKurin = reach.ReachesKurin,
             KurinKey = request.KurinKey,
-            KurinLabel = AgendaLookups.KurinLabel,
+            KurinLabel = AgendaNames.KurinLabel,
             KurinLeaderships = kurinLeaderships,
             Groups = groupTargets,
             UnplacedMembers = unplaced.Where(m => !kvMembers.Contains(m.MemberKey)).Select(Person).Where(p => p.CanTarget).ToList(),

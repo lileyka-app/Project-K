@@ -30,7 +30,7 @@ public class LoginUserCommandHandlerTests
     private readonly Mock<IJwtService> _jwtServiceMock;
     private readonly Mock<IUnitOfWork> _uowMock;
     private Mock<IMemberDirectory> _memberDirectoryMock;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly Mock<IActivityLogger> _activityLoggerMock;
     private readonly Mock<IConfiguration> _configurationMock;
     private const int ThrottleLimit = 3;
@@ -64,7 +64,7 @@ public class LoginUserCommandHandlerTests
         _uowMock = new Mock<IUnitOfWork>();
 
         _refreshTokensMock = new Mock<IRefreshTokenStore>();
-        _loginResponseFactory = new LoginResponseFactory(_accessMock.Object, _jwtServiceMock.Object, _memberDirectoryMock.Object, _refreshTokensMock.Object, new AccessSnapshotFactory(new PermissionResolver(new FixedKurinAccessPolicyProvider())));
+        _loginResponseService = new LoginResponseService(_accessMock.Object, _jwtServiceMock.Object, _memberDirectoryMock.Object, _refreshTokensMock.Object, new AccessSnapshotFactory(new PermissionResolver(new FixedKurinAccessPolicyProvider())));
         _handler = CreateHandler(_configurationMock.Object, Environments.Development);
     }
 
@@ -76,7 +76,7 @@ public class LoginUserCommandHandlerTests
         return new LoginUserCommandHandler(
             _userManagerMock.Object,
             _signInManagerMock.Object,
-            _loginResponseFactory,
+            _loginResponseService,
             _activityLoggerMock.Object,
             configuration,
             _jwtServiceMock.Object,

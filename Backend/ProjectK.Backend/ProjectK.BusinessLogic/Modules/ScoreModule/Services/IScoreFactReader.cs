@@ -7,7 +7,7 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 /// paid, a пересторога in force. The ledger takes them as it takes marks; where they come from is
 /// this seam's business.
 /// </summary>
-public interface IScoreFactSource
+public interface IScoreFactReader
 {
     Task<IReadOnlyList<ScoreFact>> ForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 }

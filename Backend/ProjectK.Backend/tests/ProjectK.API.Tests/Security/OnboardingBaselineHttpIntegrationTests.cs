@@ -288,7 +288,7 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(new Mock<INotificationService>().Object);
             mockUserManager.Setup(m => m.GetUsersInRoleAsync(It.IsAny<string>())).ReturnsAsync(new List<AppUser>());
             // Activation answers with a session now; the factory is the part of sign-in the host does not build.
-            var mockLoginResponses = new Mock<ILoginResponseFactory>();
+            var mockLoginResponses = new Mock<ILoginResponseService>();
             mockLoginResponses
                 .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with { UserKey = user.Id, Email = user.Email ?? string.Empty });

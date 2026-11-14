@@ -23,10 +23,10 @@ public sealed class DeleteArchivedOfficeCommandHandler : IRequestHandler<DeleteA
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly ArchiveDeletionGate _gate;
+    private readonly ArchiveDeletionService _gate;
     private readonly IKurinAudit _audit;
 
-    public DeleteArchivedOfficeCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ArchiveDeletionGate gate, IKurinAudit audit)
+    public DeleteArchivedOfficeCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ArchiveDeletionService gate, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _members = members;
@@ -61,7 +61,7 @@ public sealed class DeleteArchivedOfficeCommandHandler : IRequestHandler<DeleteA
 
         if (await _gate.SpendAsync(pass, request.KurinKey, cancellationToken) is not { } left)
         {
-            return ArchiveDeletionGate.Closed();
+            return ArchiveDeletionService.Closed();
         }
 
         var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);

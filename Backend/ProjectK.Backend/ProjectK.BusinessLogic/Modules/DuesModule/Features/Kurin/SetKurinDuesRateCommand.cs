@@ -67,7 +67,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
 {
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IDuesKurinShape _shape;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDuesAccrual _accrual;
@@ -75,7 +75,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
     public SetKurinDuesRateCommandHandler(
         IDuesUnitOfWork dues,
         ICurrentUserContext currentUser,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IDuesKurinShape shape,
         IUnitOfWork unitOfWork,
         IDuesAccrual accrual)

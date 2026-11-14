@@ -36,11 +36,11 @@ public sealed record JoinKurinCommand(
 public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IAccessChangeSignal _accessChanges;
+    private readonly IAccessChangeStore _accessChanges;
     private readonly IMemberDirectory _members;
     private readonly IKurinAudit _audit;
 
-    public JoinKurinCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAccessChangeSignal accessChanges, IKurinAudit audit)
+    public JoinKurinCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAccessChangeStore accessChanges, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _accessChanges = accessChanges;

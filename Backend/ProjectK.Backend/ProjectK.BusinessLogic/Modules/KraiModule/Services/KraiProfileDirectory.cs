@@ -16,13 +16,13 @@ namespace ProjectK.BusinessLogic.Modules.KraiModule.Services;
 /// Builds a край's profile: the values in code first, the край's latest saved revision over them.
 /// The values in code are how Lilejka worked before profiles, so an empty profile changes nothing.
 /// </summary>
-public sealed class KraiProfileProvider : IKraiProfileProvider
+public sealed class KraiProfileDirectory : IKraiProfileDirectory
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;
-    private readonly ILogger<KraiProfileProvider> _logger;
+    private readonly ILogger<KraiProfileDirectory> _logger;
 
-    public KraiProfileProvider(IUnitOfWork unitOfWork, IBackendCache cache, ILogger<KraiProfileProvider> logger)
+    public KraiProfileDirectory(IUnitOfWork unitOfWork, IBackendCache cache, ILogger<KraiProfileDirectory> logger)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;

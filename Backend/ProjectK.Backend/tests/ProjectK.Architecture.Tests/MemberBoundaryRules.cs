@@ -73,7 +73,7 @@ public class MemberBoundaryRules
         var rule = Types()
             .That().ImplementInterface(typeof(IResourceAccessService))
             .Or().ImplementInterface(typeof(IResourceScopeReader))
-            .Or().ImplementInterface(typeof(ILoginResponseFactory))
+            .Or().ImplementInterface(typeof(ILoginResponseService))
             .Should().NotDependOnAny(typeof(Member), typeof(IMemberRepository));
 
         ProjectKArchitecture.Violations(rule).Should().BeSubsetOf(

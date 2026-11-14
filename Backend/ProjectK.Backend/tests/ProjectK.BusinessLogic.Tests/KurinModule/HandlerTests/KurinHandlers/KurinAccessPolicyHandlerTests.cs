@@ -24,8 +24,8 @@ public class KurinAccessPolicyHandlerTests
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IBackendCache> _cache = new();
-    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
-    private readonly KurinAccessPolicyProvider _provider;
+    private readonly Mock<IAccessChangeStore> _accessChanges = new();
+    private readonly KurinAccessPolicyReader _provider;
     private readonly Kurin _kurin = new(5);
     private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
@@ -41,7 +41,7 @@ public class KurinAccessPolicyHandlerTests
 
         _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         _kurins.Setup(r => r.GetByKeyAsync(_kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_kurin);
-        _provider = new KurinAccessPolicyProvider(_unitOfWork.Object, _cache.Object, NullLogger<KurinAccessPolicyProvider>.Instance);
+        _provider = new KurinAccessPolicyReader(_unitOfWork.Object, _cache.Object, NullLogger<KurinAccessPolicyReader>.Instance);
     }
 
     private static Dictionary<string, IReadOnlyDictionary<string, string?>> Matrix(

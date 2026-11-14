@@ -48,7 +48,7 @@ public class KurinArchiveHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IKurinArchiveRepository> _archive = new();
     private readonly Mock<IKurinRepository> _kurins = new();
-    private readonly ArchiveDangerZoneRegistry _registry = new();
+    private readonly ArchiveDangerZoneStore _zones = new();
     private readonly List<AuditRecord> _journal = [];
 
     public KurinArchiveHandlerTests()
@@ -90,8 +90,8 @@ public class KurinArchiveHandlerTests
     }
 
     private ArchiveReach Reach() => new(_user.Object, _permissions.Object, _scopes.Object, _members.Object);
-    private ArchiveDangerZone Zone() => new(_registry, _jwt.Object, _reauth.Object, _user.Object, _time);
-    private ArchiveDeletionGate Gate() => new(Reach(), Zone(), _user.Object, _audit.Object);
+    private ArchiveDangerZoneService Zone() => new(_zones, _jwt.Object, _reauth.Object, _user.Object, _time);
+    private ArchiveDeletionService Gate() => new(Reach(), Zone(), _user.Object, _audit.Object);
 
     private string OpenZone() => Zone().Open(_userKey, _kurinKey, Stamp).Ticket;
 
@@ -131,7 +131,7 @@ public class KurinArchiveHandlerTests
         var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, OpenZone()), default);
 
         result.Type.Should().Be(ResultType.Success);
-        result.Data!.DeletionsLeft.Should().Be(ArchiveDangerZone.Deletions - 1);
+        result.Data!.DeletionsLeft.Should().Be(ArchiveDangerZoneService.Deletions - 1);
         _archive.Verify(a => a.RemoveOffice(office), Times.Once);
         var entry = _journal.Should().ContainSingle().Subject;
         entry.Action.Should().Be(AuditActions.Archive.OfficeDeleted);
@@ -148,7 +148,7 @@ public class KurinArchiveHandlerTests
         var result = await DeleteOffice().Handle(new DeleteArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, OpenZone()), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.OwnRecord);
-        _registry.Find(_registry.Close(_userKey, _kurinKey)!.TicketId).Should().BeNull();
+        _zones.Find(_zones.Close(_userKey, _kurinKey)!.TicketId).Should().BeNull();
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public class KurinArchiveHandlerTests
         (await zone.CheckAsync(ticket, _kurinKey, default)).Should().BeNull();
 
         _reauth.Setup(r => r.GetSecurityStampAsync(_userKey, It.IsAny<CancellationToken>())).ReturnsAsync(Stamp);
-        _time.Advance(ArchiveDangerZone.Lifetime);
+        _time.Advance(ArchiveDangerZoneService.Lifetime);
         (await zone.CheckAsync(ticket, _kurinKey, default)).Should().BeNull();
         zone.Close(_userKey, _kurinKey).Should().BeTrue("a zone that ran out of time is journalled as such");
     }
@@ -184,7 +184,7 @@ public class KurinArchiveHandlerTests
     public async Task TheTenthDeletion_EndsTheZone()
     {
         var ticket = OpenZone();
-        for (var i = 0; i < ArchiveDangerZone.Deletions; i++)
+        for (var i = 0; i < ArchiveDangerZoneService.Deletions; i++)
         {
             var office = FormerOffice();
             _archive.Setup(a => a.FindOfficeAsync(office.LeadershipHistoryKey, It.IsAny<CancellationToken>())).ReturnsAsync(office);
@@ -213,7 +213,7 @@ public class KurinArchiveHandlerTests
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be(ArchiveErrors.WrongCredentials);
         _journal.Should().ContainSingle(entry => entry.Action == AuditActions.Archive.DangerZoneRefused);
-        _registry.Close(_userKey, _kurinKey).Should().BeNull();
+        _zones.Close(_userKey, _kurinKey).Should().BeNull();
         events.Verify(e => e.PublishAsync(It.IsAny<ArchiveDangerZoneEntered>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -228,8 +228,8 @@ public class KurinArchiveHandlerTests
         var result = await handler.Handle(new EnterArchiveDangerZoneCommand(_kurinKey, "right", null), default);
 
         result.Type.Should().Be(ResultType.Success);
-        result.Data!.DeletionsLeft.Should().Be(ArchiveDangerZone.Deletions);
-        result.Data.ExpiresAtUtc.Should().Be(Now.UtcDateTime.Add(ArchiveDangerZone.Lifetime));
+        result.Data!.DeletionsLeft.Should().Be(ArchiveDangerZoneService.Deletions);
+        result.Data.ExpiresAtUtc.Should().Be(Now.UtcDateTime.Add(ArchiveDangerZoneService.Lifetime));
         _journal.Should().ContainSingle(entry => entry.Action == AuditActions.Archive.DangerZoneEntered);
         events.Verify(e => e.PublishAsync(It.Is<ArchiveDangerZoneEntered>(raised => raised.KurinKey == _kurinKey), It.IsAny<CancellationToken>()), Times.Once);
     }

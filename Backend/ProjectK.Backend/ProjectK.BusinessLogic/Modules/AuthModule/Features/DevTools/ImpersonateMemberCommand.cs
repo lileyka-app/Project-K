@@ -26,7 +26,7 @@ public class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMember
     private readonly UserManager<AppUser> _userManager;
     private readonly IMemberDirectory _members;
     private readonly IMembershipDirectory _memberships;
-    private readonly ILoginResponseFactory _loginResponseFactory;
+    private readonly ILoginResponseService _loginResponseService;
     private readonly IJwtService _jwtService;
     private readonly ICurrentUserContext _currentUser;
     private readonly IActivityLogger _activityLogger;
@@ -35,7 +35,7 @@ public class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMember
         UserManager<AppUser> userManager,
         IMemberDirectory members,
         IMembershipDirectory memberships,
-        ILoginResponseFactory loginResponseFactory,
+        ILoginResponseService loginResponseService,
         IJwtService jwtService,
         ICurrentUserContext currentUser,
         IActivityLogger activityLogger)
@@ -43,7 +43,7 @@ public class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMember
         _userManager = userManager;
         _members = members;
         _memberships = memberships;
-        _loginResponseFactory = loginResponseFactory;
+        _loginResponseService = loginResponseService;
         _jwtService = jwtService;
         _currentUser = currentUser;
         _activityLogger = activityLogger;
@@ -83,7 +83,7 @@ public class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMember
         target.ActiveKurinKey = kurinKey;
         await _userManager.UpdateAsync(target);
 
-        var login = await _loginResponseFactory.CreateAsync(target, cancellationToken);
+        var login = await _loginResponseService.CreateAsync(target, cancellationToken);
         var ticket = _jwtService.GenerateDevReturnTicket(actorKey);
 
         _activityLogger.LogAudit(

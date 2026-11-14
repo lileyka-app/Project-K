@@ -41,7 +41,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IPermissionResolver _permissions;
 
     public GetMyDutiesQueryHandler(
@@ -53,7 +53,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         ScoreBookReader books,
         ICurrentUserContext currentUser,
         TimeProvider time,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         IPermissionResolver permissions)
     {
         _scopes = scopes;

@@ -47,11 +47,11 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
             return AgendaErrors.NotFound<AgendaItemDto>();
         }
 
-        var lookups = await AgendaLookups.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _members, item.KurinKey, [item], cancellationToken);
         var roster = await AgendaRoster.LoadAsync(_uow, lookups.MemberGroups, [item], cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, [item], cancellationToken);
 
         return new ServiceResult<AgendaItemDto>(ResultType.Success,
-            AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster));
+            AgendaItemResponseFactory.Create(item, viewer, AgendaNames.KurinLabel, lookups.GroupNames, lookups.MemberNames, userNames, lookups.TargetLabels, lookups.Categories, roster));
     }
 }

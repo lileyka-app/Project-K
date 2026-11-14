@@ -19,14 +19,14 @@ public sealed record SetKurinCardFieldsCommand(Guid KurinKey, IReadOnlyCollectio
 public sealed class SetKurinCardFieldsCommandHandler : IRequestHandler<SetKurinCardFieldsCommand, ServiceResult<IReadOnlyList<KurinCardFieldDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IBackendCache _cache;
     private readonly IKurinAudit _audit;
 
     /// <summary>What the kurin's journal calls this setting.</summary>
     public const string Label = "Поля картки";
 
-    public SetKurinCardFieldsCommandHandler(IUnitOfWork unitOfWork, IKraiProfileProvider profiles, IBackendCache cache, IKurinAudit audit)
+    public SetKurinCardFieldsCommandHandler(IUnitOfWork unitOfWork, IKraiProfileDirectory profiles, IBackendCache cache, IKurinAudit audit)
     {
         _unitOfWork = unitOfWork;
         _profiles = profiles;

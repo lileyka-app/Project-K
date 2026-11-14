@@ -132,7 +132,7 @@ public class SeniorDuesSeamTests
             new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()),
             user.Object,
             new FixedTimeProvider(new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero)),
-            Mock.Of<IKraiProfileProvider>());
+            Mock.Of<IKraiProfileDirectory>());
 
         var result = await handler.Handle(new GetMyDuesQuery(), CancellationToken.None);
 

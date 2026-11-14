@@ -177,10 +177,10 @@ public class ScoreHandlerTests
         return directory.Object;
     }
 
-    private static IScoreFactSource NoFacts()
+    private static IScoreFactReader NoFacts()
     {
         IReadOnlyList<ScoreFact> none = [];
-        return Mock.Of<IScoreFactSource>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
+        return Mock.Of<IScoreFactReader>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
     }
 
     private ScoreBookReader Books()
@@ -192,9 +192,9 @@ public class ScoreHandlerTests
         return new ScoreBookReader(_score.Object, _unitOfWork.Object, Memberships(), members.Object, NoFacts(), _time);
     }
 
-    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, _unitOfWork.Object, Memberships(), Books(), User(), _time, Mock.Of<IKraiProfileProvider>(), _audit.Object);
+    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, _unitOfWork.Object, Memberships(), Books(), User(), _time, Mock.Of<IKraiProfileDirectory>(), _audit.Object);
 
-    private CreateScoreEntryCommandHandler Giver() => new(Access(), Books(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileProvider>());
+    private CreateScoreEntryCommandHandler Giver() => new(Access(), Books(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileDirectory>());
 
     private static MarkAttendanceCommand MarkCommand(params Guid[] keys) =>
         new(Kurin, Skhodyny, Start, new MarkAttendanceRequest { MembershipKeys = keys });
@@ -205,7 +205,7 @@ public class ScoreHandlerTests
         var oksanaUser = _people.Single(p => p.FirstName == "Оксана").UserKey!.Value;
         _responses.Add(new AgendaResponse { AgendaItemKey = Skhodyny, UserKey = oksanaUser, Status = AgendaRsvpStatus.Going });
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object)
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -230,7 +230,7 @@ public class ScoreHandlerTests
         _tags.Setup(t => t.GetMemberKeysAsync(novices, It.IsAny<CancellationToken>())).ReturnsAsync([tarasMember]);
         _tagVisibility.Setup(v => v.ShowsTagsOfAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync((_, _) => readerSeesTags);
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object)
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Data!.People.Single(p => p.MembershipKey == _taras).IsAssigned.Should().Be(tarasAimedAt);
@@ -242,7 +242,7 @@ public class ScoreHandlerTests
         _resourceAccess.Setup(r => r.CheckAccessAsync(ResourceType.GroupScore, It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Deny("youth"));
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object)
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
@@ -293,7 +293,7 @@ public class ScoreHandlerTests
     }
 
     private SetOccurrenceNotHeldCommandHandler NotHeldSetter() =>
-        new(Access(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileProvider>(), _audit.Object);
+        new(Access(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileDirectory>(), _audit.Object);
 
     [Fact]
     public async Task NotHeld_IsSaid_ByWhoeverMarksSomewhere_AndJournalled()
@@ -386,7 +386,7 @@ public class ScoreHandlerTests
     {
         _notHeld.Add(new ScoreNotHeldOccurrence { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Actor, MarkedAtUtc = Start });
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object)
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Data!.NotHeld.Should().NotBeNull();

@@ -3,7 +3,7 @@ using ProjectK.Common.Enums.InfrastructureModule;
 namespace ProjectK.Common.Contracts.InfrastructureModule;
 
 /// <summary>Who is told that something in a kurin waits on a reviewer.</summary>
-public interface IReviewNotificationRecipientResolver
+public interface IReviewNotificationRecipientReader
 {
     /// <summary>
     /// The accounts that may act on <paramref name="subject"/> for a member of

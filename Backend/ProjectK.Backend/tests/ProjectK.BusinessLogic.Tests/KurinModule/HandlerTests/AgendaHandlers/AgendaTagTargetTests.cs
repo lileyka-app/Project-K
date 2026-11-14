@@ -95,6 +95,6 @@ public class AgendaTagTargetTests
     [Fact]
     public void ATagTarget_IsNamedForEveryoneCarryingIt()
     {
-        AgendaLookups.TagLabel("Новики").Should().Be("Усі з тегом «Новики»");
+        AgendaNames.TagLabel("Новики").Should().Be("Усі з тегом «Новики»");
     }
 }

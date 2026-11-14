@@ -29,7 +29,7 @@ public class ImpersonateRoleCommandHandlerTests
     private readonly Mock<ILeadershipRepository> _leaderships = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IMembershipDirectory> _memberships = new();
-    private readonly Mock<ILoginResponseFactory> _loginResponses = new();
+    private readonly Mock<ILoginResponseService> _loginResponses = new();
     private readonly Mock<IJwtService> _jwt = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IActivityLogger> _activityLogger = new();

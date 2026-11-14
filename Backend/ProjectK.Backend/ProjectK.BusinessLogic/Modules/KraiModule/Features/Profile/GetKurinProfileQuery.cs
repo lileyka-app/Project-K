@@ -11,9 +11,9 @@ public sealed record GetKurinProfileQuery(Guid KurinKey) : IRequest<ServiceResul
 
 public sealed class GetKurinProfileQueryHandler : IRequestHandler<GetKurinProfileQuery, ServiceResult<KraiProfile>>
 {
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public GetKurinProfileQueryHandler(IKraiProfileProvider profiles)
+    public GetKurinProfileQueryHandler(IKraiProfileDirectory profiles)
     {
         _profiles = profiles;
     }

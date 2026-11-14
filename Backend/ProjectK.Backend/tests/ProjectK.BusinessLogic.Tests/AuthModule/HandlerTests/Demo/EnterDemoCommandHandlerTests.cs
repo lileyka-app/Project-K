@@ -28,7 +28,7 @@ public class EnterDemoCommandHandlerTests
     private readonly Mock<ILeadershipRepository> _leaderships = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IMembershipDirectory> _memberships = new();
-    private readonly Mock<ILoginResponseFactory> _loginResponses = new();
+    private readonly Mock<ILoginResponseService> _loginResponses = new();
     private readonly Mock<IActivityLogger> _activityLogger = new();
     private readonly IUnitOfWork _unitOfWork;
     private readonly Kurin _demoKurin = new(1) { KurinKey = Guid.NewGuid() };

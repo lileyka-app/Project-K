@@ -6,12 +6,12 @@ using ProjectK.Common.Entities.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
-public interface ILoginResponseFactory
+public interface ILoginResponseService
 {
     Task<LoginUserDto> CreateAsync(AppUser user, CancellationToken cancellationToken);
 }
 
-public class LoginResponseFactory : ILoginResponseFactory
+public class LoginResponseService : ILoginResponseService
 {
     private readonly IAccessContextResolver _access;
     private readonly IJwtService _jwtService;
@@ -19,7 +19,7 @@ public class LoginResponseFactory : ILoginResponseFactory
     private readonly IRefreshTokenStore _refreshTokens;
     private readonly IAccessSnapshotFactory _snapshots;
 
-    public LoginResponseFactory(
+    public LoginResponseService(
         IAccessContextResolver access,
         IJwtService jwtService,
         IMemberDirectory members,

@@ -9,7 +9,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// Name lookups used to label agenda assignments and creators. Loaded for the items on the page:
 /// only the people they name are read, not the kurin (<see cref="AgendaPeople"/>).
 /// </summary>
-public sealed record AgendaLookups(
+public sealed record AgendaNames(
     IReadOnlyDictionary<Guid, string> GroupNames,
     IReadOnlyDictionary<Guid, string> MemberNames,
     IReadOnlyDictionary<Guid, string> CreatorNames,
@@ -25,7 +25,7 @@ public sealed record AgendaLookups(
     /// <summary>What an item aimed at a tag says it is for: everyone carrying it.</summary>
     public static string TagLabel(string? tagName) => tagName is null ? "Усі з тегом" : $"Усі з тегом «{tagName}»";
 
-    public static async Task<AgendaLookups> LoadAsync(IUnitOfWork uow, IMemberDirectory directory, Guid kurinKey, IEnumerable<AgendaItem> items, CancellationToken cancellationToken)
+    public static async Task<AgendaNames> LoadAsync(IUnitOfWork uow, IMemberDirectory directory, Guid kurinKey, IEnumerable<AgendaItem> items, CancellationToken cancellationToken)
     {
         var groups = await uow.Groups.GetAllAsync(kurinKey, cancellationToken);
         var members = await AgendaPeople.ReadAsync(directory, kurinKey, AgendaPeople.ToLabel(items), cancellationToken);
@@ -55,7 +55,7 @@ public sealed record AgendaLookups(
 
         var memberGroups = members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey);
 
-        return new AgendaLookups(groupNames, memberNames, creatorNames, targetLabels, categories, memberGroups);
+        return new AgendaNames(groupNames, memberNames, creatorNames, targetLabels, categories, memberGroups);
     }
 
     public static string LabelFor(LeadershipType type, Guid? groupKey, IReadOnlyDictionary<Guid, string> groupNames) =>

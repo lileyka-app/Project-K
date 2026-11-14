@@ -56,7 +56,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
     private readonly MeAgendaScopes _scopes;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly TimeProvider _time;
     private readonly string _siteUrl;
 
@@ -66,7 +66,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         MeAgendaScopes scopes,
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
-        IKraiProfileProvider profiles,
+        IKraiProfileDirectory profiles,
         TimeProvider time,
         IOptions<EmailOptions> site)
     {

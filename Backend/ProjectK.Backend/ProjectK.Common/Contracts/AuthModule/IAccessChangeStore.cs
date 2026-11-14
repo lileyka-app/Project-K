@@ -9,7 +9,7 @@ namespace ProjectK.Common.Contracts.AuthModule;
 /// and a token never outlives its ten minutes.
 /// </para>
 /// </summary>
-public interface IAccessChangeSignal
+public interface IAccessChangeStore
 {
     /// <summary>One account's roles changed: an office, a mentor assignment, a membership, admin.</summary>
     void MarkUser(Guid userKey);

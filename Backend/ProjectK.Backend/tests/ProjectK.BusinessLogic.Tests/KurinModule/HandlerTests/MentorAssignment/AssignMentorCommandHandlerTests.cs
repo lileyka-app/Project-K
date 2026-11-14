@@ -26,7 +26,7 @@ public class AssignMentorCommandHandlerTests
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
-    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
+    private readonly Mock<IAccessChangeStore> _accessChanges = new();
     private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     public AssignMentorCommandHandlerTests()

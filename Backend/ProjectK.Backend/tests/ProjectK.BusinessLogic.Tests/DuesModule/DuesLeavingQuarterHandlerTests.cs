@@ -49,7 +49,7 @@ public class DuesLeavingQuarterHandlerTests
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
         dues.SetupGet(d => d.DuesCharges).Returns(_charges.Object);
 
-        return new DuesLeavingQuarterEventHandler(dues.Object, new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), Mock.Of<IKraiProfileProvider>());
+        return new DuesLeavingQuarterEventHandler(dues.Object, new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), Mock.Of<IKraiProfileDirectory>());
     }
 
     private void Pay(decimal amount) => _entries.Add(new DuesEntry

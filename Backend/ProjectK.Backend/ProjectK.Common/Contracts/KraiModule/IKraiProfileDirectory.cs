@@ -6,7 +6,7 @@ namespace ProjectK.Common.Contracts.KraiModule;
 /// The one place code asks what a край allows. Nothing outside it reads the profile tables or
 /// checks a край code to decide behaviour.
 /// </summary>
-public interface IKraiProfileProvider
+public interface IKraiProfileDirectory
 {
     /// <summary>The profile of a край; null when the instance has no such край.</summary>
     Task<KraiProfile?> GetForKraiAsync(string kraiCode, CancellationToken cancellationToken = default);

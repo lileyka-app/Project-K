@@ -22,14 +22,14 @@ public class SensitiveChangeRefreshTokenInvalidationTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<IActivityLogger> _activityLoggerMock;
     private readonly Mock<IRefreshTokenStore> _refreshTokensMock;
-    private readonly Mock<ILoginResponseFactory> _loginResponsesMock;
+    private readonly Mock<ILoginResponseService> _loginResponsesMock;
 
     public SensitiveChangeRefreshTokenInvalidationTests()
     {
         _userManagerMock = CreateUserManagerMock();
         _activityLoggerMock = new Mock<IActivityLogger>();
         _refreshTokensMock = new Mock<IRefreshTokenStore>();
-        _loginResponsesMock = new Mock<ILoginResponseFactory>();
+        _loginResponsesMock = new Mock<ILoginResponseService>();
         _loginResponsesMock
             .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with
