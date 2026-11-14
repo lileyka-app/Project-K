@@ -7,6 +7,7 @@ using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings.Get;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings.Update;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 
 namespace ProjectK.API.Controllers.AuthModule;
 
@@ -48,5 +49,3 @@ public class SettingsController : ControllerBase
         return response.ToActionResult(this);
     }
 }
-
-public record UpdateSettingRequest(string Value);

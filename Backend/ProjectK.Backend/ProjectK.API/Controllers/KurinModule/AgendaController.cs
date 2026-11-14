@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +15,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Status;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.API.Controllers.KurinModule;
@@ -347,15 +347,3 @@ public class AgendaController : ControllerBase
         return response.ToActionResult(this);
     }
 }
-
-/// <summary>Body for the board status move.</summary>
-public sealed record ChangeAgendaStatusRequest([property: JsonRequired] AgendaItemStatus Status);
-
-/// <summary>Body for archiving a task (true) or taking it back (false).</summary>
-public sealed record SetAgendaArchivedRequest([property: JsonRequired] bool Archived);
-
-/// <summary>Body for moving one target; <c>MemberKey</c> names whose part, in «кожному окремо».</summary>
-public sealed record ChangeAgendaTargetStatusRequest([property: JsonRequired] AgendaItemStatus Status, Guid? MemberKey);
-
-/// <summary>Body for an RSVP set; <c>OccurrenceStartUtc</c> names the occurrence of a series, null for a one-off event.</summary>
-public sealed record SetAgendaResponseRequest([property: JsonRequired] AgendaRsvpStatus Status, DateTime? OccurrenceStartUtc = null);

@@ -21,6 +21,7 @@ using ProjectK.BusinessLogic.Modules.KraiModule.Features.List;
 using ProjectK.BusinessLogic.Modules.KraiModule.Models;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Enums;
 
 using ProjectK.Common.Models.Settings;
@@ -94,12 +95,6 @@ public class OnboardingController : ControllerBase
     {
         var response = await _mediator.Send(new ApproveWaitlistEntryCommand(key, request?.KraiCode));
         return response.ToActionResult(this);
-    }
-
-    /// <summary>Body of <c>POST waitlist/{key}/approve</c>.</summary>
-    public sealed class ApproveWaitlistEntryRequest
-    {
-        public string? KraiCode { get; set; }
     }
 
     /// <summary>

@@ -8,6 +8,8 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.ReportProblem;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Feedback.UploadScreenshot;
+using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.InfrastructureModule.Requests;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -28,17 +30,6 @@ public class FeedbackController : ControllerBase
     {
         _mediator = mediator;
     }
-
-    public sealed record ReportProblemRequest(
-        string? Title,
-        string Description,
-        string? Steps,
-        string? Expected,
-        string? Route,
-        string? AppVersion,
-        IReadOnlyCollection<string>? ScreenshotUrls);
-
-    public sealed record ScreenshotUploaded(string Url);
 
     /// <summary>
     /// Files a problem report. The browser's user agent is read from the request, not trusted from the body.
@@ -74,7 +65,7 @@ public class FeedbackController : ControllerBase
     [HttpPost("screenshots")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(ScreenshotUploaded), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ScreenshotUploadedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
@@ -97,6 +88,6 @@ public class FeedbackController : ControllerBase
             return response.ToActionResult(this);
         }
 
-        return Ok(new ScreenshotUploaded(response.Data));
+        return Ok(new ScreenshotUploadedDto(response.Data));
     }
 }

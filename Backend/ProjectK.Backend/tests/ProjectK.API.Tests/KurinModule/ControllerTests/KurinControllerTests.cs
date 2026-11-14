@@ -93,7 +93,7 @@ public class KurinControllerTests
             .Setup(m => m.Send(It.IsAny<UpsertKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(serviceResult);
 
-        var result = await _controller.Create(new KurinController.CreateKurinRequest { Number = kurinNumber });
+        var result = await _controller.Create(new CreateKurinRequest { Number = kurinNumber });
 
         var created = Assert.IsType<CreatedAtActionResult>(result);
         var data = Assert.IsType<KurinResponse>(created.Value);
