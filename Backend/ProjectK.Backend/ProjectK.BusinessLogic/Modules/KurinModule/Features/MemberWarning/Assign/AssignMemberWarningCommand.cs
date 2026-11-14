@@ -174,13 +174,4 @@ public sealed class AssignMemberWarningCommandHandler : IRequestHandler<AssignMe
                 _currentUserContext.UserId),
             cancellationToken);
     }
-
-    private static string GetWarningLevelName(MemberWarningLevel level) =>
-        level switch
-        {
-            MemberWarningLevel.Level1 => "першу пересторогу",
-            MemberWarningLevel.Level2 => "другу пересторогу",
-            MemberWarningLevel.Level3 => "третю пересторогу",
-            _ => "пересторогу"
-        };
 }
