@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.Impersonate;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.Return;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;

@@ -1,5 +1,4 @@
 using System.Net;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -17,7 +16,8 @@ using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.AuthModule;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;

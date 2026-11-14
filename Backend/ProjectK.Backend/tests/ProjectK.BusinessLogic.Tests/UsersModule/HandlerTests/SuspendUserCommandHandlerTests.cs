@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.BusinessLogic.Modules.UsersModule.Features.User.Suspend;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;

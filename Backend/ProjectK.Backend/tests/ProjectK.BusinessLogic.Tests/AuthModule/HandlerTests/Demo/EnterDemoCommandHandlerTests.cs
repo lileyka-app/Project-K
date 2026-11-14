@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Demo.Enter;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Demo;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;

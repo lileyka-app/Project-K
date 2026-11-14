@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Identity;
-using ProjectK.Common.Models.Records;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.GenerateMfaRecoveryCodes;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.User.VerifyMfaLogin;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Mfa;
 

@@ -1,0 +1,75 @@
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AuthModule.Models;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
+
+namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
+
+/// <summary>
+/// Makes one of the kept accounts the one in use, and keeps the one that was in use instead. No
+/// password: the kept session is the credential, exactly as the refresh cookie is.
+/// </summary>
+public record SwitchSavedAccountCommand(
+    Guid UserKey,
+    IReadOnlyList<string> SavedTokens,
+    IReadOnlyList<string> ActiveTokens) : IRequest<ServiceResult<SwitchedAccount>>;
+
+public class SwitchSavedAccountCommandHandler : IRequestHandler<SwitchSavedAccountCommand, ServiceResult<SwitchedAccount>>
+{
+    private readonly ISavedSessionList _saved;
+    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly ILoginResponseFactory _loginResponses;
+
+    public SwitchSavedAccountCommandHandler(
+        ISavedSessionList saved,
+        IRefreshTokenStore refreshTokens,
+        UserManager<AppUser> userManager,
+        ILoginResponseFactory loginResponses)
+    {
+        _saved = saved;
+        _refreshTokens = refreshTokens;
+        _userManager = userManager;
+        _loginResponses = loginResponses;
+    }
+
+    public async Task<ServiceResult<SwitchedAccount>> Handle(SwitchSavedAccountCommand request, CancellationToken cancellationToken)
+    {
+        var live = await _saved.ReadAsync(request.SavedTokens, cancellationToken);
+        var target = live.LastOrDefault(session => session.UserKey == request.UserKey);
+        if (target is null)
+        {
+            return ServiceResult<SwitchedAccount>.Failure(
+                ResultType.NotFound,
+                "AccountNotSaved",
+                "This browser holds no live session for that account.");
+        }
+
+        var user = await _userManager.FindByIdAsync(target.UserKey.ToString());
+        if (user is null || !user.CanSignIn())
+        {
+            return new ServiceResult<SwitchedAccount>(ResultType.Unauthorized);
+        }
+
+        // Spent before a new one is issued, and only by the call that spent it — the same race the
+        // refresh guards against.
+        if (!await _refreshTokens.RevokeAsync(target.Token, cancellationToken))
+        {
+            return new ServiceResult<SwitchedAccount>(ResultType.Unauthorized);
+        }
+
+        var login = await _loginResponses.CreateAsync(user, cancellationToken);
+
+        var saved = await _saved.TidyAsync(
+            request.SavedTokens.Where(token => token != target.Token).Concat(request.ActiveTokens),
+            user.Id,
+            cancellationToken);
+
+        return new ServiceResult<SwitchedAccount>(ResultType.Success, new SwitchedAccount(login, saved));
+    }
+}

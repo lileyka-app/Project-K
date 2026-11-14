@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings.Get;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings.Update;
+using ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 
