@@ -477,7 +477,7 @@ swagger tofile --output swagger.json Backend/ProjectK.Backend/ProjectK.API/bin/R
 | `ProjectK.BusinessLogic.Tests` | хендлери: доменні рішення |
 | `ProjectK.Infrastructure.Tests` | репозиторії, сховища |
 | `ProjectK.API.Tests` | контролери, серіалізація, **і вся авторизація** — матриця політик, ресурсні перевірки, анонімний доступ |
-| `ProjectK.Architecture.Tests` | межі й імена: залежності шарів (`LayerRules`), суфікси (`NamingRules`), чужі репозиторії й сутності мембера, події замість прямих викликів (`MemberBoundaryRules`), таблиця журналу (`AuditBoundaryRules`) |
+| `ProjectK.Architecture.Tests` | межі й розкладка: залежності шарів (`LayerRules`), імена запитів і хендлерів (`NamingRules`), чужі репозиторії й сутності мембера, події замість прямих викликів (`MemberBoundaryRules`), таблиця журналу (`AuditBoundaryRules`), розкладка модулів і зрізів (`LayoutRules`), контролери (`ApiRules`), вісім видів `Common` (`CommonRules`), суфікси static-класів, служб і `Directory` (`SuffixRules`), мапінг без AutoMapper (`MappingRules`), репозиторії лише через UoW (`RepositoryRules`), коди помилок з каталогу модуля (`ErrorRules`) |
 | `ProjectK.LoadTests` | навантаження |
 | `Frontend/.../e2e` | Playwright проти docker-стека |
 
