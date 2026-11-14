@@ -1,9 +1,9 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -48,7 +48,7 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
         var me = await _me.ReadAsync(cancellationToken);
         if (me is null)
         {
-            return new ServiceResult<IReadOnlyList<MyGroupDto>>(ResultType.Forbidden);
+            return MeErrors.NoMember<IReadOnlyList<MyGroupDto>>();
         }
 
         var rows = new List<MyGroupDto>();

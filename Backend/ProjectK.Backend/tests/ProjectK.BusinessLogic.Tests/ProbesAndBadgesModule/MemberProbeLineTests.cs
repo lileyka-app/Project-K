@@ -1,12 +1,12 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -42,7 +42,7 @@ public class MemberProbeLineTests
         _line = new MemberProbeLine(unitOfWork.Object, catalog.Object, members.Object, _groupEditions.Object);
     }
 
-    private static ProbeSummaryResponse Probe(string id, int order, string? edition = null) =>
+    private static ProbeSummaryDto Probe(string id, int order, string? edition = null) =>
         new(id, id, 10, 2, edition, order, "ua", "approved");
 
     private void Given(params (string Id, ProbeProgressStatus Status)[] rows)

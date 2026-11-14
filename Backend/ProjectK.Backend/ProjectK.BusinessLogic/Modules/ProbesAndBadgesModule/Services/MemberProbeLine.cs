@@ -1,9 +1,9 @@
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -28,7 +28,7 @@ public enum ProbeStart
 public interface IMemberProbeLine
 {
     /// <summary>Empty when the member does not exist.</summary>
-    Task<IReadOnlyList<ProbeSummaryResponse>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ProbeSummaryDto>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>Asked only for a probe the person has not started: one already under way may go on.</summary>
     Task<ProbeStart> CanStartAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
@@ -53,7 +53,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         _groupEditions = groupEditions;
     }
 
-    public async Task<IReadOnlyList<ProbeSummaryResponse>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ProbeSummaryDto>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         return (await ReadAsync(memberKey, cancellationToken))?.Line ?? [];
     }
@@ -116,7 +116,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         return standings;
     }
 
-    private async Task<(IReadOnlyList<ProbeSummaryResponse> Line, IReadOnlyDictionary<string, ProbeProgressStatus> Progress)?> ReadAsync(
+    private async Task<(IReadOnlyList<ProbeSummaryDto> Line, IReadOnlyDictionary<string, ProbeProgressStatus> Progress)?> ReadAsync(
         Guid memberKey,
         CancellationToken cancellationToken)
     {
@@ -143,9 +143,9 @@ public static class ProbeStartRefusal
     public static ServiceResult<T>? Of<T>(ProbeStart start) => start switch
     {
         ProbeStart.NotInLine => ServiceResult<T>.Failure(
-            ResultType.Conflict, "ProbeNotInLine", "This probe is not one the member walks: it belongs to another edition of the programme."),
+            ResultType.Conflict, ProbesAndBadgesErrors.ProbeNotInLine, "This probe is not one the member walks: it belongs to another edition of the programme."),
         ProbeStart.WaitsForPrevious => ServiceResult<T>.Failure(
-            ResultType.Conflict, "ProbeWaitsForPrevious", "This probe opens once the one before it is closed."),
+            ResultType.Conflict, ProbesAndBadgesErrors.ProbeWaitsForPrevious, "This probe opens once the one before it is closed."),
         _ => null
     };
 }

@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Render;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Security;
 

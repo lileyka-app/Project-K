@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -467,10 +467,10 @@ public sealed class KurinReportDataService
             : null;
     }
 
-    private static string ResolveProbeTitle(string probeId, GroupedProbeResponse? probe)
+    private static string ResolveProbeTitle(string probeId, GroupedProbeDto? probe)
         => string.IsNullOrWhiteSpace(probe?.Title) ? probeId : probe.Title;
 
-    private static string ResolveProbePointLabel(string pointId, GroupedProbeResponse? probe)
+    private static string ResolveProbePointLabel(string pointId, GroupedProbeDto? probe)
     {
         if (probe?.Sections is null)
         {

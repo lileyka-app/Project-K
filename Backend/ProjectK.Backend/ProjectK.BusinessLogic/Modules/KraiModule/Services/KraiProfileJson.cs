@@ -91,32 +91,32 @@ public static partial class KraiProfileJson
 
         if (document.Catalog?.BadgeSources is { } sources)
         {
-            errors.AddRange(sources.Where(code => !KraiCodePattern().IsMatch(code)).Select(code => $"Невідомий код краю: «{code}»."));
+            errors.AddRange(sources.Where(code => !KraiCodePattern().IsMatch(code)).Select(code => $"Unknown krai code '{code}'."));
         }
 
         if ((document.Catalog?.BadgeSources?.Count ?? 0) > MaxListItems || (document.Catalog?.HiddenBadges?.Count ?? 0) > MaxListItems)
         {
-            errors.Add("Список завеликий.");
+            errors.Add("A list is too long.");
         }
 
         if (document.Catalog?.HiddenBadges?.Any(id => id.Length > 200) == true)
         {
-            errors.Add("Задовгий ідентифікатор вмілості.");
+            errors.Add("A badge id is too long.");
         }
 
         if (document.Locale?.Currency is { } currency && !CurrencyPattern().IsMatch(currency))
         {
-            errors.Add($"Валюта має бути кодом ISO 4217, як UAH чи CZK: «{currency}».");
+            errors.Add($"The currency must be an ISO 4217 code like UAH or CZK, not '{currency}'.");
         }
 
         if (document.Locale?.TimeZone is { } zone && !IsTimeZone(zone))
         {
-            errors.Add($"Невідомий часовий пояс: «{zone}».");
+            errors.Add($"Unknown time zone '{zone}'.");
         }
 
         if (document.Locale?.NumberLocale is { } culture && !IsCulture(culture))
         {
-            errors.Add($"Невідомий формат чисел: «{culture}».");
+            errors.Add($"Unknown number locale '{culture}'.");
         }
 
         if (document.CardFields is { } card)
@@ -126,7 +126,7 @@ public static partial class KraiProfileJson
 
         if (document.Dues?.Upstream is { } upstream && !KraiDues.Upstreams.Contains(upstream))
         {
-            errors.Add($"Вкладку можна передавати лише stanytsia, krai чи both, а не «{upstream}».");
+            errors.Add($"Dues go upstream to stanytsia, krai or both, not '{upstream}'.");
         }
 
         if (document.Dues?.Concessions is { } concessions)
@@ -143,41 +143,41 @@ public static partial class KraiProfileJson
         {
             if (!KraiCardFields.Configurable.ContainsKey(field))
             {
-                yield return $"Поле «{field}» картки не налаштовується.";
+                yield return $"Card field '{field}' is not configurable.";
             }
             else if (!KraiCardFields.Modes.Contains(mode))
             {
-                yield return $"Поле «{field}» може бути лише required, optional чи hidden, а не «{mode}».";
+                yield return $"Card field '{field}' is required, optional or hidden, not '{mode}'.";
             }
         }
 
         var extra = card.Extra ?? [];
         if (extra.Count > MaxExtraFields)
         {
-            yield return $"Додаткових полів може бути щонайбільше {MaxExtraFields}.";
+            yield return $"At most {MaxExtraFields} extra fields are allowed.";
         }
 
         foreach (var field in extra)
         {
             if (!ExtraKeyPattern().IsMatch(field.Key))
             {
-                yield return $"Ключ поля «{field.Key}» має бути латиницею, з малої літери, без пробілів.";
+                yield return $"Field key '{field.Key}' must be latin, start lowercase and have no spaces.";
             }
 
             if (string.IsNullOrEmpty(field.Label) || field.Label.Length > MaxLabelLength)
             {
-                yield return $"Поле «{field.Key}» потребує назви до {MaxLabelLength} знаків.";
+                yield return $"Field '{field.Key}' needs a label of 1 to {MaxLabelLength} characters.";
             }
 
             if (!KraiCardFields.Types.Contains(field.Type))
             {
-                yield return $"Поле «{field.Key}» може бути лише text чи date, а не «{field.Type}».";
+                yield return $"Field '{field.Key}' is text or date, not '{field.Type}'.";
             }
         }
 
         foreach (var key in extra.GroupBy(field => field.Key, StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1).Select(group => group.Key))
         {
-            yield return $"Ключ поля «{key}» повторюється.";
+            yield return $"Field key '{key}' is repeated.";
         }
     }
 
@@ -225,12 +225,12 @@ public static partial class KraiProfileJson
     {
         if (concessions.Count > MaxConcessions)
         {
-            yield return "Пільг забагато.";
+            yield return "There are too many concessions.";
         }
 
         foreach (var key in concessions.GroupBy(c => c.Key).Where(g => g.Count() > 1).Select(g => g.Key))
         {
-            yield return $"Дві пільги мають однаковий ключ «{key}».";
+            yield return $"Two concessions share the key '{key}'.";
         }
 
         foreach (var concession in concessions)
@@ -238,36 +238,36 @@ public static partial class KraiProfileJson
             var name = string.IsNullOrEmpty(concession.Name) ? concession.Key : concession.Name;
             if (!ConcessionKeyPattern().IsMatch(concession.Key))
             {
-                yield return $"Ключ пільги «{name}» — латиниця, цифри й дефіс, до 40 символів.";
+                yield return $"Concession key of '{name}' is latin letters, digits and hyphens, up to 40 characters.";
             }
 
             if (concession.Name.Length is 0 or > 80)
             {
-                yield return $"Назва пільги «{concession.Key}» — від 1 до 80 символів.";
+                yield return $"Concession '{concession.Key}' needs a name of 1 to 80 characters.";
             }
 
             if (!KraiDues.ConcessionKinds.Contains(concession.Kind))
             {
-                yield return $"Пільга «{name}» може бути лише percent, amount чи exempt, а не «{concession.Kind}».";
+                yield return $"Concession '{name}' is percent, amount or exempt, not '{concession.Kind}'.";
             }
             else if (concession.Kind == KraiDues.Percent && concession.Value is not (> 0 and <= 100))
             {
-                yield return $"Знижка пільги «{name}» — від 0 до 100 відсотків.";
+                yield return $"Concession '{name}' takes off more than 0 and at most 100 percent.";
             }
             else if (concession.Kind == KraiDues.Amount && concession.Value is not > 0)
             {
-                yield return $"Знижка пільги «{name}» має бути більшою за нуль.";
+                yield return $"Concession '{name}' must take off more than zero.";
             }
 
             if (concession.AppliesTo is not { Count: > 0 } parts)
             {
-                yield return $"Пільга «{name}» має знижувати хоч одну частину вкладки.";
+                yield return $"Concession '{name}' must apply to at least one part of the dues.";
             }
             else
             {
                 foreach (var part in parts.Where(part => !KraiDues.Parts.Contains(part)))
                 {
-                    yield return $"Пільга «{name}» не знає частини вкладки «{part}».";
+                    yield return $"Concession '{name}' names an unknown part of the dues '{part}'.";
                 }
             }
         }

@@ -1,6 +1,5 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -11,6 +10,7 @@ using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -50,7 +50,7 @@ public class UpdateProbeProgressStatusHandlerTests
             .ReturnsAsync([]);
         _probesCatalogServiceMock
             .Setup(x => x.GetGroupedProbeById(It.IsAny<string>()))
-            .Returns((GroupedProbeResponse?)null);
+            .Returns((GroupedProbeDto?)null);
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
         _currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
@@ -225,7 +225,7 @@ public class UpdateProbeProgressStatusHandlerTests
 
         _probesCatalogServiceMock
             .Setup(x => x.GetGroupedProbeById("probe-1"))
-            .Returns(new GroupedProbeResponse("probe-1", "Перша проба", 2, 1, []));
+            .Returns(new GroupedProbeDto("probe-1", "Перша проба", 2, 1, []));
 
         _probePointProgressRepositoryMock
             .Setup(x => x.GetByMemberAndProbeAsync(memberKey, "probe-1", It.IsAny<CancellationToken>()))

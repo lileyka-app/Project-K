@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
@@ -15,8 +15,8 @@ public static class ProbeLine
 {
     /// <param name="progress">The person's probes that have a progress row, by id.</param>
     /// <param name="groupEdition">The edition their гурток walks; null for the unnamed one.</param>
-    public static IReadOnlyList<ProbeSummaryResponse> Of(
-        IReadOnlyList<ProbeSummaryResponse> catalog,
+    public static IReadOnlyList<ProbeSummaryDto> Of(
+        IReadOnlyList<ProbeSummaryDto> catalog,
         IReadOnlyDictionary<string, ProbeProgressStatus> progress,
         string? groupEdition)
     {
@@ -38,8 +38,8 @@ public static class ProbeLine
     /// The closed probe that holds a person to its edition: the furthest one past the first place.
     /// Null when nothing holds them and their гурток decides.
     /// </summary>
-    public static ProbeSummaryResponse? HeldBy(
-        IReadOnlyList<ProbeSummaryResponse> catalog,
+    public static ProbeSummaryDto? HeldBy(
+        IReadOnlyList<ProbeSummaryDto> catalog,
         IReadOnlyDictionary<string, ProbeProgressStatus> progress)
     {
         return catalog

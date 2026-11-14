@@ -49,13 +49,13 @@ public class KraiConcessionProfileTests
             new KraiConcessionDocument { Key = "dup", Name = "Одна", Kind = "amount", Value = -5, AppliesTo = ["moon"] },
             new KraiConcessionDocument { Key = "dup", Name = "Друга", Kind = "gift", AppliesTo = ["kurin"] }));
 
-        errors.Should().Contain(e => e.Contains("однаковий ключ «dup»"));
-        errors.Should().Contain(e => e.Contains("латиниця"));
-        errors.Should().Contain(e => e.Contains("від 1 до 80"));
-        errors.Should().Contain(e => e.Contains("від 0 до 100"));
-        errors.Should().Contain(e => e.Contains("хоч одну частину"));
-        errors.Should().Contain(e => e.Contains("більшою за нуль"));
-        errors.Should().Contain(e => e.Contains("«moon»"));
-        errors.Should().Contain(e => e.Contains("«gift»"));
+        errors.Should().Contain(e => e.Contains("share the key 'dup'"));
+        errors.Should().Contain(e => e.Contains("latin letters, digits and hyphens"));
+        errors.Should().Contain(e => e.Contains("name of 1 to 80"));
+        errors.Should().Contain(e => e.Contains("at most 100 percent"));
+        errors.Should().Contain(e => e.Contains("at least one part"));
+        errors.Should().Contain(e => e.Contains("more than zero"));
+        errors.Should().Contain(e => e.Contains("'moon'"));
+        errors.Should().Contain(e => e.Contains("'gift'"));
     }
 }

@@ -1,12 +1,12 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -45,8 +45,8 @@ public class GetThirdProbersQueryTests
         _members.Setup(m => m.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(everyone);
         _line.Setup(l => l.ForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new ProbeSummaryResponse("probe-2", "Друга", 10, 2, null, 2),
-            new ProbeSummaryResponse("probe-3", "Третя", 0, 0, null, 3)
+            new ProbeSummaryDto("probe-2", "Друга", 10, 2, null, 2, "", ""),
+            new ProbeSummaryDto("probe-3", "Третя", 0, 0, null, 3, "", "")
         ]);
         _access.Setup(a => a.CanSignAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _access.Setup(a => a.CanSignAsync(_notMine.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);

@@ -1,5 +1,5 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
+using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;

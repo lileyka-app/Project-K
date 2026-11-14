@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.AuthModule;
@@ -11,6 +10,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -23,9 +23,9 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 /// the page behind it would refuse. What the person hid stays out while it has not grown, and is
 /// counted instead.
 /// </summary>
-public sealed record GetMyDutiesQuery : IRequest<ServiceResult<MyDutiesResponse>>;
+public sealed record GetMyDutiesQuery : IRequest<ServiceResult<MyDutiesDto>>;
 
-public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, ServiceResult<MyDutiesResponse>>
+public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, ServiceResult<MyDutiesDto>>
 {
     private const int AttendanceWindowDays = 14;
 
@@ -64,7 +64,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         _permissions = permissions;
     }
 
-    public async Task<ServiceResult<MyDutiesResponse>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<MyDutiesDto>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
     {
         var duties = new List<MyDutyDto>();
 
@@ -88,10 +88,9 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
             }
         }
 
-        foreach (var duty in duties)
+        for (var i = 0; i < duties.Count; i++)
         {
-            duty.Key = DutyDismissals.KeyOf(duty);
-            duty.Fingerprint = DutyDismissals.FingerprintOf(duty);
+            duties[i] = duties[i] with { Key = DutyDismissals.KeyOf(duties[i]), Fingerprint = DutyDismissals.FingerprintOf(duties[i]) };
         }
 
         var dismissed = _currentUser.UserId is { } userKey && duties.Count > 0
@@ -99,7 +98,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
             : new Dictionary<string, DismissedDuty>(StringComparer.Ordinal);
         bool Hidden(MyDutyDto duty) => dismissed.TryGetValue(duty.Key, out var dismissal) && DutyDismissals.StillHidden(duty, dismissal);
 
-        return new ServiceResult<MyDutiesResponse>(ResultType.Success, new MyDutiesResponse
+        return new ServiceResult<MyDutiesDto>(ResultType.Success, new MyDutiesDto
         {
             Items = duties.Where(duty => !Hidden(duty)).ToList(),
             HiddenCount = duties.Count(Hidden)

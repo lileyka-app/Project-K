@@ -14,7 +14,7 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Events;
 /// Refused on an event they could not see from that kurin's calendar — the one visibility rule for
 /// both. <paramref name="OccurrenceStartUtc"/> is null for a one-off event.
 /// </summary>
-public sealed record SetMyEventResponseCommand(Guid AgendaItemKey, DateTime? OccurrenceStartUtc, AgendaRsvpStatus Status) : IRequest<ServiceResult<object>>;
+public sealed record SetMyEventResponseCommand(Guid AgendaItemKey, DateTime? OccurrenceStartUtc, AgendaRsvpStatus Status) : IRequest<ServiceResult<Unit>>;
 
 public sealed class SetMyEventResponseCommandValidator : AbstractValidator<SetMyEventResponseCommand>
 {
@@ -25,7 +25,7 @@ public sealed class SetMyEventResponseCommandValidator : AbstractValidator<SetMy
     }
 }
 
-public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEventResponseCommand, ServiceResult<object>>
+public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEventResponseCommand, ServiceResult<Unit>>
 {
     private readonly MeAgendaScopes _scopes;
     private readonly IUnitOfWork _unitOfWork;
@@ -40,28 +40,28 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
         _profiles = profiles;
     }
 
-    public async Task<ServiceResult<object>> Handle(SetMyEventResponseCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(SetMyEventResponseCommand request, CancellationToken cancellationToken)
     {
         var item = await _unitOfWork.AgendaItems.GetByKeyWithAssignmentsAsync(request.AgendaItemKey, cancellationToken);
         if (item is null || item.Kind != AgendaItemKind.Event)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, "AGENDA_NOT_FOUND", "There is no such event.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MeErrors.AgendaNotFound, "There is no such event.");
         }
 
         var context = (await _scopes.BuildAsync(cancellationToken)).FirstOrDefault(c => c.Membership.KurinKey == item.KurinKey);
         if (context is null || !AgendaPermissions.IsVisibleTo(item, context.Viewer))
         {
-            return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_NOT_VISIBLE", "You cannot respond to this event.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, MeErrors.AgendaNotVisible, "You cannot respond to this event.");
         }
 
         var zone = await _profiles.ForKurinAsync(item.KurinKey, cancellationToken);
         if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
         {
-            return ServiceResult<object>.Failure(ResultType.BadRequest, "AGENDA_NOT_OCCURRENCE", "The event has no occurrence starting at that time.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, MeErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }
 
         await AgendaRsvpWriter.UpsertAsync(_unitOfWork, item, context.Viewer.ViewerUserKey!.Value, occurrenceKey, request.Status, _time.GetUtcNow().UtcDateTime, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

@@ -1,6 +1,6 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
@@ -13,7 +13,7 @@ public class ProbeLineTests
 {
     private const string New = "upyu-2026";
 
-    private static readonly ProbeSummaryResponse[] Catalog =
+    private static readonly ProbeSummaryDto[] Catalog =
     [
         Probe("probe-1", order: 1),
         Probe("probe-2", order: 2),
@@ -23,7 +23,7 @@ public class ProbeLineTests
         Probe("probe-2-2026", order: 2, edition: New),
     ];
 
-    private static ProbeSummaryResponse Probe(string id, int order, string? edition = null) =>
+    private static ProbeSummaryDto Probe(string id, int order, string? edition = null) =>
         new(id, id, PointsCount: 10, SectionsCount: 2, edition, order, "ua", "approved");
 
     private static string[] Line(string? groupEdition, params (string Id, ProbeProgressStatus Status)[] progress) =>

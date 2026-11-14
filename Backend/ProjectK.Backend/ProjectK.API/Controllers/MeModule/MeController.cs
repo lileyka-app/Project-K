@@ -5,10 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Invitations;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Disable;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Get;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Issue;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Update;
+using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
@@ -17,7 +14,6 @@ using ProjectK.BusinessLogic.Modules.MeModule.Features.Groups;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Dtos.MeModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -101,7 +97,7 @@ public class MeController : ControllerBase
 
     /// <summary>What waits on the person as провід, per kurin where they hold an office, less what they hid, and how many they hid.</summary>
     [HttpGet("duties/board")]
-    [ProducesResponseType(typeof(MyDutiesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MyDutiesDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDutiesBoard()
     {
         var result = await _mediator.Send(new GetMyDutiesQuery());

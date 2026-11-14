@@ -13,6 +13,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 
@@ -191,11 +192,11 @@ public class KraiProfileProviderTests
 
         kurin.HiddenCardFields.Should().Be("""["note"]""");
         result.Data!.Should().Equal(
-            new KurinCardFieldResponse("middleName", "По батькові", false),
-            new KurinCardFieldResponse("address", "Адреса", false),
-            new KurinCardFieldResponse("school", "Школа", false),
-            new KurinCardFieldResponse("parents", "Контакти батьків", false),
-            new KurinCardFieldResponse("note", "Примітка", true));
+            new KurinCardFieldDto("middleName", "По батькові", false),
+            new KurinCardFieldDto("address", "Адреса", false),
+            new KurinCardFieldDto("school", "Школа", false),
+            new KurinCardFieldDto("parents", "Контакти батьків", false),
+            new KurinCardFieldDto("note", "Примітка", true));
 
         // Filed under the kurin itself, so an unscoped admin's change is kept too.
         var entry = journal.Entries.Should().ContainSingle().Subject;

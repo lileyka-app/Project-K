@@ -1,8 +1,8 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.MeModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -41,12 +41,18 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
         var me = await _me.ReadAsync(cancellationToken);
         if (me is null)
         {
-            return new ServiceResult<MyGrowthDto>(ResultType.Forbidden);
+            return MeErrors.NoMember<MyGrowthDto>();
         }
 
         if (!me.HasYouthProgram)
         {
-            return new ServiceResult<MyGrowthDto>(ResultType.Success, new MyGrowthDto { MemberKey = me.Person.MemberKey });
+            return new ServiceResult<MyGrowthDto>(ResultType.Success, new MyGrowthDto
+            {
+                MemberKey = me.Person.MemberKey,
+                HasYouthProgram = false,
+                Probe = null,
+                Badges = new MyBadgesDto { OnReview = [], InWork = [], Confirmed = [], ConfirmedCount = 0 }
+            });
         }
 
         var memberKey = me.Person.MemberKey;

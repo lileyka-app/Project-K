@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.AuditModule;
@@ -10,6 +9,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -43,7 +43,7 @@ public class GetKurinJournalQueryTests
             .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, _access.KurinKey, _access.GroupKey, "Марта", "Впорядниця", "m@example.com", null));
     }
 
-    private Task<ServiceResult<Modules.AuditModule.Models.KurinJournalPageResponse>> ReadAsync(
+    private Task<ServiceResult<ProjectK.Common.Models.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(
         ICurrentUserContext user,
         GetKurinJournalQuery? query = null)
     {
@@ -150,7 +150,7 @@ public class GetKurinJournalQueryTests
     public async Task FoldedProbeHistory_ReadsAsTheCatalogueTitle_WhileOtherLabelsStay()
     {
         _probes.Setup(x => x.GetGroupedProbeById("probe-1"))
-            .Returns(new GroupedProbeResponse("probe-1", "Перша проба", 0, 0, []));
+            .Returns(new GroupedProbeDto("probe-1", "Перша проба", 0, 0, []));
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [

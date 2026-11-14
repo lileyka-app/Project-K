@@ -22,7 +22,7 @@ public sealed class GetAwardImageQueryHandler : IRequestHandler<GetAwardImageQue
     {
         var image = await _images.GetAwardImageAsync(request.Level, request.Colored, cancellationToken);
         return image is null
-            ? ServiceResult<CatalogImage>.Failure(ResultType.NotFound, "AwardImageNotFound", "No award image exists for this level.")
+            ? ServiceResult<CatalogImage>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.AwardImageNotFound, "No award image exists for this level.")
             : new ServiceResult<CatalogImage>(ResultType.Success, image);
     }
 }

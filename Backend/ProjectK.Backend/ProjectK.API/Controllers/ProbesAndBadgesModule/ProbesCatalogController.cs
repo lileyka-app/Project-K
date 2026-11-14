@@ -1,11 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
@@ -28,7 +27,7 @@ public class ProbesCatalogController : ControllerBase
     /// Lists probe definitions.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<ProbeSummaryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<ProbeSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
     {
         var response = await _mediator.Send(new GetProbesQuery());
@@ -39,7 +38,7 @@ public class ProbesCatalogController : ControllerBase
     /// Returns one probe with its points grouped as they are presented in the book.
     /// </summary>
     [HttpGet("{probeId}/grouped")]
-    [ProducesResponseType(typeof(GroupedProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupedProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetGroupedById(string probeId)
     {

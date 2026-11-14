@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
@@ -17,7 +18,7 @@ public sealed class ProbesCatalogService : IProbesCatalogService
         _cache = cache;
     }
 
-    public IReadOnlyList<ProbeSummaryResponse> GetProbes()
+    public IReadOnlyList<ProbeSummaryDto> GetProbes()
     {
         // Keyed by the catalogue's version, so a new edition shows up with the fetch that brought it.
         return _cache.GetOrCreate($"catalog:probes:list:{_probesCatalog.Version}", entry =>
@@ -25,16 +26,16 @@ public sealed class ProbesCatalogService : IProbesCatalogService
             entry.AbsoluteExpirationRelativeToNow = CatalogCacheTtl;
             return _probesCatalog
                 .GetAll()
-                .Select(ProbeSummaryResponse.FromProbe)
+                .Select(CatalogMapping.ToSummaryDto)
                 .ToList();
         })!;
     }
 
-    public GroupedProbeResponse? GetGroupedProbeById(string probeId)
+    public GroupedProbeDto? GetGroupedProbeById(string probeId)
     {
         var cacheKey = $"catalog:probes:grouped:{_probesCatalog.Version}:{probeId}";
 
-        if (_cache.TryGetValue(cacheKey, out GroupedProbeResponse? cachedProbe))
+        if (_cache.TryGetValue(cacheKey, out GroupedProbeDto? cachedProbe))
         {
             return cachedProbe;
         }
@@ -45,7 +46,7 @@ public sealed class ProbesCatalogService : IProbesCatalogService
             return null;
         }
 
-        var response = GroupedProbeResponse.FromProbe(probe);
+        var response = CatalogMapping.ToGroupedDto(probe);
         _cache.Set(cacheKey, response, CatalogCacheTtl);
 
         return response;

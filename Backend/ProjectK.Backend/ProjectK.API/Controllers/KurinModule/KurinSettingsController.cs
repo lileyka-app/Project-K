@@ -12,6 +12,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.CardSharing;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -40,7 +41,7 @@ public class KurinSettingsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("card-fields")]
     [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCardFields(Guid kurinKey)
     {
@@ -52,7 +53,7 @@ public class KurinSettingsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("card-fields")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetCardFields(Guid kurinKey, [FromBody] SetKurinCardFieldsRequest body)
     {

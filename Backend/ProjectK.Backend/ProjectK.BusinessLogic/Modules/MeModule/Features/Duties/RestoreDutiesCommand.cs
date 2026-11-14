@@ -7,9 +7,9 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 
 /// <summary>Brings hidden duties back to the person's «Справи»: the one under <see cref="Key"/>, or every one when it is null.</summary>
-public sealed record RestoreDutiesCommand(string? Key) : IRequest<ServiceResult<object>>;
+public sealed record RestoreDutiesCommand(string? Key) : IRequest<ServiceResult<Unit>>;
 
-public sealed class RestoreDutiesCommandHandler : IRequestHandler<RestoreDutiesCommand, ServiceResult<object>>
+public sealed class RestoreDutiesCommandHandler : IRequestHandler<RestoreDutiesCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
@@ -20,11 +20,11 @@ public sealed class RestoreDutiesCommandHandler : IRequestHandler<RestoreDutiesC
         _currentUser = currentUser;
     }
 
-    public async Task<ServiceResult<object>> Handle(RestoreDutiesCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(RestoreDutiesCommand request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserId is not { } userKey || userKey == Guid.Empty)
         {
-            return ServiceResult<object>.Failure(ResultType.Unauthorized, "NotSignedIn", "Not signed in.");
+            return MeErrors.SignInRequired<Unit>();
         }
 
         var key = string.IsNullOrWhiteSpace(request.Key) ? null : request.Key;
@@ -34,6 +34,6 @@ public sealed class RestoreDutiesCommandHandler : IRequestHandler<RestoreDutiesC
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

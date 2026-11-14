@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;

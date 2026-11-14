@@ -1,8 +1,9 @@
-using ProjectK.BusinessLogic.Modules.KraiModule.Models;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
@@ -35,27 +36,27 @@ public sealed class KraiProfileEditor
         }
     }
 
-    public async Task<ServiceResult<KraiProfileEditorResponse>> SaveAsync(
+    public async Task<ServiceResult<KraiProfileEditorDto>> SaveAsync(
         string kraiCode, int baseRevision, KraiProfileDocument document, string? note, CancellationToken cancellationToken)
     {
         var code = kraiCode.Trim().ToLowerInvariant();
         var krai = await _unitOfWork.Krais.GetAsync(code, cancellationToken);
         if (krai is null)
         {
-            return ServiceResult<KraiProfileEditorResponse>.Failure(ResultType.NotFound, "KraiNotFound", "Krai not found.");
+            return KraiErrors.NotFound<KraiProfileEditorDto>();
         }
 
         var normalized = KraiProfileJson.Normalize(document);
         var errors = KraiProfileJson.Validate(normalized);
         if (errors.Count > 0)
         {
-            return ServiceResult<KraiProfileEditorResponse>.Failure(ResultType.BadRequest, "InvalidProfile", string.Join(" ", errors));
+            return ServiceResult<KraiProfileEditorDto>.Failure(ResultType.BadRequest, KraiErrors.InvalidProfile, string.Join(" ", errors));
         }
 
         var json = KraiProfileJson.Serialize(normalized);
         if (json.Length > KraiProfileJson.MaxLength)
         {
-            return ServiceResult<KraiProfileEditorResponse>.Failure(ResultType.BadRequest, "InvalidProfile", "Профіль завеликий.");
+            return ServiceResult<KraiProfileEditorDto>.Failure(ResultType.BadRequest, KraiErrors.ProfileTooLarge, "The profile is too large.");
         }
 
         // Two admins editing at once: the second save would silently undo the first one.
@@ -63,7 +64,7 @@ public sealed class KraiProfileEditor
         var current = latest?.Revision ?? 0;
         if (baseRevision != current)
         {
-            return ServiceResult<KraiProfileEditorResponse>.Failure(ResultType.Conflict, "ProfileChanged", "Профіль змінили, поки ти його редагував. Онови сторінку.");
+            return ServiceResult<KraiProfileEditorDto>.Failure(ResultType.Conflict, KraiErrors.ProfileChanged, "The profile was saved by someone else since this edit began; reload it.");
         }
 
         var trimmedNote = note?.Trim();
@@ -81,17 +82,11 @@ public sealed class KraiProfileEditor
 
         if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0)
         {
-            return new ServiceResult<KraiProfileEditorResponse>(ResultType.InternalServerError);
+            return ServiceResult<KraiProfileEditorDto>.Failure(ResultType.InternalServerError, KraiErrors.NotSaved, "The profile was not saved.");
         }
 
         _cache.Invalidate(BackendCachePolicies.KraiProfileReads);
 
-        return new ServiceResult<KraiProfileEditorResponse>(ResultType.Success, new KraiProfileEditorResponse
-        {
-            KraiCode = krai.Code,
-            KraiName = krai.Name,
-            Revision = revision.Revision,
-            Document = normalized
-        });
+        return new ServiceResult<KraiProfileEditorDto>(ResultType.Success, krai.ToEditorDto(revision.Revision, normalized));
     }
 }

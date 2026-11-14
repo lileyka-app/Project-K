@@ -5,7 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Abilities;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Assign;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberWarning.Cancel;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -297,7 +297,7 @@ public class KurinPolicyEnforcementTests
             Dues: false));
     }
 
-    private async Task<ServiceResult<IEnumerable<ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models.BadgeProgressResponse>>> QueueAsync(ICurrentUserContext actor)
+    private async Task<ServiceResult<IEnumerable<ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.BadgeProgressDto>>> QueueAsync(ICurrentUserContext actor)
     {
         var inGroup = Guid.NewGuid();
         var inOtherGroup = Guid.NewGuid();

@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -143,6 +143,6 @@ public class PushSubscriptionHandlersTests
         result.IsValid.Should().Be(valid);
     }
 
-    private Task<ProjectK.Common.Models.Records.ServiceResult<bool>> Subscribe(SubscribeToPushCommand command) =>
+    private Task<ProjectK.Common.Models.Records.ServiceResult<MediatR.Unit>> Subscribe(SubscribeToPushCommand command) =>
         new SubscribeToPushCommandHandler(_unitOfWork.Object, _currentUser.Object, On).Handle(command, CancellationToken.None);
 }

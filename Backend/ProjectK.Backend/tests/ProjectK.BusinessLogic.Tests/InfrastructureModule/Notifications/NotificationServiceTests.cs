@@ -1,7 +1,6 @@
-using AutoMapper;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
+using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -15,7 +14,6 @@ public class NotificationServiceTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IAppNotificationRepository> _notificationRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
-    private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IPushQueue> _pushQueueMock;
     private readonly NotificationService _service;
 
@@ -26,25 +24,15 @@ public class NotificationServiceTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _notificationRepositoryMock = new Mock<IAppNotificationRepository>();
         _currentUserContextMock = new Mock<ICurrentUserContext>();
-        _mapperMock = new Mock<IMapper>();
         _pushQueueMock = new Mock<IPushQueue>();
 
         _unitOfWorkMock.SetupGet(x => x.AppNotifications).Returns(_notificationRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(_currentUserKey);
 
-        _mapperMock
-            .Setup(x => x.Map<AppNotificationDto>(It.IsAny<AppNotification>()))
-            .Returns((AppNotification source) => ToDto(source));
-
-        _mapperMock
-            .Setup(x => x.Map<IReadOnlyList<AppNotificationDto>>(It.IsAny<IReadOnlyList<AppNotification>>()))
-            .Returns((IReadOnlyList<AppNotification> source) => source.Select(ToDto).ToList());
-
         _service = new NotificationService(
             _unitOfWorkMock.Object,
             _currentUserContextMock.Object,
-            _mapperMock.Object,
             _pushQueueMock.Object);
     }
 
@@ -272,27 +260,5 @@ public class NotificationServiceTests
         var result = await _service.MarkAllAsReadAsync();
 
         result.Should().Be(3);
-    }
-
-    private static AppNotificationDto ToDto(AppNotification source)
-    {
-        return new AppNotificationDto
-        {
-            NotificationKey = source.NotificationKey,
-            RecipientUserKey = source.RecipientUserKey,
-            Type = source.Type,
-            Severity = source.Severity,
-            Title = source.Title,
-            Body = source.Body,
-            EntityType = source.EntityType,
-            EntityKey = source.EntityKey,
-            Route = source.Route,
-            PayloadJson = source.PayloadJson,
-            CreatedAtUtc = source.CreatedAtUtc,
-            ReadAtUtc = source.ReadAtUtc,
-            ActorUserKey = source.ActorUserKey,
-            DeduplicationKey = source.DeduplicationKey,
-            ExpiresAtUtc = source.ExpiresAtUtc
-        };
     }
 }

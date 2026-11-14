@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KraiModule.Features.Manage;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;

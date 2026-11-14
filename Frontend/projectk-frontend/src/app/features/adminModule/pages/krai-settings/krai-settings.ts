@@ -14,7 +14,7 @@ import { BadgesCatalogService } from '../../../kurinModule/services/probes-and-b
 import { KraiDto } from '../../../kurinModule/models/krai.dto';
 import { BadgeCatalogItemDto } from '../../../kurinModule/models/probes-and-badges/badge-catalog-item.dto';
 import { KraiProfileService } from '../../services/krai-profile-service/krai-profile.service';
-import { KraiCardFieldsDocument, KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
+import { KRAI_ERROR_TEXT, KraiCardFieldsDocument, KraiProfileDocument, KraiProfileEditorDto, KraiProfileRevisionDto } from '../../models/krai-profile.dto';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { KraiCardFieldsComponent, sameCardFields } from './krai-card-fields/krai-card-fields';
 import { KraiConcessionsComponent } from './krai-concessions/krai-concessions';
@@ -453,11 +453,8 @@ function sameSet(left: readonly string[], right: readonly string[]): boolean {
   return a.size === b.size && [...a].every(value => b.has(value));
 }
 
-/** Сервер пояснює, що не так із профілем (400) чи що його змінили (409), українською. */
+/** Що сказати людині за кодом помилки краю чи профілю; невідомий код — `null`. */
 function serverMessage(error: unknown): string | null {
-  if (error instanceof HttpErrorResponse && (error.status === 400 || error.status === 409)) {
-    const message = (error.error as { message?: unknown } | null)?.message;
-    return typeof message === 'string' && message ? message : null;
-  }
-  return null;
+  const code = error instanceof HttpErrorResponse ? (error.error as { error?: unknown } | null)?.error : null;
+  return typeof code === 'string' ? KRAI_ERROR_TEXT[code] ?? null : null;
 }
