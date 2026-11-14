@@ -8,7 +8,6 @@ using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
-using ProjectK.Common.Models.Dtos.KraiModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.AuthModule;

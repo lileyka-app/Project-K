@@ -1,4 +1,4 @@
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.Common.Models.Records;
 

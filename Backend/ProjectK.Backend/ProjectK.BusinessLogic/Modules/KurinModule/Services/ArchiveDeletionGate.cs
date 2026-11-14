@@ -1,5 +1,5 @@
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;

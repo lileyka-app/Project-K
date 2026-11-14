@@ -1,3 +1,5 @@
+using ProjectK.Common.Entities.Shared;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -39,12 +41,4 @@ public class KurinBranchRequest : Entity
         .. UspNumber is int usp ? [new KurinNumbering(KurinBranch.USP, usp)] : Array.Empty<KurinNumbering>(),
         .. UpsNumber is int ups ? [new KurinNumbering(KurinBranch.UPS, ups)] : Array.Empty<KurinNumbering>()
     ];
-}
-
-/// <summary>Stored as a number: append new members at the end.</summary>
-public enum KurinBranchRequestStatus
-{
-    Pending = 0,
-    Approved = 1,
-    Rejected = 2
 }

@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;

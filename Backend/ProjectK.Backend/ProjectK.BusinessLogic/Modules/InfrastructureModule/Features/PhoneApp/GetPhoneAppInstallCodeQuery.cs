@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using MediatR;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

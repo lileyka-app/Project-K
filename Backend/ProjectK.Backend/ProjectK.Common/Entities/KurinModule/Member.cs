@@ -1,6 +1,7 @@
-using ProjectK.Common.Models.Members;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.Shared;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Members;
 
 namespace ProjectK.Common.Entities.KurinModule;
 

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Configuration;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Contracts.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 

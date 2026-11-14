@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Services.Events;
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Models.Events;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Events;

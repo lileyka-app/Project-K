@@ -1,7 +1,7 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Phones;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

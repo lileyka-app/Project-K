@@ -2,11 +2,11 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
@@ -23,7 +23,7 @@ public class UpsertLeadershipHandlerTests
     private readonly Mock<IMemberDirectory> _membersMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
     private readonly Mock<IAccessChangeSignal> _accessChangesMock = new();
-    private readonly Mock<ProjectK.Common.Interfaces.Modules.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
+    private readonly Mock<ProjectK.Common.Contracts.InfrastructureModule.ICurrentUserContext> _currentUserContextMock = new();
     private readonly UpsertLeadershipCommandHandler _handler;
 
     public UpsertLeadershipHandlerTests()

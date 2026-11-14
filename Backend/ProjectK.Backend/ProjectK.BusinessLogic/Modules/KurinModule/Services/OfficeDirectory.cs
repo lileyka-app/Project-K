@@ -1,5 +1,5 @@
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Models.Authorization;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;

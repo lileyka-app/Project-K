@@ -3,9 +3,9 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
@@ -23,7 +23,7 @@ public class SetKurinDuesRateTests
     private readonly List<KurinDuesRate> _rates = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
     private readonly Mock<IDuesKurinShape> _shape = new();
-    private readonly Mock<ProjectK.Common.Interfaces.IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<ProjectK.Common.Contracts.Shared.IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly Mock<IDuesAccrual> _accrual = new();
     private string _upstream = KraiDues.Stanytsia;
@@ -186,7 +186,7 @@ public class SetKurinDuesRateTests
         var tag = Guid.NewGuid();
         _shape.Setup(s => s.IsSeniorAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _shape.Setup(s => s.TagsOnAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(tagsOn);
-        var tags = new Mock<ProjectK.Common.Interfaces.Modules.KurinModule.IKurinTagRepository>();
+        var tags = new Mock<ProjectK.Common.Contracts.KurinModule.IKurinTagRepository>();
         tags.Setup(t => t.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new ProjectK.Common.Entities.KurinModule.Tags.KurinTag { KurinTagKey = tag, KurinKey = Kurin, Name = "УСП" }]);
         _unitOfWork.SetupGet(u => u.KurinTags).Returns(tags.Object);

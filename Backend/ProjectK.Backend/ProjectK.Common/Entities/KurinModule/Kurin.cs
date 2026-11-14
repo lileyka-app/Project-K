@@ -1,6 +1,7 @@
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
+using ProjectK.Common.Entities.Shared;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

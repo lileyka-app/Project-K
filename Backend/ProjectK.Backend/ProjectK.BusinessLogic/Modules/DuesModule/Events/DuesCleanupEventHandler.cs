@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Models.Events;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Events;

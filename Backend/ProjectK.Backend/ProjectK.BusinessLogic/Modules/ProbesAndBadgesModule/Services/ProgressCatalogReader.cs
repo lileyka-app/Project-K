@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;

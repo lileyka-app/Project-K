@@ -1,4 +1,4 @@
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.Common.Models.Dtos.KurinModule;

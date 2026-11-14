@@ -1,6 +1,6 @@
 using System.Text.Json;
+using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 

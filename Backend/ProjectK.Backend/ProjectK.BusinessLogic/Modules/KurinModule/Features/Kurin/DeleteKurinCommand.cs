@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.Spreadsheets;
 

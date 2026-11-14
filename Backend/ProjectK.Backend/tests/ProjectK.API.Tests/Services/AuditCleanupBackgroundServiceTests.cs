@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.InfrastructureModule;
+using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;

@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;

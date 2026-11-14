@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.Shared;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 

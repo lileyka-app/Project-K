@@ -3,8 +3,9 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Enums;
 

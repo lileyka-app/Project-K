@@ -1,7 +1,8 @@
 using MediatR;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 

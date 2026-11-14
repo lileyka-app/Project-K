@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Interfaces.Modules.AuditModule;
 using ProjectK.Common.Models.Records;
 using ProjectK.Infrastructure.DbContexts;
 

@@ -1,5 +1,5 @@
 using System.Globalization;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Models;
 using ProjectK.Common.Models.Reports;
 using QuestPDF.Fluent;

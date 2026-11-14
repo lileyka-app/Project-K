@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 using FluentValidation;
 using MediatR;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

@@ -2,9 +2,9 @@ using FluentValidation.TestHelper;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Tests.AuthModule.HandlerTests.Onboarding;

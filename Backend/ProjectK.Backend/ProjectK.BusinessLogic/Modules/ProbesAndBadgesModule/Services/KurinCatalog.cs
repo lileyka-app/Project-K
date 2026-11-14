@@ -1,5 +1,5 @@
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Catalog;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;

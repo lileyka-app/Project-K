@@ -1,16 +1,17 @@
 using Microsoft.Extensions.Configuration;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models;
+using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Roster;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 

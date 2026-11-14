@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Enums.AuthModule;
 
 namespace ProjectK.Common.Entities.AuthModule;
 
@@ -15,13 +16,4 @@ public class AppUser : IdentityUser<Guid>
     /// </summary>
     public Guid? ActiveKurinKey { get; set; }
     public OnboardingStatus OnboardingStatus { get; set; }
-}
-
-public enum OnboardingStatus
-{
-    RegisteredInactive = 0,
-    PendingActivation = 1,
-    Active = 2,
-    Suspended = 3,
-    Archived = 4
 }

@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 

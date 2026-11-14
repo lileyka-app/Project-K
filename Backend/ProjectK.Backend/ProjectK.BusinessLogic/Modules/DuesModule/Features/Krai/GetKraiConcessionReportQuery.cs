@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Models.Dtos.DuesModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;

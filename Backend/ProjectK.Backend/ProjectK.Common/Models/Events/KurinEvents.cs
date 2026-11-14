@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.Shared;
 
 namespace ProjectK.Common.Models.Events;
 

@@ -15,12 +15,12 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Hosting;
 using ProjectK.API.Filters;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
 
 namespace ProjectK.API.Tests.Security;
 

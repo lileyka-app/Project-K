@@ -1,6 +1,6 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Access;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

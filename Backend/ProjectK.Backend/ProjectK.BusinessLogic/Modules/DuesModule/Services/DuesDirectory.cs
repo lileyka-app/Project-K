@@ -1,5 +1,5 @@
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Records;
 

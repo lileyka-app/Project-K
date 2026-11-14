@@ -1,7 +1,7 @@
-using ProjectK.Common.Models.Members;
-using System.ComponentModel.DataAnnotations;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Members;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProjectK.API.Models.Requests;
 

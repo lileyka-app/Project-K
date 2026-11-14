@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Models.Reports;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;

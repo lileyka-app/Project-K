@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PhoneApp;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Settings;
 

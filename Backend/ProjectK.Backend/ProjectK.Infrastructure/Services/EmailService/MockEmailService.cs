@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.EmailService;
 

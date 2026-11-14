@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.Shared;
 
 namespace ProjectK.BusinessLogic.Services.Events;
 

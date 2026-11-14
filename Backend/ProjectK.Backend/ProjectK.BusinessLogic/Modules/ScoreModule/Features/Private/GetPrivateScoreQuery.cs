@@ -1,7 +1,7 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule;
 using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Models.Enums;

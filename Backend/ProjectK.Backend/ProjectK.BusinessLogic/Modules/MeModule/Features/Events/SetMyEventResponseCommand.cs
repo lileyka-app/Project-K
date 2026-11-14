@@ -2,8 +2,8 @@ using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 

@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;

@@ -1,5 +1,5 @@
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 
 namespace ProjectK.API.Middleware;
 

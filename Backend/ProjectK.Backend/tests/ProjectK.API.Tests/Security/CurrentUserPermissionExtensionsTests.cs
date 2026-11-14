@@ -1,6 +1,6 @@
 using Moq;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;

@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Dtos.UsersModule;
 using ProjectK.Common.Models.Enums;
