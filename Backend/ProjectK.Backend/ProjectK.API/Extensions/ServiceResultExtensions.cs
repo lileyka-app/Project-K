@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -43,12 +44,16 @@ public static class ServiceResultExtensions
             return ServiceResult<object>.Failure(result.Type, code, message).ToActionResult(controller);
         }
 
+        // A result with no data is ServiceResult<Unit>; it answers exactly as the old <object> null did
+        // (204 No Content), so moving a handler to Unit never changes what the client receives.
+        object? data = result.Data is Unit ? null : result.Data;
+
         return result.Type switch
         {
-            ResultType.Success => controller.Ok(result.Data),
+            ResultType.Success => controller.Ok(data),
             ResultType.Created => result.CreatedAtActionName != null
-                ? controller.CreatedAtAction(result.CreatedAtActionName, result.CreatedAtRouteValues, result.Data)
-                : controller.Created(string.Empty, result.Data),
+                ? controller.CreatedAtAction(result.CreatedAtActionName, result.CreatedAtRouteValues, data)
+                : controller.Created(string.Empty, data),
             ResultType.BadRequest => controller.BadRequest(result.Data),
             ResultType.NotFound => controller.NotFound(result.Data),
             ResultType.Conflict => controller.Conflict(new object[] { "The entity that was attempted to be created already exists.", result.Data! }),
