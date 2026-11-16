@@ -7,22 +7,17 @@ using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
-using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
-using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Common.Rules.Shared;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
-using MembershipEntity = ProjectK.Common.Entities.MemberModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 
@@ -175,28 +170,10 @@ public class UpsertMemberProfileCommandHandler
             }
         }
 
-        // Every write stores the phone as +380501234567. One the member already has is let through
-        // as it is, so a number older than the rule does not block an edit of something else.
-        if (existing is null || !string.Equals(request.PhoneNumber, existing.PhoneNumber, StringComparison.Ordinal))
-        {
-            var phone = PhoneNumberRules.Normalize(request.PhoneNumber);
-            if (phone is null)
-            {
-                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumberRules.ErrorCode, PhoneNumberRules.InvalidMessage);
-            }
-
-            request.PhoneNumber = phone;
-        }
-
-        // A parent's phone is stored in the same shape; an empty one stays empty.
-        if (!TryNormalizeParentPhone(request.MotherPhone, existing?.MotherPhone, out var motherPhone)
-            || !TryNormalizeParentPhone(request.FatherPhone, existing?.FatherPhone, out var fatherPhone))
+        if (!MemberProfileWriteRules.TryNormalizePhones(request, existing))
         {
             return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.BadRequest, PhoneNumberRules.ErrorCode, PhoneNumberRules.InvalidMessage);
         }
-
-        request.MotherPhone = motherPhone;
-        request.FatherPhone = fatherPhone;
 
         var wasProfileVerifiedCurrent =
             existing?.ProfileVerificationStatus == MemberProfileVerificationStatus.VerifiedCurrent;
@@ -217,14 +194,14 @@ public class UpsertMemberProfileCommandHandler
             // what made that visible: every imported юнак came in with a blank ступінь.
             if (CanEditRestrictedFields())
             {
-                UpdatePlastLevelHistory(
+                PlastLevelHistoryRules.Apply(
                     existing.MemberKey,
                     kurinKey,
                     request.PlastLevelHistories,
                     existing.PlastLevelHistory);
             }
 
-            existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
+            existing.LatestPlastLevel = PlastLevelHistoryRules.LatestOf(existing.PlastLevelHistory);
 
             _unitOfWork.Members.Create(existing, cancellationToken);
             isCreated = true;
@@ -237,14 +214,14 @@ public class UpsertMemberProfileCommandHandler
             // Refused before anything changes: skipped quietly, the save answered 200 and still
             // marked the profile stale over ступені it never wrote.
             if (CanEditPlastLevels(existing)
-                && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory)
+                && PlastLevelHistoryRules.Differs(request.PlastLevelHistories, existing.PlastLevelHistory)
                 && await _access.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, existing.MemberKey, ownerMayChange: true, cancellationToken) is { IsAllowed: false } senior)
             {
                 return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.Forbidden, MemberErrors.SeniorYouthRecord, senior.Reason);
             }
 
             var shouldMarkProfileStale = wasProfileVerifiedCurrent
-                && (HasSignificantProfileChange(request, existing, current, kurinKey, groupKey)
+                && (MemberProfileWriteRules.IsSignificantChange(request, existing, current, kurinKey, groupKey, plastLevelsCount: CanEditPlastLevels(existing))
                     || !string.Equals(existing.CardExtras, cardExtras, StringComparison.Ordinal));
 
             var preserveLinkedUserEmail = false;
@@ -303,14 +280,17 @@ public class UpsertMemberProfileCommandHandler
 
             if (CanEditPlastLevels(existing))
             {
-                UpdatePlastLevelHistory(existing.MemberKey, kurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
-                existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
+                PlastLevelHistoryRules.Apply(existing.MemberKey, kurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
+                existing.LatestPlastLevel = PlastLevelHistoryRules.LatestOf(existing.PlastLevelHistory);
             }
 
             _unitOfWork.Members.Update(existing, cancellationToken);
         }
 
-        await RecordAsync(existing, before, kurinKey, cancellationToken);
+        if (MemberTrail.RecordOf(existing, before, kurinKey, _currentUserContext.KurinKey) is { } record)
+        {
+            await _audit.RecordAsync(record, cancellationToken);
+        }
 
         // Where the person stands is the kurin's to record, and it is the only place it is
         // written. The member module says who was put where; the kurin opens the membership in
@@ -340,38 +320,6 @@ public class UpsertMemberProfileCommandHandler
                 groupKey));
     }
 
-    /// <summary>
-    /// Records a new card with what it was made with, or an edit with what it changed; an edit that
-    /// changed nothing is not recorded. A new person is not in any kurin yet, so the entry is filed
-    /// under the one they are being placed in; an edit goes to the kurin the request acts in, or to
-    /// where the person stands when it acts in none.
-    /// </summary>
-    private async Task RecordAsync(
-        MemberEntity member,
-        (string Field, object? Value)[]? before,
-        Guid kurinKey,
-        CancellationToken cancellationToken)
-    {
-        var changes = before is null
-            ? MemberTrail.Added(member)
-            : MemberTrail.Between(before, MemberTrail.Of(member));
-        if (changes.Count == 0)
-        {
-            return;
-        }
-
-        await _audit.RecordAsync(
-            new AuditRecord(
-                AuditArea.Member,
-                before is null ? AuditActionNames.Member.Added : AuditActionNames.Member.Changed,
-                member.MemberKey,
-                MemberTrail.LabelOf(member),
-                member.MemberKey,
-                changes,
-                KurinKey: before is null ? kurinKey : _currentUserContext.KurinKey ?? kurinKey),
-            cancellationToken);
-    }
-
     private bool CanEditRestrictedFields() => _currentUserContext.IsLeadership();
 
     private bool IsAdmin() => _currentUserContext.IsAdmin();
@@ -384,124 +332,4 @@ public class UpsertMemberProfileCommandHandler
         member.UserKey.HasValue
         && _currentUserContext.UserId.HasValue
         && member.UserKey.Value == _currentUserContext.UserId.Value;
-
-    private static PlastLevel? LatestLevelOf(ICollection<PlastLevelHistory> history) =>
-        history.OrderByDescending(entry => entry.DateAchieved).FirstOrDefault()?.PlastLevel;
-
-    private static void UpdatePlastLevelHistory(
-        Guid memberKey,
-        Guid? kurinKey,
-        ICollection<PlastLevelHistoryDto> plastLevelHistoryDto,
-        ICollection<PlastLevelHistory> plastLevelHistory)
-    {
-        if (plastLevelHistoryDto == null || !plastLevelHistoryDto.Any())
-        {
-            plastLevelHistory.Clear();
-            return;
-        }
-
-        var dtoDict = plastLevelHistoryDto
-            .Where(dto => dto.PlastLevelHistoryKey.HasValue && dto.PlastLevelHistoryKey != Guid.Empty)
-            .ToDictionary(dto => dto.PlastLevelHistoryKey!.Value);
-
-        var entitiesToDelete = plastLevelHistory
-            .Where(e => !dtoDict.ContainsKey(e.PlastLevelHistoryKey))
-            .ToList();
-
-        foreach (var entity in entitiesToDelete)
-        {
-            plastLevelHistory.Remove(entity);
-        }
-
-        foreach (var dto in plastLevelHistoryDto)
-        {
-            if (!dto.PlastLevelHistoryKey.HasValue || dto.PlastLevelHistoryKey == Guid.Empty)
-            {
-                plastLevelHistory.Add(new PlastLevelHistory
-                {
-                    MemberKey = memberKey,
-                    KurinKey = kurinKey,
-                    PlastLevel = dto.PlastLevel,
-                    DateAchieved = dto.DateAchieved,
-                    IsPlastunka = dto.IsPlastunka
-                });
-            }
-            else
-            {
-                var existingHistory = plastLevelHistory
-                    .FirstOrDefault(e => e.PlastLevelHistoryKey == dto.PlastLevelHistoryKey);
-
-                if (existingHistory != null)
-                {
-                    existingHistory.PlastLevel = dto.PlastLevel;
-                    existingHistory.DateAchieved = dto.DateAchieved;
-                    existingHistory.IsPlastunka = dto.IsPlastunka;
-                }
-            }
-        }
-    }
-
-    private static bool TryNormalizeParentPhone(string? requested, string? stored, out string? phone)
-    {
-        phone = requested;
-        if (string.IsNullOrWhiteSpace(requested) || string.Equals(requested, stored, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        phone = PhoneNumberRules.Normalize(requested);
-        return phone is not null;
-    }
-
-    private bool HasSignificantProfileChange(
-        UpsertMemberProfileCommand request,
-        MemberEntity existing,
-        MembershipEntity? current,
-        Guid targetKurinKey,
-        Guid? targetGroupKey)
-    {
-        return !string.Equals(existing.FirstName, request.FirstName, StringComparison.Ordinal)
-               || !string.Equals(existing.MiddleName ?? string.Empty, request.MiddleName ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.LastName, request.LastName, StringComparison.Ordinal)
-               || !string.Equals(existing.Email, request.Email, StringComparison.OrdinalIgnoreCase)
-               || !string.Equals(existing.PhoneNumber, request.PhoneNumber, StringComparison.Ordinal)
-               || existing.DateOfBirth != request.DateOfBirth
-               || !string.Equals(existing.Address ?? string.Empty, request.Address ?? string.Empty, StringComparison.Ordinal)
-               || !string.Equals(existing.School ?? string.Empty, request.School ?? string.Empty, StringComparison.Ordinal)
-               || existing.ParentsDiffer(request)
-               || current?.GroupKey != targetGroupKey
-               || current?.KurinKey != targetKurinKey
-               || (CanEditPlastLevels(existing) && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory));
-    }
-
-    private static bool HasPlastLevelHistoryChange(
-        ICollection<PlastLevelHistoryDto> requested,
-        ICollection<PlastLevelHistory> existing)
-    {
-        if (requested.Count != existing.Count)
-        {
-            return true;
-        }
-
-        var existingByKey = existing.ToDictionary(history => history.PlastLevelHistoryKey);
-        foreach (var dto in requested)
-        {
-            if (!dto.PlastLevelHistoryKey.HasValue || dto.PlastLevelHistoryKey == Guid.Empty)
-            {
-                return true;
-            }
-
-            if (!existingByKey.TryGetValue(dto.PlastLevelHistoryKey.Value, out var entity))
-            {
-                return true;
-            }
-
-            if (entity.PlastLevel != dto.PlastLevel || entity.DateAchieved != dto.DateAchieved)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

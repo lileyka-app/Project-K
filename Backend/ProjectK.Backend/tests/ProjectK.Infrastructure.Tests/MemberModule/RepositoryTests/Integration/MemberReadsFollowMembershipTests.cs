@@ -51,7 +51,7 @@ public class MemberReadsFollowMembershipTests
         context.Memberships.Add(Joining(person.MemberKey, kurinKey, onlyGroup));
         await context.SaveChangesAsync();
 
-        var listed = Assert.Single(await uow.Members.GetListItemsByKurinKeyAsync(kurinKey));
+        var listed = Assert.Single(await uow.Members.GetListRowsByKurinKeyAsync(kurinKey));
 
         Assert.Equal(onlyGroup, listed.GroupKey);
         Assert.Equal(kurinKey, listed.KurinKey);
@@ -71,7 +71,7 @@ public class MemberReadsFollowMembershipTests
         context.Memberships.Add(left);
         await context.SaveChangesAsync();
 
-        Assert.Empty(await uow.Members.GetListItemsByKurinKeyAsync(kurinKey));
+        Assert.Empty(await uow.Members.GetListRowsByKurinKeyAsync(kurinKey));
         Assert.Empty(await uow.Members.GetSummariesByKurinKeyAsync(kurinKey));
         Assert.Null(await uow.Members.GetKurinKeyByMemberAsync(person.MemberKey));
     }
@@ -93,8 +93,8 @@ public class MemberReadsFollowMembershipTests
             Joining(person.MemberKey, seniorKurin));
         await context.SaveChangesAsync();
 
-        var inYouth = Assert.Single(await uow.Members.GetListItemsByKurinKeyAsync(youthKurin));
-        var inSenior = Assert.Single(await uow.Members.GetListItemsByKurinKeyAsync(seniorKurin));
+        var inYouth = Assert.Single(await uow.Members.GetListRowsByKurinKeyAsync(youthKurin));
+        var inSenior = Assert.Single(await uow.Members.GetListRowsByKurinKeyAsync(seniorKurin));
 
         Assert.Equal(person.MemberKey, inYouth.MemberKey);
         Assert.Equal(person.MemberKey, inSenior.MemberKey);

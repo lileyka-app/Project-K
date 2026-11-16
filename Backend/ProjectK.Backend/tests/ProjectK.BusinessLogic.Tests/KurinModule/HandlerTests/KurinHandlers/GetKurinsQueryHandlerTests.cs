@@ -3,10 +3,12 @@ using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -18,6 +20,7 @@ public class GetKurinsHandlerTests
     private readonly IBlobReadLinks _links;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
     private readonly GetKurinsQueryHandler _handler;
 
     public GetKurinsHandlerTests()
@@ -29,7 +32,34 @@ public class GetKurinsHandlerTests
 
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-        _handler = new GetKurinsQueryHandler(_unitOfWorkMock.Object, _links, CreateCache());
+        _membershipRepositoryMock
+            .Setup(x => x.CountCurrentInKurinsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, int>());
+        _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
+
+        _handler = new GetKurinsQueryHandler(_unitOfWorkMock.Object, _links, CreateCache(), new MembershipDirectory(_unitOfWorkMock.Object));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportEveryoneWhoBelongsToEachKurinNow_FromOneRead()
+    {
+        var crowded = new Kurin(1) { KurinKey = Guid.NewGuid() };
+        var empty = new Kurin(2) { KurinKey = Guid.NewGuid() };
+        _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Kurin> { crowded, empty });
+        _membershipRepositoryMock
+            .Setup(x => x.CountCurrentInKurinsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, int> { [crowded.KurinKey] = 5 });
+
+        var result = await _handler.Handle(new GetKurinsQuery(), CancellationToken.None);
+
+        result.Data!.Single(kurin => kurin.KurinKey == crowded.KurinKey).CurrentUserCount.Should().Be(5);
+        result.Data!.Single(kurin => kurin.KurinKey == empty.KurinKey).CurrentUserCount.Should().Be(0);
+        _membershipRepositoryMock.Verify(
+            x => x.CountCurrentInKurinsAsync(
+                It.Is<IReadOnlyCollection<Guid>>(keys => keys.Count == 2 && keys.Contains(crowded.KurinKey) && keys.Contains(empty.KurinKey)),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     private static IBackendCache CreateCache() =>

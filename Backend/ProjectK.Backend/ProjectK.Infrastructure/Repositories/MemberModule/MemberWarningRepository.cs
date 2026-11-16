@@ -20,13 +20,6 @@ public class MemberWarningRepository : BaseEntityRepository<MemberWarning>, IMem
             .FirstOrDefaultAsync(x => x.MemberWarningKey == entityKey, cancellationToken);
     }
 
-    public override async Task<IEnumerable<MemberWarning>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return await Context.MemberWarnings
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-    }
-
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.MemberWarnings

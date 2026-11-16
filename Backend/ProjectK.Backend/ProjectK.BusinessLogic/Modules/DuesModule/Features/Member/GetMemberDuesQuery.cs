@@ -72,7 +72,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
             .ToList();
         if (memberships.Count == 0)
         {
-            return new ServiceResult<MemberDuesDto>(ResultType.Success, NoAccount(kurinKey, current, elsewhere));
+            return new ServiceResult<MemberDuesDto>(ResultType.Success, NoAccount(kurinKey, krai, current, elsewhere));
         }
 
         var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
@@ -84,7 +84,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         var accounts = ledger.Accounts().Where(a => mine.Contains(a.MembershipKey)).ToList();
         if (accounts.Count == 0)
         {
-            return new ServiceResult<MemberDuesDto>(ResultType.Success, NoAccount(kurinKey, current, elsewhere));
+            return new ServiceResult<MemberDuesDto>(ResultType.Success, NoAccount(kurinKey, krai, current, elsewhere));
         }
 
         var standing = memberships.FirstOrDefault(m => m.IsCurrent);
@@ -197,15 +197,15 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     }
 
     /// <summary>
-    /// The card of someone never charged here. It names no край, so it carries the defaults it always
-    /// carried rather than the kurin's currency.
+    /// The card of someone never charged here, counted in the kurin's край all the same: the zero
+    /// it shows is in the money the kurin would charge them in.
     /// </summary>
-    private static MemberDuesDto NoAccount(Guid kurinKey, DuesQuarter current, IReadOnlyList<MemberDuesElsewhereDto> elsewhere) => new()
+    private static MemberDuesDto NoAccount(Guid kurinKey, DuesKrai krai, DuesQuarter current, IReadOnlyList<MemberDuesElsewhereDto> elsewhere) => new()
     {
         HasAccount = false,
         KurinKey = kurinKey,
-        Currency = "UAH",
-        NumberLocale = "uk-UA",
+        Currency = krai.Currency,
+        NumberLocale = krai.NumberLocale,
         CurrentQuarter = current.ToDto(),
         Balance = 0,
         OwedToLeave = 0,

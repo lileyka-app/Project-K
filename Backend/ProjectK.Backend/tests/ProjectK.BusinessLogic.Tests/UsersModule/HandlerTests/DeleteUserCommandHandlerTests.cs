@@ -70,7 +70,6 @@ public class DeleteUserCommandHandlerTests
         Assert.Equal(ResultType.Success, result.Type);
         _mentorAssignmentRepositoryMock.Verify(r => r.Delete(It.Is<MentorAssignment>(a => a.MentorUserKey == userId), It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _mentorAssignmentRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Never);
         _userManagerMock.Verify(x => x.DeleteAsync(user), Times.Once);
     }
 

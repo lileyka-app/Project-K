@@ -251,7 +251,6 @@ public class OnboardingBaselineHttpIntegrationTests
             mockWaitlistRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<WaitlistEntry> { dummyWaitlistEntry }.AsEnumerable());
 
             mockMemberRepo.Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((Member?)null);
-            mockMemberRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Member>().AsEnumerable());
             // The person activation opens is read back by account, as the database would answer.
             Member? opened = null;
             mockMemberRepo.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
@@ -262,7 +261,6 @@ public class OnboardingBaselineHttpIntegrationTests
                     : null);
 
             mockInvitationRepo.Setup(r => r.GetByTokenAsync("valid-token-123", It.IsAny<CancellationToken>())).ReturnsAsync(dummyInvitation);
-            mockInvitationRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Invitation> { dummyInvitation }.AsEnumerable());
 
             mockGroupRepo.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Guid key, CancellationToken _) => new Group("Test", Guid.NewGuid()) { GroupKey = key });

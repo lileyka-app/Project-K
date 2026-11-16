@@ -65,11 +65,6 @@ public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgr
             .ToListAsync(cancellationToken);
     }
 
-    public override Task<IEnumerable<ProbePointProgress>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetByMemberAndProbeAsync instead.");
-    }
-
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.ProbePointProgresses

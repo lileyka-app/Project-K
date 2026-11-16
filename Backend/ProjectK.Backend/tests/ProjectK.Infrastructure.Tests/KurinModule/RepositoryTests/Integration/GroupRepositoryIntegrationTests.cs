@@ -148,18 +148,6 @@ public class GroupRepositoryIntegrationTests
         Assert.True(exists);
     }
 
-    [Fact]
-    public async Task GetAllAsync_Parameterless_ShouldThrowNotSupported()
-    {
-        using var context = CreateInMemoryDbContext();
-        var uow = new InfraUnitOfWork(context);
-
-        await Assert.ThrowsAsync<NotSupportedException>(async () =>
-        {
-            await uow.Groups.GetAllAsync();
-        });
-    }
-
     /// <summary>
     /// The sequence <c>DeleteGroupCommandHandler</c> runs, against a real change tracker.
     /// <para>

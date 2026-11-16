@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.AuthModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.MemberModule;
@@ -163,30 +162,15 @@ public class LeadershipRepository : ILeadershipRepository
                 && (l.KurinKey == kurinKey
                     || (l.GroupKey != null && l.Group!.KurinKey == kurinKey)));
 
-        var held = await (from ms in belongsHere
-                          join history in _context.LeadershipHistories.Where(h => h.EndDate == null)
-                              on ms.MemberKey equals history.MemberKey
-                          join office in officesOfThisKurin
-                              on history.LeadershipKey equals office.LeadershipKey
-                          select new MemberOffice(office.Type, history.Role))
+        return await (from ms in belongsHere
+                      join history in _context.LeadershipHistories.Where(h => h.EndDate == null)
+                          on ms.MemberKey equals history.MemberKey
+                      join office in officesOfThisKurin
+                          on history.LeadershipKey equals office.LeadershipKey
+                      select new MemberOffice(office.Type, history.Role))
             .Distinct()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-
-        var mentorsHere = await _context.MentorAssignments
-            .AnyAsync(
-                assignment => assignment.MentorUserKey == userKey
-                    && assignment.RevokedAtUtc == null
-                    && _context.Groups.Any(group => group.GroupKey == assignment.GroupKey && group.KurinKey == kurinKey),
-                cancellationToken);
-
-        var vykhovnyk = new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-        if (mentorsHere && !held.Contains(vykhovnyk))
-        {
-            held.Add(vykhovnyk);
-        }
-
-        return held;
     }
 
     public async Task<IReadOnlyList<Guid>> GetActiveOfficeMemberKeysAsync(
@@ -218,7 +202,7 @@ public class LeadershipRepository : ILeadershipRepository
                      .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MemberLookupDto>> GetOfficeMembersLookupAsync(
+    public async Task<IReadOnlyList<MemberLookupRow>> GetOfficeHoldersAsync(
         Guid kurinKey,
         LeadershipType type,
         CancellationToken cancellationToken = default)
@@ -236,52 +220,16 @@ public class LeadershipRepository : ILeadershipRepository
                                  .AsNoTracking()
                                  .ToListAsync(cancellationToken);
 
-        var lookup = rows
-            .Select(r => new MemberLookupDto
-            {
-                MemberKey = r.MemberKey,
-                UserKey = r.UserKey,
-                FirstName = r.FirstName,
-                MiddleName = r.MiddleName,
-                LastName = r.LastName,
-                ProfilePhotoBlobName = r.ProfilePhotoBlobName,
-                // The system-role name, not the bare enum: MemberLookupDto.UserRole is read as an
-                // office identity, and MemberRepository fills the same field the same way.
-                UserRole = SystemRoleNames.ForOffice(type, r.Role)
-            })
+        return rows
+            .Select(r => new MemberLookupRow(
+                r.MemberKey,
+                r.UserKey,
+                r.FirstName,
+                r.MiddleName,
+                r.LastName,
+                r.ProfilePhotoBlobName,
+                new MemberOffice(type, r.Role)))
             .ToList();
-
-        // A person closed over a гурток is a впорядник of this КВ whether or not the провід screen
-        // ever seated them: access already reads the assignment that way, and the КВ list has to
-        // show the same person the sidebar does.
-        if (type == LeadershipType.KV)
-        {
-            var seated = lookup.Select(entry => entry.MemberKey).ToHashSet();
-            var mentors = await _context.MentorAssignments
-                .Where(assignment => assignment.RevokedAtUtc == null && _context.Groups.Any(group => group.GroupKey == assignment.GroupKey && group.KurinKey == kurinKey))
-                .Join(_context.Members,
-                      assignment => assignment.MentorUserKey,
-                      member => member.UserKey,
-                      (assignment, member) => new { member.MemberKey, member.UserKey, member.FirstName, member.MiddleName, member.LastName, member.ProfilePhotoBlobName })
-                .Distinct()
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
-
-            lookup.AddRange(mentors
-                .Where(mentor => seated.Add(mentor.MemberKey))
-                .Select(mentor => new MemberLookupDto
-                {
-                    MemberKey = mentor.MemberKey,
-                    UserKey = mentor.UserKey,
-                    FirstName = mentor.FirstName,
-                    MiddleName = mentor.MiddleName,
-                    LastName = mentor.LastName,
-                    ProfilePhotoBlobName = mentor.ProfilePhotoBlobName,
-                    UserRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)
-                }));
-        }
-
-        return lookup;
     }
 
     public async Task<IReadOnlyList<LeadershipRef>> GetLeadershipRefsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)

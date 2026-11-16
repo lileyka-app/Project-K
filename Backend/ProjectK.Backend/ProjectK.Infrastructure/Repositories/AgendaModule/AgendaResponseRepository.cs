@@ -18,9 +18,6 @@ public class AgendaResponseRepository : BaseEntityRepository<AgendaResponse>, IA
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default) =>
         await Context.AgendaResponses.AnyAsync(r => r.AgendaResponseKey == entityKey, cancellationToken);
 
-    public override Task<IEnumerable<AgendaResponse>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException("Use GetForItemAsync instead.");
-
     public async Task<IReadOnlyList<AgendaResponse>> GetForItemAsync(Guid agendaItemKey, DateTime? occurrenceStartUtc, CancellationToken cancellationToken = default) =>
         await Context.AgendaResponses
             .Where(r => r.AgendaItemKey == agendaItemKey && r.OccurrenceStartUtc == occurrenceStartUtc)

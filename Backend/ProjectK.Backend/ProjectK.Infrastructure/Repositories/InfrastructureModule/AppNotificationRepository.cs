@@ -19,14 +19,6 @@ public class AppNotificationRepository : BaseEntityRepository<AppNotification>, 
             .FirstOrDefaultAsync(x => x.NotificationKey == entityKey, cancellationToken);
     }
 
-    public override async Task<IEnumerable<AppNotification>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return await Context.AppNotifications
-            .AsNoTracking()
-            .OrderByDescending(x => x.CreatedAtUtc)
-            .ToListAsync(cancellationToken);
-    }
-
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.AppNotifications

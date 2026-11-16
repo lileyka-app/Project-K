@@ -31,11 +31,6 @@ public class GroupRepository : BaseEntityRepository<Group>, IGroupRepository
         return await Context.Groups.Where(g => g.KurinKey == kurinKey).Include(g => g.Kurin).AsNoTracking().ToListAsync(token);
     }
 
-    public override Task<IEnumerable<Group>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetAllAsync(Guid kurinKey) instead.");
-    }
-
     public override void Update(Group group, CancellationToken cancellationToken = default)
     {
         Context.Groups.Update(group);

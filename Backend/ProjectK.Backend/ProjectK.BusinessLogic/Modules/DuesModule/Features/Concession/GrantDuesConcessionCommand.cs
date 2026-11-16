@@ -76,20 +76,20 @@ public sealed class GrantDuesConcessionCommandHandler : IRequestHandler<GrantDue
         var rule = profile?.Dues.Concessions.FirstOrDefault(c => c.Key == request.Request.ConcessionKey.Trim());
         if (rule is null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.UnknownConcession, "У краю куреня немає такої пільги.");
+            return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.UnknownConcession, "The kurin's край has no such пільга.");
         }
 
         var from = new DuesQuarter(request.Request.FromQuarter.Year, request.Request.FromQuarter.Number).Index;
         var to = DuesConcessionGrantRules.Index(request.Request.ToQuarter);
         if (to < from)
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "Пільга не може закінчитися раніше, ніж почнеться.");
+            return ServiceResult<Guid>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "A пільга cannot end before it starts.");
         }
 
         // The same пільга twice over the same quarters would only hide which one counts.
         if (await DuesConcessionGrantRules.OverlapsAsync(_dues, group.KurinKey, request.MembershipKey, rule.Key, from, to, null, cancellationToken))
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "Ця пільга вже діє в цих кварталах.");
+            return ServiceResult<Guid>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "This пільга already applies in those quarters.");
         }
 
         var grant = new DuesConcessionGrant

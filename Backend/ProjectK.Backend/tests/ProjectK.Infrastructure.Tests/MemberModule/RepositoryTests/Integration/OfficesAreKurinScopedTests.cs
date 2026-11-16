@@ -3,6 +3,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.MemberModule;
@@ -173,12 +174,21 @@ public class OfficesAreKurinScopedTests
         await context.SaveChangesAsync();
 
         var repository = new LeadershipRepository(context);
+        var assignments = new MentorAssignmentRepository(context);
 
-        Assert.Equal(
-            Vykhovnyk,
-            Assert.Single(await repository.GetActiveOfficesForAccountInKurinAsync(person.UserKey, mentorsKurin)));
-        Assert.Empty(await repository.GetActiveOfficesForAccountInKurinAsync(person.UserKey, elsewhere));
+        // The seats alone hold nothing: the assignment is counted by the rule, not by the read.
+        Assert.Empty(await repository.GetActiveOfficesForAccountInKurinAsync(person.UserKey, mentorsKurin));
+        Assert.True(await assignments.HasActiveInKurinAsync(person.UserKey, mentorsKurin));
+        Assert.False(await assignments.HasActiveInKurinAsync(person.UserKey, elsewhere));
+        Assert.Equal(Vykhovnyk, Assert.Single(await OfficesInAsync(context, person, mentorsKurin)));
+        Assert.Empty(await OfficesInAsync(context, person, elsewhere));
     }
+
+    /// <summary>What the member module answers for an account in a kurin: its seats, with an assignment counted.</summary>
+    private static async Task<IReadOnlyList<MemberOffice>> OfficesInAsync(AppDbContext context, Person person, Guid kurinKey) =>
+        MentorOfficeRules.WithAssignment(
+            await new LeadershipRepository(context).GetActiveOfficesForAccountInKurinAsync(person.UserKey, kurinKey),
+            await new MentorAssignmentRepository(context).HasActiveInKurinAsync(person.UserKey, kurinKey));
 
     [Fact]
     public async Task ARevokedMentorAssignment_ShouldGrantNothing()
@@ -200,8 +210,8 @@ public class OfficesAreKurinScopedTests
         });
         await context.SaveChangesAsync();
 
-        Assert.Empty(await new LeadershipRepository(context)
-            .GetActiveOfficesForAccountInKurinAsync(person.UserKey, kurinKey));
+        Assert.False(await new MentorAssignmentRepository(context).HasActiveInKurinAsync(person.UserKey, kurinKey));
+        Assert.Empty(await OfficesInAsync(context, person, kurinKey));
     }
 
     [Fact]
@@ -234,8 +244,8 @@ public class OfficesAreKurinScopedTests
 
         var repository = new MemberRepository(context);
 
-        var here = Assert.Single(Assert.Single(await repository.GetListItemsByKurinKeyAsync(whereTheyLead)).LeadershipHistories);
-        Assert.Equal(whereTheyLead, here.KurinKey);
-        Assert.Empty(Assert.Single(await repository.GetListItemsByKurinKeyAsync(whereTheyJustBelong)).LeadershipHistories);
+        var here = Assert.Single(Assert.Single(await repository.GetListRowsByKurinKeyAsync(whereTheyLead)).Offices);
+        Assert.Equal(whereTheyLead, here.OfficeKurinKey);
+        Assert.Empty(Assert.Single(await repository.GetListRowsByKurinKeyAsync(whereTheyJustBelong)).Offices);
     }
 }

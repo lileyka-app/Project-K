@@ -24,7 +24,7 @@ using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.AuthModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using ProjectK.Infrastructure.Seeding;
+using ProjectK.Infrastructure.Seeding.Demo;
 using ProjectK.Infrastructure.Services.Blobs;
 using ProjectK.Infrastructure.Services.Cards;
 using ProjectK.Infrastructure.Services.Catalog;

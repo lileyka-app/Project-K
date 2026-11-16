@@ -4,7 +4,7 @@ using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;
 
-public interface IKurinRepository : IBaseEntityRepository<Kurin>
+public interface IKurinRepository : IListableRepository<Kurin>
 {
     /// <summary>
     /// A kurin number is unique within its край and гілка only, so a lookup by number names both;

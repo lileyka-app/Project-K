@@ -49,11 +49,8 @@ public class GetKurinByKeyQueryHandler : IRequestHandler<GetKurinByKeyQuery, Ser
                     return KurinErrors.NotFound<KurinDto>();
                 }
 
-                var accountsHere = await _memberships.GetAccountKeysInKurinAsync(request.KurinKey, token);
-                var activeUsersCount = await _unitOfWork.Users
-                    .CountActiveAsync(accountsHere, token);
-
-                var kurinResponse = kurin.ToDto(_links, activeUsersCount);
+                var headcount = await _memberships.CountCurrentInKurinAsync(request.KurinKey, token);
+                var kurinResponse = kurin.ToDto(_links, headcount);
 
                 return new ServiceResult<KurinDto>(ResultType.Success, kurinResponse);
             },

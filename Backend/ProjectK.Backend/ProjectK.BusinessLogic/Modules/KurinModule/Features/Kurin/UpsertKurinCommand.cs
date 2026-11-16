@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -67,11 +68,12 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
     private readonly KurinNumberOptions _numbers;
     private readonly KraiOptions _krai;
     private readonly IKurinAudit _audit;
+    private readonly IMembershipDirectory _memberships;
 
     /// <summary>What the kurin's journal calls these settings.</summary>
     public const string Label = "Дані куреня";
 
-    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache, IOptions<KurinNumberOptions> numbers, IOptions<KraiOptions> krai, IKurinAudit audit)
+    public UpsertKurinCommandHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache, IOptions<KurinNumberOptions> numbers, IOptions<KraiOptions> krai, IKurinAudit audit, IMembershipDirectory memberships)
     {
         _unitOfWork = unitOfWork;
         _links = links;
@@ -79,6 +81,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         _numbers = numbers.Value;
         _krai = krai.Value;
         _audit = audit;
+        _memberships = memberships;
     }
     public async Task<ServiceResult<KurinDto>> Handle(UpsertKurinCommand request, CancellationToken cancellationToken)
     {
@@ -159,7 +162,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             return ServiceResult<KurinDto>.Failure(ResultType.InternalServerError, KurinErrors.KurinSaveFailed, "The kurin was not saved.");
         }
 
-        var kurinResponse = existing.ToDto(_links);
+        var kurinResponse = existing.ToDto(_links, await _memberships.CountCurrentInKurinAsync(existing.KurinKey, cancellationToken));
         _cache.Invalidate(BackendCacheRules.KurinReads);
         _cache.Invalidate(BackendCacheRules.GroupReads);
 
@@ -228,7 +231,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         if (existingByNumber is not null)
         {
             return existing is null
-                ? new ServiceResult<KurinDto>(ResultType.Conflict, existingByNumber.ToDto(_links))
+                ? new ServiceResult<KurinDto>(ResultType.Conflict, existingByNumber.ToDto(_links, await _memberships.CountCurrentInKurinAsync(existingByNumber.KurinKey, cancellationToken)))
                 : ServiceResult<KurinDto>.Failure(ResultType.Conflict, KurinErrors.KurinNumberTaken, "A kurin with this number already exists in this край.");
         }
 

@@ -41,6 +41,7 @@ public class EnterDemoCommandHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         unitOfWork.Setup(u => u.Leaderships).Returns(_leaderships.Object);
+        unitOfWork.Setup(u => u.MentorAssignments).Returns(Mock.Of<IMentorAssignmentRepository>());
         _unitOfWork = unitOfWork.Object;
         _kurins.Setup(k => k.GetByNumberAsync("ua", 1, It.IsAny<CancellationToken>())).ReturnsAsync(_demoKurin);
         _loginResponses

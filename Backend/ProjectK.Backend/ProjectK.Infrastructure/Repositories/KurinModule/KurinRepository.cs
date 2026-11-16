@@ -34,7 +34,7 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
             token);
     }
 
-    public override async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await Context.Kurins.ToListAsync(cancellationToken);
     }

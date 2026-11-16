@@ -12,7 +12,7 @@ namespace ProjectK.Common.Dtos.KurinModule;
 /// <param name="RegionOrCountry">Its region or country, as the kurin wrote it.</param>
 /// <param name="NamedAfter">Whom the kurin is named after.</param>
 /// <param name="Description">The kurin's own words about itself.</param>
-/// <param name="CurrentUserCount">How many active accounts stand in it now.</param>
+/// <param name="CurrentUserCount">How many people belong to it now, with an account or without.</param>
 /// <param name="ProfileVerificationEnabled">Whether its people's profiles are checked by the провід.</param>
 /// <param name="ScoreEnabled">Whether the kurin keeps точкування now; the UI shows its menu, tiles and pages only then.</param>
 /// <param name="RoleNames">The kurin's own names for its roles, by role: «Pysar» → «Скриптор». Empty keeps the usual names.</param>

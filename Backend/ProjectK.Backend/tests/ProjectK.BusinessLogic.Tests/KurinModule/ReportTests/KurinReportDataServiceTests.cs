@@ -65,17 +65,18 @@ public sealed class KurinReportDataServiceTests
         _uow.Setup(u => u.KurinTags).Returns(_tags.Object);
         TagsOn(false);
 
+        var unitOfWork = UnitOfWorks.WithReports(_source.Object, _uow);
         _service = new KurinReportDataService(
             _currentUser.Object,
             FakeBlobReadLinks.Instance,
             _media.Object,
             Mock.Of<IProbesCatalogReader>(),
             Mock.Of<IBadgesCatalogReader>(),
-            new ConfigurationBuilder().Build(),
             _progress.Object,
-            UnitOfWorks.WithReports(_source.Object, _uow),
-            _tagVisibility.Object,
-            Mock.Of<ProjectK.Common.Contracts.ProbesAndBadgesModule.IHonoursCatalog>());
+            unitOfWork,
+            Mock.Of<ProjectK.Common.Contracts.ProbesAndBadgesModule.IHonoursCatalog>(),
+            new KurinReportHeaderReader(_currentUser.Object, new ConfigurationBuilder().Build()),
+            new KurinReportTagReader(unitOfWork, _tagVisibility.Object));
     }
 
     private void TagsOn(bool enabled, Func<Guid?, Guid?, bool>? shows = null)

@@ -12,7 +12,7 @@ internal sealed class MembershipConfiguration : IEntityTypeConfiguration<Members
         builder.HasKey(e => e.MembershipKey);
         builder.Property(e => e.Kind).HasConversion<int>();
         builder.HasOne<Kurin>()
-            .WithMany(k => k.Memberships)
+            .WithMany()
             .HasForeignKey(e => e.KurinKey)
             .OnDelete(DeleteBehavior.NoAction);
         builder.HasOne<Group>()

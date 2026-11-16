@@ -48,6 +48,14 @@ public sealed class MembershipDirectory : IMembershipDirectory
         CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.GetAccountKeysInKurinAsync(kurinKey, cancellationToken);
 
+    public Task<int> CountCurrentInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.CountCurrentInKurinAsync(kurinKey, cancellationToken);
+
+    public Task<IReadOnlyDictionary<Guid, int>> CountCurrentInKurinsAsync(
+        IReadOnlyCollection<Guid> kurinKeys,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.CountCurrentInKurinsAsync(kurinKeys, cancellationToken);
+
     public Task<IReadOnlyCollection<KurinMembershipRecord>> GetInKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)

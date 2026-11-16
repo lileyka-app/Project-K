@@ -126,7 +126,6 @@ public class ModuleBoundaryRules
     private static readonly string[] NavigatesIntoAnotherModule =
     [
         "ProjectK.Common.Entities.KurinModule.Group.Leadership -> MemberModule",
-        "ProjectK.Common.Entities.KurinModule.Kurin.Memberships -> MemberModule",
         "ProjectK.Common.Entities.MemberModule.Leadership.Group -> KurinModule",
         "ProjectK.Common.Entities.MemberModule.Leadership.Kurin -> KurinModule",
     ];

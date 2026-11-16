@@ -16,7 +16,8 @@ public interface IOfficeDirectory
 {
     /// <summary>
     /// The offices this account currently holds inside one kurin. An office of another kurin, or one
-    /// held under a membership that has since ended, is not among them.
+    /// held under a membership that has since ended, is not among them. Running a гурток of the
+    /// kurin as виховник counts as the КВ's Виховник (<c>MentorOfficeRules</c>).
     /// </summary>
     Task<IReadOnlyCollection<MemberOffice>> GetForAccountInKurinAsync(
         Guid userKey,

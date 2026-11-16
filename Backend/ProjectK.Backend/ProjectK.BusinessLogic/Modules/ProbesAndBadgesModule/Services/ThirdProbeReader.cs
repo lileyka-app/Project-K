@@ -6,7 +6,7 @@ using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.Shared;
 
@@ -83,14 +83,14 @@ public sealed class ThirdProbeReader : IThirdProbeReader
 
     private async Task<ThirdProbeMentorOptionsDto> MentorOptionsAsync(Guid memberKey, CancellationToken cancellationToken)
     {
-        var zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var zvyazkovyi = new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
         var zvyazkovi = new List<string>();
         var ownGroup = new List<string>();
         var kurinWide = new List<string>();
         foreach (var membership in await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken))
         {
-            zvyazkovi.AddRange((await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(membership.KurinKey, LeadershipType.KV, cancellationToken))
-                .Where(holder => holder.UserRole == zvyazkovyi && holder.MemberKey != memberKey)
+            zvyazkovi.AddRange((await _unitOfWork.Leaderships.GetOfficeHoldersAsync(membership.KurinKey, LeadershipType.KV, cancellationToken))
+                .Where(holder => holder.Office == zvyazkovyi && holder.MemberKey != memberKey)
                 .Select(holder => PersonNames.FirstLast(holder.FirstName, holder.LastName)));
 
             foreach (var assignment in (await _unitOfWork.MentorAssignments.GetByKurinKeyAsync(membership.KurinKey, cancellationToken))

@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -25,13 +26,15 @@ public sealed class UploadKurinEmblemCommandHandler : IRequestHandler<UploadKuri
     private readonly IPhotoService _photoService;
     private readonly IBlobReadLinks _links;
     private readonly IBackendCache _cache;
+    private readonly IMembershipDirectory _memberships;
 
-    public UploadKurinEmblemCommandHandler(IUnitOfWork unitOfWork, IPhotoService photoService, IBlobReadLinks links, IBackendCache cache)
+    public UploadKurinEmblemCommandHandler(IUnitOfWork unitOfWork, IPhotoService photoService, IBlobReadLinks links, IBackendCache cache, IMembershipDirectory memberships)
     {
         _unitOfWork = unitOfWork;
         _photoService = photoService;
         _links = links;
         _cache = cache;
+        _memberships = memberships;
     }
 
     public async Task<ServiceResult<KurinDto>> Handle(UploadKurinEmblemCommand request, CancellationToken cancellationToken)
@@ -73,6 +76,6 @@ public sealed class UploadKurinEmblemCommandHandler : IRequestHandler<UploadKuri
         }
 
         _cache.Invalidate(BackendCacheRules.KurinReads);
-        return new ServiceResult<KurinDto>(ResultType.Success, kurin.ToDto(_links));
+        return new ServiceResult<KurinDto>(ResultType.Success, kurin.ToDto(_links, await _memberships.CountCurrentInKurinAsync(kurin.KurinKey, cancellationToken)));
     }
 }

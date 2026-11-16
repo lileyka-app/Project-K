@@ -58,6 +58,20 @@ public interface IMembershipDirectory
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// How many people belong to a kurin now — every current membership, whether or not the
+    /// person has an account.
+    /// </summary>
+    Task<int> CountCurrentInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The same for a list of kurins in one read, by kurin. A kurin nobody belongs to is absent
+    /// rather than present with zero.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, int>> CountCurrentInKurinsAsync(
+        IReadOnlyCollection<Guid> kurinKeys,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Every membership the kurin has had, current and closed — what the dues module charges from.
     /// </summary>
     Task<IReadOnlyCollection<KurinMembershipRecord>> GetInKurinAsync(

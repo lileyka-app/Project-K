@@ -27,4 +27,7 @@ public class SystemSettingRepository : BaseEntityRepository<SystemSetting>, ISys
         return await Context.SystemSettings.FirstOrDefaultAsync(x => x.Key == key, token);
     }
 
+    public async Task<IEnumerable<SystemSetting>> GetAllAsync(CancellationToken cancellationToken = default)
+        => await Context.SystemSettings.ToListAsync(cancellationToken);
+
 }

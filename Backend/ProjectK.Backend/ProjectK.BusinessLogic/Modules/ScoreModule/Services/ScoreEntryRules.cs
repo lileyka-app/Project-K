@@ -91,7 +91,7 @@ public static class ScoreEntryRules
         if (already is not null)
         {
             return ServiceResult<T>.Failure(ResultType.Conflict, ScoreErrors.ItemAlreadyGiven,
-                $"Уже дав {book.NameOfAccount(already.CreatedByUserKey) ?? "хтось"}.");
+                $"Already given by {book.NameOfAccount(already.CreatedByUserKey) ?? "someone"}.");
         }
 
         return null;
@@ -102,7 +102,7 @@ public static class ScoreEntryRules
     /// index caught what the check could not. Said the way the check would have said it.
     /// </summary>
     public static ServiceResult<T> GivenMeanwhile<T>() =>
-        ServiceResult<T>.Failure(ResultType.Conflict, ScoreErrors.ItemAlreadyGiven, "Уже дав хтось інший щойно.");
+        ServiceResult<T>.Failure(ResultType.Conflict, ScoreErrors.ItemAlreadyGiven, "Someone else has just given it.");
 
     public static void Apply(ScoreEntry entry, UpsertScoreEntryRequest request, ScoreBook book)
     {

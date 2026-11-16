@@ -13,6 +13,8 @@ using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Events.ArchiveModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
@@ -33,16 +35,16 @@ public class ArchiveNotificationHandlersTests
     public async Task OnlyLeadersStandingInTheKurin_AreTold_AndNotTheOneWhoTurnedItOn()
     {
         var leaderships = new Mock<ILeadershipRepository>();
-        var zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-        var kurinnyi = SystemRoleNames.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
-        leaderships.Setup(l => l.GetOfficeMembersLookupAsync(_kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>()))
+        var zvyazkovyi = new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var kurinnyi = new MemberOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
+        leaderships.Setup(l => l.GetOfficeHoldersAsync(_kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>()))
             .ReturnsAsync([
-                new MemberLookupDto { UserKey = _actor, UserRole = zvyazkovyi },
-                new MemberLookupDto { UserKey = _otherZvyazkovyi, UserRole = zvyazkovyi },
-                new MemberLookupDto { UserKey = _goneZvyazkovyi, UserRole = zvyazkovyi }
+                Holder(_actor, zvyazkovyi),
+                Holder(_otherZvyazkovyi, zvyazkovyi),
+                Holder(_goneZvyazkovyi, zvyazkovyi)
             ]);
-        leaderships.Setup(l => l.GetOfficeMembersLookupAsync(_kurinKey, LeadershipType.Kurin, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MemberLookupDto { UserKey = _kurinnyi, UserRole = kurinnyi }]);
+        leaderships.Setup(l => l.GetOfficeHoldersAsync(_kurinKey, LeadershipType.Kurin, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Holder(_kurinnyi, kurinnyi)]);
         var memberships = new Mock<IMembershipRepository>();
         memberships.Setup(m => m.GetAccountKeysInKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([_actor, _otherZvyazkovyi, _kurinnyi]);
@@ -61,4 +63,7 @@ public class ArchiveNotificationHandlersTests
 
         sent.Select(request => request.RecipientUserKey).Should().BeEquivalentTo([_otherZvyazkovyi, _kurinnyi]);
     }
+
+    private static MemberLookupRow Holder(Guid userKey, MemberOffice office) =>
+        new(Guid.NewGuid(), userKey, "Ім'я", null, "Прізвище", null, office);
 }

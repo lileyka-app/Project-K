@@ -108,23 +108,23 @@ public sealed class InviteKurinFounderCommandHandler
         {
             case AccountAvailability.EmailTaken:
                 return ServiceResult<KurinFounderInvitationDto>.Failure(
-                    ResultType.Conflict, AuthErrors.EmailTaken, "За цією адресою вже є акаунт.");
+                    ResultType.Conflict, AuthErrors.EmailTaken, "An account with this email already exists.");
             case AccountAvailability.WaitlistPending:
                 return ServiceResult<KurinFounderInvitationDto>.Failure(
-                    ResultType.Conflict, AuthErrors.WaitlistPending, "Від цієї адреси вже є заявка — схвали її в «Заявках».");
+                    ResultType.Conflict, AuthErrors.WaitlistPending, "A waitlist entry with this email is pending; approve it instead.");
         }
 
         var kraiCode = Krai.NormalizeCode(request.KraiCode) ?? _krai.Default;
         if (!await _unitOfWork.Krais.ExistsAsync(kraiCode, cancellationToken))
         {
             return ServiceResult<KurinFounderInvitationDto>.Failure(
-                ResultType.BadRequest, AuthErrors.KraiNotFound, "Такого краю немає в списку.");
+                ResultType.BadRequest, AuthErrors.KraiNotFound, "There is no such krai.");
         }
 
         if (request.KurinNumber is int number && await _unitOfWork.Kurins.ExistsAsync(kraiCode, number, cancellationToken))
         {
             return ServiceResult<KurinFounderInvitationDto>.Failure(
-                ResultType.Conflict, AuthErrors.KurinNumberTaken, "Курінь з таким числом у цьому краї вже є.");
+                ResultType.Conflict, AuthErrors.KurinNumberTaken, "A kurin with this number already exists in this krai.");
         }
 
         var kurin = new Kurin(request.KurinNumber) { KraiCode = kraiCode };

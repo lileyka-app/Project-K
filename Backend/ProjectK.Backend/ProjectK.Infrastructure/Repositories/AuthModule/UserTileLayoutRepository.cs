@@ -18,11 +18,6 @@ public class UserTileLayoutRepository : BaseEntityRepository<UserTileLayout>, IU
             .AnyAsync(x => x.UserTileLayoutKey == entityKey, cancellationToken);
     }
 
-    public override async Task<IEnumerable<UserTileLayout>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return await Context.UserTileLayouts.AsNoTracking().ToListAsync(cancellationToken);
-    }
-
     public override async Task<UserTileLayout?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.UserTileLayouts

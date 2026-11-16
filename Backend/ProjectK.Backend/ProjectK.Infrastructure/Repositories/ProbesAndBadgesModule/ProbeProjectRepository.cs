@@ -96,11 +96,6 @@ public class ProbeProjectRepository : BaseEntityRepository<ProbeProject>, IProbe
         return [.. pictures, .. certificates];
     }
 
-    public override Task<IEnumerable<ProbeProject>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetForMemberProbeAsync instead.");
-    }
-
     public async Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
     {
         if (memberKeys.Count == 0)

@@ -1,12 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.MemberModule;
-using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.MemberModule;
@@ -113,20 +109,18 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                                      .ToListAsync(cancellationToken);
     }
 
-    public Task<IEnumerable<MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
-        => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey), cancellationToken);
+    public Task<IReadOnlyList<MemberListRow>> GetListRowsByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => ProjectListRowsAsync(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey), cancellationToken);
 
-    public Task<IEnumerable<MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, CancellationToken cancellationToken = default)
-        => ProjectListItemsAsync(ActiveMemberships.Where(ms => ms.GroupKey == groupKey), cancellationToken);
+    public Task<IReadOnlyList<MemberListRow>> GetListRowsByGroupKeyAsync(Guid groupKey, CancellationToken cancellationToken = default)
+        => ProjectListRowsAsync(ActiveMemberships.Where(ms => ms.GroupKey == groupKey), cancellationToken);
 
     // Single projection shared by the kurin- and group-scoped list reads. It reads a list of
     // memberships and pulls the person behind each: the same member seen from two kurins is two
-    // entries, each placed by its own membership. Still one SQL — the join replaces the old
-    // WHERE on the member's own kurin, and nothing else about the shape changed. No Include
-    // graph: scalars come from the root query, UserRole is a correlated subquery over
-    // Identity (replacing the old per-list GroupJoin), and only active leadership/warnings are
-    // pulled. Every field is read as stored: what the caller may see is GetMembersQuery's to mask.
-    private async Task<IEnumerable<MemberListItemDto>> ProjectListItemsAsync(
+    // entries, each placed by its own membership. One SQL, no Include graph. Every field is read as
+    // stored: who is кадра and which office names them is MemberMapping's to say, what the caller
+    // may see is GetMembersQuery's to mask.
+    private async Task<IReadOnlyList<MemberListRow>> ProjectListRowsAsync(
         IQueryable<Membership> memberships,
         CancellationToken cancellationToken)
     {
@@ -134,127 +128,64 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                      join person in Context.Members on ms.MemberKey equals person.MemberKey
                      select new { Placement = ms, Person = person };
 
-        var rows = await source
-            .Select(x => new
+        return await source
+            .Select(x => new MemberListRow
             {
-                // The office they hold *in this kurin*. It used to come from the identity store,
-                // which said what someone was anywhere and so showed a виховник's office to a
-                // kurin they are only a member of. Read as its two halves and named afterwards:
-                // the enums are stored as numbers, so the name cannot be assembled in SQL.
-                Office = (from history in Context.LeadershipHistories
-                          where history.MemberKey == x.Person.MemberKey && history.EndDate == null
-                          join office in Context.Leaderships
-                              on history.LeadershipKey equals office.LeadershipKey
-                          where office.EndDate == null
-                              && (office.KurinKey == x.Placement.KurinKey
-                                  || (office.GroupKey != null && office.Group!.KurinKey == x.Placement.KurinKey))
-                          orderby office.Type, history.Role
-                          select new { office.Type, history.Role }).FirstOrDefault(),
-                Item = new MemberListItemDto
-                {
-                    MemberKey = x.Person.MemberKey,
-                    GroupKey = x.Placement.GroupKey,
-                    GroupName = Context.Groups.Where(g => g.GroupKey == x.Placement.GroupKey).Select(g => g.Name).FirstOrDefault(),
-                    KurinKey = x.Placement.KurinKey,
-                    // Кадра виховників, і саме цього куреня. Роль типу Group — це гуртковий, а він
-                    // юнак; тому тут звужено до KV, а не до «має якусь роль». Активне закріплення
-                    // за гуртком — теж впорядник: доступ так його й трактує (LeadershipRepository),
-                    // і реєстр не має казати «юнак» тому, кого сайдбар зве впорядником.
-                    // Це дзеркало KurinRosterRules.IsStaffOffice і KurinRosterRules.IsStaffAssignment, яким
-                    // відповідає звіт; EF не перекладе виклик методу, тож правило стоїть тут рядком.
-                    IsStaff = Context.LeadershipHistories.Any(history =>
-                        history.MemberKey == x.Person.MemberKey
-                        && history.EndDate == null
-                        && history.Leadership.EndDate == null
-                        && history.Leadership.Type == LeadershipType.KV
-                        && history.Leadership.KurinKey == x.Placement.KurinKey)
-                        || Context.MentorAssignments.Any(assignment =>
-                            assignment.RevokedAtUtc == null
-                            && x.Person.UserKey != null
-                            && assignment.MentorUserKey == x.Person.UserKey
-                            && Context.Groups.Any(group => group.GroupKey == assignment.GroupKey && group.KurinKey == x.Placement.KurinKey)),
-                    // Закріплення виховника ведеться на акаунт, а не на людину, тож людина без
-                    // акаунта не має закріплень — і список порожній, а не помилковий.
-                    MentoredGroupNames = Context.MentorAssignments
-                    .Join(Context.Groups, assignment => assignment.GroupKey, group => group.GroupKey, (assignment, group) => new { assignment, group })
-                    .Where(pair => pair.assignment.RevokedAtUtc == null
-                        && x.Person.UserKey != null
-                        && pair.assignment.MentorUserKey == x.Person.UserKey
-                        && pair.group.KurinKey == x.Placement.KurinKey)
-                    .OrderBy(pair => pair.group.Name)
-                    .Select(pair => pair.group.Name)
-                    .ToList(),
-                    UserKey = x.Person.UserKey,
-                    FirstName = x.Person.FirstName,
-                    MiddleName = x.Person.MiddleName,
-                    LastName = x.Person.LastName,
-                    Email = x.Person.Email,
-                    PhoneNumber = x.Person.PhoneNumber,
-                    DateOfBirth = x.Person.DateOfBirth,
-                    Address = x.Person.Address,
-                    School = x.Person.School,
-                    // Mirror the Member -> MemberResponse mapping: newest history level, else the stored one.
-                    LatestPlastLevel = x.Person.PlastLevelHistory
-                    .OrderByDescending(history => history.DateAchieved)
-                    .Select(history => (PlastLevel?)history.PlastLevel)
-                    .FirstOrDefault() ?? x.Person.LatestPlastLevel,
-                    ProfilePhotoBlobName = x.Person.ProfilePhotoBlobName,
-                    ProfileVerificationStatus = x.Person.ProfileVerificationStatus,
-                    ProfileVerifiedAtUtc = x.Person.ProfileVerifiedAtUtc,
-                    ProfileVerifiedByUserKey = x.Person.ProfileVerifiedByUserKey,
-                    ProfileVerificationNote = x.Person.ProfileVerificationNote,
-                    PlastLevelHistories = x.Person.PlastLevelHistory
-                    .Select(h => new PlastLevelHistoryDto
-                    {
-                        MemberKey = h.MemberKey,
-                        PlastLevelHistoryKey = h.PlastLevelHistoryKey,
-                        PlastLevel = h.PlastLevel,
-                        DateAchieved = h.DateAchieved,
-                        IsPlastunka = h.IsPlastunka
-                    }).ToList(),
-                    // Offices of this kurin only, like Office above: a role held in another kurin is
-                    // not this kurin's to show, and would be named by this kurin's own role names.
-                    LeadershipHistories = x.Person.LeadershipHistories
+                MemberKey = x.Person.MemberKey,
+                GroupKey = x.Placement.GroupKey,
+                GroupName = Context.Groups.Where(g => g.GroupKey == x.Placement.GroupKey).Select(g => g.Name).FirstOrDefault(),
+                KurinKey = x.Placement.KurinKey,
+                UserKey = x.Person.UserKey,
+                FirstName = x.Person.FirstName,
+                MiddleName = x.Person.MiddleName,
+                LastName = x.Person.LastName,
+                Email = x.Person.Email,
+                PhoneNumber = x.Person.PhoneNumber,
+                DateOfBirth = x.Person.DateOfBirth,
+                Address = x.Person.Address,
+                School = x.Person.School,
+                StoredPlastLevel = x.Person.LatestPlastLevel,
+                ProfilePhotoBlobName = x.Person.ProfilePhotoBlobName,
+                ProfileVerificationStatus = x.Person.ProfileVerificationStatus,
+                ProfileVerifiedAtUtc = x.Person.ProfileVerifiedAtUtc,
+                ProfileVerifiedByUserKey = x.Person.ProfileVerifiedByUserKey,
+                ProfileVerificationNote = x.Person.ProfileVerificationNote,
+                PlastLevels = x.Person.PlastLevelHistory.ToList(),
+                // Offices of this kurin only: a role held in another kurin is not this kurin's to
+                // show, and would be named by this kurin's own role names.
+                Offices = x.Person.LeadershipHistories
                     .Where(h => h.EndDate == null
                         && h.Leadership.EndDate == null
                         && (h.Leadership.KurinKey == x.Placement.KurinKey
                             || (h.Leadership.GroupKey != null && h.Leadership.Group!.KurinKey == x.Placement.KurinKey)))
-                    .Select(h => new LeadershipHistoryDto
-                    {
-                        LeadershipHistoryKey = h.LeadershipHistoryKey,
-                        MemberKey = h.MemberKey,
-                        LeadershipKey = h.LeadershipKey,
-                        Role = h.Role,
-                        LeadershipType = h.Leadership.Type,
-                        GroupName = h.Leadership.Group != null ? h.Leadership.Group.Name : null,
-                        KurinKey = x.Placement.KurinKey,
-                        StartDate = h.StartDate,
-                        EndDate = h.EndDate
-                    }).ToList(),
-                    Warnings = x.Person.MemberWarnings
+                    .Select(h => new MemberListOffice(
+                        h.LeadershipHistoryKey,
+                        h.MemberKey,
+                        h.LeadershipKey,
+                        h.Role,
+                        h.Leadership.Type,
+                        h.Leadership.KurinKey,
+                        h.Leadership.Group != null ? h.Leadership.Group.Name : null,
+                        h.StartDate,
+                        h.EndDate,
+                        h.Leadership.EndDate))
+                    .ToList(),
+                // Закріплення виховника ведеться на акаунт, а не на людину, тож людина без
+                // акаунта не має закріплень — і список порожній, а не помилковий.
+                Assignments = (from assignment in Context.MentorAssignments
+                               join assigned in Context.Groups on assignment.GroupKey equals assigned.GroupKey
+                               where x.Person.UserKey != null
+                                   && assignment.MentorUserKey == x.Person.UserKey
+                                   && assigned.KurinKey == x.Placement.KurinKey
+                               orderby assigned.Name
+                               select new MemberListAssignment(assigned.Name, assigned.KurinKey, assignment.RevokedAtUtc))
+                    .ToList(),
+                Warnings = x.Person.MemberWarnings
                     .Where(w => w.RevokedAtUtc == null)
-                    .Select(w => new MemberWarningDto
-                    {
-                        MemberWarningKey = w.MemberWarningKey,
-                        MemberKey = w.MemberKey,
-                        Level = w.Level,
-                        IssuedAtUtc = w.IssuedAtUtc,
-                        ExpiresAtUtc = w.ExpiresAtUtc,
-                        IssuedByUserKey = w.IssuedByUserKey,
-                        RevokedByUserKey = w.RevokedByUserKey,
-                        RevokedAtUtc = w.RevokedAtUtc
-                    }).ToList()
-                }
+                    .ToList()
             })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-
-        foreach (var row in rows.Where(row => row.Office is not null))
-        {
-            row.Item.UserRole = SystemRoleNames.ForOffice(row.Office!.Type, row.Office.Role);
-        }
-
-        return [.. rows.Select(row => row.Item)];
     }
 
     public async Task<IReadOnlyCollection<MemberIdentity>> FindPossibleMatchesAsync(
@@ -405,15 +336,23 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
             .Select(ms => (Guid?)ms.KurinKey)
             .FirstOrDefaultAsync(cancellationToken);
 
-    public async Task<IEnumerable<MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<MemberLookupRow>> GetMentorCandidatesAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
-        // One row per candidate, with whichever office they hold in this kurin. It used to fan out
+        // One row per candidate, with the first office they hold in this kurin. It used to fan out
         // over the identity store's roles and collapse them again, which also meant showing an
         // office earned in a different kurin.
         var rows = await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
             .Where(m => m.UserKey != null)
             .Select(m => new
             {
+                m.MemberKey,
+                m.UserKey,
+                m.FirstName,
+                m.MiddleName,
+                m.LastName,
+                m.ProfilePhotoBlobName,
+                // Read as its two halves: the enums are stored as numbers, so the office is put
+                // together after the query.
                 Office = (from history in Context.LeadershipHistories
                           where history.MemberKey == m.MemberKey && history.EndDate == null
                           join office in Context.Leaderships
@@ -422,26 +361,21 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                               && (office.KurinKey == kurinKey
                                   || (office.GroupKey != null && office.Group!.KurinKey == kurinKey))
                           orderby office.Type, history.Role
-                          select new { office.Type, history.Role }).FirstOrDefault(),
-                Item = new MemberLookupDto
-                {
-                    MemberKey = m.MemberKey,
-                    UserKey = m.UserKey,
-                    FirstName = m.FirstName,
-                    MiddleName = m.MiddleName,
-                    LastName = m.LastName,
-                    ProfilePhotoBlobName = m.ProfilePhotoBlobName
-                }
+                          select new { office.Type, history.Role }).FirstOrDefault()
             })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        foreach (var row in rows.Where(row => row.Office is not null))
-        {
-            row.Item.UserRole = SystemRoleNames.ForOffice(row.Office!.Type, row.Office.Role);
-        }
-
-        return [.. rows.Select(row => row.Item)];
+        return rows
+            .Select(row => new MemberLookupRow(
+                row.MemberKey,
+                row.UserKey,
+                row.FirstName,
+                row.MiddleName,
+                row.LastName,
+                row.ProfilePhotoBlobName,
+                row.Office is null ? null : new MemberOffice(row.Office.Type, row.Office.Role)))
+            .ToList();
     }
 
     public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
@@ -464,11 +398,6 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     {
         return await Context.Members
             .FirstOrDefaultAsync(m => m.Email == email, cancellationToken);
-    }
-
-    public override Task<IEnumerable<Member>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetAllAsync(Guid groupKey, CancellationToken token) or GetAllByKurinkey(...) instead.");
     }
 
     public override void Update(Member member, CancellationToken cancellationToken = default)
