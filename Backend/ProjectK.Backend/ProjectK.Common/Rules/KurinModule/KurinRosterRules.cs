@@ -39,13 +39,9 @@ public static class KurinRosterRules
     /// <summary>
     /// Whether a закріплення за гуртком puts a person in the кадра of <paramref name="kurinKey"/>:
     /// it is still in force and its гурток is this kurin's. Access already reads an assignment as
-    /// the впорядник's office (<c>LeadershipRepository</c>), and the sidebar calls the person that;
+    /// the впорядник's office (<c>MentorOfficeRules</c>), and the sidebar calls the person that;
     /// the реєстр and the звіт have to say the same, or the report prints among the юнаки someone
     /// the screen next to it lists as кадра.
-    /// <para>
-    /// The реєстр's EF projection cannot call this, so <c>MemberRepository</c> mirrors it inline
-    /// with a pointer back here — change one, change both.
-    /// </para>
     /// </summary>
     public static bool IsStaffAssignment(DateTime? revokedAtUtc, Guid? assignmentKurinKey, Guid kurinKey)
         => revokedAtUtc is null && assignmentKurinKey == kurinKey;

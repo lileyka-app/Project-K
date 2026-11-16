@@ -234,8 +234,8 @@ public class OfficesAreKurinScopedTests
 
         var repository = new MemberRepository(context);
 
-        var here = Assert.Single(Assert.Single(await repository.GetListItemsByKurinKeyAsync(whereTheyLead)).LeadershipHistories);
-        Assert.Equal(whereTheyLead, here.KurinKey);
-        Assert.Empty(Assert.Single(await repository.GetListItemsByKurinKeyAsync(whereTheyJustBelong)).LeadershipHistories);
+        var here = Assert.Single(Assert.Single(await repository.GetListRowsByKurinKeyAsync(whereTheyLead)).Offices);
+        Assert.Equal(whereTheyLead, here.OfficeKurinKey);
+        Assert.Empty(Assert.Single(await repository.GetListRowsByKurinKeyAsync(whereTheyJustBelong)).Offices);
     }
 }

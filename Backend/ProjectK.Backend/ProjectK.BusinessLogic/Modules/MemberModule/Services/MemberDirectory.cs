@@ -94,7 +94,9 @@ public sealed class MemberDirectory : IMemberDirectory
     public async Task<IReadOnlyCollection<MemberLookupDto>> GetLookupByKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)
-        => (await _unitOfWork.Members.GetMentorCandidatesLookupAsync(kurinKey, cancellationToken)).ToList();
+        => (await _unitOfWork.Members.GetMentorCandidatesAsync(kurinKey, cancellationToken))
+            .Select(candidate => candidate.ToLookupDto())
+            .ToList();
 
     /// <inheritdoc />
     /// <remarks>

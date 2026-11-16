@@ -5,6 +5,7 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
@@ -41,14 +42,14 @@ public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceRe
 
     public async Task<ServiceResult<IEnumerable<MemberDto>>> Handle(GetMembersQuery request, CancellationToken cancellationToken)
     {
-        IEnumerable<MemberListItemDto> members;
+        IReadOnlyList<MemberListRow> rows;
         if (request.KurinKey == Guid.Empty)
         {
-            members = await _unitOfWork.Members.GetListItemsByGroupKeyAsync(request.GroupKey, cancellationToken);
+            rows = await _unitOfWork.Members.GetListRowsByGroupKeyAsync(request.GroupKey, cancellationToken);
         }
         else if (request.GroupKey == Guid.Empty)
         {
-            members = await _unitOfWork.Members.GetListItemsByKurinKeyAsync(request.KurinKey, cancellationToken);
+            rows = await _unitOfWork.Members.GetListRowsByKurinKeyAsync(request.KurinKey, cancellationToken);
         }
         else
         {
@@ -58,13 +59,14 @@ public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceRe
         // Read whole and masked here, row by row: the registry export reads through this query too,
         // so whatever a viewer may not see never reaches a sheet either.
         var mask = await _fieldAccess.ForViewerAsync(cancellationToken);
-        var rows = members.ToList();
+        var response = new List<MemberDto>(rows.Count);
         foreach (var row in rows)
         {
-            mask.Apply(row, row.UserKey, row.GroupKey);
+            var member = row.ToDto(_links);
+            mask.Apply(member, member.UserKey, row.GroupKey);
+            response.Add(member);
         }
 
-        var response = rows.Select(row => row.ToDto(_links)).ToList();
         await _tagVisibility.FillAsync(request.KurinKey, response, cancellationToken);
         return new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, response);
     }

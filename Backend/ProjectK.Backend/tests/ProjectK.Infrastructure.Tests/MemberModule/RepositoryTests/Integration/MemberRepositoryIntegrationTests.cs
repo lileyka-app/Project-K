@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
@@ -200,7 +201,7 @@ public class MemberRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task GetListItemsByKurinKeyAsync_ShouldReturnOnlyActiveLeadershipAndWarnings()
+    public async Task GetListRowsByKurinKeyAsync_ShouldReturnOnlyActiveLeadershipAndWarnings()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -266,12 +267,12 @@ public class MemberRepositoryIntegrationTests
             });
         await context.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var item = Assert.Single(items);
-        var activeLeadership = Assert.Single(item.LeadershipHistories);
+        var activeLeadership = Assert.Single(item.Offices);
         Assert.Equal(LeadershipRole.Hurtkoviy, activeLeadership.Role);
-        Assert.Equal(LeadershipType.Group, activeLeadership.LeadershipType);
+        Assert.Equal(LeadershipType.Group, activeLeadership.Type);
         Assert.Equal(group.Name, activeLeadership.GroupName);
 
         var activeWarning = Assert.Single(item.Warnings);
@@ -279,7 +280,7 @@ public class MemberRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task GetListItemsByKurinKeyAsync_ShouldReadPrivateFieldsAsStored_LeavingTheMaskToTheQuery()
+    public async Task GetListRowsByKurinKeyAsync_ShouldReadPrivateFieldsAsStored_LeavingTheMaskToTheQuery()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -312,7 +313,7 @@ public class MemberRepositoryIntegrationTests
         Placed(uow, hidden, kurin.KurinKey, hiddenGroup.GroupKey);
         await uow.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var ownerItem = items.Single(i => i.MemberKey == owner.MemberKey);
         var visibleItem = items.Single(i => i.MemberKey == inVisibleGroup.MemberKey);
@@ -325,12 +326,13 @@ public class MemberRepositoryIntegrationTests
     }
 
     /// <summary>
-    /// The split the реєстр draws. Only an office in the кадра виховників makes someone кадра: a
-    /// гуртковий holds an office too and is still a юнак, and getting that wrong would empty the
-    /// юнаки table of exactly the people who run the гуртки.
+    /// The split the реєстр draws, from the facts the read carries. Only an office in the кадра
+    /// виховників makes someone кадра: a гуртковий holds an office too and is still a юнак, and
+    /// getting that wrong would empty the юнаки table of exactly the people who run the гуртки. The
+    /// read keeps a revoked закріплення, and the rule is what drops it.
     /// </summary>
     [Fact]
-    public async Task GetListItemsByKurinKeyAsync_ShouldCallOnlyKvOfficersStaff_AndNameTheGroupsTheyMentor()
+    public async Task GetListRowsByKurinKeyAsync_ShouldCarryWhatMakesOnlyKvOfficersStaff_AndTheGroupsTheyMentor()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -404,29 +406,37 @@ public class MemberRepositoryIntegrationTests
             });
         await context.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var plainItem = items.Single(item => item.MemberKey == youth.MemberKey);
         var hurtkovyiItem = items.Single(item => item.MemberKey == hurtkovyi.MemberKey);
         var mentorItem = items.Single(item => item.MemberKey == mentor.MemberKey);
 
-        Assert.False(plainItem.IsStaff);
-        Assert.False(hurtkovyiItem.IsStaff);
-        Assert.True(mentorItem.IsStaff);
+        Assert.False(IsStaff(plainItem));
+        Assert.False(IsStaff(hurtkovyiItem));
+        Assert.True(IsStaff(mentorItem));
 
-        Assert.Empty(hurtkovyiItem.MentoredGroupNames);
-        Assert.Equal(["Beta"], mentorItem.MentoredGroupNames);
+        Assert.Empty(hurtkovyiItem.Assignments);
+        Assert.Equal(["Alpha", "Beta"], mentorItem.Assignments.Select(assignment => assignment.GroupName));
+        Assert.Equal(["Beta"], mentorItem.Assignments
+            .Where(assignment => KurinRosterRules.IsStaffAssignment(assignment.RevokedAtUtc, assignment.GroupKurinKey, kurin.KurinKey))
+            .Select(assignment => assignment.GroupName));
     }
 
+    /// <summary>The shared staff rule over a row, as the member module applies it.</summary>
+    private static bool IsStaff(MemberListRow row) =>
+        row.Offices.Any(office => KurinRosterRules.IsStaffOffice(office.Type, office.OfficeKurinKey, office.OfficeEndDate, office.EndDate, row.KurinKey))
+        || row.Assignments.Any(assignment => KurinRosterRules.IsStaffAssignment(assignment.RevokedAtUtc, assignment.GroupKurinKey, row.KurinKey));
+
     /// <summary>
-    /// The реєстр decides кадра in SQL and the звіт куреня decides it in memory, so the rule
-    /// itself lives in <see cref="KurinRosterRules"/> and neither owns it. This is what stops the two
-    /// from drifting: the projection's answer is compared against the rule applied to the very
-    /// same offices, over a fixture that has one of each kind — including the two that look like
-    /// кадра and are not.
+    /// The реєстр and the звіт куреня both decide кадра with <see cref="KurinRosterRules"/>, from
+    /// whatever their reads hand them. This is what stops the реєстр's read from narrowing the facts
+    /// the rule needs: the rule over the projected rows is compared against the rule over the very
+    /// same offices as stored, over a fixture that has one of each kind — including the two that
+    /// look like кадра and are not.
     /// </summary>
     [Fact]
-    public async Task GetListItemsByKurinKeyAsync_ShouldAgreeWithTheSharedStaffRule()
+    public async Task GetListRowsByKurinKeyAsync_ShouldAgreeWithTheSharedStaffRule()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -489,7 +499,7 @@ public class MemberRepositoryIntegrationTests
             Held(elsewhereMentor, foreignKvOffice, LeadershipRole.Vykhovnyk));
         await context.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListItemsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
 
         var offices = context.Set<Leadership>().ToDictionary(office => office.LeadershipKey);
         var expected = context.Set<LeadershipHistory>()
@@ -503,7 +513,7 @@ public class MemberRepositoryIntegrationTests
             .Select(history => history.MemberKey)
             .ToHashSet();
 
-        var actual = items.Where(item => item.IsStaff).Select(item => item.MemberKey).ToHashSet();
+        var actual = items.Where(IsStaff).Select(item => item.MemberKey).ToHashSet();
 
         Assert.Equal(expected, actual);
         Assert.Equal([mentor.MemberKey], actual);

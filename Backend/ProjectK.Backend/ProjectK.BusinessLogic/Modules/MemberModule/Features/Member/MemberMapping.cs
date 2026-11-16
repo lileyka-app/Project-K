@@ -1,11 +1,13 @@
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberWarning;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KraiModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.MemberModule;
@@ -41,11 +43,7 @@ public static class MemberMapping
         FatherLastName = member.FatherLastName,
         FatherPhone = member.FatherPhone,
         CardExtras = MemberCardExtraRules.Read(member.CardExtras),
-        // The newest ступінь on record; a record older than the history holds it alone.
-        LatestPlastLevel = member.PlastLevelHistory
-            .OrderByDescending(history => history.DateAchieved)
-            .Select(history => (PlastLevel?)history.PlastLevel)
-            .FirstOrDefault() ?? member.LatestPlastLevel,
+        LatestPlastLevel = LatestLevel(member.PlastLevelHistory, member.LatestPlastLevel),
         PlastLevelHistories = member.PlastLevelHistory.Select(ToDto).ToList(),
         LeadershipHistories = member.LeadershipHistories.Select(ToDto).ToList(),
         Warnings = member.MemberWarnings.Select(MemberWarningMapping.ToDto).ToList(),
@@ -58,41 +56,84 @@ public static class MemberMapping
     };
 
     /// <summary>
-    /// A roster row in the shape of the full card. Level, open offices and open перестороги are
-    /// already resolved by the projection. A list never carries anyone's public code — it is answered
-    /// for a whole kurin, and the code is something one person hands over — nor parents' contacts or
-    /// awards, which are read on one person's card.
+    /// A roster row in the shape of the full card, with what the row only holds as facts decided
+    /// here: кадра by <see cref="KurinRosterRules"/> — the same rule the звіт куреня applies — the
+    /// role by the first office held in this kurin, the level by the newest ступінь. A list never
+    /// carries anyone's public code — it is answered for a whole kurin, and the code is something one
+    /// person hands over — nor parents' contacts or awards, which are read on one person's card.
     /// </summary>
-    public static MemberDto ToDto(this MemberListItemDto row, IBlobReadLinks links) => new()
+    public static MemberDto ToDto(this MemberListRow row, IBlobReadLinks links)
     {
-        MemberKey = row.MemberKey,
-        GroupKey = row.GroupKey ?? Guid.Empty,
-        GroupName = row.GroupName,
-        KurinKey = row.KurinKey,
-        IsStaff = row.IsStaff,
-        MentoredGroupNames = [.. row.MentoredGroupNames],
-        UserKey = row.UserKey,
-        UserRole = row.UserRole,
-        FirstName = row.FirstName,
-        MiddleName = row.MiddleName,
-        LastName = row.LastName,
-        Email = row.Email,
-        PhoneNumber = row.PhoneNumber,
-        DateOfBirth = row.DateOfBirth,
-        Birthday = row.Birthday,
-        HiddenData = row.HiddenData,
-        Address = row.Address,
-        School = row.School,
-        LatestPlastLevel = row.LatestPlastLevel,
-        PlastLevelHistories = [.. row.PlastLevelHistories],
-        LeadershipHistories = [.. row.LeadershipHistories],
-        Warnings = [.. row.Warnings],
-        ProfilePhotoUrl = links.For(row.ProfilePhotoBlobName),
-        ProfileVerificationStatus = row.ProfileVerificationStatus,
-        ProfileVerifiedAtUtc = row.ProfileVerifiedAtUtc,
-        ProfileVerifiedByUserKey = row.ProfileVerifiedByUserKey,
-        ProfileVerificationNote = row.ProfileVerificationNote
-    };
+        var mentored = row.Assignments
+            .Where(assignment => KurinRosterRules.IsStaffAssignment(assignment.RevokedAtUtc, assignment.GroupKurinKey, row.KurinKey))
+            .Select(assignment => assignment.GroupName)
+            .ToList();
+        var naming = row.Offices
+            .OrderBy(office => office.Type)
+            .ThenBy(office => office.Role)
+            .FirstOrDefault();
+
+        return new MemberDto
+        {
+            MemberKey = row.MemberKey,
+            GroupKey = row.GroupKey ?? Guid.Empty,
+            GroupName = row.GroupName,
+            KurinKey = row.KurinKey,
+            IsStaff = mentored.Count > 0
+                || row.Offices.Any(office => KurinRosterRules.IsStaffOffice(
+                    office.Type, office.OfficeKurinKey, office.OfficeEndDate, office.EndDate, row.KurinKey)),
+            MentoredGroupNames = mentored,
+            UserKey = row.UserKey,
+            UserRole = naming is null ? null : SystemRoleNames.ForOffice(naming.Type, naming.Role),
+            FirstName = row.FirstName,
+            MiddleName = row.MiddleName,
+            LastName = row.LastName,
+            Email = row.Email,
+            PhoneNumber = row.PhoneNumber,
+            DateOfBirth = row.DateOfBirth,
+            Address = row.Address,
+            School = row.School,
+            LatestPlastLevel = LatestLevel(row.PlastLevels, row.StoredPlastLevel),
+            // Without the catalogue id the card carries: the list has never sent it.
+            PlastLevelHistories = row.PlastLevels
+                .Select(history => new PlastLevelHistoryDto
+                {
+                    MemberKey = history.MemberKey,
+                    PlastLevelHistoryKey = history.PlastLevelHistoryKey,
+                    PlastLevel = history.PlastLevel,
+                    DateAchieved = history.DateAchieved,
+                    IsPlastunka = history.IsPlastunka
+                })
+                .ToList(),
+            LeadershipHistories = row.Offices
+                .Select(office => new LeadershipHistoryDto
+                {
+                    LeadershipHistoryKey = office.LeadershipHistoryKey,
+                    MemberKey = office.MemberKey,
+                    LeadershipKey = office.LeadershipKey,
+                    Role = office.Role,
+                    LeadershipType = office.Type,
+                    GroupName = office.GroupName,
+                    KurinKey = row.KurinKey,
+                    StartDate = office.StartDate,
+                    EndDate = office.EndDate
+                })
+                .ToList(),
+            Warnings = row.Warnings.Select(MemberWarningMapping.ToDto).ToList(),
+            ProfilePhotoUrl = links.For(row.ProfilePhotoBlobName),
+            ProfileVerificationStatus = row.ProfileVerificationStatus,
+            ProfileVerifiedAtUtc = row.ProfileVerifiedAtUtc,
+            ProfileVerifiedByUserKey = row.ProfileVerifiedByUserKey,
+            ProfileVerificationNote = row.ProfileVerificationNote
+        };
+    }
+
+    /// <summary>The newest ступінь on record; a record older than the history holds it alone.</summary>
+    private static PlastLevel? LatestLevel(IEnumerable<PlastLevelHistory> history, PlastLevel? stored) =>
+        history
+            .OrderByDescending(entry => entry.DateAchieved)
+            .Select(entry => (PlastLevel?)entry.PlastLevel)
+            .FirstOrDefault() ?? stored;
 
     public static PlastLevelHistoryDto ToDto(this PlastLevelHistory history) => new()
     {
@@ -132,6 +173,21 @@ public static class MemberMapping
         ProfileVerificationNote = member.ProfileVerificationNote,
         ProfilePhotoBlobName = member.ProfilePhotoBlobName,
         ProfilePhotoUrl = links.For(member.ProfilePhotoBlobName)
+    };
+
+    /// <summary>
+    /// A person in a picker, named by the office the read found them in. The photo stays a blob name
+    /// until the caller signs it (<see cref="MemberLookupPhotoRules"/>); verification is not read.
+    /// </summary>
+    public static MemberLookupDto ToLookupDto(this MemberLookupRow row) => new()
+    {
+        MemberKey = row.MemberKey,
+        UserKey = row.UserKey,
+        FirstName = row.FirstName,
+        MiddleName = row.MiddleName,
+        LastName = row.LastName,
+        ProfilePhotoBlobName = row.ProfilePhotoBlobName,
+        UserRole = row.Office is null ? null : SystemRoleNames.ForOffice(row.Office.Type, row.Office.Role)
     };
 
     /// <summary>

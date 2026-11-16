@@ -1,5 +1,4 @@
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Records.MemberModule;
 
@@ -9,9 +8,18 @@ public interface IMemberRepository : IBaseEntityRepository<Member>
 {
     Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default);
     Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
-    Task<IEnumerable<MemberListItemDto>> GetListItemsByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
-    Task<IEnumerable<MemberListItemDto>> GetListItemsByGroupKeyAsync(Guid groupKey, CancellationToken cancellationToken = default);
-    Task<IEnumerable<MemberLookupDto>> GetMentorCandidatesLookupAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>A kurin's roster, one row per open membership, read as stored (<see cref="MemberListRow"/>).</summary>
+    Task<IReadOnlyList<MemberListRow>> GetListRowsByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>A гурток's roster, one row per open membership in it, read as stored.</summary>
+    Task<IReadOnlyList<MemberListRow>> GetListRowsByGroupKeyAsync(Guid groupKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The kurin's people who have an account, each with the first office they hold in this kurin
+    /// (by провід, then role), or none.
+    /// </summary>
+    Task<IReadOnlyList<MemberLookupRow>> GetMentorCandidatesAsync(Guid kurinKey, CancellationToken cancellationToken = default);
     Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default);
     // Narrow reads for handlers that only need one field — avoids loading the full
     // Include graph of GetByKeyAsync just to read a single key. Null means no such member.
