@@ -82,14 +82,18 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 ### Модулі
 
 Однакові по обидва боки межі — і в `BusinessLogic/Modules/`, і в `API/Controllers/`. Розміри — на
-14 листопада 2026: області (`Features/<Area>/`), запити (`…Command` і `…Query`) і рядки `.cs` у
+16 листопада 2026: області (`Features/<Area>/`), запити (`…Command` і `…Query`) і рядки `.cs` у
 `BusinessLogic/Modules/<Module>/`.
 
 | Модуль | Області · запити · рядки | Про що |
 |---|---|---|
 | `AuthModule` | 12 · 39 · 5,2 тис. | вхід і сесії, MFA, онбординг і список очікування, скидання пароля, перемикання куреня, налаштування інстансу, первинна настройка, демо- і дев-вхід. Тут і рушій прав: `PermissionResolver`, `AccessContextResolver`, `AccessSnapshotFactory`, `CurrentPermissions`, `ResourceAccessService` |
 | `UsersModule` | 3 · 13 · 1 тис. | акаунти: адміністрування користувачів, безпека й профіль власного акаунта, збережені розкладки дашборда |
-| `KurinModule` | 16 · 105 · 15,8 тис. | курінь, гуртки, члени, членства й заявки на перехід, провід, впорядники, календар і задачі, планування, відзначення, перестороги, імпорт і реєстр, архів, гілки старшого куреня, теги куреня (хто їх бачить — `SeeTags`, хто ставить — `ManageTags`; чи курінь ними користується — `KurinTagSettings`, за замовчуванням із гілки в `KurinTagRules.EnabledByDefault`). Найбільший модуль; каталоги помилок у ньому вже розкладені на майбутні модулі (`KurinErrors`, `MemberErrors`, `MembershipErrors`, `LeadershipErrors`, `AgendaErrors`, `ArchiveErrors`) |
+| `KurinModule` | 5 · 36 · 3,9 тис. | ядро куреня: курінь (картка, емблема, край, політика доступу, чи можуть люди до 18 ділитися карткою), гуртки й редакції проб, які вони обрали, планування, прохання старшого куреня змінити гілки, теги куреня (хто їх бачить — `SeeTags`, хто ставить — `ManageTags`; чи курінь ними користується — `KurinTagSettings`, за замовчуванням із гілки в `KurinTagRules.EnabledByDefault`) і PDF-звіт куреня. Звіт `KurinReportDataService` збирає зі значень: людей, членства й впорядників `IKurinReportRepository` віддає значеннями `KurinReportSource…`, а не сутностями мембера |
+| `MemberModule` | 7 · 40 · 6,4 тис. | людина: картка, профіль і його перевірка, фото, акаунт людини; членства (прийом, вихід, перехід між гуртками, колишні члени) і прохання між куренями; провід та його історія (`Leadership`); впорядники; відзначення; перестороги. Тут живе й «хто я» — `ICurrentMember`. Найбільший модуль; каталогів помилок три, за областями: `MemberErrors`, `MembershipErrors`, `LeadershipErrors` |
+| `AgendaModule` | 1 · 18 · 3,2 тис. | календар і задачі: події й задачі з призначенням «для кого», категорії, повтори, відповіді «буду / не буду», дошка й архів задач. Правила без стану, які читають і інші модулі, — у `Common/Rules/AgendaModule` (повтори `AgendaRecurrenceRules`, окремі дати серії `AgendaOccurrenceRules`, виконання `AgendaCompletionRules`, видимість `AgendaVisibilityRules`, пояс куреня `KurinTimeZoneRules`), їхні значення — у `Common/Records/AgendaModule`. Сутності тримають `KurinKey` без навігації на `Kurin` |
+| `ArchiveModule` | 1 · 8 · 1,1 тис. | архів куреня: колишні ролі, закриті членства з гуртками, розформовані гуртки, виправлення й видалення в небезпечному режимі. Своїх таблиць не має: `IKurinArchiveRepository` відповідає значеннями (`ArchivedOffice`, `MembershipPeriod`, `DissolvedGroup`) і змінює рядки за ключем, тож логіка архіву не тримає в руках ні сутностей мембера, ні сутностей куреня |
+| `RosterModule` | 2 · 3 · 1,1 тис. | імпорт реєстру з файлу (перегляд і запис) і вивантаження реєстру. Своїх таблиць не має: людей читає через `IMemberDirectory`, пише через `IMemberImportWriter` і `IKurinGroupWriter`; коди помилок — `RosterErrors` |
 | `ProbesAndBadgesModule` | 4 · 27 · 4,1 тис. | каталоги проб, вмілостей і відзначень (лише читання); які проби склав і які вмілості здобув конкретний член; третя проба |
 | `InfrastructureModule` | 3 · 10 · 1,9 тис. | сповіщення (в застосунку й на телефон), «Повідомити про проблему», код для встановлення на телефон |
 | `DuesModule` | 6 · 21 · 3,9 тис. | вкладка: ставки, нарахування, операції гурткової й курінної каси, баланс людини; у старшому курені (без гуртків) рахунок людини в касі куреня (нарахування з `GroupKey = null`), ставки за тегом (`KurinDuesRate.TagKey`, тег запамʼятовує `DuesCharge.RateTagKey`, несплачений квартал переоцінюється), там платить і провід; статті для краю й передачі просто краю; годинник кварталів і формат чисел краю (`DuesKrai`); пільги краю, надані людям, і звіт, скільки вони зняли (`GetKraiConcessionReportQuery`, віддає `KraiController`) |
@@ -101,9 +105,12 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 У `API/Controllers/` є ще три теки без двійника в `BusinessLogic`: `DemoModule`, `DevModule` і
 `TestModule` — контролери, які існують лише в окремих середовищах і беруть запити з `AuthModule`.
 
-Мембер окремої теки модуля не має: його код лежить у `KurinModule`, сутності — у
-`Common/Entities/KurinModule`, а контракти для решти — у `Common/Contracts/MemberModule/`
-(`IMemberDirectory`, `ICurrentMember`).
+У кожному шарі модуль має свою теку: `BusinessLogic/Modules/<M>`, `Common/<Вид>/<M>`,
+`Infrastructure/Repositories/<M>` і `Infrastructure/Persistence/Configurations/<M>`, `API/Controllers/<M>`.
+Тека є лише там, де модулю є що в неї класти: у `RosterModule` немає ні репозиторіїв, ні
+конфігурацій, в `ArchiveModule` — лише репозиторій архіву. `MemberModule`, `AgendaModule`,
+`ArchiveModule` і `RosterModule` виросли з `KurinModule` (`POL-13`, листопад 2026); адреси, JSON і
+база від цього не змінились.
 
 **Член ≠ користувач.** Член — це людина; користувач — спосіб увійти. Одне може існувати без
 іншого: людину заводять до того, як вона отримає акаунт, і не кожна його отримує.
@@ -134,8 +141,8 @@ BusinessLogic/Modules/<Module>/
 
 ### Межі модулів
 
-Модулі не читають таблиць одне одного. Три правила, кожне з яких перевіряє
-`ProjectK.Architecture.Tests`:
+Модулі не читають таблиць одне одного й не називають хендлерів, служб, мапінгів і каталогів
+помилок одне одного. Чотири правила, кожне з яких перевіряє `ProjectK.Architecture.Tests`:
 
 - **Питання — через контракт.** Усе, що один модуль питає в іншого, проходить через інтерфейс у
   `Common/Contracts/<Module>/` — рівно ті питання, які колись можна буде поставити по мережі.
@@ -143,20 +150,32 @@ BusinessLogic/Modules/<Module>/
 - **Зміна в чужому модулі — через подію.** Модуль, що зробив дію, публікує подію з
   `Common/Events/<Module>/` через `IDomainEventPublisher`, а модуль, чиї дані міняються, обробляє її
   сам у своїй теці `Events/`. Так активація акаунта (`AccountActivated`) заводить людину в
-  `KurinModule` (`AccountActivatedEventHandler`), зміна пошти й телефону акаунта (`AccountEmailChanged`,
+  `MemberModule` (`AccountActivatedEventHandler`), зміна пошти й телефону акаунта (`AccountEmailChanged`,
   `AccountPhoneChanged`) доходить до картки (`AccountContactSyncEventHandler`), видалений тег
   (`KurinTagDeleted`) переоцінює вкладку в `DuesModule` (`KurinTagDeletedEventHandler`), а перехід між
-  гуртками (`MembershipMovedToGroup`) записують і вкладка, і точкування.
+  гуртками (`MembershipMovedToGroup`) записують і вкладка, і точкування. Видалений курінь
+  (`KurinDeleted`) і розформований гурток (`GroupDissolved`) закривають провід і членства в
+  `MemberModule` (`MembershipCleanupEventHandler`). Ці дві події, як і `MembersRemoved` самого
+  мембера, публікуються **до** `SaveChanges` того, хто їх оголосив: обробник міняє рядки на тому
+  самому unit of work, і все комітиться одним збереженням.
+- **Запис у чужому модулі — контрактом запису, коли подія не годиться.** Подію обробляють без
+  відповіді, тож коли дія мусить змінити чужі дані в тій самій транзакції й одразу дістати
+  результат, модуль-власник відкриває `I…Writer` у `Common/Contracts/<Module>/` і виконує запис
+  своїми ж правилами. Таких контрактів три (таблиця нижче), і кожен у doc-коментарі пояснює, чому
+  тут не подія.
 - **Ключ замість навігації.** Сутність чужого модуля не буває навігаційною властивістю: тримають
   `MemberKey`, а не `Member`.
 
 | Контракт | Хто відповідає | На що |
 |---|---|---|
-| `IMemberDirectory` | мембер | хто ця людина; пошук за публічним кодом і за акаунтом; її ступені |
+| `IMemberDirectory` | мембер | хто ця людина; пошук за публічним кодом і за акаунтом; її ступені; склад куреня таким, яким його бачить глядач (`GetVisibleRosterAsync`, для вивантаження реєстру); хто може стояти за рядками файлу (`FindPossibleMatchesAsync`, для імпорту) |
 | `ICurrentMember` | мембер | хто я: людина за токеном запиту, прочитана раз на запит |
-| `IMembershipDirectory` | курінь | де людина належить і належала; хто стоїть у курені (для вкладки) |
-| `IOfficeDirectory` | курінь | які діловодства акаунт тримає в цьому курені |
+| `IMembershipDirectory` | мембер | де людина належить і належала; хто стоїть у курені (для вкладки) |
+| `IOfficeDirectory` | мембер | які діловодства акаунт тримає в цьому курені; проводи куреня, хто в них зараз сидить і в яких сидить людина — за ключем члена (для календаря) |
 | `IGroupProbeEditions` | курінь | яку редакцію проб обрав гурток |
+| `IKurinTagDirectory` | курінь | чи курінь користується тегами і як далеко глядач бачить, хто їх носить (для календаря) |
+| `IKurinTagVisibility` | курінь | чиї теги бачить глядач, перемикачі тегів куреня (`KurinTagSettingsState`), чи може він ставити теги; заповнює видимі теги в рядках людей |
+| `IAgendaDirectory` | календар | кого цілі задач охоплюють зараз (для «моїх» задач і посилання на календар) |
 | `IMemberProgressDirectory` | проби й вмілості | як далеко людина зайшла, підписані точки проби; що в курені підтверджено й підписано (для точкування) |
 | `IProbeEditionHolds` | проби й вмілості | де в черзі проб стоїть кожен юнак (для налаштувань редакції) |
 | `IBadgesCatalog`, `IProbesCatalog`, `IHonoursCatalog` | каталог | фіксовані довідники вмілостей, проб і відзначень |
@@ -164,10 +183,21 @@ BusinessLogic/Modules/<Module>/
 | `IKraiProfileDirectory` | край | профіль краю чи куреня з усіма значеннями: вмілості, валюта, пояс, формат чисел, поля картки, вкладка (куди передають, пільги) |
 | `IKurinJournalRepository` | журнал | записи журналу дій за предметами (історія на картці проби й вмілості) і сторінка журналу з фільтрами; доступний лише як `IAuditUnitOfWork.KurinJournal` |
 
+Контракти запису:
+
+| Контракт | Чий | Хто пише і навіщо |
+|---|---|---|
+| `IMemberImportWriter` | мембер | імпорт реєстру: завести нову людину, прийняти відому в курінь, відкрити їй акаунт — ключ нової людини потрібен одразу, а весь файл лягає однією транзакцією |
+| `IKurinGroupWriter` | курінь | імпорт реєстру: відкрити гуртки, яких курінь ще не має, — імпорт тут же ставить у них людей і з невдалим файлом прибирає їх назад |
+| `IAgendaRsvpWriter` | календар | відповідь «буду / не буду» з головної: той самий рядок, що й з календаря, збережений у транзакції того, хто відповідає, і одразу у відповіді |
+
 Межі тримає не домовленість, а `ProjectK.Architecture.Tests`: правила читають IL, тож звернення до
 чужого репозиторію чи чужої сутності валить тест навіть тоді, коли воно сховане всередині методу й
-ніде не видно в сигнатурах. Там, де борг ще є, він занесений у baseline правила — тобто
-перелічений поіменно, а не непомічений.
+ніде не видно в сигнатурах. `Modules_ShouldNotReachIntoEachOther` (`ModuleBoundaryRules`) так само
+ловить модуль, що називає чужий хендлер, службу чи мапінг, а ще читає текст: константа коду
+помилки вбудовується у виклик і в IL сліду не лишає. Там, де борг ще є, він занесений у baseline
+правила — тобто перелічений поіменно, а не непомічений; найбільше такого боргу в `MeModule` і
+`UsersModule`.
 
 Вкладка має свій фасад `IDuesUnitOfWork`, як мембер — `IMemberUnitOfWork`: до грошових таблиць
 нема дороги з `IUnitOfWork`, тож жоден інший модуль їх не прочитає. Гуртки, курені й членства вона
@@ -180,8 +210,9 @@ BusinessLogic/Modules/<Module>/
 гурток.
 
 Мембера будували так, щоб його можна було винести в окремий сервіс: контракт замість репозиторію,
-подія замість виклику, ключ замість навігації. Виносити його в 0.20.0 ніхто не збирався — але
-кожне з цих правил уже перевіряється.
+подія замість виклику, ключ замість навігації. Ці правила перевіряються з 0.20.0, і саме тому в
+`POL-13` мембер переїхав із `KurinModule` в окремий `MemberModule`, не зачепивши ні адрес, ні JSON,
+ні бази. Окремим сервісом він від цього не став: процес і база ті самі.
 
 ---
 
@@ -289,7 +320,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 відзначеннями й рештою профілю, тож їхні хендлери питають `CheckSeniorYouthRecordAsync`. Провід колишнього
 куреня сюди не доходить узагалі: перевірка обсягу тримає його в курені, де людина стоїть.
 
-**Архів куреня** (`KurinArchiveController`, `IKurinArchiveRepository`) — колишні ролі, закриті
+**Архів куреня** (`ArchiveModule`: `KurinArchiveController`, `IKurinArchiveRepository`) — колишні ролі, закриті
 членства з гуртками, через які вони пройшли, і розформовані гуртки. Розформований гурток не
 стирається: `Group.DissolvedAtUtc` і фільтр запитів ховають його всюди, крім архіву, а провід лишається
 з датами. Гуртки членства пише інтерсептор збереження (`MembershipGroupStintInterceptor`, `MembershipGroupStint`), тож
@@ -317,7 +348,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 | Що | Де |
 |---|---|
 | Чисті правила: мапа ролей на дозволи, можливості куреня, аудиторії політики, діловодства, імена claims | `Common/Rules/AuthModule/`: `RolePermissionRules`, `KurinCapabilityRules`, `PolicyAudienceRules`, `LeadershipOfficeRules`, `SystemRoleNames`, `AccessTokenClaimNames` |
-| Політика куреня, дозвіл, маска полів | `Common/Records/AuthModule/` (`KurinAccessPolicy`, `Permission`, `CapabilityDescriptor`), `Common/Records/KurinModule/MemberFieldMask` |
+| Політика куреня, дозвіл, маска полів | `Common/Records/AuthModule/` (`KurinAccessPolicy`, `Permission`, `CapabilityDescriptor`), `Common/Records/MemberModule/MemberFieldMask` |
 | Рушій: хто викликач, які в нього права, чи доступний обʼєкт | `BusinessLogic/Modules/AuthModule/Services/`: `AccessContextResolver`, `PermissionResolver`, `CurrentPermissions`, `AccessSnapshotFactory`, `ResourceAccessService`, `MemberFieldAccess`, `AccessChangeStore` |
 | Права всередині модуля (кого з людей і гуртків зачіпає дія) | один клас на модуль у його `Services/`: `KurinAccess`, `AgendaAccess`, `DuesAccess`, `ScoreAccess`, `ProbesAndBadgesAccess` |
 | Політики й ресурсна перевірка на ендпоінті | `API/Authorization/AuthorizationPolicies`, `API/Filters/ResourceAuthorizeAttribute` і `ResourceAuthorizeFilter` |
@@ -337,7 +368,7 @@ Permission                           напр. Group:Manage:KurinWide, MemberCon
 | Календар назовні | ICS-файл за секретним посиланням `GET /api/calendar/feed/{token}.ics` — анонімно, бо Google, Apple й Outlook забирають його зі своїх серверів без cookie; ліміт `CalendarFeedLimit` рахує за посиланням, не за IP. Свій серіалізатор RFC 5545 (`IcsRules`), повтори розгорнуті на сервері (`AgendaRecurrenceRules`), тож у файлі ні RRULE, ні VTIMEZONE. Вимкнене посилання 90 днів віддає подію-повідомлення замість мовчання | `MeModule/Features/CalendarFeed`, `API/Controllers/MeModule/CalendarFeedController` |
 | Файли | Azure Blob Storage (локально — Azurite) | `Infrastructure/Services/Blobs` |
 | Пошта | запрошення, скидання пароля, сповіщення | `Infrastructure/Services/Email` |
-| PDF | QuestPDF; звіт куреня збирає `KurinReportDataService` з `IKurinReportRepository`, малює `KurinReportPdfRenderer`; життєпис — `LifeStoryPdfRenderer` | `Infrastructure/Services/Reports`, `BusinessLogic/Modules/KurinModule/Services` |
+| PDF | QuestPDF; звіт куреня збирає `KurinReportDataService` з `IKurinReportRepository` (люди, членства й впорядники — значеннями `KurinReportSource…`), малює `KurinReportPdfRenderer`; життєпис — `LifeStoryPdfRenderer` | `Infrastructure/Services/Reports`, `BusinessLogic/Modules/KurinModule/Services` |
 | Логи | Serilog: файл, Application Insights, Telegram-сінк для дев-алертів (події безпеки й помилки; читабельний HTML, однотипні за 5 хв — одним зведенням, черга замість відкидання) | `API/Program.cs`, `Infrastructure/Logging/TelegramDevAlerts` |
 | Зворотний звʼязок | «Повідомити про проблему» → GitHub issue токеном сервера (`Feedback:GitHub`), без токена — в лог; скриншоти в `feedback-screenshots` того ж контейнера | `Infrastructure/Services/Feedback`, `API/Controllers/InfrastructureModule/FeedbackController` |
 | Каталог | вмілості, проби й відзначення з сервісу каталогу (`GET /v1/catalog`, секція `Catalog`); тримаються в памʼяті (`CatalogStore`), остання вдала відповідь — на диску, без мережі — копія, вбудована в збірку | `Infrastructure/Services/Catalog` |
@@ -477,7 +508,7 @@ swagger tofile --output swagger.json Backend/ProjectK.Backend/ProjectK.API/bin/R
 | `ProjectK.BusinessLogic.Tests` | хендлери: доменні рішення |
 | `ProjectK.Infrastructure.Tests` | репозиторії, сховища |
 | `ProjectK.API.Tests` | контролери, серіалізація, **і вся авторизація** — матриця політик, ресурсні перевірки, анонімний доступ |
-| `ProjectK.Architecture.Tests` | межі й розкладка: залежності шарів (`LayerRules`), імена запитів і хендлерів (`NamingRules`), чужі репозиторії й сутності мембера, події замість прямих викликів (`MemberBoundaryRules`), таблиця журналу (`AuditBoundaryRules`), розкладка модулів і зрізів (`LayoutRules`), контролери (`ApiRules`), вісім видів `Common` (`CommonRules`), суфікси static-класів, служб і `Directory` (`SuffixRules`), мапінг без AutoMapper (`MappingRules`), репозиторії лише через UoW (`RepositoryRules`), коди помилок з каталогу модуля (`ErrorRules`) |
+| `ProjectK.Architecture.Tests` | межі й розкладка: залежності шарів (`LayerRules`), імена запитів і хендлерів (`NamingRules`), чужі репозиторії й сутності мембера, події замість прямих викликів (`MemberBoundaryRules`), модулі не називають хендлерів, служб і кодів помилок одне одного (`ModuleBoundaryRules`), таблиця журналу (`AuditBoundaryRules`), розкладка модулів і зрізів (`LayoutRules`), контролери (`ApiRules`), вісім видів `Common` (`CommonRules`), суфікси static-класів, служб і `Directory` (`SuffixRules`), мапінг без AutoMapper (`MappingRules`), репозиторії лише через UoW (`RepositoryRules`), коди помилок з каталогу модуля (`ErrorRules`) |
 | `ProjectK.LoadTests` | навантаження |
 | `Frontend/.../e2e` | Playwright проти docker-стека |
 
