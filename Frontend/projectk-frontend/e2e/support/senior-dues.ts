@@ -58,14 +58,52 @@ async function bearer(request: APIRequestContext, user: E2eUser): Promise<Record
   return { Authorization: `Bearer ${login.tokens!.accessToken}` };
 }
 
+/** The first УСП number from `start` on (wrapping within 101–199) that no kurin and no join request holds. */
+async function freeUspNumber(request: APIRequestContext, start: number): Promise<number> {
+  const login = await loginViaApi(request, e2eUsers.admin);
+  expect(login.tokens?.accessToken, 'The admin API login returned no access token.').toBeTruthy();
+  const headers = { Authorization: `Bearer ${login.tokens!.accessToken}` };
+
+  const taken = new Set<number>();
+  const kurins = await request.get(`${e2eApiUrl}/kurin/kurins`, { headers });
+  expect(kurins.ok(), `Failed to list kurins: ${kurins.status()} ${await kurins.text()}`).toBe(true);
+  for (const kurin of await kurins.json() as { branches?: { branch: string; number: number | null }[] }[]) {
+    for (const branch of kurin.branches ?? []) {
+      if (branch.branch === 'USP' && branch.number != null) {
+        taken.add(branch.number);
+      }
+    }
+  }
+
+  const waitlist = await request.get(`${e2eApiUrl}/auth/onboarding/waitlist`, { headers });
+  expect(waitlist.ok(), `Failed to list join requests: ${waitlist.status()} ${await waitlist.text()}`).toBe(true);
+  for (const entry of await waitlist.json() as { claimedUspNumber?: number | null }[]) {
+    if (entry.claimedUspNumber != null) {
+      taken.add(entry.claimedUspNumber);
+    }
+  }
+
+  for (let offset = 0; offset < 99; offset++) {
+    const candidate = 101 + ((start - 101 + offset) % 99);
+    if (!taken.has(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error('Every УСП number from 101 to 199 is taken in the e2e database; reset it.');
+}
+
 /**
  * Opens a УСП kurin the way a senior kurin's leader does: a join request with a УСП number, the
  * admin's approval, the invitation. Numbers 101–199 like the УПЮ flows, but in УСП, so the two
  * never meet; the suffix keeps two projects apart.
+ *
+ * The e2e database outlives a run, and the join request does not check the number — only the
+ * approval does. So the number is picked among those no kurin and no request holds yet.
  */
 export async function createSeniorKurin(request: APIRequestContext, suffix: string, password: string): Promise<SeniorKurin> {
   const email = scenarioEmail(suffix, 'senior.founder');
-  let number = 101 + ((Date.now() + suffix.length * 37) % 99);
+  let number = await freeUspNumber(request, 101 + ((Date.now() + suffix.length * 37) % 99));
 
   for (let attempt = 0; ; attempt++) {
     const submitted = await request.post(`${e2eApiUrl}/auth/onboarding/waitlist`, {
@@ -88,7 +126,7 @@ export async function createSeniorKurin(request: APIRequestContext, suffix: stri
 
     // A УСП number another run holds is refused; try the next one.
     expect(attempt < 5, `Join request for a УСП kurin failed: ${submitted.status()} ${await submitted.text()}`).toBe(true);
-    number = 101 + ((number - 100) % 99);
+    number = await freeUspNumber(request, 101 + ((number - 100) % 99));
   }
 
   await approveWaitlistEntryByEmail(request, e2eUsers.admin, email);
