@@ -11,6 +11,14 @@ sidebar:
 `ProjectK.Infrastructure/Persistence/Configurations/<Module>/`. Межі модулів і те, хто в кого може
 питати, описано в [Архітектурі](/dev/core/architecture/).
 
+Сутність іншого модуля тримають ключем, а не навігаційною властивістю: `Membership` знає курінь і
+гурток як `KurinKey` і `GroupKey`, `MentorAssignment` — гурток як `GroupKey`, `Member` — акаунт як
+`UserKey`. Звʼязок лишається в моделі (`HasOne<T>()` у конфігурації з тим самим ключем і правилом
+видалення), тож у базі нічого не змінилося. Зворотних колекцій через межу теж немає: курінь не
+тримає своїх членств. Навігації через межу, що ще лишились, — `Group.Leadership`, `Leadership.Group`
+і `Leadership.Kurin` — перелічені в baseline архітектурного тесту
+`Entities_ShouldNotNavigateIntoAnotherModule`.
+
 ## Auth
 
 - **AppUser** — обліковий запис (ASP.NET Identity), має `OnboardingStatus` (активний, запрошений,
@@ -67,7 +75,9 @@ sidebar:
 - **Leadership** / **LeadershipHistory** — провід (КВ, курінний, гуртковий) і хто коли яке діловодство
   тримав. Саме з активних записів виводяться права.
 - **MentorAssignment** — закріплення впорядника за гуртком. Активне закріплення трактується як
-  діловодство впорядника в КВ.
+  діловодство впорядника в КВ; це правило сказано раз, у `MentorOfficeRules`. Закріплення за
+  розформованим гуртком ховає фільтр запитів, який стоїть в `AppDbContext.OnModelCreating` і питає
+  гуртки за ключем.
 - **MemberAward** — відзначення; **MemberWarning** — зауваження й стягнення.
 - **PlastLevelHistory** — історія пластових ступенів.
 

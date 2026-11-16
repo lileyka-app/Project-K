@@ -183,7 +183,11 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 PNG/JPEG/WebP); декодер бере лише картинку до 40 Мп (`MaxDecodedPixels`, розмір читає з заголовка до
 декодування), далі JPEG. Посвідка може бути PDF: її пускають лише перші пʼять байтів `%PDF-`
 (`BlobUploadProcessingMode.KeepPdf`) — це не перевірка документа, тож блоб зберігається з
-`Content-Disposition: attachment` і браузер його завантажує, а не відкриває.
+`Content-Disposition: attachment` і браузер його завантажує, а не відкриває. Те, що відхиляє вже
+контролер, до хендлера (немає файла, посвідка більша за 2 МБ, не-PDF, що не пройшов перевірку
+зображення), відповідає
+кодами з того ж каталогу `ProbesAndBadgesErrors`: `MissingFile`, `CertificateTooLarge`,
+`InvalidCertificate`.
 
 Файли живуть, поки їх називає рядок: `ProbeProjectImage` для зображень, колонка
 `CampCertificateBlobName` для посвідки. Збереження тексту видаляє зображення, яких він більше не

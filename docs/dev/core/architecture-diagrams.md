@@ -110,8 +110,9 @@ sequenceDiagram
 Чотири проєкти з односторонніми залежностями. `BusinessLogic` та `Infrastructure` не знають одне
 про одного: інтерфейс живе в `Common`, реалізація — в `Infrastructure`. Модулі не читають таблиць
 одне одного, а питають через контракти в `Common/Contracts/<Module>/`, і ці контракти лише
-відповідають; змінити щось у чужому модулі можна подією, яку той модуль обробить сам, а коли
-потрібні одна транзакція й відповідь одразу — його контрактом запису `I…Writer`.
+відповідають — значеннями з `Common/Records`, а не сутностями; змінити щось у чужому модулі можна
+подією, яку той модуль обробить сам, а коли потрібні одна транзакція й відповідь одразу — його
+контрактом запису `I…Writer`. Сутність чужого модуля тримають ключем, а не навігацією.
 `ProjectK.Architecture.Tests` читає IL і валить збірку, якщо хтось перетнув межу. `Common` розкладений
 спершу за видом, потім за модулем: `Entities/`, `Contracts/`, `Dtos/`, `Records/`, `Events/`, `Enums/`,
 `Rules/`, `Options/`.
@@ -136,7 +137,7 @@ flowchart TB
         direction LR
         ENT["Entities<br/>Member · Membership · Kurin · Group · AgendaItem …"]
         IFACE["Contracts<br/>IUnitOfWork · IEmailService · IPhotoService …"]
-        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · ICurrentMember · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory · IAgendaDirectory<br/>IKurinTagDirectory · IDuesDirectory · IKraiProfileDirectory<br/>запис: IMemberImportWriter · IKurinGroupWriter · IAgendaRsvpWriter"]
+        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · ICurrentMember · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory · IAgendaDirectory<br/>IKurinDirectory · IKurinTagDirectory · IDuesDirectory · IKraiProfileDirectory<br/>запис: IMemberImportWriter · IKurinGroupWriter<br/>IAgendaRsvpWriter · IAccountSessionWriter"]
         KINDS["Dtos · Records · Events<br/>Enums · Rules · Options"]
     end
 
