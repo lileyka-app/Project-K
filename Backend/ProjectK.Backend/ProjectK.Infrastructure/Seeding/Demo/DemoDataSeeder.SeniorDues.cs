@@ -8,7 +8,7 @@ using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.DuesModule;
 
-namespace ProjectK.Infrastructure.Seeding;
+namespace ProjectK.Infrastructure.Seeding.Demo;
 
 /// <summary>
 /// The Order's вкладка: no гуртки, so each person pays into the kurin's own box. Tags УСП and УПС
