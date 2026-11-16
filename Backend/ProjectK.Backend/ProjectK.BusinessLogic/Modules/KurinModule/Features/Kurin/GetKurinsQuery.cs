@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -18,12 +19,14 @@ public class GetKurinsQueryHandler : IRequestHandler<GetKurinsQuery, ServiceResu
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;
     private readonly IBackendCache _cache;
+    private readonly IMembershipDirectory _memberships;
 
-    public GetKurinsQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache)
+    public GetKurinsQueryHandler(IUnitOfWork unitOfWork, IBlobReadLinks links, IBackendCache cache, IMembershipDirectory memberships)
     {
         _unitOfWork = unitOfWork;
         _links = links;
         _cache = cache;
+        _memberships = memberships;
     }
 
     public async Task<ServiceResult<IEnumerable<KurinDto>>> Handle(GetKurinsQuery request, CancellationToken cancellationToken)
@@ -34,7 +37,10 @@ public class GetKurinsQueryHandler : IRequestHandler<GetKurinsQuery, ServiceResu
             async token =>
             {
                 var kurins = await _unitOfWork.Kurins.GetAllAsync(token);
-                var kurinResponses = kurins.Select(item => item.ToDto(_links)).ToList();
+                var headcounts = await _memberships.CountCurrentInKurinsAsync(kurins.Select(item => item.KurinKey).ToList(), token);
+                var kurinResponses = kurins
+                    .Select(item => item.ToDto(_links, headcounts.GetValueOrDefault(item.KurinKey)))
+                    .ToList();
                 return new ServiceResult<IEnumerable<KurinDto>>(ResultType.Success, kurinResponses);
             },
             cancellationToken);

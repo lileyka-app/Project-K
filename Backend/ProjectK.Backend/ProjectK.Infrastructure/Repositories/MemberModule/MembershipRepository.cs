@@ -144,6 +144,26 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
             .Distinct()
             .ToListAsync(cancellationToken);
 
+    public Task<int> CountCurrentInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => Context.Memberships.CountAsync(m => m.KurinKey == kurinKey && m.LeftAtUtc == null, cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, int>> CountCurrentInKurinsAsync(
+        IReadOnlyCollection<Guid> kurinKeys,
+        CancellationToken cancellationToken = default)
+    {
+        if (kurinKeys.Count == 0)
+        {
+            return new Dictionary<Guid, int>();
+        }
+
+        var keys = kurinKeys.Distinct().ToList();
+        return await Context.Memberships
+            .Where(m => keys.Contains(m.KurinKey) && m.LeftAtUtc == null)
+            .GroupBy(m => m.KurinKey)
+            .Select(group => new { KurinKey = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(row => row.KurinKey, row => row.Count, cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<KurinMembershipRecord>> GetRecordsInKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)
