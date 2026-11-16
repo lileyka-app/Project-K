@@ -3,7 +3,8 @@ import { registerLocaleData } from '@angular/common';
 import localeUk from '@angular/common/locales/uk';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { MessageService } from '@openng/optimus-ui/api';
 import { WaitlistManagementComponent } from './waitlist-management';
 import { OnboardingService, WaitlistEntry } from '../../../authModule/services/onboarding-service/onboarding.service';
@@ -98,5 +99,18 @@ describe('WaitlistManagementComponent', () => {
     component.confirmApproval();
 
     expect(onboarding.approveWaitlistEntry).toHaveBeenCalledWith('key-1', null);
+  });
+
+  it('words an unknown край by its code, not by the server message', () => {
+    const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+    onboarding.approveWaitlistEntry.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 400,
+      error: { error: 'KraiNotFound', message: 'There is no such krai.' }
+    })));
+
+    component.approve(component.entries[0]);
+    component.confirmApproval();
+
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Такого краю немає в списку.' }));
   });
 });
