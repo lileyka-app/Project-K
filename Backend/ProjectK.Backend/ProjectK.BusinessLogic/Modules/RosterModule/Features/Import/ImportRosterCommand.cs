@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
@@ -7,7 +8,6 @@ using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
-using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 
 namespace ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 
@@ -89,15 +89,18 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
     private readonly IUnitOfWork _kurinData;
     private readonly IMemberDirectory _members;
     private readonly IMemberImportWriter _people;
+    private readonly IKurinGroupWriter _groups;
 
     public ImportRosterCommandHandler(
         IUnitOfWork kurinData,
         IMemberDirectory members,
-        IMemberImportWriter people)
+        IMemberImportWriter people,
+        IKurinGroupWriter groups)
     {
         _kurinData = kurinData;
         _members = members;
         _people = people;
+        _groups = groups;
     }
 
     public async Task<ServiceResult<RosterImportReport>> Handle(
@@ -151,14 +154,10 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         // takes the new гуртки back out with everything else.
         if (!request.DryRun && request.CreateMissingGroups)
         {
-            foreach (var name in missingGroups)
+            foreach (var (name, groupKey) in await _groups.OpenAsync(request.KurinKey, missingGroups, cancellationToken))
             {
-                var group = new GroupEntity(name, request.KurinKey);
-                _kurinData.Groups.Create(group, cancellationToken);
-                groupsByName[name] = group.GroupKey;
+                groupsByName[name] = groupKey;
             }
-
-            await _kurinData.SaveChangesAsync(cancellationToken);
         }
 
         var results = new List<RowResult>(rows.Count);

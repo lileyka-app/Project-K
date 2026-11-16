@@ -8,7 +8,7 @@ namespace ProjectK.Common.Contracts.MemberModule;
 /// known into a kurin, open their account. Each call runs the member module's own use case, so the
 /// rules of writing a person stay where they are.
 /// <para>
-/// A write contract on purpose, and the only one: a Directory only answers, and an event does not
+/// A write contract on purpose: a Directory only answers, and an event does not
 /// fit. The import needs the new member's key back at once — the account is opened for the person
 /// just written — and the whole file lands in one transaction or not at all. A handler reacting to an
 /// event after the save could give neither.

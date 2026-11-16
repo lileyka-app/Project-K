@@ -1,3 +1,4 @@
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.RosterModule;
@@ -51,7 +52,7 @@ public class ImportRosterHandlerTests
         _kurinData.Setup(u => u.Kurins).Returns(_kurins.Object);
         _kurinData.Setup(u => u.Groups).Returns(_groups.Object);
 
-        _handler = new ImportRosterCommandHandler(_kurinData.Object, _members.Object, _people.Object);
+        _handler = new ImportRosterCommandHandler(_kurinData.Object, _members.Object, _people.Object, new KurinGroupWriter(_kurinData.Object));
     }
 
     /// <summary>Прізвище, Ім'я, Дата народження, Ступінь, Дата ступеня, Гурток, Курінь, Пошта.</summary>

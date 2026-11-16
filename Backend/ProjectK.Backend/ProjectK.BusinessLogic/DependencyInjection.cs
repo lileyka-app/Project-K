@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IMemberFieldAccess, MemberFieldAccess>();
         services.AddScoped<IKurinTagVisibility, KurinTagVisibility>();
         services.AddScoped<IKurinTagDirectory, KurinTagDirectory>();
+        services.AddScoped<IKurinGroupWriter, KurinGroupWriter>();
         services.AddScoped<KraiProfileWriter>();
         services.AddScoped<IMfaEnforcementReader, MfaEnforcementReader>();
         services.AddScoped<ResourceAccessService>();
