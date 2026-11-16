@@ -56,7 +56,7 @@ public class UpdateAgendaItemHandlerTests
         groups.Setup(g => g.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_groups);
         _uow.Setup(u => u.Groups).Returns(groups.Object);
         _journal = new JournalRecorder(_currentUser.Object);
-        _handler = new UpdateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
+        _handler = new UpdateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
     }
 
     [Fact]

@@ -21,6 +21,8 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinDirectory _kurins;
+    private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
@@ -30,6 +32,8 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
         IUnitOfWork uow,
         IMemberDirectory members,
         IOfficeDirectory offices,
+        IKurinDirectory kurins,
+        IKurinTagDirectory tags,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
@@ -38,6 +42,8 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
         _uow = uow;
         _members = members;
         _offices = offices;
+        _kurins = kurins;
+        _tags = tags;
         _access = access;
         _currentUser = currentUser;
         _events = events;
@@ -65,13 +71,13 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
 
         // Resolve who was assigned before the row (and its assignments) are gone.
         var actorUserKey = viewer.ViewerUserKey ?? Guid.Empty;
-        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, _offices, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_members, _offices, _tags, item, actorUserKey, cancellationToken);
         var title = item.Title;
         var kind = item.Kind;
         var kurinKey = item.KurinKey;
 
         var targets = AgendaTrail.TargetsOf(item);
-        var names = await AgendaTargetNames.LoadAsync(_uow, _members, _offices, kurinKey, targets, cancellationToken);
+        var names = await AgendaTargetNames.LoadAsync(_members, _offices, _kurins, _tags, kurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,

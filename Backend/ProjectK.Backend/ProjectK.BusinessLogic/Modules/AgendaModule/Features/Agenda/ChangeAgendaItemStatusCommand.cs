@@ -24,6 +24,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
@@ -35,6 +36,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         IUnitOfWork uow,
         IMemberDirectory members,
         IOfficeDirectory offices,
+        IKurinTagDirectory tags,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
@@ -45,6 +47,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         _uow = uow;
         _members = members;
         _offices = offices;
+        _tags = tags;
         _access = access;
         _currentUser = currentUser;
         _events = events;
@@ -92,7 +95,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
             }
 
             var movedFrom = AgendaCompletionRules.StatusOf(moves[0]);
-            var roster = await AgendaRosterRules.LoadAsync(_uow, _members, _offices, item.KurinKey, [item], cancellationToken);
+            var roster = await AgendaRosterRules.LoadAsync(_members, _offices, _tags, item.KurinKey, [item], cancellationToken);
             foreach (var stake in moves)
             {
                 _statuses.Apply(item, stake, request.Status, actor, roster, now);

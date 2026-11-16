@@ -39,9 +39,10 @@ public sealed class AgendaTargetNames
 
     /// <summary>Reads the names <paramref name="targets"/> need, all of them at once.</summary>
     public static async Task<AgendaTargetNames> LoadAsync(
-        IUnitOfWork uow,
         IMemberDirectory directory,
         IOfficeDirectory offices,
+        IKurinDirectory kurins,
+        IKurinTagDirectory kurinTags,
         Guid kurinKey,
         IEnumerable<(AgendaTargetType Type, Guid Key)> targets,
         CancellationToken cancellationToken)
@@ -51,8 +52,7 @@ public sealed class AgendaTargetNames
         IReadOnlyDictionary<Guid, string> groups = new Dictionary<Guid, string>();
         if (list.Any(target => target.Type is AgendaTargetType.Group or AgendaTargetType.Leadership))
         {
-            groups = (await uow.Groups.GetAllAsync(kurinKey, cancellationToken))
-                .ToDictionary(group => group.GroupKey, group => group.Name);
+            groups = await kurins.GetGroupNamesAsync(kurinKey, cancellationToken);
         }
 
         IReadOnlyDictionary<Guid, string> members = new Dictionary<Guid, string>();
@@ -73,7 +73,7 @@ public sealed class AgendaTargetNames
         IReadOnlyDictionary<Guid, string> tags = new Dictionary<Guid, string>();
         if (list.Any(target => target.Type == AgendaTargetType.Tag))
         {
-            tags = (await uow.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
+            tags = (await kurinTags.GetTagsAsync(kurinKey, cancellationToken))
                 .ToDictionary(tag => tag.KurinTagKey, tag => AgendaNames.TagLabel(tag.Name));
         }
 

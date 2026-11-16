@@ -72,6 +72,9 @@ public static class KurinErrors
     public const string NoteTooLong = "NoteTooLong";
     public const string NothingToChange = "NothingToChange";
 
+    /// <summary>A task archive period is outside 1..3650 days; the code keeps the agenda's name, which the client knows.</summary>
+    public const string AgendaArchivePolicyRange = "AgendaArchivePolicyRange";
+
     /// <summary>The caller's identity is missing from the token.</summary>
     public const string Unauthorized = "Unauthorized";
 

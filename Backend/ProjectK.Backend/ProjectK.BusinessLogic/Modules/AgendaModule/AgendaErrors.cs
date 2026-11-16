@@ -39,7 +39,6 @@ public static class AgendaErrors
     public const string AgendaNotVisible = "AgendaNotVisible";
 
     public const string AgendaArchiveTasksOnly = "AgendaArchiveTasksOnly";
-    public const string AgendaArchivePolicyRange = "AgendaArchivePolicyRange";
 
     public const string CategoryNotFound = "CategoryNotFound";
     public const string CategoryOtherKurin = "CategoryOtherKurin";

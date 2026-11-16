@@ -43,6 +43,8 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinDirectory _kurins;
+    private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
@@ -52,6 +54,8 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         IUnitOfWork uow,
         IMemberDirectory members,
         IOfficeDirectory offices,
+        IKurinDirectory kurins,
+        IKurinTagDirectory tags,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
@@ -60,6 +64,8 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         _uow = uow;
         _members = members;
         _offices = offices;
+        _kurins = kurins;
+        _tags = tags;
         _access = access;
         _currentUser = currentUser;
         _events = events;
@@ -116,7 +122,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         _uow.AgendaItems.Create(item, cancellationToken);
 
         var targets = AgendaTrail.TargetsOf(item);
-        var names = await AgendaTargetNames.LoadAsync(_uow, _members, _offices, item.KurinKey, targets, cancellationToken);
+        var names = await AgendaTargetNames.LoadAsync(_members, _offices, _kurins, _tags, item.KurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,
@@ -136,7 +142,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
 
     private async Task PublishAssignedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, _offices, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_members, _offices, _tags, item, actorUserKey, cancellationToken);
 
         await _events.PublishAsync(
             new AgendaItemAssigned(

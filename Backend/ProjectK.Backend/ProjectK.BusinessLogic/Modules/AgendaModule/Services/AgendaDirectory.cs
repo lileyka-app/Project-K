@@ -13,17 +13,19 @@ public sealed class AgendaDirectory : IAgendaDirectory
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinTagDirectory _tags;
 
-    public AgendaDirectory(IUnitOfWork uow, IMemberDirectory members, IOfficeDirectory offices)
+    public AgendaDirectory(IUnitOfWork uow, IMemberDirectory members, IOfficeDirectory offices, IKurinTagDirectory tags)
     {
         _uow = uow;
         _members = members;
         _offices = offices;
+        _tags = tags;
     }
 
     public Task<AgendaRoster> GetRosterAsync(
         Guid kurinKey,
         IReadOnlyCollection<AgendaItem> items,
         CancellationToken cancellationToken = default)
-        => AgendaRosterRules.LoadAsync(_uow, _members, _offices, kurinKey, items, cancellationToken);
+        => AgendaRosterRules.LoadAsync(_members, _offices, _tags, kurinKey, items, cancellationToken);
 }

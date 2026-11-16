@@ -44,6 +44,8 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinDirectory _kurins;
+    private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
@@ -53,6 +55,8 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         IUnitOfWork uow,
         IMemberDirectory members,
         IOfficeDirectory offices,
+        IKurinDirectory kurins,
+        IKurinTagDirectory tags,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
@@ -61,6 +65,8 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         _uow = uow;
         _members = members;
         _offices = offices;
+        _kurins = kurins;
+        _tags = tags;
         _access = access;
         _currentUser = currentUser;
         _events = events;
@@ -142,7 +148,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         ReconcileTargets(item, request.Targets, requestedModes);
 
         // Targets came and went, so what the task adds up to may have changed with them.
-        var roster = await AgendaRosterRules.LoadAsync(_uow, _members, _offices, item.KurinKey, [item], cancellationToken);
+        var roster = await AgendaRosterRules.LoadAsync(_members, _offices, _tags, item.KurinKey, [item], cancellationToken);
         AgendaCompletionRules.SetItemStatus(item, AgendaCompletionRules.ItemStatus(item, roster), DateTime.UtcNow);
 
         await RecordChangesAsync(item, before, targetsBefore, statusBefore, cancellationToken);
@@ -166,7 +172,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
         var changes = AgendaTrail.Between(before, AgendaTrail.Of(item)).ToList();
         if (!targetsBefore.ToHashSet().SetEquals(targetsAfter))
         {
-            var names = await AgendaTargetNames.LoadAsync(_uow, _members, _offices, item.KurinKey, targetsBefore.Concat(targetsAfter), cancellationToken);
+            var names = await AgendaTargetNames.LoadAsync(_members, _offices, _kurins, _tags, item.KurinKey, targetsBefore.Concat(targetsAfter), cancellationToken);
             changes.AddRange(AuditChangeRules.Of((AgendaTrail.Targets, names.Describe(targetsBefore), names.Describe(targetsAfter))));
         }
 
@@ -225,7 +231,7 @@ public sealed class UpdateAgendaItemCommandHandler : IRequestHandler<UpdateAgend
 
     private async Task PublishChangedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_uow, _members, _offices, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_members, _offices, _tags, item, actorUserKey, cancellationToken);
 
         await _events.PublishAsync(
             new AgendaItemChanged(

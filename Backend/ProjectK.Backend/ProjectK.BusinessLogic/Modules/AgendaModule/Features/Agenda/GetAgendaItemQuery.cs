@@ -20,15 +20,19 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinDirectory _kurins;
+    private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly UserManager<AppUser> _userManager;
 
-    public GetAgendaItemQueryHandler(IUnitOfWork uow, IMemberDirectory members, IOfficeDirectory offices, IAgendaAccess access, ICurrentUserContext currentUser, UserManager<AppUser> userManager)
+    public GetAgendaItemQueryHandler(IUnitOfWork uow, IMemberDirectory members, IOfficeDirectory offices, IKurinDirectory kurins, IKurinTagDirectory tags, IAgendaAccess access, ICurrentUserContext currentUser, UserManager<AppUser> userManager)
     {
         _uow = uow;
         _members = members;
         _offices = offices;
+        _kurins = kurins;
+        _tags = tags;
         _access = access;
         _currentUser = currentUser;
         _userManager = userManager;
@@ -49,8 +53,8 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
             return AgendaErrors.NotFound<AgendaItemDto>();
         }
 
-        var lookups = await AgendaNames.LoadAsync(_uow, _members, _offices, item.KurinKey, [item], cancellationToken);
-        var roster = await AgendaRosterRules.LoadAsync(_uow, _offices, lookups.MemberGroups, [item], cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _members, _offices, _kurins, _tags, item.KurinKey, [item], cancellationToken);
+        var roster = await AgendaRosterRules.LoadAsync(_offices, _tags, lookups.MemberGroups, [item], cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, [item], cancellationToken);
 
         return new ServiceResult<AgendaItemDto>(ResultType.Success,

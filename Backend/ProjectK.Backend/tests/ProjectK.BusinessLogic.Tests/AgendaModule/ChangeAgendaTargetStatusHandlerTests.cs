@@ -78,7 +78,7 @@ public class ChangeAgendaTargetStatusHandlerTests
         _journal = new JournalRecorder(_currentUser.Object).Knows(_youth, _kurinKey, _groupKey, "Марта", "Мельник");
         var events = Mock.Of<IDomainEventPublisher>();
         _handler = new ChangeAgendaTargetStatusCommandHandler(
-            _uow.Object, _members.Object, new OfficeDirectory(_uow.Object), _access.Object, _currentUser.Object, events, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, events));
+            _uow.Object, _members.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, events, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, events));
     }
 
     [Fact]

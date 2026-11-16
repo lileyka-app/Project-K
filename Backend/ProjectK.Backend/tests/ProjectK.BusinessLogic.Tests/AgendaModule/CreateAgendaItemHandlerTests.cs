@@ -46,7 +46,7 @@ public class CreateAgendaItemHandlerTests
         _uow.Setup(u => u.Groups).Returns(Mock.Of<IGroupRepository>());
         _access.Setup(a => a.CanAuthorAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _journal = new JournalRecorder(_currentUser.Object);
-        _handler = new CreateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
+        _handler = new CreateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
     }
 
     private static CreateAgendaItemCommand CommandWith(Guid kurinKey, params AgendaTargetInput[] targets) => new()

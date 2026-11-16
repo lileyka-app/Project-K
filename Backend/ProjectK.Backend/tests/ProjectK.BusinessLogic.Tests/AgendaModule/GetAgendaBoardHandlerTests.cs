@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -58,7 +59,7 @@ public class GetAgendaBoardHandlerTests
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, Guid.NewGuid(), null, null, [], [], true, true));
 
         var userManager = new Mock<UserManager<AppUser>>(Mock.Of<IUserStore<AppUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
-        _handler = new GetAgendaBoardQueryHandler(uow.Object, members.Object, new OfficeDirectory(uow.Object), access.Object, userManager.Object);
+        _handler = new GetAgendaBoardQueryHandler(uow.Object, members.Object, new OfficeDirectory(uow.Object), KurinDirectories.Over(uow.Object), KurinDirectories.TagsOver(uow.Object), access.Object, userManager.Object);
     }
 
     private AgendaItem Add(string title, Guid group, AgendaItemStatus status = AgendaItemStatus.Todo, DateTime? due = null)

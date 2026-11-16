@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -81,9 +82,11 @@ public class GetAssignTargetsHandlerTests
         _novices = new KurinTag { KurinKey = _kurinKey, Name = "Новики", ColorHex = "#2F855A" };
         _uow.Setup(u => u.KurinTags).Returns(_tagRepo.Object);
         _tagRepo.Setup(r => r.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([_novices]);
+        _tags.Setup(t => t.GetTagsAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new ProjectK.Common.Records.KurinModule.KurinTagSummary(_novices.KurinTagKey, _novices.Name, _novices.ColorHex)]);
         TagsOn(true);
 
-        _handler = new GetAssignTargetsQueryHandler(_uow.Object, _memberDirectory.Object, _access.Object, _tags.Object, new OfficeDirectory(_uow.Object));
+        _handler = new GetAssignTargetsQueryHandler(_memberDirectory.Object, _access.Object, _tags.Object, KurinDirectories.Over(_uow.Object), new OfficeDirectory(_uow.Object));
     }
 
     private void Reach(CapabilityReach kurin, CapabilityReach groups, CapabilityReach members, CapabilityReach provid, params Guid[] led) =>

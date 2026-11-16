@@ -31,14 +31,15 @@ public sealed record AgendaNames(
         IUnitOfWork uow,
         IMemberDirectory directory,
         IOfficeDirectory offices,
+        IKurinDirectory kurins,
+        IKurinTagDirectory tags,
         Guid kurinKey,
         IEnumerable<AgendaItem> items,
         CancellationToken cancellationToken)
     {
-        var groups = await uow.Groups.GetAllAsync(kurinKey, cancellationToken);
+        var groupNames = await kurins.GetGroupNamesAsync(kurinKey, cancellationToken);
         var members = await AgendaPeopleRules.ReadAsync(directory, kurinKey, AgendaPeopleRules.ToLabel(items), cancellationToken);
 
-        var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
         var memberNames = members.ToDictionary(m => m.MemberKey, m => m.FullName);
 
         // Creators are app users; resolve their display name through the linked member record.
@@ -49,7 +50,7 @@ public sealed record AgendaNames(
         var targetLabels = leadershipRefs.ToDictionary(
             r => r.LeadershipKey,
             r => LabelFor(r.Type, r.GroupKey, groupNames));
-        foreach (var tag in await uow.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
+        foreach (var tag in await tags.GetTagsAsync(kurinKey, cancellationToken))
         {
             targetLabels[tag.KurinTagKey] = TagLabel(tag.Name);
         }
