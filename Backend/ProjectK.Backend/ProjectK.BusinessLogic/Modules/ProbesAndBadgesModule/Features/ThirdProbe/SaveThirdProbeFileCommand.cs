@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -14,23 +15,6 @@ using ProjectK.Common.Rules.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
-
-/// <summary>
-/// What the person writes into their third-probe file. The confirmation of the reflection and the
-/// stages are not here: leaders set those.
-/// </summary>
-public sealed record ThirdProbeFileInput(
-    string? MentorZvyazkovyi,
-    string? MentorVporiadnyk,
-    string? MentorReferent,
-    DateOnly? ReflectionOn,
-    string? ReflectionWith,
-    ThirdProbeCampKind? CampKind,
-    string? CampName,
-    DateOnly? CampFrom,
-    DateOnly? CampTo,
-    string? PhysicalBadgeId,
-    string? Resume);
 
 /// <summary>
 /// Writes the third-probe file. A confirmed reflection whose date or partner changes loses its

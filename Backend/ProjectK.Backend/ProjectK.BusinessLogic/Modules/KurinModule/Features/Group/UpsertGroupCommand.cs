@@ -10,7 +10,7 @@ using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
-public class UpsertGroupCommand : IRequest<ServiceResult<GroupDto>>
+public sealed class UpsertGroupCommand : IRequest<ServiceResult<GroupDto>>
 {
     public Guid GroupKey { get; set; }
     public string Name { get; set; }
@@ -32,7 +32,7 @@ public class UpsertGroupCommand : IRequest<ServiceResult<GroupDto>>
     }
 }
 
-public class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, ServiceResult<GroupDto>>
+public sealed class UpsertGroupCommandHandler : IRequestHandler<UpsertGroupCommand, ServiceResult<GroupDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

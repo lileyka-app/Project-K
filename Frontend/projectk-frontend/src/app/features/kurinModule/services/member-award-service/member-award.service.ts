@@ -32,8 +32,8 @@ export class MemberAwardService {
     }
 
     /** Pins or unpins one of the caller's own відзначення: every grant of that level or catalogue id. */
-    pinAward(request: { level?: MemberAwardLevel | null; catalogId?: string | null; pinned: boolean }): Observable<boolean> {
-        return this.http.put<boolean>(`${environment.apiUrl}/me/awards/pin`, request).pipe(
+    pinAward(request: { level?: MemberAwardLevel | null; catalogId?: string | null; pinned: boolean }): Observable<void> {
+        return this.http.put<void>(`${environment.apiUrl}/me/awards/pin`, request).pipe(
             tap(() => this.invalidateMemberData())
         );
     }

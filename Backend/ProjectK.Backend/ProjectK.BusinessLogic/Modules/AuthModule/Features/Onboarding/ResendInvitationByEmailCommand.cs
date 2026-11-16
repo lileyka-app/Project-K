@@ -13,7 +13,7 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record ResendInvitationByEmailCommand(string Email) : IRequest<ServiceResult<Unit>>, ITransactionalRequest;
+public sealed record ResendInvitationByEmailCommand(string Email) : IRequest<ServiceResult<Unit>>, ITransactionalRequest;
 
 public sealed class ResendInvitationByEmailCommandValidator : AbstractValidator<ResendInvitationByEmailCommand>
 {

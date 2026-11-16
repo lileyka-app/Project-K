@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -15,10 +14,10 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 
-public record ConfirmAccountEmailChangeCommand(Guid UserKey, string Email, string Token)
+public sealed record ConfirmAccountEmailChangeCommand(Guid UserKey, string Email, string Token)
     : IRequest<ServiceResult<AccountSettingsDto>>;
 
-public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAccountEmailChangeCommand, ServiceResult<AccountSettingsDto>>
+public sealed class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAccountEmailChangeCommand, ServiceResult<AccountSettingsDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IAccountSessionWriter _sessions;

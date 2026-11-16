@@ -16,6 +16,8 @@ public static class UsersErrors
     public const string UpdateFailed = "UpdateFailed";
     public const string PasswordChangeFailed = "PasswordChangeFailed";
     public const string LayoutTooLarge = "LayoutTooLarge";
+    /// <summary>The account role asked for is not one the system knows.</summary>
+    public const string InvalidRole = "InvalidRole";
     public const string AdminOnly = "AdminOnly";
     public const string AdminRoleNotGranted = "AdminRoleNotGranted";
     public const string AdminRoleNotRevoked = "AdminRoleNotRevoked";

@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using ProjectK.API.Hosting;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Infrastructure.Services.GeoIP;
 
 namespace ProjectK.API.Middleware;
 
@@ -16,7 +15,7 @@ public sealed class SecurityHardeningMiddleware
         _options = options;
     }
 
-    public async Task InvokeAsync(HttpContext context, GeoIPService geoIPService, IActivityLogger activityLogger)
+    public async Task InvokeAsync(HttpContext context, IGeoIPService geoIPService, IActivityLogger activityLogger)
     {
         var remoteIp = context.Connection.RemoteIpAddress?.ToString();
 

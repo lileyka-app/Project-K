@@ -413,5 +413,3 @@ public class AzureBlobPhotoService : IPhotoService
         return normalized;
     }
 }
-
-internal sealed record PreparedBlobUpload(byte[] ProcessedBytes, string FinalExtension, string ContentType);

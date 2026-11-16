@@ -2,6 +2,8 @@ namespace ProjectK.Common.Options.InfrastructureModule;
 
 public sealed class TelegramDevAlertOptions
 {
+    public const string SectionName = "Telegram:DevAlerts";
+
     public bool Enabled { get; set; }
 
     public string? BotToken { get; set; }

@@ -3,18 +3,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
+using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
+using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -60,7 +58,7 @@ public static class DependencyInjection
 
         services.Configure<KurinNumberOptions>(configuration.GetSection(KurinNumberOptions.SectionName));
         services.Configure<KraiOptions>(configuration.GetSection(KraiOptions.SectionName));
-        services.Configure<LoginThrottleOptions>(configuration.GetSection("LoginThrottle"));
+        services.Configure<LoginThrottleOptions>(configuration.GetSection(LoginThrottleOptions.SectionName));
 
         // The clock a kurin's week repeats by (DST-safe recurrence); Kyiv unless configured.
         AgendaRecurrenceRules.DefaultZone = AgendaRecurrenceRules.ResolveZone(configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");

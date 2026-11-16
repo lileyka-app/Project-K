@@ -28,7 +28,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 /// kurin's application, and <paramref name="ClaimedKurinNameOrNumber"/> is left out.
 /// </param>
 /// <param name="UpsNumber">The senior kurin's number in УПС; see <paramref name="UspNumber"/>.</param>
-public record SubmitWaitlistRegistrationCommand(
+public sealed record SubmitWaitlistRegistrationCommand(
     string FirstName,
     string LastName,
     string Email,
@@ -114,7 +114,7 @@ public sealed class SubmitWaitlistRegistrationCommandValidator : AbstractValidat
     }
 }
 
-public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWaitlistRegistrationCommand, ServiceResult<Guid>>
+public sealed class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWaitlistRegistrationCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;

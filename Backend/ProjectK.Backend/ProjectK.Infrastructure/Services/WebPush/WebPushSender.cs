@@ -7,18 +7,6 @@ using ProjectK.Common.Options.InfrastructureModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 
-/// <summary>What became of one push.</summary>
-public enum WebPushOutcome
-{
-    Delivered,
-
-    /// <summary>The push service no longer knows the device (404/410): its row should go.</summary>
-    Gone,
-
-    /// <summary>Anything else — refused, throttled, unreachable. Logged; the row stays.</summary>
-    Failed
-}
-
 /// <summary>
 /// Sends one encrypted message to one device's push service (RFC 8030), signed with this server's
 /// VAPID key. A typed HttpClient, so the handler is pooled and a test can put its own behind it.

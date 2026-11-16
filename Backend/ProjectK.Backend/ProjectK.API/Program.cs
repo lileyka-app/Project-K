@@ -44,7 +44,7 @@ public static class Program
                 .Enrich.With<SecretPathMaskingEnricher>();
 
             var devAlerts = context.Configuration
-                .GetSection("Telegram:DevAlerts")
+                .GetSection(TelegramDevAlertOptions.SectionName)
                 .Get<TelegramDevAlertOptions>() ?? new TelegramDevAlertOptions();
 
             if (devAlerts.Enabled)
@@ -195,7 +195,7 @@ public static class Program
         });
 
         builder.Services.Configure<SecurityPatchOptions>(
-            builder.Configuration.GetSection("SecurityPatch"));
+            builder.Configuration.GetSection(SecurityPatchOptions.SectionName));
 
         // Which address a request is charged to. X-Forwarded-For is believed from the proxies
         // named in Security:ClientIp:TrustedProxies — from anyone when the list is empty, which
@@ -311,7 +311,7 @@ public static class Program
     private static void ValidateTelegramConfiguration(WebApplication app)
     {
         var devAlerts = app.Configuration
-            .GetSection("Telegram:DevAlerts")
+            .GetSection(TelegramDevAlertOptions.SectionName)
             .Get<TelegramDevAlertOptions>() ?? new TelegramDevAlertOptions();
 
         if (devAlerts.Enabled && (string.IsNullOrWhiteSpace(devAlerts.BotToken) || string.IsNullOrWhiteSpace(devAlerts.ChatId)))

@@ -1,7 +1,8 @@
 using MediatR;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.BusinessLogic.Modules.RosterModule.Models;
 using ProjectK.BusinessLogic.Modules.RosterModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -23,9 +24,6 @@ namespace ProjectK.BusinessLogic.Modules.RosterModule.Features.Registry;
 /// </param>
 public sealed record ExportRegistryQuery(Guid KurinKey, IReadOnlyList<string> ColumnIds)
     : IRequest<ServiceResult<RegistryFile>>;
-
-/// <summary>The file and the name to offer it under.</summary>
-public sealed record RegistryFile(byte[] Content, string FileName);
 
 /// <summary>
 /// Writes the roster the caller can already see, as the three sheets the screen shows: юнаки,

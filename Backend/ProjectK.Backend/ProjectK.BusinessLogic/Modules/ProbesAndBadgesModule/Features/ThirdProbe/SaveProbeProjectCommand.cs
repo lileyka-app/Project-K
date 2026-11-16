@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
@@ -8,7 +9,6 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
@@ -17,24 +17,6 @@ using ProjectK.Common.Rules.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
-
-/// <summary>What the project form sends, as the УПЮ template lays a project out.</summary>
-public sealed record ProbeProjectInput(
-    string? Title,
-    ProbeProjectArea? Area,
-    IReadOnlyList<ProbeProjectReach>? Reach,
-    bool IsShared,
-    string? SharedWith,
-    DateOnly? StartsOn,
-    DateOnly? EndsOn,
-    string? Location,
-    string? EventLeads,
-    string? CoordinatorName,
-    string? CoordinatorContact,
-    string? Description,
-    string? Goal,
-    string? Plan,
-    string? Results);
 
 /// <summary>
 /// Adds a project to the third probe (<see cref="ProjectKey"/> null) or rewrites one. A new project

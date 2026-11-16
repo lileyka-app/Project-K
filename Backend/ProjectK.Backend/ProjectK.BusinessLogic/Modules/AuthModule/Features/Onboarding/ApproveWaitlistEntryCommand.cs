@@ -4,7 +4,6 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuthModule;
@@ -20,9 +19,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 /// The край the admin settled on, overriding the applicant's pick. Without it the entry's own край
 /// stands, and without that the instance's default.
 /// </param>
-public record ApproveWaitlistEntryCommand(Guid WaitlistEntryKey, string? KraiCode = null) : IRequest<ServiceResult<Guid>>;
+public sealed record ApproveWaitlistEntryCommand(Guid WaitlistEntryKey, string? KraiCode = null) : IRequest<ServiceResult<Guid>>;
 
-public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlistEntryCommand, ServiceResult<Guid>>
+public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlistEntryCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAccountProvisioningService _accountProvisioning;

@@ -11,9 +11,9 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
-public record ResetUserMfaCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
+public sealed record ResetUserMfaCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
 
-public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, ServiceResult<Unit>>
+public sealed class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;

@@ -7,9 +7,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record RejectWaitlistEntryCommand(Guid WaitlistEntryKey, string? Note) : IRequest<ServiceResult<Guid>>;
+public sealed record RejectWaitlistEntryCommand(Guid WaitlistEntryKey, string? Note) : IRequest<ServiceResult<Guid>>;
 
-public class RejectWaitlistEntryCommandHandler : IRequestHandler<RejectWaitlistEntryCommand, ServiceResult<Guid>>
+public sealed class RejectWaitlistEntryCommandHandler : IRequestHandler<RejectWaitlistEntryCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUserContext;

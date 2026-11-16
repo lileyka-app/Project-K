@@ -6,9 +6,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record ValidateInvitationTokenQuery(string Token) : IRequest<ServiceResult<InvitationValidationDto>>;
+public sealed record ValidateInvitationTokenQuery(string Token) : IRequest<ServiceResult<InvitationValidationDto>>;
 
-public class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvitationTokenQuery, ServiceResult<InvitationValidationDto>>
+public sealed class ValidateInvitationTokenQueryHandler : IRequestHandler<ValidateInvitationTokenQuery, ServiceResult<InvitationValidationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;

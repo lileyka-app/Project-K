@@ -6,9 +6,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record GetWaitlistEntriesQuery : IRequest<ServiceResult<IEnumerable<WaitlistEntry>>>;
+public sealed record GetWaitlistEntriesQuery : IRequest<ServiceResult<IEnumerable<WaitlistEntry>>>;
 
-public class GetWaitlistEntriesQueryHandler : IRequestHandler<GetWaitlistEntriesQuery, ServiceResult<IEnumerable<WaitlistEntry>>>
+public sealed class GetWaitlistEntriesQueryHandler : IRequestHandler<GetWaitlistEntriesQuery, ServiceResult<IEnumerable<WaitlistEntry>>>
 {
     private readonly IUnitOfWork _unitOfWork;
 

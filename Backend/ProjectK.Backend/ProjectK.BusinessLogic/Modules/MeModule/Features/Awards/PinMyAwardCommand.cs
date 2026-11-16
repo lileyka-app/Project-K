@@ -12,7 +12,7 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Awards;
 /// that відзначення at once — an УПЮ one by <see cref="Level"/>, a senior one by <see cref="CatalogId"/>.
 /// Only one's own: what the person likes best is theirs to say.
 /// </summary>
-public sealed class PinMyAwardCommand : IRequest<ServiceResult<bool>>
+public sealed class PinMyAwardCommand : IRequest<ServiceResult<Unit>>
 {
     public MemberAwardLevel? Level { get; set; }
     public string? CatalogId { get; set; }
@@ -31,7 +31,7 @@ public sealed class PinMyAwardCommandValidator : AbstractValidator<PinMyAwardCom
     }
 }
 
-public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand, ServiceResult<bool>>
+public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand, ServiceResult<Unit>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly ICurrentMember _currentMember;
@@ -42,11 +42,11 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
         _currentMember = currentMember;
     }
 
-    public async Task<ServiceResult<bool>> Handle(PinMyAwardCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(PinMyAwardCommand request, CancellationToken cancellationToken)
     {
         if (await _currentMember.FindAsync(cancellationToken) is not { } me)
         {
-            return ServiceResult<bool>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
+            return ServiceResult<Unit>.Failure(ResultType.Forbidden, MeErrors.NoOwnCard, "No person stands behind this account.");
         }
 
         var catalogId = request.CatalogId?.Trim();
@@ -55,7 +55,7 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
             .ToList();
         if (grants.Count == 0)
         {
-            return ServiceResult<bool>.Failure(ResultType.NotFound, MeErrors.AwardNotFound, "You hold no such award.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, MeErrors.AwardNotFound, "You hold no such award.");
         }
 
         foreach (var award in grants)
@@ -65,6 +65,6 @@ public sealed class PinMyAwardCommandHandler : IRequestHandler<PinMyAwardCommand
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ServiceResult<bool>(ResultType.Success, request.Pinned);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

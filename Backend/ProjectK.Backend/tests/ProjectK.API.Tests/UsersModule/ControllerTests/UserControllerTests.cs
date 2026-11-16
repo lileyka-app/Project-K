@@ -9,6 +9,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.Common.Dtos.UsersModule;
+using ProjectK.Common.Dtos.UsersModule.Requests;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -198,7 +199,7 @@ public class UserControllerTests
         // Arrange
         var userKey = Guid.NewGuid();
         SetCurrentUser(userKey);
-        var request = new UpdateAccountProfileRequestDto("new@example.com", "123456789", "current-password");
+        var request = new UpdateAccountProfileRequest("new@example.com", "123456789", "current-password");
         var settings = new AccountSettingsDto(userKey, null, "current@example.com", "123456789", "John", "Doe", "User", false, "new@example.com");
 
         _mediatorMock
@@ -249,7 +250,7 @@ public class UserControllerTests
         // Arrange
         var userKey = Guid.NewGuid();
         SetCurrentUser(userKey);
-        var request = new ChangePasswordRequestDto("current-password", "new-password");
+        var request = new ChangePasswordRequest("current-password", "new-password");
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ChangeOwnPasswordCommand>(), It.IsAny<CancellationToken>()))
@@ -274,7 +275,7 @@ public class UserControllerTests
         // Arrange
         var userKey = Guid.NewGuid();
         SetCurrentUser(userKey);
-        var request = new ResetMfaRequestDto("current-password");
+        var request = new ResetMfaRequest("current-password");
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<ResetOwnMfaCommand>(), It.IsAny<CancellationToken>()))
@@ -298,7 +299,7 @@ public class UserControllerTests
         // Arrange
         var userKey = Guid.NewGuid();
         SetCurrentUser(userKey);
-        var request = new DisableMfaRequestDto("current-password");
+        var request = new DisableMfaRequest("current-password");
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<DisableOwnMfaCommand>(), It.IsAny<CancellationToken>()))
@@ -373,7 +374,7 @@ public class UserControllerTests
         // Arrange
         var userKey = Guid.NewGuid();
         SetCurrentUser(userKey);
-        var request = new ConfirmAccountEmailChangeRequestDto("confirmed@example.com", "token");
+        var request = new ConfirmAccountEmailChangeRequest("confirmed@example.com", "token");
         var settings = new AccountSettingsDto(userKey, null, request.Email, null, "John", "Doe", "User", false);
 
         _mediatorMock

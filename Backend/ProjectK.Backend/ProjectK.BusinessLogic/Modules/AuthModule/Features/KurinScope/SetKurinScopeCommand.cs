@@ -13,7 +13,7 @@ using ProjectK.Common.Rules.AuthModule;
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.KurinScope;
 
 /// <param name="KurinKey">Kurin to step into, or null to return to system-wide scope.</param>
-public record SetKurinScopeCommand(Guid UserKey, Guid? KurinKey)
+public sealed record SetKurinScopeCommand(Guid UserKey, Guid? KurinKey)
     : IRequest<ServiceResult<LoginUserDto>>;
 
 public sealed class SetKurinScopeCommandValidator : AbstractValidator<SetKurinScopeCommand>
@@ -25,7 +25,7 @@ public sealed class SetKurinScopeCommandValidator : AbstractValidator<SetKurinSc
     }
 }
 
-public class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand, ServiceResult<LoginUserDto>>
+public sealed class SetKurinScopeCommandHandler : IRequestHandler<SetKurinScopeCommand, ServiceResult<LoginUserDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;

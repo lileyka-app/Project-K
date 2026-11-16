@@ -10,7 +10,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record ResetPasswordCommand(string Email, string Token, string NewPassword) : IRequest<ServiceResult<Unit>>;
+public sealed record ResetPasswordCommand(string Email, string Token, string NewPassword) : IRequest<ServiceResult<Unit>>;
 
 public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
 {
@@ -23,7 +23,7 @@ public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPassw
     }
 }
 
-public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, ServiceResult<Unit>>
+public sealed class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IActivityLogger _activityLogger;

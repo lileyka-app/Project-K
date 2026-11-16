@@ -6,21 +6,20 @@ using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Optimization.Abstractions;
-using PlanningSessionEntity = ProjectK.Common.Entities.KurinModule.Planning.PlanningSession;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
 
-public class CreatePlanningSessionCommand : IRequest<ServiceResult<Guid>>
+public sealed class CreatePlanningSessionCommand : IRequest<ServiceResult<Guid>>
 {
     public string Name { get; set; } = string.Empty;
     public Guid KurinKey { get; set; }
     public DateTime SearchStart { get; set; }
     public DateTime SearchEnd { get; set; }
     public int DurationDays { get; set; }
-    public List<ParticipantInputDto> Participants { get; set; } = [];
+    public List<ParticipantInput> Participants { get; set; } = [];
 }
 
-public class CreatePlanningSessionCommandHandler : IRequestHandler<CreatePlanningSessionCommand, ServiceResult<Guid>>
+public sealed class CreatePlanningSessionCommandHandler : IRequestHandler<CreatePlanningSessionCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IOptimizer _optimizer;

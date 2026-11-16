@@ -11,7 +11,7 @@ using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 
-public class DeleteMemberCommand : IRequest<ServiceResult<Unit>>
+public sealed class DeleteMemberCommand : IRequest<ServiceResult<Unit>>
 {
     public Guid MemberKey { get; set; }
     public DeleteMemberCommand(Guid memberKey)
@@ -20,7 +20,7 @@ public class DeleteMemberCommand : IRequest<ServiceResult<Unit>>
     }
 }
 
-public class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, ServiceResult<Unit>>
+public sealed class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberUnitOfWork _memberData;

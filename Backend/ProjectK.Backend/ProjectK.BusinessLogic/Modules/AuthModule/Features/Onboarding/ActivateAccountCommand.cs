@@ -24,7 +24,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 /// Turns an invitation into a usable account and answers with a signed-in session, so the person
 /// lands inside the app rather than on the sign-in form they have never used.
 /// </summary>
-public record ActivateAccountCommand(string Token, string Password) : IRequest<ServiceResult<LoginUserDto>>;
+public sealed record ActivateAccountCommand(string Token, string Password) : IRequest<ServiceResult<LoginUserDto>>;
 
 public sealed class ActivateAccountCommandValidator : AbstractValidator<ActivateAccountCommand>
 {
@@ -36,7 +36,7 @@ public sealed class ActivateAccountCommandValidator : AbstractValidator<Activate
     }
 }
 
-public class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<LoginUserDto>>
+public sealed class ActivateAccountCommandHandler : IRequestHandler<ActivateAccountCommand, ServiceResult<LoginUserDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;

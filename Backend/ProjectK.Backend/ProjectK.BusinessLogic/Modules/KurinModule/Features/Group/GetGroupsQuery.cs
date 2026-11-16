@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
@@ -9,7 +8,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
-public class GetGroupsQuery : IRequest<ServiceResult<IEnumerable<GroupDto>>>
+public sealed class GetGroupsQuery : IRequest<ServiceResult<IEnumerable<GroupDto>>>
 {
     public Guid KurinKey { get; set; }
     public GetGroupsQuery(Guid kurinKey)
@@ -18,7 +17,7 @@ public class GetGroupsQuery : IRequest<ServiceResult<IEnumerable<GroupDto>>>
     }
 }
 
-public class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, ServiceResult<IEnumerable<GroupDto>>>
+public sealed class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, ServiceResult<IEnumerable<GroupDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

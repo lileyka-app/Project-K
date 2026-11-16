@@ -23,7 +23,7 @@ public sealed record SetMemberPhotoCommand(
     string? FileName,
     bool Remove) : IRequest<ServiceResult<string?>>;
 
-public class SetMemberPhotoCommandHandler
+public sealed class SetMemberPhotoCommandHandler
     : IRequestHandler<SetMemberPhotoCommand, ServiceResult<string?>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;

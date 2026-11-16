@@ -4,13 +4,6 @@ using ProjectK.Common.Entities.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
-public interface ISystemSettingsService
-{
-    Task<string?> GetValueAsync(string key, CancellationToken cancellationToken = default);
-    Task<bool> GetBoolAsync(string key, bool defaultValue = false, CancellationToken cancellationToken = default);
-    Task SetValueAsync(string key, string value, CancellationToken cancellationToken = default);
-}
-
 public class SystemSettingsService : ISystemSettingsService
 {
     private readonly IUnitOfWork _unitOfWork;

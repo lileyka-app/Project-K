@@ -268,7 +268,7 @@ export class KurinApi {
   }
 
   /** Pins or unpins one of the caller's own відзначення: every grant of that level or catalogue id. */
-  pinAward(request: { level?: AwardLevel | null; catalogId?: string | null; pinned: boolean }): Promise<boolean> {
+  pinAward(request: { level?: AwardLevel | null; catalogId?: string | null; pinned: boolean }): Promise<void> {
     return this.api.put('me/awards/pin', request);
   }
 

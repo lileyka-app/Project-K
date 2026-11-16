@@ -14,9 +14,9 @@ using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.MentorAssignment;
 
-public record RevokeMentorCommand(Guid MentorUserKey, Guid GroupKey) : IRequest<ServiceResult<Unit>>;
+public sealed record RevokeMentorCommand(Guid MentorUserKey, Guid GroupKey) : IRequest<ServiceResult<Unit>>;
 
-public class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, ServiceResult<Unit>>
+public sealed class RevokeMentorCommandHandler : IRequestHandler<RevokeMentorCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;

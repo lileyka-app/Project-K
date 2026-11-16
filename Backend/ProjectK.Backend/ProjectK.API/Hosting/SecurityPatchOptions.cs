@@ -5,6 +5,8 @@ namespace ProjectK.API.Hosting;
 /// </summary>
 public sealed class SecurityPatchOptions
 {
+    public const string SectionName = "SecurityPatch";
+
     /// <summary>
     /// Enables geo-blocking of requests originating from <see cref="BlockedCountries"/>.
     /// </summary>

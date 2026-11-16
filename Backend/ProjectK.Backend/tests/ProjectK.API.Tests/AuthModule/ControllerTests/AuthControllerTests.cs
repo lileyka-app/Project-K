@@ -263,7 +263,7 @@ public class AuthControllerTests
         // Arrange
         var userKey = Guid.NewGuid();
         SetCurrentUser(userKey);
-        var request = new MfaVerifyRequestDto("123 456");
+        var request = new MfaVerifyRequest("123 456");
         var response = new MfaEnableResponseDto(true, new[] { "code-1", "code-2" });
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<EnableMfaCommand>(), default))
@@ -294,7 +294,7 @@ public class AuthControllerTests
             .ReturnsAsync(new ServiceResult<MfaEnableResponseDto>(ResultType.Success, new MfaEnableResponseDto(true, [], tokens)));
 
         // Act
-        var result = await _controller.EnableMfa(new MfaVerifyRequestDto("123456"));
+        var result = await _controller.EnableMfa(new MfaVerifyRequest("123456"));
 
         // Assert
         Assert.IsType<OkObjectResult>(result);
@@ -307,7 +307,7 @@ public class AuthControllerTests
         // Arrange
         var userKey = Guid.NewGuid();
         SetCurrentUser(userKey);
-        var request = new MfaRecoveryCodesRequestDto("current-password");
+        var request = new MfaRecoveryCodesRequest("current-password");
         var response = new MfaRecoveryCodesResponseDto(new[] { "code-1" });
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<GenerateMfaRecoveryCodesCommand>(), default))
@@ -329,7 +329,7 @@ public class AuthControllerTests
     public async Task VerifyMfaLogin_ShouldSetCookie_WhenVerificationReturnsTokens()
     {
         // Arrange
-        var request = new MfaLoginRequestDto("user@example.com", "123456", true);
+        var request = new MfaLoginRequest("user@example.com", "123456", true);
         var tokens = new JwtResponse
         {
             AccessToken = "AccessToken",
@@ -363,7 +363,7 @@ public class AuthControllerTests
     public async Task VerifyMfaLogin_ShouldNotSetCookie_WhenMfaIsUnauthorized()
     {
         // Arrange
-        var request = new MfaLoginRequestDto("user@example.com", "bad-code", false);
+        var request = new MfaLoginRequest("user@example.com", "bad-code", false);
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<VerifyMfaLoginCommand>(), default))
             .ReturnsAsync(new ServiceResult<LoginUserDto>(ResultType.Unauthorized));

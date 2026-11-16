@@ -1,24 +1,11 @@
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Records.MemberModule;
-using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Records.AgendaModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
-
-/// <summary>
-/// One kurin the person stands in: how the agenda there sees them, the roles their offices there
-/// amount to, and the гуртки they lead there.
-/// </summary>
-public sealed record MeKurinContext(
-    MembershipRecord Membership,
-    AgendaViewerContext Viewer,
-    IReadOnlyList<string> Roles,
-    IReadOnlySet<Guid> LedGroupKeys);
 
 /// <summary>
 /// How the person is seen by the agenda of every kurin they currently stand in. The token carries the

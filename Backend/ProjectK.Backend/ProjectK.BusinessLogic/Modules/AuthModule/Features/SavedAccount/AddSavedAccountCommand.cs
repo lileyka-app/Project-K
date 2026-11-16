@@ -13,12 +13,12 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 /// <param name="SavedTokens">The sessions the browser already kept.</param>
 /// <param name="PreviousTokens">The session the browser was using before this sign-in.</param>
 /// <param name="SignedInUserKey">The account that just signed in; any session it already had here is ended.</param>
-public record AddSavedAccountCommand(
+public sealed record AddSavedAccountCommand(
     IReadOnlyList<string> SavedTokens,
     IReadOnlyList<string> PreviousTokens,
     Guid SignedInUserKey) : IRequest<ServiceResult<IReadOnlyList<SavedSession>>>;
 
-public class AddSavedAccountCommandHandler : IRequestHandler<AddSavedAccountCommand, ServiceResult<IReadOnlyList<SavedSession>>>
+public sealed class AddSavedAccountCommandHandler : IRequestHandler<AddSavedAccountCommand, ServiceResult<IReadOnlyList<SavedSession>>>
 {
     private readonly ISavedSessionList _saved;
 

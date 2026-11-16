@@ -18,20 +18,7 @@ public sealed class CreatePrivateScoreEntryCommandValidator : AbstractValidator<
     public CreatePrivateScoreEntryCommandValidator(TimeProvider time)
     {
         RuleFor(c => c.KurinKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertPrivateScoreEntryRequestValidator(time));
-    }
-}
-
-public sealed class UpsertPrivateScoreEntryRequestValidator : AbstractValidator<UpsertPrivateScoreEntryRequest>
-{
-    public UpsertPrivateScoreEntryRequestValidator(TimeProvider time)
-    {
-        RuleFor(r => r.MembershipKey).NotEmpty();
-        RuleFor(r => r.Points).NotEqual(0).InclusiveBetween(-1000, 1000);
-        RuleFor(r => r.Note).MaximumLength(500);
-        RuleFor(r => r).Must(r => r.PrivateScoreCriterionKey.HasValue || !string.IsNullOrWhiteSpace(r.Note))
-            .WithMessage("Say what it was for: a criterion, or a note.");
-        RuleFor(r => r.OccurredOn).LessThanOrEqualTo(_ => DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime).AddDays(1));
+        RuleFor(c => c.Request).NotNull().ChildRules(request => PrivateScoreEntryRules.AddShapeRules(request, time));
     }
 }
 

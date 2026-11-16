@@ -11,9 +11,9 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
-public record EnableMfaCommand(Guid UserKey, string Code) : IRequest<ServiceResult<MfaEnableResponseDto>>;
+public sealed record EnableMfaCommand(Guid UserKey, string Code) : IRequest<ServiceResult<MfaEnableResponseDto>>;
 
-public class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, ServiceResult<MfaEnableResponseDto>>
+public sealed class EnableMfaCommandHandler : IRequestHandler<EnableMfaCommand, ServiceResult<MfaEnableResponseDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;

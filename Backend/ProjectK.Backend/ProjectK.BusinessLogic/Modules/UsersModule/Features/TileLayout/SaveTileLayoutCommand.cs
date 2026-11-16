@@ -10,7 +10,7 @@ using ProjectK.Common.Rules.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 
-public record SaveTileLayoutCommand(
+public sealed record SaveTileLayoutCommand(
     Guid UserKey,
     string BoardKey,
     IReadOnlyList<string> TileKeys,
@@ -58,7 +58,7 @@ public sealed partial class SaveTileLayoutCommandValidator : AbstractValidator<S
     private static partial Regex TileKeyPattern();
 }
 
-public class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutCommand, ServiceResult<TileLayoutDto>>
+public sealed class SaveTileLayoutCommandHandler : IRequestHandler<SaveTileLayoutCommand, ServiceResult<TileLayoutDto>>
 {
     private const int MaxOrderJsonLength = 2000;
 

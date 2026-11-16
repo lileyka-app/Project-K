@@ -8,9 +8,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
 
-public record GetPlanningSessionByKeyQuery(Guid entityKey) : IRequest<ServiceResult<PlanningSessionDto>>;
+public sealed record GetPlanningSessionByKeyQuery(Guid entityKey) : IRequest<ServiceResult<PlanningSessionDto>>;
 
-public class GetPlanningSessionByKeyQueryHandler : IRequestHandler<GetPlanningSessionByKeyQuery, ServiceResult<PlanningSessionDto>>
+public sealed class GetPlanningSessionByKeyQueryHandler : IRequestHandler<GetPlanningSessionByKeyQuery, ServiceResult<PlanningSessionDto>>
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserContext _currentUser;

@@ -3,21 +3,12 @@ using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.ArchiveModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.ArchiveModule.Features.Archive;
-
-/// <summary>Why a danger zone ended, as the journal tells it.</summary>
-public enum ArchiveDangerZoneEnd
-{
-    /// <summary>The «Вимкнути» button.</summary>
-    Manual,
-
-    /// <summary>The person left the archive page or closed the tab.</summary>
-    Left
-}
 
 /// <summary>
 /// Ends the caller's danger zone in the kurin. Ending one that is not there is fine: the page asks

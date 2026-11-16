@@ -11,7 +11,7 @@ using ProjectK.Common.Rules.AuthModule;
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
 /// <summary>Refuses the account at sign-in and ends every session it holds. Reversible.</summary>
-public record SuspendUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
+public sealed record SuspendUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
 
 /// <summary>
 /// The switch between deleting an account and leaving it alone. A person who left the kurin
@@ -19,7 +19,7 @@ public record SuspendUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<Un
 /// for a season: none of these is a reason to destroy the account and everything it is linked
 /// to, and all of them are reasons it must not open a session tomorrow.
 /// </summary>
-public class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, ServiceResult<Unit>>
+public sealed class SuspendUserCommandHandler : IRequestHandler<SuspendUserCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;

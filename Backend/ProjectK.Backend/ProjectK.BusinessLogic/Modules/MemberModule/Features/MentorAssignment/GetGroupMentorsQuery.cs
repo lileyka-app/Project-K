@@ -10,9 +10,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.MentorAssignment;
 
-public record GetGroupMentorsQuery(Guid GroupKey) : IRequest<ServiceResult<IEnumerable<MemberLookupDto>>>;
+public sealed record GetGroupMentorsQuery(Guid GroupKey) : IRequest<ServiceResult<IEnumerable<MemberLookupDto>>>;
 
-public class GetGroupMentorsQueryHandler : IRequestHandler<GetGroupMentorsQuery, ServiceResult<IEnumerable<MemberLookupDto>>>
+public sealed class GetGroupMentorsQueryHandler : IRequestHandler<GetGroupMentorsQuery, ServiceResult<IEnumerable<MemberLookupDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;

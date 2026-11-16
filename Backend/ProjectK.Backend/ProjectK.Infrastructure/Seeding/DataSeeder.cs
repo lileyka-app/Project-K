@@ -9,14 +9,14 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Options.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Infrastructure.Services.Catalog;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.Seeding;
 

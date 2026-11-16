@@ -21,7 +21,7 @@ using LeadershipEntity = ProjectK.Common.Entities.MemberModule.Leadership;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Leadership;
 
-public class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipDto>>
+public sealed class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipDto>>
 {
     public Guid? LeadershipKey { get; set; }
     public string? Type { get; set; }
@@ -56,7 +56,7 @@ public class UpsertLeadershipCommand : IRequest<ServiceResult<LeadershipDto>>
     }
 }
 
-public class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCommand, ServiceResult<LeadershipDto>>
+public sealed class UpsertLeadershipCommandHandler : IRequestHandler<UpsertLeadershipCommand, ServiceResult<LeadershipDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

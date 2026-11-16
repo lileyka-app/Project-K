@@ -17,10 +17,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 /// The other accounts this browser is signed in to. The cookies are the credential, as for a
 /// refresh: whoever holds a session may see whose it is, and nobody else can name one.
 /// </summary>
-public record GetSavedAccountsQuery(IReadOnlyList<string> SavedTokens, IReadOnlyList<string> ActiveTokens)
+public sealed record GetSavedAccountsQuery(IReadOnlyList<string> SavedTokens, IReadOnlyList<string> ActiveTokens)
     : IRequest<ServiceResult<SavedAccounts>>;
 
-public class GetSavedAccountsQueryHandler : IRequestHandler<GetSavedAccountsQuery, ServiceResult<SavedAccounts>>
+public sealed class GetSavedAccountsQueryHandler : IRequestHandler<GetSavedAccountsQuery, ServiceResult<SavedAccounts>>
 {
     private readonly ISavedSessionList _saved;
     private readonly IRefreshTokenStore _refreshTokens;

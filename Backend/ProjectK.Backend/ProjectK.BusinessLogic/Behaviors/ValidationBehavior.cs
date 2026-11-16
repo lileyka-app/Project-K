@@ -77,7 +77,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>
         }
 
         var failureMethod = responseType.GetMethod(
-            nameof(ServiceResult<object>.Failure),
+            nameof(ServiceResult<Unit>.Failure),
             BindingFlags.Public | BindingFlags.Static);
 
         if (failureMethod is null)

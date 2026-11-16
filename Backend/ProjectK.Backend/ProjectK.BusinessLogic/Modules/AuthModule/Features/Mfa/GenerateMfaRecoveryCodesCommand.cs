@@ -11,10 +11,10 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
-public record GenerateMfaRecoveryCodesCommand(Guid UserKey, string CurrentPassword)
+public sealed record GenerateMfaRecoveryCodesCommand(Guid UserKey, string CurrentPassword)
     : IRequest<ServiceResult<MfaRecoveryCodesResponseDto>>;
 
-public class GenerateMfaRecoveryCodesCommandHandler
+public sealed class GenerateMfaRecoveryCodesCommandHandler
     : IRequestHandler<GenerateMfaRecoveryCodesCommand, ServiceResult<MfaRecoveryCodesResponseDto>>
 {
     private readonly UserManager<AppUser> _userManager;

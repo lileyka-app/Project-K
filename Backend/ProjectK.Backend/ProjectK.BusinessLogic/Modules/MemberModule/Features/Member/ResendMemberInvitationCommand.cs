@@ -16,7 +16,7 @@ namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 /// </summary>
 public sealed record ResendMemberInvitationCommand(Guid MemberKey) : IRequest<ServiceResult<Guid>>;
 
-public class ResendMemberInvitationCommandHandler
+public sealed class ResendMemberInvitationCommandHandler
     : IRequestHandler<ResendMemberInvitationCommand, ServiceResult<Guid>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;

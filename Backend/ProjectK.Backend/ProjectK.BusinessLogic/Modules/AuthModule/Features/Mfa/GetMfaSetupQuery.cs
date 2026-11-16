@@ -9,9 +9,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
-public record GetMfaSetupQuery(Guid UserKey) : IRequest<ServiceResult<MfaSetupResponseDto>>;
+public sealed record GetMfaSetupQuery(Guid UserKey) : IRequest<ServiceResult<MfaSetupResponseDto>>;
 
-public class GetMfaSetupQueryHandler : IRequestHandler<GetMfaSetupQuery, ServiceResult<MfaSetupResponseDto>>
+public sealed class GetMfaSetupQueryHandler : IRequestHandler<GetMfaSetupQuery, ServiceResult<MfaSetupResponseDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IQrCodeService _qrCodes;
