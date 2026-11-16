@@ -7,6 +7,7 @@ using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.ArchiveModule.Features.Archive;
 using ProjectK.Common.Dtos.ArchiveModule;
 using ProjectK.Common.Dtos.ArchiveModule.Requests;
+using ProjectK.Common.Enums.ArchiveModule;
 
 namespace ProjectK.API.Controllers.ArchiveModule;
 

@@ -5,6 +5,8 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Models;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
 using ProjectK.Common.Enums.AgendaModule;

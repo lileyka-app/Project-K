@@ -5,36 +5,9 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
-using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-
-/// <summary>Whether a probe nobody has started for a person yet may be started now.</summary>
-public enum ProbeStart
-{
-    Allowed,
-
-    /// <summary>The probe is not one this person walks: another edition, or not in the catalogue.</summary>
-    NotInLine,
-
-    /// <summary>The probe before it in the line is not closed yet.</summary>
-    WaitsForPrevious
-}
-
-/// <summary>
-/// A person's <see cref="ProbeLineRules"/>, read from their progress, their гурток's edition and the
-/// catalogue. The one place clients, the dashboard and the guards on signing take it from.
-/// </summary>
-public interface IMemberProbeLine
-{
-    /// <summary>Empty when the member does not exist.</summary>
-    Task<IReadOnlyList<ProbeSummaryDto>> ForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
-
-    /// <summary>Asked only for a probe the person has not started: one already under way may go on.</summary>
-    Task<ProbeStart> CanStartAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
-}
 
 public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
 {
@@ -137,17 +110,4 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
     private static Dictionary<string, ProbeProgressStatus> Statuses(IEnumerable<ProbeProgress> rows) =>
         rows.GroupBy(row => row.ProbeId, StringComparer.Ordinal)
             .ToDictionary(probe => probe.Key, probe => probe.Max(row => row.Status), StringComparer.Ordinal);
-}
-
-/// <summary>What signing or moving a probe answers when <see cref="IMemberProbeLine.CanStartAsync"/> says no.</summary>
-public static class ProbeStartRules
-{
-    public static ServiceResult<T>? Of<T>(ProbeStart start) => start switch
-    {
-        ProbeStart.NotInLine => ServiceResult<T>.Failure(
-            ResultType.Conflict, ProbesAndBadgesErrors.ProbeNotInLine, "This probe is not one the member walks: it belongs to another edition of the programme."),
-        ProbeStart.WaitsForPrevious => ServiceResult<T>.Failure(
-            ResultType.Conflict, ProbesAndBadgesErrors.ProbeWaitsForPrevious, "This probe opens once the one before it is closed."),
-        _ => null
-    };
 }

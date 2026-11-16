@@ -1,20 +1,10 @@
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;
-
-/// <summary>Navigation targets for agenda notifications, matched to the frontend routes.</summary>
-public static class AgendaRouteRules
-{
-    public static string For(AgendaItem item) =>
-        item.Kind == AgendaItemKind.Task ? $"/tasks/{item.KurinKey}" : $"/calendar/{item.KurinKey}";
-}
 
 /// <summary>
 /// Fans an item's assignments out to the app-user keys that should be notified. A member with no

@@ -4,18 +4,6 @@ using Serilog.Events;
 
 namespace ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 
-/// <summary>What one log event says, read once: the alert, its group, and what a digest of the group needs.</summary>
-public sealed record TelegramAlert(
-    string GroupKey,
-    string Text,
-    string Title,
-    LogEventLevel Level,
-    string? Ip,
-    string? Country,
-    string? Path,
-    string? TraceId,
-    bool IsRequestLog);
-
 /// <summary>
 /// Turns a log event into a Telegram message a person can read at a glance: what happened in words,
 /// who and where, only the fields that carry something, and for an error where in our code it broke.

@@ -8,6 +8,3 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Models;
 /// left among them. The controller writes both cookies; only <see cref="Login"/> reaches the body.
 /// </summary>
 public sealed record SwitchedAccount(LoginUserDto Login, IReadOnlyList<SavedSession> Saved);
-
-/// <summary>The accounts to list, and the live sessions behind them to write back to the cookie.</summary>
-public sealed record SavedAccounts(IReadOnlyList<SavedAccountDto> Accounts, IReadOnlyList<SavedSession> Saved);

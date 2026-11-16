@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Models;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
-using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
@@ -13,41 +13,6 @@ using ProjectK.Common.Rules.AgendaModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
-
-/// <summary>How the board orders a column.</summary>
-public enum AgendaBoardSort
-{
-    /// <summary>Nearest deadline first; tasks without one last.</summary>
-    Due = 0,
-    /// <summary>Last touched first.</summary>
-    Recent = 1,
-    /// <summary>Newest first.</summary>
-    Created = 2,
-    Title = 3
-}
-
-/// <summary>
-/// What the board narrows to. <see cref="Status"/> asks for one column only — the «Завантажити ще»
-/// of that column; without it every column comes back with its first page.
-/// </summary>
-public sealed record AgendaBoardFilter
-{
-    public string? Search { get; init; }
-    public AgendaTargetType? TargetType { get; init; }
-    public Guid? TargetKey { get; init; }
-    /// <summary>Only tasks where something is the viewer's own to do.</summary>
-    public bool OnlyMine { get; init; }
-    public AgendaBoardSort Sort { get; init; } = AgendaBoardSort.Due;
-    public AgendaItemStatus? Status { get; init; }
-    public int Skip { get; init; }
-    public int Take { get; init; } = AgendaBoardPagingRules.DefaultTake;
-}
-
-public static class AgendaBoardPagingRules
-{
-    public const int DefaultTake = 20;
-    public const int MaxTake = 100;
-}
 
 /// <summary>
 /// The live tasks the viewer may see, filtered, sorted and paged per column. Columns follow the
