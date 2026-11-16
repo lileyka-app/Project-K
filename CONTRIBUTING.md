@@ -50,9 +50,9 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 ### Що куди лягає
 
 Правила нижче ухвалено 2026-11-14 (рішення D-1…D-8 потоку полірування `POL`). Старий код
-переведено під них кроками `POL-02…POL-10`; розрізати `KurinModule` лишилось на `POL-13`, тож
-**новий код пишеться одразу за ними**, навіть коли сусідній файл ще лежить по-старому. Архітектурні
-тести почнуть тримати це в `POL-11`.
+переведено під них кроками `POL-02…POL-10`, а колишній `KurinModule` розрізано на `KurinModule`,
+`MemberModule`, `AgendaModule`, `ArchiveModule` і `RosterModule` у `POL-13`. **Новий код пишеться
+одразу за ними**; з `POL-11` це тримають архітектурні тести.
 
 | Що пишеш | Куди | Як звати |
 |---|---|---|
@@ -103,7 +103,7 @@ Entities/   Contracts/   Dtos/   Records/   Events/   Enums/   Rules/   Options/
 
 Спільне для всіх модулів лягає в підтеку `Shared/` відповідного виду (`Rules/Shared/PhoneNumberRules.cs`).
 Модуль у шляху зветься так само, як у `Entities/` (`KurinModule`, `AuthModule`), а модуль без власних
-таблиць — як у `BusinessLogic/Modules/` (`MeModule`, `UsersModule`). Простір імен іде за текою:
+таблиць — як у `BusinessLogic/Modules/` (`MeModule`, `UsersModule`, `RosterModule`). Простір імен іде за текою:
 `ProjectK.Common.<Вид>.<Module>`. Винятки репозиторію
 (`StaleRowException`, `DuplicateRowException`) — частина обіцянки Infrastructure бізнес-логіці, тож лежать у
 `Contracts/Shared/`; розширення `ClaimsPrincipal` і користувача — `Rules/AuthModule/`.
@@ -173,14 +173,16 @@ Modules/<Module>/Features/<Area>/
 ### Межі модулів
 
 Шари кажуть, **звідки** код бере залежності; межі модулів — **у кого** він їх бере. Модуль не читає
-таблиць сусіда. Три правила, і кожне перевіряється в `ProjectK.Architecture.Tests`, а не тримається
+таблиць сусіда. Чотири правила, і кожне перевіряється в `ProjectK.Architecture.Tests`, а не тримається
 на пам'яті:
 
 **Контракт замість чужого репозиторію.** Питання до іншого модуля ставиться через інтерфейс у
 `Common/Contracts/<Module>/` —
 `IMemberDirectory`, `IMembershipDirectory`, `IOfficeDirectory`, `IMemberProgressDirectory`.
 Directory лише відповідає на питання; запис у чужий модуль через нього не йде. За межами модуля, якому належить сутність, її імені
-не буває: поза мембером ніхто не називає ні `Member`, ні `IMemberRepository`. Пиши контракт так,
+не буває: поза мембером ніхто не називає ні `Member`, ні `IMemberRepository`. Так само модуль не
+називає чужих хендлерів, служб, мапінгів і каталогів помилок — це ловить
+`Modules_ShouldNotReachIntoEachOther` (`ModuleBoundaryRules`) з IL і з тексту. Пиши контракт так,
 ніби виклик піде по мережі: читання, що повертає багатьох, робиться **одним** методом, бо «один за
 ключем» перетворює список на N звернень.
 
@@ -370,9 +372,9 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 - **Коди живуть у каталозі модуля** `<Module>Errors` (`BusinessLogic/Modules/<M>/<M>Errors.cs`):
   PascalCase-константи й фабрики частих випадків (`KurinErrors.NotFound<T>()`). Літерал коду в
   хендлері не пишемо — саме так «курінь не знайдено» встиг стати чотирма різними рядками.
-  Поки KurinModule не розрізаний (`POL-13`), він тримає каталог на кожен майбутній модуль:
-  `MemberErrors`, `AgendaErrors`, `ArchiveErrors`, `KurinErrors`… Те саме значення може жити в кількох
-  каталогах (`"KurinNotFound"` у Dues і в Score) — контракт із клієнтом це рядок, не константа.
+  Каталог у кожного модуля свій, і чужого модуль не бере. `MemberModule` тримає три, за
+  областями: `MemberErrors`, `MembershipErrors`, `LeadershipErrors`. Те саме значення може жити в кількох
+  каталогах (`"KurinNotFound"` у `KurinErrors` і в `RosterErrors`) — контракт із клієнтом це рядок, не константа.
 - **Кожна невдача має код.** `new ServiceResult<T>(ResultType.NotFound)` без коду не буває.
 - Код — частина контракту з фронтом: перейменування коду ламає текст на екрані, тож нові й змінені
   коди дзеркалимо у відповідній `*_ERROR_TEXT` на фронті в тому самому PR.
@@ -643,7 +645,7 @@ GitHub. Скрипт `site/scripts/sync-docs.mjs` копіює обидві те
 dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
-- бекенд — **2796** тестів (BusinessLogic 1558 · API 939 · Infrastructure 262 · Architecture 37)
+- бекенд — **2797** тестів (BusinessLogic 1558 · API 939 · Infrastructure 262 · Architecture 38)
 - фронт — **1281** тест, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
 - e2e — **101** тест
 
