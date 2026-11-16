@@ -36,8 +36,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic/Modules/AuditModule/Features/Journal/GetKurinJournalQuery.cs -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic/Modules/AuthModule/Features/Onboarding/ActivateAccountCommand.cs -> MemberModule",
         "ProjectK.BusinessLogic/Modules/KurinModule/Services/KurinReportDataService.cs -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/CalendarFeed/RenderCalendarFeedQuery.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/CalendarFeed/RenderCalendarFeedQuery.cs -> InfrastructureModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Dues/GetMyDuesQuery.cs -> DuesModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Duties/GetMyDutiesQuery.cs -> ScoreModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Growth/GetMyGrowthQuery.cs -> ProbesAndBadgesModule",
@@ -47,11 +45,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Life/ExportMyLifePdfQuery.cs -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Score/GetMyScoreQuery.cs -> ScoreModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Services/MemberCards.cs -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/ChangeOwnPasswordCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/ConfirmAccountEmailChangeCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/UpdateAccountProfileCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/User/RestoreUserCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/User/SuspendUserCommand.cs -> AuthModule",
     ];
 
     /// <summary>
@@ -63,7 +56,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.GetKurinJournalQueryHandler -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccountCommandHandler -> MemberModule",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinReportDataService -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.RenderCalendarFeedQueryHandler -> InfrastructureModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Dues.GetMyDuesQueryHandler -> DuesModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Duties.GetMyDutiesQueryHandler -> ScoreModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Growth.GetMyGrowthQueryHandler -> ProbesAndBadgesModule",
@@ -73,10 +65,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Life.ExportMyLifePdfQueryHandler -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Score.GetMyScoreQueryHandler -> ScoreModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MemberCards -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangeOwnPasswordCommandHandler -> AuthModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmAccountEmailChangeCommandHandler -> AuthModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateAccountProfileCommandHandler -> AuthModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.User.SuspendUserCommandHandler -> AuthModule",
     ];
 
     [Fact]

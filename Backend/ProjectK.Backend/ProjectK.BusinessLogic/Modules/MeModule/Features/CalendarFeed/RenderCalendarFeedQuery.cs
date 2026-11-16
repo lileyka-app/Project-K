@@ -1,8 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
@@ -262,7 +260,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         {
             lines.Add(kurinLine);
         }
-        lines.Add($"Відкрити в Лілейці: {_siteUrl}{AgendaNotificationNames.RouteFor(item.Kind, kurinKey)}");
+        lines.Add($"Відкрити в Лілейці: {_siteUrl}{AgendaRouteNames.For(item.Kind, kurinKey)}");
         return string.Join('\n', lines);
     }
 
@@ -284,7 +282,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         var description =
             $"Посилання, за яким цей календар брав події з Лілейки, вимкнено: {ReasonText(reason)}. Нові події сюди більше не приходять.\n\n" +
             $"Створи нове посилання в Лілейці (Налаштування → Календар у Google, Apple, Outlook), додай його в календар, а цю підписку видали.\n\n" +
-            $"{_siteUrl}{RefreshTokenInvalidation.CalendarRoute}";
+            $"{_siteUrl}{CalendarFeedNames.SettingsRoute}";
 
         for (var day = first; day <= last; day = day.AddDays(7))
         {
