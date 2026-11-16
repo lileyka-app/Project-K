@@ -80,18 +80,13 @@ public class DeleteMemberHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldClearAgendaAssignmentsBeforeRemovingThePerson()
+    public async Task Handle_ShouldRemoveThePerson_AndAnnounceItBeforeSaving()
     {
         var memberKey = Guid.NewGuid();
 
         var result = await _handler.Handle(new DeleteMemberCommand(memberKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        _agendaItemRepositoryMock.Verify(
-            r => r.RemoveAssignmentsForTargetsAsync(
-                It.Is<IReadOnlyCollection<Guid>>(keys => keys.Single() == memberKey),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
         _memberRepository.Verify(
             r => r.Delete(It.Is<Member>(m => m.MemberKey == memberKey), It.IsAny<CancellationToken>()),
             Times.Once);
