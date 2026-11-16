@@ -1,4 +1,5 @@
 using ProjectK.Common.Dtos.AgendaModule;
+using ProjectK.Common.Dtos.AgendaModule.Requests;
 using ProjectK.Common.Enums.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;

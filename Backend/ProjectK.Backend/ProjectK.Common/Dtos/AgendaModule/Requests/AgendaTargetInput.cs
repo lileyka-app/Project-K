@@ -1,6 +1,6 @@
 using ProjectK.Common.Enums.AgendaModule;
 
-namespace ProjectK.Common.Dtos.AgendaModule;
+namespace ProjectK.Common.Dtos.AgendaModule.Requests;
 
 /// <summary>
 /// One selected "Assign for" target. TargetKey is a KurinKey, GroupKey or MemberKey per TargetType.

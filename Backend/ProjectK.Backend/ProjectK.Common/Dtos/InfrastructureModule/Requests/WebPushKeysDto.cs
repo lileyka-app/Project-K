@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Dtos.InfrastructureModule;
+namespace ProjectK.Common.Dtos.InfrastructureModule.Requests;
 
 public sealed class WebPushKeysDto
 {

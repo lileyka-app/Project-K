@@ -11,6 +11,7 @@ using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 using ProjectK.Common.Dtos.UsersModule;
+using ProjectK.Common.Dtos.UsersModule.Requests;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 
@@ -77,7 +78,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> UpdateAccountProfile([FromBody] UpdateAccountProfileRequestDto request)
+    public async Task<IActionResult> UpdateAccountProfile([FromBody] UpdateAccountProfileRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {
@@ -98,7 +99,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(AccountSettingsDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ConfirmAccountEmailChange([FromBody] ConfirmAccountEmailChangeRequestDto request)
+    public async Task<IActionResult> ConfirmAccountEmailChange([FromBody] ConfirmAccountEmailChangeRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {
@@ -118,7 +119,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {
@@ -138,7 +139,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ResetMfa([FromBody] ResetMfaRequestDto request)
+    public async Task<IActionResult> ResetMfa([FromBody] ResetMfaRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {
@@ -161,7 +162,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> DisableMfa([FromBody] DisableMfaRequestDto request)
+    public async Task<IActionResult> DisableMfa([FromBody] DisableMfaRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {
@@ -198,7 +199,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(TileLayoutDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> SaveTileLayout(string boardKey, [FromBody] SaveTileLayoutRequestDto request)
+    public async Task<IActionResult> SaveTileLayout(string boardKey, [FromBody] SaveTileLayoutRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {

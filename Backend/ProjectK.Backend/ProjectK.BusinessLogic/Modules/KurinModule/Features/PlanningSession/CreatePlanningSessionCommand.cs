@@ -17,7 +17,7 @@ public class CreatePlanningSessionCommand : IRequest<ServiceResult<Guid>>
     public DateTime SearchStart { get; set; }
     public DateTime SearchEnd { get; set; }
     public int DurationDays { get; set; }
-    public List<ParticipantInputDto> Participants { get; set; } = [];
+    public List<ParticipantInput> Participants { get; set; } = [];
 }
 
 public class CreatePlanningSessionCommandHandler : IRequestHandler<CreatePlanningSessionCommand, ServiceResult<Guid>>

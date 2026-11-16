@@ -324,7 +324,7 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("mfa/enable")]
     [ProducesResponseType(typeof(MfaEnableResponseDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> EnableMfa([FromBody] MfaVerifyRequestDto request)
+    public async Task<IActionResult> EnableMfa([FromBody] MfaVerifyRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {
@@ -347,7 +347,7 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("mfa/recovery-codes")]
     [ProducesResponseType(typeof(MfaRecoveryCodesResponseDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> RotateMfaRecoveryCodes([FromBody] MfaRecoveryCodesRequestDto request)
+    public async Task<IActionResult> RotateMfaRecoveryCodes([FromBody] MfaRecoveryCodesRequest request)
     {
         if (this.UserKey() is not { } userKey)
         {
@@ -372,7 +372,7 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("AccountSecurityLimit")]
     [HttpPost("mfa/login-verify")]
     [ProducesResponseType(typeof(LoginUserDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequestDto request, [FromQuery] bool addAccount = false)
+    public async Task<IActionResult> VerifyMfaLogin([FromBody] MfaLoginRequest request, [FromQuery] bool addAccount = false)
     {
         var command = new VerifyMfaLoginCommand(request.Email, request.Code, request.RememberMe, request.MfaToken);
         var response = await _mediator.Send(command);

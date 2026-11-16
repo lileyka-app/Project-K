@@ -1,6 +1,6 @@
 namespace ProjectK.Common.Dtos.KurinModule.Requests;
 
-public class ParticipantInputDto
+public class ParticipantInput
 {
     public Guid MemberKey { get; set; }
     public string FullName { get; set; }
