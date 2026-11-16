@@ -128,13 +128,6 @@ public static class MemberMapping
         };
     }
 
-    /// <summary>The newest ступінь on record; a record older than the history holds it alone.</summary>
-    private static PlastLevel? LatestLevel(IEnumerable<PlastLevelHistory> history, PlastLevel? stored) =>
-        history
-            .OrderByDescending(entry => entry.DateAchieved)
-            .Select(entry => (PlastLevel?)entry.PlastLevel)
-            .FirstOrDefault() ?? stored;
-
     public static PlastLevelHistoryDto ToDto(this PlastLevelHistory history) => new()
     {
         MemberKey = history.MemberKey,
@@ -264,4 +257,11 @@ public static class MemberMapping
         member.FatherPhone = request.FatherPhone;
         member.UpdatedDate = now;
     }
+
+    /// <summary>The newest ступінь on record; a record older than the history holds it alone.</summary>
+    private static PlastLevel? LatestLevel(IEnumerable<PlastLevelHistory> history, PlastLevel? stored) =>
+        history
+            .OrderByDescending(entry => entry.DateAchieved)
+            .Select(entry => (PlastLevel?)entry.PlastLevel)
+            .FirstOrDefault() ?? stored;
 }

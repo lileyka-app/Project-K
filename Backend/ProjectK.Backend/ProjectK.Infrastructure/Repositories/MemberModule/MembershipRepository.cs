@@ -222,7 +222,6 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                 UserKey = userKey,
                 KurinKey = kurinKey,
                 GroupKey = groupKey,
-                Kind = MembershipKind.Youth,
                 JoinedAtUtc = DateTime.UtcNow
             });
             return;
