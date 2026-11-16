@@ -1,6 +1,8 @@
 using System.Globalization;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.Shared;
 
@@ -48,6 +50,37 @@ public static class MemberTrail
     /// <summary>The fields that differ between two snapshots taken with <see cref="Of"/>.</summary>
     public static IReadOnlyList<AuditChange> Between((string Field, object? Value)[] before, (string Field, object? Value)[] after) =>
         AuditChangeRules.Of(before.Zip(after, (was, now) => (was.Field, was.Value, now.Value)).ToArray());
+
+    /// <summary>
+    /// The journal entry for a profile write: a new card with what it was made with, an edit with what
+    /// it changed, and null for an edit that changed nothing. A new person is not in any kurin yet, so
+    /// the entry is filed under the one they are being placed in; an edit goes to the kurin the request
+    /// acts in, or to where the person stands when it acts in none. <c>before</c> is the card taken
+    /// with <see cref="Of"/> before the edit, null for a new card.
+    /// </summary>
+    public static AuditRecord? RecordOf(
+        Member member,
+        (string Field, object? Value)[]? before,
+        Guid kurinKey,
+        Guid? actingKurinKey)
+    {
+        var changes = before is null
+            ? Added(member)
+            : Between(before, Of(member));
+        if (changes.Count == 0)
+        {
+            return null;
+        }
+
+        return new AuditRecord(
+            AuditArea.Member,
+            before is null ? AuditActionNames.Member.Added : AuditActionNames.Member.Changed,
+            member.MemberKey,
+            LabelOf(member),
+            member.MemberKey,
+            changes,
+            KurinKey: before is null ? kurinKey : actingKurinKey ?? kurinKey);
+    }
 
     /// <summary>The ступені in the order they were reached, each with its date; null when there are none.</summary>
     public static string? PlastLevelsOf(IEnumerable<PlastLevelHistory> history)
