@@ -17,7 +17,7 @@ internal sealed class AgendaItemConfiguration : IEntityTypeConfiguration<AgendaI
         builder.Property(e => e.Description).HasMaxLength(2000);
         builder.Property(e => e.Location).HasMaxLength(200);
         builder.HasOne<Kurin>()
-            .WithMany(k => k.AgendaItems)
+            .WithMany()
             .HasForeignKey(e => e.KurinKey)
             .OnDelete(DeleteBehavior.Cascade);
         // The calendar queries by kurin and date window, so index both.

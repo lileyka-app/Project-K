@@ -177,7 +177,7 @@ public class LeadershipRepository : ILeadershipRepository
             .AnyAsync(
                 assignment => assignment.MentorUserKey == userKey
                     && assignment.RevokedAtUtc == null
-                    && assignment.Group.KurinKey == kurinKey,
+                    && _context.Groups.Any(group => group.GroupKey == assignment.GroupKey && group.KurinKey == kurinKey),
                 cancellationToken);
 
         var vykhovnyk = new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
@@ -258,7 +258,7 @@ public class LeadershipRepository : ILeadershipRepository
         {
             var seated = lookup.Select(entry => entry.MemberKey).ToHashSet();
             var mentors = await _context.MentorAssignments
-                .Where(assignment => assignment.RevokedAtUtc == null && assignment.Group.KurinKey == kurinKey)
+                .Where(assignment => assignment.RevokedAtUtc == null && _context.Groups.Any(group => group.GroupKey == assignment.GroupKey && group.KurinKey == kurinKey))
                 .Join(_context.Members,
                       assignment => assignment.MentorUserKey,
                       member => member.UserKey,

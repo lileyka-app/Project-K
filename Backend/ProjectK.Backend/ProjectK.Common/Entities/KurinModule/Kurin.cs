@@ -160,7 +160,5 @@ public class Kurin : Entity
     public string? AccessPolicy { get; set; }
     public ICollection<Group> Groups { get; set; } = new List<Group>();
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
-    public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();
     public ICollection<PlanningSession> PlanningSessions { get; set; } = new List<PlanningSession>();
-    public ICollection<AgendaItem> AgendaItems { get; set; } = new List<AgendaItem>();
 }

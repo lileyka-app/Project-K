@@ -116,6 +116,56 @@ public class ModuleBoundaryRules
             $"Files that name another module's namespace; ask it through Common/Contracts instead, and give the module its own error codes ({Boundaries}):");
     }
 
+    private static readonly Regex EntityNamespace = new(
+        @"^ProjectK\.Common\.Entities\.(?<module>\w+)(\.|$)", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// The navigations across a module boundary still standing, one by one, with the module they reach.
+    /// The list only gets shorter.
+    /// </summary>
+    private static readonly string[] NavigatesIntoAnotherModule =
+    [
+        "ProjectK.Common.Entities.KurinModule.Group.Leadership -> MemberModule",
+        "ProjectK.Common.Entities.KurinModule.Kurin.Memberships -> MemberModule",
+        "ProjectK.Common.Entities.MemberModule.Leadership.Group -> KurinModule",
+        "ProjectK.Common.Entities.MemberModule.Leadership.Kurin -> KurinModule",
+    ];
+
+    /// <summary>
+    /// An entity holds another module's entity by key, never by navigation: the navigation is a hidden
+    /// JOIN that does not survive splitting the modules, and it ties deleting one to the other. The
+    /// relationship itself stays in the model as <c>HasOne&lt;T&gt;()</c> with the same key and delete
+    /// rule, so the database does not change. Read by reflection, so the list is held exactly.
+    /// </summary>
+    [Fact]
+    public void Entities_ShouldNotNavigateIntoAnotherModule()
+    {
+        var offenders = typeof(ProjectK.Common.Entities.MemberModule.Member).Assembly.GetTypes()
+            .Select(type => (type, from: EntityModuleOf(type)))
+            .Where(pair => pair.from is not null && pair.type.IsClass)
+            .SelectMany(pair => pair.type
+                .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly)
+                .Select(property => (property, to: EntityModuleOf(NavigatedType(property.PropertyType))))
+                .Where(nav => nav.to is not null && nav.to != pair.from && nav.to != "Shared")
+                .Select(nav => $"{pair.type.FullName}.{nav.property.Name} -> {nav.to}"));
+
+        Baseline.Hold(
+            offenders,
+            NavigatesIntoAnotherModule,
+            $"Entities that navigate into another module's entity; hold its key and configure HasOne<T>() with the same key and delete rule ({Boundaries}):");
+    }
+
+    private static Type NavigatedType(Type type) =>
+        type.IsGenericType && type.GetGenericArguments() is [var element] && typeof(System.Collections.IEnumerable).IsAssignableFrom(type)
+            ? element
+            : type;
+
+    private static string? EntityModuleOf(Type type)
+    {
+        var match = EntityNamespace.Match(type.Namespace ?? "");
+        return match.Success && type.IsClass ? match.Groups["module"].Value : null;
+    }
+
     private static string? ModuleOf(IType type)
     {
         var match = ModuleNamespace.Match(type.Namespace?.FullName ?? "");

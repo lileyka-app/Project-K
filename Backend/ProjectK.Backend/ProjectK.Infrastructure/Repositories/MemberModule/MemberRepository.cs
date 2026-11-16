@@ -154,7 +154,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                 {
                     MemberKey = x.Person.MemberKey,
                     GroupKey = x.Placement.GroupKey,
-                    GroupName = x.Placement.Group != null ? x.Placement.Group.Name : null,
+                    GroupName = Context.Groups.Where(g => g.GroupKey == x.Placement.GroupKey).Select(g => g.Name).FirstOrDefault(),
                     KurinKey = x.Placement.KurinKey,
                     // Кадра виховників, і саме цього куреня. Роль типу Group — це гуртковий, а він
                     // юнак; тому тут звужено до KV, а не до «має якусь роль». Активне закріплення
@@ -172,16 +172,17 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                             assignment.RevokedAtUtc == null
                             && x.Person.UserKey != null
                             && assignment.MentorUserKey == x.Person.UserKey
-                            && assignment.Group.KurinKey == x.Placement.KurinKey),
+                            && Context.Groups.Any(group => group.GroupKey == assignment.GroupKey && group.KurinKey == x.Placement.KurinKey)),
                     // Закріплення виховника ведеться на акаунт, а не на людину, тож людина без
                     // акаунта не має закріплень — і список порожній, а не помилковий.
                     MentoredGroupNames = Context.MentorAssignments
-                    .Where(assignment => assignment.RevokedAtUtc == null
+                    .Join(Context.Groups, assignment => assignment.GroupKey, group => group.GroupKey, (assignment, group) => new { assignment, group })
+                    .Where(pair => pair.assignment.RevokedAtUtc == null
                         && x.Person.UserKey != null
-                        && assignment.MentorUserKey == x.Person.UserKey
-                        && assignment.Group.KurinKey == x.Placement.KurinKey)
-                    .OrderBy(assignment => assignment.Group.Name)
-                    .Select(assignment => assignment.Group.Name)
+                        && pair.assignment.MentorUserKey == x.Person.UserKey
+                        && pair.group.KurinKey == x.Placement.KurinKey)
+                    .OrderBy(pair => pair.group.Name)
+                    .Select(pair => pair.group.Name)
                     .ToList(),
                     UserKey = x.Person.UserKey,
                     FirstName = x.Person.FirstName,

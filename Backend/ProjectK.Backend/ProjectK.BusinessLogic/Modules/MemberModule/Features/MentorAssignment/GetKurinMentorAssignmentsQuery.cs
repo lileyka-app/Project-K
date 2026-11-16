@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
@@ -17,12 +18,14 @@ public class GetKurinMentorAssignmentsQueryHandler : IRequestHandler<GetKurinMen
     private readonly IMemberDirectory _members;
 
     private readonly IBlobReadLinks _links;
+    private readonly IKurinDirectory _kurins;
 
-    public GetKurinMentorAssignmentsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBlobReadLinks links)
+    public GetKurinMentorAssignmentsQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IBlobReadLinks links, IKurinDirectory kurins)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _links = links;
+        _kurins = kurins;
     }
 
     public async Task<ServiceResult<IEnumerable<MentorAssignmentDto>>> Handle(GetKurinMentorAssignmentsQuery request, CancellationToken cancellationToken)
@@ -32,6 +35,7 @@ public class GetKurinMentorAssignmentsQueryHandler : IRequestHandler<GetKurinMen
             .WithPhotoLinks(_links)
             .Where(member => member.UserKey.HasValue)
             .ToDictionary(member => member.UserKey!.Value);
+        var groupNames = await _kurins.GetGroupNamesAsync(request.KurinKey, cancellationToken);
         var response = new List<MentorAssignmentDto>();
 
         foreach (var assignment in assignments.OrderByDescending(a => a.AssignedAtUtc))
@@ -41,7 +45,7 @@ public class GetKurinMentorAssignmentsQueryHandler : IRequestHandler<GetKurinMen
                 MentorAssignmentKey = assignment.MentorAssignmentKey,
                 MentorUserKey = assignment.MentorUserKey,
                 GroupKey = assignment.GroupKey,
-                GroupName = assignment.Group.Name,
+                GroupName = groupNames.GetValueOrDefault(assignment.GroupKey, string.Empty),
                 AssignedAtUtc = assignment.AssignedAtUtc,
                 RevokedAtUtc = assignment.RevokedAtUtc,
                 Member = memberLookup.GetValueOrDefault(assignment.MentorUserKey)
