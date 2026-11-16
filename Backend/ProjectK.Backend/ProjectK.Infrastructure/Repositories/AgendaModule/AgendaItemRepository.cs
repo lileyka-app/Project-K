@@ -78,11 +78,6 @@ public class AgendaItemRepository : BaseEntityRepository<AgendaItem>, IAgendaIte
         Context.AgendaAssignments.RemoveRange(assignments);
     }
 
-    public override Task<IEnumerable<AgendaItem>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetForViewerAsync instead.");
-    }
-
     public async Task<IEnumerable<AgendaItem>> GetForViewerAsync(
         AgendaViewerScope viewer,
         DateTime? fromUtc,

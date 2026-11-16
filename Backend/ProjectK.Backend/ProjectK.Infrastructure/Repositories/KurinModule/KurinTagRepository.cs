@@ -11,9 +11,6 @@ public class KurinTagRepository : BaseEntityRepository<KurinTag>, IKurinTagRepos
     {
     }
 
-    public override Task<IEnumerable<KurinTag>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException("Use GetForKurinAsync instead.");
-
     public async Task<IReadOnlyList<KurinTag>> GetForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default) =>
         await Context.KurinTags
             .Where(t => t.KurinKey == kurinKey)

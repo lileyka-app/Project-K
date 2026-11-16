@@ -11,6 +11,7 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 
@@ -107,10 +108,10 @@ public class ThirdProbeReaderTests
             .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = kurinKey, GroupKey = groupKey }]);
         _unitOfWork.SetupGet(u => u.Memberships).Returns(memberships.Object);
         var leaderships = new Mock<ILeadershipRepository>();
-        leaderships.Setup(l => l.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>())).ReturnsAsync(
+        leaderships.Setup(l => l.GetOfficeHoldersAsync(kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Остап", LastName = "Коваль", UserRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi) },
-            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Ірина", LastName = "Бойко", UserRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) }
+            new MemberLookupRow(Guid.NewGuid(), null, "Остап", null, "Коваль", null, new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)),
+            new MemberLookupRow(Guid.NewGuid(), null, "Ірина", null, "Бойко", null, new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk))
         ]);
         _unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
         var mentors = new Mock<IMentorAssignmentRepository>();

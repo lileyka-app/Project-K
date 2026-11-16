@@ -6,7 +6,7 @@ using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Events.MemberModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
@@ -24,9 +24,9 @@ internal static class MembershipRequestNoticeRules
 
     public static async Task<IReadOnlyCollection<Guid>> ZvyazkoviAsync(IUnitOfWork unitOfWork, Guid kurinKey, CancellationToken cancellationToken)
     {
-        var role = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-        return (await unitOfWork.Leaderships.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.KV, cancellationToken))
-            .Where(holder => holder.UserKey.HasValue && holder.UserRole == role)
+        var office = new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        return (await unitOfWork.Leaderships.GetOfficeHoldersAsync(kurinKey, LeadershipType.KV, cancellationToken))
+            .Where(holder => holder.UserKey.HasValue && holder.Office == office)
             .Select(holder => holder.UserKey!.Value)
             .Distinct()
             .ToList();

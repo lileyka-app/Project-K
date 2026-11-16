@@ -3,6 +3,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.MemberModule;
@@ -45,6 +46,38 @@ public class MentorAssignmentRepository : BaseEntityRepository<MentorAssignment>
             .OrderBy(group => group.Name)
             .ToListAsync(cancellationToken);
         return groups.Select(group => new GroupRef(group.GroupKey, group.Name)).ToList();
+    }
+
+    public Task<bool> HasActiveInKurinAsync(Guid mentorUserKey, Guid kurinKey, CancellationToken cancellationToken = default)
+        => (from assignment in Context.MentorAssignments
+            join assigned in Context.Groups on assignment.GroupKey equals assigned.GroupKey
+            where assignment.MentorUserKey == mentorUserKey
+                && assignment.RevokedAtUtc == null
+                && assigned.KurinKey == kurinKey
+            select assignment)
+            .AnyAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<MemberLookupRow>> GetActiveMentorsInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        var mentors = await (from assignment in Context.MentorAssignments
+                             join assigned in Context.Groups on assignment.GroupKey equals assigned.GroupKey
+                             join member in Context.Members on assignment.MentorUserKey equals member.UserKey
+                             where assignment.RevokedAtUtc == null && assigned.KurinKey == kurinKey
+                             select new { member.MemberKey, member.UserKey, member.FirstName, member.MiddleName, member.LastName, member.ProfilePhotoBlobName })
+            .Distinct()
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return mentors
+            .Select(mentor => new MemberLookupRow(
+                mentor.MemberKey,
+                mentor.UserKey,
+                mentor.FirstName,
+                mentor.MiddleName,
+                mentor.LastName,
+                mentor.ProfilePhotoBlobName,
+                null))
+            .ToList();
     }
 
     public override async Task<MentorAssignment?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)

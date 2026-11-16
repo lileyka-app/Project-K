@@ -61,11 +61,6 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
             .ToListAsync(cancellationToken);
     }
 
-    public override Task<IEnumerable<BadgeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetByMemberKeyAsync instead.");
-    }
-
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.BadgeProgresses

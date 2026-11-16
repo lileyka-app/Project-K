@@ -23,7 +23,9 @@ public class GetKurinMentorCandidatesQueryHandler : IRequestHandler<GetKurinMent
 
     public async Task<ServiceResult<IEnumerable<MemberLookupDto>>> Handle(GetKurinMentorCandidatesQuery request, CancellationToken cancellationToken)
     {
-        var response = await _uow.Members.GetMentorCandidatesLookupAsync(request.KurinKey, cancellationToken);
+        var response = (await _uow.Members.GetMentorCandidatesAsync(request.KurinKey, cancellationToken))
+            .Select(candidate => candidate.ToLookupDto())
+            .ToList();
         return new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, response.WithPhotoLinks(_links));
     }
 }

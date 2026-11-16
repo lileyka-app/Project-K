@@ -16,11 +16,6 @@ public class PlanningSessionRepository : BaseEntityRepository<PlanningSession>, 
         return await Context.PlanningSessions.AnyAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);
     }
 
-    public override Task<IEnumerable<PlanningSession>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken token) instead.");
-    }
-
     public override async Task<PlanningSession?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.PlanningSessions.FirstOrDefaultAsync(ps => ps.PlanningSessionKey == entityKey, cancellationToken);

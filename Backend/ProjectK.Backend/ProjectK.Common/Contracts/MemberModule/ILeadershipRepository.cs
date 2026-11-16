@@ -1,7 +1,7 @@
-using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.Common.Contracts.MemberModule;
 
@@ -56,8 +56,8 @@ public interface ILeadershipRepository
     /// no bearing on what they may do, and this read is the place that would quietly reintroduce
     /// the dependency.
     /// </para>
-    /// A mentor assignment to a гурток of this kurin counts as a Виховник (КВ) office — the
-    /// assignment is what makes someone one, and it is folded in here so there is one answer.
+    /// Only the seats: a mentor assignment, which also counts as an office, is folded in by the
+    /// member module (<c>MentorOfficeRules</c>), which answers through <see cref="IOfficeDirectory"/>.
     /// </summary>
     Task<IReadOnlyList<MemberOffice>> GetActiveOfficesForAccountInKurinAsync(
         Guid userKey,
@@ -75,10 +75,11 @@ public interface ILeadershipRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Members currently holding a kurin- or КВ-scoped office in the kurin, one lookup row per office,
-    /// with <c>UserRole</c> set to the office role name. Used to render the КВ / провід tables.
+    /// Members seated in a kurin- or КВ-scoped office of the kurin, one row per seat, each with its
+    /// office. A виховник closed over a гурток but never seated is not among them; the КВ as the
+    /// screen shows it adds those through <c>MentorOfficeRules.KvWithMentors</c>.
     /// </summary>
-    Task<IReadOnlyList<MemberLookupDto>> GetOfficeMembersLookupAsync(
+    Task<IReadOnlyList<MemberLookupRow>> GetOfficeHoldersAsync(
         Guid kurinKey,
         LeadershipType type,
         CancellationToken cancellationToken = default);
