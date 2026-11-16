@@ -67,9 +67,10 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Журнал змін сутності | там само | `…Trail` |
 | Поняття предметної області | модуль-власник | сам іменник: `DuesLedger`, `ScoreBook` |
 | Коди помилок | `BusinessLogic/Modules/<M>/<M>Errors.cs` | PascalCase-константи |
-| Внутрішній тип модуля, який клієнт не бачить | `BusinessLogic/Modules/<M>/Models/` | за змістом |
-| Те, що бачить клієнт | `Common/Dtos/<Module>/` | відповідь `…Dto`, запит `…Request`; record з конструктором |
-| Питання до іншого модуля | `Common/Contracts/<Module>/` | `I…Directory` — лише читання |
+| Внутрішній тип модуля, який клієнт не бачить (і частини тіла команди) | `BusinessLogic/Modules/<M>/Models/` | за змістом |
+| Те, що бачить клієнт | `Common/Dtos/<Module>/`, запити — у підтеці `Requests/` | відповідь `…Dto`, запит `…Request`; record з конструктором |
+| Рядок, який репозиторій віддає для читання: лише збережені факти, без рішень | `Common/Records/<Module>/` | `<Thing>Row`; у DTO його перекладає `<Area>Mapping` |
+| Питання до іншого модуля | `Common/Contracts/<Module>/` | `I…Directory` — лише читання, відповідь — значення з `Common/Records`, не сутності |
 | Синхронний запис в іншому модулі (одна транзакція, результат одразу) | контракт у `Common/Contracts/<Module>/`, реалізація в модулі-власнику | `I…Writer` |
 | Зміна в іншому модулі | подія в `Common/Events/<Module>/`, обробник — у модулі, чиї дані міняються | `<Thing><PastVerb>`, `…EventHandler` |
 | Фіксований довідник із файлів (проби, вмілості, відзначення) | контракт у `Common/Contracts/<Module>/` | `I…Catalog` |
@@ -78,6 +79,7 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Правило чи підписи, яких Infrastructure не потребує | `BusinessLogic/Modules/<M>/Services/` | `…Rules` / `…Names`, static |
 | Таблиця | сутність `Common/Entities/<Module>/`, конфіг `Infrastructure/Persistence/Configurations/<Module>/` | `<Entity>`, `<Entity>Configuration` |
 | Доступ до таблиці | `Infrastructure/Repositories/<Module>/`, лише через UoW | `<Entity>Repository` |
+| Таблиця, яку читають цілою (мала або глобальна за природою) | контракт репозиторію бере `IListableRepository<T>` (`Common/Contracts/Shared/`) | `GetAllAsync` лише звідти |
 | Сховище не-таблиці (сесії, кеш, файли) | `Infrastructure/Stores/` | `…Store` |
 | Стан у памʼяті процесу, який тримає модуль (позначки, відкриті зони) | `BusinessLogic/Modules/<M>/Services/`, singleton | `…Store` |
 | Нащадок типу бібліотеки чи фреймворку | де його шукає бібліотека | суфікс базового типу: `…Problem`, `…ControllerFeatureProvider`, `…DbContextFactory`, `…Interceptor` |
@@ -110,6 +112,13 @@ Entities/   Contracts/   Dtos/   Records/   Events/   Enums/   Rules/   Options/
 Один публічний тип — один файл: супутній record чи enum контракту лягає у свій вид, а не поруч з
 інтерфейсом. Static-клас (правило, підписи, набір значень) — завжди `Rules/`, навіть коли описує enum.
 
+Те саме правило діє й поза `Common`, у кожному проєкті: один тип верхнього рівня — один файл, названий
+за ним. Інтерфейс служби лежить окремо від реалізації (`IAgendaAccess` поруч з `AgendaAccess`), кожен
+обробник подій — у своєму файлі, а частини тіла команди (`ThirdProbeSignPart`, `ProbeProjectInput`) —
+у `Models/` модуля. Єдиний виняток — зріз: запит, валідатор і хендлер ділять один файл (нижче).
+Архітектурний тест тримає правило лише для `Common` (`CommonFiles_ShouldHoldOnePublicTypeNamedLikeTheFile`);
+решту — рев'ю.
+
 ### Вертикальні зрізи
 
 Уся бізнес-логіка живе за одним шаблоном:
@@ -136,6 +145,15 @@ Modules/<Module>/Features/<Area>/
 Обробники доменних подій (`INotificationHandler<DomainEventNotification<…>>`) звуться
 `…EventHandler`, щоб не плутатися з хендлерами запитів. Усе це перевіряє
 `ProjectK.Architecture.Tests` → `NamingRules`.
+
+Запит, хендлер, обробник подій і валідатор — `sealed`: від них ніхто не успадковує, і другий хендлер
+не прослизне підкласом першого (`NamingRules.EveryRequestHandlerAndValidator_ShouldBeSealed`).
+
+**Валідатор перевіряє команду**, а не DTO в ній: `ValidationBehavior` бере лише валідатори самого
+запиту MediatR, тож валідатор на `…Request` конвеєр не викличе. Правило тіла запиту пишеться в
+валідаторі команди через `RuleFor(c => c.Request).ChildRules(…)`. Коли те саме тіло приймають дві
+команди (створення й зміна), правило — static-метод `…Rules` у `Services/` модуля, який обидві
+кличуть із `ChildRules`: `DuesEntryRules.Apply`, `ScoreEntryRules.AddShapeRules`.
 
 Поза `Features/` у модулі допускаються лише `Models/` (внутрішні типи, яких клієнт не бачить),
 `Services/` (доменні служби, спільні для кількох зрізів — сюди ж ідуть збирачі звітів і
@@ -178,13 +196,19 @@ Modules/<Module>/Features/<Area>/
 
 **Контракт замість чужого репозиторію.** Питання до іншого модуля ставиться через інтерфейс у
 `Common/Contracts/<Module>/` —
-`IMemberDirectory`, `IMembershipDirectory`, `IOfficeDirectory`, `IMemberProgressDirectory`.
-Directory лише відповідає на питання; запис у чужий модуль через нього не йде. За межами модуля, якому належить сутність, її імені
+`IMemberDirectory`, `IMembershipDirectory`, `IOfficeDirectory`, `IMemberProgressDirectory`,
+`IKurinDirectory`, `IKurinTagDirectory`, `IAgendaDirectory`.
+Directory лише відповідає на питання; запис у чужий модуль через нього не йде. Відповідь — значення
+з `Common/Records/<Module>/`, а не сутність: `IAgendaDirectory` віддає `AgendaViewerItem`,
+`AgendaCategorySummary`, `AgendaEventSummary`, `AgendaEventOccurrence`, а не `AgendaItem`, бо стан
+задачі для людини й дні серії вміє порахувати лише агенда. За межами модуля, якому належить сутність, її імені
 не буває: поза мембером ніхто не називає ні `Member`, ні `IMemberRepository`. Так само модуль не
 називає чужих хендлерів, служб, мапінгів і каталогів помилок — це ловить
 `Modules_ShouldNotReachIntoEachOther` (`ModuleBoundaryRules`) з IL і з тексту. Пиши контракт так,
 ніби виклик піде по мережі: читання, що повертає багатьох, робиться **одним** методом, бо «один за
-ключем» перетворює список на N звернень.
+ключем» перетворює список на N звернень. Правило чи сталий рядок, потрібний двом модулям, переїжджає
+в `Common/Rules/<Module>/`, а не береться з чужих `Services/`: `AgendaRouteNames` читають сповіщення
+й посилання на календар, `CalendarFeedNames` — `AuthModule` і `MeModule`.
 
 **Подія замість синхронного виклику.** Коли після дії має статися щось у чужому модулі —
 оголошуй подію (`Common/Events/<Module>/`) і публікуй через
@@ -193,17 +217,33 @@ Directory лише відповідає на питання; запис у чу�
 сам пише в чужий інбокс, валить `Modules_ShouldAnnounceWhatHappened_RatherThanWriteToTheInbox`.
 Той, хто зробив дію, не має знати, кого вона обходить.
 
+Коли подію публікувати, вирішує те, що мусить статися в обробнику. Події, чиї наслідки комітяться
+разом із дією, йдуть **до** `SaveChangesAsync`: обробник міняє свої рядки на тому самому unit of
+work. Так `MembersRemoved`, `GroupDissolved` і `KurinTagRemoved` прибирають призначення агенди
+(`AgendaTargetCleanupEventHandler`), а `KurinDeleted` і `GroupDissolved` закривають провід і членства.
+Решту публікують **після** збереження. Одна дія може оголосити обидві: видалення тегу публікує
+`KurinTagRemoved` до збереження, а `KurinTagDeleted` — після, і з нього вкладка переоцінює квартали.
+
 **Явний запис — лише коли потрібні одна транзакція й відповідь одразу.** Подію обробляють без
 відповіді, тож вона не годиться, коли дія мусить змінити чужі дані в тій самій транзакції й тут же
 дістати результат: імпорт реєстру відкриває людині акаунт ключем, який щойно отримав. Тоді
 модуль-власник відкриває контракт запису `I…Writer` у `Common/Contracts/<Module>/`; реалізація живе
 в ньому самому й іде його ж правилами (часто — надсилає його ж команди). Таких контрактів мало, і
 кожен пояснює в doc-коментарі, чому подія не підходить: `IMemberImportWriter` (імпорт пише людей),
-`IKurinGroupWriter` (імпорт відкриває гуртки), `IAgendaRsvpWriter` (відповідь на подію з дашборда).
+`IKurinGroupWriter` (імпорт відкриває гуртки), `IAgendaRsvpWriter` (відповідь на подію з дашборда),
+`IAccountSessionWriter` (новий пароль, підтверджена пошта чи призупинення в `UsersModule` обривають
+сесії й посилання на календар в `AuthModule`; реалізує `RefreshTokenInvalidation`). Контракт запису,
+як і Directory, приймає ключі й значення, а не чужі сутності: `IAgendaRsvpWriter.AnswerAsync` бере
+ключ події й повертає `AgendaRsvpOutcome`.
 
 **Ключ замість навігації через межу.** Сутність чужого модуля не буває навігаційною властивістю:
 тримай `MemberKey`, а не `Member`. EF-навігація через межу — це прихований JOIN, який не переживе
-поділу на сервіси; вона ж робить неможливим видалити щось одне, не потягнувши інше.
+поділу на сервіси; вона ж робить неможливим видалити щось одне, не потягнувши інше. Звʼязок
+лишається в моделі як `HasOne<T>()` з тим самим ключем і правилом видалення, тож база від цього не
+міняється. Фільтр запитів, якому потрібна чужа таблиця (закріплення впорядника ховається разом із
+розформованим гуртком), пишеться в `AppDbContext.OnModelCreating` через ключ, а не через навігацію.
+Тримає це `Entities_ShouldNotNavigateIntoAnotherModule` (`ModuleBoundaryRules`); у його baseline
+лишились `Group.Leadership`, `Leadership.Group` і `Leadership.Kurin`.
 
 Борг, який ще не виправлений, заноситься **поіменно** в baseline відповідного правила. Baseline
 тільки коротшає: додати туди новий рядок — це визнати, що правило порушено свідомо, і такий рядок
@@ -263,7 +303,7 @@ Directory лише відповідає на питання; запис у чу�
 профіль, офіс, налаштування — записується через `IKurinAudit.RecordAsync` **до** `SaveChangesAsync`
 обробника. Запис іде в той самий контекст і комітиться разом зі зміною. Доменна подія для цього не
 годиться: більшість подій публікують уже після збереження. Виняток — події, чиї наслідки мусять
-закомітитись разом із дією (`MembersRemoved`, `KurinDeleted`, `GroupDissolved`): їх публікують **до**
+закомітитись разом із дією (`MembersRemoved`, `KurinDeleted`, `GroupDissolved`, `KurinTagRemoved`): їх публікують **до**
 `SaveChangesAsync`, і модуль-власник змінює свої дані в тій самій транзакції.
 
 - Дія — рядок з `AuditActionNames`; розділ — `AuditArea` (числа заморожені). Клієнт будує з них речення,
@@ -281,6 +321,10 @@ Directory лише відповідає на питання; запис у чу�
   проєктує запити просто в DTO, а BusinessLogic вона не бачить.
 - **`Common/Records/<Module>/`** — внутрішні типи-значення, які **ніколи не серіалізуються клієнту**:
   `ServiceResult`, `ResourceAccessDecision`, `AgendaViewerScope`, результати завантаження блобів.
+  Сюди ж лягають рядки, які репозиторій віддає для читання (`MemberListRow` — людина в реєстрі,
+  `MemberLookupRow` — кандидат у впорядники чи той, хто тримає офіс): лише збережені факти, без
+  рішень. Рішення (хто кадра, яким офісом назвати людину, який ступінь останній) ухвалює модуль, а в
+  DTO рядок перекладає `<Area>Mapping` (`MemberMapping`). Так правило не дублюється в SQL репозиторію.
 - **`BusinessLogic/Modules/<M>/Models/`** — внутрішнє одного модуля.
 
 DTO — `record` з конструктором (або з `required`-властивостями): нове поле не скомпілюється, поки
@@ -292,7 +336,17 @@ DTO — `record` з конструктором (або з `required`-власт�
 
 Успадковують `BaseEntityRepository<T>`, який дає CRUD; ключ береться з моделі EF, тож сутність не
 мусить називати його однаково. Перевизначай лише те, що справді відрізняється — eager loading,
-звужений запит, свідома відмова від `GetAllAsync`.
+звужений запит.
+
+**Читання всієї таблиці базовий клас не дає.** Більшість таблиць належить куреню, гуртку чи людині,
+і «усі рядки» там не питання; колись такі репозиторії успадковували `GetAllAsync` і кидали з нього
+`NotSupportedException`, чого компілятор не ловив. Тепер репозиторій пропонує це, лише коли його
+контракт бере `IListableRepository<T>`: курені, список очікування, системні налаштування.
+
+**Репозиторій читає, а не вирішує.** Запит повертає збережені факти — сутність або рядок `…Row` з
+`Common/Records/<Module>/`, — а правила (хто кадра, яку роль дає офіс, що закріплення впорядника — це
+Виховник КВ) застосовує модуль. `LeadershipRepository` віддає лише тих, хто сидить в офісі; впорядника
+до КВ додає `MentorOfficeRules`.
 
 Репозиторії групуються за модулем (`Repositories/<Module>/`) і доступні **тільки** через
 `IUnitOfWork` — окремо вони не реєструються, бо це створювало б другий екземпляр на той самий
@@ -347,8 +401,14 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 («пл. скоб Іван Петренко»), а не назва рядка таблиці, тож «пл. скоб / вірл.» там був би неправильний.
 
 Так само з правилами, а не лише з підписами: де проходить межа між юнацтвом і кадрою, сказано в
-`KurinRosterRules`, бо реєстр рахує це в SQL, а звіт — у пам'яті, і два місця вже давали дві різні
-відповіді. Тест `GetListItemsByKurinKeyAsync_ShouldAgreeWithTheSharedStaffRule` тримає їх разом.
+`KurinRosterRules`. Колись реєстр рахував це в SQL, а звіт — у пам'яті, і два місця давали дві різні
+відповіді. Тепер обидва вирішують у пам'яті тим самим правилом: репозиторій віддає реєстру лише
+збережені факти (`MemberListRow`), а кадру, роль і останній ступінь з них виводить `MemberMapping`
+через `KurinRosterRules` і `SystemRoleNames`; звіт робить те саме в `KurinReportRosterRules`. Тест
+`GetListRowsByKurinKeyAsync_ShouldAgreeWithTheSharedStaffRule` тримає реєстр і правило разом. Так
+само «закріплений за гуртком виховник — це Виховник КВ» сказано раз, у `MentorOfficeRules`
+(`Common/Rules/MemberModule`): його читають `OfficeDirectory` (звідти права), список КВ і отримувачі
+сповіщень про перевірку.
 
 ### Час читача приносить браузер
 
@@ -369,7 +429,7 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 Текст помилки **не кладеться в `Data`**.
 
 `error` — стабільний код, за яким UI обирає формулювання. `message` англійською і призначений
-розробнику; користувацький текст пише фронт (див. `LOGIN_ERROR_TEXT`).
+розробнику; користувацький текст пише фронт (див. `LOGIN_ERROR_TEXT`, `CONCESSION_ERROR_TEXT`).
 
 - **Коди живуть у каталозі модуля** `<Module>Errors` (`BusinessLogic/Modules/<M>/<M>Errors.cs`):
   PascalCase-константи й фабрики частих випадків (`KurinErrors.NotFound<T>()`). Літерал коду в
@@ -377,6 +437,11 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
   Каталог у кожного модуля свій, і чужого модуль не бере. `MemberModule` тримає три, за
   областями: `MemberErrors`, `MembershipErrors`, `LeadershipErrors`. Те саме значення може жити в кількох
   каталогах (`"KurinNotFound"` у `KurinErrors` і в `RosterErrors`) — контракт із клієнтом це рядок, не константа.
+- **Контролер теж бере код із каталогу.** Коли контролер відмовляє сам, ще до хендлера (немає файла,
+  невідома роль, порожній `groupKey`), він пише `this.Failure(type, <M>Errors.Code, message)` з
+  каталогу свого модуля: клієнт формулює текст за тим самим рядком, що й від хендлера. Літерал коду
+  в API валить `ErrorRules.Api_ShouldTakeErrorCodesFromTheModuleCatalogue`; у baseline лише
+  `E2ETestController`, бо його коди не належать жодному модулю й жоден екран їх не показує.
 - **Кожна невдача має код.** `new ServiceResult<T>(ResultType.NotFound)` без коду не буває.
 - Код — частина контракту з фронтом: перейменування коду ламає текст на екрані, тож нові й змінені
   коди дзеркалимо у відповідній `*_ERROR_TEXT` на фронті в тому самому PR.
@@ -647,9 +712,9 @@ GitHub. Скрипт `site/scripts/sync-docs.mjs` копіює обидві те
 dotnet test Backend/ProjectK.Backend/ProjectK.Backend.sln
 ```
 
-- бекенд — **2797** тестів (BusinessLogic 1558 · API 939 · Infrastructure 262 · Architecture 38)
-- фронт — **1281** тест, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
-- e2e — **101** тест
+- бекенд — **2837** тестів (BusinessLogic 1593 · API 940 · Infrastructure 263 · Architecture 41)
+- фронт — **1282** тести, лінт **0 помилок** (18 попереджень — поточний бейслайн, див. `docs/quality-baseline.md`)
+- e2e — **199** тестів (останній повний прогін: 186 зелених, 12 пропущених)
 
 ```bash
 cd Frontend/projectk-frontend && npm run lint && npm test && npx ng build
