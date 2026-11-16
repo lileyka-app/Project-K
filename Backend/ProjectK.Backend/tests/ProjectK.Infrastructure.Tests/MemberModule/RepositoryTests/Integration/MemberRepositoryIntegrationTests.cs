@@ -518,16 +518,4 @@ public class MemberRepositoryIntegrationTests
         Assert.Equal(expected, actual);
         Assert.Equal([mentor.MemberKey], actual);
     }
-
-    [Fact]
-    public async Task GetAllAsync_Parameterless_ShouldThrowNotSupported()
-    {
-        using var context = CreateInMemoryDbContext();
-        var repo = new MemberRepository(context);
-
-        await Assert.ThrowsAsync<NotSupportedException>(async () =>
-        {
-            _ = await repo.GetAllAsync(); // parameterless
-        });
-    }
 }

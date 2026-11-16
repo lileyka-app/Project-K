@@ -12,9 +12,6 @@ public class AgendaCategoryRepository : BaseEntityRepository<AgendaCategory>, IA
     {
     }
 
-    public override Task<IEnumerable<AgendaCategory>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException("Use GetForKurinAsync instead.");
-
     public async Task<IReadOnlyList<AgendaCategory>> GetForKurinAsync(Guid kurinKey, bool includeArchived, CancellationToken cancellationToken = default)
     {
         var query = Context.AgendaCategories.Where(c => c.KurinKey == kurinKey);

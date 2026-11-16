@@ -20,13 +20,6 @@ public class MemberAwardRepository : BaseEntityRepository<MemberAward>, IMemberA
             .FirstOrDefaultAsync(x => x.MemberAwardKey == entityKey, cancellationToken);
     }
 
-    public override async Task<IEnumerable<MemberAward>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return await Context.MemberAwards
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-    }
-
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
         return await Context.MemberAwards

@@ -17,4 +17,7 @@ public class WaitlistRepository : BaseEntityRepository<WaitlistEntry>, IWaitlist
         return await Context.WaitlistEntries.FirstOrDefaultAsync(e => e.Email == email, cancellationToken);
     }
 
+    public async Task<IEnumerable<WaitlistEntry>> GetAllAsync(CancellationToken cancellationToken = default)
+        => await Context.WaitlistEntries.ToListAsync(cancellationToken);
+
 }

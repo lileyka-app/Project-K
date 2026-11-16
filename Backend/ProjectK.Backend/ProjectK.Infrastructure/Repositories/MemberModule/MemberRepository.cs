@@ -400,11 +400,6 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
             .FirstOrDefaultAsync(m => m.Email == email, cancellationToken);
     }
 
-    public override Task<IEnumerable<Member>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetAllAsync(Guid groupKey, CancellationToken token) or GetAllByKurinkey(...) instead.");
-    }
-
     public override void Update(Member member, CancellationToken cancellationToken = default)
     {
         Context.Members.Update(member);
