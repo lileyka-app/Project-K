@@ -6,7 +6,7 @@ sidebar:
 ---
 
 Лілейка — **модульний моноліт**: один процес `.NET`, одна база, один образ на всі середовища, але
-всередині десять модулів із контрактами між ними, які колись можна винести окремо. Словами це
+всередині чотирнадцять модулів із контрактами між ними, які колись можна винести окремо. Словами це
 описано в [Архітектурі](/dev/core/architecture/); тут ті самі речі намальовані. Діаграми
 підлаштовуються під ширину екрана і тему сайту.
 
@@ -27,6 +27,10 @@ flowchart TB
         AUTH["AuthModule"]
         USERS["UsersModule"]
         KURIN["KurinModule"]
+        MEMBER["MemberModule"]
+        AGENDA["AgendaModule"]
+        ARCHIVE["ArchiveModule"]
+        ROSTER["RosterModule"]
         PB["ProbesAndBadges<br/>Module"]
         INFRA["Infrastructure<br/>Module"]
         DUES["DuesModule"]
@@ -34,7 +38,8 @@ flowchart TB
         KRAI["KraiModule"]
         ME["MeModule"]
         AUDIT["AuditModule"]
-        HTTP --> AUTH & USERS & KURIN & PB & INFRA
+        HTTP --> AUTH & USERS & KURIN & MEMBER & AGENDA
+        HTTP --> ARCHIVE & ROSTER & PB & INFRA
         HTTP --> DUES & SCORE & KRAI & ME & AUDIT
     end
 
@@ -105,7 +110,8 @@ sequenceDiagram
 Чотири проєкти з односторонніми залежностями. `BusinessLogic` та `Infrastructure` не знають одне
 про одного: інтерфейс живе в `Common`, реалізація — в `Infrastructure`. Модулі не читають таблиць
 одне одного, а питають через контракти в `Common/Contracts/<Module>/`, і ці контракти лише
-відповідають; змінити щось у чужому модулі можна тільки подією, яку той модуль обробить сам.
+відповідають; змінити щось у чужому модулі можна подією, яку той модуль обробить сам, а коли
+потрібні одна транзакція й відповідь одразу — його контрактом запису `I…Writer`.
 `ProjectK.Architecture.Tests` читає IL і валить збірку, якщо хтось перетнув межу. `Common` розкладений
 спершу за видом, потім за модулем: `Entities/`, `Contracts/`, `Dtos/`, `Records/`, `Events/`, `Enums/`,
 `Rules/`, `Options/`.
@@ -114,7 +120,7 @@ sequenceDiagram
 flowchart TB
     subgraph API["ProjectK.API"]
         direction LR
-        CTRL["Controllers по модулях<br/>Auth · Users · Kurin · ProbesAndBadges · Infrastructure<br/>Dues · Score · Krai · Me · Audit"]
+        CTRL["Controllers по модулях<br/>Auth · Users · Kurin · Member · Agenda · Archive · Roster<br/>ProbesAndBadges · Infrastructure · Dues · Score · Krai · Me · Audit"]
         POL["Authorization · Filters<br/>AuthorizationPolicies · ResourceAuthorize"]
         DI["Program.cs · Hosting · Middleware<br/>Cookies · прогрів після старту"]
     end
@@ -130,7 +136,7 @@ flowchart TB
         direction LR
         ENT["Entities<br/>Member · Membership · Kurin · Group · AgendaItem …"]
         IFACE["Contracts<br/>IUnitOfWork · IEmailService · IPhotoService …"]
-        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · ICurrentMember · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory<br/>IDuesDirectory · IKraiProfileDirectory"]
+        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · ICurrentMember · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory · IAgendaDirectory<br/>IKurinTagDirectory · IDuesDirectory · IKraiProfileDirectory<br/>запис: IMemberImportWriter · IKurinGroupWriter · IAgendaRsvpWriter"]
         KINDS["Dtos · Records · Events<br/>Enums · Rules · Options"]
     end
 
@@ -153,7 +159,9 @@ flowchart TB
 Модулі однакові по обидва боки межі: `BusinessLogic/Modules/AuthModule` і
 `API/Controllers/AuthModule` — про одне й те саме. Мембер від початку будувався так, щоб його
 можна було винести в окремий сервіс: контракт замість репозиторію, подія замість виклику, ключ
-замість навігації. Що в яку теку лягає і як зветься — таблиця «Що куди лягає» в
+замість навігації. Тому в листопаді 2026 колишній `KurinModule` розрізали на пʼять — `KurinModule`,
+`MemberModule`, `AgendaModule`, `ArchiveModule` і `RosterModule`, — не змінивши ні адрес, ні JSON,
+ні бази. Що в яку теку лягає і як зветься — таблиця «Що куди лягає» в
 [Конвенціях](/dev/core/contributing/).
 
 ## 4. Прод і локальні заглушки
