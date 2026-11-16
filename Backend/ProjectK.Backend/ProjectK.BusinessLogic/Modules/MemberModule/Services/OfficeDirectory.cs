@@ -1,6 +1,7 @@
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Services;
 
@@ -18,8 +19,9 @@ public sealed class OfficeDirectory : IOfficeDirectory
         Guid userKey,
         Guid kurinKey,
         CancellationToken cancellationToken = default)
-        => await _unitOfWork.Leaderships.GetActiveOfficesForAccountInKurinAsync(
-            userKey, kurinKey, cancellationToken);
+        => MentorOfficeRules.WithAssignment(
+            await _unitOfWork.Leaderships.GetActiveOfficesForAccountInKurinAsync(userKey, kurinKey, cancellationToken),
+            await _unitOfWork.MentorAssignments.HasActiveInKurinAsync(userKey, kurinKey, cancellationToken));
 
     public Task<IReadOnlyList<Guid>> GetLeadershipKeysForMemberAsync(
         Guid memberKey,

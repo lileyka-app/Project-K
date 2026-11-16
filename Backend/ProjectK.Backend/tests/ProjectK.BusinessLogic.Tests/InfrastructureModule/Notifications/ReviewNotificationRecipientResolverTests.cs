@@ -10,6 +10,8 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
@@ -44,14 +46,14 @@ public class ReviewNotificationRecipientResolverTests
         _unitOfWork.SetupGet(x => x.MentorAssignments).Returns(_mentors.Object);
 
         _leaderships
-            .Setup(x => x.GetOfficeMembersLookupAsync(_kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetOfficeHoldersAsync(_kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 Holder(_zvyazkovyi, LeadershipType.KV, LeadershipRole.Zvyazkovyi),
                 Holder(_vykhovnyk, LeadershipType.KV, LeadershipRole.Vykhovnyk)
             ]);
         _leaderships
-            .Setup(x => x.GetOfficeMembersLookupAsync(_kurinKey, LeadershipType.Kurin, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetOfficeHoldersAsync(_kurinKey, LeadershipType.Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([Holder(_kurinnyy, LeadershipType.Kurin, LeadershipRole.Kurinnuy)]);
         _leaderships
             .Setup(x => x.GetActiveOfficeMemberKeysAsync(
@@ -64,6 +66,9 @@ public class ReviewNotificationRecipientResolverTests
             .Setup(x => x.GetLookupByKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberLookupDto { MemberKey = _hurtkovyyMember, UserKey = _hurtkovyy }]);
         _mentors
+            .Setup(x => x.GetActiveMentorsInKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _mentors
             .Setup(x => x.GetByGroupKeyAsync(_groupKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
@@ -75,8 +80,24 @@ public class ReviewNotificationRecipientResolverTests
         _resolver = new ReviewNotificationRecipientReader(_unitOfWork.Object, _members.Object, _policies);
     }
 
-    private static MemberLookupDto Holder(Guid userKey, LeadershipType type, LeadershipRole role) =>
-        new() { MemberKey = Guid.NewGuid(), UserKey = userKey, UserRole = SystemRoleNames.ForOffice(type, role) };
+    private static MemberLookupRow Holder(Guid userKey, LeadershipType type, LeadershipRole role) =>
+        new(Guid.NewGuid(), userKey, "Ім'я", null, "Прізвище", null, new MemberOffice(type, role));
+
+    /// <summary>
+    /// A виховник closed over the гурток but never seated in the КВ is its впорядник all the same, and
+    /// is told like one; a revoked assignment is not read as a mentor at all.
+    /// </summary>
+    [Fact]
+    public async Task AnUnseatedMentorOfTheGurtok_IsToldAsItsVporyadnyk()
+    {
+        _mentors
+            .Setup(x => x.GetActiveMentorsInKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new MemberLookupRow(Guid.NewGuid(), _officeless, "Ім'я", null, "Прізвище", null, null)]);
+
+        var result = await _resolver.ResolveAsync(ReviewSubject.Award, _kurinKey, _groupKey, excludedUserKey: null);
+
+        result.Should().BeEquivalentTo([_zvyazkovyi, _vykhovnyk, _officeless]);
+    }
 
     [Theory]
     [InlineData(ReviewSubject.Award)]
@@ -103,7 +124,7 @@ public class ReviewNotificationRecipientResolverTests
         var result = await _resolver.ResolveAsync(ReviewSubject.Award, _kurinKey, groupKey: null, excludedUserKey: null);
 
         result.Should().BeEquivalentTo([_zvyazkovyi]);
-        _unitOfWork.VerifyGet(x => x.MentorAssignments, Times.Never);
+        _mentors.Verify(x => x.GetByGroupKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

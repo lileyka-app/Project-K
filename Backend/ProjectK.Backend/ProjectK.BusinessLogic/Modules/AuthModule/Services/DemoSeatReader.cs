@@ -6,6 +6,7 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
@@ -83,7 +84,9 @@ public sealed class DemoSeatReader
                 continue;
             }
 
-            var offices = await _unitOfWork.Leaderships.GetActiveOfficesForAccountInKurinAsync(accountKey, kurinKey, cancellationToken);
+            var offices = MentorOfficeRules.WithAssignment(
+                await _unitOfWork.Leaderships.GetActiveOfficesForAccountInKurinAsync(accountKey, kurinKey, cancellationToken),
+                await _unitOfWork.MentorAssignments.HasActiveInKurinAsync(accountKey, kurinKey, cancellationToken));
             if (offices.Any(office => office.Type != LeadershipType.Group))
             {
                 continue;

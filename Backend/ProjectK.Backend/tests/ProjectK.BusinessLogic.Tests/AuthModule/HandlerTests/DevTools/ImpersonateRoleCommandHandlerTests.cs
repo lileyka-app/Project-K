@@ -45,6 +45,7 @@ public class ImpersonateRoleCommandHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         unitOfWork.Setup(u => u.Leaderships).Returns(_leaderships.Object);
+        unitOfWork.Setup(u => u.MentorAssignments).Returns(Mock.Of<IMentorAssignmentRepository>());
         _unitOfWork = unitOfWork.Object;
 
         _currentUser.SetupGet(c => c.UserId).Returns(_adminKey);

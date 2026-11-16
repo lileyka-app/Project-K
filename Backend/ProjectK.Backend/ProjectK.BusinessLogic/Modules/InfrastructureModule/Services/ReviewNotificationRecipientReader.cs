@@ -7,6 +7,7 @@ using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 
@@ -73,10 +74,13 @@ public sealed class ReviewNotificationRecipientReader : IReviewNotificationRecip
         Guid? groupKey,
         CancellationToken cancellationToken)
     {
-        var holders = (await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.KV, cancellationToken))
-            .Concat(await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.Kurin, cancellationToken))
-            .Where(holder => holder.UserKey.HasValue && holder.UserRole is not null)
-            .Select(holder => (UserKey: holder.UserKey!.Value, Reach: ReachOf(subject, policy, holder.UserRole!)))
+        var kv = MentorOfficeRules.KvWithMentors(
+            await _unitOfWork.Leaderships.GetOfficeHoldersAsync(kurinKey, LeadershipType.KV, cancellationToken),
+            await _unitOfWork.MentorAssignments.GetActiveMentorsInKurinAsync(kurinKey, cancellationToken));
+        var holders = kv
+            .Concat(await _unitOfWork.Leaderships.GetOfficeHoldersAsync(kurinKey, LeadershipType.Kurin, cancellationToken))
+            .Where(holder => holder.UserKey.HasValue && holder.Office is not null)
+            .Select(holder => (UserKey: holder.UserKey!.Value, Reach: ReachOf(subject, policy, SystemRoleNames.ForOffice(holder.Office!.Type, holder.Office.Role))))
             .ToList();
 
         reviewers.UnionWith(holders.Where(holder => holder.Reach == CapabilityReach.Kurin).Select(holder => holder.UserKey));

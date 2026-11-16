@@ -8,7 +8,7 @@ using ProjectK.Common.Enums.InfrastructureModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Events.ArchiveModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Records.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Events;
 
@@ -47,12 +47,12 @@ public sealed class ArchiveDangerZoneEnteredEventHandler : INotificationHandler<
 
     private async Task NotifyAsync(ArchiveDangerZoneEntered raised, CancellationToken cancellationToken)
     {
-        var zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-        var kurinnyi = SystemRoleNames.ForOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
-        var holders = (await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(raised.KurinKey, LeadershipType.KV, cancellationToken))
-            .Where(holder => holder.UserRole == zvyazkovyi)
-            .Concat((await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(raised.KurinKey, LeadershipType.Kurin, cancellationToken))
-                .Where(holder => holder.UserRole == kurinnyi));
+        var zvyazkovyi = new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var kurinnyi = new MemberOffice(LeadershipType.Kurin, LeadershipRole.Kurinnuy);
+        var holders = (await _unitOfWork.Leaderships.GetOfficeHoldersAsync(raised.KurinKey, LeadershipType.KV, cancellationToken))
+            .Where(holder => holder.Office == zvyazkovyi)
+            .Concat((await _unitOfWork.Leaderships.GetOfficeHoldersAsync(raised.KurinKey, LeadershipType.Kurin, cancellationToken))
+                .Where(holder => holder.Office == kurinnyi));
         // Only who stands in the kurin now: an office row of someone who left is history, not a seat.
         var standing = (await _unitOfWork.Memberships.GetAccountKeysInKurinAsync(raised.KurinKey, cancellationToken)).ToHashSet();
         var recipients = holders
