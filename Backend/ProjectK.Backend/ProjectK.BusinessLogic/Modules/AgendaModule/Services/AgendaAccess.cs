@@ -23,7 +23,6 @@ public sealed class AgendaAccess : IAgendaAccess
     ];
 
     private readonly ICurrentUserContext _currentUser;
-    private readonly IUnitOfWork _uow;
     private readonly ICurrentMember _currentMember;
     private readonly IResourceScopeRepository _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
@@ -43,7 +42,6 @@ public sealed class AgendaAccess : IAgendaAccess
         _tags = tags;
         _offices = offices;
         _currentUser = currentUser;
-        _uow = uow;
         _currentMember = currentMember;
         _scopeReader = uow.ResourceScopes;
         _resourceAccess = resourceAccess;
@@ -78,7 +76,7 @@ public sealed class AgendaAccess : IAgendaAccess
 
         // The tags the viewer carries in this kurin: an item aimed at a tag reaches whoever has it now.
         var tagKeys = memberKey.HasValue
-            ? (await _uow.KurinTags.GetAssignmentsAsync(kurinKey, [memberKey.Value], cancellationToken)).Select(a => a.KurinTagKey).ToList()
+            ? await _tags.GetTagKeysOfMemberAsync(kurinKey, memberKey.Value, cancellationToken)
             : [];
 
         var visibilityGroups = new HashSet<Guid>();

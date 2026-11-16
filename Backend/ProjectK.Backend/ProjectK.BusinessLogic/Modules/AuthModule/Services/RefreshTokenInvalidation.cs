@@ -4,6 +4,7 @@ using ProjectK.Common.Dtos.InfrastructureModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 
@@ -22,10 +23,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 /// notification.
 /// </para>
 /// </summary>
-public class RefreshTokenInvalidation
+public class RefreshTokenInvalidation : IAccountSessionWriter
 {
-    public const string CalendarRoute = "/settings/account#calendar";
-
     private readonly IRefreshTokenStore _refreshTokens;
     private readonly ICalendarFeedStore _calendarFeeds;
     private readonly INotificationService _notifications;
@@ -61,7 +60,7 @@ public class RefreshTokenInvalidation
             Severity = AppNotificationSeverity.Warn,
             Title = "Посилання на календар вимкнено",
             Body = "Після зміни в безпеці акаунта старе посилання більше не оновлює твій календар. Створи нове в налаштуваннях і додай його в календар знову.",
-            Route = CalendarRoute,
+            Route = CalendarFeedNames.SettingsRoute,
             DeduplicationKey = $"calendar-feed-revoked:{userId}"
         }, cancellationToken);
     }

@@ -20,23 +20,23 @@ public sealed record GetAssignTargetsQuery(Guid KurinKey)
 public sealed class GetAssignTargetsQueryHandler
     : IRequestHandler<GetAssignTargetsQuery, ServiceResult<AgendaAssignTargetsDto>>
 {
-    private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly IKurinTagDirectory _tags;
+    private readonly IKurinDirectory _kurins;
     private readonly IOfficeDirectory _offices;
 
     public GetAssignTargetsQueryHandler(
-        IUnitOfWork uow,
         IMemberDirectory members,
         IAgendaAccess access,
         IKurinTagDirectory tags,
+        IKurinDirectory kurins,
         IOfficeDirectory offices)
     {
-        _uow = uow;
         _members = members;
         _access = access;
         _tags = tags;
+        _kurins = kurins;
         _offices = offices;
     }
 
@@ -51,9 +51,8 @@ public sealed class GetAssignTargetsQueryHandler
                 ResultType.Forbidden, AgendaErrors.AgendaAuthorForbidden, "The kurin's policy lets this user assign nothing.");
         }
 
-        var groups = (await _uow.Groups.GetAllAsync(request.KurinKey, cancellationToken)).ToList();
+        var groupNames = await _kurins.GetGroupNamesAsync(request.KurinKey, cancellationToken);
         var members = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
-        var groupNames = groups.ToDictionary(g => g.GroupKey, g => g.Name);
 
         var leaderships = await _offices.GetLeadershipsInKurinAsync(request.KurinKey, cancellationToken);
         var groupLeaderships = leaderships
@@ -89,7 +88,8 @@ public sealed class GetAssignTargetsQueryHandler
             })
             .ToList();
 
-        var groupTargets = groups
+        var groupTargets = groupNames
+            .Select(g => (GroupKey: g.Key, Name: g.Value))
             .OrderBy(g => g.Name)
             .Select(g => new AgendaGroupTargetDto
             {
@@ -123,7 +123,7 @@ public sealed class GetAssignTargetsQueryHandler
         var tagTargets = new List<AgendaTagTargetDto>();
         if (reach.ReachesTags && await _tags.IsEnabledAsync(request.KurinKey, cancellationToken))
         {
-            tagTargets = (await _uow.KurinTags.GetForKurinAsync(request.KurinKey, cancellationToken))
+            tagTargets = (await _tags.GetTagsAsync(request.KurinKey, cancellationToken))
                 .Select(tag => new AgendaTagTargetDto { KurinTagKey = tag.KurinTagKey, Name = tag.Name, ColorHex = tag.ColorHex })
                 .ToList();
         }

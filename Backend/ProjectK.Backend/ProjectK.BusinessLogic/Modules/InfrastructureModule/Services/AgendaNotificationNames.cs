@@ -1,4 +1,5 @@
 using ProjectK.Common.Enums.AgendaModule;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 
@@ -10,7 +11,7 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 internal static class AgendaNotificationNames
 {
     public static string RouteFor(AgendaItemKind kind, Guid kurinKey) =>
-        kind == AgendaItemKind.Task ? $"/tasks/{kurinKey}" : $"/calendar/{kurinKey}";
+        AgendaRouteNames.For(kind, kurinKey);
 
     public static string KindWord(AgendaItemKind kind) =>
         kind == AgendaItemKind.Task ? "Задачу" : "Подію";

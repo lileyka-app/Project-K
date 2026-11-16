@@ -27,7 +27,6 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
     private readonly IKurinAudit _audit;
     private readonly TimeProvider _time;
     private readonly IDuesDirectory _dues;
-    private readonly IOfficeDirectory _offices;
     private readonly IDomainEventPublisher _events;
 
     public DeleteGroupCommandHandler(
@@ -36,11 +35,9 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         IKurinAudit audit,
         TimeProvider time,
         IDuesDirectory dues,
-        IOfficeDirectory offices,
         IDomainEventPublisher events)
     {
         _dues = dues;
-        _offices = offices;
         _events = events;
         _unitOfWork = unitOfWork;
         _cache = cache;
@@ -76,20 +73,11 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
-        var leadershipKeys = (await _offices.GetLeadershipsInKurinAsync(existing.KurinKey, cancellationToken))
-            .Where(leadership => leadership.GroupKey == request.GroupKey)
-            .Select(leadership => leadership.LeadershipKey)
-            .ToList();
 
         // The people stay, and stay in the kurin — they are simply no longer in a гурток. Its проводи
-        // close and its впорядники lead nothing; the member module does that on this unit of work.
+        // close and its впорядники lead nothing, and tasks aimed at it lose that target; the member and agenda
+        // modules do that on this unit of work.
         await _events.PublishAsync(new GroupDissolved(existing.KurinKey, existing.GroupKey, now), cancellationToken);
-
-        // Agenda assignments name their target by a bare key, so nothing in the database clears
-        // them: neither the гурток nor its offices can be a target any more.
-        await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync(
-            [request.GroupKey, .. leadershipKeys],
-            cancellationToken);
 
         existing.DissolvedAtUtc = now;
         await _audit.RecordAsync(

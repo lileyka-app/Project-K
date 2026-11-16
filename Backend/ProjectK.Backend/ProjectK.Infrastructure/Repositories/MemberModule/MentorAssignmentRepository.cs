@@ -30,8 +30,7 @@ public class MentorAssignmentRepository : BaseEntityRepository<MentorAssignment>
     public async Task<IEnumerable<MentorAssignment>> GetByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
         return await Context.MentorAssignments
-            .Include(ma => ma.Group)
-            .Where(ma => ma.Group.KurinKey == kurinKey)
+            .Where(ma => Context.Groups.Any(group => group.GroupKey == ma.GroupKey && group.KurinKey == kurinKey))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
@@ -40,8 +39,9 @@ public class MentorAssignmentRepository : BaseEntityRepository<MentorAssignment>
     {
         // A record cannot be translated under Distinct/OrderBy, so the pair is read flat and wrapped after.
         var groups = await Context.MentorAssignments
-            .Where(ma => ma.MentorUserKey == mentorUserKey && ma.RevokedAtUtc == null && ma.Group.KurinKey == kurinKey)
-            .Select(ma => new { ma.GroupKey, ma.Group.Name })
+            .Join(Context.Groups, ma => ma.GroupKey, group => group.GroupKey, (ma, group) => new { ma, group })
+            .Where(pair => pair.ma.MentorUserKey == mentorUserKey && pair.ma.RevokedAtUtc == null && pair.group.KurinKey == kurinKey)
+            .Select(pair => new { pair.ma.GroupKey, pair.group.Name })
             .Distinct()
             .OrderBy(group => group.Name)
             .ToListAsync(cancellationToken);

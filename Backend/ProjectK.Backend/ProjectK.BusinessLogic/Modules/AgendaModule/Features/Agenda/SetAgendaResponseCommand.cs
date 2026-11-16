@@ -77,7 +77,7 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
             return ServiceResult<AgendaResponsesDto>.Failure(ResultType.BadRequest, AgendaErrors.AgendaNotOccurrence, "The event has no occurrence starting at that time.");
         }
 
-        await _rsvps.UpsertAsync(item, userKey.Value, occurrenceKey, request.Status, DateTime.UtcNow, cancellationToken);
+        await _rsvps.UpsertAsync(item.AgendaItemKey, userKey.Value, occurrenceKey, request.Status, DateTime.UtcNow, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, occurrenceKey, cancellationToken);

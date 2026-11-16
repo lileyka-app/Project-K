@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Models;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
@@ -30,15 +31,19 @@ public sealed class GetAgendaBoardQueryHandler
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinDirectory _kurins;
+    private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
     private readonly UserManager<AppUser> _userManager;
 
     public GetAgendaBoardQueryHandler(IUnitOfWork uow,
-        IMemberDirectory members, IOfficeDirectory offices, IAgendaAccess access, UserManager<AppUser> userManager)
+        IMemberDirectory members, IOfficeDirectory offices, IKurinDirectory kurins, IKurinTagDirectory tags, IAgendaAccess access, UserManager<AppUser> userManager)
     {
         _uow = uow;
         _members = members;
         _offices = offices;
+        _kurins = kurins;
+        _tags = tags;
         _access = access;
         _userManager = userManager;
     }
@@ -58,8 +63,8 @@ public sealed class GetAgendaBoardQueryHandler
             kind: AgendaItemKind.Task,
             cancellationToken)).ToList();
 
-        var lookups = await AgendaNames.LoadAsync(_uow, _members, _offices, request.KurinKey, items, cancellationToken);
-        var roster = await AgendaRosterRules.LoadAsync(_uow, _offices, lookups.MemberGroups, items, cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _members, _offices, _kurins, _tags, request.KurinKey, items, cancellationToken);
+        var roster = await AgendaRosterRules.LoadAsync(_offices, _tags, lookups.MemberGroups, items, cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, items, cancellationToken);
 
         var all = items

@@ -6,6 +6,8 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
+using ProjectK.Common.Rules.AuthModule;
+
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 
 public sealed record ResetOwnMfaCommand(Guid UserKey, string CurrentPassword) : IRequest<ServiceResult<Unit>>;

@@ -3,8 +3,6 @@ using System.Net.Mail;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using ProjectK.BusinessLogic.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
@@ -14,6 +12,8 @@ using ProjectK.Common.Events.UsersModule;
 using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.Shared;
+
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 
@@ -50,7 +50,7 @@ public sealed class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateA
         var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
-            return AuthErrors.AccountMissing<AccountSettingsDto>();
+            return UsersErrors.AccountMissing<AccountSettingsDto>();
         }
 
         var email = request.Email.Trim();

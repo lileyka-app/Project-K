@@ -67,7 +67,7 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                     person.MiddleName,
                     person.LastName,
                     membership.GroupKey,
-                    GroupName = membership.Group != null ? membership.Group.Name : null,
+                    GroupName = Context.Groups.Where(g => g.GroupKey == membership.GroupKey).Select(g => g.Name).FirstOrDefault(),
                     membership.JoinedAtUtc,
                     LeftAtUtc = membership.LeftAtUtc!.Value
                 })
@@ -108,22 +108,23 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
         var keys = userKeys.Distinct().ToList();
         var rows = await Context.Memberships
             .Where(m => m.UserKey != null && keys.Contains(m.UserKey.Value) && m.LeftAtUtc == null)
-            .OrderByDescending(m => m.JoinedAtUtc)
-            .Select(m => new
+            .Join(Context.Kurins, m => m.KurinKey, kurin => kurin.KurinKey, (m, kurin) => new { m, kurin })
+            .OrderByDescending(x => x.m.JoinedAtUtc)
+            .Select(x => new
             {
-                UserKey = m.UserKey!.Value,
+                UserKey = x.m.UserKey!.Value,
                 Record = new MembershipRecord(
-                    m.MembershipKey,
-                    m.KurinKey,
-                    m.Kurin.Number,
-                    m.Kurin.Branch,
-                    m.Kurin.NamedAfter,
-                    m.GroupKey,
-                    m.Group != null ? m.Group.Name : null,
-                    m.Kind,
-                    m.JoinedAtUtc,
-                    m.LeftAtUtc,
-                    m.Kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList())
+                    x.m.MembershipKey,
+                    x.m.KurinKey,
+                    x.kurin.Number,
+                    x.kurin.Branch,
+                    x.kurin.NamedAfter,
+                    x.m.GroupKey,
+                    Context.Groups.Where(group => group.GroupKey == x.m.GroupKey).Select(group => group.Name).FirstOrDefault(),
+                    x.m.Kind,
+                    x.m.JoinedAtUtc,
+                    x.m.LeftAtUtc,
+                    x.kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList())
             })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -174,23 +175,24 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
             .ToListAsync(cancellationToken);
 
     /// <summary>Current memberships first, then the ones already closed, newest joined first.</summary>
-    private static IQueryable<MembershipRecord> AsRecords(IQueryable<Membership> memberships)
+    private IQueryable<MembershipRecord> AsRecords(IQueryable<Membership> memberships)
         => memberships
             .AsNoTracking()
-            .OrderBy(m => m.LeftAtUtc == null ? 0 : 1)
-            .ThenByDescending(m => m.JoinedAtUtc)
-            .Select(m => new MembershipRecord(
-                m.MembershipKey,
-                m.KurinKey,
-                m.Kurin.Number,
-                m.Kurin.Branch,
-                m.Kurin.NamedAfter,
-                m.GroupKey,
-                m.Group != null ? m.Group.Name : null,
-                m.Kind,
-                m.JoinedAtUtc,
-                m.LeftAtUtc,
-                m.Kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList()));
+            .Join(Context.Kurins, m => m.KurinKey, kurin => kurin.KurinKey, (m, kurin) => new { m, kurin })
+            .OrderBy(x => x.m.LeftAtUtc == null ? 0 : 1)
+            .ThenByDescending(x => x.m.JoinedAtUtc)
+            .Select(x => new MembershipRecord(
+                x.m.MembershipKey,
+                x.m.KurinKey,
+                x.kurin.Number,
+                x.kurin.Branch,
+                x.kurin.NamedAfter,
+                x.m.GroupKey,
+                Context.Groups.Where(group => group.GroupKey == x.m.GroupKey).Select(group => group.Name).FirstOrDefault(),
+                x.m.Kind,
+                x.m.JoinedAtUtc,
+                x.m.LeftAtUtc,
+                x.kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList()));
 
     public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => Context.Memberships.CountAsync(m => m.MemberKey == memberKey, cancellationToken);

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using ProjectK.Common.Rules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Entities.AuthModule;

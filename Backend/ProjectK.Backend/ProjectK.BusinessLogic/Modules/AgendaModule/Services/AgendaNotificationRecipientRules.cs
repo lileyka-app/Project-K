@@ -1,3 +1,4 @@
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AgendaModule;
@@ -14,9 +15,9 @@ namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 public static class AgendaNotificationRecipientRules
 {
     public static async Task<IReadOnlyCollection<Guid>> ResolveAsync(
-        IUnitOfWork uow,
         IMemberDirectory directory,
         IOfficeDirectory offices,
+        IKurinTagDirectory tags,
         AgendaItem item,
         Guid actorUserKey,
         CancellationToken cancellationToken)
@@ -50,7 +51,7 @@ public static class AgendaNotificationRecipientRules
                     break;
 
                 case AgendaTargetType.Tag:
-                    var carriers = await uow.KurinTags.GetMemberKeysAsync(assignment.TargetKey, cancellationToken);
+                    var carriers = (await tags.GetCarriersAsync([assignment.TargetKey], cancellationToken))[assignment.TargetKey];
                     IReadOnlyCollection<MemberSummary> carrierAccounts = carriers.Count == 0
                         ? []
                         : await directory.GetByKurinAsync(item.KurinKey, new MemberSelection(carriers.ToList(), [], []), cancellationToken);

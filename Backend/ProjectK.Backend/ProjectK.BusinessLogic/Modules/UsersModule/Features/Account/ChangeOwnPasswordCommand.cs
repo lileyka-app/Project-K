@@ -1,11 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.BusinessLogic.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+
+using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 
@@ -15,13 +16,13 @@ public sealed record ChangeOwnPasswordCommand(Guid UserKey, string CurrentPasswo
 public sealed class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly RefreshTokenInvalidation _sessions;
+    private readonly IAccountSessionWriter _sessions;
     private readonly IActivityLogger _activityLogger;
 
     public ChangeOwnPasswordCommandHandler(
         UserManager<AppUser> userManager,
         IActivityLogger activityLogger,
-        RefreshTokenInvalidation sessions)
+        IAccountSessionWriter sessions)
     {
         _userManager = userManager;
         _activityLogger = activityLogger;
@@ -33,7 +34,7 @@ public sealed class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnP
         var user = await _userManager.FindSignedInAsync(request.UserKey);
         if (user == null)
         {
-            return AuthErrors.AccountMissing<Unit>();
+            return UsersErrors.AccountMissing<Unit>();
         }
 
         var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);

@@ -8,9 +8,12 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 
-namespace ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 
-/// <summary>Sets how long a kurin's done tasks stay on the board and its archive is kept. Gated as kurin settings.</summary>
+/// <summary>
+/// Sets how long a kurin's done tasks stay on the board and its archive is kept. Gated as kurin settings.
+/// The rules are stored on the kurin, so the kurin writes them; the agenda's endpoint sends this command.
+/// </summary>
 public sealed record SetAgendaArchivePolicyCommand(Guid KurinKey, int? AutoArchiveAfterDays, int? PurgeAfterDays)
     : IRequest<ServiceResult<AgendaArchivePolicyDto>>;
 
@@ -32,13 +35,13 @@ public sealed class SetAgendaArchivePolicyCommandHandler : IRequestHandler<SetAg
     {
         if (request.AutoArchiveAfterDays is < 1 or > 3650 || request.PurgeAfterDays is < 1 or > 3650)
         {
-            return ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.BadRequest, AgendaErrors.AgendaArchivePolicyRange, "A period is between 1 and 3650 days, or empty to switch it off.");
+            return ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.BadRequest, KurinErrors.AgendaArchivePolicyRange, "A period is between 1 and 3650 days, or empty to switch it off.");
         }
 
         var kurin = await _uow.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
         if (kurin is null)
         {
-            return ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.NotFound, AgendaErrors.KurinNotFound, "Kurin was not found.");
+            return KurinErrors.NotFound<AgendaArchivePolicyDto>();
         }
 
         var changes = AuditChangeRules.Of(

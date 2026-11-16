@@ -97,5 +97,9 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 
         // After the base call: AppUserConfiguration adds to the user table Identity has just mapped.
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Follows the гурток's own filter: a впорядник of a dissolved гурток leads nothing. The
+        // assignment holds the гурток by key only, so the filter asks the гуртки rather than a navigation.
+        builder.Entity<MentorAssignment>().HasQueryFilter(assignment => Groups.Any(group => group.GroupKey == assignment.GroupKey));
     }
 }

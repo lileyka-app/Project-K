@@ -79,6 +79,7 @@ public static class DependencyInjection
         services.AddScoped<IMemberFieldAccess, MemberFieldAccess>();
         services.AddScoped<IKurinTagVisibility, KurinTagVisibility>();
         services.AddScoped<IKurinTagDirectory, KurinTagDirectory>();
+        services.AddScoped<IKurinDirectory, KurinDirectory>();
         services.AddScoped<IKurinGroupWriter, KurinGroupWriter>();
         services.AddScoped<KraiProfileWriter>();
         services.AddScoped<IMfaEnforcementReader, MfaEnforcementReader>();
@@ -102,6 +103,7 @@ public static class DependencyInjection
         services.AddArchiveModule();
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
+        services.AddScoped<IAccountSessionWriter>(sp => sp.GetRequiredService<RefreshTokenInvalidation>());
         services.AddScoped<MemberCards>();
 
         services.AddScoped<KurinReportHeaderReader>();

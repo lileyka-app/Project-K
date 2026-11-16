@@ -12,22 +12,22 @@ public static class AgendaRosterRules
 {
     /// <summary>Reads the people the items stand for and the holders of every провід they aim at.</summary>
     public static async Task<AgendaRoster> LoadAsync(
-        IUnitOfWork uow,
         IMemberDirectory directory,
         IOfficeDirectory offices,
+        IKurinTagDirectory tags,
         Guid kurinKey,
         IEnumerable<AgendaItem> items,
         CancellationToken cancellationToken)
     {
         var list = items as IReadOnlyCollection<AgendaItem> ?? items.ToList();
         var members = await AgendaPeopleRules.ReadAsync(directory, kurinKey, AgendaPeopleRules.ToLabel(list), cancellationToken);
-        return await LoadAsync(uow, offices, members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey), list, cancellationToken);
+        return await LoadAsync(offices, tags, members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey), list, cancellationToken);
     }
 
     /// <summary>The same, over a kurin's members already read for the page.</summary>
     public static async Task<AgendaRoster> LoadAsync(
-        IUnitOfWork uow,
         IOfficeDirectory offices,
+        IKurinTagDirectory tags,
         IReadOnlyDictionary<Guid, Guid?> memberGroups,
         IEnumerable<AgendaItem> items,
         CancellationToken cancellationToken)
@@ -43,15 +43,15 @@ public static class AgendaRosterRules
             ? new Dictionary<Guid, IReadOnlyList<Guid>>()
             : await offices.GetHolderMemberKeysAsync(leadershipKeys, cancellationToken);
 
-        var tagMembers = new Dictionary<Guid, IReadOnlyList<Guid>>();
-        foreach (var tagKey in items
+        var tagKeys = items
             .SelectMany(item => item.Assignments)
             .Where(a => a.TargetType == AgendaTargetType.Tag && a.CompletionMode == AgendaCompletionMode.PerMember)
             .Select(a => a.TargetKey)
-            .Distinct())
-        {
-            tagMembers[tagKey] = await uow.KurinTags.GetMemberKeysAsync(tagKey, cancellationToken);
-        }
+            .Distinct()
+            .ToList();
+        IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> tagMembers = tagKeys.Count == 0
+            ? new Dictionary<Guid, IReadOnlyList<Guid>>()
+            : await tags.GetCarriersAsync(tagKeys, cancellationToken);
 
         return new AgendaRoster(memberGroups, leadershipMembers, tagMembers);
     }

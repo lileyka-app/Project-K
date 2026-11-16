@@ -14,7 +14,7 @@ internal sealed class LeadershipConfiguration : IEntityTypeConfiguration<Leaders
             .HasConversion<int>();
         builder.HasIndex(e => new { e.Type, e.KurinKey, e.GroupKey });
         builder.HasOne(e => e.Kurin)
-            .WithMany(k => k.Leaderships)
+            .WithMany()
             .HasForeignKey(e => e.KurinKey)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);

@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.Common.Rules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -116,7 +117,7 @@ public class CalendarFeedTests
         userManager.Setup(m => m.FindByIdAsync(User.ToString())).ReturnsAsync(() => new AppUser { Id = User, OnboardingStatus = _status });
 
         return new RenderCalendarFeedQueryHandler(
-            _feeds.Object, userManager.Object, scopes, unitOfWork.Object, new AgendaDirectory(unitOfWork.Object, members.Object, new OfficeDirectory(unitOfWork.Object)),
+            _feeds.Object, userManager.Object, scopes, new AgendaDirectory(unitOfWork.Object, members.Object, new OfficeDirectory(unitOfWork.Object), KurinDirectories.TagsOver(unitOfWork.Object)), KurinDirectories.Over(unitOfWork.Object),
             new Mock<IKraiProfileDirectory>().Object, new FixedTimeProvider(Now),
             Options.Create(new EmailOptions { BaseUrl = "https://lileyka.app" }));
     }
@@ -242,7 +243,7 @@ public class CalendarFeedTests
         await sessions.RevokeRefreshTokenAsync(new AppUser { Id = User });
 
         notifications.Verify(n => n.NotifyAsync(
-            It.Is<NotificationRequest>(r => r.RecipientUserKey == User && r.Type == AppNotificationType.CalendarFeedRevoked && r.Route == RefreshTokenInvalidation.CalendarRoute),
+            It.Is<NotificationRequest>(r => r.RecipientUserKey == User && r.Type == AppNotificationType.CalendarFeedRevoked && r.Route == CalendarFeedNames.SettingsRoute),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

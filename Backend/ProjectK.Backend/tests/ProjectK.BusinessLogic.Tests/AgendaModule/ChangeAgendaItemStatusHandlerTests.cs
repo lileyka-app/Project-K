@@ -43,7 +43,7 @@ public class ChangeAgendaItemStatusHandlerTests
         _memberDirectory.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _memberDirectory.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _journal = new JournalRecorder(_currentUser.Object);
-        _handler = new ChangeAgendaItemStatusCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), _access.Object, _currentUser.Object, _events.Object, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, _events.Object));
+        _handler = new ChangeAgendaItemStatusCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, _events.Object));
     }
 
     private AgendaItem TaskAssignedToMember(Guid? createdBy = null)

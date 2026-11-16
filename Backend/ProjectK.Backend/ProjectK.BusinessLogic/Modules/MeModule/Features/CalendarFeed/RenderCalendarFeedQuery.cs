@@ -1,15 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
@@ -53,8 +50,8 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
     private readonly ICalendarFeedStore _feeds;
     private readonly UserManager<AppUser> _userManager;
     private readonly MeAgendaScopes _scopes;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IAgendaDirectory _agenda;
+    private readonly IKurinDirectory _kurins;
     private readonly IKraiProfileDirectory _profiles;
     private readonly TimeProvider _time;
     private readonly string _siteUrl;
@@ -63,8 +60,8 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         ICalendarFeedStore feeds,
         UserManager<AppUser> userManager,
         MeAgendaScopes scopes,
-        IUnitOfWork unitOfWork,
         IAgendaDirectory agenda,
+        IKurinDirectory kurins,
         IKraiProfileDirectory profiles,
         TimeProvider time,
         IOptions<EmailOptions> site)
@@ -72,8 +69,8 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         _feeds = feeds;
         _userManager = userManager;
         _scopes = scopes;
-        _unitOfWork = unitOfWork;
         _agenda = agenda;
+        _kurins = kurins;
         _profiles = profiles;
         _time = time;
         _siteUrl = site.Value.BaseUrl.TrimEnd('/');
@@ -134,40 +131,32 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         CancellationToken cancellationToken)
     {
         var kurinKey = context.Membership.KurinKey;
-        var viewer = context.Viewer;
-        var scope = viewer.ToScope();
         var from = now - PastWindow;
         var to = now + FutureWindow;
 
-        var items = (await _unitOfWork.AgendaItems.GetForViewerAsync(
-                scope, from, to, onlyDated: true, kind: feed.IncludeTasks ? null : AgendaItemKind.Event,
-                cancellationToken, includeKurinSchedules: feed.IncludeSchedules))
-            .Where(item => IsOwn(item, scope, viewer) || feed.IncludeSchedules)
+        var items = (await _agenda.GetInWindowForViewerAsync(
+                context.Viewer,
+                new AgendaWindow(from, to, zone, feed.IncludeTasks ? null : AgendaItemKind.Event, IncludeKurinSchedules: feed.IncludeSchedules, WithAnswers: true),
+                cancellationToken))
+            .Where(item => IsOwn(item) || feed.IncludeSchedules)
             .ToList();
         if (items.Count == 0)
         {
             return [];
         }
 
-        var categories = (await _unitOfWork.AgendaCategories.GetForKurinAsync(kurinKey, includeArchived: true, cancellationToken))
+        var categories = (await _agenda.GetCategoriesAsync(kurinKey, includeArchived: true, cancellationToken))
             .ToDictionary(c => c.AgendaCategoryKey);
         var groupNames = feed.IncludeSchedules
-            ? (await _unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken)).ToDictionary(g => g.GroupKey, g => g.Name)
+            ? await _kurins.GetGroupNamesAsync(kurinKey, cancellationToken)
             : new Dictionary<Guid, string>();
-        var tasks = items.Where(i => i.Kind == AgendaItemKind.Task).ToList();
-        var roster = tasks.Count > 0
-            ? await _agenda.GetRosterAsync(kurinKey, tasks, cancellationToken)
-            : AgendaRoster.Empty;
-        var answers = (await _unitOfWork.AgendaResponses.GetForUserAsync(
-                feed.UserId, items.Where(i => i.Kind == AgendaItemKind.Event).Select(i => i.AgendaItemKey).ToList(), from, to, cancellationToken))
-            .ToDictionary(r => (r.AgendaItemKey, r.OccurrenceStartUtc), r => r.Status);
         var kurinLine = severalKurins && context.Membership.KurinNumber is { } number ? $"Курінь {number}" : null;
 
         var rows = new List<IcsEvent>();
         foreach (var item in items)
         {
             var category = item.AgendaCategoryKey is { } key ? categories.GetValueOrDefault(key) : null;
-            var own = IsOwn(item, scope, viewer);
+            var own = IsOwn(item);
 
             // Only what the toggle adds may be someone else's: a schedule event. Anything else a
             // whole-kurin viewer can merely see stays out of their personal calendar.
@@ -178,7 +167,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
 
             if (item.Kind == AgendaItemKind.Task)
             {
-                if (TaskRow(item, viewer, roster, category, kurinLine) is { } task)
+                if (TaskRow(item, category, kurinLine) is { } task)
                 {
                     rows.Add(task);
                 }
@@ -186,17 +175,15 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             }
 
             var summary = own ? item.Title : ScheduleTitle(item, groupNames);
-            foreach (var occurrence in AgendaRecurrenceRules.Expand(item, from, to, zone))
+            foreach (var occurrence in item.Occurrences)
             {
-                var occurrenceKey = AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc);
-                AgendaRsvpStatus? answer = answers.TryGetValue((item.AgendaItemKey, occurrenceKey), out var status) ? status : null;
                 rows.Add(new IcsEvent(
-                    Uid: occurrenceKey is { } at ? $"{item.AgendaItemKey:N}-{at:yyyyMMdd'T'HHmmss'Z'}@{UidDomain}" : $"{item.AgendaItemKey:N}@{UidDomain}",
+                    Uid: occurrence.OccurrenceKey is { } at ? $"{item.AgendaItemKey:N}-{at:yyyyMMdd'T'HHmmss'Z'}@{UidDomain}" : $"{item.AgendaItemKey:N}@{UidDomain}",
                     StartUtc: occurrence.StartUtc,
                     EndUtc: EndOf(item, occurrence, category),
                     IsAllDay: item.IsAllDay,
                     Summary: summary,
-                    Description: Describe(item, kurinKey, answer, kurinLine),
+                    Description: Describe(item, kurinKey, occurrence.Answer, kurinLine),
                     Location: item.Location,
                     Category: category?.Name,
                     StampUtc: item.UpdatedDate));
@@ -206,14 +193,12 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         return rows;
     }
 
-    private static bool IsOwn(AgendaItem item, AgendaViewerScope scope, AgendaViewerContext viewer) =>
-        AgendaVisibilityRules.IsAddressedTo(item, scope) || item.CreatedByUserKey == viewer.ViewerUserKey;
+    private static bool IsOwn(AgendaViewerItem item) => item.IsAddressedToViewer || item.IsByViewer;
 
     /// <summary>A dated task the person still has to do, as an all-day event on its due day.</summary>
-    private IcsEvent? TaskRow(AgendaItem item, AgendaViewerContext viewer, AgendaRoster roster, AgendaCategory? category, string? kurinLine)
+    private IcsEvent? TaskRow(AgendaViewerItem item, AgendaCategorySummary? category, string? kurinLine)
     {
-        if (AgendaCompletionRules.StakeOf(item, viewer) is null
-            || AgendaCompletionRules.ViewerStatus(item, viewer, roster) == AgendaItemStatus.Done
+        if (item.ViewerStatus is null or AgendaItemStatus.Done
             || (item.EndUtc ?? item.StartUtc) is not { } due)
         {
             return null;
@@ -232,11 +217,10 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
     }
 
     /// <summary>The same naming as the web calendar: six «Сходини» on one day say nothing.</summary>
-    private static string ScheduleTitle(AgendaItem item, IReadOnlyDictionary<Guid, string> groupNames)
+    private static string ScheduleTitle(AgendaViewerItem item, IReadOnlyDictionary<Guid, string> groupNames)
     {
-        var groups = item.Assignments
-            .Where(a => a.TargetType == AgendaTargetType.Group)
-            .Select(a => groupNames.GetValueOrDefault(a.TargetKey))
+        var groups = item.GroupTargetKeys
+            .Select(groupKey => groupNames.GetValueOrDefault(groupKey))
             .OfType<string>()
             .ToList();
         if (groups.Count == 0 || item.Title.Contains(groups[0], StringComparison.Ordinal))
@@ -248,7 +232,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         return $"{groups[0]}{more} · {item.Title}";
     }
 
-    private static DateTime EndOf(AgendaItem item, AgendaOccurrence occurrence, AgendaCategory? category)
+    private static DateTime EndOf(AgendaViewerItem item, AgendaViewerOccurrence occurrence, AgendaCategorySummary? category)
     {
         if (item.IsAllDay)
         {
@@ -260,7 +244,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
             : occurrence.StartUtc.AddMinutes(category?.DefaultDurationMinutes ?? DefaultDurationMinutes);
     }
 
-    private string Describe(AgendaItem item, Guid kurinKey, AgendaRsvpStatus? answer, string? kurinLine)
+    private string Describe(AgendaViewerItem item, Guid kurinKey, AgendaRsvpStatus? answer, string? kurinLine)
     {
         var lines = new List<string>();
         if (!string.IsNullOrWhiteSpace(item.Description))
@@ -276,7 +260,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         {
             lines.Add(kurinLine);
         }
-        lines.Add($"Відкрити в Лілейці: {_siteUrl}{AgendaNotificationNames.RouteFor(item.Kind, kurinKey)}");
+        lines.Add($"Відкрити в Лілейці: {_siteUrl}{AgendaRouteNames.For(item.Kind, kurinKey)}");
         return string.Join('\n', lines);
     }
 
@@ -298,7 +282,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
         var description =
             $"Посилання, за яким цей календар брав події з Лілейки, вимкнено: {ReasonText(reason)}. Нові події сюди більше не приходять.\n\n" +
             $"Створи нове посилання в Лілейці (Налаштування → Календар у Google, Apple, Outlook), додай його в календар, а цю підписку видали.\n\n" +
-            $"{_siteUrl}{RefreshTokenInvalidation.CalendarRoute}";
+            $"{_siteUrl}{CalendarFeedNames.SettingsRoute}";
 
         for (var day = first; day <= last; day = day.AddDays(7))
         {

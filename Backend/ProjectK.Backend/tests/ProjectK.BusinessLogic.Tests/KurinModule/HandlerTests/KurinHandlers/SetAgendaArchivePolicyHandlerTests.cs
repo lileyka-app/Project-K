@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -11,7 +11,7 @@ using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.AuditModule;
 
-namespace ProjectK.BusinessLogic.Tests.AgendaModule;
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
 public class SetAgendaArchivePolicyHandlerTests
 {

@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
@@ -40,7 +41,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
 {
     private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
     private readonly IMembershipDirectory _memberships;
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
@@ -51,7 +52,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
     public MarkAttendanceCommandHandler(
         ScoreAccess access,
         IScoreUnitOfWork score,
-        IUnitOfWork unitOfWork,
+        IAgendaDirectory agenda,
         IMembershipDirectory memberships,
         ScoreBookReader books,
         ICurrentUserContext currentUser,
@@ -61,7 +62,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
     {
         _access = access;
         _score = score;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
         _memberships = memberships;
         _books = books;
         _currentUser = currentUser;
@@ -77,7 +78,7 @@ public sealed class MarkAttendanceCommandHandler : IRequestHandler<MarkAttendanc
             return refused;
         }
 
-        var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
+        var occurrence = await EventOccurrence.LoadAsync(_agenda, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
             return ScoreErrors.NotFound<IReadOnlyList<MarkAttendanceResultDto>>("There is no such event, or it does not meet that day.");

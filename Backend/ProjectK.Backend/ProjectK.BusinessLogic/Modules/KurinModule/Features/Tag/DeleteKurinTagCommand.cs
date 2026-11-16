@@ -45,8 +45,8 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
                 KurinKey: request.KurinKey),
             cancellationToken);
 
-        // Events and tasks aimed at the tag name it by key alone; left behind, they would reach nobody.
-        await _uow.AgendaItems.RemoveAssignmentsForTargetsAsync([tag.KurinTagKey], cancellationToken);
+        // Events and tasks aimed at the tag name it by key alone; the agenda drops them on this unit of work.
+        await _events.PublishAsync(new KurinTagRemoved(request.KurinKey, tag.KurinTagKey), cancellationToken);
         _uow.KurinTags.Delete(tag, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 

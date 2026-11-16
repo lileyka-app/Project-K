@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
@@ -11,19 +11,19 @@ public sealed record GetAgendaArchivePolicyQuery(Guid KurinKey) : IRequest<Servi
 
 public sealed class GetAgendaArchivePolicyQueryHandler : IRequestHandler<GetAgendaArchivePolicyQuery, ServiceResult<AgendaArchivePolicyDto>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IKurinDirectory _kurins;
 
-    public GetAgendaArchivePolicyQueryHandler(IUnitOfWork uow)
+    public GetAgendaArchivePolicyQueryHandler(IKurinDirectory kurins)
     {
-        _uow = uow;
+        _kurins = kurins;
     }
 
     public async Task<ServiceResult<AgendaArchivePolicyDto>> Handle(GetAgendaArchivePolicyQuery request, CancellationToken cancellationToken)
     {
-        var kurin = await _uow.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
-        return kurin is null
+        var policy = await _kurins.GetTaskArchivePolicyAsync(request.KurinKey, cancellationToken);
+        return policy is null
             ? ServiceResult<AgendaArchivePolicyDto>.Failure(ResultType.NotFound, AgendaErrors.KurinNotFound, "Kurin was not found.")
             : new ServiceResult<AgendaArchivePolicyDto>(ResultType.Success,
-                new AgendaArchivePolicyDto { AutoArchiveAfterDays = kurin.TaskAutoArchiveAfterDays, PurgeAfterDays = kurin.TaskArchivePurgeAfterDays });
+                new AgendaArchivePolicyDto { AutoArchiveAfterDays = policy.AutoArchiveAfterDays, PurgeAfterDays = policy.PurgeAfterDays });
     }
 }

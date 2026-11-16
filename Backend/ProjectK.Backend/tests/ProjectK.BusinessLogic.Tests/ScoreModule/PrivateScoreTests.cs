@@ -119,7 +119,7 @@ public class PrivateScoreTests
         unitOfWork.SetupGet(u => u.AgendaItems).Returns(new Mock<IAgendaItemRepository>().Object);
         IReadOnlyList<ScoreFact> none = [];
         var facts = Mock.Of<IScoreFactReader>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
-        return new ScoreBookReader(_score.Object, unitOfWork.Object, memberships.Object, members.Object, facts, _time);
+        return new ScoreBookReader(_score.Object, Agendas.Over(unitOfWork.Object), KurinDirectories.Over(unitOfWork.Object), memberships.Object, members.Object, facts, _time);
     }
 
     private Task<ServiceResult<Guid>> Write(int points, Guid? criterion, string? note = null) =>

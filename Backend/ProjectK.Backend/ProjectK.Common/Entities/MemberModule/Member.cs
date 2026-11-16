@@ -54,5 +54,4 @@ public class Member : Entity, IHasParentContacts
     public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
     public ICollection<MemberWarning> MemberWarnings { get; set; } = new List<MemberWarning>();
     public ICollection<MemberAward> MemberAwards { get; set; } = new List<MemberAward>();
-    public AppUser? User { get; set; }
 }

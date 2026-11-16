@@ -133,7 +133,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
             {
                 MemberKey = x.Person.MemberKey,
                 GroupKey = x.Placement.GroupKey,
-                GroupName = x.Placement.Group != null ? x.Placement.Group.Name : null,
+                GroupName = Context.Groups.Where(g => g.GroupKey == x.Placement.GroupKey).Select(g => g.Name).FirstOrDefault(),
                 KurinKey = x.Placement.KurinKey,
                 UserKey = x.Person.UserKey,
                 FirstName = x.Person.FirstName,

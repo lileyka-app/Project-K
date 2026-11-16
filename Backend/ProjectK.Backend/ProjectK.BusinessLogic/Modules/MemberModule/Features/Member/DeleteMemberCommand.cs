@@ -65,7 +65,6 @@ public sealed class DeleteMemberCommandHandler : IRequestHandler<DeleteMemberCom
                 AuditChangeRules.Removed(("firstName", person?.FirstName), ("lastName", person?.LastName))),
             cancellationToken);
 
-        await _unitOfWork.AgendaItems.RemoveAssignmentsForTargetsAsync([request.MemberKey], cancellationToken);
         if (await _memberData.Members.GetByKeyAsync(request.MemberKey, cancellationToken) is { } member)
         {
             _memberData.Members.Delete(member, cancellationToken);

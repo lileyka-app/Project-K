@@ -45,7 +45,7 @@ public class DeleteAgendaItemHandlerTests
             .ReturnsAsync(Array.Empty<MemberSummary>());
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _journal = new JournalRecorder(_currentUser.Object);
-        _handler = new DeleteAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
+        _handler = new DeleteAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
     }
 
     private AgendaItem Item() => new()

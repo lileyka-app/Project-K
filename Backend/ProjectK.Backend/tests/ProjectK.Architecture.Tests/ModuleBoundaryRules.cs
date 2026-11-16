@@ -36,8 +36,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic/Modules/AuditModule/Features/Journal/GetKurinJournalQuery.cs -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic/Modules/AuthModule/Features/Onboarding/ActivateAccountCommand.cs -> MemberModule",
         "ProjectK.BusinessLogic/Modules/KurinModule/Services/KurinReportDataService.cs -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/CalendarFeed/RenderCalendarFeedQuery.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/CalendarFeed/RenderCalendarFeedQuery.cs -> InfrastructureModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Dues/GetMyDuesQuery.cs -> DuesModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Duties/GetMyDutiesQuery.cs -> ScoreModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Growth/GetMyGrowthQuery.cs -> ProbesAndBadgesModule",
@@ -47,10 +45,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Life/ExportMyLifePdfQuery.cs -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Score/GetMyScoreQuery.cs -> ScoreModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Services/MemberCards.cs -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/ChangeOwnPasswordCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/ConfirmAccountEmailChangeCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/UpdateAccountProfileCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/User/SuspendUserCommand.cs -> AuthModule",
     ];
 
     /// <summary>
@@ -62,7 +56,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.GetKurinJournalQueryHandler -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccountCommandHandler -> MemberModule",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinReportDataService -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.RenderCalendarFeedQueryHandler -> InfrastructureModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Dues.GetMyDuesQueryHandler -> DuesModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Duties.GetMyDutiesQueryHandler -> ScoreModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Growth.GetMyGrowthQueryHandler -> ProbesAndBadgesModule",
@@ -72,10 +65,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Life.ExportMyLifePdfQueryHandler -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Score.GetMyScoreQueryHandler -> ScoreModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MemberCards -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ChangeOwnPasswordCommandHandler -> AuthModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.ConfirmAccountEmailChangeCommandHandler -> AuthModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.Account.UpdateAccountProfileCommandHandler -> AuthModule",
-        "ProjectK.BusinessLogic.Modules.UsersModule.Features.User.SuspendUserCommandHandler -> AuthModule",
     ];
 
     [Fact]
@@ -113,6 +102,55 @@ public class ModuleBoundaryRules
             named,
             NamesAnotherModule,
             $"Files that name another module's namespace; ask it through Common/Contracts instead, and give the module its own error codes ({Boundaries}):");
+    }
+
+    private static readonly Regex EntityNamespace = new(
+        @"^ProjectK\.Common\.Entities\.(?<module>\w+)(\.|$)", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// The navigations across a module boundary still standing, one by one, with the module they reach.
+    /// The list only gets shorter.
+    /// </summary>
+    private static readonly string[] NavigatesIntoAnotherModule =
+    [
+        "ProjectK.Common.Entities.KurinModule.Group.Leadership -> MemberModule",
+        "ProjectK.Common.Entities.MemberModule.Leadership.Group -> KurinModule",
+        "ProjectK.Common.Entities.MemberModule.Leadership.Kurin -> KurinModule",
+    ];
+
+    /// <summary>
+    /// An entity holds another module's entity by key, never by navigation: the navigation is a hidden
+    /// JOIN that does not survive splitting the modules, and it ties deleting one to the other. The
+    /// relationship itself stays in the model as <c>HasOne&lt;T&gt;()</c> with the same key and delete
+    /// rule, so the database does not change. Read by reflection, so the list is held exactly.
+    /// </summary>
+    [Fact]
+    public void Entities_ShouldNotNavigateIntoAnotherModule()
+    {
+        var offenders = typeof(ProjectK.Common.Entities.MemberModule.Member).Assembly.GetTypes()
+            .Select(type => (type, from: EntityModuleOf(type)))
+            .Where(pair => pair.from is not null && pair.type.IsClass)
+            .SelectMany(pair => pair.type
+                .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly)
+                .Select(property => (property, to: EntityModuleOf(NavigatedType(property.PropertyType))))
+                .Where(nav => nav.to is not null && nav.to != pair.from && nav.to != "Shared")
+                .Select(nav => $"{pair.type.FullName}.{nav.property.Name} -> {nav.to}"));
+
+        Baseline.Hold(
+            offenders,
+            NavigatesIntoAnotherModule,
+            $"Entities that navigate into another module's entity; hold its key and configure HasOne<T>() with the same key and delete rule ({Boundaries}):");
+    }
+
+    private static Type NavigatedType(Type type) =>
+        type.IsGenericType && type.GetGenericArguments() is [var element] && typeof(System.Collections.IEnumerable).IsAssignableFrom(type)
+            ? element
+            : type;
+
+    private static string? EntityModuleOf(Type type)
+    {
+        var match = EntityNamespace.Match(type.Namespace ?? "");
+        return match.Success && type.IsClass ? match.Groups["module"].Value : null;
     }
 
     private static string? ModuleOf(IType type)

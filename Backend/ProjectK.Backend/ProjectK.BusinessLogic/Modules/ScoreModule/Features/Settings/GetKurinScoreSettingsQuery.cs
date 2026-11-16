@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Enums.Shared;
@@ -13,13 +14,13 @@ public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurin
 {
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
 
-    public GetKurinScoreSettingsQueryHandler(ScoreAccess access, ScoreBookReader books, IUnitOfWork unitOfWork)
+    public GetKurinScoreSettingsQueryHandler(ScoreAccess access, ScoreBookReader books, IAgendaDirectory agenda)
     {
         _access = access;
         _books = books;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
     }
 
     public async Task<ServiceResult<KurinScoreSettingsDto>> Handle(GetKurinScoreSettingsQuery request, CancellationToken cancellationToken)
@@ -30,7 +31,7 @@ public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurin
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        var categories = await _unitOfWork.AgendaCategories.GetForKurinAsync(request.KurinKey, includeArchived: false, cancellationToken);
+        var categories = await _agenda.GetCategoriesAsync(request.KurinKey, includeArchived: false, cancellationToken);
 
         return new ServiceResult<KurinScoreSettingsDto>(ResultType.Success, new KurinScoreSettingsDto
         {

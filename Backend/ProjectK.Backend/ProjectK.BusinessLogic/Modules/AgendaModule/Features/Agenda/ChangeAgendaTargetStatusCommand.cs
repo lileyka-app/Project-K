@@ -26,6 +26,8 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
+    private readonly IKurinDirectory _kurins;
+    private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IDomainEventPublisher _events;
@@ -37,6 +39,8 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         IUnitOfWork uow,
         IMemberDirectory members,
         IOfficeDirectory offices,
+        IKurinDirectory kurins,
+        IKurinTagDirectory tags,
         IAgendaAccess access,
         ICurrentUserContext currentUser,
         IDomainEventPublisher events,
@@ -47,6 +51,8 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         _uow = uow;
         _members = members;
         _offices = offices;
+        _kurins = kurins;
+        _tags = tags;
         _access = access;
         _currentUser = currentUser;
         _events = events;
@@ -77,7 +83,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
                 perMember ? "This target is done by each person; name whose part moves." : "This target has one state; no person is named.");
         }
 
-        var roster = await AgendaRosterRules.LoadAsync(_uow, _members, _offices, item.KurinKey, [item], cancellationToken);
+        var roster = await AgendaRosterRules.LoadAsync(_members, _offices, _tags, item.KurinKey, [item], cancellationToken);
         if (request.MemberKey is { } memberKey)
         {
             if (!roster.PeopleIn(assignment).Contains(memberKey))
@@ -106,7 +112,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         if (request.MemberKey is null)
         {
             (AgendaTargetType, Guid)[] target = [(assignment.TargetType, assignment.TargetKey)];
-            var names = await AgendaTargetNames.LoadAsync(_uow, _members, _offices, item.KurinKey, target, cancellationToken);
+            var names = await AgendaTargetNames.LoadAsync(_members, _offices, _kurins, _tags, item.KurinKey, target, cancellationToken);
             label = $"{item.Title} — {names.Describe(target)}";
         }
 

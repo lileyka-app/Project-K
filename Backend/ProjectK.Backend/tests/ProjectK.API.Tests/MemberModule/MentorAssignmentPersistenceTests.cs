@@ -117,4 +117,19 @@ public class MentorAssignmentPersistenceTests : IDisposable
 
         found!.MentorAssignmentKey.Should().Be(latest.MentorAssignmentKey);
     }
+
+    [Fact]
+    public async Task AVporiadnykOfADissolvedGroup_LeadsNothing()
+    {
+        await using (var context = new AppDbContext(_options))
+        {
+            context.MentorAssignments.Add(Assignment(DateTime.UtcNow.AddMonths(-1)));
+            (await context.Groups.SingleAsync(g => g.GroupKey == _groupKey)).DissolvedAtUtc = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+        }
+
+        await using var read = new AppDbContext(_options);
+        (await read.MentorAssignments.CountAsync()).Should().Be(0);
+        (await read.MentorAssignments.IgnoreQueryFilters().CountAsync()).Should().Be(1);
+    }
 }

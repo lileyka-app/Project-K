@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.ScoreModule;
@@ -29,17 +30,17 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IScoreUnitOfWork _score;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
     private readonly IKraiProfileDirectory _profiles;
 
-    public UpdateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
+    public UpdateScoreEntryCommandHandler(ScoreAccess access, ScoreBookReader books, IScoreUnitOfWork score, IAgendaDirectory agenda, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _access = access;
         _books = books;
         _score = score;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
         _currentUser = currentUser;
         _time = time;
         _profiles = profiles;
@@ -64,7 +65,7 @@ public sealed class UpdateScoreEntryCommandHandler : IRequestHandler<UpdateScore
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        if (await ScoreEntryRules.CheckAsync<Unit>(_access, _unitOfWork, _profiles, book, request.Request, entry.ScoreEntryKey, cancellationToken) is { } problem)
+        if (await ScoreEntryRules.CheckAsync<Unit>(_access, _agenda, _profiles, book, request.Request, entry.ScoreEntryKey, cancellationToken) is { } problem)
         {
             return problem;
         }
