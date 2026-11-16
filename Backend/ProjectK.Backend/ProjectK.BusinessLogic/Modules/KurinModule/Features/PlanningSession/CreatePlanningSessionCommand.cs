@@ -6,7 +6,6 @@ using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Optimization.Abstractions;
-using PlanningSessionEntity = ProjectK.Common.Entities.KurinModule.Planning.PlanningSession;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
 

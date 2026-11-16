@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;

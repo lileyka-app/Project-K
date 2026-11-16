@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;

@@ -1,4 +1,3 @@
-using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
 using ProjectK.Common.Enums.AgendaModule;
 

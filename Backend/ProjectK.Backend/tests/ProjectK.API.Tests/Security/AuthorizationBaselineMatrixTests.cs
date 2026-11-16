@@ -25,12 +25,9 @@ using ProjectK.API.Models.Requests;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Awards;
 using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
-using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Dtos.AuthModule.Requests;
 using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Dtos.KraiModule.Requests;
@@ -39,11 +36,9 @@ using ProjectK.Common.Dtos.MemberModule.Requests;
 using ProjectK.Common.Dtos.MeModule.Requests;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Dtos.UsersModule.Requests;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.API.Tests.Security;
 

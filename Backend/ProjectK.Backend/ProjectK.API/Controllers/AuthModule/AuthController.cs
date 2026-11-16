@@ -1,9 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
@@ -16,7 +12,6 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Dtos.AuthModule;
 using ProjectK.Common.Dtos.AuthModule.Requests;
 using ProjectK.Common.Enums.Shared;
