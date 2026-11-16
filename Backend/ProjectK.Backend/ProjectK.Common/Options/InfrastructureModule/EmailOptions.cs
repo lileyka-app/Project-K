@@ -2,6 +2,8 @@ namespace ProjectK.Common.Options.InfrastructureModule;
 
 public class EmailOptions
 {
+    public const string SectionName = "Email";
+
     public string Provider { get; set; } = "Mock"; // "Mock" or "Resend"
     public string ApiKey { get; set; } = string.Empty;
     public string FromEmail { get; set; } = "onboarding@resend.dev";

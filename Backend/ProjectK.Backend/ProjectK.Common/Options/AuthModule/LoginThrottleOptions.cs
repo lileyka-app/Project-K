@@ -6,6 +6,8 @@ namespace ProjectK.Common.Options.AuthModule;
 /// </summary>
 public sealed class LoginThrottleOptions
 {
+    public const string SectionName = "LoginThrottle";
+
     public int FailureLimit { get; set; } = 10;
     public TimeSpan Window { get; set; } = TimeSpan.FromMinutes(15);
 }

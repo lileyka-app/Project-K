@@ -60,7 +60,7 @@ public static class DependencyInjection
 
         services.Configure<KurinNumberOptions>(configuration.GetSection(KurinNumberOptions.SectionName));
         services.Configure<KraiOptions>(configuration.GetSection(KraiOptions.SectionName));
-        services.Configure<LoginThrottleOptions>(configuration.GetSection("LoginThrottle"));
+        services.Configure<LoginThrottleOptions>(configuration.GetSection(LoginThrottleOptions.SectionName));
 
         // The clock a kurin's week repeats by (DST-safe recurrence); Kyiv unless configured.
         AgendaRecurrenceRules.DefaultZone = AgendaRecurrenceRules.ResolveZone(configuration["Agenda:TimeZone"] ?? "Europe/Kyiv");

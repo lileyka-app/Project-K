@@ -5,5 +5,7 @@ namespace ProjectK.Common.Options.InfrastructureModule;
 /// </summary>
 public sealed class FeedbackOptions
 {
+    public const string SectionName = "Feedback";
+
     public GitHubFeedbackOptions GitHub { get; set; } = new();
 }

@@ -60,8 +60,8 @@ public static class DependencyInjection
         AddPersistence(services, configuration);
         AddBlobStorage(services, configuration);
 
-        services.Configure<SecurityMonitoringOptions>(configuration.GetSection("SecurityMonitoring"));
-        services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
+        services.Configure<SecurityMonitoringOptions>(configuration.GetSection(SecurityMonitoringOptions.SectionName));
+        services.Configure<TelegramOptions>(configuration.GetSection(TelegramOptions.SectionName));
 
         // Data access. Repositories are reached only through IUnitOfWork, which owns their lifetime
         // and shares the request DbContext, so they are deliberately not registered individually.
@@ -143,8 +143,8 @@ public static class DependencyInjection
         var blobOptions = new BlobStorageOptions
         {
             ConnectionString = configuration.GetConnectionString("BlobStorage") ?? "UseDevelopmentStorage=true",
-            ContainerName = configuration["BlobStorage:ContainerName"] ?? "photos",
-            PublicBaseUrl = configuration["BlobStorage:PublicBaseUrl"]
+            ContainerName = configuration[$"{BlobStorageOptions.SectionName}:ContainerName"] ?? "photos",
+            PublicBaseUrl = configuration[$"{BlobStorageOptions.SectionName}:PublicBaseUrl"]
         };
         services.AddScoped<MemberPhotoReferenceReader>();
         services.AddScoped<GroupSilhouetteReferenceReader>();
@@ -166,7 +166,7 @@ public static class DependencyInjection
         services.AddSingleton(blobOptions);
         services.AddSingleton<IBlobReadLinks, SignedBlobReadLinks>();
 
-        services.Configure<OrphanCleanupOptions>(configuration.GetSection("OrphanCleanup"));
+        services.Configure<OrphanCleanupOptions>(configuration.GetSection(OrphanCleanupOptions.SectionName));
 
         services.AddScoped<IPhotoService, AzureBlobPhotoService>(sp =>
         {
@@ -206,9 +206,9 @@ public static class DependencyInjection
     /// </summary>
     private static void AddFeedback(IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<FeedbackOptions>(configuration.GetSection("Feedback"));
+        services.Configure<FeedbackOptions>(configuration.GetSection(FeedbackOptions.SectionName));
 
-        if (string.IsNullOrWhiteSpace(configuration["Feedback:GitHub:Token"]))
+        if (string.IsNullOrWhiteSpace(configuration[$"{FeedbackOptions.SectionName}:GitHub:Token"]))
         {
             services.AddScoped<IProblemReporter, LogProblemReporter>();
             return;
@@ -266,9 +266,9 @@ public static class DependencyInjection
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)
     {
         // The business logic reads it too: BaseUrl is the frontend address its links are built on.
-        services.Configure<EmailOptions>(configuration.GetSection("Email"));
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
-        var provider = configuration["Email:Provider"] ?? "Mock";
+        var provider = configuration[$"{EmailOptions.SectionName}:Provider"] ?? "Mock";
         if (!provider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
         {
             services.AddScoped<IEmailService, MockEmailService>();
@@ -277,7 +277,7 @@ public static class DependencyInjection
 
         services.AddOptions();
         services.AddHttpClient<IResend, ResendClient>();
-        services.Configure<ResendClientOptions>(options => options.ApiToken = configuration["Email:ApiKey"]!);
+        services.Configure<ResendClientOptions>(options => options.ApiToken = configuration[$"{EmailOptions.SectionName}:ApiKey"]!);
         services.AddTransient<IResend, ResendClient>();
         services.AddScoped<IEmailService, ResendEmailService>();
     }
