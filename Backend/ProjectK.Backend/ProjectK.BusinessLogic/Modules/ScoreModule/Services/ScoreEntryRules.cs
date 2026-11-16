@@ -1,3 +1,4 @@
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
@@ -15,7 +16,7 @@ public static class ScoreEntryRules
     /// <summary>Null when the entry may be written as asked; otherwise why not.</summary>
     public static async Task<ServiceResult<T>?> CheckAsync<T>(
         ScoreAccess access,
-        IUnitOfWork unitOfWork,
+        IAgendaDirectory agenda,
         IKraiProfileDirectory profiles,
         ScoreBook book,
         UpsertScoreEntryRequest request,
@@ -39,7 +40,7 @@ public static class ScoreEntryRules
 
         if (request.AgendaItemKey is { } eventKey)
         {
-            var occurrence = await EventOccurrence.LoadAsync(unitOfWork, profiles, book.KurinKey, eventKey, request.OccurrenceStartUtc!.Value, cancellationToken);
+            var occurrence = await EventOccurrence.LoadAsync(agenda, profiles, book.KurinKey, eventKey, request.OccurrenceStartUtc!.Value, cancellationToken);
             if (occurrence is null)
             {
                 return ScoreErrors.NotFound<T>("There is no such event, or it does not meet that day.");

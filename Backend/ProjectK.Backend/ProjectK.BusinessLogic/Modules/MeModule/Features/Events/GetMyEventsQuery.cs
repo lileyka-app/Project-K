@@ -1,11 +1,10 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AgendaModule;
@@ -28,15 +27,15 @@ public sealed class GetMyEventsQueryValidator : AbstractValidator<GetMyEventsQue
 public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, ServiceResult<IReadOnlyList<MyEventDto>>>
 {
     private readonly MeAgendaScopes _scopes;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
     private readonly IKraiProfileDirectory _profiles;
 
-    public GetMyEventsQueryHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
+    public GetMyEventsQueryHandler(MeAgendaScopes scopes, IAgendaDirectory agenda, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _scopes = scopes;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
         _currentUser = currentUser;
         _time = time;
         _profiles = profiles;
@@ -51,28 +50,19 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
         foreach (var context in await _scopes.BuildAsync(cancellationToken))
         {
             var kurin = MeKurinMapping.Ref(context.Membership, _currentUser.KurinKey);
-            var items = await _unitOfWork.AgendaItems.GetForViewerAsync(
-                context.Viewer.ToScope(), now, until, onlyDated: true, kind: AgendaItemKind.Event, cancellationToken);
-            var categories = (await _unitOfWork.AgendaCategories.GetForKurinAsync(context.Membership.KurinKey, includeArchived: true, cancellationToken))
-                .ToDictionary(c => c.AgendaCategoryKey);
             var zone = await _profiles.ForKurinAsync(context.Membership.KurinKey, cancellationToken);
-
-            // The person's answers for the whole window in one read, then matched per occurrence: a
-            // series' answers are keyed by occurrence start, a one-off's by null.
-            var answers = (await _unitOfWork.AgendaResponses.GetForUserAsync(
-                    context.Viewer.ViewerUserKey!.Value, items.Select(i => i.AgendaItemKey).ToList(), now, until, cancellationToken))
-                .ToDictionary(r => (r.AgendaItemKey, r.OccurrenceStartUtc), r => r.Status);
+            var items = await _agenda.GetInWindowForViewerAsync(
+                context.Viewer, new AgendaWindow(now, until, zone, AgendaItemKind.Event, WithAnswers: true), cancellationToken);
+            var categories = (await _agenda.GetCategoriesAsync(context.Membership.KurinKey, includeArchived: true, cancellationToken))
+                .ToDictionary(c => c.AgendaCategoryKey);
 
             foreach (var item in items)
             {
                 var category = item.AgendaCategoryKey is { } key ? categories.GetValueOrDefault(key) : null;
 
-                foreach (var occurrence in AgendaRecurrenceRules.Expand(item, now, until, zone))
+                foreach (var occurrence in item.Occurrences)
                 {
-                    var response = answers.TryGetValue((item.AgendaItemKey, AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc)), out var status)
-                        ? status
-                        : (AgendaRsvpStatus?)null;
-                    rows.Add(ToDto(item, kurin, category, occurrence, response));
+                    rows.Add(ToDto(item, kurin, category, occurrence));
                 }
             }
         }
@@ -80,7 +70,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
         return new ServiceResult<IReadOnlyList<MyEventDto>>(ResultType.Success, rows.OrderBy(r => r.StartUtc).ThenBy(r => r.Title).ToList());
     }
 
-    private static MyEventDto ToDto(AgendaItem item, MyKurinRefDto kurin, AgendaCategory? category, AgendaOccurrence occurrence, AgendaRsvpStatus? response) => new()
+    private static MyEventDto ToDto(AgendaViewerItem item, MyKurinRefDto kurin, AgendaCategorySummary? category, AgendaViewerOccurrence occurrence) => new()
     {
         AgendaItemKey = item.AgendaItemKey,
         Kurin = kurin,
@@ -88,12 +78,12 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
         StartUtc = DateTime.SpecifyKind(occurrence.StartUtc, DateTimeKind.Utc),
         EndUtc = occurrence.EndUtc is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null,
         IsAllDay = item.IsAllDay,
-        IsRecurring = item.RecurrenceFrequency != RecurrenceFrequency.None,
+        IsRecurring = item.IsRecurring,
         Location = item.Location,
         CategoryName = category?.Name,
         CategoryColorHex = category?.ColorHex,
         CategoryIcon = category?.Icon,
         RsvpRequired = category?.RsvpRequired ?? false,
-        MyResponse = response
+        MyResponse = occurrence.Answer
     };
 }

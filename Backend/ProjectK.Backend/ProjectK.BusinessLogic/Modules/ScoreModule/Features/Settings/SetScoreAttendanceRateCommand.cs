@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Contracts.Shared;
@@ -31,15 +32,15 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
 {
     private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
 
-    public SetScoreAttendanceRateCommandHandler(ScoreAccess access, IScoreUnitOfWork score, IUnitOfWork unitOfWork, ICurrentUserContext currentUser, TimeProvider time)
+    public SetScoreAttendanceRateCommandHandler(ScoreAccess access, IScoreUnitOfWork score, IAgendaDirectory agenda, ICurrentUserContext currentUser, TimeProvider time)
     {
         _access = access;
         _score = score;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
         _currentUser = currentUser;
         _time = time;
     }
@@ -96,14 +97,14 @@ public sealed class SetScoreAttendanceRateCommandHandler : IRequestHandler<SetSc
         var r = request.Request;
         if (r.AgendaCategoryKey is { } categoryKey)
         {
-            var category = await _unitOfWork.AgendaCategories.GetByKeyAsync(categoryKey, cancellationToken);
+            var category = await _agenda.FindCategoryAsync(categoryKey, cancellationToken);
             return category is null || category.KurinKey != request.KurinKey
                 ? ScoreErrors.NotFound<Unit>("There is no such group of events here.")
                 : null;
         }
 
-        var item = await _unitOfWork.AgendaItems.GetByKeyAsync(r.AgendaItemKey!.Value, cancellationToken);
-        return item is null || item.KurinKey != request.KurinKey || item.Kind != AgendaItemKind.Event
+        var item = await _agenda.FindEventAsync(r.AgendaItemKey!.Value, cancellationToken);
+        return item is null || item.KurinKey != request.KurinKey
             ? ScoreErrors.NotFound<Unit>("There is no such event here.")
             : null;
     }

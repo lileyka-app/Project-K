@@ -1,10 +1,11 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
-using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
@@ -25,21 +26,24 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
 {
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
     private readonly IKraiProfileDirectory _profiles;
     private readonly IKurinTagVisibility _tags;
+    private readonly IKurinTagDirectory _tagDirectory;
 
     public GetAttendanceSheetQueryHandler(
         ScoreAccess access,
         ScoreBookReader books,
-        IUnitOfWork unitOfWork,
+        IAgendaDirectory agenda,
         IKraiProfileDirectory profiles,
-        IKurinTagVisibility tags)
+        IKurinTagVisibility tags,
+        IKurinTagDirectory tagDirectory)
     {
         _tags = tags;
+        _tagDirectory = tagDirectory;
         _access = access;
         _books = books;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
         _profiles = profiles;
     }
 
@@ -50,14 +54,14 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             return refused;
         }
 
-        var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
+        var occurrence = await EventOccurrence.LoadAsync(_agenda, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
             return ScoreErrors.NotFound<AttendanceSheetDto>("There is no such event, or it does not meet that day.");
         }
 
         var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
-        var item = occurrence.Item;
+        var item = occurrence.Event;
 
         var canScoreIn = await CanScoreByGroupAsync(request.KurinKey, book.GroupNames.Keys, cancellationToken);
         var canScoreUnplaced = await _access.MayScoreAsync(request.KurinKey, null, ResourceAction.Create, cancellationToken);
@@ -69,8 +73,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         }
 
         // The answers of this very day: a series' RSVPs are per occurrence, a one-off's sit under null.
-        var responses = (await _unitOfWork.AgendaResponses.GetForItemAsync(item.AgendaItemKey, AgendaOccurrenceRules.KeyOf(item, occurrence.StartUtc), cancellationToken))
-            .ToDictionary(r => r.UserKey, r => r.Status);
+        var responses = await _agenda.GetAnswersAsync(item.AgendaItemKey, occurrence.OccurrenceKey, cancellationToken);
         var marks = book.Attendances
             .Where(a => a.AgendaItemKey == item.AgendaItemKey && a.OccurrenceStartUtc == occurrence.StartUtc)
             .ToDictionary(a => a.MembershipKey);
@@ -78,16 +81,16 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             .Where(e => e.AgendaItemKey == item.AgendaItemKey && e.OccurrenceStartUtc == occurrence.StartUtc)
             .ToLookup(e => e.MembershipKey ?? e.GroupKey!.Value);
 
-        var aimedAtKurin = item.Assignments.Any(a => a.TargetType == AgendaTargetType.Kurin);
-        var aimedGroups = item.Assignments.Where(a => a.TargetType == AgendaTargetType.Group).Select(a => a.TargetKey).ToHashSet();
-        var aimedMembers = item.Assignments.Where(a => a.TargetType == AgendaTargetType.Member).Select(a => a.TargetKey).ToHashSet();
+        var aimedAtKurin = item.IsAimedAtKurin;
+        var aimedGroups = item.GroupKeys;
+        var aimedMembers = item.MemberKeys;
 
         // Whoever carries an aimed tag today is among those the event is for, like a гурток's members —
         // but only where the caller may see tags, or the sheet would tell who carries what.
         var tagCarriers = new HashSet<Guid>();
-        foreach (var tagKey in item.Assignments.Where(a => a.TargetType == AgendaTargetType.Tag).Select(a => a.TargetKey).Distinct())
+        if (item.TagKeys.Count > 0)
         {
-            tagCarriers.UnionWith(await _unitOfWork.KurinTags.GetMemberKeysAsync(tagKey, cancellationToken));
+            tagCarriers.UnionWith((await _tagDirectory.GetCarriersAsync(item.TagKeys, cancellationToken)).Values.SelectMany(carriers => carriers));
         }
         var showsTagsOf = tagCarriers.Count > 0 ? await _tags.ShowsTagsOfAsync(request.KurinKey, cancellationToken) : (_, _) => false;
 
@@ -135,7 +138,7 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
             OccurrenceStartUtc = occurrence.StartUtc,
             OccurrenceEndUtc = occurrence.EndUtc,
             IsAllDay = item.IsAllDay,
-            IsRecurring = item.RecurrenceFrequency != RecurrenceFrequency.None,
+            IsRecurring = item.IsRecurring,
             Title = item.Title,
             CategoryKey = category?.AgendaCategoryKey,
             CategoryName = category?.Name,
@@ -165,8 +168,8 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         return canScoreIn;
     }
 
-    private async Task<AgendaCategory?> CategoryOfAsync(Guid? categoryKey, CancellationToken cancellationToken) =>
+    private async Task<AgendaCategorySummary?> CategoryOfAsync(Guid? categoryKey, CancellationToken cancellationToken) =>
         categoryKey is { } key
-            ? await _unitOfWork.AgendaCategories.GetByKeyAsync(key, cancellationToken)
+            ? await _agenda.FindCategoryAsync(key, cancellationToken)
             : null;
 }

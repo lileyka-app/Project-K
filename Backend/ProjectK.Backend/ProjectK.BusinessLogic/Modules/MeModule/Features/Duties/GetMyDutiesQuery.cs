@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
@@ -17,6 +18,7 @@ using ProjectK.Common.Enums.MeModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AgendaModule;
+using ProjectK.Common.Records.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 
@@ -43,6 +45,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
     private readonly TimeProvider _time;
     private readonly IKraiProfileDirectory _profiles;
     private readonly IPermissionResolver _permissions;
+    private readonly IAgendaDirectory _agenda;
 
     public GetMyDutiesQueryHandler(
         MeAgendaScopes scopes,
@@ -54,7 +57,8 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         ICurrentUserContext currentUser,
         TimeProvider time,
         IKraiProfileDirectory profiles,
-        IPermissionResolver permissions)
+        IPermissionResolver permissions,
+        IAgendaDirectory agenda)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
@@ -66,6 +70,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         _time = time;
         _profiles = profiles;
         _permissions = permissions;
+        _agenda = agenda;
     }
 
     public async Task<ServiceResult<MyDutiesDto>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
@@ -206,12 +211,12 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         // An occurrence said not to have taken place has no sheet to fill.
         settled.UnionWith(book.NotHeld.Select(n => (n.AgendaItemKey, n.OccurrenceStartUtc)));
 
-        var items = await _unitOfWork.AgendaItems.GetForViewerAsync(
-            context.Viewer.ToScope(), from, now, onlyDated: true, kind: AgendaItemKind.Event, cancellationToken);
+        var items = await _agenda.GetInWindowForViewerAsync(
+            context.Viewer, new AgendaWindow(from, now, zone, AgendaItemKind.Event), cancellationToken);
 
         foreach (var item in items.Where(candidate => book.AttendancePoints(candidate.AgendaItemKey, candidate.AgendaCategoryKey) > 0))
         {
-            var unmarkedStarts = AgendaRecurrenceRules.Expand(item, from, now, zone)
+            var unmarkedStarts = item.Occurrences
                 .Select(occurrence => occurrence.StartUtc)
                 .Where(startUtc => startUtc <= now && !settled.Contains((item.AgendaItemKey, startUtc)));
             foreach (var startUtc in unmarkedStarts)

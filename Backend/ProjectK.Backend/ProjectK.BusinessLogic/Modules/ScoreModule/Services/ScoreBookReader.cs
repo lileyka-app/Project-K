@@ -1,3 +1,5 @@
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Contracts.Shared;
@@ -13,7 +15,8 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 public sealed class ScoreBookReader
 {
     private readonly IScoreUnitOfWork _score;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
+    private readonly IKurinDirectory _kurins;
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
     private readonly IScoreFactReader _facts;
@@ -21,14 +24,16 @@ public sealed class ScoreBookReader
 
     public ScoreBookReader(
         IScoreUnitOfWork score,
-        IUnitOfWork unitOfWork,
+        IAgendaDirectory agenda,
+        IKurinDirectory kurins,
         IMembershipDirectory memberships,
         IMemberDirectory members,
         IScoreFactReader facts,
         TimeProvider time)
     {
         _score = score;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
+        _kurins = kurins;
         _memberships = memberships;
         _members = members;
         _facts = facts;
@@ -59,11 +64,11 @@ public sealed class ScoreBookReader
             ? []
             : await _members.GetByKeysAsync(leftKeys, cancellationToken) ?? [];
         var people = current.Concat(left).GroupBy(p => p.MemberKey).Select(g => g.First()).ToList();
-        var groupNames = (await _unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken)).ToDictionary(g => g.GroupKey, g => g.Name);
+        var groupNames = await _kurins.GetGroupNamesAsync(kurinKey, cancellationToken);
 
         // The ledger prices a mark by its event's group, so every marked event's group is read at once.
         var eventKeys = attendances.Select(a => a.AgendaItemKey).Distinct().ToList();
-        var eventCategories = await _unitOfWork.AgendaItems.GetCategoryKeysAsync(eventKeys, cancellationToken);
+        var eventCategories = await _agenda.GetCategoryKeysAsync(eventKeys, cancellationToken);
 
         var youths = inKurin.Values
             .Where(m => m.Kind == MembershipKind.Youth)

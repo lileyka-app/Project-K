@@ -6,8 +6,7 @@ namespace ProjectK.Common.Records.AgendaModule;
 
 /// <summary>
 /// The people each kind of target stands for, as they are now: a гурток's and the kurin's current
-/// members, a провід's current office holders, whoever carries a tag now. Read once per request and shared by every item;
-/// <see cref="IAgendaDirectory"/> reads one.
+/// members, a провід's current office holders, whoever carries a tag now. Read once per request and shared by every item.
 /// </summary>
 public sealed class AgendaRoster
 {

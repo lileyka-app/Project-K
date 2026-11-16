@@ -1,5 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
@@ -26,7 +28,8 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
 {
     private readonly ScoreAccess _access;
     private readonly IScoreUnitOfWork _score;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAgendaDirectory _agenda;
+    private readonly IKurinDirectory _kurins;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
     private readonly IKraiProfileDirectory _profiles;
@@ -35,7 +38,8 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
     public SetOccurrenceNotHeldCommandHandler(
         ScoreAccess access,
         IScoreUnitOfWork score,
-        IUnitOfWork unitOfWork,
+        IAgendaDirectory agenda,
+        IKurinDirectory kurins,
         ICurrentUserContext currentUser,
         TimeProvider time,
         IKraiProfileDirectory profiles,
@@ -43,7 +47,8 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
     {
         _access = access;
         _score = score;
-        _unitOfWork = unitOfWork;
+        _agenda = agenda;
+        _kurins = kurins;
         _currentUser = currentUser;
         _time = time;
         _profiles = profiles;
@@ -57,13 +62,13 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
             return refused;
         }
 
-        var occurrence = await EventOccurrence.LoadAsync(_unitOfWork, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
+        var occurrence = await EventOccurrence.LoadAsync(_agenda, _profiles, request.KurinKey, request.AgendaItemKey, request.OccurrenceStartUtc, cancellationToken);
         if (occurrence is null)
         {
             return ScoreErrors.NotFound<Unit>("There is no such event, or it does not meet that day.");
         }
 
-        var groupKeys = (await _unitOfWork.Groups.GetAllAsync(request.KurinKey, cancellationToken)).Select(g => g.GroupKey);
+        var groupKeys = (await _kurins.GetGroupNamesAsync(request.KurinKey, cancellationToken)).Keys;
         if (!await _access.MayMarkAnyoneAsync(request.KurinKey, groupKeys, cancellationToken))
         {
             return ScoreErrors.Refused<Unit>();
@@ -118,7 +123,7 @@ public sealed class SetOccurrenceNotHeldCommandHandler : IRequestHandler<SetOccu
             new AuditRecord(
                 AuditArea.Agenda,
                 notHeld ? AuditActionNames.Agenda.OccurrenceNotHeld : AuditActionNames.Agenda.OccurrenceHeld,
-                occurrence.Item.AgendaItemKey,
+                occurrence.Event.AgendaItemKey,
                 occurrence.Label,
                 KurinKey: kurinKey),
             cancellationToken);
