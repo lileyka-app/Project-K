@@ -25,7 +25,7 @@ namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 /// The member's own data — who they are and where they are placed. Carries no photo and no
 /// account: those are separate use cases, so this one owns exactly the member row.
 /// </summary>
-public class UpsertMemberProfileCommand : IRequest<ServiceResult<MemberProfileWriteResult>>, IHasParentContacts
+public sealed class UpsertMemberProfileCommand : IRequest<ServiceResult<MemberProfileWriteResult>>, IHasParentContacts
 {
     public Guid MemberKey { get; set; }
     public Guid? KurinKey { get; set; }
@@ -57,7 +57,7 @@ public class UpsertMemberProfileCommand : IRequest<ServiceResult<MemberProfileWr
     public bool ApplyCardFields { get; set; }
 }
 
-public class UpsertMemberProfileCommandHandler
+public sealed class UpsertMemberProfileCommandHandler
     : IRequestHandler<UpsertMemberProfileCommand, ServiceResult<MemberProfileWriteResult>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;

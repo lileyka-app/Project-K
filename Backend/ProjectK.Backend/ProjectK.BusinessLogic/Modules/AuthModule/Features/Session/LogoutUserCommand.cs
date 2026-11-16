@@ -7,7 +7,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 
-public class LogoutUserCommand : IRequest<ServiceResult<Unit>>
+public sealed class LogoutUserCommand : IRequest<ServiceResult<Unit>>
 {
     public string? UserKey { get; set; }
 
@@ -37,7 +37,7 @@ public class LogoutUserCommand : IRequest<ServiceResult<Unit>>
     }
 }
 
-public class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, ServiceResult<Unit>>
+public sealed class LogoutUserCommandHandler : IRequestHandler<LogoutUserCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IRefreshTokenStore _refreshTokens;

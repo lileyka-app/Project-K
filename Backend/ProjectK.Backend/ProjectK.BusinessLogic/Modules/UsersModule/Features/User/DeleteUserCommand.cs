@@ -7,9 +7,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
-public record DeleteUserCommand(Guid UserId) : IRequest<ServiceResult<Unit>>;
+public sealed record DeleteUserCommand(Guid UserId) : IRequest<ServiceResult<Unit>>;
 
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ServiceResult<Unit>>
+public sealed class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;

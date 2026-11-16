@@ -14,12 +14,12 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.SavedAccount;
 /// Makes one of the kept accounts the one in use, and keeps the one that was in use instead. No
 /// password: the kept session is the credential, exactly as the refresh cookie is.
 /// </summary>
-public record SwitchSavedAccountCommand(
+public sealed record SwitchSavedAccountCommand(
     Guid UserKey,
     IReadOnlyList<string> SavedTokens,
     IReadOnlyList<string> ActiveTokens) : IRequest<ServiceResult<SwitchedAccount>>;
 
-public class SwitchSavedAccountCommandHandler : IRequestHandler<SwitchSavedAccountCommand, ServiceResult<SwitchedAccount>>
+public sealed class SwitchSavedAccountCommandHandler : IRequestHandler<SwitchSavedAccountCommand, ServiceResult<SwitchedAccount>>
 {
     private readonly ISavedSessionList _saved;
     private readonly IRefreshTokenStore _refreshTokens;

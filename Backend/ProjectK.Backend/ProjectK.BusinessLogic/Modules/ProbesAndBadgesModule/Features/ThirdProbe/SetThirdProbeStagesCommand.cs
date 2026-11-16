@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -11,16 +12,6 @@ using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
-
-/// <summary>The referent's stages, each the day it happened; null where it has not.</summary>
-public sealed record ThirdProbeStagesInput(
-    DateOnly? MotivationLetterOn,
-    DateOnly? SelfReflectionOn,
-    DateOnly? ApplicationSubmittedOn,
-    DateOnly? OpenedOn,
-    DateOnly? CompletedOn,
-    DateOnly? NamedOn,
-    DateOnly? ArchivedOn);
 
 /// <summary>
 /// Sets the stages of a person's third probe, as the referent of the third probe tracks them —

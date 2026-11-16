@@ -11,7 +11,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 
-public class GetMemberByKeyQuery : IRequest<ServiceResult<MemberDto>>
+public sealed class GetMemberByKeyQuery : IRequest<ServiceResult<MemberDto>>
 {
     public Guid MemberKey { get; set; }
     public GetMemberByKeyQuery(Guid memberKey)
@@ -20,7 +20,7 @@ public class GetMemberByKeyQuery : IRequest<ServiceResult<MemberDto>>
     }
 }
 
-public class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, ServiceResult<MemberDto>>
+public sealed class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQuery, ServiceResult<MemberDto>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

@@ -19,7 +19,7 @@ public sealed class UpdateDuesEntryCommandValidator : AbstractValidator<UpdateDu
     {
         RuleFor(c => c.GroupKey).NotEmpty();
         RuleFor(c => c.EntryKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertDuesEntryRequestValidator(time));
+        RuleFor(c => c.Request).NotNull().ChildRules(request => DuesEntryRules.Apply(request, time, DuesEntryRules.GroupKinds));
     }
 }
 

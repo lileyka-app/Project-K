@@ -2,8 +2,8 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Models;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -15,7 +15,6 @@ using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Records.AgendaModule;
-using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.AgendaModule;

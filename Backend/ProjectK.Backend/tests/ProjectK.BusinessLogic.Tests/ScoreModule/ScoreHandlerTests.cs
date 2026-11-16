@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Entry;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
@@ -16,12 +15,10 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
@@ -524,6 +521,6 @@ public class ScoreHandlerTests
             OccurredOn = new DateOnly(2026, 10, 6)
         };
 
-        new UpsertScoreEntryRequestValidator(_time).Validate(request).IsValid.Should().BeFalse(because);
+        new CreateScoreEntryCommandValidator(_time).Validate(new CreateScoreEntryCommand(Guid.NewGuid(), request)).IsValid.Should().BeFalse(because);
     }
 }

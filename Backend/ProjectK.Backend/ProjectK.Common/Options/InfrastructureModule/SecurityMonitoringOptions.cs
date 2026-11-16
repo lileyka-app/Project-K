@@ -2,6 +2,8 @@ namespace ProjectK.Common.Options.InfrastructureModule;
 
 public sealed class SecurityMonitoringOptions
 {
+    public const string SectionName = "SecurityMonitoring";
+
     public int FailedLoginThreshold { get; set; } = 5;
     public int FailedMfaThreshold { get; set; } = 5;
     public TimeSpan FailedLoginWindow { get; set; } = TimeSpan.FromMinutes(10);

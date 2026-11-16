@@ -8,9 +8,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
 /// Withdraws a planning session. Answers with a line of plain text, which both clients read as text
 /// and ignore; it stays so the reply does not change under them.
 /// </summary>
-public record DeletePlanningSessionCommand(Guid planningSessionKey) : IRequest<ServiceResult<string>>;
+public sealed record DeletePlanningSessionCommand(Guid planningSessionKey) : IRequest<ServiceResult<string>>;
 
-public class DeletePlanningSessionCommandHandler : IRequestHandler<DeletePlanningSessionCommand, ServiceResult<string>>
+public sealed class DeletePlanningSessionCommandHandler : IRequestHandler<DeletePlanningSessionCommand, ServiceResult<string>>
 {
     private readonly IUnitOfWork _uow;
     public DeletePlanningSessionCommandHandler(IUnitOfWork uow)

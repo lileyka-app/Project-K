@@ -17,7 +17,7 @@ public sealed class CreateKurinDuesEntryCommandValidator : AbstractValidator<Cre
     public CreateKurinDuesEntryCommandValidator(TimeProvider time)
     {
         RuleFor(c => c.KurinKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertKurinDuesEntryRequestValidator(time));
+        RuleFor(c => c.Request).NotNull().ChildRules(request => DuesEntryRules.Apply(request, time, DuesEntryRules.KurinKinds));
     }
 }
 

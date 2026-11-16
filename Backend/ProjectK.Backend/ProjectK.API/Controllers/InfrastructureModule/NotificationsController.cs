@@ -5,6 +5,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.Notifications;
 using ProjectK.Common.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.InfrastructureModule.Requests;
 
 namespace ProjectK.API.Controllers.InfrastructureModule;
 
@@ -111,7 +112,7 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SubscribeToPush(
-        [FromBody] WebPushSubscriptionRequestDto request,
+        [FromBody] WebPushSubscriptionRequest request,
         CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(

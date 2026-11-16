@@ -5,6 +5,8 @@ namespace ProjectK.Common.Options.InfrastructureModule;
 /// </summary>
 public sealed class BlobStorageOptions
 {
+    public const string SectionName = "BlobStorage";
+
     /// <summary>
     /// Full connection string. Azurite accepts <c>UseDevelopmentStorage=true</c>, or an explicit
     /// <c>DefaultEndpointsProtocol=...;AccountName=...;AccountKey=...;BlobEndpoint=...</c>.

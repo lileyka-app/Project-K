@@ -11,11 +11,11 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
-public class GetAllUsersQuery : IRequest<ServiceResult<IEnumerable<UserDto>>>
+public sealed class GetAllUsersQuery : IRequest<ServiceResult<IEnumerable<UserDto>>>
 {
 }
 
-public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, ServiceResult<IEnumerable<UserDto>>>
+public sealed class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, ServiceResult<IEnumerable<UserDto>>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;

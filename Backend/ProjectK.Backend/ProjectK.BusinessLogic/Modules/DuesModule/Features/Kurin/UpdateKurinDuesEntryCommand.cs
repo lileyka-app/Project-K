@@ -17,7 +17,7 @@ public sealed class UpdateKurinDuesEntryCommandValidator : AbstractValidator<Upd
     {
         RuleFor(c => c.KurinKey).NotEmpty();
         RuleFor(c => c.EntryKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertKurinDuesEntryRequestValidator(time));
+        RuleFor(c => c.Request).NotNull().ChildRules(request => DuesEntryRules.Apply(request, time, DuesEntryRules.KurinKinds));
     }
 }
 

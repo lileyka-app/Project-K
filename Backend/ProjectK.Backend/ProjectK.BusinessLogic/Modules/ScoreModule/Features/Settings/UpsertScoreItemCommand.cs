@@ -18,16 +18,11 @@ public sealed class UpsertScoreItemCommandValidator : AbstractValidator<UpsertSc
     public UpsertScoreItemCommandValidator()
     {
         RuleFor(c => c.KurinKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertScoreItemRequestValidator());
-    }
-}
-
-public sealed class UpsertScoreItemRequestValidator : AbstractValidator<UpsertScoreItemRequest>
-{
-    public UpsertScoreItemRequestValidator()
-    {
-        RuleFor(r => r.Name).NotEmpty().MaximumLength(100);
-        RuleFor(r => r.Points).NotEqual(0).InclusiveBetween(-1000, 1000);
+        RuleFor(c => c.Request).NotNull().ChildRules(request =>
+        {
+            request.RuleFor(r => r.Name).NotEmpty().MaximumLength(100);
+            request.RuleFor(r => r.Points).NotEqual(0).InclusiveBetween(-1000, 1000);
+        });
     }
 }
 

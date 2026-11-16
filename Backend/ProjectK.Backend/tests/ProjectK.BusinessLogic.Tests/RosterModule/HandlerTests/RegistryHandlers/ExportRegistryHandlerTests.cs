@@ -1,7 +1,8 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.RosterModule.Features.Registry;
+using ProjectK.BusinessLogic.Modules.RosterModule.Models;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;

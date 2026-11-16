@@ -4,12 +4,12 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
-public class ExistsGroupByKeyQuery(Guid groupKey) : IRequest<ServiceResult<bool>>
+public sealed class ExistsGroupByKeyQuery(Guid groupKey) : IRequest<ServiceResult<bool>>
 {
     public Guid GroupKey { get; set; } = groupKey;
 }
 
-public class ExistsGroupByKeyQueryHandler : IRequestHandler<ExistsGroupByKeyQuery, ServiceResult<bool>>
+public sealed class ExistsGroupByKeyQueryHandler : IRequestHandler<ExistsGroupByKeyQuery, ServiceResult<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
     public ExistsGroupByKeyQueryHandler(IUnitOfWork unitOfWork)

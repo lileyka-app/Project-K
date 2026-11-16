@@ -6,7 +6,9 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule.Requests;
 using ProjectK.Common.Enums.AuthModule;
@@ -145,24 +147,24 @@ public class ThirdProbeController : ControllerBase
         var file = form.File;
         if (file == null || file.Length == 0)
         {
-            return this.Failure(ResultType.BadRequest, "MissingFile", "A file is required.");
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.MissingFile, "A file is required.");
         }
 
         var isPdf = string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
         if (file.Length > ProbeProjectRules.MaxCertificateBytes)
         {
-            return this.Failure(ResultType.BadRequest, "CertificateTooLarge", "The посвідка must be 2 MB or smaller.");
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.CertificateTooLarge, "The посвідка must be 2 MB or smaller.");
         }
 
         if (!isPdf && ImageUploadRules.Refusal(file, ProbeProjectRules.MaxCertificateBytes) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, "InvalidCertificate", refusal.Message);
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.InvalidCertificate, refusal.Message);
         }
 
         var bytes = await file.ToByteArrayAsync(cancellationToken);
         if (bytes == null || bytes.Length == 0)
         {
-            return this.Failure(ResultType.BadRequest, "MissingFile", "A file is required.");
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.MissingFile, "A file is required.");
         }
 
         var command = new UploadCampCertificateCommand(memberKey, probeId, bytes, file.FileName, isPdf);

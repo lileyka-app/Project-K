@@ -155,8 +155,8 @@ public class PrivateScoreTests
     [Fact]
     public async Task NothingWithoutAWord_AndNoCriterionOffTheList()
     {
-        new UpsertPrivateScoreEntryRequestValidator(_time)
-            .Validate(new UpsertPrivateScoreEntryRequest { MembershipKey = _oksana, Points = 2, OccurredOn = new DateOnly(2026, 10, 6) })
+        new CreatePrivateScoreEntryCommandValidator(_time)
+            .Validate(new CreatePrivateScoreEntryCommand(Guid.NewGuid(), new UpsertPrivateScoreEntryRequest { MembershipKey = _oksana, Points = 2, OccurredOn = new DateOnly(2026, 10, 6) }))
             .IsValid.Should().BeFalse("neither a criterion nor a note");
 
         (await Write(2, Guid.NewGuid())).Type.Should().Be(ResultType.NotFound);

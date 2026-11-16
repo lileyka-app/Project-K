@@ -6,7 +6,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Access;
 
-public class CheckEntityAccessQuery : IRequest<ServiceResult<bool>>
+public sealed class CheckEntityAccessQuery : IRequest<ServiceResult<bool>>
 {
     public string EntityType { get; set; }
     public string EntityKey { get; set; }
@@ -16,7 +16,7 @@ public class CheckEntityAccessQuery : IRequest<ServiceResult<bool>>
     public string? ActiveKurinKey { get; set; }
 }
 
-public class CheckEntityAccessQueryHandler : IRequestHandler<CheckEntityAccessQuery, ServiceResult<bool>>
+public sealed class CheckEntityAccessQueryHandler : IRequestHandler<CheckEntityAccessQuery, ServiceResult<bool>>
 {
     private readonly IResourceAccessService _resourceAccessService;
 

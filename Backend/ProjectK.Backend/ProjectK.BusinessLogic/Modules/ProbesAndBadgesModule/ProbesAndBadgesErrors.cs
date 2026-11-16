@@ -65,6 +65,9 @@ public static class ProbesAndBadgesErrors
     public const string TooManyShared = "TooManyShared";
     public const string ImageTooLarge = "ImageTooLarge";
     public const string InvalidImageContent = "InvalidImageContent";
+    /// <summary>An upload came without a file, or with an empty one.</summary>
+    public const string MissingFile = "MissingFile";
+
     public const string CertificateTooLarge = "CertificateTooLarge";
     public const string InvalidCertificate = "InvalidCertificate";
 

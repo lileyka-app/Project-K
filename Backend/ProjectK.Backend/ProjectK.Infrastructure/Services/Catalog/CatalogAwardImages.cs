@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.Services.Catalog;
 

@@ -15,9 +15,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
 /// Signs the administrator in as one particular person: the one whose card is open. The sibling of
 /// <c>ImpersonateRoleCommand</c>, for when the tester wants "this member", not "somebody with that office".
 /// </summary>
-public record ImpersonateMemberCommand(Guid MemberKey) : IRequest<ServiceResult<DevImpersonationDto>>;
+public sealed record ImpersonateMemberCommand(Guid MemberKey) : IRequest<ServiceResult<DevImpersonationDto>>;
 
-public class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMemberCommand, ServiceResult<DevImpersonationDto>>
+public sealed class ImpersonateMemberCommandHandler : IRequestHandler<ImpersonateMemberCommand, ServiceResult<DevImpersonationDto>>
 {
     /// <summary>What the answer calls the seat when it is a named person rather than an office.</summary>
     public const string PersonRole = "Person";

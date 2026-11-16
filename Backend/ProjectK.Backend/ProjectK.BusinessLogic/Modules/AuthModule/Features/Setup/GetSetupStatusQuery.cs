@@ -8,9 +8,9 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup;
 
-public record GetSetupStatusQuery() : IRequest<ServiceResult<SetupStatusDto>>;
+public sealed record GetSetupStatusQuery() : IRequest<ServiceResult<SetupStatusDto>>;
 
-public class GetSetupStatusQueryHandler : IRequestHandler<GetSetupStatusQuery, ServiceResult<SetupStatusDto>>
+public sealed class GetSetupStatusQueryHandler : IRequestHandler<GetSetupStatusQuery, ServiceResult<SetupStatusDto>>
 {
     private readonly UserManager<AppUser> _userManager;
 

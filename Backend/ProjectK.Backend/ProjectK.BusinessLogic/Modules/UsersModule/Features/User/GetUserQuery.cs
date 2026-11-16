@@ -9,9 +9,9 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
-public record GetUserQuery(Guid UserKey) : IRequest<ServiceResult<UserDto>>;
+public sealed record GetUserQuery(Guid UserKey) : IRequest<ServiceResult<UserDto>>;
 
-public class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<UserDto>>
+public sealed class GetUserQueryHandler : IRequestHandler<GetUserQuery, ServiceResult<UserDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IMembershipDirectory _memberships;

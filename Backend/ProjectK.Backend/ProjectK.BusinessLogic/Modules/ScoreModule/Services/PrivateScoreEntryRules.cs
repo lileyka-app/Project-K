@@ -1,3 +1,4 @@
+using FluentValidation;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
@@ -10,6 +11,17 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 /// <summary>What a new and an edited entry share: the youth is here, the criterion is on the list.</summary>
 public static class PrivateScoreEntryRules
 {
+    /// <summary>A youth, a non-zero amount within bounds, what it was for, and a day not ahead of today.</summary>
+    public static void AddShapeRules(AbstractValidator<UpsertPrivateScoreEntryRequest> rules, TimeProvider time)
+    {
+        rules.RuleFor(r => r.MembershipKey).NotEmpty();
+        rules.RuleFor(r => r.Points).NotEqual(0).InclusiveBetween(-1000, 1000);
+        rules.RuleFor(r => r.Note).MaximumLength(500);
+        rules.RuleFor(r => r).Must(r => r.PrivateScoreCriterionKey.HasValue || !string.IsNullOrWhiteSpace(r.Note))
+            .WithMessage("Say what it was for: a criterion, or a note.");
+        rules.RuleFor(r => r.OccurredOn).LessThanOrEqualTo(_ => DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime).AddDays(1));
+    }
+
     public static async Task<ServiceResult<T>?> CheckAsync<T>(IScoreUnitOfWork score, ScoreBook book, UpsertPrivateScoreEntryRequest request, CancellationToken cancellationToken)
     {
         if (!book.Memberships.TryGetValue(request.MembershipKey, out var membership) || membership.Kind != MembershipKind.Youth)

@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.UsersModule;
 using ProjectK.Common.Entities.AuthModule;
@@ -18,10 +17,10 @@ using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 
-public record UpdateAccountProfileCommand(Guid UserKey, string Email, string? PhoneNumber, string? CurrentPassword = null)
+public sealed record UpdateAccountProfileCommand(Guid UserKey, string Email, string? PhoneNumber, string? CurrentPassword = null)
     : IRequest<ServiceResult<AccountSettingsDto>>;
 
-public class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountProfileCommand, ServiceResult<AccountSettingsDto>>
+public sealed class UpdateAccountProfileCommandHandler : IRequestHandler<UpdateAccountProfileCommand, ServiceResult<AccountSettingsDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IDomainEventPublisher _events;

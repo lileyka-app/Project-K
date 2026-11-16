@@ -18,15 +18,10 @@ public sealed class UpsertPrivateScoreCriterionCommandValidator : AbstractValida
     public UpsertPrivateScoreCriterionCommandValidator()
     {
         RuleFor(c => c.KurinKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertPrivateScoreCriterionRequestValidator());
-    }
-}
-
-public sealed class UpsertPrivateScoreCriterionRequestValidator : AbstractValidator<UpsertPrivateScoreCriterionRequest>
-{
-    public UpsertPrivateScoreCriterionRequestValidator()
-    {
-        RuleFor(r => r.Name).NotEmpty().MaximumLength(100);
+        RuleFor(c => c.Request).NotNull().ChildRules(request =>
+        {
+            request.RuleFor(r => r.Name).NotEmpty().MaximumLength(100);
+        });
     }
 }
 

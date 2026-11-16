@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using ProjectK.Common.Options.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Services.Catalog;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.BackgroundServices;
 

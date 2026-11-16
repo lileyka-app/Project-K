@@ -9,6 +9,9 @@ public static class MemberErrors
 {
     public const string MemberNotFound = "MemberNotFound";
     public const string MemberKeyRequired = "MemberKeyRequired";
+
+    /// <summary>A new card is opened in a гурток; the form came without one.</summary>
+    public const string GroupKeyRequired = "GroupKeyRequired";
     public const string MemberDeleteFailed = "MemberDeleteFailed";
     public const string MemberNotSaved = "MemberNotSaved";
     public const string KurinNotFound = "KurinNotFound";

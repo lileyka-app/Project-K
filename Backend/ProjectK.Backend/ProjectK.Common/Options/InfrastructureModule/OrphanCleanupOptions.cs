@@ -2,6 +2,8 @@ namespace ProjectK.Common.Options.InfrastructureModule;
 
 public sealed class OrphanCleanupOptions
 {
+    public const string SectionName = "OrphanCleanup";
+
     // Enable/disable the cleanup service.
     public bool Enabled { get; init; } = true;
 
