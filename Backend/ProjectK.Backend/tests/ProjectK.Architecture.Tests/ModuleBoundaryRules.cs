@@ -50,7 +50,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/ChangeOwnPasswordCommand.cs -> AuthModule",
         "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/ConfirmAccountEmailChangeCommand.cs -> AuthModule",
         "ProjectK.BusinessLogic/Modules/UsersModule/Features/Account/UpdateAccountProfileCommand.cs -> AuthModule",
-        "ProjectK.BusinessLogic/Modules/UsersModule/Features/User/RestoreUserCommand.cs -> AuthModule",
         "ProjectK.BusinessLogic/Modules/UsersModule/Features/User/SuspendUserCommand.cs -> AuthModule",
     ];
 
