@@ -106,6 +106,8 @@ public static class DependencyInjection
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MemberCards>();
 
+        services.AddScoped<KurinReportHeaderReader>();
+        services.AddScoped<KurinReportTagReader>();
         services.AddScoped<KurinReportDataService>();
 
         services.AddScoped<INotificationService, NotificationService>();
