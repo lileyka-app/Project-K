@@ -10,7 +10,7 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 
-public class RefreshTokenCommand : IRequest<ServiceResult<RefreshTokenResponse>>
+public sealed class RefreshTokenCommand : IRequest<ServiceResult<RefreshTokenResponse>>
 {
     public string RefreshToken { get; set; }
 
@@ -20,7 +20,7 @@ public class RefreshTokenCommand : IRequest<ServiceResult<RefreshTokenResponse>>
     }
 }
 
-public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, ServiceResult<RefreshTokenResponse>>
+public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, ServiceResult<RefreshTokenResponse>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IJwtService _jwtService;

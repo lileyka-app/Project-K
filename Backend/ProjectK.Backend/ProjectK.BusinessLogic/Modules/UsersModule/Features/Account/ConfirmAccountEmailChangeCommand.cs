@@ -14,10 +14,10 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 
-public record ConfirmAccountEmailChangeCommand(Guid UserKey, string Email, string Token)
+public sealed record ConfirmAccountEmailChangeCommand(Guid UserKey, string Email, string Token)
     : IRequest<ServiceResult<AccountSettingsDto>>;
 
-public class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAccountEmailChangeCommand, ServiceResult<AccountSettingsDto>>
+public sealed class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAccountEmailChangeCommand, ServiceResult<AccountSettingsDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;

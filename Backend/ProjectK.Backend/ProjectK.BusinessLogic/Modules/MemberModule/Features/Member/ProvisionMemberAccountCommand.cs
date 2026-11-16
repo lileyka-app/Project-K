@@ -20,7 +20,7 @@ namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 /// </summary>
 public sealed record ProvisionMemberAccountCommand(Guid MemberKey) : IRequest<ServiceResult<MemberInvitation>>;
 
-public class ProvisionMemberAccountCommandHandler
+public sealed class ProvisionMemberAccountCommandHandler
     : IRequestHandler<ProvisionMemberAccountCommand, ServiceResult<MemberInvitation>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;

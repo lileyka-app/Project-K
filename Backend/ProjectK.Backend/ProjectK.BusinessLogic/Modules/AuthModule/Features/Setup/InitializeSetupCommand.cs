@@ -12,7 +12,7 @@ using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Setup;
 
-public record InitializeSetupCommand(
+public sealed record InitializeSetupCommand(
     string Email,
     string Password,
     string FirstName,
@@ -21,7 +21,7 @@ public record InitializeSetupCommand(
     bool SeedDemoData = false
 ) : IRequest<ServiceResult<LoginUserDto>>;
 
-public class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupCommand, ServiceResult<LoginUserDto>>
+public sealed class InitializeSetupCommandHandler : IRequestHandler<InitializeSetupCommand, ServiceResult<LoginUserDto>>
 {
     // Guards against two concurrent initialize calls both passing the "no admins yet" check.
     private static readonly SemaphoreSlim InitializationLock = new(1, 1);

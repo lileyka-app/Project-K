@@ -15,9 +15,9 @@ using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.MentorAssignment;
 
-public record AssignMentorCommand(Guid MentorUserKey, Guid GroupKey) : IRequest<ServiceResult<Guid>>;
+public sealed record AssignMentorCommand(Guid MentorUserKey, Guid GroupKey) : IRequest<ServiceResult<Guid>>;
 
-public class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, ServiceResult<Guid>>
+public sealed class AssignMentorCommandHandler : IRequestHandler<AssignMentorCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;

@@ -15,7 +15,7 @@ using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 
-public class UpsertMemberCommand : IRequest<ServiceResult<MemberDto>>, IHasParentContacts
+public sealed class UpsertMemberCommand : IRequest<ServiceResult<MemberDto>>, IHasParentContacts
 {
     public Guid MemberKey { get; set; }
     public Guid? UserKey { get; set; }
@@ -54,7 +54,7 @@ public class UpsertMemberCommand : IRequest<ServiceResult<MemberDto>>, IHasParen
 /// photo and the account. This handler only decides the order and reports the outcome; every
 /// rule about a member's data lives in the use case that owns it.
 /// </summary>
-public class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, ServiceResult<MemberDto>>
+public sealed class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCommand, ServiceResult<MemberDto>>
 {
     private readonly IMediator _mediator;
     private readonly IMemberUnitOfWork _unitOfWork;

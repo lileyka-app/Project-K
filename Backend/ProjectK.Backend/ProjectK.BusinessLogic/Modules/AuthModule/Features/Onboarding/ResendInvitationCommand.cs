@@ -12,9 +12,9 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record ResendInvitationCommand(Guid WaitlistEntryKey) : IRequest<ServiceResult<Guid>>, ITransactionalRequest;
+public sealed record ResendInvitationCommand(Guid WaitlistEntryKey) : IRequest<ServiceResult<Guid>>, ITransactionalRequest;
 
-public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCommand, ServiceResult<Guid>>
+public sealed class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;

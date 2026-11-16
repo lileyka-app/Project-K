@@ -7,9 +7,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Migration;
 
-public record GetMigrationPreflightReportQuery : IRequest<ServiceResult<MigrationPreflightReportDto>>;
+public sealed record GetMigrationPreflightReportQuery : IRequest<ServiceResult<MigrationPreflightReportDto>>;
 
-public class GetMigrationPreflightReportQueryHandler : IRequestHandler<GetMigrationPreflightReportQuery, ServiceResult<MigrationPreflightReportDto>>
+public sealed class GetMigrationPreflightReportQueryHandler : IRequestHandler<GetMigrationPreflightReportQuery, ServiceResult<MigrationPreflightReportDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;

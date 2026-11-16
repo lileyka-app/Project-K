@@ -5,9 +5,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings;
 
-public record GetSystemSettingsQuery() : IRequest<ServiceResult<Dictionary<string, string>>>;
+public sealed record GetSystemSettingsQuery() : IRequest<ServiceResult<Dictionary<string, string>>>;
 
-public class GetSystemSettingsQueryHandler : IRequestHandler<GetSystemSettingsQuery, ServiceResult<Dictionary<string, string>>>
+public sealed class GetSystemSettingsQueryHandler : IRequestHandler<GetSystemSettingsQuery, ServiceResult<Dictionary<string, string>>>
 {
     private readonly IUnitOfWork _unitOfWork;
 

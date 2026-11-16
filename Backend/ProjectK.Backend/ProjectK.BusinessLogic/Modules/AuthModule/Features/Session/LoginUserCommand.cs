@@ -12,7 +12,7 @@ using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Session;
 
-public class LoginUserCommand : IRequest<ServiceResult<LoginUserDto>>
+public sealed class LoginUserCommand : IRequest<ServiceResult<LoginUserDto>>
 {
     public string Email { get; set; }
     public string Password { get; set; }
@@ -30,7 +30,7 @@ public class LoginUserCommand : IRequest<ServiceResult<LoginUserDto>>
     }
 }
 
-public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, ServiceResult<LoginUserDto>>
+public sealed class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, ServiceResult<LoginUserDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly SignInManager<AppUser> _signInManager;

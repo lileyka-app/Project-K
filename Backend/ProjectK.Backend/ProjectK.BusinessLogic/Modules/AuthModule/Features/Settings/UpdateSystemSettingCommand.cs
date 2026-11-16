@@ -5,9 +5,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Settings;
 
-public record UpdateSystemSettingCommand(string Key, string Value) : IRequest<ServiceResult<Unit>>;
+public sealed record UpdateSystemSettingCommand(string Key, string Value) : IRequest<ServiceResult<Unit>>;
 
-public class UpdateSystemSettingCommandHandler : IRequestHandler<UpdateSystemSettingCommand, ServiceResult<Unit>>
+public sealed class UpdateSystemSettingCommandHandler : IRequestHandler<UpdateSystemSettingCommand, ServiceResult<Unit>>
 {
     private readonly ISystemSettingsService _systemSettings;
 

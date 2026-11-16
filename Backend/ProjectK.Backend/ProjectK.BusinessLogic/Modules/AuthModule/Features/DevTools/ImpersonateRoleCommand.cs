@@ -19,9 +19,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
 /// ticket that brings them back. A testing tool: it exists only on the local tiers, where the
 /// controller that sends it is part of the application at all.
 /// </summary>
-public record ImpersonateRoleCommand(DevRole Role, Guid? KurinKey) : IRequest<ServiceResult<DevImpersonationDto>>;
+public sealed record ImpersonateRoleCommand(DevRole Role, Guid? KurinKey) : IRequest<ServiceResult<DevImpersonationDto>>;
 
-public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleCommand, ServiceResult<DevImpersonationDto>>
+public sealed class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleCommand, ServiceResult<DevImpersonationDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;

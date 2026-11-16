@@ -7,9 +7,9 @@ using ProjectK.Common.Rules.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 
-public record GetTileLayoutsQuery(Guid UserKey) : IRequest<ServiceResult<IReadOnlyList<TileLayoutDto>>>;
+public sealed record GetTileLayoutsQuery(Guid UserKey) : IRequest<ServiceResult<IReadOnlyList<TileLayoutDto>>>;
 
-public class GetTileLayoutsQueryHandler : IRequestHandler<GetTileLayoutsQuery, ServiceResult<IReadOnlyList<TileLayoutDto>>>
+public sealed class GetTileLayoutsQueryHandler : IRequestHandler<GetTileLayoutsQuery, ServiceResult<IReadOnlyList<TileLayoutDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
 

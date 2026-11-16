@@ -11,9 +11,9 @@ using ProjectK.Common.Rules.AuthModule;
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
 
 /// <summary>Lets a suspended account sign in again. Sessions are not restored; the person signs in anew.</summary>
-public record RestoreUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
+public sealed record RestoreUserCommand(Guid TargetUserKey) : IRequest<ServiceResult<Unit>>;
 
-public class RestoreUserCommandHandler : IRequestHandler<RestoreUserCommand, ServiceResult<Unit>>
+public sealed class RestoreUserCommandHandler : IRequestHandler<RestoreUserCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;

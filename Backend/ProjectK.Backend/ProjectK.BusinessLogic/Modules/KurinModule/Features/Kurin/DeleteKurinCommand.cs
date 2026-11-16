@@ -7,7 +7,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 
-public class DeleteKurinCommand : IRequest<ServiceResult<Unit>>
+public sealed class DeleteKurinCommand : IRequest<ServiceResult<Unit>>
 {
     public Guid KurinKey { get; set; }
     public DeleteKurinCommand(Guid kurinKey)
@@ -16,7 +16,7 @@ public class DeleteKurinCommand : IRequest<ServiceResult<Unit>>
     }
 }
 
-public class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, ServiceResult<Unit>>
+public sealed class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackendCache _cache;

@@ -9,10 +9,10 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 
-public record ChangeOwnPasswordCommand(Guid UserKey, string CurrentPassword, string NewPassword)
+public sealed record ChangeOwnPasswordCommand(Guid UserKey, string CurrentPassword, string NewPassword)
     : IRequest<ServiceResult<Unit>>;
 
-public class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<Unit>>
+public sealed class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly RefreshTokenInvalidation _sessions;

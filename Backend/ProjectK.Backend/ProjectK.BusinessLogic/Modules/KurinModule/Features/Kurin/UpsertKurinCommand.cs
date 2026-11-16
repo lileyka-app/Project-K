@@ -18,7 +18,7 @@ using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 
-public class UpsertKurinCommand : IRequest<ServiceResult<KurinDto>>
+public sealed class UpsertKurinCommand : IRequest<ServiceResult<KurinDto>>
 {
     public Guid KurinKey { get; set; }
 
@@ -59,7 +59,7 @@ public class UpsertKurinCommand : IRequest<ServiceResult<KurinDto>>
     }
 }
 
-public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, ServiceResult<KurinDto>>
+public sealed class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, ServiceResult<KurinDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

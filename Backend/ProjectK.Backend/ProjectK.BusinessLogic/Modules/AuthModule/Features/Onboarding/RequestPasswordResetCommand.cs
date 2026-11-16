@@ -10,7 +10,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 
-public record RequestPasswordResetCommand(string Email) : IRequest<ServiceResult<Unit>>;
+public sealed record RequestPasswordResetCommand(string Email) : IRequest<ServiceResult<Unit>>;
 
 /// <summary>
 /// Example validator wired through <c>ValidationBehavior</c>: a malformed or empty email is
@@ -27,7 +27,7 @@ public sealed class RequestPasswordResetCommandValidator : AbstractValidator<Req
     }
 }
 
-public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswordResetCommand, ServiceResult<Unit>>
+public sealed class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswordResetCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IEmailService _emailService;

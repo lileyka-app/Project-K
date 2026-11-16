@@ -15,10 +15,10 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
 /// Finishes a sign-in that stopped for the second factor. <paramref name="MfaToken"/> is the
 /// challenge the password step handed out for this account; the handler refuses without it.
 /// </summary>
-public record VerifyMfaLoginCommand(string Email, string Code, bool RememberMe, string? MfaToken = null)
+public sealed record VerifyMfaLoginCommand(string Email, string Code, bool RememberMe, string? MfaToken = null)
     : IRequest<ServiceResult<LoginUserDto>>;
 
-public class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginCommand, ServiceResult<LoginUserDto>>
+public sealed class VerifyMfaLoginCommandHandler : IRequestHandler<VerifyMfaLoginCommand, ServiceResult<LoginUserDto>>
 {
     private const string InvalidCredentialsCode = AuthErrors.InvalidCredentials;
     private const string InvalidCredentialsMessage = "Invalid verification code or recovery code.";

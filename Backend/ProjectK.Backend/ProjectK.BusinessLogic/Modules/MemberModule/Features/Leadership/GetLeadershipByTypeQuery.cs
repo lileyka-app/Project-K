@@ -8,7 +8,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Leadership;
 
-public class GetLeadershipByTypeQuery : IRequest<ServiceResult<LeadershipDto>>
+public sealed class GetLeadershipByTypeQuery : IRequest<ServiceResult<LeadershipDto>>
 {
     public LeadershipType LeadershipType { get; }
     public Guid TypeKey { get; }
@@ -19,7 +19,7 @@ public class GetLeadershipByTypeQuery : IRequest<ServiceResult<LeadershipDto>>
     }
 }
 
-public class GetLeadershipByTypeQueryHandler : IRequestHandler<GetLeadershipByTypeQuery, ServiceResult<LeadershipDto>>
+public sealed class GetLeadershipByTypeQueryHandler : IRequestHandler<GetLeadershipByTypeQuery, ServiceResult<LeadershipDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

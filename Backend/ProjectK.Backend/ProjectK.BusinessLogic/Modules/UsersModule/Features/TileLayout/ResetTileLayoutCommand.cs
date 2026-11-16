@@ -7,7 +7,7 @@ using ProjectK.Common.Rules.UsersModule;
 
 namespace ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 
-public record ResetTileLayoutCommand(Guid UserKey, string BoardKey) : IRequest<ServiceResult<Unit>>;
+public sealed record ResetTileLayoutCommand(Guid UserKey, string BoardKey) : IRequest<ServiceResult<Unit>>;
 
 public sealed class ResetTileLayoutCommandValidator : AbstractValidator<ResetTileLayoutCommand>
 {
@@ -19,7 +19,7 @@ public sealed class ResetTileLayoutCommandValidator : AbstractValidator<ResetTil
     }
 }
 
-public class ResetTileLayoutCommandHandler : IRequestHandler<ResetTileLayoutCommand, ServiceResult<Unit>>
+public sealed class ResetTileLayoutCommandHandler : IRequestHandler<ResetTileLayoutCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _unitOfWork;
 

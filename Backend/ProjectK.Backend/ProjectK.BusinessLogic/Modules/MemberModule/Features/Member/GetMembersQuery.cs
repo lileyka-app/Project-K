@@ -9,7 +9,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 
-public class GetMembersQuery : IRequest<ServiceResult<IEnumerable<MemberDto>>>
+public sealed class GetMembersQuery : IRequest<ServiceResult<IEnumerable<MemberDto>>>
 {
     public Guid GroupKey { get; set; }
     public Guid KurinKey { get; set; }
@@ -20,7 +20,7 @@ public class GetMembersQuery : IRequest<ServiceResult<IEnumerable<MemberDto>>>
     }
 }
 
-public class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceResult<IEnumerable<MemberDto>>>
+public sealed class GetMembersQueryHandler : IRequestHandler<GetMembersQuery, ServiceResult<IEnumerable<MemberDto>>>
 {
     private readonly IMemberUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

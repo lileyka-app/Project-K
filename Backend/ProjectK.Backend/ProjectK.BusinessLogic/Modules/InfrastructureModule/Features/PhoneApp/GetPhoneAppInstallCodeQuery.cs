@@ -14,9 +14,9 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Features.PhoneApp;
 /// page on the site's public address, the same one the letters link to, so a self-hosted instance
 /// points at itself as long as its letters do.
 /// </summary>
-public record GetPhoneAppInstallCodeQuery : IRequest<ServiceResult<PhoneAppInstallCodeDto>>;
+public sealed record GetPhoneAppInstallCodeQuery : IRequest<ServiceResult<PhoneAppInstallCodeDto>>;
 
-public class GetPhoneAppInstallCodeQueryHandler : IRequestHandler<GetPhoneAppInstallCodeQuery, ServiceResult<PhoneAppInstallCodeDto>>
+public sealed class GetPhoneAppInstallCodeQueryHandler : IRequestHandler<GetPhoneAppInstallCodeQuery, ServiceResult<PhoneAppInstallCodeDto>>
 {
     private const string InstallPath = "/m/install";
 

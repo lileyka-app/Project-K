@@ -8,9 +8,9 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 
-public record GetKurinMentorCandidatesQuery(Guid KurinKey) : IRequest<ServiceResult<IEnumerable<MemberLookupDto>>>;
+public sealed record GetKurinMentorCandidatesQuery(Guid KurinKey) : IRequest<ServiceResult<IEnumerable<MemberLookupDto>>>;
 
-public class GetKurinMentorCandidatesQueryHandler : IRequestHandler<GetKurinMentorCandidatesQuery, ServiceResult<IEnumerable<MemberLookupDto>>>
+public sealed class GetKurinMentorCandidatesQueryHandler : IRequestHandler<GetKurinMentorCandidatesQuery, ServiceResult<IEnumerable<MemberLookupDto>>>
 {
     private readonly IMemberUnitOfWork _uow;
     private readonly IBlobReadLinks _links;

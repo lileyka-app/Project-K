@@ -7,7 +7,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Leadership;
 
-public class GetLeadershipHistoriesQuery : IRequest<ServiceResult<IEnumerable<LeadershipHistoryMemberDto>>>
+public sealed class GetLeadershipHistoriesQuery : IRequest<ServiceResult<IEnumerable<LeadershipHistoryMemberDto>>>
 {
     public Guid LeadershipKey { get; }
     public GetLeadershipHistoriesQuery(Guid leadershipKey)
@@ -16,7 +16,7 @@ public class GetLeadershipHistoriesQuery : IRequest<ServiceResult<IEnumerable<Le
     }
 }
 
-public class GetLeadershipHistoriesQueryHandler : IRequestHandler<GetLeadershipHistoriesQuery, ServiceResult<IEnumerable<LeadershipHistoryMemberDto>>>
+public sealed class GetLeadershipHistoriesQueryHandler : IRequestHandler<GetLeadershipHistoriesQuery, ServiceResult<IEnumerable<LeadershipHistoryMemberDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

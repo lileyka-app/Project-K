@@ -9,7 +9,7 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 
-public class GetGroupByKeyQuery : IRequest<ServiceResult<GroupDto>>
+public sealed class GetGroupByKeyQuery : IRequest<ServiceResult<GroupDto>>
 {
     public Guid GroupKey { get; set; }
     public GetGroupByKeyQuery(Guid groupKey)
@@ -18,7 +18,7 @@ public class GetGroupByKeyQuery : IRequest<ServiceResult<GroupDto>>
     }
 }
 
-public class GetGroupByKeyQueryHandler : IRequestHandler<GetGroupByKeyQuery, ServiceResult<GroupDto>>
+public sealed class GetGroupByKeyQueryHandler : IRequestHandler<GetGroupByKeyQuery, ServiceResult<GroupDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;

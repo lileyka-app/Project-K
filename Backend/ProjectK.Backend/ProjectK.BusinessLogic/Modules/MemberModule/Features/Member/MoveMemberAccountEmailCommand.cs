@@ -14,7 +14,7 @@ namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 /// </summary>
 public sealed record MoveMemberAccountEmailCommand(Guid MemberKey) : IRequest<ServiceResult<Guid>>;
 
-public class MoveMemberAccountEmailCommandHandler
+public sealed class MoveMemberAccountEmailCommandHandler
     : IRequestHandler<MoveMemberAccountEmailCommand, ServiceResult<Guid>>
 {
     private readonly IMediator _mediator;

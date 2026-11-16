@@ -15,9 +15,9 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools;
 /// Steps the dev role switcher back out: the ticket names the administrator, the refresh tokens
 /// are the borrowed session, which is ended so it does not outlive the test.
 /// </summary>
-public record ReturnFromImpersonationCommand(string Ticket, IReadOnlyList<string> RefreshTokens) : IRequest<ServiceResult<LoginUserDto>>;
+public sealed record ReturnFromImpersonationCommand(string Ticket, IReadOnlyList<string> RefreshTokens) : IRequest<ServiceResult<LoginUserDto>>;
 
-public class ReturnFromImpersonationCommandHandler : IRequestHandler<ReturnFromImpersonationCommand, ServiceResult<LoginUserDto>>
+public sealed class ReturnFromImpersonationCommandHandler : IRequestHandler<ReturnFromImpersonationCommand, ServiceResult<LoginUserDto>>
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IJwtService _jwtService;
