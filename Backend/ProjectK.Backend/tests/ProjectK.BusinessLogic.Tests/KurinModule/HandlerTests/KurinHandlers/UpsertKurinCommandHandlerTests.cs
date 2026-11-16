@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -45,7 +46,7 @@ public class UpsertKurinHandlerTests
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
         _unitOfWorkMock.Setup(uow => uow.Krais).Returns(_kraiRepositoryMock.Object);
 
-        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions()), _journal.Audit);
+        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions()), _journal.Audit, Mock.Of<IMembershipDirectory>());
     }
 
     [Fact]
@@ -277,7 +278,7 @@ public class UpsertKurinHandlerTests
     public async Task Handle_WhenTheRangeIsRaised_ShouldAcceptTheHigherNumber()
     {
         var handler = new UpsertKurinCommandHandler(
-            _unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }), Options.Create(new KraiOptions()), _journal.Audit);
+            _unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }), Options.Create(new KraiOptions()), _journal.Audit, Mock.Of<IMembershipDirectory>());
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         var result = await handler.Handle(new UpsertKurinCommand(300), default);
@@ -416,7 +417,7 @@ public class UpsertKurinHandlerTests
             .Callback<Kurin, CancellationToken>((k, _) => savedKurin = k);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
         var handler = new UpsertKurinCommandHandler(
-            _unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions { Default = "cz" }), _journal.Audit);
+            _unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions { Default = "cz" }), _journal.Audit, Mock.Of<IMembershipDirectory>());
 
         var result = await handler.Handle(new UpsertKurinCommand(12), default);
 

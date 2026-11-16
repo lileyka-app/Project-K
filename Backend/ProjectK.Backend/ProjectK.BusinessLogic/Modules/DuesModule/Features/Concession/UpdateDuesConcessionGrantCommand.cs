@@ -56,13 +56,13 @@ public sealed class UpdateDuesConcessionGrantCommandHandler : IRequestHandler<Up
         var to = DuesConcessionGrantRules.Index(request.Request.ToQuarter);
         if (to < grant.FromQuarter)
         {
-            return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "Пільга не може закінчитися раніше, ніж почнеться.");
+            return ServiceResult<Unit>.Failure(ResultType.BadRequest, DuesErrors.EndsBeforeStart, "A пільга cannot end before it starts.");
         }
 
         // A later end may run into another grant of the same пільга, as a new grant would.
         if (await DuesConcessionGrantRules.OverlapsAsync(_dues, grant.KurinKey, grant.MembershipKey, grant.ConcessionKey, grant.FromQuarter, to, grant.DuesConcessionGrantKey, cancellationToken))
         {
-            return ServiceResult<Unit>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "Ця пільга вже діє в цих кварталах.");
+            return ServiceResult<Unit>.Failure(ResultType.Conflict, DuesErrors.ConcessionOverlaps, "This пільга already applies in those quarters.");
         }
 
         grant.ToQuarter = to;

@@ -71,6 +71,16 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
         Guid kurinKey,
         CancellationToken cancellationToken = default);
 
+    /// <summary>How many people currently belong to a kurin, with an account or without.</summary>
+    Task<int> CountCurrentInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The same for several kurins in one read, by kurin; a kurin nobody belongs to is absent.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, int>> CountCurrentInKurinsAsync(
+        IReadOnlyCollection<Guid> kurinKeys,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Every membership the kurin has had, current and closed.</summary>
     Task<IReadOnlyCollection<KurinMembershipRecord>> GetRecordsInKurinAsync(
         Guid kurinKey,

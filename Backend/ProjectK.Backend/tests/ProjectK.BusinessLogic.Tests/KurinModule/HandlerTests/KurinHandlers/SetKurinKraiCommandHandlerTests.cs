@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -26,7 +27,7 @@ public class SetKurinKraiCommandHandlerTests
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _handler = new SetKurinKraiCommandHandler(_unitOfWork.Object, FakeBlobReadLinks.Instance, new Mock<IBackendCache>().Object);
+        _handler = new SetKurinKraiCommandHandler(_unitOfWork.Object, FakeBlobReadLinks.Instance, new Mock<IBackendCache>().Object, Mock.Of<IMembershipDirectory>());
     }
 
     private Kurin Given(int? number, string krai = "ua")

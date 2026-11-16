@@ -99,9 +99,9 @@ describe('KraiConcessionGrantsComponent', () => {
     expect(dues.deleteConcessionGrant).toHaveBeenCalledWith({ groupKey: 'grp' }, 'g1');
   });
 
-  it('shows why the server refused', () => {
+  it('words why the server refused by its code', () => {
     dues.grantConcession.mockReturnValue(throwError(() => new HttpErrorResponse({
-      status: 409, error: { message: 'Ця пільга вже діє в цих кварталах.' }
+      status: 409, error: { error: 'ConcessionOverlaps', message: 'This concession already applies in those quarters.' }
     })));
 
     component.concessionKey.set('sibling');

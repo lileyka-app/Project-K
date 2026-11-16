@@ -29,6 +29,11 @@ import { KurinBranchRequestDto } from '../../../kurinModule/models/kurin-branch-
 import { KurinBranch, KurinNumbering } from '../../../kurinModule/models/enums/kurin-branch.enum';
 import { kurinBranchesName, kurinGroupTitle } from '../../../../shared/functions/kurin-label.function';
 
+/** Коди помилок схвалення заявки → що сказати людині. */
+const APPROVAL_ERROR_TEXT: Record<string, string> = {
+  KraiNotFound: 'Такого краю немає в списку.'
+};
+
 @Component({
   selector: 'app-waitlist-management',
   imports: [
@@ -420,7 +425,11 @@ export class WaitlistManagementComponent implements OnInit {
         },
         error: (err) => {
           this.approving = false;
-          this.messageService.add({ severity: 'error', summary: 'Помилка', detail: err.error?.message || 'Не вдалося схвалити' });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Помилка',
+            detail: APPROVAL_ERROR_TEXT[err.error?.error] ?? (err.error?.message || 'Не вдалося схвалити')
+          });
         }
       });
   }

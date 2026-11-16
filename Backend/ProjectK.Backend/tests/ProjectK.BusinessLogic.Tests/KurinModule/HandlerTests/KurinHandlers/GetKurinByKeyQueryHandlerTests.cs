@@ -21,7 +21,6 @@ public class GetKurinByKeyHandlerTests
     private readonly IBlobReadLinks _links;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
     private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
 
     private readonly GetKurinByKeyQueryHandler _handler;
@@ -35,16 +34,9 @@ public class GetKurinByKeyHandlerTests
 
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-        _appUserRepositoryMock
-            .Setup(x => x.CountActiveAsync(
-                It.IsAny<IReadOnlyCollection<Guid>?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
-        _unitOfWorkMock.Setup(uow => uow.Users).Returns(_appUserRepositoryMock.Object);
-
         _membershipRepositoryMock
-            .Setup(x => x.GetAccountKeysInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Guid>());
+            .Setup(x => x.CountCurrentInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
         _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
 
         _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _links, CreateCache(), new MembershipDirectory(_unitOfWorkMock.Object));
@@ -135,6 +127,21 @@ public class GetKurinByKeyHandlerTests
         result.Data.Number.Should().Be(456);
 
         result.Data.Should().BeEquivalentTo(new { KurinKey = kurinKey, Number = 456, kurin.KraiCode, kurin.Branch, CurrentUserCount = 0, EmblemUrl = (string?)null, IsPreparatory = false });
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportEveryoneWhoBelongsToTheKurinNow()
+    {
+        var kurinKey = Guid.NewGuid();
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(456) { KurinKey = kurinKey });
+        _membershipRepositoryMock
+            .Setup(x => x.CountCurrentInKurinAsync(kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(7);
+
+        var result = await _handler.Handle(new GetKurinByKeyQuery(kurinKey), default);
+
+        result.Data!.CurrentUserCount.Should().Be(7);
     }
 
     [Fact]

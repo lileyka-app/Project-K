@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -30,7 +31,7 @@ public class KurinEmblemHandlerTests
         _links = FakeBlobReadLinks.Instance;
     }
 
-    private UploadKurinEmblemCommandHandler Uploader() => new(_unitOfWork.Object, _photos.Object, _links, Mock.Of<IBackendCache>());
+    private UploadKurinEmblemCommandHandler Uploader() => new(_unitOfWork.Object, _photos.Object, _links, Mock.Of<IBackendCache>(), Mock.Of<IMembershipDirectory>());
 
     private Kurin Given(Kurin kurin)
     {

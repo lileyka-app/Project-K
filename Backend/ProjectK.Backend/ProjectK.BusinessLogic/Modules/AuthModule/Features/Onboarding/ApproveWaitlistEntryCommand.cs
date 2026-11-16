@@ -68,7 +68,7 @@ public class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlis
         var chosenKrai = Krai.NormalizeCode(request.KraiCode);
         if (chosenKrai is not null && !await _unitOfWork.Krais.ExistsAsync(chosenKrai, cancellationToken))
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, AuthErrors.KraiNotFound, "Такого краю немає в списку.");
+            return ServiceResult<Guid>.Failure(ResultType.BadRequest, AuthErrors.KraiNotFound, "There is no such krai.");
         }
 
         var kraiCode = chosenKrai ?? entry.KraiCode ?? _krai.Default;

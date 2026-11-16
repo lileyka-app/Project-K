@@ -23,6 +23,13 @@ export const DUES_PART_LABELS: Record<DuesPart, string> = {
   group: 'Гурток'
 };
 
+/** Коди помилок пільг краю → що сказати людині. */
+export const CONCESSION_ERROR_TEXT: Record<string, string> = {
+  UnknownConcession: 'У краю куреня немає такої пільги.',
+  EndsBeforeStart: 'Пільга не може закінчитися раніше, ніж почнеться.',
+  ConcessionOverlaps: 'Ця пільга вже діє в цих кварталах.'
+};
+
 /** A пільга of the край as its profile keeps it. */
 export interface KraiConcessionDocument {
   /** Stays the same when the name changes: the grants point at it. */
