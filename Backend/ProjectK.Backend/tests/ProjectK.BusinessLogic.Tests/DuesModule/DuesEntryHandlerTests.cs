@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.DuesModule;
@@ -243,7 +244,7 @@ public class DuesEntryHandlerTests
             MembershipKey = DuesEntryRules.PersonalKinds.Contains(kind) ? Guid.NewGuid() : null
         };
 
-        new UpsertDuesEntryRequestValidator(_time).Validate(request).IsValid.Should().Be(valid);
+        new CreateDuesEntryCommandValidator(_time).Validate(new CreateDuesEntryCommand(Guid.NewGuid(), request)).IsValid.Should().Be(valid);
     }
 
     // The kurin's box takes no transfers to itself; the станиця is its own to hand to. A personal
@@ -264,29 +265,29 @@ public class DuesEntryHandlerTests
             MembershipKey = DuesEntryRules.PersonalKinds.Contains(kind) ? Guid.NewGuid() : null
         };
 
-        new UpsertKurinDuesEntryRequestValidator(_time).Validate(request).IsValid.Should().Be(valid);
+        new CreateKurinDuesEntryCommandValidator(_time).Validate(new CreateKurinDuesEntryCommand(Guid.NewGuid(), request)).IsValid.Should().Be(valid);
     }
 
     [Fact]
     public void Rules_RefuseADateInTheFutureAndAPersonOnAnExpense()
     {
-        var validator = new UpsertDuesEntryRequestValidator(_time);
+        var validator = new CreateDuesEntryCommandValidator(_time);
 
-        validator.Validate(new UpsertDuesEntryRequest
+        validator.Validate(new CreateDuesEntryCommand(Guid.NewGuid(), new UpsertDuesEntryRequest
         {
             Kind = DuesEntryKind.Expense,
             Method = DuesPaymentMethod.Cash,
             Amount = 10,
             OccurredOn = new DateOnly(2026, 6, 1)
-        }).IsValid.Should().BeFalse();
+        })).IsValid.Should().BeFalse();
 
-        validator.Validate(new UpsertDuesEntryRequest
+        validator.Validate(new CreateDuesEntryCommand(Guid.NewGuid(), new UpsertDuesEntryRequest
         {
             Kind = DuesEntryKind.Expense,
             Method = DuesPaymentMethod.Cash,
             Amount = 10,
             OccurredOn = new DateOnly(2026, 5, 1),
             MembershipKey = Guid.NewGuid()
-        }).IsValid.Should().BeFalse();
+        })).IsValid.Should().BeFalse();
     }
 }

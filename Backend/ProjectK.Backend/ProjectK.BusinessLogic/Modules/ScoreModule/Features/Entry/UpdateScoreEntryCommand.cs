@@ -20,7 +20,7 @@ public sealed class UpdateScoreEntryCommandValidator : AbstractValidator<UpdateS
     {
         RuleFor(c => c.KurinKey).NotEmpty();
         RuleFor(c => c.EntryKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertScoreEntryRequestValidator(time));
+        RuleFor(c => c.Request).NotNull().ChildRules(request => ScoreEntryRules.AddShapeRules(request, time));
     }
 }
 

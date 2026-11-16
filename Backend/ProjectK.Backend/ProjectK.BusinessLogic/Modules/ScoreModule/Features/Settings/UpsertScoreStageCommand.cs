@@ -17,16 +17,11 @@ public sealed class UpsertScoreStageCommandValidator : AbstractValidator<UpsertS
     public UpsertScoreStageCommandValidator()
     {
         RuleFor(c => c.KurinKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertScoreStageRequestValidator());
-    }
-}
-
-public sealed class UpsertScoreStageRequestValidator : AbstractValidator<UpsertScoreStageRequest>
-{
-    public UpsertScoreStageRequestValidator()
-    {
-        RuleFor(r => r.Name).NotEmpty().MaximumLength(100);
-        RuleFor(r => r.ToDate).GreaterThanOrEqualTo(r => r.FromDate).WithMessage("A stage ends no earlier than it starts.");
+        RuleFor(c => c.Request).NotNull().ChildRules(request =>
+        {
+            request.RuleFor(r => r.Name).NotEmpty().MaximumLength(100);
+            request.RuleFor(r => r.ToDate).GreaterThanOrEqualTo(r => r.FromDate).WithMessage("A stage ends no earlier than it starts.");
+        });
     }
 }
 

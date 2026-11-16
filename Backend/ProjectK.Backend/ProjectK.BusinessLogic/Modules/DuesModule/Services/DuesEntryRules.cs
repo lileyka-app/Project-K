@@ -62,21 +62,3 @@ public static class DuesEntryRules
         validator.RuleFor(r => r.Note).MaximumLength(500);
     }
 }
-
-/// <summary>An operation as a гурток's box accepts it.</summary>
-public sealed class UpsertDuesEntryRequestValidator : AbstractValidator<UpsertDuesEntryRequest>
-{
-    public UpsertDuesEntryRequestValidator(TimeProvider time)
-    {
-        DuesEntryRules.Apply(this, time, DuesEntryRules.GroupKinds);
-    }
-}
-
-/// <summary>An operation as the kurin's own box accepts it.</summary>
-public sealed class UpsertKurinDuesEntryRequestValidator : AbstractValidator<UpsertDuesEntryRequest>
-{
-    public UpsertKurinDuesEntryRequestValidator(TimeProvider time)
-    {
-        DuesEntryRules.Apply(this, time, DuesEntryRules.KurinKinds);
-    }
-}

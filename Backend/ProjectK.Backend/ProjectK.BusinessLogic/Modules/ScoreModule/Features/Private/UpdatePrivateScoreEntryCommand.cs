@@ -18,7 +18,7 @@ public sealed class UpdatePrivateScoreEntryCommandValidator : AbstractValidator<
     {
         RuleFor(c => c.KurinKey).NotEmpty();
         RuleFor(c => c.EntryKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertPrivateScoreEntryRequestValidator(time));
+        RuleFor(c => c.Request).NotNull().ChildRules(request => PrivateScoreEntryRules.AddShapeRules(request, time));
     }
 }
 

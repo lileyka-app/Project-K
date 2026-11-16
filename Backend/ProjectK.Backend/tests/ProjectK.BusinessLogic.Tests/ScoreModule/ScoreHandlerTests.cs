@@ -524,6 +524,6 @@ public class ScoreHandlerTests
             OccurredOn = new DateOnly(2026, 10, 6)
         };
 
-        new UpsertScoreEntryRequestValidator(_time).Validate(request).IsValid.Should().BeFalse(because);
+        new CreateScoreEntryCommandValidator(_time).Validate(new CreateScoreEntryCommand(Guid.NewGuid(), request)).IsValid.Should().BeFalse(because);
     }
 }

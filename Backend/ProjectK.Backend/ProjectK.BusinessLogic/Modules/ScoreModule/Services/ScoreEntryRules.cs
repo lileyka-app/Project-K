@@ -1,3 +1,4 @@
+using FluentValidation;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
@@ -12,6 +13,25 @@ namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 /// <summary>The checks a new and an edited entry share, with the book open.</summary>
 public static class ScoreEntryRules
 {
+    /// <summary>
+    /// The shape of points given by hand: one target, a position or a free amount with a reason, and an
+    /// occurrence whenever an event is named. The day may not be in the future.
+    /// </summary>
+    public static void AddShapeRules(AbstractValidator<UpsertScoreEntryRequest> rules, TimeProvider time)
+    {
+        rules.RuleFor(r => r).Must(r => r.MembershipKey.HasValue != r.GroupKey.HasValue)
+            .WithMessage("Points go to a person or to a гурток — one of the two.");
+        rules.RuleFor(r => r).Must(r => r.ScoreItemKey.HasValue || (r.Points.HasValue && !string.IsNullOrWhiteSpace(r.Reason)))
+            .WithMessage("Pick a position from the list, or give an amount and a reason.");
+        rules.RuleFor(r => r.Points).NotEqual(0).When(r => r.Points.HasValue).WithMessage("Zero points change nothing.");
+        rules.RuleFor(r => r.Points).InclusiveBetween(-1000, 1000).When(r => r.Points.HasValue);
+        rules.RuleFor(r => r.Reason).MaximumLength(500);
+        rules.RuleFor(r => r.OccurrenceStartUtc).NotNull().When(r => r.AgendaItemKey.HasValue)
+            .WithMessage("An event is named by its occurrence too.");
+        rules.RuleFor(r => r.OccurredOn).LessThanOrEqualTo(_ => DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime).AddDays(1))
+            .WithMessage("Points are not given ahead of the day.");
+    }
+
     /// <summary>Null when the entry may be written as asked; otherwise why not.</summary>
     public static async Task<ServiceResult<T>?> CheckAsync<T>(
         ScoreAccess access,

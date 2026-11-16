@@ -19,29 +19,7 @@ public sealed class CreateScoreEntryCommandValidator : AbstractValidator<CreateS
     public CreateScoreEntryCommandValidator(TimeProvider time)
     {
         RuleFor(c => c.KurinKey).NotEmpty();
-        RuleFor(c => c.Request).NotNull().SetValidator(new UpsertScoreEntryRequestValidator(time));
-    }
-}
-
-/// <summary>
-/// The shape of points given by hand: one target, a position or a free amount with a reason, and an
-/// occurrence whenever an event is named. The day may not be in the future.
-/// </summary>
-public sealed class UpsertScoreEntryRequestValidator : AbstractValidator<UpsertScoreEntryRequest>
-{
-    public UpsertScoreEntryRequestValidator(TimeProvider time)
-    {
-        RuleFor(r => r).Must(r => r.MembershipKey.HasValue != r.GroupKey.HasValue)
-            .WithMessage("Points go to a person or to a гурток — one of the two.");
-        RuleFor(r => r).Must(r => r.ScoreItemKey.HasValue || (r.Points.HasValue && !string.IsNullOrWhiteSpace(r.Reason)))
-            .WithMessage("Pick a position from the list, or give an amount and a reason.");
-        RuleFor(r => r.Points).NotEqual(0).When(r => r.Points.HasValue).WithMessage("Zero points change nothing.");
-        RuleFor(r => r.Points).InclusiveBetween(-1000, 1000).When(r => r.Points.HasValue);
-        RuleFor(r => r.Reason).MaximumLength(500);
-        RuleFor(r => r.OccurrenceStartUtc).NotNull().When(r => r.AgendaItemKey.HasValue)
-            .WithMessage("An event is named by its occurrence too.");
-        RuleFor(r => r.OccurredOn).LessThanOrEqualTo(_ => DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime).AddDays(1))
-            .WithMessage("Points are not given ahead of the day.");
+        RuleFor(c => c.Request).NotNull().ChildRules(request => ScoreEntryRules.AddShapeRules(request, time));
     }
 }
 
