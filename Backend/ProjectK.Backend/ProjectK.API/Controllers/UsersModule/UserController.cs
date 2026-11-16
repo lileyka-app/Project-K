@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Mfa;
+using ProjectK.BusinessLogic.Modules.UsersModule;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.Account;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.TileLayout;
 using ProjectK.BusinessLogic.Modules.UsersModule.Features.User;
@@ -310,7 +311,7 @@ public class UserController : ControllerBase
     {
         if (!Enum.IsDefined(newRole))
         {
-            return this.Failure(ResultType.BadRequest, "InvalidRole", "Unknown user role.");
+            return this.Failure(ResultType.BadRequest, UsersErrors.InvalidRole, "Unknown user role.");
         }
 
         var request = new ChangeUserRoleCommand(userId, newRole);

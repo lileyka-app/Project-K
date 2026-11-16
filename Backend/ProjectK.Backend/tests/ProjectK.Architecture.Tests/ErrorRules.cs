@@ -45,6 +45,31 @@ public class ErrorRules
         Baseline.None(offenders, $"Error codes written as literals outside the <M>Errors catalogue ({Errors}):");
     }
 
+    /// <summary>
+    /// The e2e fixture endpoint answers for the test harness alone; its codes are no module's and no
+    /// screen words them (D-02 in the extraction backlog).
+    /// </summary>
+    private static readonly string[] ApiLiteralCodes =
+    [
+        "ProjectK.API/Controllers/TestModule/E2ETestController.cs",
+    ];
+
+    /// <summary>
+    /// A controller that refuses on its own (a missing file, an unknown role) takes the code from the
+    /// module's catalogue too: the client words it by the same string the handler would send.
+    /// </summary>
+    [Fact]
+    public void Api_ShouldTakeErrorCodesFromTheModuleCatalogue()
+    {
+        var offenders = SourceTree.Files("ProjectK.API")
+            .Where(file => LiteralCode.IsMatch(SourceTree.Read(file)) || LiteralErrorCode.IsMatch(SourceTree.Read(file)));
+
+        Baseline.Hold(
+            offenders,
+            ApiLiteralCodes,
+            $"API files that pass an error code as a literal; take it from Modules/<M>/<M>Errors.cs ({Errors}):");
+    }
+
     [Fact]
     public void BusinessLogic_ShouldGiveEveryFailureACode()
     {

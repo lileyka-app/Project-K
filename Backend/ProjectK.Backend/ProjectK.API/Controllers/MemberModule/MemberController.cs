@@ -6,6 +6,7 @@ using ProjectK.API.Extensions;
 using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
+using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.MemberModule.Requests;
@@ -168,7 +169,7 @@ public class MemberController : ControllerBase
     {
         if (!request.GroupKey.HasValue || request.GroupKey.Value == Guid.Empty)
         {
-            return this.Failure(ResultType.BadRequest, "GroupKeyRequired", "groupKey is required.");
+            return this.Failure(ResultType.BadRequest, MemberErrors.GroupKeyRequired, "groupKey is required.");
         }
 
         if (this.RefuseImage(request.Blob) is { } refusal)
