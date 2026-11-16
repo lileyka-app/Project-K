@@ -1,5 +1,6 @@
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Services.Catalog;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
 

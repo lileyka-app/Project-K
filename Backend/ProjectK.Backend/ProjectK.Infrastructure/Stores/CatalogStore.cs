@@ -1,8 +1,9 @@
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.Services.Catalog;
 
-namespace ProjectK.Infrastructure.Services.Catalog;
+namespace ProjectK.Infrastructure.Stores;
 
 /// <summary>
 /// The catalogue in memory. <see cref="BackgroundServices.CatalogSyncBackgroundService"/> swaps in each new fetch;

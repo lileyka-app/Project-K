@@ -7,11 +7,12 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Common.Options.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Services.Catalog;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
 
