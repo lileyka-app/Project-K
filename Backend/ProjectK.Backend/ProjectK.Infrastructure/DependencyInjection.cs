@@ -93,7 +93,7 @@ public static class DependencyInjection
         services.AddSingleton<ISpreadsheetWriter, ClosedXmlSpreadsheetWriter>();
         services.AddSingleton<ISpreadsheetReader, ClosedXmlSpreadsheetReader>();
 
-        services.AddScoped<GeoIPService>();
+        services.AddScoped<IGeoIPService, GeoIPService>();
         services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();
         services.AddSingleton<IActivityLogger, ActivityLogger>();
 

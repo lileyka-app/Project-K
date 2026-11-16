@@ -33,14 +33,13 @@ public class ApiRules
     ];
 
     /// <summary>
-    /// Outside the composition root the host still names two Infrastructure types: the GeoIP lookup
-    /// the security middleware calls and the telemetry counters the request middleware bumps. Both
-    /// want a contract in Common. The e2e controller is the D-02 case above.
+    /// Outside the composition root the host still names one Infrastructure type: the telemetry
+    /// counters the request middleware bumps, which want a contract in Common. The e2e controller is
+    /// the D-02 case above.
     /// </summary>
     private static readonly string[] ReachesIntoInfrastructure =
     [
         "ProjectK.API.Controllers.TestModule.E2ETestController",
-        "ProjectK.API.Middleware.SecurityHardeningMiddleware",
         "ProjectK.API.Middleware.TelemetryCountingMiddleware",
     ];
 
