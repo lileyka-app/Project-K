@@ -25,7 +25,7 @@ public class MyAwardsController : ControllerBase
 
     /// <summary>Pins a відзначення to the front of the caller's card, or unpins it.</summary>
     [HttpPut("pin")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Pin([FromBody] PinMyAwardCommand command)
     {

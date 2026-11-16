@@ -41,7 +41,7 @@ public static class ServiceResultExtensions
         if (EqualityComparer<T?>.Default.Equals(result.Data, default) && result.Type is not (ResultType.Success or ResultType.Created))
         {
             var (code, message) = DefaultFailure(result.Type);
-            return ServiceResult<object>.Failure(result.Type, code, message).ToActionResult(controller);
+            return ServiceResult<Unit>.Failure(result.Type, code, message).ToActionResult(controller);
         }
 
         // A result with no data is ServiceResult<Unit>; it answers exactly as the old <object> null did
@@ -83,7 +83,7 @@ public static class ServiceResultExtensions
         ResultType type,
         string errorCode,
         string errorMessage)
-        => ServiceResult<object>.Failure(type, errorCode, errorMessage).ToActionResult(controller);
+        => ServiceResult<Unit>.Failure(type, errorCode, errorMessage).ToActionResult(controller);
 
     /// <summary>The caller's identity claim is missing or unreadable.</summary>
     public static IActionResult UnreadableIdentity(this ControllerBase controller)
