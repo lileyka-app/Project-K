@@ -40,7 +40,7 @@ public sealed class GetKraiConcessionReportQueryHandler
     {
         if ((request.Year is null) != (request.Number is null) || request.Number is < 1 or > 4 || request.Year is < 2000 or > 2100)
         {
-            return ServiceResult<KraiConcessionReportDto>.Failure(ResultType.BadRequest, DuesErrors.InvalidQuarter, "Квартал задано неправильно.");
+            return ServiceResult<KraiConcessionReportDto>.Failure(ResultType.BadRequest, DuesErrors.InvalidQuarter, "The quarter is not valid.");
         }
 
         var code = request.KraiCode.Trim().ToLowerInvariant();
