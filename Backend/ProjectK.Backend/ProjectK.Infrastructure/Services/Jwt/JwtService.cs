@@ -6,10 +6,10 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Dtos.AuthModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Records.ArchiveModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.Infrastructure.Services.Jwt;
 

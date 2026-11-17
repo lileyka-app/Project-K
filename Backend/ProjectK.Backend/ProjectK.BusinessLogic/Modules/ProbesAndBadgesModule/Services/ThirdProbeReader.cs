@@ -7,7 +7,7 @@ using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.Shared;
 

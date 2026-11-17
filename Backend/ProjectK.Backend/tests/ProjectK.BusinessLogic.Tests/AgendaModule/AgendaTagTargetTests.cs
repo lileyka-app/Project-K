@@ -2,7 +2,7 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Rules.AgendaModule;
 

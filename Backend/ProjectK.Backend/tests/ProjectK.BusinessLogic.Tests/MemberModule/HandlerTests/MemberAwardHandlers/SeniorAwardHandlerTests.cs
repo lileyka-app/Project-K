@@ -14,7 +14,7 @@ using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;

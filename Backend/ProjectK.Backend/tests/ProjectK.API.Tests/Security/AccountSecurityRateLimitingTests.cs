@@ -1,10 +1,8 @@
 using System.Reflection;
 using Microsoft.AspNetCore.RateLimiting;
-using ProjectK.API.Controllers.AuthModule;
-using ProjectK.API.Controllers.UsersModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
-using ProjectK.Common.Dtos.AuthModule.Requests;
-using ProjectK.Common.Dtos.UsersModule.Requests;
+using ProjectK.API.Controllers.IdentityModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
+using ProjectK.Common.Dtos.IdentityModule.Requests;
 
 namespace ProjectK.API.Tests.Security;
 

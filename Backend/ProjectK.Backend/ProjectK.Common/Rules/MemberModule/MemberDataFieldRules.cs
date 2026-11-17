@@ -1,6 +1,6 @@
-using ProjectK.Common.Contracts.MemberModule;
 using System.Globalization;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.MemberModule;
 

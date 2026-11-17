@@ -1,5 +1,5 @@
-using ProjectK.Common.Contracts.AuthModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Records.IdentityModule;
 
 namespace ProjectK.API.Tests.TestHelpers;
 

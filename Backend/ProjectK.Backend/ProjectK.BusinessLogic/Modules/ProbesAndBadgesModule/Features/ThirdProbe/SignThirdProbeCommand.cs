@@ -18,8 +18,8 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdPro
 
 /// <summary>
 /// Confirms or takes back one part of the third probe. Confirming is the kurin's
-/// <see cref="Common.Enums.AuthModule.KurinCapability.SignProbe"/>, taking back its
-/// <see cref="Common.Enums.AuthModule.KurinCapability.UnsignProbe"/>, the same pair
+/// <see cref="Common.Enums.IdentityModule.KurinCapability.SignProbe"/>, taking back its
+/// <see cref="Common.Enums.IdentityModule.KurinCapability.UnsignProbe"/>, the same pair
 /// that signs and unsigns probe points.
 /// </summary>
 public sealed record SignThirdProbeCommand(

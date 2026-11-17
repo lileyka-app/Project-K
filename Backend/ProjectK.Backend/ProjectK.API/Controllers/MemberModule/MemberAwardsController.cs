@@ -8,7 +8,7 @@ using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.MemberModule;

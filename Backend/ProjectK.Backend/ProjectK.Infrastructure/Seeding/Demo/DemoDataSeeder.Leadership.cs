@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.Infrastructure.Seeding.Demo;
 

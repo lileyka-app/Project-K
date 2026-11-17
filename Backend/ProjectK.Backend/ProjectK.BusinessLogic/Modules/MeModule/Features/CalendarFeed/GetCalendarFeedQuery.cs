@@ -1,5 +1,5 @@
 using MediatR;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Enums.Shared;

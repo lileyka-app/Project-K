@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 

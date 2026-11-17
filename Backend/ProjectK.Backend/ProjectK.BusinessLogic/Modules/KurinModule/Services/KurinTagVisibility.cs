@@ -1,12 +1,12 @@
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;

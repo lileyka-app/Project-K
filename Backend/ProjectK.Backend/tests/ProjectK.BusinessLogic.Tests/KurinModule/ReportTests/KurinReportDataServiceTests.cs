@@ -1,14 +1,14 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.MemberModule;

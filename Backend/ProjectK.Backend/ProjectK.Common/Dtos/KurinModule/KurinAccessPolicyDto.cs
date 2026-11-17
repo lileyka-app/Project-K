@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.Common.Dtos.KurinModule;
 

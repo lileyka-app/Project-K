@@ -1,6 +1,6 @@
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.Common.Contracts.AuditModule;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -13,7 +13,7 @@ using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.Shared;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
 using MembershipEntity = ProjectK.Common.Entities.MemberModule.Membership;

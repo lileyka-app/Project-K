@@ -1,6 +1,6 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;

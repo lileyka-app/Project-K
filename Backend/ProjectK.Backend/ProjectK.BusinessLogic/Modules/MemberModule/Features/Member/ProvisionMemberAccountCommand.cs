@@ -1,13 +1,13 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 

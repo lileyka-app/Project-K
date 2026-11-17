@@ -11,7 +11,7 @@ using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.MemberModule;

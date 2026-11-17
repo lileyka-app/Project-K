@@ -11,7 +11,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.MemberModule;

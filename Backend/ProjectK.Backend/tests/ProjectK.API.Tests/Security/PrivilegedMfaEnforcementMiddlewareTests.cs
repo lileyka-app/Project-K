@@ -3,9 +3,9 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using ProjectK.API.Middleware;
-using ProjectK.BusinessLogic.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -102,7 +102,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
 
         context.Response.Body.Position = 0;
         using var body = await JsonDocument.ParseAsync(context.Response.Body);
-        Assert.Equal(AuthErrors.PrivilegedMfaRequired, body.RootElement.GetProperty("error").GetString());
+        Assert.Equal(IdentityErrors.PrivilegedMfaRequired, body.RootElement.GetProperty("error").GetString());
         Assert.Equal("MFA is required for privileged accounts.", body.RootElement.GetProperty("message").GetString());
     }
 

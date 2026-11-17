@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Options.InfrastructureModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.Shared;
 using Serilog.Context;
 

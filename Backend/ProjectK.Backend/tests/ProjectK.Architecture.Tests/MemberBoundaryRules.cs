@@ -1,5 +1,5 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;

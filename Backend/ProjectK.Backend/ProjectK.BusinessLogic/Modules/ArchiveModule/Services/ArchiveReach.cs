@@ -1,9 +1,9 @@
 using ProjectK.BusinessLogic.Modules.ArchiveModule.Models;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 

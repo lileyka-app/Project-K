@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;

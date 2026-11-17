@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;

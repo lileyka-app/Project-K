@@ -3,7 +3,7 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Events.AuthModule;
+using ProjectK.Common.Events.IdentityModule;
 using ProjectK.Common.Events.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Events;

@@ -2,12 +2,12 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberHandlers;

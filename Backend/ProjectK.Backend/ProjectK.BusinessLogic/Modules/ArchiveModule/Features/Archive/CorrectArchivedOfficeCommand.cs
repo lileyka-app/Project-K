@@ -4,13 +4,13 @@ using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.ArchiveModule.Features.Archive;

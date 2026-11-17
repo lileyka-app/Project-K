@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 

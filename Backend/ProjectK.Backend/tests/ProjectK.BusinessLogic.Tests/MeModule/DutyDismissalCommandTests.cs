@@ -2,10 +2,10 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;

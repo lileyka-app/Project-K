@@ -3,7 +3,7 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.MemberModule;

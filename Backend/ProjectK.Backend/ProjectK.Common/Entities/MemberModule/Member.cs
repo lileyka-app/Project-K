@@ -1,5 +1,5 @@
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.Shared;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;

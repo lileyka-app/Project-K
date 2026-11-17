@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.BusinessLogic.Modules.AuthModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -88,5 +88,5 @@ public static class ServiceResultExtensions
 
     /// <summary>The caller's identity claim is missing or unreadable.</summary>
     public static IActionResult UnreadableIdentity(this ControllerBase controller)
-        => controller.Failure(ResultType.Unauthorized, AuthErrors.InvalidToken, "The access token carries no readable user identity.");
+        => controller.Failure(ResultType.Unauthorized, IdentityErrors.InvalidToken, "The access token carries no readable user identity.");
 }

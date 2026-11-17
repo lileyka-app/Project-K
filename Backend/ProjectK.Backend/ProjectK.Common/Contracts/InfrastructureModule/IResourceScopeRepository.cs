@@ -1,5 +1,5 @@
-using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.MemberModule;
 

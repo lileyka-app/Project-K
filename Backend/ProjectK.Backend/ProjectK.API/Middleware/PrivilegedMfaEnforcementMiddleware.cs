@@ -1,7 +1,7 @@
 using System.Security.Claims;
-using ProjectK.BusinessLogic.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Middleware;
 
@@ -43,7 +43,7 @@ public class PrivilegedMfaEnforcementMiddleware
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         await context.Response.WriteAsJsonAsync(new
         {
-            error = AuthErrors.PrivilegedMfaRequired,
+            error = IdentityErrors.PrivilegedMfaRequired,
             message = "MFA is required for privileged accounts."
         }, context.RequestAborted);
     }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;

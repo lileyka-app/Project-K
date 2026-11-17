@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.MemberModule;
 
 namespace ProjectK.Infrastructure.Persistence.Configurations.MemberModule;
