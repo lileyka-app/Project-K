@@ -66,6 +66,8 @@ import {
   orderAwardBlocks,
   AwardBlockRow,
   currentDegree,
+  mayConfirmLevels,
+  waitingDegrees,
   isSeniorPerson,
   officesIn,
   membershipOf,
@@ -533,8 +535,35 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
                       @if (top.date) { <p>{{ shortDate(top.date) }}</p> }
                     </ion-label>
                   </ion-item>
-                } @else {
+                } @else if (!waitingDegrees().length) {
                   <ion-item><ion-label>Ступенів ще немає.</ion-label></ion-item>
+                }
+                @for (row of waitingDegrees(); track row.key) {
+                  <ion-item data-testid="degree-waiting">
+                    <ion-label class="ion-text-wrap">
+                      <h3>{{ row.title }}</h3>
+                      @if (row.date) { <p>{{ shortDate(row.date) }}</p> }
+                    </ion-label>
+                    <ion-badge slot="end" class="lk-tag--warn">чекає підтвердження</ion-badge>
+                  </ion-item>
+                  @if (canConfirmLevels()) {
+                    <ion-item lines="full" data-testid="degree-waiting-actions">
+                      <ion-button
+                        slot="start"
+                        size="small"
+                        [disabled]="!!levelAnswering()"
+                        [attr.aria-label]="'Підтвердити: ' + row.title"
+                        (click)="confirmLevel(row.key)">Підтвердити</ion-button>
+                      <ion-button
+                        slot="end"
+                        size="small"
+                        fill="outline"
+                        color="medium"
+                        [disabled]="!!levelAnswering()"
+                        [attr.aria-label]="'Відхилити: ' + row.title"
+                        (click)="rejectLevel(row.key)">Відхилити</ion-button>
+                    </ion-item>
+                  }
                 }
               </ion-item-group>
             </ion-list>
@@ -874,6 +903,13 @@ export class MemberPage implements OnInit {
   });
   /** Only the current ступінь, the highest on the whole ladder, large; the whole way is the пластовий життєпис's (web member-degrees-tile). */
   protected readonly highestDegree = computed(() => currentDegree(this.memberValue()?.plastLevelHistories, this.honours()));
+  /** Ступені, що чекають на Звʼязкового (web member-degrees-tile waiting). */
+  protected readonly waitingDegrees = computed(() => waitingDegrees(this.memberValue()?.plastLevelHistories, this.honours()));
+  /** The Звʼязковий of a kurin the person stands in, on someone else's card (web canConfirmLevels). */
+  protected readonly canConfirmLevels = computed(() =>
+    mayConfirmLevels(kurinAccess(this.auth.user()).manageWholeKurin, this.scopedKurin, this.membershipList(), this.isOwnCard()));
+  /** The ступінь whose answer is on its way. */
+  protected readonly levelAnswering = signal<string | null>(null);
 
   protected openYouthBlock(key: string | null, all: boolean): Promise<void> {
     return this.openBlocks(this.youthBlocks(), key, all, (award) => this.openAward(award));
@@ -1107,6 +1143,44 @@ export class MemberPage implements OnInit {
     } finally {
       this.placing.set(false);
     }
+  }
+
+  /** «Підтвердити» a waiting ступінь (web member-card confirmLevel); the card is read again, its улад may have changed. */
+  protected async confirmLevel(levelKey: string): Promise<void> {
+    const key = this.key();
+    if (!key || this.levelAnswering()) return;
+    await this.answerLevel(key, levelKey, () => this.data.confirmLevel(key, levelKey));
+  }
+
+  /** «Відхилити» asks first, as on the web, and the ступінь leaves the card. */
+  protected async rejectLevel(levelKey: string): Promise<void> {
+    const key = this.key();
+    if (!key || this.levelAnswering()) return;
+    const sheet = await this.sheets.create({
+      header: 'Відхилити ступінь?',
+      subHeader: 'Ступінь зникне з картки.',
+      buttons: [
+        { text: 'Відхилити', role: 'destructive', data: 'reject' },
+        { text: 'Скасувати', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
+    const { data } = await sheet.onWillDismiss();
+    if (data !== 'reject') return;
+    await this.answerLevel(key, levelKey, () => this.data.rejectLevel(key, levelKey));
+  }
+
+  private async answerLevel(key: string, levelKey: string, send: () => Promise<void>): Promise<void> {
+    this.levelAnswering.set(levelKey);
+    try {
+      await send();
+    } catch (error) {
+      await this.toasts.show(apiErrorText(error, 'Не вдалося зберегти. Спробуй ще раз.'), 'danger');
+      return;
+    } finally {
+      this.levelAnswering.set(null);
+    }
+    await this.load(key);
   }
 
   /**

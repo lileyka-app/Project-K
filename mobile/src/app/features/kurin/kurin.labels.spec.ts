@@ -1,6 +1,8 @@
 import {
   activeWarning,
   currentDegree,
+  mayConfirmLevels,
+  waitingDegrees,
   isSeniorPerson,
   awardGroups,
   birthdayWhen,
@@ -394,5 +396,27 @@ describe('відзначення блоками', () => {
     const block = (key: string, date: string, pinned = false) =>
       ({ key, title: key, imageUrl: null, section: '', pinned, pending: false, pin: {}, grants: [{ award: { ...base, memberAwardKey: key, dateAcquired: date }, pending: false, canOpen: true }] });
     expect(orderAwardBlocks([block('old', '2010-01-01'), block('new', '2024-01-01'), block('liked', '2005-01-01', true)]).map((b) => b.key)).toEqual(['liked', 'new', 'old']);
+  });
+});
+
+describe('a ступінь that waits (web member-degrees-tile)', () => {
+  const histories = [
+    { plastLevelHistoryKey: 'skob', plastLevel: 'Skob', dateAchieved: '2021-06-01' },
+    { plastLevelHistoryKey: 'sp', plastLevel: 'Starshoplastun', dateAchieved: '2025-09-01', awaitsConfirmation: true },
+  ];
+  const here = [{ isCurrent: true, kurinKey: 'k1' }, { isCurrent: false, kurinKey: 'k2' }] as MembershipDto[];
+
+  it('stands apart, keyed for the answer, and is not the current ступінь', () => {
+    expect(waitingDegrees(histories, []).map((row) => row.key)).toEqual(['sp']);
+    expect(currentDegree(histories, [])?.key).toBe('skob');
+    expect(waitingDegrees([], [])).toEqual([]);
+  });
+
+  it('is answered by the Звʼязковий of a kurin the person stands in now, never on their own card', () => {
+    expect(mayConfirmLevels(true, 'k1', here, false)).toBe(true);
+    expect(mayConfirmLevels(true, 'k1', here, true)).toBe(false);
+    expect(mayConfirmLevels(false, 'k1', here, false)).toBe(false);
+    expect(mayConfirmLevels(true, 'k2', here, false)).toBe(false);
+    expect(mayConfirmLevels(true, null, here, false)).toBe(false);
   });
 });

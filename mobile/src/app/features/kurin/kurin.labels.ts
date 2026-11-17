@@ -866,6 +866,24 @@ export const SENIOR_LADDER = ['Starshoplastun', 'Senior', 'SeniorPratsi', 'Senio
  */
 export const DEGREE_LADDER = [...YOUTH_LADDER, ...SENIOR_LADDER] as const;
 
+/** The ступені that wait for the Звʼязковий, each with the key an answer names (web MemberDegreesTileComponent.waiting). */
+export function waitingDegrees(histories: PlastLevelHistoryDto[] | null | undefined, honours: readonly CatalogHonour[]): DegreeRow[] {
+  return degreeRows((histories ?? []).filter((history) => history.awaitsConfirmation), DEGREE_LADDER, honours);
+}
+
+/**
+ * Who answers a waiting ступінь (web member-card canConfirmLevels): the Звʼязковий of a kurin the person
+ * stands in now — the one the session acts in — and never on their own card.
+ */
+export function mayConfirmLevels(
+  manageWholeKurin: boolean,
+  scopedKurin: string | null,
+  memberships: readonly MembershipDto[],
+  ownCard: boolean,
+): boolean {
+  return manageWholeKurin && !!scopedKurin && !ownCard && memberships.some((m) => m.isCurrent && m.kurinKey === scopedKurin);
+}
+
 /** The person's current ступінь: the highest on the whole ladder, not on the kurin's (web currentDegree). */
 export function currentDegree(histories: PlastLevelHistoryDto[] | null | undefined, honours: readonly CatalogHonour[]): DegreeRow | null {
   return degreeRows((histories ?? []).filter((history) => !history.awaitsConfirmation), DEGREE_LADDER, honours).at(-1) ?? null;
