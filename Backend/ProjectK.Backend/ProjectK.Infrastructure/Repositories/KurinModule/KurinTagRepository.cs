@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -10,9 +10,6 @@ public class KurinTagRepository : BaseEntityRepository<KurinTag>, IKurinTagRepos
     public KurinTagRepository(AppDbContext context) : base(context)
     {
     }
-
-    public override Task<IEnumerable<KurinTag>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException("Use GetForKurinAsync instead.");
 
     public async Task<IReadOnlyList<KurinTag>> GetForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default) =>
         await Context.KurinTags

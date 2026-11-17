@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Interfaces;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories;
@@ -14,8 +14,12 @@ namespace ProjectK.Infrastructure.Repositories;
 /// own key names (<c>MemberKey</c>, <c>AgendaCategoryKey</c>, …) without the base needing to know them.
 /// </para>
 /// <para>
-/// Everything is <c>virtual</c>: repositories that eager-load related data, narrow the query, or
-/// deliberately refuse <see cref="GetAllAsync"/> override just that member.
+/// Everything is <c>virtual</c>: repositories that eager-load related data or narrow the query
+/// override just that member.
+/// </para>
+/// <para>
+/// Reading the whole table is not here: a repository that offers it takes
+/// <see cref="IListableRepository{T}"/> and writes it, so the rest have no method to refuse.
 /// </para>
 /// </summary>
 public abstract class BaseEntityRepository<T> : IBaseEntityRepository<T>
@@ -41,9 +45,6 @@ public abstract class BaseEntityRepository<T> : IBaseEntityRepository<T>
 
     public virtual Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default) =>
         Set.AnyAsync(KeyEquals(entityKey), cancellationToken);
-
-    public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await Set.ToListAsync(cancellationToken);
 
     /// <summary>
     /// Marks an entity modified whether or not the context is already tracking it.

@@ -74,7 +74,7 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 `edition`, `order`, `kraiCode`, `statusCode`.
 
 Назву редакції задає каталог: окремий запис у `editions` (`id`, `title`, `ulad`, `krai`), який
-редагують в адмінці каталогу на вкладці «Редакції проб». `CatalogMapper` кладе її в
+редагують в адмінці каталогу на вкладці «Редакції проб». `CatalogMapping` кладе її в
 `Probe.EditionTitle`, а клієнти показують як є, нічого не виводячи з id. Звичайна проба (без
 `edition`) запису в каталозі не має, і «Звичайна проба» — єдина назва, яку дає сама Лілейка
 (`REGULAR_PROBE_LABEL`). Журнал дій записує назву, яку бачили на момент зміни, а не id: пізніше
@@ -91,7 +91,7 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 `ChooseProbeEdition` (`GroupProbeEdition:Update`, за замовчуванням лише Звʼязковий); зміна йде в
 Журнал дій як `Settings.GroupProbeEditionChanged`.
 
-Яку пробу людина бачить на якому місці, вирішує `ProbeLine` (`ProbesAndBadgesModule/Services`):
+Яку пробу людина бачить на якому місці, вирішує `ProbeLineRules` (`ProbesAndBadgesModule/Services`):
 
 - редакція людини — редакція її гуртка (`IGroupProbeEditions`), **якщо** вона не закрила пробу,
   далі за перше місце (`order ≥ 1`, тобто першу чи пізнішу), в іншій редакції. Тоді вона
@@ -158,13 +158,13 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 (PUT), `third-probe/camp/certificate` (POST/DELETE), `projects` (POST), `projects/{key}`
 (PUT/DELETE), `projects/{spare}/swap/{main}`, `projects/{key}/approval|completion` (PUT/DELETE),
 `projects/{key}/images`. Читання — `ProbeProgress:Read` на людину; писати може сама людина й той,
-хто має `SignProbe` (`IProbeProjectAccess`). Кожен запис відповідає всією вкладкою
+хто має `SignProbe` (`IProbesAndBadgesAccess`). Кожен запис відповідає всією вкладкою
 (`IThirdProbeReader`), тож клієнти не складають її з частин.
 
 ### Для інструменту референта
 
 Інструмент референта ІІІ проби буде частиною Лілейки, але його ще немає; поки є адреси, з яких він
-братиме дані. `GET api/kurin/{kurinKey}/third-probers` (`ThirdProberStatusResponse`) — по рядку на
+братиме дані. `GET api/kurin/{kurinKey}/third-probers` (`ThirdProberStatusDto`) — по рядку на
 кожного, хто має третю пробу в черзі й уже її почав (є файл або закрита друга проба), лише тих, чию
 пробу глядач може підписувати. У рядку — `memberKey`, імʼя, `probeId`, `stages` (сім дат, хто й
 коли міняв востаннє), лічильники основних і виконаних проєктів, вмілостей під час проби, чи є табір і
@@ -183,13 +183,17 @@ API віддає за старою адресою `/api/awards/images/{level}`, 
 PNG/JPEG/WebP); декодер бере лише картинку до 40 Мп (`MaxDecodedPixels`, розмір читає з заголовка до
 декодування), далі JPEG. Посвідка може бути PDF: її пускають лише перші пʼять байтів `%PDF-`
 (`BlobUploadProcessingMode.KeepPdf`) — це не перевірка документа, тож блоб зберігається з
-`Content-Disposition: attachment` і браузер його завантажує, а не відкриває.
+`Content-Disposition: attachment` і браузер його завантажує, а не відкриває. Те, що відхиляє вже
+контролер, до хендлера (немає файла, посвідка більша за 2 МБ, не-PDF, що не пройшов перевірку
+зображення), відповідає
+кодами з того ж каталогу `ProbesAndBadgesErrors`: `MissingFile`, `CertificateTooLarge`,
+`InvalidCertificate`.
 
 Файли живуть, поки їх називає рядок: `ProbeProjectImage` для зображень, колонка
 `CampCertificateBlobName` для посвідки. Збереження тексту видаляє зображення, яких він більше не
 показує; видалення проєкту чи заміна посвідки — їхні блоби. Теки `probe-project-images` і
-`third-probe-certificates` входять у `BlobUploadFolders.ScenarioFolders`, а
-`ProbeProjectImageReferenceProvider` віддає `OrphanPhotoCleanupService` усі блоби з рядків, тож
+`third-probe-certificates` входять у `BlobUploadFolderNames.ScenarioFolders`, а
+`ProbeProjectImageReferenceReader` віддає `OrphanPhotoCleanupBackgroundService` усі блоби з рядків, тож
 завантажене й покинуте прибирається само. Видалення людини прибирає її третю пробу через
 `ProgressCleanupEventHandler`. Журнал дій: `Probe.Project*`, `Probe.ProjectsSwapped`,
 `Probe.FileEdited`, `Probe.Reflection*`, `Probe.StagesChanged`, `Probe.Certificate*`.
@@ -217,7 +221,7 @@ PNG/JPEG/WebP); декодер бере лише картинку до 40 Мп (
 
 Права: підписати точку і розглянути вмілість може впорядник у своїх гуртках (`OwnGroups`) або
 Звʼязковий у всьому курені (`KurinWide`) — гранти на `ProbeProgress` і `BadgeProgress` у
-`RolePermissionMap` мають лише вони й адміністратор. Провід куреня (курінний, писар, скарбник) цих
+`RolePermissionRules` мають лише вони й адміністратор. Провід куреня (курінний, писар, скарбник) цих
 грантів не має: усі записи `MemberProgressController` захищені `ResourceAuthorize` по учаснику.
 
 ## Фронтенд

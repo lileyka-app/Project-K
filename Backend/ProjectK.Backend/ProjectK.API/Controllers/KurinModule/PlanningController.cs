@@ -3,13 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Enums;
+using ProjectK.API.Filters;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
@@ -50,7 +47,7 @@ public class PlanningController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("session/{planningSessionKey:guid}")]
     [ResourceAuthorize(ResourceType.PlanningSession, ResourceAction.Read, "route:planningSessionKey")]
-    [ProducesResponseType(typeof(PlanningSessionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PlanningSessionDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPlanningSessionByKey(Guid planningSessionKey)
     {
         var request = new GetPlanningSessionByKeyQuery(planningSessionKey);
@@ -65,7 +62,7 @@ public class PlanningController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<PlanningSessionResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<PlanningSessionDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPlanningSessions(Guid kurinKey)
     {
         var request = new GetPlanningSessionsQuery(kurinKey);

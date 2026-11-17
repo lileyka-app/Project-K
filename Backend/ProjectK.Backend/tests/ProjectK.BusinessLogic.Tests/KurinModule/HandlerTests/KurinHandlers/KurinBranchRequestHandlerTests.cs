@@ -2,19 +2,19 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest.Review;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest.Submit;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Options.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
@@ -96,11 +96,11 @@ public class KurinBranchRequestHandlerTests
     [Fact]
     public void BranchSet_ShouldNotMixYouthWithTheOlderBranches()
     {
-        KurinBranchSet.IsValid([KurinBranch.UPYu]).Should().BeTrue();
-        KurinBranchSet.IsValid([KurinBranch.USP, KurinBranch.UPS]).Should().BeTrue();
-        KurinBranchSet.IsValid([KurinBranch.UPYu, KurinBranch.USP]).Should().BeFalse();
-        KurinBranchSet.IsValid([KurinBranch.USP, KurinBranch.USP]).Should().BeFalse();
-        KurinBranchSet.IsValid([]).Should().BeFalse();
+        KurinBranchSetRules.IsValid([KurinBranch.UPYu]).Should().BeTrue();
+        KurinBranchSetRules.IsValid([KurinBranch.USP, KurinBranch.UPS]).Should().BeTrue();
+        KurinBranchSetRules.IsValid([KurinBranch.UPYu, KurinBranch.USP]).Should().BeFalse();
+        KurinBranchSetRules.IsValid([KurinBranch.USP, KurinBranch.USP]).Should().BeFalse();
+        KurinBranchSetRules.IsValid([]).Should().BeFalse();
     }
 
     [Fact]

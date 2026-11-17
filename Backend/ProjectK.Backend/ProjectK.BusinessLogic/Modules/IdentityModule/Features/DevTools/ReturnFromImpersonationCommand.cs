@@ -1,0 +1,69 @@
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Dtos.IdentityModule;
+using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.IdentityModule;
+
+namespace ProjectK.BusinessLogic.Modules.IdentityModule.Features.DevTools;
+
+/// <summary>
+/// Steps the dev role switcher back out: the ticket names the administrator, the refresh tokens
+/// are the borrowed session, which is ended so it does not outlive the test.
+/// </summary>
+public sealed record ReturnFromImpersonationCommand(string Ticket, IReadOnlyList<string> RefreshTokens) : IRequest<ServiceResult<LoginUserDto>>;
+
+public sealed class ReturnFromImpersonationCommandHandler : IRequestHandler<ReturnFromImpersonationCommand, ServiceResult<LoginUserDto>>
+{
+    private readonly UserManager<AppUser> _userManager;
+    private readonly IJwtService _jwtService;
+    private readonly IRefreshTokenStore _refreshTokens;
+    private readonly ILoginResponseService _loginResponseService;
+    private readonly IActivityLogger _activityLogger;
+
+    public ReturnFromImpersonationCommandHandler(
+        UserManager<AppUser> userManager,
+        IJwtService jwtService,
+        IRefreshTokenStore refreshTokens,
+        ILoginResponseService loginResponseService,
+        IActivityLogger activityLogger)
+    {
+        _userManager = userManager;
+        _jwtService = jwtService;
+        _refreshTokens = refreshTokens;
+        _loginResponseService = loginResponseService;
+        _activityLogger = activityLogger;
+    }
+
+    public async Task<ServiceResult<LoginUserDto>> Handle(ReturnFromImpersonationCommand request, CancellationToken cancellationToken)
+    {
+        var adminKey = string.IsNullOrWhiteSpace(request.Ticket) ? null : _jwtService.ReadDevReturnTicket(request.Ticket);
+        if (adminKey is null)
+        {
+            return ServiceResult<LoginUserDto>.Failure(ResultType.Unauthorized, IdentityErrors.InvalidTicket, "The return ticket is missing, expired or not one.");
+        }
+
+        var admin = await _userManager.FindByIdAsync(adminKey.Value.ToString());
+        if (admin is null || !await _userManager.IsInRoleAsync(admin, SystemRoleNames.Admin))
+        {
+            return ServiceResult<LoginUserDto>.Failure(ResultType.Forbidden, IdentityErrors.NotAnAdministrator, "The ticket does not belong to an administrator.");
+        }
+
+        foreach (var token in request.RefreshTokens.Distinct(StringComparer.Ordinal))
+        {
+            await _refreshTokens.RevokeAsync(token, cancellationToken);
+        }
+
+        var login = await _loginResponseService.CreateAsync(admin, cancellationToken);
+
+        _activityLogger.LogAudit(
+            action: "Dev.ImpersonateReturn",
+            actorUserId: admin.Id,
+            reason: "Dev role switcher: back to the administrator.");
+
+        return new ServiceResult<LoginUserDto>(ResultType.Success, login);
+    }
+}

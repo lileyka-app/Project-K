@@ -1,9 +1,13 @@
 using MediatR;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 
@@ -12,43 +16,42 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 /// entry per person would bury the journal for a single click. Allowed with tags off too, so a kurin
 /// can clear what it no longer wants.
 /// </summary>
-public sealed record DeleteKurinTagCommand(Guid KurinKey, Guid KurinTagKey) : IRequest<ServiceResult<object>>;
+public sealed record DeleteKurinTagCommand(Guid KurinKey, Guid KurinTagKey) : IRequest<ServiceResult<Unit>>;
 
-public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTagCommand, ServiceResult<object>>
+public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTagCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
     private readonly IKurinAudit _audit;
-    private readonly IDuesDirectory _dues;
+    private readonly IDomainEventPublisher _events;
 
-    public DeleteKurinTagCommandHandler(IUnitOfWork uow, IKurinAudit audit, IDuesDirectory dues)
+    public DeleteKurinTagCommandHandler(IUnitOfWork uow, IKurinAudit audit, IDomainEventPublisher events)
     {
         _uow = uow;
         _audit = audit;
-        _dues = dues;
+        _events = events;
     }
 
-    public async Task<ServiceResult<object>> Handle(DeleteKurinTagCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<Unit>> Handle(DeleteKurinTagCommand request, CancellationToken cancellationToken)
     {
         var tag = await _uow.KurinTags.GetWithMembersAsync(request.KurinTagKey, cancellationToken);
         if (tag is null || tag.KurinKey != request.KurinKey)
         {
-            return ServiceResult<object>.Failure(ResultType.NotFound, KurinTagErrors.TagNotFound, "Tag was not found in this kurin.");
+            return ServiceResult<Unit>.Failure(ResultType.NotFound, KurinErrors.TagNotFound, "Tag was not found in this kurin.");
         }
 
         await _audit.RecordAsync(
-            new AuditRecord(AuditArea.Tag, AuditActions.Tag.Deleted, tag.KurinTagKey, tag.Name,
-                Changes: AuditChanges.Removed(("name", tag.Name), ("carriedBy", tag.Members.Count)),
+            new AuditRecord(AuditArea.Tag, AuditActionNames.Tag.Deleted, tag.KurinTagKey, tag.Name,
+                Changes: AuditChangeRules.Removed(("name", tag.Name), ("carriedBy", tag.Members.Count)),
                 KurinKey: request.KurinKey),
             cancellationToken);
 
-        // Events and tasks aimed at the tag name it by key alone; left behind, they would reach nobody.
-        await _uow.AgendaItems.RemoveAssignmentsForTargetsAsync([tag.KurinTagKey], cancellationToken);
+        // Events and tasks aimed at the tag name it by key alone; the agenda drops them on this unit of work.
+        await _events.PublishAsync(new KurinTagRemoved(request.KurinKey, tag.KurinTagKey), cancellationToken);
         _uow.KurinTags.Delete(tag, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // A rate by this tag can no longer be seen or changed: nobody's debt may stay on it.
-        await _dues.RepriceUnpaidAsync(request.KurinKey, cancellationToken);
+        await _events.PublishAsync(new KurinTagDeleted(request.KurinKey, tag.KurinTagKey), cancellationToken);
 
-        return new ServiceResult<object>(ResultType.Success);
+        return new ServiceResult<Unit>(ResultType.Success, Unit.Value);
     }
 }

@@ -1,33 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using ProjectK.Common.Exceptions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Infrastructure.Repositories;
-using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.AgendaModule;
+using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.DuesModule;
-using ProjectK.Infrastructure.Repositories.InfrastructureModule;
+using ProjectK.Infrastructure.Repositories.IdentityModule;
 using ProjectK.Infrastructure.Repositories.KraiModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.MemberModule;
+using ProjectK.Infrastructure.Repositories.NotificationsModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Repositories.ScoreModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork
+public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork, IAuditUnitOfWork
 {
     private readonly AppDbContext _context;
 
@@ -85,6 +83,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IPrivateScoreCriterionRepository _privateScoreCriteria;
     private IPrivateScoreEntryRepository _privateScoreEntries;
 
+    private IResourceScopeRepository? _resourceScopes;
+    private IKurinReportRepository? _kurinReports;
+    private IKurinAuditRepository? _kurinAudit;
+    private IKurinJournalRepository? _kurinJournal;
     private IKraiRepository _krais;
 
     public IKraiRepository Krais => _krais ??= new KraiRepository(_context);
@@ -138,6 +140,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IScoreTrailEventRepository ScoreTrailEvents => _scoreTrailEvents ??= new ScoreTrailEventRepository(_context);
     public IPrivateScoreCriterionRepository PrivateScoreCriteria => _privateScoreCriteria ??= new PrivateScoreCriterionRepository(_context);
     public IPrivateScoreEntryRepository PrivateScoreEntries => _privateScoreEntries ??= new PrivateScoreEntryRepository(_context);
+    public IResourceScopeRepository ResourceScopes => _resourceScopes ??= new ResourceScopeRepository(_context);
+    public IKurinReportRepository KurinReports => _kurinReports ??= new KurinReportRepository(_context);
+    public IKurinAuditRepository KurinAudit => _kurinAudit ??= new KurinAuditRepository(_context);
+    public IKurinJournalRepository KurinJournal => _kurinJournal ??= new KurinJournalRepository(_context);
 
     public UnitOfWork(AppDbContext context)
     {

@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Exceptions;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
@@ -14,7 +14,7 @@ public class MembershipRequestConcurrencyTests
     [Fact]
     public async Task TheSecondOfTwoAnswersGivenAtOnce_IsRefused()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var request = new MembershipRequest

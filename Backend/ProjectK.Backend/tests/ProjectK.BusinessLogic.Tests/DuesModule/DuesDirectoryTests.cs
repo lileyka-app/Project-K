@@ -2,12 +2,11 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -46,7 +45,7 @@ public class DuesDirectoryTests
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
         IReadOnlyList<DuesConcessionGrant> grants = [];
         dues.SetupGet(d => d.DuesConcessionGrants).Returns(Mock.Of<IDuesConcessionGrantRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(grants)));
-        return new DuesDirectory(new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), _time, Mock.Of<IKraiProfileProvider>(), Mock.Of<IDuesAccrual>());
+        return new DuesDirectory(new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), _time, Mock.Of<IKraiProfileDirectory>());
     }
 
     private void Pay(decimal amount) => _entries.Add(new DuesEntry

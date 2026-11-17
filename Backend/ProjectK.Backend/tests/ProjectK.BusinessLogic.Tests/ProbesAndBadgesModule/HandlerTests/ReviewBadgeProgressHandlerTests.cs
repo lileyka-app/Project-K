@@ -1,21 +1,18 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.ProbesAndBadgesModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
@@ -49,7 +46,7 @@ public class ReviewBadgeProgressHandlerTests
 
         _journal = new JournalRecorder(
             _currentUserContextMock.Object,
-            new AuditActorResolver(_currentUserContextMock.Object, _memberDirectoryMock.Object));
+            new CurrentMember(_currentUserContextMock.Object, _memberDirectoryMock.Object, Mock.Of<IMembershipDirectory>()));
 
         _handler = new ReviewBadgeProgressCommandHandler(
             _unitOfWorkMock.Object,
@@ -59,13 +56,13 @@ public class ReviewBadgeProgressHandlerTests
             _journal.Actors,
             _journal.Audit,
             _journal.Reader,
-            Mock.Of<IBadgesCatalogService>());
+            Mock.Of<IBadgesCatalogReader>());
     }
 
     [Theory]
-    [InlineData(BadgeProgressStatus.Submitted, true, AuditActions.Badge.Confirmed, "Confirmed")]
-    [InlineData(BadgeProgressStatus.Submitted, false, AuditActions.Badge.Rejected, "Rejected")]
-    [InlineData(BadgeProgressStatus.Confirmed, false, AuditActions.Badge.ConfirmationRemoved, "Rejected")]
+    [InlineData(BadgeProgressStatus.Submitted, true, AuditActionNames.Badge.Confirmed, "Confirmed")]
+    [InlineData(BadgeProgressStatus.Submitted, false, AuditActionNames.Badge.Rejected, "Rejected")]
+    [InlineData(BadgeProgressStatus.Confirmed, false, AuditActionNames.Badge.ConfirmationRemoved, "Rejected")]
     public async Task Handle_ShouldRecordTheDecisionInTheJournal(BadgeProgressStatus from, bool approved, string action, string to)
     {
         var memberKey = Guid.NewGuid();
@@ -103,7 +100,7 @@ public class ReviewBadgeProgressHandlerTests
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(reviewerUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(
-                Guid.NewGuid(), reviewerUserKey, Guid.NewGuid(), null,
+                Guid.NewGuid(), reviewerUserKey,
                 "Іван", "Петренко", "ivan@example.com", null));
 
         var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);

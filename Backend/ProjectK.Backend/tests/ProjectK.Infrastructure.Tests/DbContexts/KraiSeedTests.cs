@@ -1,6 +1,5 @@
 using System.Text.Json;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.DbContexts;
 

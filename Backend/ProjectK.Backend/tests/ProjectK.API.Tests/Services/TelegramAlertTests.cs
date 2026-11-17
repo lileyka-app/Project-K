@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using FluentAssertions;
 using ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 using Serilog;
 using Serilog.Context;
 using Serilog.Core;
 using Serilog.Events;
-using Xunit;
 
 namespace ProjectK.API.Tests.Services;
 
@@ -53,7 +49,7 @@ public class TelegramAlertTests
         return capture.Events.Single();
     }
 
-    private static TelegramAlert Describe(LogEvent logEvent) => TelegramAlertFormatter.Describe(logEvent, "Production", "1.1.1", null);
+    private static TelegramAlert Describe(LogEvent logEvent) => TelegramAlertRules.Describe(logEvent, "Production", "1.1.1", null);
 
     [Fact]
     public void ASecurityEvent_ReadsAsWords_WithOnlyTheFieldsThatCarrySomething()
@@ -164,7 +160,7 @@ public class TelegramAlertTests
     [Fact]
     public void EmailsAndSecrets_NeverLeave()
     {
-        Redaction.Apply("user oksana@example.com sent token=abc123 and Bearer eyJhbGci.x.y")
+        RedactionRules.Apply("user oksana@example.com sent token=abc123 and Bearer eyJhbGci.x.y")
             .Should().Be("user [email] sent token=[redacted] and Bearer [redacted]");
     }
 }

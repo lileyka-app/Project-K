@@ -1,17 +1,18 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Account;
 using MediatR;
 using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.ImportHandlers;
 
@@ -25,16 +26,16 @@ public class ImportRosterHandlerTests
     private static readonly Guid GroupKey = Guid.NewGuid();
 
     private readonly Mock<IUnitOfWork> _kurinData = new();
-    private readonly Mock<IMemberUnitOfWork> _memberData = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IGroupRepository> _groups = new();
-    private readonly Mock<IMemberRepository> _members = new();
-    private readonly Mock<IMembershipRepository> _memberships = new();
-    private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<IMemberImportWriter> _people = new();
+    private readonly Mock<ISender> _sender = new();
     private readonly ImportRosterCommandHandler _handler;
 
     private List<MemberIdentity> _knownPeople = [];
-    private List<MemberSummary> _peopleHere = [];
+    private List<KurinMembershipRecord> _peopleHere = [];
+    private readonly Mock<IMembershipRepository> _memberships = new();
 
     public ImportRosterHandlerTests()
     {
@@ -48,15 +49,17 @@ public class ImportRosterHandlerTests
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _knownPeople);
-        _members.Setup(r => r.GetSummariesByKurinKeyAsync(KurinKey, It.IsAny<CancellationToken>()))
+        _memberships.Setup(r => r.GetRecordsInKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _peopleHere);
+        _kurinData.Setup(u => u.Memberships).Returns(_memberships.Object);
 
         _kurinData.Setup(u => u.Kurins).Returns(_kurins.Object);
         _kurinData.Setup(u => u.Groups).Returns(_groups.Object);
-        _kurinData.Setup(u => u.Memberships).Returns(_memberships.Object);
-        _memberData.Setup(u => u.Members).Returns(_members.Object);
 
-        _handler = new ImportRosterCommandHandler(_kurinData.Object, _memberData.Object, _mediator.Object);
+        _sender.Setup(s => s.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Created, Guid.NewGuid()));
+
+        _handler = new ImportRosterCommandHandler(_kurinData.Object, _members.Object, _people.Object, _sender.Object);
     }
 
     /// <summary>Прізвище, Ім'я, Дата народження, Ступінь, Дата ступеня, Гурток, Курінь, Пошта.</summary>
@@ -90,7 +93,7 @@ public class ImportRosterHandlerTests
             new ImportRosterCommand(KurinKey, [Row(2, "Петренко", "Іван", "01.01.1990", "", "", "Ведмеді", "5", "ivan@example.com")], FullMapping, CreateMissingGroups: true, DryRun: false),
             CancellationToken.None);
 
-        report.ErrorCode.Should().Be(ImportRosterCommandHandler.NotForSeniorKurinCode);
+        report.ErrorCode.Should().Be(KurinErrors.RosterImportNotForSeniorKurin);
         _groups.Verify(g => g.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -115,20 +118,18 @@ public class ImportRosterHandlerTests
         without.Outcome.Should().Be(RowOutcome.Rejected);
         without.AccountInvited.Should().BeFalse();
         without.Reason.Should().Contain("пошти");
-        _mediator.Verify(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+        _people.Verify(p => p.InviteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task AConfirmedImport_OpensAnAccount_ForTheRowWithAnAddress()
     {
         var memberKey = Guid.NewGuid();
-        _mediator
-            .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
-                ResultType.Success,
-                new MemberProfileWriteResult(memberKey, true, false, null)));
-        _mediator
-            .Setup(m => m.Send(It.Is<ProvisionMemberAccountCommand>(c => c.MemberKey == memberKey), It.IsAny<CancellationToken>()))
+        _people
+            .Setup(p => p.CreateAsync(It.IsAny<ImportedMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(memberKey);
+        _people
+            .Setup(p => p.InviteAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.Success, new MemberInvitation(Guid.NewGuid(), true)));
 
         var report = await _handler.Handle(
@@ -142,19 +143,17 @@ public class ImportRosterHandlerTests
 
         report.Data!.CreatedCount.Should().Be(1);
         report.Data.InvitedCount.Should().Be(1);
-        _mediator.Verify(m => m.Send(It.Is<ProvisionMemberAccountCommand>(c => c.MemberKey == memberKey), It.IsAny<CancellationToken>()), Times.Once);
+        _people.Verify(p => p.InviteAsync(memberKey, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task AConfirmedImport_NotesWhenTheAccountCouldNotBeOpened_ButKeepsThePerson()
     {
-        _mediator
-            .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
-                ResultType.Success,
-                new MemberProfileWriteResult(Guid.NewGuid(), true, false, null)));
-        _mediator
-            .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
+        _people
+            .Setup(p => p.CreateAsync(It.IsAny<ImportedMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        _people
+            .Setup(p => p.InviteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.InternalServerError));
 
         var report = await _handler.Handle(
@@ -276,7 +275,7 @@ public class ImportRosterHandlerTests
         ];
         _peopleHere =
         [
-            new MemberSummary(memberKey, null, KurinKey, GroupKey, "Іван", "Петренко", "ivan@example.com", null)
+            new KurinMembershipRecord(Guid.NewGuid(), memberKey, GroupKey, MembershipKind.Youth, DateTime.UtcNow, null)
         ];
 
         var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
@@ -366,11 +365,11 @@ public class ImportRosterHandlerTests
     {
         await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Соколи", "2", "ivan@example.com")], createMissingGroups: true);
 
-        _mediator.Verify(
-            m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()),
+        _people.Verify(
+            p => p.CreateAsync(It.IsAny<ImportedMember>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        _mediator.Verify(
-            m => m.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()),
+        _sender.Verify(
+            s => s.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _groups.Verify(r => r.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
         _kurinData.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -384,13 +383,11 @@ public class ImportRosterHandlerTests
     [Fact]
     public async Task AConfirmedImport_OpensTheGurtokAndWritesThePerson()
     {
-        _mediator
-            .Setup(m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<MemberProfileWriteResult>(
-                ResultType.Success,
-                new MemberProfileWriteResult(Guid.NewGuid(), true, false, null)));
-        _mediator
-            .Setup(m => m.Send(It.IsAny<ProvisionMemberAccountCommand>(), It.IsAny<CancellationToken>()))
+        _people
+            .Setup(p => p.CreateAsync(It.IsAny<ImportedMember>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        _people
+            .Setup(p => p.InviteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.Success, new MemberInvitation(Guid.NewGuid(), true)));
 
         var report = await _handler.Handle(
@@ -404,8 +401,8 @@ public class ImportRosterHandlerTests
 
         report.Data!.CreatedCount.Should().Be(1);
         _groups.Verify(r => r.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mediator.Verify(
-            m => m.Send(It.IsAny<UpsertMemberProfileCommand>(), It.IsAny<CancellationToken>()),
+        _people.Verify(
+            p => p.CreateAsync(It.IsAny<ImportedMember>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

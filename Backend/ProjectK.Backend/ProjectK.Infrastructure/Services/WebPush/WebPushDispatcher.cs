@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Entities.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 
@@ -32,10 +32,10 @@ public sealed class WebPushDispatcher
             return;
         }
 
-        var activeKurin = PushRoutes.NeedsActiveKurin(notification)
+        var activeKurin = PushRouteRules.NeedsActiveKurin(notification)
             ? await _unitOfWork.Users.GetActiveKurinKeyAsync(notification.RecipientUserKey, cancellationToken)
             : null;
-        var payload = WebPushPayload.Build(notification, PushRoutes.For(notification, activeKurin));
+        var payload = WebPushPayloadRules.Build(notification, PushRouteRules.For(notification, activeKurin));
 
         var gone = 0;
         foreach (var device in devices)

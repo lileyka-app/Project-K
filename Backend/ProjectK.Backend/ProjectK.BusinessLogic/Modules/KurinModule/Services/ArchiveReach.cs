@@ -1,24 +1,10 @@
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
-
-/// <summary>
-/// How far one caller reaches into the kurin's archive for one action: the whole of it, or the
-/// records of the гуртки they lead. The person behind the account comes with it, because nobody
-/// corrects or deletes their own record — the rule probes and badges already follow.
-/// </summary>
-public sealed record ArchiveReachResult(bool KurinWide, IReadOnlySet<Guid> LedGroups, Guid? OwnMemberKey)
-{
-    /// <summary>Whether a record that touches these гуртки (none for a kurin-level one) is within reach.</summary>
-    public bool Reaches(IEnumerable<Guid?> groupKeys) =>
-        KurinWide || groupKeys.Any(groupKey => groupKey is { } key && LedGroups.Contains(key));
-
-    public bool IsOwn(Guid memberKey) => OwnMemberKey == memberKey;
-}
 
 /// <summary>
 /// Resolves <see cref="ArchiveReachResult"/>. The archive is read in the kurin the session acts in
@@ -29,18 +15,19 @@ public sealed class ArchiveReach
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
     private readonly IResourceScopeReader _scopeReader;
-    private readonly IMemberDirectory _members;
+    private readonly ICurrentMember _currentMember;
 
     public ArchiveReach(
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
-        IResourceScopeReader scopeReader,
-        IMemberDirectory members)
+        IUnitOfWork unitOfWork,
+        ICurrentMember currentMember,
+        IResourceScopeReader scopeReader)
     {
         _currentUser = currentUser;
         _permissions = permissions;
         _scopeReader = scopeReader;
-        _members = members;
+        _currentMember = currentMember;
     }
 
     public async Task<ArchiveReachResult?> ResolveAsync(Guid kurinKey, ResourceAction action, CancellationToken cancellationToken)
@@ -56,7 +43,7 @@ public sealed class ArchiveReach
             return null;
         }
 
-        var self = (await _members.FindByAccountAsync(userKey, cancellationToken))?.MemberKey;
+        var self = (await _currentMember.FindAsync(cancellationToken))?.MemberKey;
         if (scope == AccessScope.KurinWide)
         {
             return new ArchiveReachResult(true, new HashSet<Guid>(), self);

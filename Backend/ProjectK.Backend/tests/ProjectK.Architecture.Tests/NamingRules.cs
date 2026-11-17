@@ -1,7 +1,6 @@
 using System.Reflection;
 using FluentValidation;
 using MediatR;
-using Xunit;
 
 namespace ProjectK.Architecture.Tests;
 
@@ -58,6 +57,32 @@ public class NamingRules
             .ToList();
 
         Assert.True(offenders.Count == 0, "Validators not named <Request>Validator: " + string.Join(", ", offenders));
+    }
+
+    /// <summary>
+    /// A request, its handler and its validator are leaves: nothing derives from them, and saying so
+    /// keeps a second handler from slipping in as a subclass of the first (POL-17).
+    /// </summary>
+    [Fact]
+    public void EveryRequestHandlerAndValidator_ShouldBeSealed()
+    {
+        var derivedFrom = SourceTree.All
+            .SelectMany(assembly => assembly.GetTypes())
+            .Select(type => type.BaseType)
+            .Where(baseType => baseType is not null)
+            .Select(baseType => baseType!.IsGenericType ? baseType.GetGenericTypeDefinition() : baseType)
+            .ToHashSet();
+
+        var offenders = ConcreteTypes()
+            .Where(type => !type.IsSealed && !type.IsNested && !derivedFrom.Contains(type))
+            .Where(type => ImplementedGeneric(type, typeof(IRequestHandler<,>)) is not null
+                || ImplementedGeneric(type, typeof(IRequestHandler<>)) is not null
+                || ImplementedGeneric(type, typeof(INotificationHandler<>)) is not null
+                || ImplementedGeneric(type, typeof(IValidator<>)) is not null
+                || typeof(IBaseRequest).IsAssignableFrom(type))
+            .Select(type => type.FullName!);
+
+        Baseline.None(offenders, "MediatR requests, handlers and validators that are not sealed (POL-17):");
     }
 
     [Fact]

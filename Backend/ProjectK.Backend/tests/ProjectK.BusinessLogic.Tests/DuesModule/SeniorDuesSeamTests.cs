@@ -1,22 +1,22 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
-using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -76,8 +76,8 @@ public class SeniorDuesSeamTests
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetInKurinAsync(KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([Membership]);
         var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.GetByKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MemberSummary(MemberKey, Guid.NewGuid(), Guid.Empty, null, "Ірина", "Коваль", "i@example.org", null)]);
+        memberships.Setup(m => m.GetPeopleInKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([KurinPeople.Of(MemberKey, Guid.NewGuid(), Guid.Empty, null, "Ірина", "Коваль", "i@example.org", null)]);
         return await DuesNames.LoadAsync(memberships.Object, members.Object, KurinKey, CancellationToken.None);
     }
 
@@ -107,7 +107,7 @@ public class SeniorDuesSeamTests
             [new MembershipRecord(Membership.MembershipKey, KurinKey, 1, KurinBranch.USP, null, null, null, MembershipKind.Youth, Membership.JoinedAtUtc, null)]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(userKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(MemberKey, userKey, Guid.Empty, null, "Ірина", "Коваль", "i@example.org", null));
+            .ReturnsAsync(new MemberSummary(MemberKey, userKey, "Ірина", "Коваль", "i@example.org", null));
         members.Setup(m => m.GetLevelsAsync(MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var dues = new Mock<IDuesUnitOfWork>();
@@ -128,11 +128,11 @@ public class SeniorDuesSeamTests
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()) == Task.FromResult<IReadOnlyList<DuesEntry>>(Array.Empty<DuesEntry>())));
 
         var handler = new GetMyDuesQueryHandler(
-            new MePerson(user.Object, memberships.Object, members.Object),
+            new CurrentMember(user.Object, members.Object, memberships.Object),
             new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()),
             user.Object,
             new FixedTimeProvider(new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero)),
-            Mock.Of<IKraiProfileProvider>());
+            Mock.Of<IKraiProfileDirectory>());
 
         var result = await handler.Handle(new GetMyDuesQuery(), CancellationToken.None);
 

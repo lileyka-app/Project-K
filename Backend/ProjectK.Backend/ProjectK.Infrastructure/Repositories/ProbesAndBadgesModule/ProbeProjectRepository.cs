@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
@@ -94,11 +94,6 @@ public class ProbeProjectRepository : BaseEntityRepository<ProbeProject>, IProbe
             .ToListAsync(cancellationToken);
 
         return [.. pictures, .. certificates];
-    }
-
-    public override Task<IEnumerable<ProbeProject>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetForMemberProbeAsync instead.");
     }
 
     public async Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)

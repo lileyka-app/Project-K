@@ -1,0 +1,31 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
+
+/// <summary>The kurin's tag switches for its settings page. Gated as kurin settings.</summary>
+public sealed record GetKurinTagSettingsQuery(Guid KurinKey) : IRequest<ServiceResult<KurinTagSettingsDto>>;
+
+public sealed class GetKurinTagSettingsQueryHandler : IRequestHandler<GetKurinTagSettingsQuery, ServiceResult<KurinTagSettingsDto>>
+{
+    private readonly IKurinTagVisibility _visibility;
+
+    public GetKurinTagSettingsQueryHandler(IKurinTagVisibility visibility)
+    {
+        _visibility = visibility;
+    }
+
+    public async Task<ServiceResult<KurinTagSettingsDto>> Handle(GetKurinTagSettingsQuery request, CancellationToken cancellationToken)
+    {
+        var settings = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
+        return settings is null
+            ? KurinErrors.NotFound<KurinTagSettingsDto>()
+            : new ServiceResult<KurinTagSettingsDto>(ResultType.Success,
+                new KurinTagSettingsDto(settings.Enabled, settings.EnabledByDefault, settings.OwnTagsVisible));
+    }
+}

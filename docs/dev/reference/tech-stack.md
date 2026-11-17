@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Стан на жовтень 2026 (`main` після релізу 1.2.1).
+Стан на жовтень 2026 (`main` після релізу 1.2.1); бекенд — на листопад 2026, після полірування (`POL`).
 
 ## Фронтенд
 
@@ -26,8 +26,12 @@ sidebar:
 
 - **ASP.NET Core (.NET 10)**.
 - **EF Core 10** + **SQL Server**.
-- **MediatR** — CQRS: кожна дія — `Command`/`Query` з хендлером, вертикальні зрізи в `Features/`.
-- **AutoMapper** з профілями на модуль.
+- **MediatR** — CQRS: кожна дія — `Command`/`Query` з хендлером, вертикальні зрізи в `Features/`;
+  поведінки конвеєра — час запиту, валідація, транзакція (`BusinessLogic/Behaviors`).
+- **FluentValidation** — валідатор лежить в одному файлі з командою; невдача — 400 `ValidationFailed`
+  до хендлера.
+- **Явний мапінг** — `<Area>Mapping.cs` з `ToDto` / `ApplyTo` поруч із запитами області, без бібліотек
+  (AutoMapper знято в листопаді 2026).
 - **ASP.NET Identity** + **JWT Bearer**; MFA (TOTP) для проводу; refresh-сесії в `UserRefreshTokens`.
 - **Serilog** — структуровані логи (File, Application Insights, енрічер, що ховає чутливе).
 - **QuestPDF** — PDF-звіти куреня.
@@ -36,7 +40,8 @@ sidebar:
 - **GitHub Issues** — звіти про проблеми з застосунку (`Feedback:GitHub`, мітки `bug`, `from client`);
   без токена — в лог.
 - **Swashbuckle** — Swagger / OpenAPI.
-- Тести: **xUnit**, **FluentAssertions**, **Moq**; архітектурні тести на іменування й межі модулів.
+- Тести: **xUnit**, **FluentAssertions**, **Moq**; архітектурні тести на іменування й межі модулів —
+  **ArchUnitNET**; навантаження — **NBomber**.
 
 ## Внутрішні NuGet-пакети
 

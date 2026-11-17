@@ -1,10 +1,9 @@
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,13 +12,8 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
-using ProjectK.API.Helpers;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -81,8 +75,8 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
         public static async Task<CatalogSecurityTestHost> StartAsync(string? roleClaim)
         {
-            var badgesCatalogService = new Mock<IBadgesCatalogService>();
-            var probesCatalogService = new Mock<IProbesCatalogService>();
+            var badgesCatalogReader = new Mock<IBadgesCatalogReader>();
+            var probesCatalogReader = new Mock<IProbesCatalogReader>();
 
             var testBadge = new Badge(
                 Id: "badge-1",
@@ -100,7 +94,7 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                 Author: string.Empty,
                 Ulady: ["УПЮ"]);
 
-            badgesCatalogService.Setup(x => x.GetBadgesMetadata())
+            badgesCatalogReader.Setup(x => x.GetBadgesMetadata())
                 .Returns(new BadgesMetadata(
                     ParserVersion: "1.0",
                     ToolAuthor: "tests",
@@ -111,23 +105,27 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                     FixerMode: "none",
                     TotalBadges: 1));
 
-            badgesCatalogService.Setup(x => x.GetBadges(It.IsAny<int>()))
+            badgesCatalogReader.Setup(x => x.GetBadges(It.IsAny<int>()))
                 .Returns([testBadge]);
 
-            badgesCatalogService.Setup(x => x.GetBadgeById(It.IsAny<string>()))
+            badgesCatalogReader.Setup(x => x.GetBadgeById(It.IsAny<string>()))
                 .Returns(testBadge);
 
-            probesCatalogService.Setup(x => x.GetProbes())
+            probesCatalogReader.Setup(x => x.GetProbes())
                 .Returns([
-                    new ProbeSummaryResponse(
+                    new ProbeSummaryDto(
                         Id: "probe-1",
                         Title: "Probe 1",
                         PointsCount: 1,
-                        SectionsCount: 0)
+                        SectionsCount: 0,
+                        Edition: null,
+                        Order: 0,
+                        KraiCode: "",
+                        StatusCode: "")
                 ]);
 
-            probesCatalogService.Setup(x => x.GetGroupedProbeById(It.IsAny<string>()))
-                .Returns(new GroupedProbeResponse(
+            probesCatalogReader.Setup(x => x.GetGroupedProbeById(It.IsAny<string>()))
+                .Returns(new GroupedProbeDto(
                     Id: "probe-1",
                     Title: "Probe 1",
                     PointsCount: 1,
@@ -152,8 +150,9 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            builder.Services.AddSingleton(badgesCatalogService.Object);
-            builder.Services.AddSingleton(probesCatalogService.Object);
+            builder.Services.AddSingleton(badgesCatalogReader.Object);
+            builder.Services.AddSingleton(probesCatalogReader.Object);
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetBadgesQuery).Assembly));
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(BadgesCatalogController).Assembly);

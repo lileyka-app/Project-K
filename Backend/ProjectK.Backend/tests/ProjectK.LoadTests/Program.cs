@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using NBomber.Contracts;
 using NBomber.CSharp;
 using NBomber.Http.CSharp;
 

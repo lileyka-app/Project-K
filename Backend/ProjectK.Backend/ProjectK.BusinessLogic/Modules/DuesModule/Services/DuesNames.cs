@@ -1,8 +1,9 @@
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -46,7 +47,7 @@ public sealed class DuesNames
         CancellationToken cancellationToken)
     {
         var inKurin = (await memberships.GetInKurinAsync(kurinKey, cancellationToken)).ToDictionary(m => m.MembershipKey);
-        var people = await members.GetByKurinAsync(kurinKey, cancellationToken);
+        var people = (await memberships.GetPeopleInKurinAsync(kurinKey, cancellationToken)).Select(p => p.Person).ToList();
 
         // The kurin's people are those who stand in it now, but its dues still hold everyone who left
         // or moved on with a debt; read those by key, or their rows in «вибулі з боргом» say «—».
@@ -59,8 +60,8 @@ public sealed class DuesNames
 
         return new DuesNames(
             inKurin,
-            named.GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().FullName),
-            named.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
+            MemberSummaryNames.ByMember(named),
+            MemberSummaryNames.ByAccount(named),
             named.Where(p => p.UserKey.HasValue).GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().UserKey!.Value),
             people.OrderBy(p => p.FullName).Select(p => new DuesPersonDto { MemberKey = p.MemberKey, FullName = p.FullName }).ToList());
     }

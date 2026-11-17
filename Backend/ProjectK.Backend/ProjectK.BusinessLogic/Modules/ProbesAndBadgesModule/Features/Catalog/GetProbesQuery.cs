@@ -1,0 +1,25 @@
+using MediatR;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+
+namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
+
+/// <summary>Every probe definition in the catalogue.</summary>
+public sealed record GetProbesQuery : IRequest<ServiceResult<IReadOnlyList<ProbeSummaryDto>>>;
+
+public sealed class GetProbesQueryHandler : IRequestHandler<GetProbesQuery, ServiceResult<IReadOnlyList<ProbeSummaryDto>>>
+{
+    private readonly IProbesCatalogReader _catalog;
+
+    public GetProbesQueryHandler(IProbesCatalogReader catalog)
+    {
+        _catalog = catalog;
+    }
+
+    public Task<ServiceResult<IReadOnlyList<ProbeSummaryDto>>> Handle(GetProbesQuery request, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new ServiceResult<IReadOnlyList<ProbeSummaryDto>>(ResultType.Success, _catalog.GetProbes()));
+    }
+}

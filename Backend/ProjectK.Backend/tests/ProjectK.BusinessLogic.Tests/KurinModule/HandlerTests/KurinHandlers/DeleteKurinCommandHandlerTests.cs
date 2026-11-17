@@ -1,15 +1,16 @@
-using System;
-using System.Threading.Tasks;
 using FluentAssertions;
+using MediatR;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
@@ -50,7 +51,7 @@ public class DeleteKurinHandlerTests
         _unitOfWorkMock.Setup(uow => uow.ProbePointProgresses).Returns(_probePointProgressRepositoryMock.Object);
         _unitOfWorkMock.Setup(uow => uow.BadgeProgresses).Returns(_badgeProgressRepositoryMock.Object);
 
-        _handler = new DeleteKurinCommandHandler(_unitOfWorkMock.Object, _cacheMock.Object);
+        _handler = new DeleteKurinCommandHandler(_unitOfWorkMock.Object, _cacheMock.Object, new KurinCleanupEvents(_unitOfWorkMock.Object));
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class DeleteKurinHandlerTests
 
         // Assert
         result.Type.Should().Be(ResultType.Success);
-        result.Data.Should().BeNull();
+        result.Data.Should().Be(Unit.Value);
         _kurinRepositoryMock.Verify(r => r.Delete(kurin, default), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }

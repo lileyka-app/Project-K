@@ -1,18 +1,18 @@
-using System;
 using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Migrations;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.AuditModule;
-using Xunit;
 
 namespace ProjectK.API.Tests.Services;
 
@@ -35,7 +35,7 @@ public class ProgressTrailFoldTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
-        _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseSqlite(_connection).Options;
 
         using var context = new AppDbContext(_options);
         context.Database.EnsureCreated();
@@ -131,8 +131,8 @@ public class ProgressTrailFoldTests : IDisposable
         await FoldAsync();
 
         await using var context = new AppDbContext(_options);
-        var entries = await new KurinJournalReader(context).GetForSubjectsAsync([probe.ProbeProgressKey]);
-        Assert.Equal([AuditActions.Probe.Started, AuditActions.Probe.Completed], entries.Select(e => e.Action));
+        var entries = await new KurinJournalRepository(context).GetForSubjectsAsync([probe.ProbeProgressKey]);
+        Assert.Equal([AuditActionNames.Probe.Started, AuditActionNames.Probe.Completed], entries.Select(e => e.Action));
 
         var first = entries[0];
         Assert.Equal(started, first.KurinAuditEventKey);
@@ -151,12 +151,12 @@ public class ProgressTrailFoldTests : IDisposable
     }
 
     [Theory]
-    [InlineData(0, 1, "InProgress", AuditActions.Probe.Started)]
-    [InlineData(1, 2, "Completed", AuditActions.Probe.Completed)]
-    [InlineData(2, 3, "Verified", AuditActions.Probe.Verified)]
-    [InlineData(3, 2, "Unverify", AuditActions.Probe.Unverified)]
-    [InlineData(2, 1, "Unsign", AuditActions.Probe.Reopened)]
-    [InlineData(3, 1, "Unsign", AuditActions.Probe.Reopened)]
+    [InlineData(0, 1, "InProgress", AuditActionNames.Probe.Started)]
+    [InlineData(1, 2, "Completed", AuditActionNames.Probe.Completed)]
+    [InlineData(2, 3, "Verified", AuditActionNames.Probe.Verified)]
+    [InlineData(3, 2, "Unverify", AuditActionNames.Probe.Unverified)]
+    [InlineData(2, 1, "Unsign", AuditActionNames.Probe.Reopened)]
+    [InlineData(3, 1, "Unsign", AuditActionNames.Probe.Reopened)]
     public async Task AProbeRow_FoldsToTheActionItsStatusesMean_AndReadsBackAsItWas(int from, int to, string oldAction, string action)
     {
         var (_, probe, _) = await SeedPersonAsync();
@@ -165,7 +165,7 @@ public class ProgressTrailFoldTests : IDisposable
         await FoldAsync();
 
         await using var context = new AppDbContext(_options);
-        var entry = Assert.Single(await new KurinJournalReader(context).GetForSubjectsAsync([probe.ProbeProgressKey]));
+        var entry = Assert.Single(await new KurinJournalRepository(context).GetForSubjectsAsync([probe.ProbeProgressKey]));
         Assert.Equal(action, entry.Action);
         var item = Assert.Single(ProgressTrail.ForProbe(probe.ProbeProgressKey, [entry]));
         Assert.Equal((ProbeProgressStatus)from, item.FromStatus);
@@ -174,11 +174,11 @@ public class ProgressTrailFoldTests : IDisposable
     }
 
     [Theory]
-    [InlineData(null, 1, "Submitted", AuditActions.Badge.Submitted)]
-    [InlineData(3, 1, "Resubmitted", AuditActions.Badge.Resubmitted)]
-    [InlineData(1, 2, "Confirmed", AuditActions.Badge.Confirmed)]
-    [InlineData(1, 3, "Rejected", AuditActions.Badge.Rejected)]
-    [InlineData(2, 3, "RemovedConfirmed", AuditActions.Badge.ConfirmationRemoved)]
+    [InlineData(null, 1, "Submitted", AuditActionNames.Badge.Submitted)]
+    [InlineData(3, 1, "Resubmitted", AuditActionNames.Badge.Resubmitted)]
+    [InlineData(1, 2, "Confirmed", AuditActionNames.Badge.Confirmed)]
+    [InlineData(1, 3, "Rejected", AuditActionNames.Badge.Rejected)]
+    [InlineData(2, 3, "RemovedConfirmed", AuditActionNames.Badge.ConfirmationRemoved)]
     public async Task ABadgeRow_FoldsToTheActionItsStatusesMean_AndReadsBackAsItWas(int? from, int to, string oldAction, string action)
     {
         var (_, _, badge) = await SeedPersonAsync();
@@ -187,7 +187,7 @@ public class ProgressTrailFoldTests : IDisposable
         await FoldAsync();
 
         await using var context = new AppDbContext(_options);
-        var entry = Assert.Single(await new KurinJournalReader(context).GetForSubjectsAsync([badge.BadgeProgressKey]));
+        var entry = Assert.Single(await new KurinJournalRepository(context).GetForSubjectsAsync([badge.BadgeProgressKey]));
         Assert.Equal(action, entry.Action);
         Assert.Equal(AuditArea.Badge, entry.Area);
         Assert.Equal("badge-1", entry.SubjectLabel);
@@ -211,7 +211,7 @@ public class ProgressTrailFoldTests : IDisposable
                 OccurredAtUtc = _start.AddSeconds(1),
                 ActorRole = "KV:Vykhovnyk",
                 Area = AuditArea.Probe,
-                Action = AuditActions.Probe.Completed,
+                Action = AuditActionNames.Probe.Completed,
                 SubjectMemberKey = member.MemberKey,
                 SubjectKey = probe.ProbeProgressKey,
                 SubjectLabel = "Проба",

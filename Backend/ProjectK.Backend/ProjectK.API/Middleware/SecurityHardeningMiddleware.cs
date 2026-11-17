@@ -1,13 +1,7 @@
-using System.Net;
-using System.Net.Sockets;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Helpers;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Infrastructure.Services.GeoIP;
+using ProjectK.API.Hosting;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.Shared;
 
 namespace ProjectK.API.Middleware;
 
@@ -22,7 +16,7 @@ public sealed class SecurityHardeningMiddleware
         _options = options;
     }
 
-    public async Task InvokeAsync(HttpContext context, GeoIPService geoIPService, IActivityLogger activityLogger)
+    public async Task InvokeAsync(HttpContext context, IGeoIPService geoIPService, IActivityLogger activityLogger)
     {
         var remoteIp = context.Connection.RemoteIpAddress?.ToString();
 
@@ -43,7 +37,11 @@ public sealed class SecurityHardeningMiddleware
             {
                 activityLogger.ReportGeoBlocked(remoteIp, countryCode);
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsync("Access from your region is restricted.", context.RequestAborted);
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = "RegionRestricted",
+                    message = "Access from your region is restricted."
+                }, context.RequestAborted);
                 return;
             }
         }

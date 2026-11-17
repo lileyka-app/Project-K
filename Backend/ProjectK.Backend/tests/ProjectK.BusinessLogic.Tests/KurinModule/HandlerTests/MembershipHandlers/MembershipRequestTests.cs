@@ -1,26 +1,21 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Invitations;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Waiting;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Exceptions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 
@@ -82,10 +77,10 @@ public class MembershipRequestTests
         _requests.Setup(r => r.GetPendingFromAsync(_person, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid _, Guid from, CancellationToken _) => _asked.Where(r => r.FromKurinKey == from && r.Status == MembershipRequestStatus.Pending).ToList());
 
-        var summary = new MemberSummary(_person, _account, _kurinA, null, "Назар", "Коваль", "n@x", null);
+        var summary = new MemberSummary(_person, _account, "Назар", "Коваль", "n@x", null);
         _members.Setup(d => d.FindAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(summary);
         _members.Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberCard(_person, Code, "Назар", "Коваль", null, 1));
+            .ReturnsAsync(new MemberCard(_person, Code, "Назар", "Коваль", null));
     }
 
     private void ActingIn(Guid kurinKey) => _user.SetupGet(u => u.KurinKey).Returns(kurinKey);
@@ -100,12 +95,12 @@ public class MembershipRequestTests
     private MembershipMoves Moves() => new(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, _time);
 
     private CreateMembershipRequestCommandHandler Create() =>
-        new(_unitOfWork.Object, _members.Object, Moves(), Routing(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
+        new(_unitOfWork.Object, _members.Object, Moves(), Routing(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
 
     private MembershipAskRouting Routing() => new(_unitOfWork.Object, _members.Object);
 
     private DecideMembershipRequestCommandHandler Decide() =>
-        new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
+        new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
 
     private MembershipRequest Asked(MembershipRequestKind kind, DateTime? expires = null, Guid? by = null)
     {
@@ -391,7 +386,7 @@ public class MembershipRequestTests
         StandsIn(_kurinA);
         _unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<IKurinRepository>(r =>
             r.GetByKeyAsync(_kurinB, It.IsAny<CancellationToken>()) == Task.FromResult<Kurin?>(new Kurin(15))));
-        var join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, Mock.Of<IAccessChangeSignal>(), _journal.Audit);
+        var join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, Mock.Of<IAccessChangeStore>(), _journal.Audit);
 
         var result = await join.Handle(
             new JoinKurinCommand(Guid.Empty, _kurinB, null, MembershipKind.Youth, Code, OnlyIfStandingNowhere: true), default);
@@ -439,7 +434,7 @@ public class MembershipRequestTests
 
     private void Senior(Guid kurinKey) => _branches[kurinKey] = KurinBranch.USP;
 
-    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.BusinessLogic.Modules.KurinModule.Models.MembershipRequestSent>> AskFromB(
+    private Task<ProjectK.Common.Records.Shared.ServiceResult<ProjectK.Common.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
         MembershipRequestKind kind, MembershipKind as_ = MembershipKind.Youth, Guid? from = null) =>
         Create().Handle(new CreateMembershipRequestCommand(_kurinB, Code, null, kind, as_, from), default);
 
@@ -535,12 +530,12 @@ public class MembershipRequestTests
         request.FromKurinKey = null;
         _user.SetupGet(u => u.UserId).Returns(_account);
         _members.Setup(d => d.FindByAccountAsync(_account, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_person, _account, _kurinA, null, "Назар", "Коваль", "n@x", null));
+            .ReturnsAsync(new MemberSummary(_person, _account, "Назар", "Коваль", "n@x", null));
         return request;
     }
 
     private AnswerMyInvitationCommandHandler Answer() =>
-        new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
+        new(_unitOfWork.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
 
     [Fact]
     public async Task AcceptingAnInvitation_AddsAMembership_AndClosesNothing()

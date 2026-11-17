@@ -5,12 +5,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Services.Catalog;
-using Xunit;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
 
@@ -35,7 +37,7 @@ public sealed class CatalogSyncBackgroundServiceTests : IDisposable
     // The name is taken once: the options lambda runs for every scope, and a name made inside it
     // would hand each scope a database of its own.
     private static ServiceProvider Database(string name) => new ServiceCollection()
-        .AddDbContext<AppDbContext>(db => db.UseInMemoryDatabase(name))
+        .AddDbContext<AppDbContext>(db => db.UseInMemoryDatabase(name).AddAppDbContextInterceptors())
         .BuildServiceProvider();
 
     [Fact]

@@ -1,8 +1,6 @@
-using System;
 using System.Web;
-using ProjectK.Common.Models.Settings;
-using ProjectK.Infrastructure.Services.BlobStorageService;
-using Xunit;
+using ProjectK.Common.Options.Shared;
+using ProjectK.Infrastructure.Services.Blobs;
 
 namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService;
 

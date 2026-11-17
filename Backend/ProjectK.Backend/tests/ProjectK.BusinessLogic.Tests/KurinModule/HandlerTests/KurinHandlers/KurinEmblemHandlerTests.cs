@@ -1,18 +1,16 @@
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Emblem;
+using ProjectK.BusinessLogic.Modules.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
@@ -21,7 +19,7 @@ public class KurinEmblemHandlerTests
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IPhotoService> _photos = new();
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
 
     public KurinEmblemHandlerTests()
     {
@@ -29,14 +27,10 @@ public class KurinEmblemHandlerTests
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), It.IsAny<string>(), BlobUploadContext.KurinEmblem, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PhotoUploadResult("kurin-emblems/new.png", "image/png"));
-        _mapper = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, LoggerFactory.Create(_ => { })).CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
     }
 
-    private UploadKurinEmblemCommandHandler Uploader() => new(_unitOfWork.Object, _photos.Object, _mapper, Mock.Of<IBackendCache>());
+    private UploadKurinEmblemCommandHandler Uploader() => new(_unitOfWork.Object, _photos.Object, _links, Mock.Of<IBackendCache>(), Mock.Of<IMembershipDirectory>());
 
     private Kurin Given(Kurin kurin)
     {
@@ -51,7 +45,7 @@ public class KurinEmblemHandlerTests
 
         var result = await Uploader().Handle(new UploadKurinEmblemCommand(youth.KurinKey, [1, 2, 3], "e.png"), default);
 
-        result.ErrorCode.Should().Be(UploadKurinEmblemCommandHandler.NotSeniorCode);
+        result.ErrorCode.Should().Be(KurinErrors.EmblemForSeniorKurins);
         youth.EmblemBlobName.Should().BeNull();
         _photos.Verify(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<BlobUploadContext>(), It.IsAny<CancellationToken>()), Times.Never);
     }

@@ -2,10 +2,9 @@ using FluentAssertions;
 using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.Behaviors;
 

@@ -1,22 +1,21 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Create;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Delete;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Update;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry.Verify;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Entry;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -56,13 +55,13 @@ public class DuesEntryHandlerTests
         _user.SetupGet(u => u.KurinKey).Returns(_kurin.KurinKey);
     }
 
-    private GroupDuesAccess Access()
+    private DuesAccess Access()
     {
         var groups = new Mock<IGroupRepository>();
         groups.Setup(g => g.GetByKeyAsync(_group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_group);
         var uow = new Mock<IUnitOfWork>();
         uow.SetupGet(u => u.Groups).Returns(groups.Object);
-        return new GroupDuesAccess(uow.Object, _user.Object, Mock.Of<IDuesKurinShape>());
+        return new DuesAccess(uow.Object, _dues.Object, _user.Object, Mock.Of<IDuesKurinShape>());
     }
 
     private DuesEntryWriter Writer()
@@ -70,9 +69,8 @@ public class DuesEntryHandlerTests
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetInKurinAsync(_kurin.KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([_youth, _moved]);
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(_kurin.KurinKey);
-        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Interfaces.Modules.KraiModule.IKraiProfileProvider>(), Mock.Of<IDuesKurinShape>());
+        memberships.Setup(m => m.GetCurrentKurinKeysForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([_kurin.KurinKey]);
+        return new DuesEntryWriter(_dues.Object, memberships.Object, Mock.Of<ProjectK.Common.Contracts.KraiModule.IKraiProfileDirectory>(), Mock.Of<IDuesKurinShape>());
     }
 
     private static UpsertDuesEntryRequest Contribution(Guid membershipKey, decimal amount = 300) => new()
@@ -244,7 +242,7 @@ public class DuesEntryHandlerTests
             MembershipKey = DuesEntryRules.PersonalKinds.Contains(kind) ? Guid.NewGuid() : null
         };
 
-        new UpsertDuesEntryRequestValidator(_time).Validate(request).IsValid.Should().Be(valid);
+        new CreateDuesEntryCommandValidator(_time).Validate(new CreateDuesEntryCommand(Guid.NewGuid(), request)).IsValid.Should().Be(valid);
     }
 
     // The kurin's box takes no transfers to itself; the станиця is its own to hand to. A personal
@@ -265,22 +263,29 @@ public class DuesEntryHandlerTests
             MembershipKey = DuesEntryRules.PersonalKinds.Contains(kind) ? Guid.NewGuid() : null
         };
 
-        new UpsertKurinDuesEntryRequestValidator(_time).Validate(request).IsValid.Should().Be(valid);
+        new CreateKurinDuesEntryCommandValidator(_time).Validate(new CreateKurinDuesEntryCommand(Guid.NewGuid(), request)).IsValid.Should().Be(valid);
     }
 
     [Fact]
     public void Rules_RefuseADateInTheFutureAndAPersonOnAnExpense()
     {
-        var validator = new UpsertDuesEntryRequestValidator(_time);
+        var validator = new CreateDuesEntryCommandValidator(_time);
 
-        validator.Validate(new UpsertDuesEntryRequest
+        validator.Validate(new CreateDuesEntryCommand(Guid.NewGuid(), new UpsertDuesEntryRequest
         {
-            Kind = DuesEntryKind.Expense, Method = DuesPaymentMethod.Cash, Amount = 10, OccurredOn = new DateOnly(2026, 6, 1)
-        }).IsValid.Should().BeFalse();
+            Kind = DuesEntryKind.Expense,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 10,
+            OccurredOn = new DateOnly(2026, 6, 1)
+        })).IsValid.Should().BeFalse();
 
-        validator.Validate(new UpsertDuesEntryRequest
+        validator.Validate(new CreateDuesEntryCommand(Guid.NewGuid(), new UpsertDuesEntryRequest
         {
-            Kind = DuesEntryKind.Expense, Method = DuesPaymentMethod.Cash, Amount = 10, OccurredOn = new DateOnly(2026, 5, 1), MembershipKey = Guid.NewGuid()
-        }).IsValid.Should().BeFalse();
+            Kind = DuesEntryKind.Expense,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 10,
+            OccurredOn = new DateOnly(2026, 5, 1),
+            MembershipKey = Guid.NewGuid()
+        })).IsValid.Should().BeFalse();
     }
 }

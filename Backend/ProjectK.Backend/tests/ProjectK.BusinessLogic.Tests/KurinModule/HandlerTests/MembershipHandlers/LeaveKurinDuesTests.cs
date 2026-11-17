@@ -1,19 +1,18 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 
@@ -56,7 +55,7 @@ public class LeaveKurinDuesTests
         new(key, kurinKey, 1, KurinBranch.UPYu, null, null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-3), leftAtUtc);
 
     private LeaveKurinCommandHandler Handler() =>
-        new(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), Mock.Of<IMemberDirectory>(), new MembershipMoves(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, TimeProvider.System), Mock.Of<ICurrentUserContext>());
+        new(_unitOfWork.Object, Mock.Of<IAccessChangeStore>(), Mock.Of<IMemberDirectory>(), new MembershipMoves(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, TimeProvider.System), Mock.Of<ICurrentUserContext>());
 
     private void Owes(decimal amount) =>
         _dues.Setup(d => d.GetOwedAsync(_kurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))

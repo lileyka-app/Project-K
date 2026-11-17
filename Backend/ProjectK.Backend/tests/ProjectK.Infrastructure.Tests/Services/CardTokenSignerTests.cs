@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using ProjectK.Infrastructure.Services;
-using Xunit;
+using ProjectK.Infrastructure.Services.Cards;
 
 namespace ProjectK.Infrastructure.Tests.Services;
 

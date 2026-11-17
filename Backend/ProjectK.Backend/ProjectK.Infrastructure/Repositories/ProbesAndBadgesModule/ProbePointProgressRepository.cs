@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
@@ -63,11 +63,6 @@ public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgr
             .Where(x => x.MemberKey == memberKey && x.ProbeId == probeId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-    }
-
-    public override Task<IEnumerable<ProbePointProgress>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetByMemberAndProbeAsync instead.");
     }
 
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)

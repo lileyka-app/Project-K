@@ -1,6 +1,5 @@
-using Microsoft.AspNetCore.Http;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Middleware;
 

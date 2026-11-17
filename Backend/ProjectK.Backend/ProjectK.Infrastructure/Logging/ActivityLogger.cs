@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,10 +5,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Settings;
-using ProjectK.Common.Security;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Options.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
+using ProjectK.Common.Rules.Shared;
 using Serilog.Context;
 
 namespace ProjectK.Infrastructure.Logging;
@@ -192,7 +191,7 @@ public sealed class ActivityLogger : IActivityLogger
         var userId = httpContext.User.GetUserKeyValue();
 
         var ip = ipOverride ?? httpContext.Connection.RemoteIpAddress?.ToString();
-        var path = SecretPaths.Mask(httpContext.Request?.Path.Value);
+        var path = SecretPathRules.Mask(httpContext.Request?.Path.Value);
         var method = httpContext.Request?.Method;
         var userAgent = httpContext.Request?.Headers["User-Agent"].ToString();
         var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;

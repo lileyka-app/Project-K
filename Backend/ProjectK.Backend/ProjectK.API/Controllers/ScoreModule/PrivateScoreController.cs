@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.ScoreModule;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.ScoreModule;
 
@@ -29,7 +29,7 @@ public class PrivateScoreController : ControllerBase
 
     [HttpGet]
     [ResourceAuthorize(ResourceType.KurinScorePrivate, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(PrivateScoreResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PrivateScoreDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(Guid kurinKey, [FromQuery] ScorePeriodQuery period)
     {
         var result = await _mediator.Send(new GetPrivateScoreQuery(kurinKey, period));

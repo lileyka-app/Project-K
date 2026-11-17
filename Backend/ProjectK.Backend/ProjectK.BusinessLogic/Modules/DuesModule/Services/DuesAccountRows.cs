@@ -1,8 +1,9 @@
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dues;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -61,7 +62,7 @@ public sealed class DuesAccountRows
             .Select(a =>
             {
                 var membership = names.Memberships[a.MembershipKey];
-                var standing = DuesAccountStandings.Of(
+                var standing = DuesAccountStandingRules.Of(
                     hasLeft: membership.LeftAtUtc.HasValue,
                     standsInThisGroup: membership.GroupKey == groupKey);
                 var rateTag = ledger.RateTagOf(a.MembershipKey, current);
@@ -82,13 +83,13 @@ public sealed class DuesAccountRows
                     Grants = grants
                         .Where(g => g.MembershipKey == a.MembershipKey)
                         .OrderByDescending(g => g.FromQuarter)
-                        .Select(g => DuesConcessionGrantDto.From(g, current))
+                        .Select(g => g.ToDto(current))
                         .ToList(),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
-                        Quarter = new QuarterDto { Year = q.Quarter.Year, Number = q.Quarter.Number },
-                        Charged = Amount(q.Charged),
-                        Paid = Amount(q.Paid),
+                        Quarter = q.Quarter.ToDto(),
+                        Charged = q.Charged.ToDto(),
+                        Paid = q.Paid.ToDto(),
                         Balance = q.Balance,
                         IsConcession = q.IsConcession,
                         ConcessionName = q.ConcessionName
@@ -102,30 +103,4 @@ public sealed class DuesAccountRows
             .ThenBy(a => a.FullName)
             .ToList();
     }
-
-    public static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
-}
-
-/// <summary>The kurin's tags and the ones on each person, as far as the viewer may see them.</summary>
-public sealed class DuesTagLens
-{
-    private readonly IReadOnlyDictionary<Guid, IReadOnlyCollection<Guid>> _byMember;
-    private readonly Func<Guid?, Guid?, bool> _shows;
-
-    public DuesTagLens(IReadOnlyList<DuesTagDto> tags, IReadOnlyDictionary<Guid, IReadOnlyCollection<Guid>> byMember, Func<Guid?, Guid?, bool> shows)
-    {
-        All = tags;
-        _byMember = byMember;
-        _shows = shows;
-    }
-
-    /// <summary>The kurin's tags, for naming and filtering by them.</summary>
-    public IReadOnlyList<DuesTagDto> All { get; }
-
-    /// <summary>Whether the viewer may see the tags on a person.</summary>
-    public bool Shows(Guid? accountKey, Guid? groupKey) => _shows(accountKey, groupKey);
-
-    public IReadOnlyList<Guid> Of(Guid memberKey, Guid? accountKey, Guid? groupKey) =>
-        _shows(accountKey, groupKey) && _byMember.TryGetValue(memberKey, out var keys) ? [.. keys] : [];
 }

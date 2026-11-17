@@ -1,4 +1,4 @@
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 
 namespace ProjectK.API.Tests.Security;
 

@@ -1,18 +1,17 @@
-using System;
-using System.Threading.Tasks;
 using FluentAssertions;
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
 
@@ -45,7 +44,13 @@ public class DeleteGroupHandlerTests
             .Setup(r => r.GetByGroupKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object, Mock.Of<IBackendCache>(), _auditMock.Object, new FixedTimeProvider(Now), _dues.Object);
+        _handler = new DeleteGroupCommandHandler(
+            _unitOfWorkMock.Object,
+            Mock.Of<IBackendCache>(),
+            _auditMock.Object,
+            new FixedTimeProvider(Now),
+            _dues.Object,
+            new KurinCleanupEvents(_unitOfWorkMock.Object));
     }
 
     [Fact]
@@ -66,7 +71,7 @@ public class DeleteGroupHandlerTests
         _groupRepositoryMock.Verify(r => r.Delete(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
         _membershipRepositoryMock.Verify(r => r.DetachFromGroupAsync(groupKey, default), Times.Once);
         _auditMock.Verify(a => a.RecordAsync(
-            It.Is<AuditRecord>(record => record.Action == AuditActions.Archive.GroupDissolved && record.SubjectKey == groupKey),
+            It.Is<AuditRecord>(record => record.Action == AuditActionNames.Archive.GroupDissolved && record.SubjectKey == groupKey),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -110,7 +115,7 @@ public class DeleteGroupHandlerTests
         var result = await _handler.Handle(new DeleteGroupCommand(groupKey), default);
 
         result.Type.Should().Be(ResultType.NotFound);
-        result.ErrorCode.Should().Be("GROUP_NOT_FOUND");
+        result.ErrorCode.Should().Be("GroupNotFound");
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }
 
@@ -120,7 +125,7 @@ public class DeleteGroupHandlerTests
         var result = await _handler.Handle(new DeleteGroupCommand(Guid.Empty), default);
 
         result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be("GROUP_KEY_EMPTY");
+        result.ErrorCode.Should().Be("GroupKeyEmpty");
         _groupRepositoryMock.Verify(r => r.GetByKeyAsync(It.IsAny<Guid>(), default), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }

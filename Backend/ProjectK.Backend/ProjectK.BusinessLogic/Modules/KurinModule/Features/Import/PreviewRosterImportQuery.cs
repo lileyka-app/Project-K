@@ -1,7 +1,9 @@
 using MediatR;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 
@@ -54,13 +56,13 @@ public sealed class PreviewRosterImportQueryHandler
             // Anything the spreadsheet library refuses is the same answer to the person holding
             // the file: this is not a workbook we can read.
             return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, "UnreadableFile", "This file could not be read as a spreadsheet."));
+                ResultType.BadRequest, KurinErrors.UnreadableFile, "This file could not be read as a spreadsheet."));
         }
 
         if (rows.Count == 0)
         {
             return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, "EmptyFile", "The spreadsheet has no rows."));
+                ResultType.BadRequest, KurinErrors.EmptyFile, "The spreadsheet has no rows."));
         }
 
         var header = rows[0];
@@ -69,7 +71,7 @@ public sealed class PreviewRosterImportQueryHandler
         var columns = header.Cells
             .Select((text, index) =>
             {
-                var (field, level) = RosterHeaders.Guess(text);
+                var (field, level) = RosterHeaderRules.Guess(text);
                 return new RosterColumnPreview(
                     index,
                     text,

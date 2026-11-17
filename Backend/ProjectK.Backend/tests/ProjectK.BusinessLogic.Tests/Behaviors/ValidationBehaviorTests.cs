@@ -2,9 +2,8 @@ using FluentAssertions;
 using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.Behaviors;
 
@@ -55,7 +54,7 @@ public class ValidationBehaviorTests
 
         handlerRan.Should().BeFalse();
         result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be("VALIDATION_ERROR");
+        result.ErrorCode.Should().Be("ValidationFailed");
         result.ErrorMessage.Should().NotBeNullOrWhiteSpace();
     }
 }

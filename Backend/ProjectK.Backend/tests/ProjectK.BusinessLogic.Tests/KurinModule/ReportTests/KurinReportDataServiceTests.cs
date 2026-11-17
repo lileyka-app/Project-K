@@ -1,20 +1,20 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
-using Xunit;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
 
@@ -24,7 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
 /// </summary>
 public sealed class KurinReportDataServiceTests
 {
-    private readonly Mock<IKurinReportSource> _source = new();
+    private readonly Mock<IKurinReportRepository> _source = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IKurinReportMedia> _media = new();
     private readonly Mock<IMemberProgressDirectory> _progress = new();
@@ -43,6 +43,7 @@ public sealed class KurinReportDataServiceTests
     private readonly List<Member> _members = [];
     private readonly List<Membership> _memberships = [];
     private readonly List<MentorAssignment> _mentorAssignments = [];
+    private readonly List<LeadershipHistory> _offices = [];
 
     public KurinReportDataServiceTests()
     {
@@ -61,18 +62,18 @@ public sealed class KurinReportDataServiceTests
         _uow.Setup(u => u.KurinTags).Returns(_tags.Object);
         TagsOn(false);
 
+        var unitOfWork = UnitOfWorks.WithReports(_source.Object, _uow);
         _service = new KurinReportDataService(
-            _source.Object,
             _currentUser.Object,
             FakeBlobReadLinks.Instance,
             _media.Object,
-            Mock.Of<IProbesCatalogService>(),
-            Mock.Of<IBadgesCatalogService>(),
-            new ConfigurationBuilder().Build(),
+            Mock.Of<IProbesCatalogReader>(),
+            Mock.Of<IBadgesCatalogReader>(),
             _progress.Object,
-            _uow.Object,
-            _tagVisibility.Object,
-            Mock.Of<ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule.IHonoursCatalog>());
+            unitOfWork,
+            Mock.Of<ProjectK.Common.Contracts.ProbesAndBadgesModule.IHonoursCatalog>(),
+            new KurinReportHeaderReader(_currentUser.Object, new ConfigurationBuilder().Build()),
+            new KurinReportTagReader(unitOfWork, _tagVisibility.Object));
     }
 
     private void TagsOn(bool enabled, Func<Guid?, Guid?, bool>? shows = null)
@@ -172,7 +173,7 @@ public sealed class KurinReportDataServiceTests
             StartDate = new DateOnly(2024, 1, 1)
         };
 
-        member.LeadershipHistories.Add(new LeadershipHistory
+        _offices.Add(new LeadershipHistory
         {
             LeadershipHistoryKey = Guid.NewGuid(),
             MemberKey = member.MemberKey,
@@ -193,7 +194,7 @@ public sealed class KurinReportDataServiceTests
             RevokedAtUtc = revokedAtUtc
         });
 
-    private Task<Common.Models.Reports.KurinReportData?> Build(KurinBranch branch = KurinBranch.UPYu)
+    private Task<Common.Records.KurinModule.KurinReportData?> Build(KurinBranch branch = KurinBranch.UPYu)
     {
         _kurin.SetBranches([new KurinNumbering(branch, 7)]);
         _source
@@ -201,13 +202,53 @@ public sealed class KurinReportDataServiceTests
             .ReturnsAsync(new KurinReportSourceData(
                 _kurin,
                 [_alpha, _beta],
-                _mentorAssignments,
-                _members,
+                _mentorAssignments
+                    .Select(assignment => new KurinReportSourceMentor(assignment.MentorUserKey, assignment.GroupKey, assignment.RevokedAtUtc))
+                    .ToList(),
+                _members.Select(ToSource).ToList(),
                 new Dictionary<Guid, AppUser>(),
-                _memberships.ToDictionary(membership => membership.MemberKey)));
+                _memberships.ToDictionary(
+                    membership => membership.MemberKey,
+                    membership => new KurinMembershipRecord(
+                        membership.MembershipKey,
+                        membership.MemberKey,
+                        membership.GroupKey,
+                        membership.Kind,
+                        membership.JoinedAtUtc,
+                        membership.LeftAtUtc))));
 
         return _service.BuildAsync(_kurinKey, CancellationToken.None);
     }
+
+    /// <summary>The person as the report's repository hands them over: values read off the entity.</summary>
+    private KurinReportSourceMember ToSource(Member member) => new(
+        member.MemberKey,
+        member.UserKey,
+        member.FirstName,
+        member.MiddleName,
+        member.LastName,
+        member.Email,
+        member.PhoneNumber,
+        member.DateOfBirth,
+        member.Address,
+        member.School,
+        member.ProfilePhotoBlobName,
+        member.LatestPlastLevel,
+        member.PlastLevelHistory.Select(history => new KurinReportPlastLevel(history.PlastLevel, history.DateAchieved)).ToList(),
+        member.MemberWarnings.Select(warning => new KurinReportSourceWarning(warning.Level, warning.IssuedAtUtc, warning.ExpiresAtUtc, warning.RevokedAtUtc)).ToList(),
+        member.MemberAwards.Select(award => new KurinReportSourceAward(award.Level, award.CatalogId, award.DateAcquired, award.Note, award.Status)).ToList(),
+        _offices
+            .Where(history => history.MemberKey == member.MemberKey)
+            .Select(history => new KurinReportSourceOffice(
+                history.Leadership.Type,
+                history.Leadership.KurinKey,
+                history.Leadership.GroupKey,
+                history.Leadership.Name,
+                history.Leadership.EndDate,
+                history.Role,
+                history.StartDate,
+                history.EndDate))
+            .ToList());
 
     /// <summary>
     /// The report is read only by whoever holds the whole kurin, so it names every tag a person

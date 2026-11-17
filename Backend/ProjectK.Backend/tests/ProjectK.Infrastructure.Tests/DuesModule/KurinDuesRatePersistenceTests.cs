@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.DuesModule;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.DuesModule;
 
@@ -16,7 +16,7 @@ public class KurinDuesRatePersistenceTests
     [Fact]
     public async Task ArticlesOfARateReadUntracked_AreReplacedOnUpdate()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var kurinKey = Guid.NewGuid();

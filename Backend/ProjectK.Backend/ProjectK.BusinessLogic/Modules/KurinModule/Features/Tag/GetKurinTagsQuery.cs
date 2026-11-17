@@ -1,10 +1,11 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Tags;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 
@@ -30,7 +31,7 @@ public sealed class GetKurinTagsQueryHandler : IRequestHandler<GetKurinTagsQuery
         var settings = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
         if (settings is null)
         {
-            return ServiceResult<KurinTagsDto>.Failure(ResultType.NotFound, KurinTagErrors.KurinNotFound, "Kurin was not found.");
+            return KurinErrors.NotFound<KurinTagsDto>();
         }
 
         if (!settings.Enabled)

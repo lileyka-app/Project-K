@@ -1,11 +1,12 @@
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -17,15 +18,13 @@ public sealed class DuesEntryWriter
 {
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
-    private readonly IMemberDirectory _members;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
     private readonly IDuesKurinShape _shape;
 
-    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IMemberDirectory members, IKraiProfileProvider profiles, IDuesKurinShape shape)
+    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IKraiProfileDirectory profiles, IDuesKurinShape shape)
     {
         _dues = dues;
         _memberships = memberships;
-        _members = members;
         _profiles = profiles;
         _shape = shape;
     }
@@ -47,7 +46,7 @@ public sealed class DuesEntryWriter
                     .Any(c => c.MembershipKey == membershipKey && c.GroupKey == group.GroupKey);
             if (!standsHere && !chargedHere)
             {
-                return ServiceResult<T>.Failure(ResultType.BadRequest, "NotOfThisGroup", "They have no вкладка in this гурток.");
+                return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.NotOfThisGroup, "They have no вкладка in this гурток.");
             }
         }
 
@@ -63,14 +62,14 @@ public sealed class DuesEntryWriter
     {
         if (!(await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).Takes(request.Kind))
         {
-            return ServiceResult<T>.Failure(ResultType.BadRequest, "DuesTransferOff", "The край does not take вкладка that way.");
+            return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.DuesTransferOff, "The край does not take вкладка that way.");
         }
 
         if (request.MembershipKey is { } membershipKey)
         {
             if (!await _shape.IsSeniorAsync(kurinKey, cancellationToken))
             {
-                return ServiceResult<T>.Failure(ResultType.BadRequest, "DuesPaidInGroup", "In this kurin people pay their гурток.");
+                return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.DuesPaidInGroup, "In this kurin people pay their гурток.");
             }
 
             var membership = (await _memberships.GetInKurinAsync(kurinKey, cancellationToken))
@@ -81,7 +80,7 @@ public sealed class DuesEntryWriter
                     .Any(c => c.MembershipKey == membershipKey && c.GroupKey is null);
             if (!standsHere && !chargedHere)
             {
-                return ServiceResult<T>.Failure(ResultType.BadRequest, "NotOfThisKurin", "They have no вкладка in this kurin.");
+                return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.NotOfThisKurin, "They have no вкладка in this kurin.");
             }
         }
 
@@ -91,9 +90,9 @@ public sealed class DuesEntryWriter
     private async Task<ServiceResult<T>?> CheckCollectorAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
     {
         if (request.CollectedByMemberKey is { } collector
-            && await _members.FindKurinKeyAsync(collector, cancellationToken) != kurinKey)
+            && !(await _memberships.GetCurrentKurinKeysForMemberAsync(collector, cancellationToken)).Contains(kurinKey))
         {
-            return ServiceResult<T>.Failure(ResultType.BadRequest, "CollectorNotInKurin", "Whoever collected it has to be of this kurin.");
+            return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.CollectorNotInKurin, "Whoever collected it has to be of this kurin.");
         }
 
         return null;
@@ -108,6 +107,6 @@ public sealed class DuesEntryWriter
         entry.OccurredOn = request.OccurredOn;
         entry.MembershipKey = DuesEntryRules.PersonalKinds.Contains(request.Kind) ? request.MembershipKey : null;
         entry.CollectedByMemberKey = request.CollectedByMemberKey;
-        entry.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
+        entry.Note = TextRules.TrimOrNull(request.Note);
     }
 }

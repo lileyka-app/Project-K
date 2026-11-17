@@ -1,11 +1,11 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetSettings;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

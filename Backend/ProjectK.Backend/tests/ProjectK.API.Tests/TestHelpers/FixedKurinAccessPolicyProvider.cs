@@ -1,10 +1,10 @@
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Records.IdentityModule;
 
 namespace ProjectK.API.Tests.TestHelpers;
 
 /// <summary>A policy provider holding whatever policy the test last set — the defaults unless told.</summary>
-public sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyProvider
+public sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyReader
 {
     public KurinAccessPolicy Policy { get; set; } = KurinAccessPolicy.Default;
 

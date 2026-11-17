@@ -1,0 +1,101 @@
+using FluentAssertions;
+using Moq;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.IdentityModule;
+using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
+using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
+
+namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberHandlers;
+
+/// <summary>
+/// The public code is the one thing a person gives away themselves. A провід that could read it
+/// could sign them into another kurin without ever asking, so nobody but its owner is told it.
+/// </summary>
+public class PublicIdIsOnlyForItsOwnerTests
+{
+    private const string Code = "PL-4F7K2-9M4A1";
+
+    private readonly Mock<IMemberUnitOfWork> _memberData = new();
+    private readonly Mock<IMemberRepository> _members = new();
+    private readonly Mock<IUnitOfWork> _kurinData = new();
+    private readonly Mock<IMembershipRepository> _memberships = new();
+    private readonly Mock<ICurrentUserContext> _currentUser = new();
+
+    private readonly Guid _memberKey = Guid.NewGuid();
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly Guid _ownerUserKey = Guid.NewGuid();
+
+    public PublicIdIsOnlyForItsOwnerTests()
+    {
+        _memberData.SetupGet(u => u.Members).Returns(_members.Object);
+        _kurinData.SetupGet(u => u.Memberships).Returns(_memberships.Object);
+        var mentorAssignments = new Mock<IMentorAssignmentRepository>();
+        mentorAssignments
+            .Setup(r => r.GetActiveGroupsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _kurinData.SetupGet(u => u.MentorAssignments).Returns(mentorAssignments.Object);
+
+        _members
+            .Setup(r => r.GetByKeyAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberEntity
+            {
+                MemberKey = _memberKey,
+                PublicId = Code,
+                UserKey = _ownerUserKey,
+                FirstName = "Оксана",
+                LastName = "Тестова",
+                Email = "o@example.com",
+                PhoneNumber = "0000000000"
+            });
+        _memberships
+            .Setup(r => r.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new MembershipEntity { MemberKey = _memberKey, KurinKey = _kurinKey }]);
+
+        _currentUser.SetupGet(c => c.KurinKey).Returns(_kurinKey);
+    }
+
+    [Fact]
+    public async Task TheirOwnCode_ShouldBeTheirsToRead()
+    {
+        _currentUser.SetupGet(c => c.UserId).Returns(_ownerUserKey);
+
+        var result = await Handler().Handle(new GetMemberByKeyQuery(_memberKey), CancellationToken.None);
+
+        result.Data!.PublicId.Should().Be(Code);
+    }
+
+    [Fact]
+    public async Task SomeoneElsesCode_ShouldNotComeBack_EvenToTheKurinsLeadership()
+    {
+        _currentUser.SetupGet(c => c.UserId).Returns(Guid.NewGuid());
+        _currentUser.SetupGet(c => c.Roles).Returns(["KV.Zvyazkovyi"]);
+
+        var result = await Handler().Handle(new GetMemberByKeyQuery(_memberKey), CancellationToken.None);
+
+        result.Data!.PublicId.Should().BeNull();
+    }
+
+    private GetMemberByKeyQueryHandler Handler()
+    {
+        var access = new Mock<IResourceAccessService>();
+        access
+            .Setup(a => a.CheckAccessAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
+        return new(
+            _memberData.Object,
+            FakeBlobReadLinks.Instance,
+            _currentUser.Object,
+            FieldAccess.SeesEverything(_currentUser.Object.UserId),
+            access.Object,
+            _kurinData.Object,
+            new Mock<ProjectK.Common.Contracts.IdentityModule.IAccountProvisioningService>().Object,
+            Mock.Of<IKurinTagVisibility>(),
+            KurinDirectories.WithoutOffices());
+    }
+}

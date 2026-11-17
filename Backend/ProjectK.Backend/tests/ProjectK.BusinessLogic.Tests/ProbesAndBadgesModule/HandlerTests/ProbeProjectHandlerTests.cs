@@ -1,18 +1,21 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
@@ -27,10 +30,10 @@ public class ProbeProjectHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IProbeProjectRepository> _projects = new();
     private readonly Mock<IBadgeProgressRepository> _badges = new();
-    private readonly Mock<IProbeProjectAccess> _access = new();
+    private readonly Mock<IProbesAndBadgesAccess> _access = new();
     private readonly Mock<IBlobReadLinks> _links = new();
     private readonly Mock<IPhotoService> _photos = new();
-    private readonly Mock<IProbesCatalogService> _probes = new();
+    private readonly Mock<IProbesCatalogReader> _probes = new();
     private readonly Mock<IThirdProbeReader> _reader = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly JournalRecorder _journal;
@@ -50,9 +53,9 @@ public class ProbeProjectHandlerTests
         _links.Setup(l => l.For(It.IsAny<string?>())).Returns<string?>(name => $"https://blob/{name}?sig");
         _user.SetupGet(u => u.UserId).Returns(Guid.NewGuid());
         _user.SetupGet(u => u.KurinKey).Returns(Guid.NewGuid());
-        _journal = new JournalRecorder(_user.Object, new AuditActorResolver(_user.Object, new Mock<IMemberDirectory>().Object));
+        _journal = new JournalRecorder(_user.Object, new CurrentMember(_user.Object, new Mock<IMemberDirectory>().Object, Mock.Of<IMembershipDirectory>()));
         _reader.Setup(r => r.ReadAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ThirdProbeResponse(true, true, true, true, null, [], [], null!));
+            .ReturnsAsync(new ThirdProbeDto(true, true, true, true, null, [], [], null!));
         _projects.Setup(r => r.GetForMemberProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
         _projects.Setup(r => r.Create(It.IsAny<ProbeProject>(), It.IsAny<CancellationToken>())).Callback<ProbeProject, CancellationToken>((p, _) => _stored.Add(p));
         _projects.Setup(r => r.GetWithImagesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -70,10 +73,10 @@ public class ProbeProjectHandlerTests
         _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
 
     private SaveThirdProbeFileCommandHandler FileHandler() => new(
-        _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
 
     private UploadCampCertificateCommandHandler CertificateHandler() => new(
-        _unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object, _reader.Object);
+        _unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
 
     private ProbeProject Given(bool isSpare = false, bool isShared = false, int images = 0, string title = "Похід")
     {
@@ -104,7 +107,7 @@ public class ProbeProjectHandlerTests
         project.Reach.Should().Be(ProbeProjectReach.GroupOrKurin | ProbeProjectReach.Stanytsia);
         project.CoordinatorName.Should().Be("Олена Коваль");
         result.Data!.ProjectKey.Should().Be(project.ProbeProjectKey);
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectAdded);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectAdded);
     }
 
     [Fact]
@@ -250,7 +253,7 @@ public class ProbeProjectHandlerTests
         _projects.Verify(r => r.Delete(project, It.IsAny<CancellationToken>()), Times.Once);
         _photos.Verify(p => p.DeletePhotoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         spare.IsSpare.Should().BeFalse();
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectRemoved);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectRemoved);
     }
 
     [Fact]
@@ -279,7 +282,7 @@ public class ProbeProjectHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         (main.IsSpare, spare.IsSpare).Should().Be((true, false));
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectsSwapped);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectsSwapped);
     }
 
     [Fact]
@@ -308,7 +311,7 @@ public class ProbeProjectHandlerTests
 
         project.CompletedAtUtc.Should().NotBeNull();
         project.CoordinatorComment.Should().Be("Взірцево");
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectCompleted);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectCompleted);
     }
 
     [Fact]
@@ -339,8 +342,12 @@ public class ProbeProjectHandlerTests
     {
         _file = new ThirdProbeFile
         {
-            MemberKey = _memberKey, ProbeId = ProbeId, ReflectionOn = new DateOnly(2026, 3, 1), ReflectionWith = "Звʼязковий",
-            ReflectionConfirmedAtUtc = DateTime.UtcNow, ReflectionConfirmedByName = "Звʼязковий"
+            MemberKey = _memberKey,
+            ProbeId = ProbeId,
+            ReflectionOn = new DateOnly(2026, 3, 1),
+            ReflectionWith = "Звʼязковий",
+            ReflectionConfirmedAtUtc = DateTime.UtcNow,
+            ReflectionConfirmedByName = "Звʼязковий"
         };
 
         await FileHandler().Handle(
@@ -468,7 +475,7 @@ public class ProbeProjectHandlerTests
     [Fact]
     public async Task Stages_ShouldBeSetByWhoeverMaySign_AndJournaled()
     {
-        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
         var stages = new ThirdProbeStagesInput(new DateOnly(2025, 9, 1), new DateOnly(2025, 9, 20), new DateOnly(2025, 10, 1), new DateOnly(2025, 11, 1), null, null, null);
 
         var result = await handler.Handle(new SetThirdProbeStagesCommand(_memberKey, ProbeId, stages), CancellationToken.None);
@@ -476,7 +483,7 @@ public class ProbeProjectHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _file!.ApplicationSubmittedOn.Should().Be(new DateOnly(2025, 10, 1));
         _file.OpenedOn.Should().Be(new DateOnly(2025, 11, 1));
-        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.StagesChanged);
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.StagesChanged);
     }
 
     [Theory]
@@ -485,7 +492,7 @@ public class ProbeProjectHandlerTests
     [InlineData("2026-01-01", "2026-03-01", "2026-02-01")]
     public async Task Stages_ShouldRefuseAClosingBeforeTheOpeningOrANamingBeforeTheClosing(string opened, string? completed, string? named)
     {
-        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
         var stages = new ThirdProbeStagesInput(null, null, null, DateOnly.Parse(opened),
             completed is null ? null : DateOnly.Parse(completed), named is null ? null : DateOnly.Parse(named), null);
 
@@ -498,7 +505,7 @@ public class ProbeProjectHandlerTests
     public async Task Stages_ShouldBeForbidden_ToTheYouthThemself()
     {
         _access.Setup(a => a.CanSignAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
 
         var result = await handler.Handle(
             new SetThirdProbeStagesCommand(_memberKey, ProbeId, new ThirdProbeStagesInput(null, null, null, null, null, null, null)), CancellationToken.None);
@@ -554,7 +561,7 @@ public class ProbeProjectHandlerTests
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
 
-        ProbeProjectMarkdown.ImageKeys($"a ![x](project-image:{first})", $"[link](https://plast.org.ua) ![](project-image:{second})")
+        ProbeProjectMarkdownRules.ImageKeys($"a ![x](project-image:{first})", $"[link](https://plast.org.ua) ![](project-image:{second})")
             .Should().Equal(first, second);
     }
 }

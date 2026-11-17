@@ -1,14 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ProjectK.Common.Entities;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Entities.Shared;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.Common.Entities.KurinModule;
 
@@ -57,16 +54,16 @@ public class Kurin : Entity
 
     /// <summary>The kurin's гілки and numbers, in the order they are shown.</summary>
     public IReadOnlyList<KurinNumbering> Numbering
-        => [.. KurinBranchSet.Ordered(Branches, row => row.Branch).Select(row => new KurinNumbering(row.Branch, row.Number))];
+        => [.. KurinBranchSetRules.Ordered(Branches, row => row.Branch).Select(row => new KurinNumbering(row.Branch, row.Number))];
 
     /// <summary>
-    /// Replaces the kurin's гілки. The caller checks the set with <see cref="KurinBranchSet.IsValid"/>
+    /// Replaces the kurin's гілки. The caller checks the set with <see cref="KurinBranchSetRules.IsValid"/>
     /// and the numbers against the край; this keeps <see cref="Branch"/> and <see cref="Number"/>
     /// pointing at the first гілка.
     /// </summary>
     public void SetBranches(IReadOnlyCollection<KurinNumbering> branches)
     {
-        var wanted = KurinBranchSet.Ordered(branches, b => b.Branch).ToList();
+        var wanted = KurinBranchSetRules.Ordered(branches, b => b.Branch).ToList();
         if (wanted.Count == 0)
         {
             throw new ArgumentException("A kurin belongs to at least one гілка.", nameof(branches));
@@ -141,7 +138,7 @@ public class Kurin : Entity
     public string? EmblemBlobName { get; set; }
 
     /// <summary>Точкування as the kurin has it now: on in УПЮ and off in the older гілки unless the kurin chose.</summary>
-    public bool IsScoreEnabled => ScoreEnabled ?? !KurinBranchSet.IsSenior(Branch);
+    public bool IsScoreEnabled => ScoreEnabled ?? !KurinBranchSetRules.IsSenior(Branch);
 
     /// <summary>Days a done task stays on the board before it moves to the archive by itself; null keeps it there.</summary>
     public int? TaskAutoArchiveAfterDays { get; set; } = 30;
@@ -162,8 +159,5 @@ public class Kurin : Entity
     /// </summary>
     public string? AccessPolicy { get; set; }
     public ICollection<Group> Groups { get; set; } = new List<Group>();
-    public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
-    public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();
     public ICollection<PlanningSession> PlanningSessions { get; set; } = new List<PlanningSession>();
-    public ICollection<AgendaItem> AgendaItems { get; set; } = new List<AgendaItem>();
 }

@@ -1,9 +1,8 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Life;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
-using Xunit;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.Life;
+using ProjectK.Common.Dtos.MemberModule.Requests;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule;
 
@@ -51,7 +50,7 @@ public class LifeEntriesTests
     {
         var stored = new MemberLifeEntry();
 
-        LifeEntries.Apply(stored, new SaveLifeEntryRequest
+        LifeMapping.Apply(stored, new SaveLifeEntryRequest
         {
             Kind = LifeEntryKind.Camp,
             Course = TrainingCourse.Kvz,
@@ -72,7 +71,7 @@ public class LifeEntriesTests
     {
         var stored = new MemberLifeEntry();
 
-        LifeEntries.Apply(stored, Training(TrainingCourse.Kvz, "щось"));
+        LifeMapping.Apply(stored, Training(TrainingCourse.Kvz, "щось"));
 
         stored.Title.Should().BeNull();
     }

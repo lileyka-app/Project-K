@@ -5,7 +5,6 @@ using System.Text.Encodings.Web;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,21 +13,25 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
-using ProjectK.API.Helpers;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.API.Hosting;
+using ProjectK.API.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -38,7 +41,7 @@ namespace ProjectK.API.Tests.Security;
 /// </summary>
 public class KurinPolicyHttpIntegrationTests
 {
-    private static readonly string Vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string Vykhovnyk = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
 
     [Fact]
     public async Task Unsigning_ShouldBeRefused_WhenTheKurinKeepsUnsignProbe_WhileSigningStillWorks()
@@ -76,7 +79,7 @@ public class KurinPolicyHttpIntegrationTests
     [Fact]
     public async Task APolicyGivingMore_ShouldOpenTheEndpoint_ToAnOfficeTheStaticMapLeavesOut()
     {
-        var hurtkovyy = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
+        var hurtkovyy = SystemRoleNames.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
         await using var host = await PolicyTestHost.StartAsync(hurtkovyy);
         var route = $"/api/member/{host.MemberKey}/probes/probe-1/points/p-1/sign";
 
@@ -122,8 +125,8 @@ public class KurinPolicyHttpIntegrationTests
             using var scope = _app.Services.CreateScope();
             var handler = new SetKurinAccessPolicyCommandHandler(
                 scope.ServiceProvider.GetRequiredService<IUnitOfWork>(),
-                scope.ServiceProvider.GetRequiredService<IKurinAccessPolicyProvider>(),
-                new Mock<IAccessChangeSignal>().Object,
+                scope.ServiceProvider.GetRequiredService<IKurinAccessPolicyReader>(),
+                new Mock<IAccessChangeStore>().Object,
                 new Mock<IKurinAudit>().Object);
             var result = await handler.Handle(
                 new SetKurinAccessPolicyCommand(Kurin.KurinKey, Matrix(capability, audience, reach)), CancellationToken.None);
@@ -150,13 +153,13 @@ public class KurinPolicyHttpIntegrationTests
                 .AddScheme<AuthenticationSchemeOptions, PolicyAuthHandler>(PolicyAuthHandler.SchemeName, _ => { });
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeReader>();
+            var scopeReader = ScopeFacts.Repository();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(kurin.KurinKey, groupKey, Guid.NewGuid()));
             scopeReader
-                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[] { groupKey });
+                .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ScopeFacts.Leading(new[] { groupKey }));
 
             var kurins = new Mock<IKurinRepository>();
             kurins.Setup(x => x.GetByKeyAsync(kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurin);
@@ -167,17 +170,17 @@ public class KurinPolicyHttpIntegrationTests
             var mediator = new Mock<IMediator>();
             mediator
                 .Setup(x => x.Send(It.IsAny<UpdateProbePointSignatureCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
+                .ReturnsAsync(new ServiceResult<ProbeProgressDto>(
                     ResultType.Success,
-                    ProbeProgressResponse.CreateNotStarted(memberKey, kurin.KurinKey, "probe-1")));
+                    ProgressDtos.Probe(memberKey, kurin.KurinKey, "probe-1")));
 
+            unitOfWork.SetupGet(x => x.ResourceScopes).Returns(scopeReader.Object);
             builder.Services.AddSingleton(unitOfWork.Object);
-            builder.Services.AddScoped(_ => scopeReader.Object);
             builder.Services.AddSingleton(mediator.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
             builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
-            builder.Services.AddScoped<IKurinAccessPolicyProvider, KurinAccessPolicyProvider>();
+            builder.Services.AddScoped<IKurinAccessPolicyReader, KurinAccessPolicyReader>();
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
             builder.Services.AddControllers().AddApplicationPart(typeof(MemberProgressController).Assembly);
@@ -217,7 +220,7 @@ public class KurinPolicyHttpIntegrationTests
                 new(ClaimTypes.NameIdentifier, authState.UserId.ToString()),
                 new("sub", authState.UserId.ToString()),
                 new("kurinKey", authState.KurinKey.ToString()),
-                new(ClaimTypes.Role, SystemRole.Member),
+                new(ClaimTypes.Role, SystemRoleNames.Member),
                 new(ClaimTypes.Role, authState.Role)
             };
 

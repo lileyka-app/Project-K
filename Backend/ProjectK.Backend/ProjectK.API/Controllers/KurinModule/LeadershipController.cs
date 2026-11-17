@@ -3,14 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.API.Filters;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
@@ -38,7 +36,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("type/{leadershipType}/{typeKey:guid}")]
     [ResourceAuthorize("route:leadershipType", ResourceAction.Read, "route:typeKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipByType(string leadershipType, Guid typeKey, CancellationToken cancellationToken)
     {
         var request = new GetLeadershipByTypeQuery(leadershipType, typeKey);
@@ -58,7 +56,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{leadershipKey:guid}")]
     [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipByKey(Guid leadershipKey)
     {
         var request = new GetLeadershipByKeyQuery(leadershipKey);
@@ -76,7 +74,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost]
     [ResourceAuthorize("arg:dto.Type", ResourceAction.Create, "arg:dto.EntityKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateLeadership([FromBody] UpsertLeadershipRequest dto)
     {
         var request = new UpsertLeadershipCommand(dto);
@@ -90,7 +88,7 @@ public class LeadershipController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("{leadershipKey:guid}")]
     [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Update, "route:leadershipKey")]
-    [ProducesResponseType(typeof(LeadershipResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LeadershipDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateLeadership(Guid leadershipKey, [FromBody] UpsertLeadershipRequest dto)
     {
         var request = new UpsertLeadershipCommand(dto, leadershipKey);
@@ -102,12 +100,26 @@ public class LeadershipController : ControllerBase
     /// Returns who has held an office over time.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("histories/{leadershipKey}")]
+    [HttpGet("histories/{leadershipKey:guid}")]
     [ResourceAuthorize(ResourceType.Leadership, ResourceAction.Read, "route:leadershipKey")]
     [ProducesResponseType(typeof(IEnumerable<LeadershipHistoryMemberDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeadershipHistories(Guid leadershipKey)
     {
         var request = new GetLeadershipHistoriesQuery(leadershipKey);
+        var response = await _mediator.Send(request);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Lists the members who sit in the kurin's governing body.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("~/api/member/members/kv/{kurinKey:guid}")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
+    {
+        var request = new GetKurinKvMembersQuery(kurinKey);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }

@@ -1,0 +1,256 @@
+using FluentAssertions;
+using Microsoft.Extensions.Options;
+using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.Card;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Records.MemberModule;
+
+namespace ProjectK.BusinessLogic.Tests.MemberModule;
+
+/// <summary>
+/// Who may share a card and what it shows: 18 or older decides alone; younger only as far as every
+/// kurin they stand in allows; and a scanned card is read live, never from what was allowed before.
+/// </summary>
+public class MemberCardServiceTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 10, 31, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateOnly Today = DateOnly.FromDateTime(Now.UtcDateTime);
+
+    private readonly Guid _person = Guid.NewGuid();
+    private readonly Guid _kurinA = Guid.NewGuid();
+    private readonly Guid _kurinB = Guid.NewGuid();
+
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IMembershipRepository> _memberships = new();
+    private readonly Mock<IKurinCardSharingRepository> _kurinSharing = new();
+    private readonly Mock<IMemberCardShareRepository> _shares = new();
+    private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<ICardTokenSigner> _signer = new();
+    private readonly Mock<IResourceScopeRepository> _scope = ScopeFacts.Repository();
+    private readonly Mock<IHonoursCatalog> _honours = new();
+    private readonly List<KurinCardSharing> _settings = [];
+    private readonly List<Membership> _standing = [];
+    private MemberCardShare? _share;
+
+    public MemberCardServiceTests()
+    {
+        _unitOfWork.SetupGet(u => u.Memberships).Returns(_memberships.Object);
+        _unitOfWork.SetupGet(u => u.KurinCardSharing).Returns(_kurinSharing.Object);
+        _unitOfWork.SetupGet(u => u.MemberCardShares).Returns(_shares.Object);
+        _memberships.Setup(r => r.GetActiveForMemberAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(() => _standing);
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(_person, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => _standing.Select(m => new MembershipRecord(m.MembershipKey, m.KurinKey, 15, KurinBranch.UPYu, null, null, "Соколи", m.Kind, m.JoinedAtUtc, null)).ToList());
+        _kurinSharing.Setup(r => r.GetForKurinsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => _settings.Where(s => keys.Contains(s.KurinKey)).ToList());
+        _shares.Setup(r => r.GetForMemberAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(() => _share);
+        _members.Setup(m => m.FindAsync(_person, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(_person, null, "Назар", "Коваль", "n@x", "photo.jpg"));
+        _members.Setup(m => m.GetLevelsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync([PlastLevel.Uchasnyk]);
+    }
+
+    private void Born(int yearsAgo) =>
+        _members.Setup(m => m.GetDateOfBirthAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(Today.AddYears(-yearsAgo));
+
+    private void StandsIn(Guid kurinKey) =>
+        _standing.Add(new Membership { MemberKey = _person, KurinKey = kurinKey, JoinedAtUtc = Now.UtcDateTime.AddYears(-2) });
+
+    private void Allows(Guid kurinKey, CardField fields, bool link = false) =>
+        _settings.Add(new KurinCardSharing { KurinKey = kurinKey, MinorsMayShare = true, MinorFields = fields, MinorsMayLink = link });
+
+    private MemberCardService Cards() => new(
+        UnitOfWorks.WithScopes(_scope.Object, _unitOfWork),
+        new MembershipDirectory(_unitOfWork.Object),
+        new KurinDirectory(_unitOfWork.Object),
+        _members.Object,
+        Mock.Of<IMemberProgressDirectory>(p => p.GetForMemberAsync(_person, It.IsAny<CancellationToken>()) == Task.FromResult(MemberProgress.Empty)),
+        Mock.Of<IProbesCatalogReader>(),
+        Mock.Of<IBadgesCatalogReader>(),
+        new FakeBlobReadLinks(),
+        _honours.Object,
+        Options.Create(new EmailOptions { BaseUrl = "https://lileyka.test" }),
+        new FixedTimeProvider(Now),
+        ScopeFacts.Reader(_scope.Object));
+
+    private ReadCheckedCardQueryHandler Checked() => new(Cards(), _signer.Object, new FixedTimeProvider(Now));
+
+    private ReadLinkedCardQueryHandler Linked() => new(Cards(), _unitOfWork.Object);
+
+    [Fact]
+    public async Task SomeoneOf18_SharesEverything_WithoutTheKurin()
+    {
+        Born(18);
+        StandsIn(_kurinA);
+
+        var allowance = await Cards().AllowanceAsync(_person, default);
+
+        allowance.Should().Be(new Common.Dtos.MemberModule.CardAllowanceDto(true, true, CardField.All, true));
+    }
+
+    [Fact]
+    public async Task AMinor_SharesNothing_UntilTheKurinAllows()
+    {
+        Born(14);
+        StandsIn(_kurinA);
+
+        (await Cards().AllowanceAsync(_person, default)).MayShare.Should().BeFalse();
+
+        Allows(_kurinA, CardField.Kurin | CardField.Awards);
+        var allowance = await Cards().AllowanceAsync(_person, default);
+        allowance.MayShare.Should().BeTrue();
+        allowance.MaxFields.Should().Be(CardField.Kurin | CardField.Awards);
+        allowance.MayLink.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AMinorInTwoKurins_NeedsBoth_AndGetsWhatBothAllow()
+    {
+        Born(15);
+        StandsIn(_kurinA);
+        StandsIn(_kurinB);
+        Allows(_kurinA, CardField.Kurin | CardField.Awards | CardField.Photo, link: true);
+
+        (await Cards().AllowanceAsync(_person, default)).MayShare.Should().BeFalse();
+
+        Allows(_kurinB, CardField.Kurin | CardField.Awards, link: false);
+        var allowance = await Cards().AllowanceAsync(_person, default);
+        allowance.MaxFields.Should().Be(CardField.Kurin | CardField.Awards);
+        allowance.MayLink.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task NoDateOfBirth_CountsAsAMinor()
+    {
+        _members.Setup(m => m.GetDateOfBirthAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync((DateOnly?)null);
+        StandsIn(_kurinA);
+
+        (await Cards().AllowanceAsync(_person, default)).MayShare.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ACheckedCard_ShowsOnlyWhatIsBothChosenAndAllowed_StampedWithTheTime()
+    {
+        Born(14);
+        StandsIn(_kurinA);
+        Allows(_kurinA, CardField.Kurin | CardField.Level);
+        _share = new MemberCardShare { MemberKey = _person, Fields = CardField.Photo | CardField.Kurin };
+        _signer.Setup(s => s.Read("t", Now.UtcDateTime)).Returns(_person);
+
+        var card = (await Checked().Handle(new ReadCheckedCardQuery("t"), default)).Data!;
+
+        card.FullName.Should().Be("Назар Коваль");
+        card.PhotoUrl.Should().BeNull();
+        card.Kurins.Should().ContainSingle().Which.Number.Should().Be(15);
+        card.Level.Should().BeNull();
+        card.CheckedAtUtc.Should().Be(Now.UtcDateTime);
+    }
+
+    [Fact]
+    public async Task ACheckedCard_IsGone_OnceTheKurinWithdraws()
+    {
+        Born(14);
+        StandsIn(_kurinA);
+        _signer.Setup(s => s.Read("t", Now.UtcDateTime)).Returns(_person);
+
+        var result = await Checked().Handle(new ReadCheckedCardQuery("t"), default);
+
+        result.Type.Should().Be(ResultType.NotFound);
+    }
+
+    [Fact]
+    public async Task AnExpiredOrForgedToken_IsNotFound()
+    {
+        var result = await Checked().Handle(new ReadCheckedCardQuery("forged"), default);
+
+        result.Type.Should().Be(ResultType.NotFound);
+    }
+
+    [Fact]
+    public async Task ALinkedCard_IsGone_WhenLinksAreNotAllowed()
+    {
+        Born(14);
+        StandsIn(_kurinA);
+        Allows(_kurinA, CardField.Kurin, link: false);
+        _shares.Setup(r => r.GetByLinkTokenAsync("link", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberCardShare { MemberKey = _person, LinkToken = "link" });
+
+        (await Linked().Handle(new ReadLinkedCardQuery("link"), default)).Type.Should().Be(ResultType.NotFound);
+
+        _settings[0].MinorsMayLink = true;
+        (await Linked().Handle(new ReadLinkedCardQuery("link"), default)).Type.Should().Be(ResultType.Success);
+    }
+
+    [Fact]
+    public void CardFields_GoOutAsANumber_EvenWhereEnumsAreWrittenByName()
+    {
+        var options = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+        options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            new Common.Dtos.MemberModule.CardAllowanceDto(true, false, CardField.Kurin | CardField.Level, false), options);
+
+        json.Should().Contain("\"maxFields\":6");
+    }
+
+    private void Earned()
+    {
+        _members.Setup(m => m.GetConfirmedAwardsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new ConfirmedAward(null, "usp-hramota-zaslugy", new DateTime(2025, 5, 1)),
+            new ConfirmedAward(MemberAwardLevel.Second, null, new DateTime(2019, 5, 1))
+        ]);
+        _honours.Setup(h => h.GetById("usp-hramota-zaslugy"))
+            .Returns(new CatalogHonour("usp-hramota-zaslugy", HonourKind.Award, "Грамота заслуги", "usp-vidznachennia", "usp", 0, "https://catalog.test/hramota.png"));
+    }
+
+    [Fact]
+    public async Task AYouth_ShowsTheirUpyuAwards_ByLevel()
+    {
+        Born(18);
+        Earned();
+
+        var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
+
+        card!.Awards.Should().Equal(new Common.Dtos.MemberModule.PublicCardAwardDto(2, "2-е відзначення", null, new DateTime(2019, 5, 1), "UPYu"));
+    }
+
+    [Fact]
+    public async Task ASenior_ShowsTheSeniorAwards_WithTheCatalogueTitleAndPicture_NotTheYouthOnes()
+    {
+        Born(25);
+        Earned();
+        _scope.Setup(s => s.GetOpenMembershipBranchesAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
+
+        var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
+
+        card!.Awards.Should().Equal(new Common.Dtos.MemberModule.PublicCardAwardDto(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1), "USP"));
+    }
+
+    [Fact]
+    public async Task TheWholeWay_ShowsEveryLine_MarkedWhereItWasEarned_NewestFirst()
+    {
+        Born(25);
+        Earned();
+        _scope.Setup(s => s.GetOpenMembershipBranchesAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
+
+        var card = await Cards().ReadAsync(_person, CardField.Awards | CardField.AwardsHistory, null, default);
+
+        card!.Awards!.Select(a => a.Ulad).Should().Equal("USP", "UPYu");
+    }
+}

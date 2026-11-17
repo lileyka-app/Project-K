@@ -1,22 +1,18 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using AutoMapper;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MentorAssignment;
 
 /// <summary>
-/// Maps with the real profile on purpose: the handler answers through <c>IMemberDirectory</c>,
-/// which hands back <c>MemberSummary</c> records, and a mocked mapper hid that no map from the
-/// record to the DTO existed — every GET /group/{key}/mentors was a 500 in the e2e run while
+/// Maps for real on purpose: the handler answers through <c>IMemberDirectory</c>, which hands
+/// back <c>MemberSummary</c> records, and a mocked mapper once hid that no map from the record to
+/// the DTO existed — every GET /group/{key}/mentors was a 500 in the e2e run while
 /// the unit tests stayed green.
 /// </summary>
 public class GetGroupMentorsQueryHandlerTests
@@ -29,13 +25,7 @@ public class GetGroupMentorsQueryHandlerTests
     {
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.MentorAssignments).Returns(_assignments.Object);
-        var mapper = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, NullLoggerFactory.Instance)
-            .CreateMapper();
-        _handler = new GetGroupMentorsQueryHandler(unitOfWork.Object, _members.Object, mapper);
+        _handler = new GetGroupMentorsQueryHandler(unitOfWork.Object, _members.Object, FakeBlobReadLinks.Instance);
     }
 
     [Fact]
@@ -52,7 +42,7 @@ public class GetGroupMentorsQueryHandlerTests
                 new Common.Entities.KurinModule.MentorAssignment { GroupKey = groupKey, MentorUserKey = mentorAccount },
                 new Common.Entities.KurinModule.MentorAssignment { GroupKey = groupKey, MentorUserKey = revokedAccount, RevokedAtUtc = DateTime.UtcNow }
             ]);
-        var mentor = new MemberSummary(Guid.NewGuid(), mentorAccount, Guid.NewGuid(), groupKey, "Оксана", "Виховниця", "o@example.com", null);
+        var mentor = new MemberSummary(Guid.NewGuid(), mentorAccount, "Оксана", "Виховниця", "o@example.com", null);
         _members.Setup(d => d.FindByAccountAsync(mentorAccount, It.IsAny<CancellationToken>())).ReturnsAsync(mentor);
 
         var result = await _handler.Handle(new GetGroupMentorsQuery(groupKey), CancellationToken.None);

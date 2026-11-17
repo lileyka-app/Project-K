@@ -1,10 +1,9 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -60,7 +59,7 @@ public class DuesConcessionGrantLedgerTests
     [Fact]
     public void Percent_LowersOnlyTheNamedParts()
     {
-        Grant("Брат", KraiDues.Percent, 50, DuesParts.Stanytsia | DuesParts.Group, Q1);
+        Grant("Брат", KraiDuesNames.Percent, 50, DuesParts.Stanytsia | DuesParts.Group, Q1);
         Charge(Q1);
 
         var quarter = Quarters().Single();
@@ -72,7 +71,7 @@ public class DuesConcessionGrantLedgerTests
     [Fact]
     public void Amount_IsSharedBetweenThePartsInProportion()
     {
-        Grant("Знижка", KraiDues.Amount, 100, DuesParts.Stanytsia | DuesParts.Kurin | DuesParts.Group, Q1);
+        Grant("Знижка", KraiDuesNames.Amount, 100, DuesParts.Stanytsia | DuesParts.Kurin | DuesParts.Group, Q1);
         Charge(Q1);
 
         var charged = Quarters().Single().Charged;
@@ -84,7 +83,7 @@ public class DuesConcessionGrantLedgerTests
     [Fact]
     public void Amount_NeverGoesBelowZero()
     {
-        Grant("Знижка", KraiDues.Amount, 1000, DuesParts.Kurin, Q1);
+        Grant("Знижка", KraiDuesNames.Amount, 1000, DuesParts.Kurin, Q1);
         Charge(Q1);
 
         Quarters().Single().Charged.Should().Be(new DuesAmount(240, 0, 45));
@@ -93,7 +92,7 @@ public class DuesConcessionGrantLedgerTests
     [Fact]
     public void Exempt_FreesTheWholeQuarter()
     {
-        Grant("Звільнення", KraiDues.Exempt, 0, DuesParts.Stanytsia | DuesParts.Krai | DuesParts.Kurin | DuesParts.Group, Q1);
+        Grant("Звільнення", KraiDuesNames.Exempt, 0, DuesParts.Stanytsia | DuesParts.Krai | DuesParts.Kurin | DuesParts.Group, Q1);
         Charge(Q1);
 
         Quarters().Single().Charged.Total.Should().Be(0);
@@ -103,8 +102,8 @@ public class DuesConcessionGrantLedgerTests
     public void TheCheapest_OfTheKurinsPilhaAndTheKraisPilhy_Counts()
     {
         _concessions.Add(new DuesConcession { KurinKey = Kurin, MembershipKey = Youth, FromQuarter = Q1.Index, IsConcession = true });
-        Grant("Мала", KraiDues.Percent, 10, DuesParts.Stanytsia, Q1);
-        Grant("Велика", KraiDues.Percent, 50, DuesParts.Stanytsia, Q2);
+        Grant("Мала", KraiDuesNames.Percent, 10, DuesParts.Stanytsia, Q1);
+        Grant("Велика", KraiDuesNames.Percent, 50, DuesParts.Stanytsia, Q2);
         Charge(Q1, Q2);
 
         var quarters = Quarters();
@@ -121,7 +120,7 @@ public class DuesConcessionGrantLedgerTests
     [Fact]
     public void Grant_CoversOnlyItsQuarters()
     {
-        Grant("Брат", KraiDues.Exempt, 0, DuesParts.Group, Q2, Q2);
+        Grant("Брат", KraiDuesNames.Exempt, 0, DuesParts.Group, Q2, Q2);
         Charge(Q1, Q2, Q3);
 
         Quarters().Select(q => q.Charged.Group).Should().Equal(45, 0, 45);
@@ -131,7 +130,7 @@ public class DuesConcessionGrantLedgerTests
     public void Priced_KeepsThePriceWithoutTheKraisPilhy_ForTheReport()
     {
         _concessions.Add(new DuesConcession { KurinKey = Kurin, MembershipKey = Youth, FromQuarter = Q1.Index, IsConcession = true });
-        var grant = Grant("Звільнення", KraiDues.Exempt, 0, DuesParts.Stanytsia, Q1);
+        var grant = Grant("Звільнення", KraiDuesNames.Exempt, 0, DuesParts.Stanytsia, Q1);
         Charge(Q1);
 
         var price = Ledger().Priced(Youth, Group, Q1);
@@ -144,14 +143,14 @@ public class DuesConcessionGrantLedgerTests
     [Fact]
     public void Rule_RoundsToCents_AndTheCentsAddUp()
     {
-        var rule = new DuesConcessionRule("x", "x", KraiDues.Amount, 10, DuesParts.Stanytsia | DuesParts.Kurin | DuesParts.Group);
+        var rule = new DuesConcessionRule("x", "x", KraiDuesNames.Amount, 10, DuesParts.Stanytsia | DuesParts.Kurin | DuesParts.Group);
 
         var result = rule.Apply(new DuesAmount(1, 1, 1));
 
         (3 - result.Total).Should().Be(3);
         result.Should().Be(new DuesAmount(0, 0, 0));
 
-        var third = new DuesConcessionRule("y", "y", KraiDues.Amount, 1, DuesParts.Stanytsia | DuesParts.Kurin | DuesParts.Group)
+        var third = new DuesConcessionRule("y", "y", KraiDuesNames.Amount, 1, DuesParts.Stanytsia | DuesParts.Kurin | DuesParts.Group)
             .Apply(new DuesAmount(10, 10, 10));
         third.Total.Should().Be(29);
     }

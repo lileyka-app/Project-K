@@ -1,18 +1,13 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
-using ProjectK.Infrastructure.Services.BlobStorageService;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Options.Shared;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Infrastructure.Services.Blobs;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService;
 

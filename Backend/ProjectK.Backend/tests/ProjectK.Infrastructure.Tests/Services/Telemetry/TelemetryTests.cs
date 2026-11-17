@@ -7,19 +7,21 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Options.Shared;
+using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Services.Telemetry;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Services.Telemetry;
 
 public class TelemetryTests
 {
     private static DbContextOptions<AppDbContext> NewDatabase() =>
-        new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     [Theory]
     [InlineData("Production", "prod")]

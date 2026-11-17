@@ -1,8 +1,7 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Models.Enums;
-using Xunit;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 
@@ -14,7 +13,7 @@ public class ProbeLineTests
 {
     private const string New = "upyu-2026";
 
-    private static readonly ProbeSummaryResponse[] Catalog =
+    private static readonly ProbeSummaryDto[] Catalog =
     [
         Probe("probe-1", order: 1),
         Probe("probe-2", order: 2),
@@ -24,11 +23,11 @@ public class ProbeLineTests
         Probe("probe-2-2026", order: 2, edition: New),
     ];
 
-    private static ProbeSummaryResponse Probe(string id, int order, string? edition = null) =>
+    private static ProbeSummaryDto Probe(string id, int order, string? edition = null) =>
         new(id, id, PointsCount: 10, SectionsCount: 2, edition, order, "ua", "approved");
 
     private static string[] Line(string? groupEdition, params (string Id, ProbeProgressStatus Status)[] progress) =>
-        [.. ProbeLine.Of(Catalog, progress.ToDictionary(p => p.Id, p => p.Status), groupEdition).Select(p => p.Id)];
+        [.. ProbeLineRules.Of(Catalog, progress.ToDictionary(p => p.Id, p => p.Status), groupEdition).Select(p => p.Id)];
 
     [Fact]
     public void Of_WalksTheUnnamedEdition_WhenTheGroupChoseNone()
@@ -76,7 +75,7 @@ public class ProbeLineTests
             ["probe-2"] = ProbeProgressStatus.Completed,
         };
 
-        ProbeLine.HeldBy(Catalog, progress)!.Id.Should().Be("probe-2");
-        ProbeLine.HeldBy(Catalog, new Dictionary<string, ProbeProgressStatus>()).Should().BeNull();
+        ProbeLineRules.HeldBy(Catalog, progress)!.Id.Should().Be("probe-2");
+        ProbeLineRules.HeldBy(Catalog, new Dictionary<string, ProbeProgressStatus>()).Should().BeNull();
     }
 }

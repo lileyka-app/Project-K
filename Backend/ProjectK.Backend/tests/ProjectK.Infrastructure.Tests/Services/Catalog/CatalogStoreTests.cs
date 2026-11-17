@@ -1,6 +1,6 @@
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Services.Catalog;
-using Xunit;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.Tests.Services.Catalog;
 
@@ -9,7 +9,7 @@ public class CatalogStoreTests
     private static CatalogStore Loaded()
     {
         var store = new CatalogStore();
-        store.Replace(CatalogMapper.ToState(CatalogClient.Parse(CatalogTestData.Bytes), "https://catalog.test", DateTimeOffset.UnixEpoch));
+        store.Replace(CatalogMapping.ToState(CatalogClient.Parse(CatalogTestData.Bytes), "https://catalog.test", DateTimeOffset.UnixEpoch));
         return store;
     }
 
@@ -31,7 +31,7 @@ public class CatalogStoreTests
         var store = Loaded();
         store.Name("ua", "Пласт в Україні");
 
-        store.Replace(CatalogMapper.ToState(CatalogClient.Parse(CatalogTestData.Bytes), "https://catalog.test", DateTimeOffset.UnixEpoch));
+        store.Replace(CatalogMapping.ToState(CatalogClient.Parse(CatalogTestData.Bytes), "https://catalog.test", DateTimeOffset.UnixEpoch));
 
         Assert.Equal("Пласт в Україні", ((IBadgesCatalog)store).GetById("plavets")!.Country);
     }

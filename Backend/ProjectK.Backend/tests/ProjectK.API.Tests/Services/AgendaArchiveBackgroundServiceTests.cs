@@ -1,19 +1,15 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 
 namespace ProjectK.API.Tests.Services;
 
@@ -29,7 +25,7 @@ public class AgendaArchiveBackgroundServiceTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
-        _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseSqlite(_connection).Options;
         using var context = new AppDbContext(_options);
         context.Database.EnsureCreated();
     }
@@ -39,7 +35,7 @@ public class AgendaArchiveBackgroundServiceTests : IDisposable
     private AgendaArchiveBackgroundService Service()
     {
         var services = new ServiceCollection();
-        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection));
+        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection).AddAppDbContextInterceptors());
         return new AgendaArchiveBackgroundService(services.BuildServiceProvider(), Mock.Of<ILogger<AgendaArchiveBackgroundService>>(), TimeProvider.System);
     }
 

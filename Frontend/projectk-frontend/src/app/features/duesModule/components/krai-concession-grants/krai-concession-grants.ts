@@ -9,7 +9,7 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { quarterKey, quarterLabel } from '../../functions/dues-format.function';
 import { QuarterOption } from '../../functions/from-quarter-options.function';
-import { DuesConcessionGrantDto, KraiConcessionDto, describeConcession } from '../../models/concession.dto';
+import { CONCESSION_ERROR_TEXT, DuesConcessionGrantDto, KraiConcessionDto, describeConcession } from '../../models/concession.dto';
 import { DuesBoxRef, QuarterDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 
@@ -155,11 +155,8 @@ function endOptions(from: QuarterDto): QuarterOption[] {
   return options;
 }
 
-/** Сервер пояснює українською, чому не надав пільгу (400) чи що вона вже діє (409). */
+/** Чому сервер не надав пільгу, за кодом помилки; невідомий код — `null`. */
 function serverMessage(error: unknown): string | null {
-  if (error instanceof HttpErrorResponse && (error.status === 400 || error.status === 409)) {
-    const message = (error.error as { message?: unknown } | null)?.message;
-    return typeof message === 'string' && message ? message : null;
-  }
-  return null;
+  const code = error instanceof HttpErrorResponse ? (error.error as { error?: unknown } | null)?.error : null;
+  return typeof code === 'string' ? CONCESSION_ERROR_TEXT[code] ?? null : null;
 }

@@ -1,6 +1,6 @@
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -299,6 +299,3 @@ public sealed class DuesLedger
         return (cash, card);
     }
 }
-
-/// <summary>A quarter's price for one person, with the пільга of the край that set it, if one did.</summary>
-public sealed record DuesPrice(DuesAmount Amount, DuesConcessionGrant? Grant, DuesAmount WithoutGrants);

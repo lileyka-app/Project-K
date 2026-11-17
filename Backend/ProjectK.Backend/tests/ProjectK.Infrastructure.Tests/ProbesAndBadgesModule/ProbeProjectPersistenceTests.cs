@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
-using ProjectK.Infrastructure.Services.BlobStorageService;
-using Xunit;
+using ProjectK.Infrastructure.Services.Blobs;
 
 namespace ProjectK.Infrastructure.Tests.ProbesAndBadgesModule;
 
@@ -15,7 +16,7 @@ namespace ProjectK.Infrastructure.Tests.ProbesAndBadgesModule;
 public class ProbeProjectPersistenceTests
 {
     private static DbContextOptions<AppDbContext> Options() =>
-        new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     private static ProbeProject Project(Guid memberKey, params string[] blobs)
     {
@@ -30,9 +31,9 @@ public class ProbeProjectPersistenceTests
     [Fact]
     public void TheCleanupSweepsTheProjectFolder()
     {
-        Assert.Contains(BlobUploadFolders.ProbeProjectImages, BlobUploadFolders.ScenarioFolders);
-        Assert.StartsWith(BlobUploadFolders.ProbeProjectImages, BlobUploadContext.ProbeProjectImage.Folder);
-        Assert.Contains(BlobUploadFolders.ThirdProbeCertificates, BlobUploadFolders.ScenarioFolders);
+        Assert.Contains(BlobUploadFolderNames.ProbeProjectImages, BlobUploadFolderNames.ScenarioFolders);
+        Assert.StartsWith(BlobUploadFolderNames.ProbeProjectImages, BlobUploadContext.ProbeProjectImage.Folder);
+        Assert.Contains(BlobUploadFolderNames.ThirdProbeCertificates, BlobUploadFolderNames.ScenarioFolders);
     }
 
     [Fact]
@@ -51,7 +52,7 @@ public class ProbeProjectPersistenceTests
 
         await using (var context = new AppDbContext(options))
         {
-            var referenced = await new ProbeProjectImageReferenceProvider(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
+            var referenced = await new ProbeProjectImageReferenceReader(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
             Assert.Equal(["probe-project-images/a.jpg", "third-probe-certificates/p.pdf"], referenced.Order());
         }
     }
@@ -88,7 +89,7 @@ public class ProbeProjectPersistenceTests
 
         await using (var context = new AppDbContext(options))
         {
-            var referenced = await new ProbeProjectImageReferenceProvider(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
+            var referenced = await new ProbeProjectImageReferenceReader(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
             Assert.Equal(["probe-project-images/a.jpg", "probe-project-images/b.jpg"], referenced.Order());
         }
     }

@@ -1,0 +1,47 @@
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
+
+namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+
+/// <summary>What both посвідка handlers share: their dependencies and the journal line.</summary>
+public abstract class CampCertificateHandlerBase
+{
+    protected static ServiceResult<ThirdProbeDto> StorageFull() =>
+        ProbeProjectWriteRules.Refuse<ThirdProbeDto>(
+            ProbesAndBadgesErrors.StorageFull, $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
+
+    protected CampCertificateHandlerBase(
+        IUnitOfWork unitOfWork,
+        IProbesAndBadgesAccess access,
+        IPhotoService photos,
+        IKurinAudit audit,
+        IProbesCatalogReader probes,
+        IThirdProbeReader reader)
+    {
+        UnitOfWork = unitOfWork;
+        Access = access;
+        Photos = photos;
+        Audit = audit;
+        Probes = probes;
+        Reader = reader;
+    }
+
+    protected IUnitOfWork UnitOfWork { get; }
+    protected IProbesAndBadgesAccess Access { get; }
+    protected IPhotoService Photos { get; }
+    protected IKurinAudit Audit { get; }
+    protected IProbesCatalogReader Probes { get; }
+    protected IThirdProbeReader Reader { get; }
+
+    protected Task RecordAsync(string action, ThirdProbeFile file, Guid memberKey, string probeId, CancellationToken cancellationToken) =>
+        Audit.RecordAsync(
+            new AuditRecord(AuditArea.Probe, action, file.ThirdProbeFileKey, ProgressAuditNames.Probe(Probes, probeId), memberKey),
+            cancellationToken);
+}

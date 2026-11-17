@@ -1,13 +1,15 @@
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 
 /// <summary>
-/// The two questions every score write asks: is this the kurin the caller acts in, and may they score
-/// this гурток. A youth in no гурток can be scored only by someone who scores the whole kurin, so the
-/// check for them runs against the kurin itself.
+/// The score module's rights. The two questions every score write asks: is this the kurin the caller
+/// acts in, and may they score this гурток. A youth in no гурток can be scored only by someone who
+/// scores the whole kurin, so the check for them runs against the kurin itself. Settings and the КВ's
+/// own book ask the same first question and then their own second one.
 /// </summary>
 public sealed class ScoreAccess
 {
@@ -21,7 +23,7 @@ public sealed class ScoreAccess
     }
 
     public ServiceResult<T>? Refuse<T>(Guid kurinKey) =>
-        kurinKey == Guid.Empty || _currentUser.KurinKey != kurinKey ? new ServiceResult<T>(ResultType.Forbidden) : null;
+        kurinKey == Guid.Empty || _currentUser.KurinKey != kurinKey ? ScoreErrors.Refused<T>() : null;
 
     /// <summary>Whether the caller may do <paramref name="action"/> to the points of a гурток — or of the kurin's unplaced youths.</summary>
     public async Task<bool> MayScoreAsync(Guid kurinKey, Guid? groupKey, ResourceAction action, CancellationToken cancellationToken)
@@ -57,8 +59,30 @@ public sealed class ScoreAccess
     public async Task<bool> MayManageAsync(Guid kurinKey, CancellationToken cancellationToken) =>
         (await _resourceAccess.CheckAccessAsync(ResourceType.KurinScore, ResourceAction.Manage, kurinKey, cancellationToken)).IsAllowed;
 
-    public static ServiceResult<T> Forbidden<T>() => new(ResultType.Forbidden);
+    /// <summary>What every settings write shares: it is the caller's kurin, and they manage its score.</summary>
+    public async Task<ServiceResult<T>?> RefuseSettingsAsync<T>(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        if (Refuse<T>(kurinKey) is { } refused)
+        {
+            return refused;
+        }
 
-    public static ServiceResult<T> NotFound<T>(string what) =>
-        ServiceResult<T>.Failure(ResultType.NotFound, "ScoreNotFound", what);
+        return await MayManageAsync(kurinKey, cancellationToken) ? null : ScoreErrors.Refused<T>();
+    }
+
+    /// <summary>
+    /// Who stands in the КВ's own book — the Звʼязковий and the впорядники — and that this is their kurin.
+    /// The endpoint lets in only those with KurinScorePrivate; here it is checked once more against the
+    /// kurin the caller acts in, as every score handler does.
+    /// </summary>
+    public async Task<ServiceResult<T>?> RefusePrivateAsync<T>(Guid kurinKey, ResourceAction action, CancellationToken cancellationToken)
+    {
+        if (Refuse<T>(kurinKey) is { } refused)
+        {
+            return refused;
+        }
+
+        var decision = await _resourceAccess.CheckAccessAsync(ResourceType.KurinScorePrivate, action, kurinKey, cancellationToken);
+        return decision.IsAllowed ? null : ScoreErrors.Refused<T>();
+    }
 }

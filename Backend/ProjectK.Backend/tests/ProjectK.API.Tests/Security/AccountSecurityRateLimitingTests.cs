@@ -1,13 +1,8 @@
 using System.Reflection;
 using Microsoft.AspNetCore.RateLimiting;
-using ProjectK.API.Controllers.AuthModule;
-using ProjectK.API.Controllers.UsersModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.RequestPasswordReset;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ResetPassword;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Models.Dtos.AuthModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
-using ProjectK.Common.Models.Dtos.UsersModule;
+using ProjectK.API.Controllers.IdentityModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
+using ProjectK.Common.Dtos.IdentityModule.Requests;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -26,17 +21,17 @@ public class AccountSecurityRateLimitingTests
     public static IEnumerable<object[]> AccountSecurityEndpoints()
     {
         yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaSetup));
-        yield return Row<Action<AuthController, MfaVerifyRequestDto>>(nameof(AuthController.EnableMfa));
-        yield return Row<Action<AuthController, MfaRecoveryCodesRequestDto>>(nameof(AuthController.RotateMfaRecoveryCodes));
-        yield return Row<Action<AuthController, MfaLoginRequestDto, bool>>(nameof(AuthController.VerifyMfaLogin));
+        yield return Row<Action<AuthController, MfaVerifyRequest>>(nameof(AuthController.EnableMfa));
+        yield return Row<Action<AuthController, MfaRecoveryCodesRequest>>(nameof(AuthController.RotateMfaRecoveryCodes));
+        yield return Row<Action<AuthController, MfaLoginRequest, bool>>(nameof(AuthController.VerifyMfaLogin));
         yield return Row<Action<AuthController>>(nameof(AuthController.GetMfaStatus));
 
         yield return Row<Action<UserController>>(nameof(UserController.GetAccountSettings));
-        yield return Row<Action<UserController, UpdateAccountProfileRequestDto>>(nameof(UserController.UpdateAccountProfile));
-        yield return Row<Action<UserController, ConfirmAccountEmailChangeRequestDto>>(nameof(UserController.ConfirmAccountEmailChange));
-        yield return Row<Action<UserController, ChangePasswordRequestDto>>(nameof(UserController.ChangePassword));
-        yield return Row<Action<UserController, ResetMfaRequestDto>>(nameof(UserController.ResetMfa));
-        yield return Row<Action<UserController, DisableMfaRequestDto>>(nameof(UserController.DisableMfa));
+        yield return Row<Action<UserController, UpdateAccountProfileRequest>>(nameof(UserController.UpdateAccountProfile));
+        yield return Row<Action<UserController, ConfirmAccountEmailChangeRequest>>(nameof(UserController.ConfirmAccountEmailChange));
+        yield return Row<Action<UserController, ChangePasswordRequest>>(nameof(UserController.ChangePassword));
+        yield return Row<Action<UserController, ResetMfaRequest>>(nameof(UserController.ResetMfa));
+        yield return Row<Action<UserController, DisableMfaRequest>>(nameof(UserController.DisableMfa));
         yield return Row<Action<UserController, Guid>>(nameof(UserController.ResetUserMfa));
 
         yield return Row<Action<OnboardingController, RequestPasswordResetCommand>>(nameof(OnboardingController.RequestPasswordReset));

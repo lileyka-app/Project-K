@@ -1,27 +1,29 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.Grants;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Concession;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.DuesModule.Requests;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
 public class DuesConcessionGrantHandlerTests
 {
     private static readonly Guid Actor = Guid.NewGuid();
-    private static readonly DuesConcessionRule Sibling = new("sibling", "Брат чи сестра", KraiDues.Percent, 20, DuesParts.Stanytsia);
+    private static readonly DuesConcessionRule Sibling = new("sibling", "Брат чи сестра", KraiDuesNames.Percent, 20, DuesParts.Stanytsia);
 
     private readonly Kurin _kurin = new(7);
     private readonly Group _group;
@@ -50,13 +52,13 @@ public class DuesConcessionGrantHandlerTests
         _user.SetupGet(u => u.KurinKey).Returns(_kurin.KurinKey);
     }
 
-    private GroupDuesAccess Access()
+    private DuesAccess Access()
     {
         var groups = new Mock<IGroupRepository>();
         groups.Setup(g => g.GetByKeyAsync(_group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_group);
         var uow = new Mock<IUnitOfWork>();
         uow.SetupGet(u => u.Groups).Returns(groups.Object);
-        return new GroupDuesAccess(uow.Object, _user.Object, Mock.Of<IDuesKurinShape>());
+        return new DuesAccess(uow.Object, _dues.Object, _user.Object, Mock.Of<IDuesKurinShape>());
     }
 
     private IMembershipDirectory Memberships()
@@ -66,15 +68,15 @@ public class DuesConcessionGrantHandlerTests
         return memberships.Object;
     }
 
-    private IKraiProfileProvider Profiles()
+    private IKraiProfileDirectory Profiles()
     {
         var profile = new KraiProfile(
             "cz", "Чехія", 2,
             new KraiCatalogSettings(["ua"], []),
             new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
             KraiCardFieldsSettings.Default,
-            new KraiDuesSettings(KraiDues.Stanytsia) { Concessions = [Sibling] });
-        var profiles = new Mock<IKraiProfileProvider>();
+            new KraiDuesSettings(KraiDuesNames.Stanytsia) { Concessions = [Sibling] });
+        var profiles = new Mock<IKraiProfileDirectory>();
         profiles.Setup(p => p.GetForKurinAsync(_kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(profile);
         return profiles.Object;
     }
@@ -97,7 +99,7 @@ public class DuesConcessionGrantHandlerTests
         result.Type.Should().Be(ResultType.Created);
         var grant = _grants.Single();
         grant.Name.Should().Be("Брат чи сестра");
-        grant.Kind.Should().Be(KraiDues.Percent);
+        grant.Kind.Should().Be(KraiDuesNames.Percent);
         grant.Value.Should().Be(20);
         grant.Parts.Should().Be(DuesParts.Stanytsia);
         grant.FromQuarter.Should().Be(new DuesQuarter(2026, 2).Index);

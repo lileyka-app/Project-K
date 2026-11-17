@@ -1,28 +1,11 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
-
-/// <summary>
-/// Who answers when a kurin asks for a person, and what it may ask. Youth and senior kurins are two
-/// separate lines: a kurin of the same line as the asking one answers, as between any two kurins.
-/// Across lines nothing is closed — only «прийняти ще й до нас» — and the person answers for
-/// themselves, unless they are still a юнак of an УПЮ kurin: then that kurin answers, so a юнак never
-/// puts themselves in УСП or УПС.
-/// </summary>
-/// <param name="ToSenior">The asking kurin is УСП/УПС: it takes people in only as members, never as юнаки or впорядники.</param>
-/// <param name="JoinsAtOnce">Nobody to ask: the person stands in no kurin and has no account to answer from.</param>
-/// <param name="PersonAnswers">The request goes to the person, not to a kurin.</param>
-/// <param name="TransferAllowed">«Перевести» is possible: only between kurins of the same line.</param>
-/// <param name="AskableKurinKeys">The kurins whose Звʼязковий may answer; one is chosen when there are several.</param>
-public sealed record MembershipAskRoute(
-    bool ToSenior,
-    bool JoinsAtOnce,
-    bool PersonAnswers,
-    bool TransferAllowed,
-    IReadOnlyList<Guid> AskableKurinKeys);
 
 public sealed class MembershipAskRouting
 {
@@ -36,23 +19,23 @@ public sealed class MembershipAskRouting
     }
 
     /// <summary>The route as the asking kurin's screen reads it, with the kurins to choose from named.</summary>
-    public async Task<MembershipAskOffer> OfferAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)
+    public async Task<MembershipAskOfferDto> OfferAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)
     {
         var route = await ResolveAsync(memberKey, toKurinKey, cancellationToken);
-        var kurins = new List<MembershipRequestKurin>(route.AskableKurinKeys.Count);
+        var kurins = new List<MembershipRequestKurinDto>(route.AskableKurinKeys.Count);
         foreach (var kurinKey in route.AskableKurinKeys)
         {
-            kurins.Add(MembershipRequestKurin.Of(kurinKey, await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken)));
+            kurins.Add((await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken)).ToRequestKurinDto(kurinKey));
         }
 
-        return new MembershipAskOffer(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins);
+        return new MembershipAskOfferDto(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins);
     }
 
     public async Task<MembershipAskRoute> ResolveAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)
     {
         var memberUserKey = (await _members.FindAsync(memberKey, cancellationToken))?.UserKey;
         var toKurin = await _unitOfWork.Kurins.GetByKeyAsync(toKurinKey, cancellationToken);
-        var toSenior = toKurin is not null && KurinBranchSet.IsSenior(toKurin.Branch);
+        var toSenior = toKurin is not null && KurinBranchSetRules.IsSenior(toKurin.Branch);
 
         var open = (await _unitOfWork.Memberships.GetRecordsForMemberAsync(memberKey, cancellationToken))
             .Where(m => m.LeftAtUtc is null && m.KurinKey != toKurinKey)
@@ -67,14 +50,14 @@ public sealed class MembershipAskRouting
                 : new MembershipAskRoute(toSenior, JoinsAtOnce: true, PersonAnswers: false, TransferAllowed: false, []);
         }
 
-        var sameLine = open.Where(m => KurinBranchSet.IsSenior(m.Branch) == toSenior).Select(m => m.KurinKey).Distinct().ToList();
+        var sameLine = open.Where(m => KurinBranchSetRules.IsSenior(m.Branch) == toSenior).Select(m => m.KurinKey).Distinct().ToList();
         if (sameLine.Count > 0)
         {
             return new MembershipAskRoute(toSenior, JoinsAtOnce: false, PersonAnswers: false, TransferAllowed: true, sameLine);
         }
 
         var youthIn = open
-            .Where(m => !KurinBranchSet.IsSenior(m.Branch) && m.Kind == MembershipKind.Youth)
+            .Where(m => !KurinBranchSetRules.IsSenior(m.Branch) && m.Kind == MembershipKind.Youth)
             .Select(m => m.KurinKey).Distinct().ToList();
         if (toSenior && youthIn.Count > 0)
         {

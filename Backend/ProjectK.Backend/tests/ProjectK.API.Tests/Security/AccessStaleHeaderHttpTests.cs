@@ -1,10 +1,8 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -12,23 +10,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using ProjectK.API.Middleware;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Upsert;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.IdentityModule;
+using ProjectK.Infrastructure.Services.Jwt;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -90,7 +88,7 @@ public class AccessStaleHeaderHttpTests
     }
 
     /// <summary>Seats the member behind <paramref name="memberUserKey"/> as курінний, through the real handler.</summary>
-    private static async Task SeatAsync(IAccessChangeSignal signal, Guid memberUserKey)
+    private static async Task SeatAsync(IAccessChangeStore signal, Guid memberUserKey)
     {
         var memberKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
@@ -100,21 +98,19 @@ public class AccessStaleHeaderHttpTests
         leaderships.Setup(r => r.GetByKeyAsync(leadership.LeadershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(leadership);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
-        unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<ProjectK.Common.Interfaces.Modules.KurinModule.IKurinRepository>());
+        unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<ProjectK.Common.Contracts.KurinModule.IKurinRepository>());
         unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var mapper = new Mock<IMapper>();
-        mapper.Setup(m => m.Map<LeadershipResponse>(It.IsAny<Leadership>())).Returns(new LeadershipResponse());
 
         var assigner = new Mock<ICurrentUserContext>();
-        assigner.SetupGet(c => c.Roles).Returns([SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
+        assigner.SetupGet(c => c.Roles).Returns([SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
 
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MemberSummary(memberKey, memberUserKey, kurinKey, null, "A", "B", "a@example.com", null)]);
+            .ReturnsAsync([new MemberSummary(memberKey, memberUserKey, "A", "B", "a@example.com", null)]);
 
         var handler = new UpsertLeadershipCommandHandler(
-            unitOfWork.Object, mapper.Object, assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);
+            unitOfWork.Object, assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);
         var request = new UpsertLeadershipRequest
         {
             Type = "kurin",
@@ -135,10 +131,10 @@ public class AccessStaleHeaderHttpTests
 
     private static string MintedAMinuteAgo(Guid userKey, Guid? kurinKey = null) =>
         Jwt(new StoppedClock(DateTimeOffset.UtcNow.AddMinutes(-1))).GenerateAccessToken(
-            userKey.ToString(), "u@example.com", [SystemRole.Member], kurinKey?.ToString(), hasSecondFactor: false);
+            userKey.ToString(), "u@example.com", [SystemRoleNames.Member], kurinKey?.ToString(), hasSecondFactor: false);
 
     private static string MintedNow(Guid userKey) =>
-        Jwt(TimeProvider.System).GenerateAccessToken(userKey.ToString(), "u@example.com", [SystemRole.Member], null, hasSecondFactor: false);
+        Jwt(TimeProvider.System).GenerateAccessToken(userKey.ToString(), "u@example.com", [SystemRoleNames.Member], null, hasSecondFactor: false);
 
     private static JwtService Jwt(TimeProvider clock) => new(Configuration(), clock);
 
@@ -168,7 +164,7 @@ public class AccessStaleHeaderHttpTests
             _client = app.GetTestClient();
         }
 
-        public IAccessChangeSignal Signal => _app.Services.GetRequiredService<IAccessChangeSignal>();
+        public IAccessChangeStore Signal => _app.Services.GetRequiredService<IAccessChangeStore>();
 
         public static async Task<StaleHost> StartAsync()
         {
@@ -176,7 +172,7 @@ public class AccessStaleHeaderHttpTests
             builder.WebHost.UseTestServer();
             builder.Configuration.AddConfiguration(Configuration());
             builder.Services.AddSingleton(TimeProvider.System);
-            builder.Services.AddSingleton<IAccessChangeSignal, AccessChangeSignal>();
+            builder.Services.AddSingleton<IAccessChangeStore, AccessChangeStore>();
 
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

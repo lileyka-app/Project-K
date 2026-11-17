@@ -1,11 +1,12 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Tags;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.IdentityModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -26,8 +27,8 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
         IUnitOfWork unitOfWork,
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
-        IResourceScopeReader scopeReader,
-        IBackendCache cache)
+        IBackendCache cache,
+        IResourceScopeReader scopeReader)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
@@ -66,11 +67,11 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
     }
 
     /// <summary>
-    /// Fills <see cref="MemberResponse.TagKeys"/> of people seen in <paramref name="kurinKey"/> with
+    /// Fills <see cref="MemberDto.TagKeys"/> of people seen in <paramref name="kurinKey"/> with
     /// the tags the viewer may see, in one read. Leaves them empty in a kurin with tags off. An empty
     /// <paramref name="kurinKey"/> is the kurin the viewer acts in — a гурток's list knows no other.
     /// </summary>
-    public async Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberResponse> rows, CancellationToken cancellationToken = default)
+    public async Task FillAsync(Guid kurinKey, IReadOnlyCollection<MemberDto> rows, CancellationToken cancellationToken = default)
     {
         foreach (var row in rows)
         {
@@ -159,7 +160,7 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
 
             case CapabilityReach.OwnGroup:
                 var ledGroups = await _cache.GetOrCreateAsync(
-                    BackendCachePolicies.MentorScopeReads,
+                    BackendCacheRules.MentorScopeReads,
                     $"ledgroups:kurin:{kurinKey}",
                     token => _scopeReader.GetLedGroupKeysAsync(viewer.Value, kurinKey, token),
                     cancellationToken,
@@ -171,8 +172,5 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
         }
     }
 
-    private bool IsUnscopedAdmin() => _currentUser.IsInRole(SystemRole.Admin) && _currentUser.KurinKey is null;
+    private bool IsUnscopedAdmin() => _currentUser.IsInRole(SystemRoleNames.Admin) && _currentUser.KurinKey is null;
 }
-
-/// <summary>A kurin's tag switches with the defaults filled in.</summary>
-public sealed record KurinTagSettingsState(bool Enabled, bool EnabledByDefault, bool OwnTagsVisible);

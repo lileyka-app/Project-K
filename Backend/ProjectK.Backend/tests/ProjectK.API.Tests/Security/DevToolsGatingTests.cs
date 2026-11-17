@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.DevModule;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 
 namespace ProjectK.API.Tests.Security;
 

@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Options.Shared;
 using Serilog.Core;
 using Serilog.Events;
 
@@ -11,7 +11,7 @@ namespace ProjectK.Infrastructure.Logging.TelegramDevAlerts;
 
 /// <summary>
 /// Sends warnings and errors to the developers' Telegram chat. Events are described by
-/// <see cref="TelegramAlertFormatter"/>, bursts folded by <see cref="TelegramAlertGrouper"/>, and the
+/// <see cref="TelegramAlertRules"/>, bursts folded by <see cref="TelegramAlertGrouper"/>, and the
 /// messages leave one by one through a queue — a burst used to be dropped while one message was in
 /// flight, so the chat saw a random few of forty.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class TelegramDevAlertSink : ILogEventSink, IDisposable
 
         try
         {
-            var alert = TelegramAlertFormatter.Describe(logEvent, _environmentName, _version, _codename);
+            var alert = TelegramAlertRules.Describe(logEvent, _environmentName, _version, _codename);
             if (_grouper.Offer(alert, DateTimeOffset.UtcNow) is { } text)
             {
                 _outbox.Writer.TryWrite(text);

@@ -1,17 +1,22 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Interfaces.Modules.AuditModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuditModule;
 
@@ -22,10 +27,10 @@ namespace ProjectK.BusinessLogic.Tests.AuditModule;
 public class GetKurinJournalQueryTests
 {
     private readonly PolicyAccess _access = new();
-    private readonly Mock<IKurinJournalReader> _reader = new();
+    private readonly Mock<IKurinJournalRepository> _reader = new();
     private readonly Mock<IMemberDirectory> _members = new();
-    private readonly Mock<IProbesCatalogService> _probes = new();
-    private readonly Mock<IBadgesCatalogService> _badges = new();
+    private readonly Mock<IProbesCatalogReader> _probes = new();
+    private readonly Mock<IBadgesCatalogReader> _badges = new();
     private readonly Guid _ownMemberKey = Guid.NewGuid();
     private KurinJournalFilter? _filter;
     private (int Skip, int Take) _page;
@@ -40,18 +45,18 @@ public class GetKurinJournalQueryTests
             })
             .ReturnsAsync([]);
         _members.Setup(x => x.FindByAccountAsync(_access.ActorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, _access.KurinKey, _access.GroupKey, "Марта", "Впорядниця", "m@example.com", null));
+            .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, "Марта", "Впорядниця", "m@example.com", null));
     }
 
-    private Task<ServiceResult<Modules.AuditModule.Models.KurinJournalPageResponse>> ReadAsync(
+    private Task<ServiceResult<ProjectK.Common.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(
         ICurrentUserContext user,
         GetKurinJournalQuery? query = null)
     {
-        var scopes = new Mock<IResourceScopeReader>();
-        scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => _access.LedGroups.ToArray());
+        var scopes = ScopeFacts.Repository();
+        scopes.Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => ScopeFacts.Leading(_access.LedGroups.ToArray()));
 
-        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), scopes.Object, _members.Object, _reader.Object, _probes.Object, _badges.Object);
+        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), UnitOfWorks.WithScopes(scopes.Object), new CurrentMember(user, _members.Object, Mock.Of<IMembershipDirectory>()), UnitOfWorks.WithJournal(_reader.Object), _probes.Object, _badges.Object, ScopeFacts.Reader(scopes.Object));
         return handler.Handle(query ?? Query(), CancellationToken.None);
     }
 
@@ -132,7 +137,7 @@ public class GetKurinJournalQueryTests
     public async Task HasMore_IsTrue_OnlyWhenTheReadReturnedMoreThanAPage()
     {
         var entries = Enumerable.Range(0, 3)
-            .Select(i => new KurinAuditEvent { Action = AuditActions.Award.Added, OccurredAtUtc = DateTime.UtcNow.AddMinutes(-i) })
+            .Select(i => new KurinAuditEvent { Action = AuditActionNames.Award.Added, OccurredAtUtc = DateTime.UtcNow.AddMinutes(-i) })
             .ToList();
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), 0, 3, It.IsAny<CancellationToken>())).ReturnsAsync(entries);
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), 2, 3, It.IsAny<CancellationToken>())).ReturnsAsync(entries.Take(1).ToList());
@@ -150,13 +155,13 @@ public class GetKurinJournalQueryTests
     public async Task FoldedProbeHistory_ReadsAsTheCatalogueTitle_WhileOtherLabelsStay()
     {
         _probes.Setup(x => x.GetGroupedProbeById("probe-1"))
-            .Returns(new GroupedProbeResponse("probe-1", "Перша проба", 0, 0, []));
+            .Returns(new GroupedProbeDto("probe-1", "Перша проба", 0, 0, []));
         _reader.Setup(x => x.ReadAsync(It.IsAny<KurinJournalFilter>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
-                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActions.Probe.Verified, SubjectLabel = "probe-1" },
-                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActions.Probe.Verified, SubjectLabel = "Друга проба" },
-                new KurinAuditEvent { Area = AuditArea.Award, Action = AuditActions.Award.Added, SubjectLabel = "probe-1" }
+                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActionNames.Probe.Verified, SubjectLabel = "probe-1" },
+                new KurinAuditEvent { Area = AuditArea.Probe, Action = AuditActionNames.Probe.Verified, SubjectLabel = "Друга проба" },
+                new KurinAuditEvent { Area = AuditArea.Award, Action = AuditActionNames.Award.Added, SubjectLabel = "probe-1" }
             ]);
 
         var result = await ReadAsync(_access.Actor(PolicyAccess.Zvyazkovyi));

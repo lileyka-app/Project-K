@@ -1,21 +1,15 @@
 using System.Net;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
-using ProjectK.API.Controllers.AuthModule;
-using ProjectK.API.Helpers;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.API.Controllers.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -36,12 +30,10 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
     {
         var g = "11111111-1111-1111-1111-111111111111";
 
-        // Auth module
+        // Identity module
         yield return Row("POST", "/api/auth/logout");
         yield return Row("POST", "/api/auth/register/kurin", "{}");
         yield return Row("POST", "/api/auth/check-access", "{}");
-
-        // Users module
         yield return Row("GET", "/api/user/users");
 
         // Member module

@@ -1,28 +1,32 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Entry;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.Get;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.Mark;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet.NotHeld;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Exceptions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Score;
-using Xunit;
+using ProjectK.Common.Enums.AgendaModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.ScoreModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 
@@ -49,7 +53,7 @@ public class ScoreHandlerTests
     private readonly List<AuditRecord> _journal = [];
     private readonly Mock<IKurinAudit> _audit = new();
     private readonly List<KurinMembershipRecord> _memberships = [];
-    private readonly List<MemberSummary> _people = [];
+    private readonly List<KurinPerson> _people = [];
     // People who stand in no kurin any more: the directory reads them only by key.
     private readonly List<MemberSummary> _gone = [];
     private readonly List<AgendaResponse> _responses = [];
@@ -148,7 +152,7 @@ public class ScoreHandlerTests
         var membership = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(membership, member, group, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), null));
-        _people.Add(new MemberSummary(member, Guid.NewGuid(), Kurin, group, name, "Пластун", $"{name}@x", null));
+        _people.Add(KurinPeople.Of(member, Guid.NewGuid(), Kurin, group, name, "Пластун", $"{name}@x", null));
         return membership;
     }
 
@@ -172,27 +176,27 @@ public class ScoreHandlerTests
     {
         var directory = new Mock<IMembershipDirectory>();
         directory.Setup(d => d.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
+        directory.Setup(d => d.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
         return directory.Object;
     }
 
-    private static IScoreFactSource NoFacts()
+    private static IScoreFactReader NoFacts()
     {
         IReadOnlyList<ScoreFact> none = [];
-        return Mock.Of<IScoreFactSource>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
+        return Mock.Of<IScoreFactReader>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
     }
 
     private ScoreBookReader Books()
     {
         var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
         members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => _gone.Where(p => keys.Contains(p.MemberKey)).ToList());
-        return new ScoreBookReader(_score.Object, _unitOfWork.Object, Memberships(), members.Object, NoFacts(), _time);
+        return new ScoreBookReader(_score.Object, Agendas.Over(_unitOfWork.Object), KurinDirectories.Over(_unitOfWork.Object), Memberships(), members.Object, NoFacts(), _time);
     }
 
-    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, _unitOfWork.Object, Memberships(), Books(), User(), _time, Mock.Of<IKraiProfileProvider>(), _audit.Object);
+    private MarkAttendanceCommandHandler Marker() => new(Access(), _score.Object, Agendas.Over(_unitOfWork.Object), Memberships(), Books(), User(), _time, Mock.Of<IKraiProfileDirectory>(), _audit.Object);
 
-    private CreateScoreEntryCommandHandler Giver() => new(Access(), Books(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileProvider>());
+    private CreateScoreEntryCommandHandler Giver() => new(Access(), Books(), _score.Object, Agendas.Over(_unitOfWork.Object), User(), _time, Mock.Of<IKraiProfileDirectory>());
 
     private static MarkAttendanceCommand MarkCommand(params Guid[] keys) =>
         new(Kurin, Skhodyny, Start, new MarkAttendanceRequest { MembershipKeys = keys });
@@ -200,10 +204,10 @@ public class ScoreHandlerTests
     [Fact]
     public async Task TheSheet_SaysWhoAnswered_WhoWasAimedAt_AndWhoIsMine()
     {
-        var oksanaUser = _people.Single(p => p.FirstName == "Оксана").UserKey!.Value;
+        var oksanaUser = _people.Single(p => p.Person.FirstName == "Оксана").UserKey!.Value;
         _responses.Add(new AgendaResponse { AgendaItemKey = Skhodyny, UserKey = oksanaUser, Status = AgendaRsvpStatus.Going });
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), Agendas.Over(_unitOfWork.Object), Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object, KurinDirectories.TagsOver(_unitOfWork.Object))
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
@@ -228,7 +232,7 @@ public class ScoreHandlerTests
         _tags.Setup(t => t.GetMemberKeysAsync(novices, It.IsAny<CancellationToken>())).ReturnsAsync([tarasMember]);
         _tagVisibility.Setup(v => v.ShowsTagsOfAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync((_, _) => readerSeesTags);
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), Agendas.Over(_unitOfWork.Object), Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object, KurinDirectories.TagsOver(_unitOfWork.Object))
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Data!.People.Single(p => p.MembershipKey == _taras).IsAssigned.Should().Be(tarasAimedAt);
@@ -240,7 +244,7 @@ public class ScoreHandlerTests
         _resourceAccess.Setup(r => r.CheckAccessAsync(ResourceType.GroupScore, It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Deny("youth"));
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), Agendas.Over(_unitOfWork.Object), Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object, KurinDirectories.TagsOver(_unitOfWork.Object))
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
@@ -291,7 +295,7 @@ public class ScoreHandlerTests
     }
 
     private SetOccurrenceNotHeldCommandHandler NotHeldSetter() =>
-        new(Access(), _score.Object, _unitOfWork.Object, User(), _time, Mock.Of<IKraiProfileProvider>(), _audit.Object);
+        new(Access(), _score.Object, Agendas.Over(_unitOfWork.Object), KurinDirectories.Over(_unitOfWork.Object), User(), _time, Mock.Of<IKraiProfileDirectory>(), _audit.Object);
 
     [Fact]
     public async Task NotHeld_IsSaid_ByWhoeverMarksSomewhere_AndJournalled()
@@ -303,7 +307,7 @@ public class ScoreHandlerTests
         _journal.Should().ContainSingle().Which.Should().BeEquivalentTo(new
         {
             Area = AuditArea.Agenda,
-            Action = AuditActions.Agenda.OccurrenceNotHeld,
+            Action = AuditActionNames.Agenda.OccurrenceNotHeld,
             SubjectKey = Skhodyny,
             SubjectLabel = "Сходини · 06.10.2026"
         });
@@ -351,7 +355,7 @@ public class ScoreHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         _notHeld.Should().BeEmpty();
-        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActions.Agenda.OccurrenceHeld);
+        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActionNames.Agenda.OccurrenceHeld);
     }
 
     [Fact]
@@ -376,7 +380,7 @@ public class ScoreHandlerTests
         result.Type.Should().Be(ResultType.Success);
         _marks.Should().ContainSingle();
         _notHeld.Should().BeEmpty();
-        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActions.Agenda.OccurrenceHeld);
+        _journal.Should().ContainSingle().Which.Action.Should().Be(AuditActionNames.Agenda.OccurrenceHeld);
     }
 
     [Fact]
@@ -384,7 +388,7 @@ public class ScoreHandlerTests
     {
         _notHeld.Add(new ScoreNotHeldOccurrence { KurinKey = Kurin, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start, MarkedByUserKey = Actor, MarkedAtUtc = Start });
 
-        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), _unitOfWork.Object, Mock.Of<IKraiProfileProvider>(), _tagVisibility.Object)
+        var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), Agendas.Over(_unitOfWork.Object), Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object, KurinDirectories.TagsOver(_unitOfWork.Object))
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Data!.NotHeld.Should().NotBeNull();
@@ -454,7 +458,7 @@ public class ScoreHandlerTests
         var left = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(left, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc)));
-        _people.Add(new MemberSummary(member, Guid.NewGuid(), Kurin, Sokoly, "Ярема", "Пластун", "yarema@x", null));
+        _people.Add(KurinPeople.Of(member, Guid.NewGuid(), Kurin, Sokoly, "Ярема", "Пластун", "yarema@x", null));
         _entries.Add(new ScoreEntry { KurinKey = Kurin, MembershipKey = left, Points = 4, Reason = "ватра", OccurredOn = new DateOnly(2026, 10, 1) });
 
         var book = await Books().OpenAsync(Kurin, CancellationToken.None);
@@ -473,7 +477,7 @@ public class ScoreHandlerTests
         var left = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(left, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc)));
-        _gone.Add(new MemberSummary(member, null, Guid.Empty, null, "Ярема", "Пластун", "yarema@x", null));
+        _gone.Add(new MemberSummary(member, null, "Ярема", "Пластун", "yarema@x", null));
 
         var book = await Books().OpenAsync(Kurin, CancellationToken.None);
 
@@ -518,6 +522,6 @@ public class ScoreHandlerTests
             OccurredOn = new DateOnly(2026, 10, 6)
         };
 
-        new UpsertScoreEntryRequestValidator(_time).Validate(request).IsValid.Should().BeFalse(because);
+        new CreateScoreEntryCommandValidator(_time).Validate(new CreateScoreEntryCommand(Guid.NewGuid(), request)).IsValid.Should().BeFalse(because);
     }
 }

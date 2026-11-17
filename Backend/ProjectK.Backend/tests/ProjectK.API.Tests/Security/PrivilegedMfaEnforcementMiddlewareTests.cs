@@ -1,9 +1,11 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using ProjectK.API.Middleware;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.BusinessLogic.Modules.IdentityModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -39,7 +41,7 @@ public class PrivilegedMfaEnforcementMiddlewareTests
     public async Task InvokeAsync_ShouldContinue_WhenTheSecondFactorArrivesUnderTheMappedClaimType()
     {
         var context = CreateContext("/api/user/users", "Admin", secondFactor: null);
-        context.User.AddIdentity(new ClaimsIdentity([new Claim(AccessTokenClaims.AuthenticationMethodsMapped, AccessTokenClaims.Mfa)]));
+        context.User.AddIdentity(new ClaimsIdentity([new Claim(AccessTokenClaimNames.AuthenticationMethodsMapped, AccessTokenClaimNames.Mfa)]));
 
         var nextCalled = await Invoke(context, required: true);
 
@@ -88,6 +90,20 @@ public class PrivilegedMfaEnforcementMiddlewareTests
 
         Assert.False(nextCalled);
         Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldRefuseInTheStandardShape_WithAStableCode()
+    {
+        var context = CreateContext("/api/user/me", "KV.Zvyazkovyi", secondFactor: false);
+        context.Request.Method = HttpMethods.Put;
+
+        await Invoke(context, required: true);
+
+        context.Response.Body.Position = 0;
+        using var body = await JsonDocument.ParseAsync(context.Response.Body);
+        Assert.Equal(IdentityErrors.PrivilegedMfaRequired, body.RootElement.GetProperty("error").GetString());
+        Assert.Equal("MFA is required for privileged accounts.", body.RootElement.GetProperty("message").GetString());
     }
 
     /// <summary>A token minted before the claim existed says nothing — and nothing is not a second factor.</summary>
@@ -153,17 +169,17 @@ public class PrivilegedMfaEnforcementMiddlewareTests
         if (secondFactor is { } hasSecondFactor)
         {
             claims.Add(new Claim(
-                AccessTokenClaims.AuthenticationMethods,
-                hasSecondFactor ? AccessTokenClaims.Mfa : AccessTokenClaims.Password));
+                AccessTokenClaimNames.AuthenticationMethods,
+                hasSecondFactor ? AccessTokenClaimNames.Mfa : AccessTokenClaimNames.Password));
         }
 
         context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
         return context;
     }
 
-    private static Mock<IMfaEnforcementPolicy> CreatePolicy(bool required)
+    private static Mock<IMfaEnforcementReader> CreatePolicy(bool required)
     {
-        var mock = new Mock<IMfaEnforcementPolicy>();
+        var mock = new Mock<IMfaEnforcementReader>();
         mock.Setup(x => x.IsPrivilegedMfaRequiredAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(required);
         return mock;

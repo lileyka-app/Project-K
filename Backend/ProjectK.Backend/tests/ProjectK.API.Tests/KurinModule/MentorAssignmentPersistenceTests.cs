@@ -1,13 +1,10 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using Xunit;
 
 namespace ProjectK.API.Tests.KurinModule;
 
@@ -27,7 +24,7 @@ public class MentorAssignmentPersistenceTests : IDisposable
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
 
-        _options = new DbContextOptionsBuilder<AppDbContext>()
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseSqlite(_connection)
             .Options;
 
@@ -118,5 +115,20 @@ public class MentorAssignmentPersistenceTests : IDisposable
         var found = await new MentorAssignmentRepository(read).GetSpecificAssignmentAsync(_mentorUserKey, _groupKey);
 
         found!.MentorAssignmentKey.Should().Be(latest.MentorAssignmentKey);
+    }
+
+    [Fact]
+    public async Task AVporiadnykOfADissolvedGroup_LeadsNothing()
+    {
+        await using (var context = new AppDbContext(_options))
+        {
+            context.MentorAssignments.Add(Assignment(DateTime.UtcNow.AddMonths(-1)));
+            (await context.Groups.SingleAsync(g => g.GroupKey == _groupKey)).DissolvedAtUtc = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+        }
+
+        await using var read = new AppDbContext(_options);
+        (await read.MentorAssignments.CountAsync()).Should().Be(0);
+        (await read.MentorAssignments.IgnoreQueryFilters().CountAsync()).Should().Be(1);
     }
 }

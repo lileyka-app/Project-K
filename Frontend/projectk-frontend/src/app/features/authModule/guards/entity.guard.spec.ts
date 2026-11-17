@@ -78,7 +78,7 @@ describe('EntityGuard', () => {
 
   it('lets an MFA challenge through so its dialog can appear', () => new Promise<void>(done => {
     entityService.checkEntityAccess.mockReturnValue(throwError(() =>
-      new HttpErrorResponse({ status: 403, error: { message: 'MFA is required for this operation.' } })));
+      new HttpErrorResponse({ status: 403, error: { error: 'PrivilegedMfaRequired', message: 'MFA is required for privileged accounts.' } })));
 
     guard.canActivate(routeFor('member', 'member-1')).subscribe(allowed => {
       expect(allowed).toBe(true);

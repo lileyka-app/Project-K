@@ -1,12 +1,12 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 
@@ -37,7 +37,7 @@ internal sealed class PolicyAccess
 
     public ICurrentUserContext User(Guid userKey, params string[] roles)
     {
-        var held = roles.Append(SystemRole.Member).ToArray();
+        var held = roles.Append(SystemRoleNames.Member).ToArray();
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(x => x.IsAuthenticated).Returns(true);
         user.SetupGet(x => x.UserId).Returns(userKey);
@@ -50,18 +50,18 @@ internal sealed class PolicyAccess
 
     public IResourceAccessService ServiceFor(ICurrentUserContext user)
     {
-        var scopes = new Mock<IResourceScopeReader>();
+        var scopes = ScopeFacts.Repository();
         scopes.Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), MemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResourceScope(KurinKey, GroupKey, MemberUserKey));
-        scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => LedGroups.ToArray());
+        scopes.Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => ScopeFacts.Leading(LedGroups.ToArray()));
 
-        return new ResourceAccessService(scopes.Object, user, new PassThroughBackendCache(), new CurrentPermissions(user, Policies));
+        return new ResourceAccessService(UnitOfWorks.WithScopes(scopes.Object), user, new PassThroughBackendCache(), new CurrentPermissions(user, Policies));
     }
 
     public ICurrentPermissions PermissionsFor(ICurrentUserContext user) => new CurrentPermissions(user, Policies);
 
-    public static string Office(LeadershipType type, LeadershipRole role) => SystemRole.ForOffice(type, role);
+    public static string Office(LeadershipType type, LeadershipRole role) => SystemRoleNames.ForOffice(type, role);
 
     public static readonly string Zvyazkovyi = Office(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
     public static readonly string Vykhovnyk = Office(LeadershipType.KV, LeadershipRole.Vykhovnyk);
@@ -80,7 +80,7 @@ internal sealed class PolicyAccess
 }
 
 /// <summary>A policy provider holding whatever policy the test last set.</summary>
-internal sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyProvider
+internal sealed class FixedKurinAccessPolicyProvider : IKurinAccessPolicyReader
 {
     public KurinAccessPolicy Policy { get; set; } = KurinAccessPolicy.Default;
 

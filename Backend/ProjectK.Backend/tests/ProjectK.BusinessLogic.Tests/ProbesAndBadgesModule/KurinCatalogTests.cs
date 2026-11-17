@@ -2,18 +2,17 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 
 public class KurinCatalogTests
 {
-    private readonly Mock<IKraiProfileProvider> _profiles = new();
+    private readonly Mock<IKraiProfileDirectory> _profiles = new();
     private readonly Mock<IBadgesCatalog> _badges = new();
     private readonly KurinCatalog _catalog;
     private readonly Guid _kurinKey = Guid.NewGuid();

@@ -3,6 +3,7 @@ import { ActivatedRouteSnapshot, CanActivate, Router } from "@angular/router";
 import { HttpErrorResponse } from "@angular/common/http";
 import { catchError, map, Observable, of } from "rxjs";
 import { EntityService } from "../services/entity-service/entity.service";
+import { isMfaRequiredRefusal } from "../../../shared/functions/failure-detail.function";
 
 @Injectable({
   providedIn: 'root'
@@ -50,16 +51,7 @@ export class EntityGuard implements CanActivate {
     }
 
     private isMfaChallenge(error: HttpErrorResponse): boolean {
-        if (error.status !== 403) {
-            return false;
-        }
-
-        const body = error.error;
-        const message = typeof body === 'string'
-            ? body
-            : (body?.message || body?.Message || body?.detail || body?.title);
-
-        return typeof message === 'string' && message.toLowerCase().includes('mfa is required');
+        return isMfaRequiredRefusal(error);
     }
 
     private resolveEntityType(route: ActivatedRouteSnapshot): string | null {

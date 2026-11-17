@@ -1,10 +1,10 @@
-using ProjectK.BusinessLogic.Services.Audit;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuditModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuditModule.Services;
 
@@ -12,30 +12,33 @@ namespace ProjectK.BusinessLogic.Modules.AuditModule.Services;
 /// Stamps a journal entry — the kurin the request acts in, actor, time, the subject's name and
 /// гурток as they are now — and puts it on the request's pending changes. An unscoped admin's
 /// action is filed under the kurin of the person it is about. The actor comes from the request's
-/// <see cref="AuditActorResolver"/>, so it is the same one the handler signed with.
+/// <see cref="ICurrentMember"/>, so it is the same one the handler signed with.
 /// <para>
-/// Private data is stripped here as well as in <c>AuditChanges</c>: a change built by hand still
+/// Private data is stripped here as well as in <c>AuditChangeRules</c>: a change built by hand still
 /// cannot carry a phone number into the journal.
 /// </para>
 /// </summary>
 public sealed class KurinAudit : IKurinAudit
 {
-    private readonly AuditActorResolver _actors;
+    private readonly ICurrentMember _actors;
     private readonly ICurrentUserContext _currentUser;
     private readonly IMemberDirectory _members;
-    private readonly IKurinAuditWriter _writer;
+    private readonly IMembershipDirectory _memberships;
+    private readonly IKurinAuditRepository _writer;
     private readonly Dictionary<(Guid? KurinKey, Guid MemberKey), Subject> _subjects = new();
 
     public KurinAudit(
-        AuditActorResolver actors,
+        ICurrentMember actors,
         ICurrentUserContext currentUser,
         IMemberDirectory members,
-        IKurinAuditWriter writer)
+        IMembershipDirectory memberships,
+        IAuditUnitOfWork audit)
     {
         _actors = actors;
         _currentUser = currentUser;
         _members = members;
-        _writer = writer;
+        _memberships = memberships;
+        _writer = audit.KurinAudit;
     }
 
     public async Task RecordAsync(AuditRecord record, CancellationToken cancellationToken = default)
@@ -55,7 +58,7 @@ public sealed class KurinAudit : IKurinAudit
             return;
         }
 
-        var actor = await _actors.ResolveAsync(cancellationToken);
+        var actor = await _actors.ActorAsync(cancellationToken);
 
         _writer.Add(new KurinAuditEvent
         {
@@ -87,22 +90,28 @@ public sealed class KurinAudit : IKurinAudit
             return known;
         }
 
-        MemberSummary? standing = null;
+        KurinPerson? standing = null;
         if (kurinKey is { } inKurin)
         {
-            var found = await _members.GetByKurinAsync(inKurin, new MemberSelection([memberKey], [], []), cancellationToken);
+            var found = await _memberships.GetPeopleInKurinAsync(inKurin, new MemberSelection([memberKey], [], []), cancellationToken);
             standing = found.FirstOrDefault(member => member.MemberKey == memberKey);
         }
 
         Subject subject;
         if (standing is not null)
         {
-            subject = new Subject(standing.FullName, standing.GroupKey, standing.KurinKey);
+            subject = new Subject(standing.Person.FullName, standing.GroupKey, standing.KurinKey);
+        }
+        else if (await _memberships.FindInLatestKurinAsync(memberKey, cancellationToken) is { } latest)
+        {
+            subject = new Subject(latest.Person.FullName, null, latest.KurinKey);
         }
         else
         {
+            // Someone who stands nowhere answers with an empty kurin rather than none, so an unscoped
+            // entry about them is still written.
             var person = await _members.FindAsync(memberKey, cancellationToken);
-            subject = new Subject(person?.FullName, null, person?.KurinKey);
+            subject = new Subject(person?.FullName, null, person is null ? null : Guid.Empty);
         }
 
         _subjects[(kurinKey, memberKey)] = subject;

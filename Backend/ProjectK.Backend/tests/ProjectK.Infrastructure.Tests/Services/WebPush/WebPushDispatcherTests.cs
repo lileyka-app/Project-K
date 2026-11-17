@@ -6,13 +6,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Entities.NotificationsModule;
+using ProjectK.Common.Enums.NotificationsModule;
+using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Services.WebPush;
 
@@ -62,8 +62,8 @@ public class WebPushDispatcherTests
         {
             UserKey = _userKey,
             Endpoint = endpoint,
-            P256dh = WebPushBase64.Encode(WebPushCrypto.ExportPublicKey(key)),
-            Auth = WebPushBase64.Encode(auth)
+            P256dh = WebPushBase64Rules.Encode(WebPushCryptoRules.ExportPublicKey(key)),
+            Auth = WebPushBase64Rules.Encode(auth)
         };
         _registered.Add(device);
         _deviceKeys[endpoint] = key;
@@ -152,7 +152,7 @@ public class WebPushDispatcherTests
         using var json = JsonDocument.Parse(DeviceReads(Assert.Single(_pushService.Requests)));
         var url = json.RootElement.GetProperty("notification").GetProperty("data")
             .GetProperty("onActionClick").GetProperty("default").GetProperty("url").GetString();
-        Assert.Equal(PushRoutes.Inbox, url);
+        Assert.Equal(PushRouteRules.Inbox, url);
         Assert.Equal("MemberSkillSubmittedForReview", json.RootElement.GetProperty("notification").GetProperty("tag").GetString());
     }
 
@@ -170,7 +170,7 @@ public class WebPushDispatcherTests
     public async Task Deliver_ShouldForgetADeviceWhoseKeysCannotBeUsed()
     {
         var broken = Device("https://fcm.googleapis.com/fcm/send/broken", HttpStatusCode.Created);
-        broken.P256dh = WebPushBase64.Encode(new byte[10]);
+        broken.P256dh = WebPushBase64Rules.Encode(new byte[10]);
         Device("https://fcm.googleapis.com/fcm/send/fine", HttpStatusCode.Created);
 
         await Dispatcher().DeliverAsync(Assigned(Guid.NewGuid()), CancellationToken.None);
@@ -239,13 +239,13 @@ public class WebPushDispatcherTests
         var body = request.Body;
         var salt = body[..16];
         var serverPublic = body[21..86];
-        using var server = WebPushCrypto.ImportPublicKey(serverPublic);
+        using var server = WebPushCryptoRules.ImportPublicKey(serverPublic);
         var device = _deviceKeys[request.Endpoint];
-        var (contentKey, nonce) = WebPushCrypto.DeriveContentKey(
+        var (contentKey, nonce) = WebPushCryptoRules.DeriveContentKey(
             device.DeriveRawSecretAgreement(server.PublicKey),
             _deviceAuth[request.Endpoint],
             salt,
-            WebPushCrypto.ExportPublicKey(device),
+            WebPushCryptoRules.ExportPublicKey(device),
             serverPublic);
 
         var record = body[86..];

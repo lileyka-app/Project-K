@@ -1,18 +1,19 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdatePointSignature;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
@@ -20,6 +21,7 @@ public class UpdateProbePointSignatureHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IMemberDirectory> _memberDirectoryMock;
+    private readonly Mock<IMembershipDirectory> _memberships = new();
     private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
     private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
@@ -52,15 +54,15 @@ public class UpdateProbePointSignatureHandlerTests
 
         _journal = new JournalRecorder(
             _currentUserContextMock.Object,
-            new AuditActorResolver(_currentUserContextMock.Object, _memberDirectoryMock.Object));
+            new CurrentMember(_currentUserContextMock.Object, _memberDirectoryMock.Object, Mock.Of<IMembershipDirectory>()));
 
         _handler = new UpdateProbePointSignatureCommandHandler(
             _unitOfWorkMock.Object,
-            _memberDirectoryMock.Object,
+            _memberships.Object,
             _journal.Actors,
             _journal.Audit,
             _journal.Reader,
-            Mock.Of<IProbesCatalogService>(),
+            Mock.Of<IProbesCatalogReader>(),
             _line.Object);
     }
 
@@ -68,9 +70,9 @@ public class UpdateProbePointSignatureHandlerTests
     public async Task Signing_ShouldRefuseToStartAProbe_OutOfTurn()
     {
         var memberKey = Guid.NewGuid();
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_kurinKey);
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([_kurinKey]);
         _line.Setup(x => x.CanStartAsync(memberKey, "probe-2", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ProbeStart.WaitsForPrevious);
 
@@ -85,9 +87,9 @@ public class UpdateProbePointSignatureHandlerTests
     public async Task Signing_ShouldNotAskTheTurn_OfAProbeUnderWay()
     {
         var memberKey = Guid.NewGuid();
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_kurinKey);
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([_kurinKey]);
         _probeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndProbeIdAsync(memberKey, "probe-2", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProbeProgress { MemberKey = memberKey, KurinKey = _kurinKey, ProbeId = "probe-2", Status = ProbeProgressStatus.InProgress });
@@ -103,12 +105,12 @@ public class UpdateProbePointSignatureHandlerTests
         var memberKey = Guid.NewGuid();
         var groupKey = Guid.NewGuid();
         _journal.Knows(memberKey, _kurinKey, groupKey, "Олесь", "Юнак");
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_kurinKey);
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([_kurinKey]);
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), _currentUserContextMock.Object.UserId, _kurinKey, null, "Марта", "Впорядниця", "m@example.com", null));
+            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), _currentUserContextMock.Object.UserId, "Марта", "Впорядниця", "m@example.com", null));
         _probePointProgressRepositoryMock
             .Setup(x => x.GetByMemberAndProbeAsync(memberKey, "probe-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
@@ -119,7 +121,7 @@ public class UpdateProbePointSignatureHandlerTests
 
         Assert.Equal(ResultType.Success, result.Type);
         var entry = Assert.Single(_journal.Entries);
-        Assert.Equal(AuditActions.Probe.PointSigned, entry.Action);
+        Assert.Equal(AuditActionNames.Probe.PointSigned, entry.Action);
         Assert.Equal(AuditArea.Probe, entry.Area);
         Assert.Equal(_kurinKey, entry.KurinKey);
         Assert.Equal("Марта Впорядниця", entry.ActorName);
@@ -140,9 +142,9 @@ public class UpdateProbePointSignatureHandlerTests
         var memberKey = Guid.NewGuid();
         var request = new UpdateProbePointSignatureCommand(memberKey, "probe-1", "point-1", false, null);
 
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Guid.NewGuid()]);
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -194,9 +196,9 @@ public class UpdateProbePointSignatureHandlerTests
         var actorUserKey = _currentUserContextMock.Object.UserId!.Value;
         var request = new UpdateProbePointSignatureCommand(memberKey, "probe-1", "point-1", false, null);
 
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Guid.NewGuid()]);
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
@@ -263,13 +265,13 @@ public class UpdateProbePointSignatureHandlerTests
             _journal.Entries,
             unsigned =>
             {
-                Assert.Equal(AuditActions.Probe.PointUnsigned, unsigned.Action);
+                Assert.Equal(AuditActionNames.Probe.PointUnsigned, unsigned.Action);
                 Assert.Equal(new AuditChange("point", "point-1", null), Assert.Single(unsigned.Changes));
                 Assert.Equal(progress.ProbeProgressKey, unsigned.SubjectKey);
             },
             reopened =>
             {
-                Assert.Equal(AuditActions.Probe.Reopened, reopened.Action);
+                Assert.Equal(AuditActionNames.Probe.Reopened, reopened.Action);
                 Assert.Equal(new AuditChange("status", "Completed", "InProgress"), Assert.Single(reopened.Changes));
                 Assert.Equal(progress.ProbeProgressKey, reopened.SubjectKey);
             });

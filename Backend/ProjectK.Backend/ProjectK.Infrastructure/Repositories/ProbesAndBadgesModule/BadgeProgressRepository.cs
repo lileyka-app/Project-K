@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
@@ -59,11 +59,6 @@ public class BadgeProgressRepository : BaseEntityRepository<BadgeProgress>, IBad
             .Where(x => keys.Contains(x.MemberKey))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-    }
-
-    public override Task<IEnumerable<BadgeProgress>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetByMemberKeyAsync instead.");
     }
 
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)

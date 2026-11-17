@@ -1,11 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
 /**
- * What the API answers when a privileged account (admin, Зв'язковий) tries to change anything
- * before it has enabled two-factor authentication. Sent by PrivilegedMfaEnforcementMiddleware
- * with status 403 on every non-GET request until the account turns it on.
+ * The `error` code the API answers with when a privileged account (admin, Зв'язковий) tries to
+ * change anything before it has enabled two-factor authentication. Sent by
+ * PrivilegedMfaEnforcementMiddleware with status 403 on every non-GET request until the account
+ * turns it on.
  */
-export const MFA_REQUIRED_MESSAGE = 'MFA is required for privileged accounts.';
+export const MFA_REQUIRED_CODE = 'PrivilegedMfaRequired';
 
 export const RETRY_DETAIL = 'Спробуй ще раз.';
 export const MFA_REQUIRED_DETAIL =
@@ -17,8 +18,8 @@ export function isMfaRequiredRefusal(error: unknown): boolean {
     return false;
   }
 
-  const body = error.error as { message?: unknown } | null | undefined;
-  return typeof body?.message === 'string' && body.message === MFA_REQUIRED_MESSAGE;
+  const body = error.error as { error?: unknown } | null | undefined;
+  return body?.error === MFA_REQUIRED_CODE;
 }
 
 /**

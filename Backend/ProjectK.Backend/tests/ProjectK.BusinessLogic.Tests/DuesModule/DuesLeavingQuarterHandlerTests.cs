@@ -1,13 +1,13 @@
 using Moq;
+using ProjectK.BusinessLogic.Modules.DuesModule.Events;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Events.KurinModule;
+using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -49,13 +49,18 @@ public class DuesLeavingQuarterHandlerTests
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
         dues.SetupGet(d => d.DuesCharges).Returns(_charges.Object);
 
-        return new DuesLeavingQuarterEventHandler(dues.Object, new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), Mock.Of<IKraiProfileProvider>());
+        return new DuesLeavingQuarterEventHandler(dues.Object, new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), Mock.Of<IKraiProfileDirectory>());
     }
 
     private void Pay(decimal amount) => _entries.Add(new DuesEntry
     {
-        KurinKey = Kurin, GroupKey = Group, MembershipKey = Youth, Kind = DuesEntryKind.Contribution,
-        Method = DuesPaymentMethod.Cash, Amount = amount, OccurredOn = new DateOnly(2026, 9, 1)
+        KurinKey = Kurin,
+        GroupKey = Group,
+        MembershipKey = Youth,
+        Kind = DuesEntryKind.Contribution,
+        Method = DuesPaymentMethod.Cash,
+        Amount = amount,
+        OccurredOn = new DateOnly(2026, 9, 1)
     });
 
     private Task Leave() => Handler().Handle(

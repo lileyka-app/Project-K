@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Seeding;
@@ -13,7 +14,7 @@ namespace ProjectK.Infrastructure.Seeding;
 /// Seeds the stable fixtures the Playwright suite addresses by name: a dedicated kurin holding
 /// "Gurtok 1"/"Gurtok 2" plus the manager1/mentor1/g1member1 accounts.
 /// <para>
-/// Lives in its own kurin so it never collides with <see cref="DemoDataSeeder"/>: the e2e manager
+/// Lives in its own kurin so it never collides with <see cref="Demo.DemoDataSeeder"/>: the e2e manager
 /// needs the Зв'язковий office (the only one granting whole-kurin management), and that office is
 /// single-holder, so it cannot be added to the demo kurin which already has one.
 /// </para>

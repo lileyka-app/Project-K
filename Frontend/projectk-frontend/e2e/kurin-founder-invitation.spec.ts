@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { getKurinByKey, getLatestInvitationByEmail, loginViaApi } from './support/api-client';
 import { e2eUsers } from './support/test-users';
+import { freeKurinNumber } from './support/kurin-numbers';
 import { loginThroughUi } from './support/login';
 import { dialog, submitButton } from './support/ui';
 import { scenarioEmail, scenarioSuffix } from './support/scenarios';
@@ -12,9 +13,9 @@ test.describe('Admin opens a kurin with an invited Зв\'язковий (SEC-4.4
 
     const suffix = scenarioSuffix(testInfo);
     const password = 'Founder@12345';
-    // Kurin numbers are capped (KurinNumbers:MaxNumber, 200); the onboarding flow takes 101–199
-    // the same way, so a clash between the two is as unlikely as one between two of its runs.
-    const kurinNumber = String(101 + ((Date.now() + 53) % 99));
+    // Kurin numbers are capped (KurinNumbers:MaxNumber, 200), and the e2e database keeps the kurins
+    // earlier runs opened, so the number is picked among those still free.
+    const kurinNumber = String(await freeKurinNumber(request, 101 + ((Date.now() + 53) % 99)));
     const founderEmail = scenarioEmail(suffix, 'founder');
 
     await test.step('admin opens the kurin and names its Зв\'язковий — no password field', async () => {

@@ -1,3 +1,6 @@
+using ProjectK.Common.Entities.Shared;
+using ProjectK.Common.Rules.KurinModule;
+
 namespace ProjectK.Common.Entities.KurinModule.Tags;
 
 /// <summary>
@@ -13,7 +16,7 @@ public class KurinTag : Entity
     /// <summary>Unique within the kurin, compared without regard to case.</summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>One of <see cref="Models.Tags.KurinTagRules.Palette"/>: the colour is data, not a style.</summary>
+    /// <summary>One of <see cref="KurinTagRules.Palette"/>: the colour is data, not a style.</summary>
     public string ColorHex { get; set; } = string.Empty;
 
     public ICollection<MemberTag> Members { get; set; } = new List<MemberTag>();

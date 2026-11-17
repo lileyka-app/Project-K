@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule;
 
@@ -18,7 +18,7 @@ public class KurinTagCarriersFollowMembershipTests
     private readonly Guid _left = Guid.NewGuid();
     private readonly KurinTag _tag;
     private readonly DbContextOptions<AppDbContext> _options =
-        new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     public KurinTagCarriersFollowMembershipTests()
     {

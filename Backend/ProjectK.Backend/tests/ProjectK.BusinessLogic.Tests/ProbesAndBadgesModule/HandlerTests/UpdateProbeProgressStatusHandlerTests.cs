@@ -1,20 +1,22 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
@@ -22,9 +24,10 @@ public class UpdateProbeProgressStatusHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IMemberDirectory> _memberDirectoryMock;
+    private readonly Mock<IMembershipDirectory> _memberships = new();
     private readonly Mock<IProbeProgressRepository> _probeProgressRepositoryMock;
     private readonly Mock<IProbePointProgressRepository> _probePointProgressRepositoryMock;
-    private readonly Mock<IProbesCatalogService> _probesCatalogServiceMock;
+    private readonly Mock<IProbesCatalogReader> _probesCatalogMock;
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IResourceAccessService> _access = new();
     private readonly Mock<IMemberProbeLine> _line = new();
@@ -38,7 +41,7 @@ public class UpdateProbeProgressStatusHandlerTests
         _memberDirectoryMock = new Mock<IMemberDirectory>();
         _probeProgressRepositoryMock = new Mock<IProbeProgressRepository>();
         _probePointProgressRepositoryMock = new Mock<IProbePointProgressRepository>();
-        _probesCatalogServiceMock = new Mock<IProbesCatalogService>();
+        _probesCatalogMock = new Mock<IProbesCatalogReader>();
         _line.Setup(x => x.CanStartAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ProbeStart.Allowed);
         _currentUserContextMock = new Mock<ICurrentUserContext>();
@@ -50,9 +53,9 @@ public class UpdateProbeProgressStatusHandlerTests
         _probePointProgressRepositoryMock
             .Setup(x => x.GetByMemberAndProbeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
-        _probesCatalogServiceMock
+        _probesCatalogMock
             .Setup(x => x.GetGroupedProbeById(It.IsAny<string>()))
-            .Returns((GroupedProbeResponse?)null);
+            .Returns((GroupedProbeDto?)null);
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
         _currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(false);
@@ -64,15 +67,15 @@ public class UpdateProbeProgressStatusHandlerTests
         _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(_kurinKey);
         _journal = new JournalRecorder(
             _currentUserContextMock.Object,
-            new AuditActorResolver(_currentUserContextMock.Object, _memberDirectoryMock.Object));
+            new CurrentMember(_currentUserContextMock.Object, _memberDirectoryMock.Object, Mock.Of<IMembershipDirectory>()));
 
         _handler = new UpdateProbeProgressStatusCommandHandler(
             _unitOfWorkMock.Object,
-            _memberDirectoryMock.Object,
+            _memberships.Object,
             _journal.Actors,
             _journal.Audit,
             _journal.Reader,
-            _probesCatalogServiceMock.Object,
+            _probesCatalogMock.Object,
             _access.Object,
             _line.Object);
     }
@@ -81,9 +84,9 @@ public class UpdateProbeProgressStatusHandlerTests
     public async Task Handle_ShouldRefuseToStartAProbe_ThatIsNotInTheMembersLine()
     {
         var memberKey = Guid.NewGuid();
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_kurinKey);
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([_kurinKey]);
         _line.Setup(x => x.CanStartAsync(memberKey, "probe-1-2026", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ProbeStart.NotInLine);
 
@@ -103,9 +106,9 @@ public class UpdateProbeProgressStatusHandlerTests
 
         var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.InProgress, "unsign");
 
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Guid.NewGuid()]);
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
@@ -160,14 +163,14 @@ public class UpdateProbeProgressStatusHandlerTests
 
         var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Guid.NewGuid()]);
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(
-                Guid.NewGuid(), actorUserKey, Guid.Empty, null, "Ivan", "Shevchenko", "ivan@example.com", null));
+                Guid.NewGuid(), actorUserKey, "Ivan", "Shevchenko", "ivan@example.com", null));
 
         var progress = new ProbeProgress
         {
@@ -198,7 +201,7 @@ public class UpdateProbeProgressStatusHandlerTests
 
         // The journal names the same actor the signature does, from the one resolution.
         var entry = Assert.Single(_journal.Entries);
-        Assert.Equal(AuditActions.Probe.Completed, entry.Action);
+        Assert.Equal(AuditActionNames.Probe.Completed, entry.Action);
         Assert.Equal("Ivan Shevchenko", entry.ActorName);
         Assert.Equal(actorUserKey, entry.ActorUserKey);
         Assert.Equal(progress.ProbeProgressKey, entry.SubjectKey);
@@ -217,17 +220,17 @@ public class UpdateProbeProgressStatusHandlerTests
 
         var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Guid.NewGuid()]);
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync((MemberSummary?)null);
 
-        _probesCatalogServiceMock
+        _probesCatalogMock
             .Setup(x => x.GetGroupedProbeById("probe-1"))
-            .Returns(new GroupedProbeResponse("probe-1", "Перша проба", 2, 1, []));
+            .Returns(new GroupedProbeDto("probe-1", "Перша проба", 2, 1, []));
 
         _probePointProgressRepositoryMock
             .Setup(x => x.GetByMemberAndProbeAsync(memberKey, "probe-1", It.IsAny<CancellationToken>()))
@@ -274,9 +277,9 @@ public class UpdateProbeProgressStatusHandlerTests
         var memberKey = Guid.NewGuid();
         _access.Setup(x => x.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mayUnsign ? ResourceAccessDecision.Allow() : ResourceAccessDecision.Deny("Refused by the test."));
-        _memberDirectoryMock
-            .Setup(x => x.FindKurinKeyAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _memberships
+            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Guid.NewGuid()]);
         var progress = new ProbeProgress
         {
             MemberKey = memberKey,
@@ -295,7 +298,7 @@ public class UpdateProbeProgressStatusHandlerTests
         Assert.Equal(expected, result.Type);
         Assert.Equal(after, progress.Status);
         Assert.Equal(
-            mayUnsign ? new[] { AuditActions.Probe.Unverified } : Array.Empty<string>(),
+            mayUnsign ? new[] { AuditActionNames.Probe.Unverified } : Array.Empty<string>(),
             _journal.Entries.Select(entry => entry.Action).ToArray());
     }
 }

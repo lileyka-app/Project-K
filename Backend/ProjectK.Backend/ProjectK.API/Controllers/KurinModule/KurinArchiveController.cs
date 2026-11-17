@@ -4,13 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive.Correct;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive.DangerZone;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive.Get;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 

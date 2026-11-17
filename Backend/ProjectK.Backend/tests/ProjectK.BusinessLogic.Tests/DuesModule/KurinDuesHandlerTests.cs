@@ -1,19 +1,20 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Entry;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Receive;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KraiModule;
+using ProjectK.BusinessLogic.Modules.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -28,7 +29,7 @@ public class KurinDuesHandlerTests
     private readonly Mock<IDuesUnitOfWork> _dues = new();
     private readonly Mock<IDuesKurinShape> _shape = new();
     private readonly Mock<ICurrentUserContext> _user = new();
-    private string _upstream = KraiDues.Stanytsia;
+    private string _upstream = KraiDuesNames.Stanytsia;
 
     public KurinDuesHandlerTests()
     {
@@ -42,21 +43,27 @@ public class KurinDuesHandlerTests
         _user.SetupGet(u => u.KurinKey).Returns(Kurin);
     }
 
-    private KurinDuesAccess Access() => new(_dues.Object, _user.Object);
+    private DuesAccess Access() => new(Mock.Of<IUnitOfWork>(), _dues.Object, _user.Object, Mock.Of<IDuesKurinShape>());
+
+    private IReadOnlyCollection<Guid> _collectorKurins = [Kurin];
 
     private DuesEntryWriter Writer()
     {
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(Kurin);
-        return new DuesEntryWriter(_dues.Object, new Mock<IMembershipDirectory>().Object, members.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
+        var memberships = new Mock<IMembershipDirectory>();
+        memberships.Setup(m => m.GetCurrentKurinKeysForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => _collectorKurins);
+        return new DuesEntryWriter(_dues.Object, memberships.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
     }
 
     private DuesEntry Transfer(decimal amount)
     {
         var transfer = new DuesEntry
         {
-            KurinKey = Kurin, GroupKey = GroupA, Kind = DuesEntryKind.TransferToKurin,
-            Method = DuesPaymentMethod.Cash, Amount = amount, OccurredOn = new DateOnly(2026, 10, 1)
+            KurinKey = Kurin,
+            GroupKey = GroupA,
+            Kind = DuesEntryKind.TransferToKurin,
+            Method = DuesPaymentMethod.Cash,
+            Amount = amount,
+            OccurredOn = new DateOnly(2026, 10, 1)
         };
         _entries.Add(transfer);
         return transfer;
@@ -110,7 +117,10 @@ public class KurinDuesHandlerTests
     {
         var request = new UpsertDuesEntryRequest
         {
-            Kind = DuesEntryKind.TransferToStanytsia, Method = DuesPaymentMethod.Card, Amount = 240, OccurredOn = new DateOnly(2026, 10, 5)
+            Kind = DuesEntryKind.TransferToStanytsia,
+            Method = DuesPaymentMethod.Card,
+            Amount = 240,
+            OccurredOn = new DateOnly(2026, 10, 5)
         };
 
         var created = await new CreateKurinDuesEntryCommandHandler(Access(), Writer(), _dues.Object, _user.Object, _time)
@@ -129,11 +139,37 @@ public class KurinDuesHandlerTests
     }
 
     [Theory]
-    [InlineData(KraiDues.Stanytsia, DuesEntryKind.TransferToKrai, false)]
-    [InlineData(KraiDues.Krai, DuesEntryKind.TransferToStanytsia, false)]
-    [InlineData(KraiDues.Krai, DuesEntryKind.TransferToKrai, true)]
-    [InlineData(KraiDues.Both, DuesEntryKind.TransferToStanytsia, true)]
-    [InlineData(KraiDues.Both, DuesEntryKind.TransferToKrai, true)]
+    [InlineData(true, ResultType.Created)]
+    [InlineData(false, ResultType.BadRequest)]
+    public async Task WhoeverCollected_MayStandInAnotherKurinToo_ButMustStandInThisOne(bool standsHere, ResultType expected)
+    {
+        // Newest first, as the directory answers: this kurin is the one joined earlier.
+        _collectorKurins = standsHere ? [Guid.NewGuid(), Kurin] : [Guid.NewGuid()];
+        var request = new UpsertDuesEntryRequest
+        {
+            Kind = DuesEntryKind.TransferToStanytsia,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 240,
+            OccurredOn = new DateOnly(2026, 10, 5),
+            CollectedByMemberKey = Guid.NewGuid()
+        };
+
+        var result = await new CreateKurinDuesEntryCommandHandler(Access(), Writer(), _dues.Object, _user.Object, _time)
+            .Handle(new CreateKurinDuesEntryCommand(Kurin, request), CancellationToken.None);
+
+        result.Type.Should().Be(expected);
+        if (!standsHere)
+        {
+            result.ErrorCode.Should().Be(DuesErrors.CollectorNotInKurin);
+        }
+    }
+
+    [Theory]
+    [InlineData(KraiDuesNames.Stanytsia, DuesEntryKind.TransferToKrai, false)]
+    [InlineData(KraiDuesNames.Krai, DuesEntryKind.TransferToStanytsia, false)]
+    [InlineData(KraiDuesNames.Krai, DuesEntryKind.TransferToKrai, true)]
+    [InlineData(KraiDuesNames.Both, DuesEntryKind.TransferToStanytsia, true)]
+    [InlineData(KraiDuesNames.Both, DuesEntryKind.TransferToKrai, true)]
     public async Task TheKurin_HandsMoneyOnOnlyTheWayItsKraiTakesIt(string upstream, DuesEntryKind kind, bool taken)
     {
         _upstream = upstream;
@@ -157,7 +193,7 @@ public class KurinDuesHandlerTests
         _dues.SetupGet(d => d.DuesCharges).Returns(Mock.Of<IDuesChargeRepository>(r =>
             r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult<IReadOnlyList<DuesCharge>>(new List<DuesCharge>())));
         _shape.Setup(s => s.IsSeniorAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        var writer = new DuesEntryWriter(_dues.Object, directory.Object, Mock.Of<IMemberDirectory>(), KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
+        var writer = new DuesEntryWriter(_dues.Object, directory.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
         var request = new UpsertDuesEntryRequest
         {
             Kind = DuesEntryKind.Contribution,

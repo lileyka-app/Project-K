@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Reports;
-using ProjectK.Infrastructure.Reports;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Infrastructure.Services.Reports;
 using QuestPDF.Infrastructure;
 
 namespace ProjectK.API.Tests.Services.Reports;

@@ -1,8 +1,8 @@
 using Moq;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 
@@ -15,7 +15,7 @@ internal static class FakeAccessContext
     internal static Mock<IAccessContextResolver> Resolver(params string[] roles)
     {
         var mock = new Mock<IAccessContextResolver>();
-        var answer = roles.Length == 0 ? [SystemRole.Member] : roles;
+        var answer = roles.Length == 0 ? [SystemRoleNames.Member] : roles;
 
         mock.Setup(r => r.ResolveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid userKey, CancellationToken _) =>

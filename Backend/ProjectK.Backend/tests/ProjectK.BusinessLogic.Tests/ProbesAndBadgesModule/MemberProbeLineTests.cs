@@ -1,15 +1,14 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 
@@ -28,7 +27,7 @@ public class MemberProbeLineTests
     {
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(x => x.ProbeProgresses).Returns(_progress.Object);
-        var catalog = new Mock<IProbesCatalogService>();
+        var catalog = new Mock<IProbesCatalogReader>();
         catalog.Setup(x => x.GetProbes()).Returns(
         [
             Probe("probe-1", 1),
@@ -36,14 +35,14 @@ public class MemberProbeLineTests
             Probe("probe-1-2026", 1, New),
             Probe("probe-2-2026", 2, New),
         ]);
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(x => x.FindKurinKeyAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(_kurinKey);
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(x => x.GetCurrentKurinKeysForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync([_kurinKey]);
         Given();
 
         _line = new MemberProbeLine(unitOfWork.Object, catalog.Object, members.Object, _groupEditions.Object);
     }
 
-    private static ProbeSummaryResponse Probe(string id, int order, string? edition = null) =>
+    private static ProbeSummaryDto Probe(string id, int order, string? edition = null) =>
         new(id, id, 10, 2, edition, order, "ua", "approved");
 
     private void Given(params (string Id, ProbeProgressStatus Status)[] rows)

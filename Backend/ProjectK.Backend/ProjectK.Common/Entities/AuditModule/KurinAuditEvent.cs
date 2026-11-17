@@ -1,5 +1,6 @@
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.Common.Entities.AuditModule;
 
@@ -32,7 +33,7 @@ public class KurinAuditEvent
 
     public AuditArea Area { get; set; }
 
-    /// <summary>One of <see cref="AuditActions"/>.</summary>
+    /// <summary>One of <see cref="AuditActionNames"/>.</summary>
     public string Action { get; set; } = string.Empty;
 
     /// <summary>The person the entry is about, when it is about a person.</summary>

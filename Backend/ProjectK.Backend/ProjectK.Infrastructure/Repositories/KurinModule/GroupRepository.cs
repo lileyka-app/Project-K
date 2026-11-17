@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -36,9 +31,17 @@ public class GroupRepository : BaseEntityRepository<Group>, IGroupRepository
         return await Context.Groups.Where(g => g.KurinKey == kurinKey).Include(g => g.Kurin).AsNoTracking().ToListAsync(token);
     }
 
-    public override Task<IEnumerable<Group>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Group>> GetByKeysIncludingDissolvedAsync(IReadOnlyCollection<Guid> groupKeys, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException("Use GetAllAsync(Guid kurinKey) instead.");
+        if (groupKeys.Count == 0)
+        {
+            return [];
+        }
+
+        return await Context.Groups.IgnoreQueryFilters()
+            .Where(g => groupKeys.Contains(g.GroupKey))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
     public override void Update(Group group, CancellationToken cancellationToken = default)

@@ -1,8 +1,6 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Http;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Middleware;
 
@@ -23,11 +21,11 @@ public sealed class AccessStaleHeaderMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IAccessChangeSignal signal)
+    public async Task InvokeAsync(HttpContext context, IAccessChangeStore signal)
     {
         if (context.User.GetUserKey() is { } userKey && IssuedAt(context) is { } issuedAt)
         {
-            var kurinKey = Guid.TryParse(context.User.FindFirst(AccessTokenClaims.KurinKey)?.Value, out var kurin)
+            var kurinKey = Guid.TryParse(context.User.FindFirst(AccessTokenClaimNames.KurinKey)?.Value, out var kurin)
                 ? kurin
                 : (Guid?)null;
 
@@ -43,7 +41,7 @@ public sealed class AccessStaleHeaderMiddleware
 
     // A token minted before the claim existed says nothing here; it runs out on its own.
     private static DateTimeOffset? IssuedAt(HttpContext context) =>
-        long.TryParse(context.User.FindFirst(AccessTokenClaims.IssuedAt)?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds)
+        long.TryParse(context.User.FindFirst(AccessTokenClaimNames.IssuedAt)?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds)
             ? DateTimeOffset.FromUnixTimeSeconds(seconds)
             : null;
 }

@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using ProjectK.API.Extensions;
-
 namespace ProjectK.API.Extensions;
 
 public static class FormFileExtensions

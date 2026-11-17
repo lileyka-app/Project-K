@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -39,7 +34,7 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
             token);
     }
 
-    public override async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await Context.Kurins.ToListAsync(cancellationToken);
     }

@@ -1,4 +1,5 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.Shared;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Entities.KurinModule;
 
@@ -26,15 +27,16 @@ public class Membership : Entity
     /// </summary>
     public Guid? UserKey { get; set; }
 
+    /// <summary>The kurin. A key, not a relationship: it lives in another module.</summary>
     public Guid KurinKey { get; set; }
+
+    /// <summary>The гурток, while they are in one. A key, not a relationship: it lives in another module.</summary>
     public Guid? GroupKey { get; set; }
+
     public MembershipKind Kind { get; set; } = MembershipKind.Youth;
 
     public DateTime JoinedAtUtc { get; set; }
 
     /// <summary>When they left. Null means the membership is current.</summary>
     public DateTime? LeftAtUtc { get; set; }
-
-    public Kurin Kurin { get; set; } = null!;
-    public Group? Group { get; set; }
 }

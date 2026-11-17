@@ -1,23 +1,22 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Events;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.ProbesAndBadgesModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
@@ -25,12 +24,13 @@ public class SubmitBadgeProgressHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IMemberDirectory> _memberDirectoryMock = new();
+    private readonly Mock<IMembershipDirectory> _memberships = new();
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepositoryMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
     private readonly Mock<IDomainEventPublisher> _eventsMock = new();
     private readonly Mock<IKurinCatalog> _kurinCatalogMock = new();
-    private readonly Mock<IBadgesCatalogService> _badges = new();
+    private readonly Mock<IBadgesCatalogReader> _badges = new();
     private readonly SubmitBadgeProgressCommandHandler _handler;
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly JournalRecorder _journal;
@@ -48,11 +48,12 @@ public class SubmitBadgeProgressHandlerTests
 
         _journal = new JournalRecorder(
             _currentUserContextMock.Object,
-            new AuditActorResolver(_currentUserContextMock.Object, _memberDirectoryMock.Object));
+            new CurrentMember(_currentUserContextMock.Object, _memberDirectoryMock.Object, Mock.Of<IMembershipDirectory>()));
 
         _handler = new SubmitBadgeProgressCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
+            _memberships.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
             _kurinCatalogMock.Object,
@@ -74,9 +75,9 @@ public class SubmitBadgeProgressHandlerTests
     private Guid GivenMember(string badgeId, BadgeProgress? progress)
     {
         var memberKey = Guid.NewGuid();
-        _memberDirectoryMock
-            .Setup(x => x.FindAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(memberKey, null, Guid.NewGuid(), null, "Ivan", "Petrenko", "ivan@example.com", null));
+        _memberships
+            .Setup(x => x.FindInLatestKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.Of(memberKey, null, Guid.NewGuid(), null, "Ivan", "Petrenko", "ivan@example.com", null));
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
@@ -117,9 +118,9 @@ public class SubmitBadgeProgressHandlerTests
         var badgeId = "badge-1";
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
-        _memberDirectoryMock
-            .Setup(x => x.FindAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(
+        _memberships
+            .Setup(x => x.FindInLatestKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.Of(
                 memberKey, null, kurinKey, groupKey, "Ivan", "Petrenko", "ivan@example.com", null));
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
@@ -151,7 +152,7 @@ public class SubmitBadgeProgressHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Badge);
-        entry.Action.Should().Be(AuditActions.Badge.Submitted);
+        entry.Action.Should().Be(AuditActionNames.Badge.Submitted);
         entry.SubjectLabel.Should().Be("Велосипедист");
         entry.SubjectMemberName.Should().Be("Ivan Petrenko");
         entry.SubjectGroupKey.Should().Be(groupKey);
@@ -168,7 +169,7 @@ public class SubmitBadgeProgressHandlerTests
         await _handler.Handle(new SubmitBadgeProgressCommand(memberKey, "badge-1", null), CancellationToken.None);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Badge.Resubmitted);
+        entry.Action.Should().Be(AuditActionNames.Badge.Resubmitted);
         entry.SubjectKey.Should().Be(progress.BadgeProgressKey);
         entry.Changes.Should().Equal(new AuditChange("status", "Rejected", "Submitted"));
     }

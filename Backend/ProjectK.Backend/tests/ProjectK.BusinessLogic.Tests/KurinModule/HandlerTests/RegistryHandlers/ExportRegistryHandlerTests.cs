@@ -1,18 +1,18 @@
 using FluentAssertions;
 using MediatR;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.RegistryHandlers;
 
@@ -22,7 +22,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.RegistryHandlers
 /// </summary>
 public class ExportRegistryHandlerTests
 {
-    private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<ISender> _sender = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<ISpreadsheetWriter> _writer = new();
@@ -45,7 +45,7 @@ public class ExportRegistryHandlerTests
             .Returns([1, 2, 3]);
 
         _handler = new ExportRegistryQueryHandler(
-            _mediator.Object,
+            _sender.Object,
             _uow.Object,
             _writer.Object,
             TimeProvider.System);
@@ -56,13 +56,13 @@ public class ExportRegistryHandlerTests
             .Setup(k => k.GetByKeyAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Kurin(3, branch) { KurinKey = _kurinKey });
 
-    private static MemberResponse Person(
+    private static MemberDto Person(
         string lastName,
         PlastLevel? level,
         bool isStaff = false,
         string? groupName = null,
         params string[] mentored)
-        => new()
+        => TestMemberDto.Blank with
         {
             MemberKey = Guid.NewGuid(),
             FirstName = "Тест",
@@ -79,10 +79,10 @@ public class ExportRegistryHandlerTests
                 : [new PlastLevelHistoryDto { PlastLevel = level.Value, DateAchieved = new DateOnly(2024, 5, 1) }]
         };
 
-    private void RosterIs(params MemberResponse[] people)
-        => _mediator
-            .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ServiceResult<IEnumerable<MemberResponse>>(ResultType.Success, people));
+    private void RosterIs(params MemberDto[] people)
+        => _sender
+            .Setup(s => s.Send(It.Is<GetMembersQuery>(q => q.KurinKey == _kurinKey && q.GroupKey == Guid.Empty), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, people));
 
     private Task<ServiceResult<RegistryFile>> Export(params string[] columnIds)
         => _handler.Handle(new ExportRegistryQuery(_kurinKey, columnIds), CancellationToken.None);

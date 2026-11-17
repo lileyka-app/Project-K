@@ -1,10 +1,12 @@
-using ProjectK.Common.Exceptions;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 
@@ -22,11 +24,11 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
     private readonly IKurinTagVisibility _visibility;
     private readonly KurinTagAssignments _assignments;
 
-    public SetTagMembersCommandHandler(IUnitOfWork uow, IKurinTagVisibility visibility, IKurinAudit audit)
+    public SetTagMembersCommandHandler(IUnitOfWork uow, IKurinTagVisibility visibility, IKurinAudit audit, IMembershipDirectory memberships)
     {
         _uow = uow;
         _visibility = visibility;
-        _assignments = new KurinTagAssignments(uow, audit);
+        _assignments = new KurinTagAssignments(uow, audit, memberships);
     }
 
     public async Task<ServiceResult<KurinTagDto>> Handle(SetTagMembersCommand request, CancellationToken cancellationToken)
@@ -34,13 +36,13 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
         var settings = await _visibility.SettingsAsync(request.KurinKey, cancellationToken);
         if (settings is not { Enabled: true })
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinTagErrors.TagsDisabled, "The kurin has tags turned off.");
+            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinErrors.TagsDisabled, "The kurin has tags turned off.");
         }
 
         var tag = await _uow.KurinTags.GetWithMembersAsync(request.KurinTagKey, cancellationToken);
         if (tag is null || tag.KurinKey != request.KurinKey)
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.NotFound, KurinTagErrors.TagNotFound, "Tag was not found in this kurin.");
+            return ServiceResult<KurinTagDto>.Failure(ResultType.NotFound, KurinErrors.TagNotFound, "Tag was not found in this kurin.");
         }
 
         var wanted = request.MemberKeys.Distinct().ToHashSet();
@@ -51,13 +53,13 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
 
         if ((await _assignments.OutsideKurinAsync(request.KurinKey, gaining, cancellationToken)).Count > 0)
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.BadRequest, KurinTagErrors.NotInKurin, "Everyone given a tag must be in the kurin now.");
+            return ServiceResult<KurinTagDto>.Failure(ResultType.BadRequest, KurinErrors.NotInKurin, "Everyone given a tag must be in the kurin now.");
         }
 
         await using var transaction = await _assignments.HoldAsync(gaining, cancellationToken);
         if ((await _assignments.OverLimitAsync(request.KurinKey, gaining, cancellationToken)).Count > 0)
         {
-            return ServiceResult<KurinTagDto>.Failure(ResultType.BadRequest, KurinTagErrors.TooManyTags, "A person would carry more tags than the limit.");
+            return ServiceResult<KurinTagDto>.Failure(ResultType.BadRequest, KurinErrors.TooManyTags, "A person would carry more tags than the limit.");
         }
 
         foreach (var memberKey in gaining)
@@ -76,7 +78,7 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
         }
         catch (DuplicateRowException)
         {
-            return KurinTagErrors.ChangedMeanwhile<KurinTagDto>();
+            return KurinErrors.ChangedMeanwhile<KurinTagDto>();
         }
 
         await transaction.CommitAsync(cancellationToken);

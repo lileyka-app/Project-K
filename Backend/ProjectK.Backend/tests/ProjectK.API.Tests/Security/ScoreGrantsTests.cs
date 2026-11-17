@@ -1,5 +1,5 @@
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -14,7 +14,7 @@ public class ScoreGrantsTests
         [ResourceAction.Read, ResourceAction.Create, ResourceAction.Update, ResourceAction.Delete];
 
     private static AccessScope? Widest(string role, ResourceType resource, ResourceAction action) =>
-        RolePermissionMap.WidestScope(RolePermissionMap.Resolve([role]), resource, action);
+        RolePermissionRules.WidestScope(RolePermissionRules.Resolve([role]), resource, action);
 
     [Theory]
     [InlineData("Member")]

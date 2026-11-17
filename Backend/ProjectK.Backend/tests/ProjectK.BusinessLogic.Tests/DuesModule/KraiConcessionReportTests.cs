@@ -3,16 +3,18 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Krai;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -57,8 +59,8 @@ public class KraiConcessionReportTests
             new KraiCatalogSettings(["ua"], []),
             new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
             KraiCardFieldsSettings.Default,
-            new KraiDuesSettings(KraiDues.Stanytsia) { Concessions = [new DuesConcessionRule("sibling", "Брат чи сестра", KraiDues.Percent, 50, DuesParts.Stanytsia)] });
-        var profiles = new Mock<IKraiProfileProvider>();
+            new KraiDuesSettings(KraiDuesNames.Stanytsia) { Concessions = [new DuesConcessionRule("sibling", "Брат чи сестра", KraiDuesNames.Percent, 50, DuesParts.Stanytsia)] });
+        var profiles = new Mock<IKraiProfileDirectory>();
         profiles.Setup(p => p.GetForKraiAsync("cz", It.IsAny<CancellationToken>())).ReturnsAsync(profile);
 
         return new GetKraiConcessionReportQueryHandler(unitOfWork.Object, new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), profiles.Object, new FixedTimeProvider(now));
@@ -79,10 +81,10 @@ public class KraiConcessionReportTests
     [Fact]
     public async Task OnlyThePilhaThatSetThePrice_Counts_UnderTheKraisCurrentName()
     {
-        Grant(Youth, "Брат (стара назва)", KraiDues.Percent, 50, DuesParts.Stanytsia);
-        Grant(Sister, "Брат (стара назва)", KraiDues.Percent, 50, DuesParts.Stanytsia);
+        Grant(Youth, "Брат (стара назва)", KraiDuesNames.Percent, 50, DuesParts.Stanytsia);
+        Grant(Sister, "Брат (стара назва)", KraiDuesNames.Percent, 50, DuesParts.Stanytsia);
         // For the sister the exemption beats 50 % off, so only it counts for her.
-        Grant(Sister, "Звільнення", KraiDues.Exempt, 0, DuesParts.Stanytsia | DuesParts.Kurin);
+        Grant(Sister, "Звільнення", KraiDuesNames.Exempt, 0, DuesParts.Stanytsia | DuesParts.Kurin);
 
         var result = await Handler(DateTimeOffset.UtcNow).Handle(new GetKraiConcessionReportQuery("cz", 2026, 4), default);
 
@@ -99,7 +101,7 @@ public class KraiConcessionReportTests
         free.Kurins.Single().Number.Should().Be(12);
         // The number is the kurin's own in its улад: the row says which улад, so 12 УПЮ and 12 УСП stay apart.
         free.Kurins.Single().Branch.Should().Be(KurinBranch.UPYu);
-        free.Kurins.Single().Branches.Should().Equal(new ProjectK.Common.Models.Records.KurinNumbering(KurinBranch.UPYu, 12));
+        free.Kurins.Single().Branches.Should().Equal(new ProjectK.Common.Dtos.KurinModule.KurinNumbering(KurinBranch.UPYu, 12));
     }
 
     [Fact]

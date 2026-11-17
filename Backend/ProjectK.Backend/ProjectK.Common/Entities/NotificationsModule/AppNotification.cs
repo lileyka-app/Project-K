@@ -1,0 +1,23 @@
+using ProjectK.Common.Entities.Shared;
+using ProjectK.Common.Enums.NotificationsModule;
+
+namespace ProjectK.Common.Entities.NotificationsModule;
+
+public class AppNotification : Entity
+{
+    public Guid NotificationKey { get; set; } = Guid.NewGuid();
+    public Guid RecipientUserKey { get; set; }
+    public AppNotificationType Type { get; set; }
+    public AppNotificationSeverity Severity { get; set; } = AppNotificationSeverity.Info;
+    public string Title { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string? EntityType { get; set; }
+    public Guid? EntityKey { get; set; }
+    public string? Route { get; set; }
+    public string? PayloadJson { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? ReadAtUtc { get; set; }
+    public Guid? ActorUserKey { get; set; }
+    public string? DeduplicationKey { get; set; }
+    public DateTime? ExpiresAtUtc { get; set; }
+}

@@ -1,17 +1,19 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
+using ProjectK.API.Uploads;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos.ProbesAndBadgesModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule.Requests;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
@@ -43,7 +45,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("third-probe")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetThirdProbe(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
         (await _mediator.Send(new GetThirdProbeQuery(memberKey, probeId), cancellationToken)).ToActionResult(this);
 
@@ -53,7 +55,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("third-probe")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SaveFile(
@@ -74,7 +76,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("third-probe/reflection/confirmation")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public Task<IActionResult> ConfirmReflection(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
         SignAsync(memberKey, probeId, ThirdProbeSignPart.Reflection, true, null, null, cancellationToken);
@@ -85,7 +87,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("third-probe/reflection/confirmation")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public Task<IActionResult> UnconfirmReflection(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
         SignAsync(memberKey, probeId, ThirdProbeSignPart.Reflection, false, null, null, cancellationToken);
@@ -98,7 +100,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("third-probe/stages")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SetStages(
@@ -121,7 +123,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("~/api/kurin/{kurinKey:guid}/third-probers")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IReadOnlyList<ThirdProberStatusResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<ThirdProberStatusDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetThirdProbers(Guid kurinKey, CancellationToken cancellationToken) =>
         (await _mediator.Send(new GetThirdProbersQuery(kurinKey), cancellationToken)).ToActionResult(this);
 
@@ -133,7 +135,7 @@ public class ThirdProbeController : ControllerBase
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
     [RequestSizeLimit(ProbeProjectRules.MaxCertificateBytes + 64 * 1024)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadCertificate(
@@ -145,24 +147,24 @@ public class ThirdProbeController : ControllerBase
         var file = form.File;
         if (file == null || file.Length == 0)
         {
-            return this.Failure(ResultType.BadRequest, "MissingFile", "A file is required.");
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.MissingFile, "A file is required.");
         }
 
         var isPdf = string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
         if (file.Length > ProbeProjectRules.MaxCertificateBytes)
         {
-            return this.Failure(ResultType.BadRequest, "CertificateTooLarge", "The посвідка must be 2 MB or smaller.");
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.CertificateTooLarge, "The посвідка must be 2 MB or smaller.");
         }
 
         if (!isPdf && ImageUploadRules.Refusal(file, ProbeProjectRules.MaxCertificateBytes) is { } refusal)
         {
-            return this.Failure(ResultType.BadRequest, "InvalidCertificate", refusal.Message);
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.InvalidCertificate, refusal.Message);
         }
 
         var bytes = await file.ToByteArrayAsync(cancellationToken);
         if (bytes == null || bytes.Length == 0)
         {
-            return this.Failure(ResultType.BadRequest, "MissingFile", "A file is required.");
+            return this.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.MissingFile, "A file is required.");
         }
 
         var command = new UploadCampCertificateCommand(memberKey, probeId, bytes, file.FileName, isPdf);
@@ -175,7 +177,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("third-probe/camp/certificate")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteCertificate(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
         (await _mediator.Send(new DeleteCampCertificateCommand(memberKey, probeId), cancellationToken)).ToActionResult(this);
@@ -186,7 +188,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("projects")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ProbeProjectSavedResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProbeProjectSavedDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddProject(
@@ -202,7 +204,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("projects/{projectKey:guid}")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ProbeProjectSavedResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProbeProjectSavedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -220,7 +222,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("projects/{projectKey:guid}")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProject(Guid memberKey, string probeId, Guid projectKey, CancellationToken cancellationToken) =>
@@ -232,7 +234,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost("projects/{spareKey:guid}/swap/{mainKey:guid}")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -245,7 +247,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("projects/{projectKey:guid}/approval")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<IActionResult> ApproveProject(Guid memberKey, string probeId, Guid projectKey, CancellationToken cancellationToken) =>
@@ -257,7 +259,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("projects/{projectKey:guid}/approval")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<IActionResult> UnapproveProject(Guid memberKey, string probeId, Guid projectKey, CancellationToken cancellationToken) =>
@@ -269,7 +271,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("projects/{projectKey:guid}/completion")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -287,7 +289,7 @@ public class ThirdProbeController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("projects/{projectKey:guid}/completion")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThirdProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<IActionResult> UncompleteProject(Guid memberKey, string probeId, Guid projectKey, CancellationToken cancellationToken) =>
@@ -301,37 +303,22 @@ public class ThirdProbeController : ControllerBase
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
     [RequestSizeLimit(ProbeProjectRules.MaxImageBytes + 64 * 1024)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(ProbeProjectImageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProbeProjectImageDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadImage(
+    public Task<IActionResult> UploadImage(
         Guid memberKey,
         string probeId,
         Guid projectKey,
         [FromForm] UploadImageRequest form,
-        CancellationToken cancellationToken)
-    {
-        var file = form.File;
-        if (file == null || file.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        if (ImageUploadRules.Refusal(file, ProbeProjectRules.MaxImageBytes) is { } refusal)
-        {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
-        }
-
-        var bytes = await file.ToByteArrayAsync(cancellationToken);
-        if (bytes == null || bytes.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        var command = new UploadProbeProjectImageCommand(memberKey, probeId, projectKey, bytes, file.FileName);
-        return (await _mediator.Send(command, cancellationToken)).ToActionResult(this);
-    }
+        CancellationToken cancellationToken) =>
+        this.SendImageAsync(
+            form.File,
+            (bytes, fileName) => _mediator.Send(
+                new UploadProbeProjectImageCommand(memberKey, probeId, projectKey, bytes, fileName), cancellationToken),
+            cancellationToken,
+            ProbeProjectRules.MaxImageBytes);
 
     private async Task<IActionResult> SignAsync(
         Guid memberKey,

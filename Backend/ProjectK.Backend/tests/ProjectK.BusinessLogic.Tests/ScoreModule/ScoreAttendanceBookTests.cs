@@ -1,7 +1,6 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.ScoreModule;
-using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 

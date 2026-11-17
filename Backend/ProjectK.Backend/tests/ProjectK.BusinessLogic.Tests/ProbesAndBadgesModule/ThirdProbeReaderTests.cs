@@ -1,20 +1,18 @@
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 
@@ -28,9 +26,9 @@ public class ThirdProbeReaderTests
     private readonly Mock<IProbeProjectRepository> _projects = new();
     private readonly Mock<IProbeProgressRepository> _progress = new();
     private readonly Mock<IBadgeProgressRepository> _badges = new();
-    private readonly Mock<IProbeProjectAccess> _access = new();
+    private readonly Mock<IProbesAndBadgesAccess> _access = new();
     private readonly Mock<IMemberProbeLine> _line = new();
-    private readonly Mock<IBadgesCatalogService> _catalog = new();
+    private readonly Mock<IBadgesCatalogReader> _catalog = new();
     private readonly Mock<IBlobReadLinks> _links = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Guid _memberKey = Guid.NewGuid();
@@ -44,9 +42,9 @@ public class ThirdProbeReaderTests
         _projects.Setup(p => p.GetForMemberProbeAsync(_memberKey, "probe-3", It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _line.Setup(l => l.ForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new ProbeSummaryResponse("probe-1", "Перша", 10, 2, null, 1),
-            new ProbeSummaryResponse("probe-2", "Друга", 10, 2, null, 2),
-            new ProbeSummaryResponse("probe-3", "Третя", 0, 0, null, 3)
+            new ProbeSummaryDto("probe-1", "Перша", 10, 2, null, 1, "", ""),
+            new ProbeSummaryDto("probe-2", "Друга", 10, 2, null, 2, "", ""),
+            new ProbeSummaryDto("probe-3", "Третя", 0, 0, null, 3, "", "")
         ]);
         _progress.Setup(p => p.GetByMemberAndProbeIdAsync(_memberKey, "probe-2", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProbeProgress { ProbeId = "probe-2", Status = ProbeProgressStatus.Completed, CompletedAtUtc = new DateTime(2026, 3, 1, 12, 0, 0, DateTimeKind.Utc) });
@@ -109,10 +107,10 @@ public class ThirdProbeReaderTests
             .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = kurinKey, GroupKey = groupKey }]);
         _unitOfWork.SetupGet(u => u.Memberships).Returns(memberships.Object);
         var leaderships = new Mock<ILeadershipRepository>();
-        leaderships.Setup(l => l.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>())).ReturnsAsync(
+        leaderships.Setup(l => l.GetOfficeHoldersAsync(kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Остап", LastName = "Коваль", UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi) },
-            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Ірина", LastName = "Бойко", UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) }
+            new MemberLookupRow(Guid.NewGuid(), null, "Остап", null, "Коваль", null, new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)),
+            new MemberLookupRow(Guid.NewGuid(), null, "Ірина", null, "Бойко", null, new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk))
         ]);
         _unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
         var mentors = new Mock<IMentorAssignmentRepository>();
@@ -123,9 +121,9 @@ public class ThirdProbeReaderTests
         ]);
         _unitOfWork.SetupGet(u => u.MentorAssignments).Returns(mentors.Object);
         _members.Setup(d => d.FindByAccountAsync(ownMentor, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), ownMentor, kurinKey, null, "Марта", "Шевчук", "m@x", null));
+            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), ownMentor, "Марта", "Шевчук", "m@x", null));
         _members.Setup(d => d.FindByAccountAsync(otherMentor, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), otherMentor, kurinKey, null, "Андрій", "Гнатюк", "a@x", null));
+            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), otherMentor, "Андрій", "Гнатюк", "a@x", null));
 
         var tab = await _reader.ReadAsync(_memberKey, "probe-3");
 
