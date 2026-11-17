@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.IdentityModule;

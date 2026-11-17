@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
@@ -47,7 +48,7 @@ public sealed class IssueCalendarFeedCommandHandler : IRequestHandler<IssueCalen
         return new ServiceResult<IssuedCalendarFeedDto>(ResultType.Success, new IssuedCalendarFeedDto
         {
             Token = token,
-            Status = CalendarFeedStatusDto.Of(feed)
+            Status = CalendarFeedMapping.ToDto(feed)
         });
     }
 }

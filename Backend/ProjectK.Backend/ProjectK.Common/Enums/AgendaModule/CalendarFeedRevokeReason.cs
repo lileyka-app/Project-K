@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Enums.IdentityModule;
+namespace ProjectK.Common.Enums.AgendaModule;
 
 /// <summary>Why a calendar link stopped working. Stored as a number: never renumber.</summary>
 public enum CalendarFeedRevokeReason

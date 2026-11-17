@@ -1,9 +1,11 @@
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Dtos.NotificationsModule;
 using ProjectK.Common.Entities.IdentityModule;
-using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.NotificationsModule;
+using ProjectK.Common.Rules.AgendaModule;
 using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;

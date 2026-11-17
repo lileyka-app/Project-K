@@ -1,8 +1,9 @@
 using MediatR;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
-using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 
@@ -41,6 +42,6 @@ public sealed class DisableCalendarFeedCommandHandler : IRequestHandler<DisableC
         }
 
         var feed = await _feeds.GetLatestForUserAsync(userKey, cancellationToken);
-        return new ServiceResult<CalendarFeedStatusDto>(ResultType.Success, CalendarFeedStatusDto.Of(feed));
+        return new ServiceResult<CalendarFeedStatusDto>(ResultType.Success, CalendarFeedMapping.ToDto(feed));
     }
 }

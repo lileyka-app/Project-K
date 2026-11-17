@@ -1,7 +1,7 @@
 using ProjectK.Common.Entities.Shared;
-using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.AgendaModule;
 
-namespace ProjectK.Common.Entities.IdentityModule;
+namespace ProjectK.Common.Entities.AgendaModule;
 
 /// <summary>
 /// The secret link an account subscribes to from Google, Apple or Outlook: an iCalendar file of the
@@ -37,6 +37,4 @@ public class CalendarFeed : Entity
     public DateTime? RevokedAtUtc { get; set; }
 
     public CalendarFeedRevokeReason? RevokedReason { get; set; }
-
-    public AppUser User { get; set; } = null!;
 }

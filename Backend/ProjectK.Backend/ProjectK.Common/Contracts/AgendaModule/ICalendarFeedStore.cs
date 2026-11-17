@@ -1,7 +1,7 @@
-using ProjectK.Common.Entities.IdentityModule;
-using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Enums.AgendaModule;
 
-namespace ProjectK.Common.Contracts.IdentityModule;
+namespace ProjectK.Common.Contracts.AgendaModule;
 
 /// <summary>
 /// The calendar links of accounts (see <see cref="CalendarFeed"/>). Like the session store, every

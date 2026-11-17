@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;

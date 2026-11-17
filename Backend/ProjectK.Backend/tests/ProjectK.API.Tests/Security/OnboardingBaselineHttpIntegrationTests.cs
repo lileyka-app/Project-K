@@ -23,6 +23,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;

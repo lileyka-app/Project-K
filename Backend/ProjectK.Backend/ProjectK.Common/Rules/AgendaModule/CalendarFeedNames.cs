@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Rules.IdentityModule;
+namespace ProjectK.Common.Rules.AgendaModule;
 
 /// <summary>Fixed strings of the calendar link that more than one module writes.</summary>
 public static class CalendarFeedNames
