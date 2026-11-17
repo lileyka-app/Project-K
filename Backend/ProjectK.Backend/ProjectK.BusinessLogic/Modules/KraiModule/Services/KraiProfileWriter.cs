@@ -1,6 +1,6 @@
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;

@@ -30,6 +30,12 @@ public sealed class MembershipDirectory : IMembershipDirectory
     public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.CountForMemberAsync(memberKey, cancellationToken);
 
+    public async Task<IReadOnlyCollection<Guid>> GetCurrentKurinKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken))
+            .Select(m => m.KurinKey)
+            .Distinct()
+            .ToList();
+
     public Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
         Guid userKey,
         CancellationToken cancellationToken = default)

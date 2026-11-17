@@ -112,4 +112,9 @@ public static class IdentityErrors
     /// </summary>
     public static ServiceResult<T> SessionEnded<T>() =>
         ServiceResult<T>.Failure(ResultType.Unauthorized, Unauthorized, "Authentication is required or the credentials are invalid.");
+
+    public const string NotSignedIn = "NotSignedIn";
+
+    public static ServiceResult<T> SignInRequired<T>() =>
+        ServiceResult<T>.Failure(ResultType.Unauthorized, NotSignedIn, "Not signed in.");
 }

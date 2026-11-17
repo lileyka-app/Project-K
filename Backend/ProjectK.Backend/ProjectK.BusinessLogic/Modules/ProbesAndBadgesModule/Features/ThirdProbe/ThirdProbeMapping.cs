@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;

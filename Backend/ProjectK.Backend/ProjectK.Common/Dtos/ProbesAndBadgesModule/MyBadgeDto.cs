@@ -1,0 +1,13 @@
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+
+namespace ProjectK.Common.Dtos.ProbesAndBadgesModule;
+
+public sealed record MyBadgeDto
+{
+    public required string BadgeId { get; init; }
+    public required string Title { get; init; }
+    public required string? ImagePath { get; init; }
+    public required BadgeProgressStatus Status { get; init; }
+    public required DateTime? SubmittedAtUtc { get; init; }
+    public required DateTime? ReviewedAtUtc { get; init; }
+}

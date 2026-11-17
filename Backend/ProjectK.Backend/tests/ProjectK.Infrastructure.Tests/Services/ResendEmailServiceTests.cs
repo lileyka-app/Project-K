@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Infrastructure.Services.Email;
-using ProjectK.Common.Options.InfrastructureModule;
 using Resend;
 using Xunit.Abstractions;
 

@@ -1,8 +1,8 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
-using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Options.InfrastructureModule;
-using ProjectK.Common.Rules.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Rules.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.Blobs;
 

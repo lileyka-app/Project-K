@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using ProjectK.API.Hosting;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 
 namespace ProjectK.API.Middleware;
 

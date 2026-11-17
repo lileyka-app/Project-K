@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.IdentityModule;

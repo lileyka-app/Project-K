@@ -1,5 +1,5 @@
 using Moq;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.IdentityModule;

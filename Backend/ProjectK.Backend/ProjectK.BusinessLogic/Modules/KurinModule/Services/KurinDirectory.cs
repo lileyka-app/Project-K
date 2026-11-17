@@ -1,6 +1,8 @@
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -26,4 +28,17 @@ public sealed class KurinDirectory : IKurinDirectory
         => await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin
             ? new KurinTaskArchivePolicy(kurin.TaskAutoArchiveAfterDays, kurin.TaskArchivePurgeAfterDays)
             : null;
+
+    public async Task<IReadOnlyDictionary<LeadershipRole, string>?> GetRoleNamesAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin
+            ? KurinRoleNames.Read(kurin.RoleNames)
+            : null;
+
+    public async Task<bool> IsScoreEnabledAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken))?.IsScoreEnabled ?? true;
+
+    public async Task<IReadOnlyCollection<MinorCardSharing>> GetMinorCardSharingAsync(IReadOnlyCollection<Guid> kurinKeys, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.KurinCardSharing.GetForKurinsAsync(kurinKeys, cancellationToken))
+            .Select(s => new MinorCardSharing(s.KurinKey, s.MinorsMayShare, s.MinorFields, s.MinorsMayLink))
+            .ToList();
 }

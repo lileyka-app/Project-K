@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Rules.Shared;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;

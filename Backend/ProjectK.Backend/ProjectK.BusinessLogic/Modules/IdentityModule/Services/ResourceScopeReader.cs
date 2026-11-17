@@ -1,5 +1,5 @@
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Rules.IdentityModule;

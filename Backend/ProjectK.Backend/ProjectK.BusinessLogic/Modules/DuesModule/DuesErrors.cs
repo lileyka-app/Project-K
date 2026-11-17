@@ -76,4 +76,10 @@ public static class DuesErrors
     public static ServiceResult<T> Locked<T>(string unmarkedBy) =>
         ServiceResult<T>.Failure(ResultType.Conflict, EntryVerified,
             $"A verified operation is locked. Add a correction, or have the {unmarkedBy} unmark it.");
+
+    /// <summary>The account stands behind no member record, so there is no «me» to read.</summary>
+    public const string NotAMember = "NotAMember";
+
+    public static ServiceResult<T> NoMember<T>() =>
+        ServiceResult<T>.Failure(ResultType.Forbidden, NotAMember, "The account has no member record.");
 }

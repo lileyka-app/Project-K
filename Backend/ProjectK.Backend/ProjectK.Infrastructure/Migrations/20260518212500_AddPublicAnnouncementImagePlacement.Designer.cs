@@ -23,7 +23,7 @@ namespace ProjectK.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.PublicAnnouncementDraft", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.PublicAnnouncementDraft", b =>
                 {
                     b.Property<Guid>("PublicAnnouncementDraftKey")
                         .ValueGeneratedOnAdd()

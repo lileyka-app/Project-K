@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Entities.NotificationsModule;
+using ProjectK.Common.Options.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 

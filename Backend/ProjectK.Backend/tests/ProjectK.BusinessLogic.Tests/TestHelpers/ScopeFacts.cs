@@ -1,7 +1,7 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.IdentityModule;

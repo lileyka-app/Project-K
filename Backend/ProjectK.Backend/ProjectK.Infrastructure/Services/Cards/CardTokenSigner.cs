@@ -3,7 +3,7 @@ using System.Buffers.Text;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.Cards;
 

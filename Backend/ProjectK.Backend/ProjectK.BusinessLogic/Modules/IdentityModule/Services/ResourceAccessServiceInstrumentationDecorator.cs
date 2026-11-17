@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.NotificationsModule;
 
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 

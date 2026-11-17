@@ -1,6 +1,6 @@
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Entities.InfrastructureModule;
+using ProjectK.Common.Entities.NotificationsModule;
 
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 

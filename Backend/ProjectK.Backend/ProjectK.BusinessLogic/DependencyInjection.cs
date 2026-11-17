@@ -7,11 +7,10 @@ using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
-using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.BusinessLogic.Modules.NotificationsModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -20,10 +19,10 @@ using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Options.IdentityModule;
@@ -100,9 +99,7 @@ public static class DependencyInjection
         services.AddDuesModule();
         services.AddScoreModule();
         services.AddKurinModule();
-        services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
-        services.AddScoped<MemberCards>();
 
         services.AddScoped<KurinReportHeaderReader>();
         services.AddScoped<KurinReportTagReader>();
@@ -124,6 +121,7 @@ public static class DependencyInjection
         services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
+        services.AddScoped<IDutySource, BadgeDutyReader>();
 
         return services;
     }
@@ -134,6 +132,7 @@ public static class DependencyInjection
         services.AddScoped<AgendaStatusWriter>();
         services.AddScoped<IAgendaRsvpWriter, AgendaRsvpWriter>();
         services.AddScoped<IAgendaDirectory, AgendaDirectory>();
+        services.AddScoped<IAgendaViewerDirectory, AgendaViewerDirectory>();
     }
 
     private static void AddDuesModule(this IServiceCollection services)
@@ -145,6 +144,7 @@ public static class DependencyInjection
         services.AddScoped<IDuesDirectory, DuesDirectory>();
         services.AddScoped<DuesAccess>();
         services.AddScoped<DuesEntryWriter>();
+        services.AddScoped<IDutySource, DuesDutyReader>();
     }
 
     private static void AddScoreModule(this IServiceCollection services)
@@ -152,6 +152,7 @@ public static class DependencyInjection
         services.AddScoped<ScoreAccess>();
         services.AddScoped<ScoreBookReader>();
         services.AddScoped<IScoreFactReader, ScoreFactReader>();
+        services.AddScoped<IDutySource, AttendanceDutyReader>();
     }
 
     private static void AddKurinModule(this IServiceCollection services)
@@ -177,5 +178,6 @@ public static class DependencyInjection
         services.AddScoped<IMemberImportWriter, MemberImportWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
+        services.AddScoped<MemberCardService>();
     }
 }

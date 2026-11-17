@@ -48,4 +48,11 @@ public static class AgendaErrors
 
     public static ServiceResult<T> OtherKurin<T>() =>
         ServiceResult<T>.Failure(ResultType.Forbidden, AgendaOtherKurin, "Agenda item belongs to a different kurin.");
+
+    public const string NotSignedIn = "NotSignedIn";
+
+    public static ServiceResult<T> SignInRequired<T>() =>
+        ServiceResult<T>.Failure(ResultType.Unauthorized, NotSignedIn, "Not signed in.");
+
+    public const string CalendarFeedNotFound = "CalendarFeedNotFound";
 }

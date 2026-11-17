@@ -1,6 +1,6 @@
 using System.Threading.Channels;
-using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Dtos.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Dtos.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 

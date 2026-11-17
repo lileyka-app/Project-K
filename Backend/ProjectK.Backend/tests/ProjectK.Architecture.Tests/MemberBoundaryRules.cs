@@ -1,7 +1,7 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;

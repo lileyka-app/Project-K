@@ -1,3 +1,6 @@
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+
 namespace ProjectK.BusinessLogic.Modules.MemberModule;
 
 /// <summary>
@@ -73,4 +76,31 @@ public static class MemberErrors
 
     /// <summary>The caller's identity is missing from the token.</summary>
     public const string Unauthorized = "Unauthorized";
+
+    /// <summary>The account stands behind no member record, so there is no «me» to read.</summary>
+    public const string NotAMember = "NotAMember";
+
+    public static ServiceResult<T> NoMember<T>() =>
+        ServiceResult<T>.Failure(ResultType.Forbidden, NotAMember, "The account has no member record.");
+
+    /// <summary>The card's allowance does not cover a permanent link.</summary>
+    public const string CardLinkNotAllowed = "CardLinkNotAllowed";
+
+    public const string CardSharingNotAllowed = "CardSharingNotAllowed";
+
+    /// <summary>A shared card that cannot be read: an unknown or stale token, or a card no longer shared.</summary>
+    public const string CardNotFound = "CardNotFound";
+
+    /// <summary>The member record has no public id to hand over for a transfer.</summary>
+    public const string PublicIdNotFound = "PublicIdNotFound";
+
+    /// <summary>The caller has no card of their own to pin a відзначення on.</summary>
+    public const string NoOwnCard = "NoOwnCard";
+
+    /// <summary>A line of the person's own life story that is not there, or not theirs.</summary>
+    public const string LifeEntryNotFound = "LifeEntryNotFound";
+    public const string LifeStoryFull = "LifeStoryFull";
+
+    public static ServiceResult<T> NoCard<T>() =>
+        ServiceResult<T>.Failure(ResultType.NotFound, CardNotFound, "No such card.");
 }

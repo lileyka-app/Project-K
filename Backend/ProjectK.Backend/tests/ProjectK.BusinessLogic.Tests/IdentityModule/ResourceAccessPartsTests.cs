@@ -2,9 +2,9 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.NotificationsModule;
 
 namespace ProjectK.BusinessLogic.Tests.IdentityModule;
 

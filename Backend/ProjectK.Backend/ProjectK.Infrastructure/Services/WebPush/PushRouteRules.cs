@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
-using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Enums.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 

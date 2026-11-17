@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Contracts.DuesModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
 

@@ -4,9 +4,9 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
@@ -20,8 +20,8 @@ using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
-using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.NotificationsModule;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberAwardHandlers;
 
@@ -293,15 +293,15 @@ public class SeniorAwardHandlerTests
         _directory.Setup(m => m.FindByAccountAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, _kurinKey, null, "Ірина", "Федорів", "i@example.com", null));
         _awards.Setup(a => a.GetByMemberKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
-        var pin = new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommandHandler(_unitOfWork.Object, new CurrentMember(_currentUser.Object, _directory.Object, Mock.Of<IMembershipDirectory>()));
+        var pin = new ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.PinMyAwardCommandHandler(_unitOfWork.Object, new CurrentMember(_currentUser.Object, _directory.Object, Mock.Of<IMembershipDirectory>()));
 
-        var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
+        var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _stored.Where(a => a.CatalogId == "usp-hramota-podiaky").Should().OnlyContain(a => a.IsPinned);
         other.IsPinned.Should().BeFalse();
 
-        (await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "nema", Pinned = true }, CancellationToken.None))
+        (await pin.Handle(new ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.PinMyAwardCommand { CatalogId = "nema", Pinned = true }, CancellationToken.None))
             .Type.Should().Be(ResultType.NotFound);
     }
 }

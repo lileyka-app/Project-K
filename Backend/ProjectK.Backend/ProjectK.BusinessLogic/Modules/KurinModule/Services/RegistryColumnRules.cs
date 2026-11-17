@@ -1,6 +1,6 @@
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.NotificationsModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;

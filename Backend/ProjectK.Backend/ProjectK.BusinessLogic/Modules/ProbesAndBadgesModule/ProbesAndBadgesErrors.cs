@@ -1,3 +1,6 @@
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule;
 
 /// <summary>
@@ -77,4 +80,10 @@ public static class ProbesAndBadgesErrors
     public const string BadgeNotHeld = "BadgeNotHeld";
     public const string NothingToConfirm = "NothingToConfirm";
     public const string StagesOutOfOrder = "StagesOutOfOrder";
+
+    /// <summary>The account stands behind no member record, so there is no «me» to read.</summary>
+    public const string NotAMember = "NotAMember";
+
+    public static ServiceResult<T> NoMember<T>() =>
+        ServiceResult<T>.Failure(ResultType.Forbidden, NotAMember, "The account has no member record.");
 }
