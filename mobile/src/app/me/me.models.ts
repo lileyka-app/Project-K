@@ -82,7 +82,7 @@ export interface MyScoreDto {
   groupCount: number;
 }
 
-export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance';
+export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance' | 'LevelsToConfirm';
 
 /** One thing that waits on a провід (api/me/duties/board; the web’s MyDutyDto). */
 export interface MyDutyDto {
@@ -94,6 +94,8 @@ export interface MyDutyDto {
   agendaItemKey: string | null;
   occurrenceStartUtc: string | null;
   title: string | null;
+  /** For waiting ступені: whose card they are on; the person's name is the title. */
+  memberKey?: string | null;
   /** Which duty this is, the same on every read: what hiding it names. Empty from a server that cannot hide. */
   key: string;
   /** How big it is now; hidden, it comes back when this grows. */

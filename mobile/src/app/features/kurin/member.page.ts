@@ -911,8 +911,8 @@ export class MemberPage implements OnInit {
     const m = this.memberValue();
     return !!this.seniorHere() || (!!m && this.memberships().state !== 'loading' && isSeniorPerson(m, this.membershipList()));
   });
-  /** In a senior kurin its провід records them too; elsewhere a senior person records only their own. */
-  protected readonly canAddSeniorAward = computed(() => (this.seniorHere() ? this.canEdit() : this.isOwnCard()));
+  /** In a senior kurin its провід records them too; elsewhere a senior person records only their own, once 18. */
+  protected readonly canAddSeniorAward = computed(() => (this.seniorHere() ? this.canEdit() : this.isOwnCard() && !!this.memberValue()?.isAdult));
   /** A senior відзначення is changed by the person, or in a senior kurin by whoever may remove awards (web canChange). */
   protected readonly canChangeSeniorAward = computed(() => this.isOwnCard() || (!!this.seniorHere() && this.abilities().awards.remove));
 

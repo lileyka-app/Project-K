@@ -101,6 +101,10 @@ export interface MemberLookupDto {
   mentoredGroupNames?: string[];
   warnings?: MemberWarningDto[];
   plastLevelHistories?: PlastLevelHistoryDto[];
+  /** The person's улад where they are looked at; the server says it (web MemberDto.ulad). Read of one person only. */
+  ulad?: KurinBranch;
+  /** Whether the person is 18 or older; the server says it. Read of one person only. */
+  isAdult?: boolean;
   /** Where list reads place them in the kurin they were read for; Guid.Empty for no гурток. */
   groupKey?: string | null;
   groupName?: string | null;
@@ -119,6 +123,8 @@ export interface PlastLevelHistoryDto {
   isPlastunka?: boolean;
   /** The ступінь in the catalogue (web PlastLevelHistoryDto.catalogId). Read only. */
   catalogId?: string | null;
+  /** A senior ступінь the person entered for themselves, waiting for the Звʼязковий; it does not count yet. Read only. */
+  awaitsConfirmation?: boolean;
 }
 
 /** A ступінь or a senior відзначення from the catalogue, with its picture (`GET api/catalog/honours`). */

@@ -146,6 +146,7 @@ describe('kurin labels', () => {
     expect(memberBranch({ latestPlastLevel: 'Uchasnyk', kurinKey: 'k1' } as never, youth)).toBe('UPYu');
     expect(memberBranch({ latestPlastLevel: 'Starshoplastun', kurinKey: 'k1' } as never, youth)).toBe('USP');
     expect(memberBranch({ latestPlastLevel: 'SeniorPratsi', kurinKey: 'k1' } as never, [])).toBe('UPS');
+    expect(memberBranch({ latestPlastLevel: 'Skob', ulad: 'USP', kurinKey: 'k1' } as never, youth)).toBe('USP');
   });
 
   it('keeps the highest warning in force with its days left', () => {
@@ -342,6 +343,7 @@ describe('ступені й старші відзначення з катало�
     expect(currentDegree(zvyazkovyi, [])?.title).toBe('пл. сен.');
     expect(currentDegree(histories, [...honours])?.title).toBe('Старша пластунка');
     expect(currentDegree([], [])).toBeNull();
+    expect(currentDegree([{ plastLevel: 'Skob' }, { plastLevel: 'Senior', awaitsConfirmation: true }], [])?.title).not.toBe('пл. сен.');
   });
 
   it('counts a сеніор who leads an УПЮ kurin as a senior person, a юнак as not', () => {

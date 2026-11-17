@@ -27,6 +27,7 @@ const META: Record<MyDutyKind, { icon: string; tile: string; label: string }> = 
   TransfersToConfirm: { icon: 'arrow-down', tile: '#5b8def', label: 'Передачі від гуртків підтвердити' },
   EntriesToVerify: { icon: 'wallet', tile: '#34a853', label: 'Операції перевірити' },
   EventWithoutAttendance: { icon: 'checkbox', tile: '#e8710a', label: 'Відмітити присутність' },
+  LevelsToConfirm: { icon: 'ribbon', tile: '#5b8def', label: 'Ступінь підтвердити' },
 };
 
 /**
@@ -52,10 +53,10 @@ export function dutyRows(duties: MyDutyDto[], today: Date, namesKurin: boolean):
     const link = duty.kurin.isCurrent ? linkOf(duty) : null;
     return {
       duty,
-      key: [duty.kind, duty.kurin.kurinKey, duty.groupKey ?? '', duty.agendaItemKey ?? '', duty.occurrenceStartUtc ?? ''].join('|'),
+      key: [duty.kind, duty.kurin.kurinKey, duty.groupKey ?? '', duty.agendaItemKey ?? duty.memberKey ?? '', duty.occurrenceStartUtc ?? ''].join('|'),
       icon: meta.icon,
       tile: meta.tile,
-      label: duty.kind === 'EventWithoutAttendance' && duty.title ? `${meta.label}: ${duty.title}` : meta.label,
+      label: (duty.kind === 'EventWithoutAttendance' || duty.kind === 'LevelsToConfirm') && duty.title ? `${meta.label}: ${duty.title}` : meta.label,
       detail: parts.join(' · '),
       count: duty.kind === 'EventWithoutAttendance' ? null : duty.count,
       link,
@@ -80,6 +81,8 @@ function linkOf(duty: MyDutyDto): string | null {
       return duty.groupKey ? `/tabs/kurin/group/${duty.groupKey}/dues` : '/tabs/kurin/dues';
     case 'EventWithoutAttendance':
       return duty.agendaItemKey ? `/tabs/calendar/attendance/${duty.agendaItemKey}` : null;
+    case 'LevelsToConfirm':
+      return duty.memberKey ? `/tabs/kurin/member/${duty.memberKey}` : null;
     case 'TransfersToConfirm':
       return '/tabs/kurin/dues';
   }
