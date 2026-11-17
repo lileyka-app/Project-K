@@ -1,4 +1,4 @@
-using ProjectK.Common.Rules.NotificationsModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Tests.Security;
 

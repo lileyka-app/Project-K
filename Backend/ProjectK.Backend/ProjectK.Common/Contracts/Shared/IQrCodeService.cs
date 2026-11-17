@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.Shared;
 
 /// <summary>
 /// The one place QR codes are drawn: the authenticator link when the second factor is set up, and

@@ -17,6 +17,7 @@ using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Options.IdentityModule;
 using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Common.Options.ProbesAndBadgesModule;
+using ProjectK.Common.Options.Shared;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Logging;

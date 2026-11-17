@@ -1,6 +1,7 @@
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
+
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 
 public class SystemSettingsService : ISystemSettingsService

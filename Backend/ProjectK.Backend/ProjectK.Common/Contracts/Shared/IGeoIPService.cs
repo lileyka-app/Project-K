@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.Shared;
 
 /// <summary>
 /// The country a request comes from, for the geo-block in front of every request. A proxy's own answer

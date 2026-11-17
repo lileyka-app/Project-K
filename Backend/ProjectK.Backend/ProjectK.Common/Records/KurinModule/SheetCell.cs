@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Records.NotificationsModule;
+namespace ProjectK.Common.Records.KurinModule;
 
 /// <summary>
 /// One cell. A date is kept as a date and a count as a number, so the spreadsheet sorts, formats and

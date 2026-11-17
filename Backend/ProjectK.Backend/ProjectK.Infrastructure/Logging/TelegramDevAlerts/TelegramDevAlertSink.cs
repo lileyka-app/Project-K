@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
-using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Options.Shared;
 using Serilog.Core;
 using Serilog.Events;
 

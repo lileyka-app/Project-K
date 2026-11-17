@@ -7,7 +7,6 @@ using ProjectK.Common.Dtos.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.NotificationsModule;
 using ProjectK.Common.Records.Shared;
-using ProjectK.Common.Rules.NotificationsModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.NotificationsModule.Features.Feedback;

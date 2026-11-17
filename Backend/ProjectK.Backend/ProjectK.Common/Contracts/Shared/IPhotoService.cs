@@ -1,6 +1,6 @@
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.Shared;
 
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.Shared;
 
 public interface IPhotoService
 {

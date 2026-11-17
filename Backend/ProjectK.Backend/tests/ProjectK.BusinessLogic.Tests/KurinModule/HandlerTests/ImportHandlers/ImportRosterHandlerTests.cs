@@ -12,7 +12,6 @@ using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
-using ProjectK.Common.Records.NotificationsModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.ImportHandlers;

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.NotificationsModule.Features.PhoneApp;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.NotificationsModule;
 

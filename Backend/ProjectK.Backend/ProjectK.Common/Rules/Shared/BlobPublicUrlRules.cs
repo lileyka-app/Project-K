@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Rules.NotificationsModule;
+namespace ProjectK.Common.Rules.Shared;
 
 /// <summary>
 /// Builds the public address of a stored blob. The single place that does so.

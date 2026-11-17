@@ -1,6 +1,7 @@
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
+
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 
 /// <summary>

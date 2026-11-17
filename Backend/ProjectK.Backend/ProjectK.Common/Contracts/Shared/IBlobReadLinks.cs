@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.Shared;
 
 /// <summary>
 /// Addresses for reading stored photos. The container is private, so every address is a read-only

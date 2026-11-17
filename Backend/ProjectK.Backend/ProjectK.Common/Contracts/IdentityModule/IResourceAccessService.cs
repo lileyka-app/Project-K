@@ -1,5 +1,6 @@
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
+
 namespace ProjectK.Common.Contracts.IdentityModule;
 
 public interface IResourceAccessService

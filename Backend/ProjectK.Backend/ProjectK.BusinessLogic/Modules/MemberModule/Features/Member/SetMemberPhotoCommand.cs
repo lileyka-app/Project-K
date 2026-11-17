@@ -2,12 +2,11 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.NotificationsModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 

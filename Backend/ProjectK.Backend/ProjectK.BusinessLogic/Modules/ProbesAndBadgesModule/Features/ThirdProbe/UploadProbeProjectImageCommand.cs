@@ -1,12 +1,10 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.NotificationsModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
 

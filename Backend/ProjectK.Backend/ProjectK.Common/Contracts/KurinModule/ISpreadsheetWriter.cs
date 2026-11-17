@@ -1,6 +1,6 @@
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.KurinModule;
 
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.KurinModule;
 
 /// <summary>
 /// Turns tables into a spreadsheet file. Kept behind an interface because the format is a delivery

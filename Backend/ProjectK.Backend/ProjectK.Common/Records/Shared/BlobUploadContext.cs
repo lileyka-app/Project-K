@@ -1,7 +1,7 @@
-using ProjectK.Common.Enums.NotificationsModule;
-using ProjectK.Common.Rules.NotificationsModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.Shared;
 
-namespace ProjectK.Common.Records.NotificationsModule;
+namespace ProjectK.Common.Records.Shared;
 
 public sealed record BlobUploadContext(
     string Folder,

@@ -22,6 +22,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.MemberModule;
+
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberAwardHandlers;
 
 /// <summary>

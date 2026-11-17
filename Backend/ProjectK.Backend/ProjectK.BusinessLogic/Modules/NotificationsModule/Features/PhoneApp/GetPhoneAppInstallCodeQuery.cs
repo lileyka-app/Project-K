@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using MediatR;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.NotificationsModule;

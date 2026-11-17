@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Enums.NotificationsModule;
+namespace ProjectK.Common.Enums.Shared;
 
 public enum BlobUploadProcessingMode
 {

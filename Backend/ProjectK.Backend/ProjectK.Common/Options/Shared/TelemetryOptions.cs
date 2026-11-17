@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Options.NotificationsModule;
+namespace ProjectK.Common.Options.Shared;
 
 /// <summary>
 /// The anonymous daily ping to the status service: a random instance id, the release and a few

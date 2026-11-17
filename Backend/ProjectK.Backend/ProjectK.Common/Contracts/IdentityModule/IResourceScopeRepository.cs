@@ -1,6 +1,7 @@
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
+
 namespace ProjectK.Common.Contracts.IdentityModule;
 
 /// <summary>

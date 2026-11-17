@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.MemberModule;
 
 /// <summary>
 /// Short-lived tokens behind the «перевірити картку» QR: a member key and an expiry, signed so that

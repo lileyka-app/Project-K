@@ -1,4 +1,4 @@
-using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Options.Shared;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Events;

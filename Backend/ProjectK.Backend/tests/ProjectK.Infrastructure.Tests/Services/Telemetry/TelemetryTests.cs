@@ -10,7 +10,7 @@ using Moq;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Options.Shared;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;

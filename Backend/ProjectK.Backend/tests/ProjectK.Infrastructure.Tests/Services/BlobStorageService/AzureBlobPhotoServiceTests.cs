@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.Common.Contracts.NotificationsModule;
-using ProjectK.Common.Options.NotificationsModule;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Options.Shared;
+using ProjectK.Common.Records.Shared;
 using ProjectK.Infrastructure.Services.Blobs;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;

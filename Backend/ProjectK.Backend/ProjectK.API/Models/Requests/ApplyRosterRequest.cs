@@ -1,5 +1,5 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.API.Models.Requests;
 

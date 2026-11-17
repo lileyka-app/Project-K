@@ -1,6 +1,6 @@
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.KurinModule;
 
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.KurinModule;
 
 /// <summary>
 /// Reads a spreadsheet back into rows of text. Everything arrives as a string on purpose: a roster

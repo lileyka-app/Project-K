@@ -9,6 +9,7 @@ using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.IdentityModule;
+
 namespace ProjectK.Infrastructure.Tests.IdentityModule;
 
 /// <summary>

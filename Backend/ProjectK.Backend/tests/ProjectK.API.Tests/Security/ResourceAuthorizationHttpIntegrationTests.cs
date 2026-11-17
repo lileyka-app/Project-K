@@ -21,6 +21,7 @@ using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
+
 namespace ProjectK.API.Tests.Security;
 
 public class ResourceAuthorizationHttpIntegrationTests

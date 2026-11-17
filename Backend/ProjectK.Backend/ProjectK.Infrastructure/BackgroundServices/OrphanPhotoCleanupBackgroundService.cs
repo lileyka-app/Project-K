@@ -5,8 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Options.NotificationsModule;
-using ProjectK.Common.Rules.NotificationsModule;
+using ProjectK.Common.Options.Shared;
+using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.Services.Blobs;
 
 namespace ProjectK.Infrastructure.BackgroundServices;

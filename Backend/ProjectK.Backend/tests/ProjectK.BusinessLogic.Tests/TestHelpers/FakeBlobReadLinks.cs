@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 

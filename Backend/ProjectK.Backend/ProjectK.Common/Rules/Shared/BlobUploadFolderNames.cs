@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Rules.NotificationsModule;
+namespace ProjectK.Common.Rules.Shared;
 
 public static class BlobUploadFolderNames
 {

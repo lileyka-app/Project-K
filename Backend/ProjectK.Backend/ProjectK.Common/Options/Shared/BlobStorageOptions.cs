@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Options.NotificationsModule;
+namespace ProjectK.Common.Options.Shared;
 
 /// <summary>
 /// Options for both Azure Blob Storage and the Azurite emulator.
