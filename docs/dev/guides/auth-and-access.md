@@ -10,7 +10,7 @@ sidebar:
 
 ## Вхід і сесії
 
-`AuthController` (`AuthModule`), JWT Bearer з refresh-сесіями.
+`AuthController` (`IdentityModule`), JWT Bearer з refresh-сесіями.
 
 - `POST /register/kurin` — адмін відкриває курінь і запрошує його Звʼязкового (`InviteKurinFounderCommand`).
   Пароля в запиті немає: пишеться те саме, що й при схваленні заявки керівника, — курінь, схвалена
@@ -27,9 +27,9 @@ sidebar:
   цього пристрою минають другий крок, поки не зміниться security stamp акаунта.
 - `POST /refresh` · `POST /logout` — оновлення й завершення сесії. Сесія — рядок у
   `UserRefreshTokens`; вхід додає рядок, вихід завершує один, зміна пароля чи MFA завершує всі.
-  Вихід не чіпає `mfaTrust`. Зміни акаунта в `UsersModule` — новий пароль, підтверджена пошта,
-  призупинення — обривають сесії й посилання на календар через контракт `IAccountSessionWriter`
-  (реалізує `RefreshTokenInvalidation` в `AuthModule`), ще до відповіді.
+  Вихід не чіпає `mfaTrust`. Зміни акаунта — новий пароль, підтверджена пошта,
+  призупинення — обривають усі сесії ще до відповіді (`RefreshTokenInvalidation`), а подія
+  `AccountSessionsEnded` вимикає й посилання на календар.
   Рефреш наново читає діловодства з бази й поруч із токенами віддає
   `access` — `{ isAdmin, roles, permissions, kurinKey }` (`IAccessSnapshotFactory`, те саме, що й при
   вході), тож нові права доходять без перезаходу.

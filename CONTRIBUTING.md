@@ -50,9 +50,8 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 ### Що куди лягає
 
 Правила нижче ухвалено 2026-11-14 (рішення D-1…D-8 потоку полірування `POL`). Старий код
-переведено під них кроками `POL-02…POL-10`, а колишній `KurinModule` розрізано на `KurinModule`,
-`MemberModule`, `AgendaModule`, `ArchiveModule` і `RosterModule` у `POL-13`. **Новий код пишеться
-одразу за ними**; з `POL-11` це тримають архітектурні тести.
+переведено під них кроками `POL-02…POL-10`, колишній `KurinModule` розрізано в `POL-13`, а склад модулів зведено до «Карти модулів»
+нижче в `POL-23`. **Новий код пишеться одразу за ними**; з `POL-11` це тримають архітектурні тести.
 
 | Що пишеш | Куди | Як звати |
 |---|---|---|
@@ -73,6 +72,8 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
 | Питання до іншого модуля | `Common/Contracts/<Module>/` | `I…Directory` — лише читання, відповідь — значення з `Common/Records`, не сутності |
 | Синхронний запис в іншому модулі (одна транзакція, результат одразу) | контракт у `Common/Contracts/<Module>/`, реалізація в модулі-власнику | `I…Writer` |
 | Зміна в іншому модулі | подія в `Common/Events/<Module>/`, обробник — у модулі, чиї дані міняються | `<Thing><PastVerb>`, `…EventHandler` |
+| Внесок модуля в «мої обовʼязки» | контракт `IDutySource` у `Common/Contracts/IdentityModule/`, реалізація в `BusinessLogic/Modules/<M>/Services/` модуля, що дає обовʼязки | `<Thing>DutyReader` |
+| Адреса `api/me/...` | контролер у `API/Controllers/<M>/` модуля, якому належить річ, `[Route("api/me")]` | `My<Thing>Controller` |
 | Фіксований довідник із файлів (проби, вмілості, відзначення) | контракт у `Common/Contracts/<Module>/` | `I…Catalog` |
 | Чисте правило без стану | `Common/Rules/<Module>/` | `…Rules`, static |
 | Підписи для людей | `Common/Rules/<Module>/` | `…Names`, static |
@@ -120,11 +121,17 @@ ProjectK.API             → Common, BusinessLogic, Infrastructure
   `Common/Contracts`; Identity збирає їх одним запитом і сам відкидає приховані. Новий модуль з
   обовʼязками додає свій `IDutySource`, і нічого більше не міняється.
 
+Обовʼязки сьогодні дають три модулі: `BadgeDutyReader` (вмілості чекають підтвердження),
+`DuesDutyReader` (передачі й записи вкладки) і `AttendanceDutyReader` (події без присутності).
+
 **Шлях пластуна** (заплановано окремою фічею): курінь, проби й інші модулі публікують події —
 вступив, перейшов у гурток, обійняв роль, вийшов, склав пробу, — а Member веде з них власну
 хронологію людини. Життєпис будується лише з неї, а людина може виправити дату чи подробиці запису;
 архів куреня лишається своїм. До того Member читає курінь через контракти (`IMembershipDirectory`,
-`IOfficeDirectory`) — це тимчасовий виняток із першого правила.
+`IOfficeDirectory`, `IKurinDirectory`) — це тимчасовий виняток із першого правила, і кожен такий
+тип перелічений у baseline `Member_ShouldNotNameTheKurin` (`MemberBoundaryRules`). Зворотний бік
+вже чистий: хто стоїть у курені й у якому гуртку, відповідає курінь (`IMembershipDirectory`,
+запис `KurinPerson`), а `IMemberDirectory` і `MemberSummary` про курінь не знають нічого.
 
 ### Схема тек Common
 
@@ -135,11 +142,12 @@ Entities/   Contracts/   Dtos/   Records/   Events/   Enums/   Rules/   Options/
 ```
 
 Спільне для всіх модулів лягає в підтеку `Shared/` відповідного виду (`Rules/Shared/PhoneNumberRules.cs`).
-Модуль у шляху зветься так само, як у `Entities/` (`KurinModule`, `AuthModule`), а модуль без власних
-таблиць — як у `BusinessLogic/Modules/` (`MeModule`, `UsersModule`, `RosterModule`). Простір імен іде за текою:
+Модуль у шляху зветься так само, як у `BusinessLogic/Modules/` (`KurinModule`, `IdentityModule`). Простір імен іде за текою:
 `ProjectK.Common.<Вид>.<Module>`. Винятки репозиторію
 (`StaleRowException`, `DuplicateRowException`) — частина обіцянки Infrastructure бізнес-логіці, тож лежать у
-`Contracts/Shared/`; розширення `ClaimsPrincipal` і користувача — `Rules/AuthModule/`.
+`Contracts/Shared/`; розширення `ClaimsPrincipal` і користувача — `Rules/IdentityModule/`. Те, чим користуються всі модулі й хост, —
+`Shared/`: хто викликач (`ICurrentUserContext`), сховище файлів (`IBlobReadLinks`, `IPhotoService`,
+`Options/Shared/BlobStorageOptions`), QR, гео-блок, телеметрія.
 Один публічний тип — один файл: супутній record чи enum контракту лягає у свій вид, а не поруч з
 інтерфейсом. Static-клас (правило, підписи, набір значень) — завжди `Rules/`, навіть коли описує enum.
 
@@ -205,7 +213,7 @@ Modules/<Module>/Features/<Area>/
   `Writer`, усе інше із залежностями — `Service`. `Provider`, `Source`, `Lookups`, `Resolver`,
   `Locator`, `Editor` і подібні разові суфікси розходяться по цих трьох.
 - **`I…Catalog`** — лише фіксовані довідники, що читаються з файлів; без `Service` у назві.
-- **Права модуля — один клас `<M>Access`.** Рушій авторизації AuthModule (`PermissionResolver`,
+- **Права модуля — один клас `<M>Access`.** Рушій авторизації в `IdentityModule` (`PermissionResolver`,
   `AccessContextResolver`, `AccessSnapshotFactory`, `CurrentPermissions`) — не права модуля, а сам
   механізм, і живе під своїми іменами.
 - **Журнал змін сутності — `…Trail`**, не `…AuditFields`.
@@ -239,7 +247,7 @@ Directory лише відповідає на питання; запис у чу�
 ніби виклик піде по мережі: читання, що повертає багатьох, робиться **одним** методом, бо «один за
 ключем» перетворює список на N звернень. Правило чи сталий рядок, потрібний двом модулям, переїжджає
 в `Common/Rules/<Module>/`, а не береться з чужих `Services/`: `AgendaRouteNames` читають сповіщення
-й посилання на календар, `CalendarFeedNames` — `AuthModule` і `MeModule`.
+й посилання на календар, `CalendarFeedNames` (`Rules/AgendaModule`) — агенда й Identity.
 
 **Подія замість синхронного виклику.** Коли після дії має статися щось у чужому модулі —
 оголошуй подію (`Common/Events/<Module>/`) і публікуй через
@@ -260,10 +268,11 @@ work. Так `MembersRemoved`, `GroupDissolved` і `KurinTagRemoved` приби�
 дістати результат: імпорт реєстру відкриває людині акаунт ключем, який щойно отримав. Тоді
 модуль-власник відкриває контракт запису `I…Writer` у `Common/Contracts/<Module>/`; реалізація живе
 в ньому самому й іде його ж правилами (часто — надсилає його ж команди). Таких контрактів мало, і
-кожен пояснює в doc-коментарі, чому подія не підходить: `IMemberImportWriter` (імпорт пише людей),
-`IKurinGroupWriter` (імпорт відкриває гуртки), `IAgendaRsvpWriter` (відповідь на подію з дашборда),
-`IAccountSessionWriter` (новий пароль, підтверджена пошта чи призупинення в `UsersModule` обривають
-сесії й посилання на календар в `AuthModule`; реалізує `RefreshTokenInvalidation`). Контракт запису,
+кожен пояснює в doc-коментарі, чому подія не підходить: `IMemberImportWriter` (імпорт заводить людей
+і надсилає запрошення), `IKurinFounderWriter` (активація ставить засновника в курінь і Звʼязковим,
+поки відповідь ще не зібрана), `IAgendaRsvpWriter` (відповідь на подію з дашборда). Коли ж відповідь
+не потрібна, хоч би як близько це було, — подія: обірвані сесії Identity оголошує
+`AccountSessionsEnded`, а посилання на календар вимикає вже агенда. Контракт запису,
 як і Directory, приймає ключі й значення, а не чужі сутності: `IAgendaRsvpWriter.AnswerAsync` бере
 ключ події й повертає `AgendaRsvpOutcome`.
 
@@ -465,9 +474,8 @@ Enum із `HasConversion<int>()` лежить у базі числами, тож
 - **Коди живуть у каталозі модуля** `<Module>Errors` (`BusinessLogic/Modules/<M>/<M>Errors.cs`):
   PascalCase-константи й фабрики частих випадків (`KurinErrors.NotFound<T>()`). Літерал коду в
   хендлері не пишемо — саме так «курінь не знайдено» встиг стати чотирма різними рядками.
-  Каталог у кожного модуля свій, і чужого модуль не бере. `MemberModule` тримає три, за
-  областями: `MemberErrors`, `MembershipErrors`, `LeadershipErrors`. Те саме значення може жити в кількох
-  каталогах (`"KurinNotFound"` у `KurinErrors` і в `RosterErrors`) — контракт із клієнтом це рядок, не константа.
+  Каталог у кожного модуля свій, один, і чужого модуль не бере. Те саме значення може жити в кількох
+  каталогах (`"NotAMember"` у `KurinErrors`, `DuesErrors`, `ScoreErrors`…) — контракт із клієнтом це рядок, не константа.
 - **Контролер теж бере код із каталогу.** Коли контролер відмовляє сам, ще до хендлера (немає файла,
   невідома роль, порожній `groupKey`), він пише `this.Failure(type, <M>Errors.Code, message)` з
   каталогу свого модуля: клієнт формулює текст за тим самим рядком, що й від хендлера. Літерал коду

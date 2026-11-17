@@ -24,23 +24,18 @@ flowchart TB
     subgraph api["Моноліт ProjectK.API · .NET 10"]
         direction TB
         HTTP["HTTP · /api/*<br/>JWT · політики · ResourceAuthorize"]
-        AUTH["AuthModule"]
-        USERS["UsersModule"]
+        IDENTITY["IdentityModule"]
         KURIN["KurinModule"]
         MEMBER["MemberModule"]
         AGENDA["AgendaModule"]
-        ARCHIVE["ArchiveModule"]
-        ROSTER["RosterModule"]
         PB["ProbesAndBadges<br/>Module"]
-        INFRA["Infrastructure<br/>Module"]
+        NOTIF["Notifications<br/>Module"]
         DUES["DuesModule"]
         SCORE["ScoreModule"]
         KRAI["KraiModule"]
-        ME["MeModule"]
         AUDIT["AuditModule"]
-        HTTP --> AUTH & USERS & KURIN & MEMBER & AGENDA
-        HTTP --> ARCHIVE & ROSTER & PB & INFRA
-        HTTP --> DUES & SCORE & KRAI & ME & AUDIT
+        HTTP --> IDENTITY & KURIN & MEMBER & AGENDA & PB
+        HTTP --> NOTIF & DUES & SCORE & KRAI & AUDIT
     end
 
     subgraph ext["Зовнішні служби"]
@@ -129,7 +124,7 @@ flowchart TB
     subgraph BL["ProjectK.BusinessLogic"]
         direction LR
         MODS["Modules/*/Features/*<br/>команда чи запит з валідатором і хендлером<br/>Mapping області · ToDto · ApplyTo"]
-        SVCS["Services · Events · каталоги помилок<br/>рушій прав AuthModule · Access модулів"]
+        SVCS["Services · Events · каталоги помилок<br/>рушій прав IdentityModule · Access модулів"]
         BEH["Behaviors<br/>час · валідація · транзакція"]
     end
 
@@ -137,7 +132,7 @@ flowchart TB
         direction LR
         ENT["Entities<br/>Member · Membership · Kurin · Group · AgendaItem …"]
         IFACE["Contracts<br/>IUnitOfWork · IEmailService · IPhotoService …"]
-        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · ICurrentMember · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory · IAgendaDirectory<br/>IKurinDirectory · IKurinTagDirectory · IDuesDirectory · IKraiProfileDirectory<br/>запис: IMemberImportWriter · IKurinGroupWriter<br/>IAgendaRsvpWriter · IAccountSessionWriter"]
+        CONTRACTS["Контракти між модулями<br/>IMemberDirectory · ICurrentMember · IMembershipDirectory<br/>IOfficeDirectory · IMemberProgressDirectory · IAgendaDirectory · IAgendaViewerDirectory<br/>IKurinDirectory · IKurinTagDirectory · IDuesDirectory · IKraiProfileDirectory · IDutySource<br/>запис: IMemberImportWriter · IKurinFounderWriter · IAgendaRsvpWriter"]
         KINDS["Dtos · Records · Events<br/>Enums · Rules · Options"]
     end
 
@@ -157,12 +152,13 @@ flowchart TB
     BL --> EXT
 ```
 
-Модулі однакові по обидва боки межі: `BusinessLogic/Modules/AuthModule` і
-`API/Controllers/AuthModule` — про одне й те саме. Мембер від початку будувався так, щоб його
+Модулі однакові по обидва боки межі: `BusinessLogic/Modules/IdentityModule` і
+`API/Controllers/IdentityModule` — про одне й те саме. Мембер від початку будувався так, щоб його
 можна було винести в окремий сервіс: контракт замість репозиторію, подія замість виклику, ключ
-замість навігації. Тому в листопаді 2026 колишній `KurinModule` розрізали на пʼять — `KurinModule`,
-`MemberModule`, `AgendaModule`, `ArchiveModule` і `RosterModule`, — не змінивши ні адрес, ні JSON,
-ні бази. Що в яку теку лягає і як зветься — таблиця «Що куди лягає» в
+замість навігації. Тому в листопаді 2026 колишній `KurinModule` розрізали, а потім звели модулі до карти з
+[Конвенцій](/dev/core/contributing/): людина (`MemberModule`) окремо від куреня (`KurinModule`, з
+членством, діловодством, реєстром і архівом), «моє» — у модулях-власниках, без окремого `MeModule`.
+Адреси, JSON і база від цього не змінились. Що в яку теку лягає і як зветься — таблиця «Що куди лягає» в
 [Конвенціях](/dev/core/contributing/).
 
 ## 4. Прод і локальні заглушки
