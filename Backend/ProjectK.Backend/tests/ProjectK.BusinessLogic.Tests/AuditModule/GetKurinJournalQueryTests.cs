@@ -52,11 +52,11 @@ public class GetKurinJournalQueryTests
         ICurrentUserContext user,
         GetKurinJournalQuery? query = null)
     {
-        var scopes = new Mock<IResourceScopeRepository>();
-        scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => _access.LedGroups.ToArray());
+        var scopes = ScopeFacts.Repository();
+        scopes.Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => ScopeFacts.Leading(_access.LedGroups.ToArray()));
 
-        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), UnitOfWorks.WithScopes(scopes.Object), new CurrentMember(user, _members.Object, Mock.Of<IMembershipDirectory>()), UnitOfWorks.WithJournal(_reader.Object), _probes.Object, _badges.Object);
+        var handler = new GetKurinJournalQueryHandler(user, _access.PermissionsFor(user), UnitOfWorks.WithScopes(scopes.Object), new CurrentMember(user, _members.Object, Mock.Of<IMembershipDirectory>()), UnitOfWorks.WithJournal(_reader.Object), _probes.Object, _badges.Object, ScopeFacts.Reader(scopes.Object));
         return handler.Handle(query ?? Query(), CancellationToken.None);
     }
 

@@ -18,6 +18,7 @@ using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
@@ -25,15 +26,14 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuthModule;
-using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -155,13 +155,13 @@ public class KurinPolicyHttpIntegrationTests
                 .AddScheme<AuthenticationSchemeOptions, PolicyAuthHandler>(PolicyAuthHandler.SchemeName, _ => { });
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeRepository>();
+            var scopeReader = ScopeFacts.Repository();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(kurin.KurinKey, groupKey, Guid.NewGuid()));
             scopeReader
-                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[] { groupKey });
+                .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ScopeFacts.Leading(new[] { groupKey }));
 
             var kurins = new Mock<IKurinRepository>();
             kurins.Setup(x => x.GetByKeyAsync(kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(kurin);

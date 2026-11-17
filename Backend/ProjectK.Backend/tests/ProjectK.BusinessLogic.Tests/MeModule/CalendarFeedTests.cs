@@ -2,13 +2,12 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.Common.Rules.AuthModule;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuthModule;
@@ -18,8 +17,8 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -34,6 +33,7 @@ using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.MeModule;
@@ -85,8 +85,8 @@ public class CalendarFeedTests
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(Person, User, Kurin, Sokoly, "Оксана", "Паливода", "o@x", null));
-        var scopeReader = new Mock<IResourceScopeRepository>();
-        scopeReader.Setup(r => r.GetLedGroupKeysAsync(User, Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        var scopeReader = ScopeFacts.Repository();
+        scopeReader.Setup(r => r.GetLedGroupSourcesAsync(User, Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([]));
 
         var leaderships = new Mock<ILeadershipRepository>();
         leaderships.Setup(l => l.GetActiveLeadershipKeysForMemberAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
@@ -111,7 +111,7 @@ public class CalendarFeedTests
         unitOfWork.SetupGet(u => u.Groups).Returns(groups.Object);
         unitOfWork.SetupGet(u => u.AgendaResponses).Returns(responses.Object);
 
-        var scopes = new MeAgendaScopes(new CurrentMember(currentUser.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, UnitOfWorks.WithScopes(scopeReader.Object, unitOfWork));
+        var scopes = new MeAgendaScopes(new CurrentMember(currentUser.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, UnitOfWorks.WithScopes(scopeReader.Object, unitOfWork), ScopeFacts.Reader(scopeReader.Object));
 
         var userManager = new Mock<UserManager<AppUser>>(new Mock<IUserStore<AppUser>>().Object, null!, null!, null!, null!, null!, null!, null!, null!);
         userManager.Setup(m => m.FindByIdAsync(User.ToString())).ReturnsAsync(() => new AppUser { Id = User, OnboardingStatus = _status });

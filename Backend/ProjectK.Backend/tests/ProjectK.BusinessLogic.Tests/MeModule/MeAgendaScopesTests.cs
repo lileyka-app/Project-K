@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -29,14 +29,14 @@ public class MeAgendaScopesTests
     private static readonly Guid LedInB = Guid.NewGuid();
 
     private readonly Mock<IOfficeDirectory> _offices = new();
-    private readonly Mock<IResourceScopeRepository> _scopeReader = new();
+    private readonly Mock<IResourceScopeRepository> _scopeReader = ScopeFacts.Repository();
     private readonly List<MembershipRecord> _memberships = [];
 
     // The fallbacks go first so a test's own setup for one kurin wins over them.
     public MeAgendaScopesTests()
     {
         _offices.Setup(o => o.GetForAccountInKurinAsync(User, It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-        _scopeReader.Setup(r => r.GetLedGroupKeysAsync(User, It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _scopeReader.Setup(r => r.GetLedGroupSourcesAsync(User, It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([]));
     }
 
     private MeAgendaScopes Scopes(Guid? userKey = null)
@@ -53,7 +53,7 @@ public class MeAgendaScopesTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
         unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
-        return new MeAgendaScopes(new CurrentMember(user.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, UnitOfWorks.WithScopes(_scopeReader.Object, unitOfWork));
+        return new MeAgendaScopes(new CurrentMember(user.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, UnitOfWorks.WithScopes(_scopeReader.Object, unitOfWork), ScopeFacts.Reader(_scopeReader.Object));
     }
 
     private void StandIn(Guid kurin, int number, Guid? group, MembershipKind kind = MembershipKind.Youth) =>
@@ -94,7 +94,7 @@ public class MeAgendaScopesTests
         StandIn(KurinB, 7, null, MembershipKind.Staff);
         _offices.Setup(o => o.GetForAccountInKurinAsync(User, KurinB, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)]);
-        _scopeReader.Setup(r => r.GetLedGroupKeysAsync(User, KurinB, It.IsAny<CancellationToken>())).ReturnsAsync([LedInB]);
+        _scopeReader.Setup(r => r.GetLedGroupSourcesAsync(User, KurinB, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([LedInB]));
 
         var contexts = await Scopes().BuildAsync(CancellationToken.None);
 

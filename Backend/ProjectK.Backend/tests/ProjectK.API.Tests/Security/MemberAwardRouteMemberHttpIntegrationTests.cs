@@ -132,13 +132,13 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                 .AddScheme<AuthenticationSchemeOptions, AwardAuthHandler>(AwardAuthHandler.SchemeName, _ => { });
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeRepository>();
+            var scopeReader = ScopeFacts.Repository();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, routeMemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(kurinKey, groupKey, routeMemberUserKey));
             scopeReader
-                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[] { groupKey });
+                .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ScopeFacts.Leading(new[] { groupKey }));
 
             var awards = new Mock<IMemberAwardRepository>();
             awards

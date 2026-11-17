@@ -37,7 +37,7 @@ public class AgendaAccessAuthorizeTargetTests
     private readonly Guid _otherUserKey = Guid.NewGuid();
 
     private readonly FixedKurinAccessPolicyProvider _policies = new();
-    private readonly Mock<IResourceScopeRepository> _scopes = new();
+    private readonly Mock<IResourceScopeRepository> _scopes = ScopeFacts.Repository();
 
     public AgendaAccessAuthorizeTargetTests()
     {
@@ -51,8 +51,8 @@ public class AgendaAccessAuthorizeTargetTests
         Scope(ResourceType.Leadership, _ledGroupProvid, new ResourceScope(_kurinKey, _ledGroup, null));
         Scope(ResourceType.Leadership, _otherGroupProvid, new ResourceScope(_kurinKey, _otherGroup, null));
         Scope(ResourceType.Leadership, _kv, new ResourceScope(_kurinKey, null, null));
-        _scopes.Setup(x => x.GetLedGroupKeysAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { _ledGroup });
+        _scopes.Setup(x => x.GetLedGroupSourcesAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ScopeFacts.Leading(new[] { _ledGroup }));
     }
 
     private readonly Mock<IKurinTagDirectory> _tags = new();
@@ -72,7 +72,7 @@ public class AgendaAccessAuthorizeTargetTests
 
         var permissions = new CurrentPermissions(user.Object, _policies);
         var resourceAccess = new ResourceAccessService(UnitOfWorks.WithScopes(_scopes.Object), user.Object, new PassThroughBackendCache(), permissions);
-        return new AgendaAccess(user.Object, UnitOfWorks.WithScopes(_scopes.Object), new CurrentMember(user.Object, Mock.Of<IMemberDirectory>(), Mock.Of<IMembershipDirectory>()), resourceAccess, permissions, _tags.Object, Mock.Of<IOfficeDirectory>());
+        return new AgendaAccess(user.Object, UnitOfWorks.WithScopes(_scopes.Object), new CurrentMember(user.Object, Mock.Of<IMemberDirectory>(), Mock.Of<IMembershipDirectory>()), resourceAccess, permissions, _tags.Object, Mock.Of<IOfficeDirectory>(), ScopeFacts.Reader(_scopes.Object));
     }
 
     private static AgendaTargetInput Target(AgendaTargetType type, Guid key) => new() { TargetType = type, TargetKey = key };

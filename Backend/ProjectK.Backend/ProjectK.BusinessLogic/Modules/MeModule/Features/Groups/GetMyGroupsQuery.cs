@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
@@ -21,7 +22,7 @@ public sealed record GetMyGroupsQuery : IRequest<ServiceResult<IReadOnlyList<MyG
 public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, ServiceResult<IReadOnlyList<MyGroupDto>>>
 {
     private readonly ICurrentMember _me;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobReadLinks _links;
     private readonly ICurrentUserContext _currentUser;
@@ -32,11 +33,12 @@ public sealed class GetMyGroupsQueryHandler : IRequestHandler<GetMyGroupsQuery, 
         IOfficeDirectory offices,
         IUnitOfWork unitOfWork,
         IBlobReadLinks links,
-        ICurrentUserContext currentUser)
+        ICurrentUserContext currentUser,
+        IResourceScopeReader scopeReader)
     {
         _me = me;
         _offices = offices;
-        _scopeReader = unitOfWork.ResourceScopes;
+        _scopeReader = scopeReader;
         _unitOfWork = unitOfWork;
         _links = links;
         _currentUser = currentUser;

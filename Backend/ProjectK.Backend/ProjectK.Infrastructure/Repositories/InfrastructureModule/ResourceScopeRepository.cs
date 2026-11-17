@@ -4,10 +4,10 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
-using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.InfrastructureModule;
@@ -107,26 +107,22 @@ public class ResourceScopeRepository : IResourceScopeRepository
         };
     }
 
-    public async Task<bool> StandsInSeniorKurinAsync(
+    public async Task<IReadOnlyList<MembershipBranchRow>> GetOpenMembershipBranchesAsync(
         ResourceType resourceType,
         Guid resourceKey,
         CancellationToken cancellationToken = default)
     {
         if (await PersonOfAsync(resourceType, resourceKey, cancellationToken) is not { } memberKey)
         {
-            return false;
+            return [];
         }
 
-        var standing = await (
+        return await (
                 from membership in _context.Memberships
                 where membership.MemberKey == memberKey && membership.LeftAtUtc == null
                 join branch in _context.Set<KurinBranchNumber>() on membership.KurinKey equals branch.KurinKey
-                select new { membership.Kind, branch.Branch })
+                select new MembershipBranchRow(membership.Kind, branch.Branch))
             .ToListAsync(cancellationToken);
-
-        // While they are still a юнак in an УПЮ kurin, they are a юнак, whatever else they are too.
-        return standing.Any(row => KurinBranchSetRules.IsSenior(row.Branch))
-               && !standing.Any(row => row.Branch == KurinBranch.UPYu && row.Kind == MembershipKind.Youth);
     }
 
     public async Task<Guid?> GetPersonAccountKeyAsync(
@@ -189,12 +185,11 @@ public class ResourceScopeRepository : IResourceScopeRepository
             : await MembershipScopeAsync(memberKey, inKurinKey, cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<Guid>> GetLedGroupKeysAsync(
+    public async Task<LedGroupSourcesRow> GetLedGroupSourcesAsync(
         Guid userKey,
         Guid kurinKey,
         CancellationToken cancellationToken = default)
     {
-        // Primary source: groups where the user currently holds a гуртковий-провід office.
         var officeGroups = await _context.LeadershipHistories
             .Where(h => h.EndDate == null)
             .Join(
@@ -211,13 +206,11 @@ public class ResourceScopeRepository : IResourceScopeRepository
                 (x, ms) => x.GroupKey)
             .ToListAsync(cancellationToken);
 
-        // Legacy source: explicit mentor assignments, kept until fully migrated to offices.
         var assigned = await _context.MentorAssignments
             .Where(a => a.MentorUserKey == userKey && a.RevokedAtUtc == null)
             .Select(a => a.GroupKey)
             .ToListAsync(cancellationToken);
 
-        // Compatibility fallback: a group leader also covers the group they are a member of.
         var ownGroupKey = await _context.Memberships
             .Where(ms => ms.KurinKey == kurinKey
                          && ms.UserKey == userKey
@@ -226,13 +219,7 @@ public class ResourceScopeRepository : IResourceScopeRepository
             .Select(ms => ms.GroupKey)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var ledGroups = officeGroups.Concat(assigned);
-        if (ownGroupKey.HasValue)
-        {
-            ledGroups = ledGroups.Append(ownGroupKey.Value);
-        }
-
-        return ledGroups.Distinct().ToArray();
+        return new LedGroupSourcesRow(officeGroups, assigned, ownGroupKey);
     }
 
     /// <summary>

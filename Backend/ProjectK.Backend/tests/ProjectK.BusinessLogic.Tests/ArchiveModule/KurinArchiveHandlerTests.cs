@@ -48,7 +48,7 @@ public class KurinArchiveHandlerTests
     private readonly FixedTimeProvider _time = new(Now);
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly Mock<ICurrentPermissions> _permissions = new();
-    private readonly Mock<IResourceScopeRepository> _scopes = new();
+    private readonly Mock<IResourceScopeRepository> _scopes = ScopeFacts.Repository();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IJwtService> _jwt = new();
     private readonly Mock<IReauthentication> _reauth = new();
@@ -67,7 +67,7 @@ public class KurinArchiveHandlerTests
         _members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) =>
                 keys.Select(key => new MemberSummary(key, null, _kurinKey, null, "Марко", "Бойко", "m@example.com", null)).ToList());
-        _scopes.Setup(s => s.GetLedGroupKeysAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([_ledGroup]);
+        _scopes.Setup(s => s.GetLedGroupSourcesAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([_ledGroup]));
         _reauth.Setup(r => r.GetSecurityStampAsync(_userKey, It.IsAny<CancellationToken>())).ReturnsAsync(Stamp);
         _jwt.Setup(j => j.GenerateArchiveDangerTicket(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>()))
             .Returns((Guid user, Guid kurin, Guid ticket, string stamp, DateTime _) => $"{user}|{kurin}|{ticket}|{stamp}");
@@ -96,7 +96,7 @@ public class KurinArchiveHandlerTests
         }
     }
 
-    private ArchiveReach Reach() => new(_user.Object, _permissions.Object, UnitOfWorks.WithScopes(_scopes.Object), new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()));
+    private ArchiveReach Reach() => new(_user.Object, _permissions.Object, UnitOfWorks.WithScopes(_scopes.Object), new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), ScopeFacts.Reader(_scopes.Object));
     private ArchiveDangerZoneService Zone() => new(_zones, _jwt.Object, _reauth.Object, _user.Object, _time);
     private ArchiveDeletionService Gate() => new(Reach(), Zone(), _user.Object, _audit.Object);
 

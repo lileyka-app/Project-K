@@ -51,11 +51,11 @@ internal sealed class PolicyAccess
 
     public IResourceAccessService ServiceFor(ICurrentUserContext user)
     {
-        var scopes = new Mock<IResourceScopeRepository>();
+        var scopes = ScopeFacts.Repository();
         scopes.Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), MemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResourceScope(KurinKey, GroupKey, MemberUserKey));
-        scopes.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => LedGroups.ToArray());
+        scopes.Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => ScopeFacts.Leading(LedGroups.ToArray()));
 
         return new ResourceAccessService(UnitOfWorks.WithScopes(scopes.Object), user, new PassThroughBackendCache(), new CurrentPermissions(user, Policies));
     }

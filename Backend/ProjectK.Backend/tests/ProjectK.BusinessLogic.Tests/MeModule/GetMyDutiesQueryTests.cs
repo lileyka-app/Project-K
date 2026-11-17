@@ -1,9 +1,9 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AgendaModule;
@@ -16,16 +16,16 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Enums.MeModule;
 using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.MeModule;
 using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.KurinModule;
@@ -102,7 +102,7 @@ public class GetMyDutiesQueryTests
         var offices = new Mock<IOfficeDirectory>();
         offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
-        var scopes = new MeAgendaScopes(new CurrentMember(_user.Object, members.Object, memberships.Object), memberships.Object, members.Object, offices.Object, UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), _unitOfWork));
+        var scopes = new MeAgendaScopes(new CurrentMember(_user.Object, members.Object, memberships.Object), memberships.Object, members.Object, offices.Object, UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), _unitOfWork), Mock.Of<IResourceScopeReader>());
 
         var permissions = new Mock<IPermissionResolver>();
         permissions.Setup(p => p.ResolveAsync(It.IsAny<IEnumerable<string>>(), Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _permissions);

@@ -25,7 +25,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IBlobReadLinks _links;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly IUnitOfWork _kurinData;
     private readonly IMembershipRepository _memberships;
     private readonly IMemberFieldAccess _fieldAccess;
@@ -38,7 +38,8 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         IBlobReadLinks links,
         IUnitOfWork kurinData,
         IMemberFieldAccess fieldAccess,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        IResourceScopeReader scopeReader)
     {
         _fieldAccess = fieldAccess;
         _audit = audit;
@@ -46,7 +47,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         _currentUserContext = currentUserContext;
         _events = events;
         _links = links;
-        _scopeReader = kurinData.ResourceScopes;
+        _scopeReader = scopeReader;
         _kurinData = kurinData;
         _memberships = kurinData.Memberships;
     }
