@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.Membership;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.MemberModule;
@@ -39,14 +38,6 @@ public sealed class MemberImportWriter : IMemberImportWriter
         return result.Type == ResultType.Success && result.Data is not null
             ? result.Data.MemberKey
             : null;
-    }
-
-    public async Task<bool> JoinKurinAsync(Guid memberKey, Guid kurinKey, Guid? groupKey, CancellationToken cancellationToken = default)
-    {
-        var result = await _sender.Send(new JoinKurinCommand(memberKey, kurinKey, groupKey), cancellationToken);
-
-        // Conflict means they were already taken in. Nothing went wrong and nothing needs undoing.
-        return result.Type is ResultType.Success or ResultType.Created or ResultType.Conflict;
     }
 
     public Task<ServiceResult<MemberInvitation>> InviteAsync(Guid memberKey, CancellationToken cancellationToken = default)

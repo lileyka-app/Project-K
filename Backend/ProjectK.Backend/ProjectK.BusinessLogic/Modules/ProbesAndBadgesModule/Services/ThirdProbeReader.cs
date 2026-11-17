@@ -5,7 +5,7 @@ using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;

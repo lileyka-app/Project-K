@@ -2,7 +2,7 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.KurinModule;

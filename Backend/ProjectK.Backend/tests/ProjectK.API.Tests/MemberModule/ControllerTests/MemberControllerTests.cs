@@ -69,61 +69,6 @@ public class MemberControllerTests
     }
 
     [Fact]
-    public async Task GetAllByGroup_ShouldReturnOk_WhenSuccess()
-    {
-        var groupKey = Guid.NewGuid();
-        var members = new List<MemberDto>
-        {
-            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
-            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = Guid.NewGuid(), FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
-        };
-        var serviceResult = new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, members);
-
-        _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(serviceResult);
-
-        var result = await _controller.GetAllByGroup(groupKey);
-
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<List<MemberDto>>(ok.Value);
-        Assert.Equal(members.Count, data.Count);
-
-        _mediatorMock.Verify(m => m.Send(
-            It.Is<GetMembersQuery>(q => q.GroupKey == groupKey && q.KurinKey == Guid.Empty),
-            It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task GetAllByKurin_ShouldReturnOk_WhenSuccess()
-    {
-        var kurinKey = Guid.NewGuid();
-        var members = new List<MemberDto>
-        {
-            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "A", LastName = "L", MiddleName="M", Email="a@ex.com", PhoneNumber="1", DateOfBirth = new DateOnly(1990,1,1) },
-            TestMemberDto.Blank with { MemberKey = Guid.NewGuid(), GroupKey = Guid.NewGuid(), KurinKey = kurinKey, FirstName = "B", LastName = "L", MiddleName="M", Email="b@ex.com", PhoneNumber="2", DateOfBirth = new DateOnly(1991,1,1) }
-        };
-
-        var serviceResult = new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, members);
-
-        _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetMembersQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(serviceResult);
-
-        var result = await _controller.GetAllByKurin(kurinKey);
-
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<List<MemberDto>>(ok.Value);
-        Assert.Equal(members.Count, data.Count);
-
-        _mediatorMock.Verify(m => m.Send(
-            It.Is<GetMembersQuery>(q => q.GroupKey == Guid.Empty && q.KurinKey == kurinKey),
-            It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
     public async Task Create_ShouldReturnCreated_WhenSuccess()
     {
         var key = Guid.NewGuid();
@@ -408,27 +353,5 @@ public class MemberControllerTests
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetKurinMentorCandidates_ShouldReturnOk_WhenSuccess()
-    {
-        var kurinKey = Guid.NewGuid();
-        var mentors = new List<MemberLookupDto>
-        {
-            new() { MemberKey = Guid.NewGuid(), UserKey = Guid.NewGuid(), FirstName = "Mentor", MiddleName = "M", LastName = "One" }
-        };
-        var serviceResult = new ServiceResult<IEnumerable<MemberLookupDto>>(ResultType.Success, mentors);
-
-        _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetKurinMentorCandidatesQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(serviceResult);
-
-        var result = await _controller.GetKurinMentorCandidates(kurinKey);
-
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var data = Assert.IsType<List<MemberLookupDto>>(ok.Value);
-        Assert.Single(data);
-        Assert.Equal("One", data[0].LastName);
     }
 }

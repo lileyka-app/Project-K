@@ -1,0 +1,182 @@
+using FluentAssertions;
+using Moq;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
+
+namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
+
+/// <summary>
+/// Taking someone into a second kurin. The провід has a code the person gave them, not a key from
+/// this kurin's database — everything here is about that being enough, and about it saying no more
+/// than it has to.
+/// </summary>
+public class JoinKurinByPublicIdTests
+{
+    private const string Code = "PL-4F7K2-9M4A1";
+
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<IMembershipRepository> _memberships = new();
+    private readonly Mock<IKurinRepository> _kurins = new();
+    private readonly Mock<IGroupRepository> _groups = new();
+    private readonly Mock<IAccessChangeStore> _accessChanges = new();
+    private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
+
+    private readonly Guid _memberKey = Guid.NewGuid();
+    private readonly Guid _kurinKey = Guid.NewGuid();
+
+    private readonly JoinKurinCommandHandler _join;
+    private readonly FindMemberByPublicIdQueryHandler _lookup;
+
+    public JoinKurinByPublicIdTests()
+    {
+        _unitOfWork.SetupGet(u => u.Memberships).Returns(_memberships.Object);
+        _unitOfWork.SetupGet(u => u.Kurins).Returns(_kurins.Object);
+        _unitOfWork.SetupGet(u => u.Groups).Returns(_groups.Object);
+        _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        _kurins
+            .Setup(r => r.GetByKeyAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(42) { KurinKey = _kurinKey });
+
+        _members
+            .Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberCard(_memberKey, Code, "Оксана", "Тестова", null, 1));
+        _members
+            .Setup(d => d.FindAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(
+                _memberKey, Guid.NewGuid(), Guid.NewGuid(), null, "Оксана", "Тестова", "o@example.com", null));
+
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, _accessChanges.Object, _journal.Audit);
+        _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object, new MembershipAskRouting(_unitOfWork.Object, _members.Object));
+    }
+
+    [Fact]
+    public async Task ACode_ShouldBeEnoughToTakeSomeoneIn()
+    {
+        Membership? opened = null;
+        _memberships.Setup(r => r.Open(It.IsAny<Membership>()))
+            .Callback<Membership>(membership => opened = membership);
+
+        var result = await _join.Handle(
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null, MembershipKind.Youth, Code),
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Created);
+        opened.Should().NotBeNull();
+        opened!.MemberKey.Should().Be(_memberKey);
+        opened.KurinKey.Should().Be(_kurinKey);
+        _accessChanges.Verify(s => s.MarkUser(opened.UserKey!.Value), Times.Once);
+
+        var entry = _journal.Entries.Should().ContainSingle().Subject;
+        entry.Area.Should().Be(AuditArea.Membership);
+        entry.Action.Should().Be(AuditActionNames.Membership.Joined);
+        entry.KurinKey.Should().Be(_kurinKey);
+        entry.SubjectKey.Should().Be(opened.MembershipKey);
+        entry.SubjectMemberKey.Should().Be(_memberKey);
+        entry.SubjectLabel.Should().Be("Оксана Тестова");
+        entry.Changes.Should().Equal(new AuditChange("kind", null, "Youth"));
+    }
+
+    [Fact]
+    public async Task ACodeNobodyHas_ShouldBeRefused_WithoutOpeningAnything()
+    {
+        var result = await _join.Handle(
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null, MembershipKind.Youth, "PL-00000-00000"),
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.NotFound);
+        result.ErrorCode.Should().Be("NoSuchCode");
+        _memberships.Verify(r => r.Open(It.IsAny<Membership>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task NeitherAKeyNorACode_ShouldBeRefused()
+    {
+        var result = await _join.Handle(
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("MembershipKeysRequired");
+    }
+
+    [Fact]
+    public async Task SomeoneAlreadyHere_ShouldBeRefusedAsAConflict()
+    {
+        _memberships
+            .Setup(r => r.GetActiveAsync(_memberKey, _kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Membership { MemberKey = _memberKey, KurinKey = _kurinKey });
+
+        var result = await _join.Handle(
+            new JoinKurinCommand(Guid.Empty, _kurinKey, null, MembershipKind.Youth, Code),
+            CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        _memberships.Verify(r => r.Open(It.IsAny<Membership>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task TheLookup_ShouldNameTheKurinsTheyStandInNow_ByNumberOnly()
+    {
+        // Since requests between kurins (JOIN-01) the asking kurin has to know whom it asks — the
+        // request names that kurin anyway. Still only the number: the card itself carries no kurin,
+        // no contacts, and nothing about kurins they once left.
+        var elsewhere = new Kurin(7);
+        _kurins.Setup(r => r.GetByKeyAsync(elsewhere.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(elsewhere);
+        _memberships
+            .Setup(r => r.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = elsewhere.KurinKey }]);
+
+        var result = await _lookup.Handle(
+            new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.Member.FullName.Should().Be("Оксана Тестова");
+        result.Data.AlreadyInThisKurin.Should().BeFalse();
+        result.Data.CurrentKurins.Should().ContainSingle().Which.Number.Should().Be(7);
+
+        // The card is a record with a fixed shape; this pins that nothing kurin-shaped crept into it.
+        typeof(MemberCard).GetProperties().Select(p => p.Name)
+            .Should().NotContain(name => name.Contains("Kurin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task TheCard_ShouldSayWhenTheyAreAlreadyHere()
+    {
+        _memberships
+            .Setup(r => r.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = _kurinKey }]);
+
+        var result = await _lookup.Handle(
+            new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);
+
+        result.Data!.AlreadyInThisKurin.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnUnknownCode_ShouldAnswerTheSameWayAsAMalformedOne()
+    {
+        var unknown = await _lookup.Handle(
+            new FindMemberByPublicIdQuery(_kurinKey, "PL-00000-00000"), CancellationToken.None);
+        var malformed = await _lookup.Handle(
+            new FindMemberByPublicIdQuery(_kurinKey, "not-a-code"), CancellationToken.None);
+
+        unknown.Type.Should().Be(ResultType.NotFound);
+        malformed.Type.Should().Be(ResultType.NotFound);
+        unknown.ErrorCode.Should().Be(malformed.ErrorCode);
+    }
+}

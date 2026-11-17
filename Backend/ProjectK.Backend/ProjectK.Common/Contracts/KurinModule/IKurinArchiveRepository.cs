@@ -1,5 +1,4 @@
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;

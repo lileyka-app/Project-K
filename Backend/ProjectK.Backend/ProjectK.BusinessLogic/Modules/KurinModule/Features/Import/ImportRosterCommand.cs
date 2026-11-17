@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
@@ -90,15 +90,18 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
     private readonly IUnitOfWork _kurinData;
     private readonly IMemberDirectory _members;
     private readonly IMemberImportWriter _people;
+    private readonly ISender _sender;
 
     public ImportRosterCommandHandler(
         IUnitOfWork kurinData,
         IMemberDirectory members,
-        IMemberImportWriter people)
+        IMemberImportWriter people,
+        ISender sender)
     {
         _kurinData = kurinData;
         _members = members;
         _people = people;
+        _sender = sender;
     }
 
     public async Task<ServiceResult<RosterImportReport>> Handle(
@@ -329,12 +332,11 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         Guid groupKey,
         CancellationToken cancellationToken)
     {
-        var joined = await _people.JoinKurinAsync(
-            person.MemberKey,
-            kurinKey,
-            groupKey == Guid.Empty ? null : groupKey,
+        var result = await _sender.Send(
+            new JoinKurinCommand(person.MemberKey, kurinKey, groupKey == Guid.Empty ? null : groupKey),
             cancellationToken);
 
-        return joined ? null : "Не вдалося долучити людину до куреня.";
+        // Conflict means they were already taken in — say, by an earlier row of the same file.
+        return result.Type is ResultType.Success or ResultType.Created or ResultType.Conflict ? null : "Не вдалося долучити людину до куреня.";
     }
 }

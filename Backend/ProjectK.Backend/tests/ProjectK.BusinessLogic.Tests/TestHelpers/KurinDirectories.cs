@@ -2,6 +2,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -17,6 +18,15 @@ internal static class KurinDirectories
         var directory = new Mock<IKurinDirectory>();
         directory.Setup(d => d.GetGroupsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, GroupSummary>());
+        return directory.Object;
+    }
+
+    /// <summary>An office directory for a person who has held no office: their card lists none.</summary>
+    public static IOfficeDirectory WithoutOffices(params LeadershipHistoryDto[] held)
+    {
+        var directory = new Mock<IOfficeDirectory>();
+        directory.Setup(d => d.GetHeldByMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(held);
         return directory.Object;
     }
 

@@ -1,11 +1,11 @@
 using FluentAssertions;
+using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -23,7 +23,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.RegistryHandlers
 /// </summary>
 public class ExportRegistryHandlerTests
 {
-    private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<ISender> _sender = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<ISpreadsheetWriter> _writer = new();
@@ -46,7 +46,7 @@ public class ExportRegistryHandlerTests
             .Returns([1, 2, 3]);
 
         _handler = new ExportRegistryQueryHandler(
-            _members.Object,
+            _sender.Object,
             _uow.Object,
             _writer.Object,
             TimeProvider.System);
@@ -81,9 +81,9 @@ public class ExportRegistryHandlerTests
         };
 
     private void RosterIs(params MemberDto[] people)
-        => _members
-            .Setup(m => m.GetVisibleRosterAsync(_kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(people);
+        => _sender
+            .Setup(s => s.Send(It.Is<GetMembersQuery>(q => q.KurinKey == _kurinKey && q.GroupKey == Guid.Empty), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<IEnumerable<MemberDto>>(ResultType.Success, people));
 
     private Task<ServiceResult<RegistryFile>> Export(params string[] columnIds)
         => _handler.Handle(new ExportRegistryQuery(_kurinKey, columnIds), CancellationToken.None);

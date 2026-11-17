@@ -4,9 +4,8 @@ using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.AuthModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.MemberModule;
 

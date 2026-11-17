@@ -1,4 +1,3 @@
-using ProjectK.Common.Records.KurinModule;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -77,8 +76,8 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.GroupProbeEditions",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagAssignments",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagVisibility",
-        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MembershipAskRouting",
-        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MembershipMoves",
+        "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipAskRouting",
+        "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipMoves",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.DutyRights",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MeAgendaScopes",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MemberCards",
@@ -102,7 +101,7 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesBox",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesKrai",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesPrice",
-        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MembershipAskRoute",
+        "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipAskRoute",
         "ProjectK.BusinessLogic.Modules.MeModule.Services.MeKurinContext",
         "ProjectK.BusinessLogic.Modules.ScoreModule.Services.EventOccurrence",
     ];

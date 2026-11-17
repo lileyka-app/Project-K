@@ -1,5 +1,5 @@
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.Shared;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
@@ -51,7 +51,6 @@ public class Member : Entity, IHasParentContacts
     public string? ProfileVerificationNote { get; set; }
     public PlastLevel? LatestPlastLevel { get; set; }
     public ICollection<PlastLevelHistory> PlastLevelHistory { get; set; } = new List<PlastLevelHistory>();
-    public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
     public ICollection<MemberWarning> MemberWarnings { get; set; } = new List<MemberWarning>();
     public ICollection<MemberAward> MemberAwards { get; set; } = new List<MemberAward>();
 }

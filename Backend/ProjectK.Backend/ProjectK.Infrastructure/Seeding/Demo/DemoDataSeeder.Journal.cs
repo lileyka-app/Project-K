@@ -2,7 +2,7 @@ using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.AuthModule;

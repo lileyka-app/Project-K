@@ -1,9 +1,10 @@
 using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ScoreModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.ScoreModule;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Services;

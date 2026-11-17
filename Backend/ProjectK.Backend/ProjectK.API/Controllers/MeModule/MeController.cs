@@ -14,7 +14,6 @@ using ProjectK.BusinessLogic.Modules.MeModule.Features.Growth;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Score;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Tasks;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.MembershipRequest;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Dtos.MeModule.Requests;
 using ProjectK.Common.Enums.AgendaModule;

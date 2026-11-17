@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;

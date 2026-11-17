@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -9,6 +8,7 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.MemberModule;
@@ -16,7 +16,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Rules.AuditModule;
 using KurinEntity = ProjectK.Common.Entities.KurinModule.Kurin;
-using MentorAssignmentEntity = ProjectK.Common.Entities.MemberModule.MentorAssignment;
+using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberHandlers;
 
@@ -63,7 +63,7 @@ public class MemberProfileVerificationHandlerTests
             FieldAccess.SeesEverything(),
             _journal.Audit,
             ScopeFacts.Reader(_scopeReaderMock.Object),
-            KurinDirectories.WithoutGroups());
+            KurinDirectories.WithoutOffices());
     }
 
     [Fact]

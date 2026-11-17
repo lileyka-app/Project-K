@@ -157,6 +157,11 @@ public static class DependencyInjection
 
     private static void AddKurinModule(this IServiceCollection services)
     {
+        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
+        services.AddScoped<IMemberActivationWriter, MemberActivationWriter>();
+        services.AddScoped<MembershipMoves>();
+        services.AddScoped<MembershipAskRouting>();
         services.AddScoped<ArchiveReach>();
         services.AddSingleton<ArchiveDangerZoneStore>();
         services.AddScoped<ArchiveDangerZoneService>();
@@ -170,13 +175,8 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
-        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
-        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberImportWriter, MemberImportWriter>();
-        services.AddScoped<IMemberActivationWriter, MemberActivationWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
-        services.AddScoped<MembershipMoves>();
-        services.AddScoped<MembershipAskRouting>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
     }
 }

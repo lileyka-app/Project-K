@@ -4,9 +4,9 @@ using ProjectK.Common.Records.Shared;
 namespace ProjectK.Common.Contracts.MemberModule;
 
 /// <summary>
-/// The member module's write door for a roster import: open a record for someone new, take someone
-/// known into a kurin, open their account. Each call runs the member module's own use case, so the
-/// rules of writing a person stay where they are.
+/// The member module's write door for a roster import: open a record for someone new and open their
+/// account. Taking someone into the kurin is the kurin's own command. Each call runs the member
+/// module's own use case, so the rules of writing a person stay where they are.
 /// <para>
 /// A write contract on purpose: a Directory only answers, and an event does not
 /// fit. The import needs the new member's key back at once — the account is opened for the person
@@ -18,12 +18,6 @@ public interface IMemberImportWriter
 {
     /// <summary>Opens a member record and places the person. The new member's key; null when it could not be written.</summary>
     Task<Guid?> CreateAsync(ImportedMember person, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Takes someone already known into a kurin. True when they stand in it afterwards — also when
-    /// they already did, say by an earlier row of the same file.
-    /// </summary>
-    Task<bool> JoinKurinAsync(Guid memberKey, Guid kurinKey, Guid? groupKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Opens an account and sends the activation letter. Conflict when the person already has an

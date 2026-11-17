@@ -10,7 +10,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Rules.AuthModule;
 

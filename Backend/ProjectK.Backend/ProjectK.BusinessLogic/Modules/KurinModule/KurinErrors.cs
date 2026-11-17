@@ -4,7 +4,8 @@ using ProjectK.Common.Records.Shared;
 namespace ProjectK.BusinessLogic.Modules.KurinModule;
 
 /// <summary>
-/// The codes the kurin's own requests fail with — the kurin, its гуртки, tags and planning. The
+/// The codes the kurin's own requests fail with — the kurin, its гуртки, tags and planning; who belongs
+/// to it, its offices and виховники, the requests between kurins, the roster and the archive. The
 /// client picks its wording by them, so a code is a contract: rename one only together with the
 /// clients.
 /// </summary>
@@ -77,6 +78,47 @@ public static class KurinErrors
 
     /// <summary>The caller's identity is missing from the token.</summary>
     public const string Unauthorized = "Unauthorized";
+
+    public const string LeadershipNotFound = "LeadershipNotFound";
+
+    /// <summary>The request seats or unseats a role the caller may not assign.</summary>
+    public const string OfficeNotAssignable = "OfficeNotAssignable";
+
+    public const string LeadershipNotSaved = "LeadershipNotSaved";
+
+    public const string MemberNotFound = "MemberNotFound";
+    public const string MembershipKeysRequired = "MembershipKeysRequired";
+    public const string PublicIdRequired = "PublicIdRequired";
+
+    /// <summary>Malformed or nobody's: the answer is the same, so codes cannot be mapped out.</summary>
+    public const string NoSuchCode = "NoSuchCode";
+
+    public const string GroupNotInKurin = "GroupNotInKurin";
+    public const string AlreadyAMember = "AlreadyAMember";
+    public const string StandsInAnotherKurin = "StandsInAnotherKurin";
+    public const string NotAMember = "NotAMember";
+    public const string OwnMembership = "OwnMembership";
+    public const string MemberOwesDues = "MemberOwesDues";
+
+    /// <summary>A kurin reads and answers only its own requests.</summary>
+    public const string MembershipRequestOtherKurin = "MembershipRequestOtherKurin";
+
+    public const string RequestNotFound = "RequestNotFound";
+    public const string RequestClosed = "RequestClosed";
+    public const string RequestPending = "RequestPending";
+    public const string ChooseKurin = "ChooseKurin";
+    public const string NotInThatKurin = "NotInThatKurin";
+    public const string SeniorKurinTakesMembers = "SeniorKurinTakesMembers";
+    public const string TransferAcrossLines = "TransferAcrossLines";
+    public const string MemberNotHere = "MemberNotHere";
+
+    /// <summary>A roster is read for a гурток or for a kurin, never both and never neither.</summary>
+    public const string RosterScopeRequired = "RosterScopeRequired";
+
+    public const string MentorNotFound = "MentorNotFound";
+    public const string MentorFromAnotherKurin = "MentorFromAnotherKurin";
+    public const string MentorAlreadyAssigned = "MentorAlreadyAssigned";
+    public const string MentorAssignmentNotFound = "MentorAssignmentNotFound";
 
     /// <summary>A senior kurin has no гуртки to import a roster into.</summary>
     public const string RosterImportNotForSeniorKurin = "RosterImportNotForSeniorKurin";

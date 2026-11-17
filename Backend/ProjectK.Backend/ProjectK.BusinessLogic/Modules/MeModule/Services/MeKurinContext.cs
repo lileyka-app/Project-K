@@ -1,4 +1,4 @@
-using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Records.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;

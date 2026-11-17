@@ -109,7 +109,7 @@ public class CommonRules
     private static readonly string[] RequestsThatAreDomainNouns =
     [
         "ProjectK.Common.Entities.KurinModule.KurinBranchRequest",
-        "ProjectK.Common.Entities.MemberModule.MembershipRequest",
+        "ProjectK.Common.Entities.KurinModule.MembershipRequest",
     ];
 
     /// <summary>

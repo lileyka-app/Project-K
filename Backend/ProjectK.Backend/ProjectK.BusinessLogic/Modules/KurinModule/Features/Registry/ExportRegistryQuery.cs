@@ -2,7 +2,6 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -29,26 +28,26 @@ public sealed record ExportRegistryQuery(Guid KurinKey, IReadOnlyList<string> Co
 /// Writes the roster the caller can already see, as the three sheets the screen shows: юнаки,
 /// впорядники, and how many юнаки stand at each ступінь.
 /// <para>
-/// The people come from <see cref="IMemberDirectory.GetVisibleRosterAsync"/> — the read the screen
-/// makes — rather than from a read of its own, and that is the point: whatever the member module
-/// decides to hide from the caller is hidden here too, without this handler knowing the rule. An
-/// export that read the table directly would be a way around it.
+/// The people come from <see cref="GetMembersQuery"/> — the read the screen makes — rather than
+/// from a read of its own, and that is the point: whatever the roster masks from the caller is
+/// masked here too, without this handler knowing the rule. An export that read the table directly
+/// would be a way around it.
 /// </para>
 /// </summary>
 public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQuery, ServiceResult<RegistryFile>>
 {
-    private readonly IMemberDirectory _members;
+    private readonly ISender _sender;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISpreadsheetWriter _spreadsheet;
     private readonly TimeProvider _timeProvider;
 
     public ExportRegistryQueryHandler(
-        IMemberDirectory members,
+        ISender sender,
         IUnitOfWork unitOfWork,
         ISpreadsheetWriter spreadsheet,
         TimeProvider timeProvider)
     {
-        _members = members;
+        _sender = sender;
         _unitOfWork = unitOfWork;
         _spreadsheet = spreadsheet;
         _timeProvider = timeProvider;
@@ -64,7 +63,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
             return KurinErrors.NotFound<RegistryFile>();
         }
 
-        var members = await _members.GetVisibleRosterAsync(request.KurinKey, cancellationToken);
+        var members = (await _sender.Send(new GetMembersQuery(Guid.Empty, request.KurinKey), cancellationToken)).Data?.ToList() ?? [];
 
         var chosen = request.ColumnIds
             .Where(id => RegistryColumnRules.HeaderFor(id) is not null)

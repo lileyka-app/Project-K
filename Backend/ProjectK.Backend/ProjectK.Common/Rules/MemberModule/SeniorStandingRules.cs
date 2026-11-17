@@ -1,6 +1,5 @@
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.Common.Rules.MemberModule;

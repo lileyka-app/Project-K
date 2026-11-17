@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;

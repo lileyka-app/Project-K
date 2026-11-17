@@ -11,7 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using ProjectK.API.Middleware;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.Leadership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
@@ -19,15 +19,15 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Dtos.MemberModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Infrastructure.Services.Jwt;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Infrastructure.Services.Jwt;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -111,7 +111,7 @@ public class AccessStaleHeaderHttpTests
             .ReturnsAsync([new MemberSummary(memberKey, memberUserKey, kurinKey, null, "A", "B", "a@example.com", null)]);
 
         var handler = new UpsertLeadershipCommandHandler(
-            unitOfWork.Object, Mock.Of<IBlobReadLinks>(), assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);
+            unitOfWork.Object, assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);
         var request = new UpsertLeadershipRequest
         {
             Type = "kurin",

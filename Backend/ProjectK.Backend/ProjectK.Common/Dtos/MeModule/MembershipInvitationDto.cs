@@ -1,5 +1,5 @@
-using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Dtos.MeModule;
 

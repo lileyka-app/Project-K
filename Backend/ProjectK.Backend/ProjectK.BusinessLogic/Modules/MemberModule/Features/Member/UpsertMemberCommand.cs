@@ -64,7 +64,7 @@ public sealed class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCom
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IMemberFieldAccess _fieldAccess;
-    private readonly IKurinDirectory _kurins;
+    private readonly IOfficeDirectory _offices;
 
     public UpsertMemberCommandHandler(
         IMediator mediator,
@@ -74,9 +74,9 @@ public sealed class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCom
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IMemberFieldAccess fieldAccess,
-        IKurinDirectory kurins)
+        IOfficeDirectory offices)
     {
-        _kurins = kurins;
+        _offices = offices;
         _fieldAccess = fieldAccess;
         _mediator = mediator;
         _unitOfWork = unitOfWork;
@@ -181,8 +181,8 @@ public sealed class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCom
         }
 
         // The writer is answered like any reader: what they may not see stays kept, and unsaid.
-        var officeGroups = await _kurins.GetGroupsAsync(MemberMapping.OfficeGroupKeys(member), cancellationToken);
-        var response = member.ToDto(_links, officeGroups)
+        var offices = await _offices.GetHeldByMemberAsync(member.MemberKey, cancellationToken);
+        var response = member.ToDto(_links, offices)
             .MaskFor(await _fieldAccess.ForViewerAsync(cancellationToken), profile.Data.GroupKey);
         response.InvitationSent = invitationSent;
 

@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
@@ -8,8 +7,7 @@ using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
 using ProjectK.API.Uploads;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.MentorAssignment;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Dtos.MemberModule;
@@ -230,6 +228,20 @@ public class GroupController : ControllerBase
     {
         var command = new RevokeMentorCommand(mentorUserKey, groupKey);
         var response = await _mediator.Send(command);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Lists the members eligible to be assigned as mentors.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("~/api/member/members/mentor-candidates/{kurinKey:guid}")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetKurinMentorCandidates(Guid kurinKey)
+    {
+        var request = new GetKurinMentorCandidatesQuery(kurinKey);
+        var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
 }

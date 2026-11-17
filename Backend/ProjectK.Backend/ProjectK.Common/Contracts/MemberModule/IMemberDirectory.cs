@@ -83,20 +83,12 @@ public interface IMemberDirectory
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The kurin's members as pickable entries, with the account role each carries. Used where the
-    /// caller has to choose a person — assigning a mentor, addressing a notification.
+    /// These people as a picker shows them — name, account, photo (signed) and verification — in one
+    /// read, by member. Someone who does not exist is absent. The office each holds is the asker's
+    /// to say, so <c>UserRole</c> stays empty.
     /// </summary>
-    Task<IReadOnlyCollection<MemberLookupDto>> GetLookupByKurinAsync(
-        Guid kurinKey,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// A kurin's roster as the caller may see it: the same read the registry screen makes, masked by
-    /// the caller's own view and carrying only the tags the caller may see. A file written from it
-    /// therefore shows nothing the screen would not.
-    /// </summary>
-    Task<IReadOnlyList<MemberDto>> GetVisibleRosterAsync(
-        Guid kurinKey,
+    Task<IReadOnlyDictionary<Guid, MemberLookupDto>> GetLookupsAsync(
+        IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default);
 
     /// <summary>

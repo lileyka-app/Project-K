@@ -1,0 +1,147 @@
+using MediatR;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
+
+namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+
+/// <summary>
+/// Takes an existing person into a kurin. Nothing about them changes — they keep every kurin they
+/// already belong to, and everything they have earned anywhere.
+/// </summary>
+/// <param name="MemberKey">
+/// Who to take in. May be empty when <paramref name="PublicId"/> names them instead — a провід
+/// taking in someone from another kurin has their code, not their key.
+/// </param>
+/// <param name="OnlyIfStandingNowhere">
+/// Set where a kurin's провід takes someone in by hand: a person who stands in another kurin is asked
+/// for through that kurin (a membership request), never taken straight from it.
+/// </param>
+public sealed record JoinKurinCommand(
+    Guid MemberKey,
+    Guid KurinKey,
+    Guid? GroupKey,
+    MembershipKind Kind = MembershipKind.Youth,
+    string? PublicId = null,
+    bool OnlyIfStandingNowhere = false) : IRequest<ServiceResult<Guid>>;
+
+public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, ServiceResult<Guid>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAccessChangeStore _accessChanges;
+    private readonly IMemberDirectory _members;
+    private readonly IKurinAudit _audit;
+
+    public JoinKurinCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAccessChangeStore accessChanges, IKurinAudit audit)
+    {
+        _unitOfWork = unitOfWork;
+        _accessChanges = accessChanges;
+        _members = members;
+        _audit = audit;
+    }
+
+    public async Task<ServiceResult<Guid>> Handle(JoinKurinCommand request, CancellationToken cancellationToken)
+    {
+        if (request.KurinKey == Guid.Empty
+            || (request.MemberKey == Guid.Empty && string.IsNullOrWhiteSpace(request.PublicId)))
+        {
+            return ServiceResult<Guid>.Failure(
+                ResultType.BadRequest,
+                KurinErrors.MembershipKeysRequired,
+                "A kurin and either a member or a public code are required.");
+        }
+
+        var memberKey = request.MemberKey;
+        if (memberKey == Guid.Empty)
+        {
+            var card = await _members.FindByPublicIdAsync(request.PublicId!, cancellationToken);
+            if (card is null)
+            {
+                return ServiceResult<Guid>.Failure(
+                    ResultType.NotFound, KurinErrors.NoSuchCode, "No one has that code.");
+            }
+
+            memberKey = card.MemberKey;
+        }
+
+        var person = await _members.FindAsync(memberKey, cancellationToken);
+        if (person is null)
+        {
+            return ServiceResult<Guid>.Failure(
+                ResultType.NotFound, KurinErrors.MemberNotFound, "No such member.");
+        }
+
+        var kurin = await _unitOfWork.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
+        if (kurin is null)
+        {
+            return ServiceResult<Guid>.Failure(
+                ResultType.NotFound, KurinErrors.KurinNotFound, "No such kurin.");
+        }
+
+        // A гурток of another kurin would place them somewhere their kurin does not reach.
+        string? groupName = null;
+        if (request.GroupKey.HasValue)
+        {
+            var group = await _unitOfWork.Groups.GetByKeyAsync(request.GroupKey.Value, cancellationToken);
+            groupName = group?.Name;
+            if (group is null || group.KurinKey != request.KurinKey)
+            {
+                return ServiceResult<Guid>.Failure(
+                    ResultType.BadRequest, KurinErrors.GroupNotInKurin, "That гурток does not belong to this kurin.");
+            }
+        }
+
+        var already = await _unitOfWork.Memberships.GetActiveAsync(
+            memberKey, request.KurinKey, cancellationToken);
+        if (already is not null)
+        {
+            return ServiceResult<Guid>.Failure(
+                ResultType.Conflict, KurinErrors.AlreadyAMember, "They already belong to this kurin.");
+        }
+
+        if (request.OnlyIfStandingNowhere
+            && (await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken)).Count > 0)
+        {
+            return ServiceResult<Guid>.Failure(
+                ResultType.Conflict, KurinErrors.StandsInAnotherKurin, "They stand in another kurin; ask that kurin with a membership request.");
+        }
+
+        var membership = new MembershipEntity
+        {
+            MemberKey = memberKey,
+            UserKey = person.UserKey,
+            KurinKey = request.KurinKey,
+            GroupKey = request.GroupKey,
+            Kind = request.Kind,
+            JoinedAtUtc = DateTime.UtcNow
+        };
+
+        _unitOfWork.Memberships.Open(membership);
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Membership,
+                AuditActionNames.Membership.Joined,
+                membership.MembershipKey,
+                person.FullName,
+                memberKey,
+                AuditChangeRules.Added(("kind", request.Kind), ("group", groupName)),
+                KurinKey: request.KurinKey),
+            cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (membership.UserKey is { } userKey)
+        {
+            _accessChanges.MarkUser(userKey);
+        }
+
+        return new ServiceResult<Guid>(ResultType.Created, membership.MembershipKey);
+    }
+}

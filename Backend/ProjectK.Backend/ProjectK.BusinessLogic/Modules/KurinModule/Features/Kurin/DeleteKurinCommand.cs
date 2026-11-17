@@ -55,7 +55,7 @@ public sealed class DeleteKurinCommandHandler : IRequestHandler<DeleteKurinComma
         //
         // What the database will not clear itself: offices are NO ACTION against both the kurin
         // and its гуртки, and the гуртки's own cascade is refused while an office still points at
-        // one, so the member module removes them, and the memberships with them. Everything else —
+        // one, so the kurin module removes them, and the memberships with them. Everything else —
         // гуртки, agenda with its assignments, planning sessions, mentor assignments — cascades.
         await _events.PublishAsync(new KurinDeleted(request.KurinKey), cancellationToken);
 

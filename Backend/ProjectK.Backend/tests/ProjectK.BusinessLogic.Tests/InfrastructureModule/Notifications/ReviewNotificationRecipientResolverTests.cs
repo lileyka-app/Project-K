@@ -2,16 +2,15 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.InfrastructureModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.AuthModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuthModule;
 
 namespace ProjectK.BusinessLogic.Tests.InfrastructureModule.Notifications;
@@ -36,7 +35,7 @@ public class ReviewNotificationRecipientResolverTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ILeadershipRepository> _leaderships = new();
     private readonly Mock<IMentorAssignmentRepository> _mentors = new();
-    private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<IMembershipDirectory> _members = new();
     private readonly FixedKurinAccessPolicyProvider _policies = new();
     private readonly ReviewNotificationRecipientReader _resolver;
 

@@ -1,4 +1,4 @@
-using ProjectK.BusinessLogic.Modules.MemberModule.Events;
+using ProjectK.BusinessLogic.Modules.KurinModule.Events;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Events.KurinModule;

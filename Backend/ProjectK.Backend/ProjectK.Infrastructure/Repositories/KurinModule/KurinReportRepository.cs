@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -60,11 +60,17 @@ public sealed class KurinReportRepository : IKurinReportRepository
             .Include(member => member.PlastLevelHistory)
             .Include(member => member.MemberWarnings)
             .Include(member => member.MemberAwards)
-            .Include(member => member.LeadershipHistories)
-                .ThenInclude(history => history.Leadership)
             .OrderBy(member => member.LastName)
             .ThenBy(member => member.FirstName)
             .ToListAsync(cancellationToken);
+
+        // Read beside the people, not through them: the offices are the kurin's, the people are not.
+        var offices = (await _context.LeadershipHistories
+                .AsNoTracking()
+                .Include(history => history.Leadership)
+                .Where(history => memberKeysHere.Contains(history.MemberKey))
+                .ToListAsync(cancellationToken))
+            .ToLookup(history => history.MemberKey);
 
         var userKeys = members
             .Select(member => member.UserKey)
@@ -79,8 +85,8 @@ public sealed class KurinReportRepository : IKurinReportRepository
             .Where(user => userKeys.Contains(user.Id))
             .ToDictionaryAsync(user => user.Id, cancellationToken);
 
-        // Ролі більше не читаються тут окремим запитом. Вони вже приходять із людиною
-        // (`Include(LeadershipHistories).ThenInclude(Leadership)`), а звіт друкує їх словами, не
+        // Ролі більше не читаються тут окремим запитом. Вони приходять поруч із людьми
+        // (`LeadershipHistories` з `Leadership`), а звіт друкує їх словами, не
         // системними ролями — тож той запит рахував те саме вдруге, аби перекласти назад у
         // "KV.Vykhovnyk".
         return new KurinReportSourceData(
@@ -89,7 +95,7 @@ public sealed class KurinReportRepository : IKurinReportRepository
             mentorAssignments
                 .Select(assignment => new KurinReportSourceMentor(assignment.MentorUserKey, assignment.GroupKey, assignment.RevokedAtUtc))
                 .ToList(),
-            members.Select(ToSource).ToList(),
+            members.Select(member => ToSource(member, offices[member.MemberKey])).ToList(),
             (IReadOnlyDictionary<Guid, AppUser>)usersByKey,
             memberships.ToDictionary(
                 membership => membership.MemberKey,
@@ -102,7 +108,7 @@ public sealed class KurinReportRepository : IKurinReportRepository
                     membership.LeftAtUtc)));
     }
 
-    private static KurinReportSourceMember ToSource(Member member) => new(
+    private static KurinReportSourceMember ToSource(Member member, IEnumerable<LeadershipHistory> offices) => new(
         member.MemberKey,
         member.UserKey,
         member.FirstName,
@@ -124,7 +130,7 @@ public sealed class KurinReportRepository : IKurinReportRepository
         member.MemberAwards
             .Select(award => new KurinReportSourceAward(award.Level, award.CatalogId, award.DateAcquired, award.Note, award.Status))
             .ToList(),
-        member.LeadershipHistories
+        offices
             .Select(history => new KurinReportSourceOffice(
                 history.Leadership.Type,
                 history.Leadership.KurinKey,

@@ -1,3 +1,4 @@
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.Common.Dtos.MemberModule;

@@ -1,8 +1,9 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using FluentAssertions;
+using MediatR;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
@@ -29,6 +30,7 @@ public class ImportRosterHandlerTests
     private readonly Mock<IGroupRepository> _groups = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IMemberImportWriter> _people = new();
+    private readonly Mock<ISender> _sender = new();
     private readonly ImportRosterCommandHandler _handler;
 
     private List<MemberIdentity> _knownPeople = [];
@@ -52,7 +54,10 @@ public class ImportRosterHandlerTests
         _kurinData.Setup(u => u.Kurins).Returns(_kurins.Object);
         _kurinData.Setup(u => u.Groups).Returns(_groups.Object);
 
-        _handler = new ImportRosterCommandHandler(_kurinData.Object, _members.Object, _people.Object);
+        _sender.Setup(s => s.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<Guid>(ResultType.Created, Guid.NewGuid()));
+
+        _handler = new ImportRosterCommandHandler(_kurinData.Object, _members.Object, _people.Object, _sender.Object);
     }
 
     /// <summary>Прізвище, Ім'я, Дата народження, Ступінь, Дата ступеня, Гурток, Курінь, Пошта.</summary>
@@ -361,8 +366,8 @@ public class ImportRosterHandlerTests
         _people.Verify(
             p => p.CreateAsync(It.IsAny<ImportedMember>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        _people.Verify(
-            p => p.JoinKurinAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+        _sender.Verify(
+            s => s.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _groups.Verify(r => r.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
         _kurinData.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

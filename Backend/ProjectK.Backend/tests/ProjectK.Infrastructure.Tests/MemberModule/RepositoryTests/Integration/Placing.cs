@@ -1,5 +1,6 @@
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Infrastructure.Tests.MemberModule.RepositoryTests.Integration;
 

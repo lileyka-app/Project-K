@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using ProjectK.Infrastructure.Repositories.MemberModule;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule;
 
@@ -242,9 +241,7 @@ public class KurinArchivePersistenceTests
         }
 
         await using var read = new AppDbContext(_options);
-        var member = await new MemberRepository(read).GetByKeyAsync(_person);
-
-        var office = Assert.Single(member!.LeadershipHistories);
+        var office = Assert.Single(await new LeadershipRepository(read).GetHistoriesForMemberAsync(_person));
         Assert.Equal(_sokoly.GroupKey, office.Leadership.GroupKey);
         var gurtok = Assert.Single(await new GroupRepository(read).GetByKeysIncludingDissolvedAsync([_sokoly.GroupKey]));
         Assert.Equal("Соколи", gurtok.Name);

@@ -2,8 +2,7 @@ namespace ProjectK.BusinessLogic.Modules.MemberModule;
 
 /// <summary>
 /// The codes a request about a person fails with — their card, account, photo, verification,
-/// відзначення, перестороги and виховники — and a kurin's request to change its гілки. The client
-/// picks its wording by them.
+/// відзначення and перестороги. The client picks its wording by them.
 /// </summary>
 public static class MemberErrors
 {
@@ -20,8 +19,6 @@ public static class MemberErrors
     /// <summary>The person stands in no kurin, so nobody can act on their card from one.</summary>
     public const string MemberBelongsNowhere = "MemberBelongsNowhere";
 
-    /// <summary>A roster is read for a гурток or for a kurin, never both and never neither.</summary>
-    public const string RosterScopeRequired = "RosterScopeRequired";
 
     public const string UnknownDossierFolder = "UnknownDossierFolder";
 
@@ -73,11 +70,6 @@ public static class MemberErrors
     /// <summary>Already cancelled, or expired.</summary>
     public const string WarningNotActive = "WarningNotActive";
     public const string WarningCancelNotAllowed = "WarningCancelNotAllowed";
-
-    public const string MentorNotFound = "MentorNotFound";
-    public const string MentorFromAnotherKurin = "MentorFromAnotherKurin";
-    public const string MentorAlreadyAssigned = "MentorAlreadyAssigned";
-    public const string MentorAssignmentNotFound = "MentorAssignmentNotFound";
 
     /// <summary>The caller's identity is missing from the token.</summary>
     public const string Unauthorized = "Unauthorized";

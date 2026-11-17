@@ -1,8 +1,8 @@
 using FluentAssertions;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.AuthModule;
-using ProjectK.Common.Records.MemberModule;
-using ProjectK.Common.Rules.MemberModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.CommonTests;
 

@@ -2,7 +2,7 @@ using FluentValidation;
 using ProjectK.Common.Contracts.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.Shared;
 

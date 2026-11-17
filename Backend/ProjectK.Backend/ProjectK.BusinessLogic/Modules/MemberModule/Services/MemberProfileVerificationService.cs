@@ -16,7 +16,7 @@ using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.Shared;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
-using MembershipEntity = ProjectK.Common.Entities.MemberModule.Membership;
+using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Services;
 
@@ -31,7 +31,7 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
     private readonly IMembershipRepository _memberships;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly IKurinAudit _audit;
-    private readonly IKurinDirectory _kurins;
+    private readonly IOfficeDirectory _offices;
 
     public MemberProfileVerificationService(
         IMemberUnitOfWork unitOfWork,
@@ -42,9 +42,9 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         IMemberFieldAccess fieldAccess,
         IKurinAudit audit,
         IResourceScopeReader scopeReader,
-        IKurinDirectory kurins)
+        IOfficeDirectory offices)
     {
-        _kurins = kurins;
+        _offices = offices;
         _fieldAccess = fieldAccess;
         _audit = audit;
         _unitOfWork = unitOfWork;
@@ -202,8 +202,8 @@ public sealed class MemberProfileVerificationService : IMemberProfileVerificatio
         }
 
         var mask = await _fieldAccess.ForViewerAsync(cancellationToken);
-        var officeGroups = await _kurins.GetGroupsAsync(MemberMapping.OfficeGroupKeys(member), cancellationToken);
-        return new ServiceResult<MemberDto>(ResultType.Success, member.ToDto(_links, officeGroups).MaskFor(mask, groupKey));
+        var offices = await _offices.GetHeldByMemberAsync(member.MemberKey, cancellationToken);
+        return new ServiceResult<MemberDto>(ResultType.Success, member.ToDto(_links, offices).MaskFor(mask, groupKey));
     }
 
     private Task RecordAsync(

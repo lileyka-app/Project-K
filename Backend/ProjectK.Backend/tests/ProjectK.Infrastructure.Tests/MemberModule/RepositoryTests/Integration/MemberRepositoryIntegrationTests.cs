@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
-using ProjectK.Infrastructure.Repositories.MemberModule;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace ProjectK.Infrastructure.Tests.MemberModule.RepositoryTests.Integration;
@@ -201,7 +201,7 @@ public class MemberRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task GetListRowsByKurinKeyAsync_ShouldReturnOnlyActiveLeadershipAndWarnings()
+    public async Task GetRosterRowsByKurinAsync_ShouldReturnOnlyActiveLeadershipAndWarnings()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -267,7 +267,7 @@ public class MemberRepositoryIntegrationTests
             });
         await context.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Memberships.GetRosterRowsByKurinAsync(kurin.KurinKey)).ToList();
 
         var item = Assert.Single(items);
         var activeLeadership = Assert.Single(item.Offices);
@@ -280,7 +280,7 @@ public class MemberRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task GetListRowsByKurinKeyAsync_ShouldReadPrivateFieldsAsStored_LeavingTheMaskToTheQuery()
+    public async Task GetRosterRowsByKurinAsync_ShouldReadPrivateFieldsAsStored_LeavingTheMaskToTheQuery()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -313,7 +313,7 @@ public class MemberRepositoryIntegrationTests
         Placed(uow, hidden, kurin.KurinKey, hiddenGroup.GroupKey);
         await uow.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Memberships.GetRosterRowsByKurinAsync(kurin.KurinKey)).ToList();
 
         var ownerItem = items.Single(i => i.MemberKey == owner.MemberKey);
         var visibleItem = items.Single(i => i.MemberKey == inVisibleGroup.MemberKey);
@@ -332,7 +332,7 @@ public class MemberRepositoryIntegrationTests
     /// read keeps a revoked закріплення, and the rule is what drops it.
     /// </summary>
     [Fact]
-    public async Task GetListRowsByKurinKeyAsync_ShouldCarryWhatMakesOnlyKvOfficersStaff_AndTheGroupsTheyMentor()
+    public async Task GetRosterRowsByKurinAsync_ShouldCarryWhatMakesOnlyKvOfficersStaff_AndTheGroupsTheyMentor()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -406,7 +406,7 @@ public class MemberRepositoryIntegrationTests
             });
         await context.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Memberships.GetRosterRowsByKurinAsync(kurin.KurinKey)).ToList();
 
         var plainItem = items.Single(item => item.MemberKey == youth.MemberKey);
         var hurtkovyiItem = items.Single(item => item.MemberKey == hurtkovyi.MemberKey);
@@ -436,7 +436,7 @@ public class MemberRepositoryIntegrationTests
     /// look like кадра and are not.
     /// </summary>
     [Fact]
-    public async Task GetListRowsByKurinKeyAsync_ShouldAgreeWithTheSharedStaffRule()
+    public async Task GetRosterRowsByKurinAsync_ShouldAgreeWithTheSharedStaffRule()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -499,7 +499,7 @@ public class MemberRepositoryIntegrationTests
             Held(elsewhereMentor, foreignKvOffice, LeadershipRole.Vykhovnyk));
         await context.SaveChangesAsync();
 
-        var items = (await uow.Members.GetListRowsByKurinKeyAsync(kurin.KurinKey)).ToList();
+        var items = (await uow.Memberships.GetRosterRowsByKurinAsync(kurin.KurinKey)).ToList();
 
         var offices = context.Set<Leadership>().ToDictionary(office => office.LeadershipKey);
         var expected = context.Set<LeadershipHistory>()

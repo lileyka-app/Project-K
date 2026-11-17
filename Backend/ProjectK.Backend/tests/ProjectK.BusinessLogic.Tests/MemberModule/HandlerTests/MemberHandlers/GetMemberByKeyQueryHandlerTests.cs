@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuthModule;
@@ -244,5 +243,5 @@ public class GetMemberByKeyHandlerTests
         _kurinDataMock.Object,
         _accountsMock.Object,
         Mock.Of<IKurinTagVisibility>(),
-        KurinDirectories.WithoutGroups());
+        KurinDirectories.WithoutOffices());
 }

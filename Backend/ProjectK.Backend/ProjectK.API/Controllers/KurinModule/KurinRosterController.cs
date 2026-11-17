@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
@@ -10,6 +9,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 
@@ -118,5 +118,35 @@ public class KurinRosterController : ControllerBase
         }
 
         return File(result.Data.Content, SpreadsheetContentType, result.Data.FileName);
+    }
+
+    /// <summary>
+    /// Lists the members of one group.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("~/api/member/groups/{groupKey:guid}/members")]
+    [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
+    [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAllByGroup(Guid groupKey)
+    {
+        var request = new GetMembersQuery(groupKey, Guid.Empty);
+        var response = await _mediator.Send(request);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Lists the members of one kurin.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("~/api/member/kurins/{kurinKey:guid}/members")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAllByKurin(Guid kurinKey)
+    {
+        var request = new GetMembersQuery(Guid.Empty, kurinKey);
+        var response = await _mediator.Send(request);
+        return response.ToActionResult(this);
     }
 }
