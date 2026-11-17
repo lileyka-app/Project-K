@@ -26,7 +26,13 @@ test.describe('Admin opens a kurin with an invited Зв\'язковий (SEC-4.4
       await expect(panel).toBeVisible();
       await expect(panel.locator('input[type="password"]')).toHaveCount(0);
 
-      await panel.locator('#manage-field-number').fill(kurinNumber);
+      // The number field of a freshly opened dialog can drop the first fill on a slow mobile
+      // render, which leaves the form invalid and the submit button disabled for good.
+      const numberField = panel.locator('#manage-field-number');
+      await expect(async () => {
+        await numberField.fill(kurinNumber);
+        await expect(numberField).toHaveValue(kurinNumber, { timeout: 1_000 });
+      }).toPass({ timeout: 15_000 });
       await panel.locator('#manage-field-founderEmail').fill(founderEmail);
       await panel.locator('#manage-field-founderFirstName').fill(`Founder${suffix}`);
       await panel.locator('#manage-field-founderLastName').fill('Zvyazkova');
