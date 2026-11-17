@@ -51,7 +51,7 @@ public class SeniorAwardHandlerTests
 
     public SeniorAwardHandlerTests()
     {
-        _member = new Member { MemberKey = Guid.NewGuid(), UserKey = _ownerUserKey, FirstName = "Ірина", LastName = "Федорів" };
+        _member = new Member { MemberKey = Guid.NewGuid(), UserKey = _ownerUserKey, FirstName = "Ірина", LastName = "Федорів", DateOfBirth = new DateOnly(1990, 3, 1) };
         _unitOfWork.SetupGet(u => u.Members).Returns(_members.Object);
         _unitOfWork.SetupGet(u => u.MemberAwards).Returns(_awards.Object);
         _members.Setup(m => m.GetByKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(_member);
@@ -86,7 +86,7 @@ public class SeniorAwardHandlerTests
 
     private UpsertMemberAwardCommandHandler Upsert() => new(
         _unitOfWork.Object, _currentUser.Object, _events.Object, UnitOfWorks.WithScopes(_scope.Object, _kurinData), _access.Object,
-        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, ScopeFacts.Reader(_scope.Object));
+        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, ScopeFacts.Reader(_scope.Object), TimeProvider.System);
 
     private DeleteMemberAwardCommandHandler Delete() => new(
         _unitOfWork.Object, _currentUser.Object, _directory.Object, _access.Object,
@@ -179,6 +179,42 @@ public class SeniorAwardHandlerTests
 
         (await Delete().Handle(new DeleteMemberAwardCommand { MemberKey = _member.MemberKey, MemberAwardKey = award.MemberAwardKey }, CancellationToken.None))
             .Type.Should().Be(ResultType.Success);
+    }
+
+    [Fact]
+    public async Task AMinorSenior_OnTheirOwnCardInAnUpyuKurin_RecordsNoSeniorAward()
+    {
+        InKurin(KurinBranch.UPYu);
+        _member.DateOfBirth = DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-17);
+        _member.PlastLevelHistory.Add(new PlastLevelHistory { MemberKey = _member.MemberKey, PlastLevel = PlastLevel.Starshoplastun });
+
+        var refused = await Record("orden-sv-yuriia-bronza");
+
+        refused.Type.Should().Be(ResultType.Forbidden);
+        refused.ErrorCode.Should().Be("OwnSeniorAwardNeedsAdult");
+        _stored.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AMinor_InASeniorKurin_IsRecordedAsBefore()
+    {
+        _member.DateOfBirth = DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-16);
+
+        (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.Success);
+        ActAs(Guid.NewGuid());
+        (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.Success);
+    }
+
+    [Fact]
+    public async Task AWaitingSeniorLevel_DoesNotMakeSomeoneSenior()
+    {
+        InKurin(KurinBranch.UPYu);
+        _member.PlastLevelHistory.Add(new PlastLevelHistory { MemberKey = _member.MemberKey, PlastLevel = PlastLevel.Skob });
+        _member.PlastLevelHistory.Add(new PlastLevelHistory { MemberKey = _member.MemberKey, PlastLevel = PlastLevel.Senior, AwaitsConfirmation = true });
+
+        var refused = await Record("orden-sv-yuriia-bronza");
+
+        refused.ErrorCode.Should().Be("SeniorAwardOutsideSeniorKurin");
     }
 
     [Fact]

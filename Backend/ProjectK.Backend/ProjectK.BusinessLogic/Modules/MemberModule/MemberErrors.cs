@@ -73,6 +73,9 @@ public static class MemberErrors
     public const string ConfirmedAwardEditNotAllowed = "ConfirmedAwardEditNotAllowed";
     public const string SeniorAwardOutsideSeniorKurin = "SeniorAwardOutsideSeniorKurin";
     public const string YouthAwardInSeniorKurin = "YouthAwardInSeniorKurin";
+
+    /// <summary>A senior person records their own senior відзначення outside a senior kurin only once they are 18.</summary>
+    public const string OwnSeniorAwardNeedsAdult = "OwnSeniorAwardNeedsAdult";
     public const string UnknownSeniorAward = "UnknownSeniorAward";
 
     public const string WarningNotFound = "WarningNotFound";

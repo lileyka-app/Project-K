@@ -80,7 +80,8 @@ public class MemberAwardHandlerTests
             _access.Object,
             _journal.Audit,
             _honours.Object,
-            Mock.Of<IResourceScopeReader>());
+            Mock.Of<IResourceScopeReader>(),
+            TimeProvider.System);
         _reviewHandler = new ReviewMemberAwardCommandHandler(
             _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,
