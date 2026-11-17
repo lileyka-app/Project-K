@@ -95,7 +95,7 @@ export class KurinApi {
   }
 
   groups(kurinKey: string): Promise<GroupDto[]> {
-    return this.api.get('group/groups', { kurinKey });
+    return this.api.get(`kurin/${kurinKey}/groups`);
   }
 
   group(groupKey: string): Promise<GroupDto> {
@@ -103,19 +103,19 @@ export class KurinApi {
   }
 
   kurinMembers(kurinKey: string): Promise<MemberLookupDto[]> {
-    return this.api.get(`member/kurins/${kurinKey}/members`);
+    return this.api.get(`kurin/${kurinKey}/members`);
   }
 
   groupMembers(groupKey: string): Promise<MemberLookupDto[]> {
-    return this.api.get(`member/groups/${groupKey}/members`);
+    return this.api.get(`group/${groupKey}/members`);
   }
 
   kvMembers(kurinKey: string): Promise<MemberLookupDto[]> {
-    return this.api.get(`member/members/kv/${kurinKey}`);
+    return this.api.get(`kurin/${kurinKey}/kv`);
   }
 
   mentorAssignments(kurinKey: string): Promise<MentorAssignmentDto[]> {
-    return this.api.get(`group/groups/${kurinKey}/mentor-assignments`);
+    return this.api.get(`kurin/${kurinKey}/mentor-assignments`);
   }
 
   leadership(type: 'kurin' | 'group' | 'kv', key: string): Promise<LeadershipDto> {
@@ -296,7 +296,7 @@ export class KurinApi {
 
   /** A new member with an account and its invitation (web MemberService.create): into a гурток, or the kurin. */
   async createMember(placement: NewMemberPlacement, body: FormData): Promise<MemberDto> {
-    const path = 'groupKey' in placement ? 'member' : `member/kurins/${placement.kurinKey}/members`;
+    const path = 'groupKey' in placement ? 'member' : `kurin/${placement.kurinKey}/members`;
     const created = await this.api.post<MemberDto>(path, body);
     this.membersChanged.update((n) => n + 1);
     return created;
@@ -436,7 +436,7 @@ export class KurinApi {
   }
   /** The КВ people who may be a гурток's виховник (the Звʼязковий only). */
   mentorCandidates(kurinKey: string): Promise<MemberLookupDto[]> {
-    return this.api.get(`member/members/mentor-candidates/${kurinKey}`);
+    return this.api.get(`kurin/${kurinKey}/mentor-candidates`);
   }
 
   groupMentors(groupKey: string): Promise<MemberLookupDto[]> {

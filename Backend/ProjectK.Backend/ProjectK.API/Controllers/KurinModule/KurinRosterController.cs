@@ -124,6 +124,8 @@ public class KurinRosterController : ControllerBase
     /// Lists the members of one group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("~/api/group/{groupKey:guid}/members")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
     [HttpGet("~/api/member/groups/{groupKey:guid}/members")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
     [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]
@@ -139,6 +141,8 @@ public class KurinRosterController : ControllerBase
     /// Lists the members of one kurin.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("members")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
     [HttpGet("~/api/member/kurins/{kurinKey:guid}/members")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]

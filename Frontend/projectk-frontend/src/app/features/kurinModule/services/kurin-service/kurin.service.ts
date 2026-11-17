@@ -37,7 +37,7 @@ export class KurinService {
     return this.cache.get(
       `${KURIN_CACHE_PREFIX}list`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<KurinDto[]>(`${this.apiUrl}/kurins`)
+      () => this.http.get<KurinDto[]>(this.apiUrl)
     );
   }
 

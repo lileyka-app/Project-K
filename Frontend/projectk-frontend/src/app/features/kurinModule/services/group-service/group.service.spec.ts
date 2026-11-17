@@ -56,7 +56,7 @@ describe('GroupService', () => {
     });
 
     const req = httpMock.expectOne(r =>
-      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+      r.url === `${environment.apiUrl}/kurin/k1/groups`
     );
     expect(req.request.method).toBe('GET');
     req.flush([mockGroup]);
@@ -68,7 +68,7 @@ describe('GroupService', () => {
     });
 
     httpMock.expectOne(r =>
-      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+      r.url === `${environment.apiUrl}/kurin/k1/groups`
     ).flush([mockGroup]);
 
     service.getAllByKurinKey('k1').subscribe(res => {
@@ -76,7 +76,7 @@ describe('GroupService', () => {
     });
 
     httpMock.expectNone(r =>
-      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+      r.url === `${environment.apiUrl}/kurin/k1/groups`
     );
   });
 
@@ -98,7 +98,7 @@ describe('GroupService', () => {
 
     service.getAllByKurinKey('k1').subscribe();
     httpMock.expectOne(r =>
-      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+      r.url === `${environment.apiUrl}/kurin/k1/groups`
     ).flush([mockGroup]);
 
     service.create(dto).subscribe();
@@ -106,7 +106,7 @@ describe('GroupService', () => {
 
     service.getAllByKurinKey('k1').subscribe();
     const req = httpMock.expectOne(r =>
-      r.url === `${baseUrl}/groups` && r.params.get('kurinKey') === 'k1'
+      r.url === `${environment.apiUrl}/kurin/k1/groups`
     );
     expect(req.request.method).toBe('GET');
     req.flush([mockGroup]);

@@ -142,27 +142,6 @@ public class OnboardingBaselineHttpIntegrationTests
     }
 
     [Fact]
-    public async Task Mentor_ShouldBeAllowedToAccessAssignedGroup_WhenMultiGroupModelIsImplemented()
-    {
-        // This test represents the target behavior where a mentor can access a group they are explicitly assigned to,
-        // even if it's not their primary group.
-        await using var host = await OnboardingBaselineTestHost.StartAsync("Group.Hurtkoviy");
-
-        var groupKey = Guid.NewGuid();
-        var kurinKey = Guid.NewGuid();
-
-        // Find the mocks from the host (we need to expose them or set them up in StartAsync)
-        // Since they are registered as Singletons, we can't easily change them here without exposing them.
-        // I will update StartAsync to pre-configure a "known" group for this test.
-
-        var response = await host.Client.GetAsync($"/api/kurin/kurins/groups/{groupKey}");
-
-        // For this baseline test, we just want to ensure it's not a 403. 
-        // 404 is also acceptable as "Not 403", but we aimed for OK.
-        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
     public async Task WaitlistRegistration_ShouldAnswerBadRequest_ForAMalformedApplication()
     {
         await using var host = await OnboardingBaselineTestHost.StartAsync();

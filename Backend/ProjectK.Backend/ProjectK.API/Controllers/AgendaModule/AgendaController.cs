@@ -19,7 +19,7 @@ namespace ProjectK.API.Controllers.AgendaModule;
 /// The kurin's agenda: items, the categories they are filed under, and who has answered that they are
 /// coming. What a caller sees is decided by the assignments on each item, not by the item's author.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/agenda")]
 [ApiController]
 public class AgendaController : ControllerBase
 {

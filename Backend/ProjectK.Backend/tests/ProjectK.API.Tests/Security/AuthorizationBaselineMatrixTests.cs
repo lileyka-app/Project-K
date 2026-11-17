@@ -223,6 +223,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetByKey), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.Exists), "RequireUser");
         yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetAll), "RequireUser");
+        yield return Row<Action<GroupController, Guid>>(nameof(GroupController.GetAllByQuery), "RequireUser");
         yield return Row<Action<GroupController, CreateGroupRequest>>(nameof(GroupController.Create), "RequireUser");
         yield return Row<Action<GroupController, Guid, UpdateGroupRequest>>(nameof(GroupController.Update), "RequireUser");
         yield return Row<Action<GroupController, Guid, UploadImageRequest, CancellationToken>>(nameof(GroupController.UploadSilhouette), "RequireUser");

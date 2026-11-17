@@ -139,12 +139,12 @@ function kurinApi(options: { canUpdate: (memberKey: string) => boolean; leads?: 
   const read = (path: string, memberMatch: RegExpExecArray | null): Answer | null => {
     switch (path) {
       case 'kurin/k1': return ok(kurin);
-      case 'group/groups': return ok(groups);
+      case 'kurin/k1/groups': return ok(groups);
       case 'group/g1': return ok(groups[0]);
-      case 'member/kurins/k1/members': return ok([ostap, marta, olena, ivan, andrii]);
-      case 'member/groups/g1/members': return ok([ostap, marta, ivan]);
-      case 'member/members/kv/k1': return ok([olena, andrii]);
-      case 'group/groups/k1/mentor-assignments':
+      case 'kurin/k1/members': return ok([ostap, marta, olena, ivan, andrii]);
+      case 'group/g1/members': return ok([ostap, marta, ivan]);
+      case 'kurin/k1/kv': return ok([olena, andrii]);
+      case 'kurin/k1/mentor-assignments':
         return ok([{ mentorAssignmentKey: 'ma1', mentorUserKey: 'u-m5', groupKey: 'g1', groupName: 'Соколи', assignedAtUtc: '2025-09-01T00:00:00Z', revokedAtUtc: null, member: andrii }]);
       case 'leadership/type/kurin/k1':
         return ok({ leadershipKey: 'l1', startDate: '2024-09-01', endDate: null, leadershipHistories: [office('h1', 'Kurinnuy', marta), office('h2', 'Pysar', ivan)] });

@@ -97,6 +97,8 @@ public class KurinController : ControllerBase
     /// Lists every kurin. Administrators only, since nobody else works above one kurin.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+    [HttpGet]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
     [HttpGet("kurins")]
     [ProducesResponseType(typeof(IEnumerable<KurinDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

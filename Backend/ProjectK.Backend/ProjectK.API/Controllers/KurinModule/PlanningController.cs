@@ -13,7 +13,7 @@ namespace ProjectK.API.Controllers.KurinModule;
 /// <summary>
 /// Planning sessions — the working documents behind what later becomes the agenda.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/planning")]
 [ApiController]
 public class PlanningController : ControllerBase
 {

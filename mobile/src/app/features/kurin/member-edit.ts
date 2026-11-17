@@ -363,7 +363,7 @@ export function memberFormData(
 export type NewMemberPlacement = { groupKey: string } | { kurinKey: string };
 
 /**
- * The multipart body of `POST member` (a гурток) or `POST member/kurins/{k}/members` (the kurin),
+ * The multipart body of `POST member` (a гурток) or `POST kurin/{k}/members` (the kurin),
  * as the web's create sends it. Every new member gets an account: the letter is how they get in
  * (web createUserAccount, always on).
  */

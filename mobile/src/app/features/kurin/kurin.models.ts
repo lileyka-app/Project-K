@@ -80,7 +80,7 @@ export interface LeadershipDto {
 /** A group of a person's data the kurin shows or hides as one; the names `hiddenData` carries. */
 export type MemberDataGroup = 'contacts' | 'birthDate' | 'birthday' | 'address' | 'parents' | 'extras';
 
-/** A row of a member list (`member/kurins/{k}/members`, `member/groups/{g}/members`, `members/kv/{k}`). */
+/** A row of a member list (`kurin/{k}/members`, `group/{g}/members`, `kurin/{k}/kv`). */
 export interface MemberLookupDto {
   memberKey: string;
   userKey?: string | null;

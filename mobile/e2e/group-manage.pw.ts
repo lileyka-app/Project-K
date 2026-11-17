@@ -29,10 +29,10 @@ function groupApi(canUpdate: boolean): ExtraApi {
   const read = (path: string, one: RegExpExecArray | null): Answer | null => {
     switch (path) {
       case 'kurin/k1': return ok(kurin);
-      case 'group/groups': return ok(groups);
-      case 'member/kurins/k1/members':
-      case 'member/members/kv/k1':
-      case 'group/groups/k1/mentor-assignments':
+      case 'kurin/k1/groups': return ok(groups);
+      case 'kurin/k1/members':
+      case 'kurin/k1/kv':
+      case 'kurin/k1/mentor-assignments':
       case 'kurin/k1/dues/groups':
         return ok([]);
     }

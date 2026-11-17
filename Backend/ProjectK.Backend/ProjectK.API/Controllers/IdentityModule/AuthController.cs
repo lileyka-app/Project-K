@@ -22,7 +22,7 @@ namespace ProjectK.API.Controllers.IdentityModule;
 /// Signing in, signing out, and the second factor. Account creation for people who are already known to
 /// the kurin lives here; strangers apply through the waitlist on <c>api/auth/onboarding</c> instead.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/auth")]
 [ApiController]
 public class AuthController : ControllerBase
 {

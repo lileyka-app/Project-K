@@ -62,6 +62,17 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         yield return Row("POST", "/api/kurin", "1");
         yield return Row("PUT", $"/api/kurin/{g}", "1");
         yield return Row("DELETE", $"/api/kurin/{g}");
+        yield return Row("GET", $"/api/kurin/{g}/members");
+        yield return Row("POST", $"/api/kurin/{g}/members");
+        yield return Row("GET", $"/api/kurin/{g}/groups");
+        yield return Row("GET", $"/api/kurin/{g}/kv");
+        yield return Row("GET", $"/api/kurin/{g}/mentor-assignments");
+        yield return Row("GET", $"/api/kurin/{g}/mentor-candidates");
+        yield return Row("GET", $"/api/group/{g}/members");
+        yield return Row("GET", "/api/kurin");
+        // Old addresses, kept for one release while PWAs still run the previous build.
+        yield return Row("POST", $"/api/member/kurins/{g}/members");
+        yield return Row("GET", $"/api/member/members/mentor-candidates/{g}");
 
         // Leadership module
         yield return Row("GET", $"/api/leadership/type/kurin/{g}");
@@ -153,6 +164,12 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         }
 
         if (route.EndsWith("/silhouette", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (route.StartsWith("/api/kurin/", StringComparison.OrdinalIgnoreCase)
+            && route.EndsWith("/members", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

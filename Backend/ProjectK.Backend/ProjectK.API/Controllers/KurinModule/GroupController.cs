@@ -18,7 +18,7 @@ namespace ProjectK.API.Controllers.KurinModule;
 /// <summary>
 /// Groups within a kurin, and the mentors assigned to them.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/group")]
 [ApiController]
 public class GroupController : ControllerBase
 {
@@ -63,8 +63,8 @@ public class GroupController : ControllerBase
     /// Lists the groups of one kurin.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("groups")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "query:kurinKey")]
+    [HttpGet("~/api/kurin/{kurinKey:guid}/groups")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<GroupDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAll(Guid kurinKey)
@@ -73,6 +73,13 @@ public class GroupController : ControllerBase
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
+
+    /// <summary>Old address of <see cref="GetAll"/>, kept for PWAs still on the previous build; drop in 1.5.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("groups")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "query:kurinKey")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public Task<IActionResult> GetAllByQuery([FromQuery] Guid kurinKey) => GetAll(kurinKey);
 
     /// <summary>
     /// Creates a group.
@@ -193,6 +200,8 @@ public class GroupController : ControllerBase
     /// Lists mentor assignments across the whole kurin.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("~/api/kurin/{kurinKey:guid}/mentor-assignments")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
     [HttpGet("groups/{kurinKey:guid}/mentor-assignments")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<MentorAssignmentDto>), StatusCodes.Status200OK)]
@@ -235,6 +244,8 @@ public class GroupController : ControllerBase
     /// Lists the members eligible to be assigned as mentors.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("~/api/kurin/{kurinKey:guid}/mentor-candidates")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
     [HttpGet("~/api/member/members/mentor-candidates/{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]

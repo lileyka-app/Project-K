@@ -16,7 +16,7 @@ namespace ProjectK.API.Controllers.KurinModule;
 /// Offices — who holds which post in a kurin or a group. Seating somebody in an office is what grants
 /// them their access, so these are the calls that change what a person may do.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/leadership")]
 [ApiController]
 public class LeadershipController : ControllerBase
 {
@@ -114,6 +114,8 @@ public class LeadershipController : ControllerBase
     /// Lists the members who sit in the kurin's governing body.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("~/api/kurin/{kurinKey:guid}/kv")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
     [HttpGet("~/api/member/members/kv/{kurinKey:guid}")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]

@@ -22,10 +22,10 @@ function kurinApi(seen: Seen, options: { reportFails?: boolean } = {}): ExtraApi
     if (method === 'GET') {
       switch (path) {
         case 'kurin/k1': return ok(kurin);
-        case 'group/groups': return ok([]);
-        case 'member/kurins/k1/members':
-        case 'member/members/kv/k1':
-        case 'group/groups/k1/mentor-assignments':
+        case 'kurin/k1/groups': return ok([]);
+        case 'kurin/k1/members':
+        case 'kurin/k1/kv':
+        case 'kurin/k1/mentor-assignments':
         case 'kurin/k1/dues/groups':
           return ok([]);
         case 'kurin/k1/report/pdf':

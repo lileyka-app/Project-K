@@ -21,7 +21,7 @@ namespace ProjectK.API.Controllers.IdentityModule;
 /// app remembers. A member is a person in the kurin; a user is a way of signing in, and one may exist
 /// without the other.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/user")]
 [ApiController]
 public class UserController : ControllerBase
 {

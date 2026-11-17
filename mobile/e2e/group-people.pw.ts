@@ -43,15 +43,15 @@ function peopleApi(opts: { canCreate: boolean; withLeadership: boolean }): Extra
   const read = (path: string): Answer | null => {
     switch (path) {
       case 'kurin/k1': return ok(kurin);
-      case 'group/groups': return ok(groups);
+      case 'kurin/k1/groups': return ok(groups);
       case 'group/g1': return ok(groups[0]);
-      case 'member/kurins/k1/members': return ok(people);
-      case 'member/groups/g1/members': return ok(people.filter((p) => p.groupKey === 'g1'));
-      case 'member/members/mentor-candidates/k1': return ok(kv);
+      case 'kurin/k1/members': return ok(people);
+      case 'group/g1/members': return ok(people.filter((p) => p.groupKey === 'g1'));
+      case 'kurin/k1/mentor-candidates': return ok(kv);
       case 'group/g1/mentors': return ok(mentors);
       case 'leadership/type/group/g1': return ok(leadership);
-      case 'member/members/kv/k1':
-      case 'group/groups/k1/mentor-assignments':
+      case 'kurin/k1/kv':
+      case 'kurin/k1/mentor-assignments':
       case 'kurin/k1/dues/groups':
         return ok([]);
     }

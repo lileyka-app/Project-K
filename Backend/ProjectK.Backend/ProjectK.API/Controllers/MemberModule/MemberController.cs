@@ -20,7 +20,7 @@ namespace ProjectK.API.Controllers.MemberModule;
 /// Members: their records, the groups they belong to, and whether their profile has been checked by
 /// leadership.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/member")]
 [ApiController]
 public class MemberController : ControllerBase
 {
@@ -175,6 +175,8 @@ public class MemberController : ControllerBase
     /// Creates a member against a kurin rather than a specific group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpPost("~/api/kurin/{kurinKey:guid}/members")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
     [HttpPost("kurins/{kurinKey:guid}/members")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "route:kurinKey")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
