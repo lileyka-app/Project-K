@@ -10,6 +10,7 @@ using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.MemberModule;
@@ -184,7 +185,7 @@ public class MemberMappingTests
         member.MemberWarnings.Add(new MemberWarning { Level = MemberWarningLevel.Level1 });
         member.MemberAwards.Add(new MemberAward { Level = MemberAwardLevel.First, Status = BadgeProgressStatus.Submitted });
 
-        var dto = member.ToDto(FakeBlobReadLinks.Instance);
+        var dto = member.ToDto(FakeBlobReadLinks.Instance, new Dictionary<Guid, GroupSummary>());
 
         dto.MemberKey.Should().Be(member.MemberKey);
         dto.PublicId.Should().Be(member.PublicId);
@@ -345,8 +346,8 @@ public class MemberMappingTests
         var member = Stored();
         var everything = MemberDataFieldRules.All.ToDictionary(info => info.Group, _ => CapabilityReach.Kurin);
 
-        var own = member.ToDto(FakeBlobReadLinks.Instance).MaskFor(new MemberFieldMask(member.UserKey, everything, []), null);
-        var other = member.ToDto(FakeBlobReadLinks.Instance).MaskFor(new MemberFieldMask(Guid.NewGuid(), everything, []), null);
+        var own = member.ToDto(FakeBlobReadLinks.Instance, new Dictionary<Guid, GroupSummary>()).MaskFor(new MemberFieldMask(member.UserKey, everything, []), null);
+        var other = member.ToDto(FakeBlobReadLinks.Instance, new Dictionary<Guid, GroupSummary>()).MaskFor(new MemberFieldMask(Guid.NewGuid(), everything, []), null);
 
         own.PublicId.Should().Be(member.PublicId);
         other.PublicId.Should().BeNull();

@@ -222,7 +222,7 @@ public class MemberRepositoryIntegrationTests
         {
             LeadershipKey = Guid.NewGuid(),
             Type = LeadershipType.Group,
-            Group = group,
+            GroupKey = group.GroupKey,
             Name = "Alpha leadership",
             StartDate = new DateOnly(2024, 1, 1)
         };
@@ -360,7 +360,7 @@ public class MemberRepositoryIntegrationTests
         {
             LeadershipKey = Guid.NewGuid(),
             Type = LeadershipType.Group,
-            Group = alpha,
+            GroupKey = alpha.GroupKey,
             Name = "Alpha",
             StartDate = new DateOnly(2024, 1, 1)
         };
@@ -469,7 +469,7 @@ public class MemberRepositoryIntegrationTests
             LeadershipKey = Guid.NewGuid(),
             Type = type,
             KurinKey = kurinKey,
-            Group = scope,
+            GroupKey = scope?.GroupKey,
             Name = type.ToString(),
             StartDate = new DateOnly(2024, 1, 1),
             EndDate = closed

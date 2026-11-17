@@ -13,13 +13,13 @@ internal sealed class LeadershipConfiguration : IEntityTypeConfiguration<Leaders
         builder.Property(e => e.Type)
             .HasConversion<int>();
         builder.HasIndex(e => new { e.Type, e.KurinKey, e.GroupKey });
-        builder.HasOne(e => e.Kurin)
+        builder.HasOne<Kurin>()
             .WithMany()
             .HasForeignKey(e => e.KurinKey)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(e => e.Group)
-            .WithOne(g => g.Leadership)
+        builder.HasOne<Group>()
+            .WithOne()
             .HasForeignKey<Leadership>(e => e.GroupKey)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);

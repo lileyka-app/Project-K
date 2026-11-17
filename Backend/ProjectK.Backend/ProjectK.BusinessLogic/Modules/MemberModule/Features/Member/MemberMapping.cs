@@ -6,6 +6,7 @@ using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KraiModule;
@@ -22,8 +23,10 @@ public static class MemberMapping
     /// <summary>
     /// The person's own record. Where they stand, what they run, their account and their tags live
     /// elsewhere, so the read that knows them fills those afterwards; the mask fills the birthday.
+    /// The гуртки their offices were held in come from the kurin module, keyed as
+    /// <see cref="OfficeGroupKeys"/> asks.
     /// </summary>
-    public static MemberDto ToDto(this MemberEntity member, IBlobReadLinks links) => new()
+    public static MemberDto ToDto(this MemberEntity member, IBlobReadLinks links, IReadOnlyDictionary<Guid, GroupSummary> officeGroups) => new()
     {
         MemberKey = member.MemberKey,
         PublicId = member.PublicId,
@@ -45,7 +48,7 @@ public static class MemberMapping
         CardExtras = MemberCardExtraRules.Read(member.CardExtras),
         LatestPlastLevel = LatestLevel(member.PlastLevelHistory, member.LatestPlastLevel),
         PlastLevelHistories = member.PlastLevelHistory.Select(ToDto).ToList(),
-        LeadershipHistories = member.LeadershipHistories.Select(ToDto).ToList(),
+        LeadershipHistories = member.LeadershipHistories.Select(history => history.ToDto(officeGroups)).ToList(),
         Warnings = member.MemberWarnings.Select(MemberWarningMapping.ToDto).ToList(),
         Awards = member.MemberAwards.Select(MemberAwardMapping.ToDto).ToList(),
         ProfilePhotoUrl = links.For(member.ProfilePhotoBlobName),
@@ -138,19 +141,31 @@ public static class MemberMapping
         CatalogId = PlastLevelDegreeRules.CatalogId(history.PlastLevel, history.IsPlastunka)
     };
 
+    /// <summary>The гуртки the person's offices were held in, to ask the kurin module about.</summary>
+    public static IReadOnlyCollection<Guid> OfficeGroupKeys(MemberEntity member) =>
+        member.LeadershipHistories
+            .Select(history => history.Leadership?.GroupKey)
+            .OfType<Guid>()
+            .Distinct()
+            .ToArray();
+
     /// <summary>An office the person held, named by its провід: the type, the гурток and the kurin it is in.</summary>
-    public static LeadershipHistoryDto ToDto(this LeadershipHistory history) => new()
+    public static LeadershipHistoryDto ToDto(this LeadershipHistory history, IReadOnlyDictionary<Guid, GroupSummary> officeGroups)
     {
-        LeadershipHistoryKey = history.LeadershipHistoryKey,
-        MemberKey = history.MemberKey,
-        LeadershipKey = history.LeadershipKey,
-        Role = history.Role,
-        LeadershipType = history.Leadership?.Type,
-        GroupName = history.Leadership?.Group?.Name,
-        KurinKey = history.Leadership?.KurinKey ?? history.Leadership?.Group?.KurinKey,
-        StartDate = history.StartDate,
-        EndDate = history.EndDate
-    };
+        var group = history.Leadership?.GroupKey is { } groupKey ? officeGroups.GetValueOrDefault(groupKey) : null;
+        return new LeadershipHistoryDto
+        {
+            LeadershipHistoryKey = history.LeadershipHistoryKey,
+            MemberKey = history.MemberKey,
+            LeadershipKey = history.LeadershipKey,
+            Role = history.Role,
+            LeadershipType = history.Leadership?.Type,
+            GroupName = group?.Name,
+            KurinKey = history.Leadership?.KurinKey ?? group?.KurinKey,
+            StartDate = history.StartDate,
+            EndDate = history.EndDate
+        };
+    }
 
     /// <summary>A person in a picker. Which office they hold is the reader's to say, so <c>UserRole</c> stays empty.</summary>
     public static MemberLookupDto ToLookupDto(this MemberEntity member, IBlobReadLinks links) => new()

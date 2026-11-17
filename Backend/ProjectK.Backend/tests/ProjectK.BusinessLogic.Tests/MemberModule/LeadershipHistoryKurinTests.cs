@@ -1,8 +1,8 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule;
 
@@ -27,16 +27,19 @@ public class LeadershipHistoryKurinTests
         var kurinKey = Guid.NewGuid();
         var office = new Leadership { LeadershipKey = Guid.NewGuid(), Type = LeadershipType.Kurin, KurinKey = kurinKey };
 
-        HeldIn(office).ToDto().KurinKey.Should().Be(kurinKey);
+        HeldIn(office).ToDto(new Dictionary<Guid, GroupSummary>()).KurinKey.Should().Be(kurinKey);
     }
 
     [Fact]
     public void AGroupOffice_SaysTheKurinItsGroupIsIn()
     {
         var kurinKey = Guid.NewGuid();
-        var group = new Group("Соколи", kurinKey) { GroupKey = Guid.NewGuid() };
-        var office = new Leadership { LeadershipKey = Guid.NewGuid(), Type = LeadershipType.Group, GroupKey = group.GroupKey, Group = group };
+        var group = new GroupSummary(Guid.NewGuid(), kurinKey, "Соколи");
+        var office = new Leadership { LeadershipKey = Guid.NewGuid(), Type = LeadershipType.Group, GroupKey = group.GroupKey };
 
-        HeldIn(office).ToDto().KurinKey.Should().Be(kurinKey);
+        var dto = HeldIn(office).ToDto(new Dictionary<Guid, GroupSummary> { [group.GroupKey] = group });
+
+        dto.KurinKey.Should().Be(kurinKey);
+        dto.GroupName.Should().Be("Соколи");
     }
 }

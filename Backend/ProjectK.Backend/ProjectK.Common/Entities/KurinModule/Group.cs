@@ -1,4 +1,3 @@
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Entities.Shared;
 
 namespace ProjectK.Common.Entities.KurinModule;
@@ -25,7 +24,6 @@ public class Group : Entity
     /// </summary>
     public DateTime? DissolvedAtUtc { get; set; }
     public Kurin Kurin { get; set; }
-    public Leadership Leadership { get; set; }
 
     public Group(string name, Guid kurinKey, string? description = null)
     {

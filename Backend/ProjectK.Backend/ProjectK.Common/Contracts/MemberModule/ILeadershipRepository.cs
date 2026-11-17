@@ -18,7 +18,7 @@ public interface ILeadershipRepository
     /// Marks the office record a гурток carries for deletion and reports its keys; the history
     /// cascades in the database.
     /// <para>
-    /// Needed because <c>Leadership.Group</c> is <c>Restrict</c>: a гурток that still carries a
+    /// Needed because <c>Leadership.GroupKey</c> is <c>Restrict</c>: a гурток that still carries a
     /// провід cannot be deleted, and the database refuses it rather than cascading. The keys come
     /// back so the caller can clear what still points at those offices.
     /// </para>
@@ -34,7 +34,7 @@ public interface ILeadershipRepository
     /// <summary>
     /// Marks every office in a kurin for deletion — its own and its гуртки's — and reports the keys.
     /// <para>
-    /// Both <c>Leadership.Kurin</c> and <c>Leadership.Group</c> are <c>NO ACTION</c>. Гуртки cascade
+    /// Both <c>Leadership.KurinKey</c> and <c>Leadership.GroupKey</c> are <c>NO ACTION</c>. Гуртки cascade
     /// with the kurin, but that cascade is itself refused while an office still points at one, so
     /// the гурток offices have to go too.
     /// </para>

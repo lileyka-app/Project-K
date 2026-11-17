@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.MemberModule;
@@ -34,6 +35,7 @@ public sealed class GetMemberDossierQueryHandler
     private readonly IBlobReadLinks _links;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly ICurrentUserContext _currentUser;
+    private readonly IKurinDirectory _kurins;
 
     public GetMemberDossierQueryHandler(
         IMemberUnitOfWork unitOfWork,
@@ -41,8 +43,10 @@ public sealed class GetMemberDossierQueryHandler
         IMemberProgressDirectory progress,
         IBlobReadLinks links,
         IMemberFieldAccess fieldAccess,
-        ICurrentUserContext currentUser)
+        ICurrentUserContext currentUser,
+        IKurinDirectory kurins)
     {
+        _kurins = kurins;
         _unitOfWork = unitOfWork;
         _memberships = memberships;
         _progress = progress;
@@ -83,7 +87,8 @@ public sealed class GetMemberDossierQueryHandler
 
         // The person's own record already carries everything the member module keeps about them,
         // and mapping it reuses the profile's own photo and history mapping rather than repeating it.
-        var mapped = person.ToDto(_links);
+        var officeGroups = await _kurins.GetGroupsAsync(MemberMapping.OfficeGroupKeys(person), cancellationToken);
+        var mapped = person.ToDto(_links, officeGroups);
 
         var wants = new HashSet<string>(request.Include, StringComparer.OrdinalIgnoreCase);
 

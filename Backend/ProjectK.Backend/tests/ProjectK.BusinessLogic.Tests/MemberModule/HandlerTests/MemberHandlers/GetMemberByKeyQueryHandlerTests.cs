@@ -243,5 +243,6 @@ public class GetMemberByKeyHandlerTests
         _accessMock.Object,
         _kurinDataMock.Object,
         _accountsMock.Object,
-        Mock.Of<IKurinTagVisibility>());
+        Mock.Of<IKurinTagVisibility>(),
+        KurinDirectories.WithoutGroups());
 }

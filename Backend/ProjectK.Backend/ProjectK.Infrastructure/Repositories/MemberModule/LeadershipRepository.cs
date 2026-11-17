@@ -160,7 +160,7 @@ public class LeadershipRepository : ILeadershipRepository
         var officesOfThisKurin = _context.Leaderships
             .Where(l => l.EndDate == null
                 && (l.KurinKey == kurinKey
-                    || (l.GroupKey != null && l.Group!.KurinKey == kurinKey)));
+                    || _context.Groups.Any(g => g.GroupKey == l.GroupKey && g.KurinKey == kurinKey)));
 
         return await (from ms in belongsHere
                       join history in _context.LeadershipHistories.Where(h => h.EndDate == null)

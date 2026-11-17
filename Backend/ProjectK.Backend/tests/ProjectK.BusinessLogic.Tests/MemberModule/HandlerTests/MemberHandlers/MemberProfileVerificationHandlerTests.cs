@@ -62,7 +62,8 @@ public class MemberProfileVerificationHandlerTests
             UnitOfWorks.WithScopes(_scopeReaderMock.Object, _kurinDataMock),
             FieldAccess.SeesEverything(),
             _journal.Audit,
-            ScopeFacts.Reader(_scopeReaderMock.Object));
+            ScopeFacts.Reader(_scopeReaderMock.Object),
+            KurinDirectories.WithoutGroups());
     }
 
     [Fact]
