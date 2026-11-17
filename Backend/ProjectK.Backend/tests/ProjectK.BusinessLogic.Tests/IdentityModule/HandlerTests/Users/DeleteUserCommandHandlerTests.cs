@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Users;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
-using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.IdentityModule.HandlerTests.Users;

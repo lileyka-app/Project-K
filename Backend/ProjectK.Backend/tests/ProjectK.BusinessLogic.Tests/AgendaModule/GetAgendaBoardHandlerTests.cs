@@ -4,7 +4,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Models;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KurinModule;

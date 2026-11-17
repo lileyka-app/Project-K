@@ -1,9 +1,9 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Records.AuditModule;

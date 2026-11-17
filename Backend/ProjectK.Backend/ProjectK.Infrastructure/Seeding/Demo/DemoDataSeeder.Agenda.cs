@@ -1,8 +1,7 @@
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Infrastructure.Seeding.Demo;
 

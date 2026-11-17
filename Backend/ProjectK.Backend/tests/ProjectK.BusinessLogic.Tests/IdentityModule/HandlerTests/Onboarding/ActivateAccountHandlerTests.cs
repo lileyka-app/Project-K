@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
@@ -13,7 +13,6 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.IdentityModule;
 using ProjectK.Common.Records.MemberModule;
-using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Tests.IdentityModule.HandlerTests.Onboarding;
@@ -32,7 +31,7 @@ public class ActivateAccountHandlerTests
     private readonly Mock<IInvitationRepository> _invitations = new();
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IMemberRepository> _members = new();
-    private readonly Mock<IMemberActivationWriter> _activation = new();
+    private readonly Mock<IKurinFounderWriter> _activation = new();
     private readonly Mock<ILoginResponseService> _loginResponses = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<UserManager<AppUser>> _userManager;

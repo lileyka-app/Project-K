@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Identity;
-using ProjectK.BusinessLogic.Modules.IdentityModule.Features.DevTools;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Rules.IdentityModule;
+using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;

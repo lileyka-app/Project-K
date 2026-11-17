@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Records.IdentityModule;
 

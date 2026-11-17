@@ -6,16 +6,15 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.KraiModule;
-using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Enums.MemberModule;
-using ProjectK.Common.Events.MemberModule;
+using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.DuesModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 

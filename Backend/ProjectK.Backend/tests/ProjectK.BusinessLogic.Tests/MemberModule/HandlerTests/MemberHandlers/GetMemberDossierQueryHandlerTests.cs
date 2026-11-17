@@ -4,8 +4,10 @@ using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.MemberModule;
@@ -54,7 +56,6 @@ public class GetMemberDossierHandlerTests
                 LastName = "Тестова",
                 Email = "oksana@example.com",
                 PhoneNumber = "0500000000",
-                LeadershipHistories = [new LeadershipHistory()],
                 PlastLevelHistory = [new PlastLevelHistory(), new PlastLevelHistory()],
                 MemberWarnings = [new MemberWarning()]
             });
@@ -210,5 +211,5 @@ public class GetMemberDossierHandlerTests
     }
 
     private GetMemberDossierQueryHandler Handler(IMemberFieldAccess fieldAccess) => new(
-        _uow.Object, _memberships.Object, _progress.Object, FakeBlobReadLinks.Instance, fieldAccess, _currentUser.Object, KurinDirectories.WithoutGroups());
+        _uow.Object, _memberships.Object, _progress.Object, FakeBlobReadLinks.Instance, fieldAccess, _currentUser.Object, KurinDirectories.WithoutOffices(new LeadershipHistoryDto()));
 }

@@ -13,7 +13,7 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 internal static class KurinMapping
 {
     /// <summary>
-    /// The kurin with how many people belong to it now; the count is the member module's answer
+    /// The kurin with how many people belong to it now; the count is the membership's answer
     /// (<c>IMembershipDirectory.CountCurrentInKurinAsync</c>), never the kurin's own navigation.
     /// </summary>
     public static KurinDto ToDto(this KurinEntity kurin, IBlobReadLinks links, int currentUserCount) => new(

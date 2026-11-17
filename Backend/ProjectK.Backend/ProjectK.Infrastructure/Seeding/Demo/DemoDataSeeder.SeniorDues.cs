@@ -5,7 +5,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.DuesModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.DuesModule;
 
 namespace ProjectK.Infrastructure.Seeding.Demo;

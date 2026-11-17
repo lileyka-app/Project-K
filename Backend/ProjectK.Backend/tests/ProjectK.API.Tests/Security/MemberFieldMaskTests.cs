@@ -4,6 +4,7 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.MemberModule;

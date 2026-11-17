@@ -1,6 +1,6 @@
 using Moq;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;

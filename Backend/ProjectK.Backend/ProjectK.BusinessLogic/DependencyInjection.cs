@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
-using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
@@ -81,7 +80,6 @@ public static class DependencyInjection
         services.AddScoped<IKurinTagVisibility, KurinTagVisibility>();
         services.AddScoped<IKurinTagDirectory, KurinTagDirectory>();
         services.AddScoped<IKurinDirectory, KurinDirectory>();
-        services.AddScoped<IKurinGroupWriter, KurinGroupWriter>();
         services.AddScoped<KraiProfileWriter>();
         services.AddScoped<IMfaEnforcementReader, MfaEnforcementReader>();
         services.AddScoped<ResourceAccessService>();
@@ -101,7 +99,7 @@ public static class DependencyInjection
         services.AddAgendaModule();
         services.AddDuesModule();
         services.AddScoreModule();
-        services.AddArchiveModule();
+        services.AddKurinModule();
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MemberCards>();
@@ -156,8 +154,13 @@ public static class DependencyInjection
         services.AddScoped<IScoreFactReader, ScoreFactReader>();
     }
 
-    private static void AddArchiveModule(this IServiceCollection services)
+    private static void AddKurinModule(this IServiceCollection services)
     {
+        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
+        services.AddScoped<IKurinFounderWriter, KurinFounderWriter>();
+        services.AddScoped<MembershipMoves>();
+        services.AddScoped<MembershipAskRouting>();
         services.AddScoped<ArchiveReach>();
         services.AddSingleton<ArchiveDangerZoneStore>();
         services.AddScoped<ArchiveDangerZoneService>();
@@ -171,13 +174,8 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
-        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
-        services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberImportWriter, MemberImportWriter>();
-        services.AddScoped<IMemberActivationWriter, MemberActivationWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
-        services.AddScoped<MembershipMoves>();
-        services.AddScoped<MembershipAskRouting>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
     }
 }

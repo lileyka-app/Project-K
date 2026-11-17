@@ -1,5 +1,5 @@
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
 

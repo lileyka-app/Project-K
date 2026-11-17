@@ -1,7 +1,7 @@
 using Moq;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;

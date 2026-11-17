@@ -1,5 +1,5 @@
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Rules.IdentityModule;
 

@@ -6,7 +6,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;

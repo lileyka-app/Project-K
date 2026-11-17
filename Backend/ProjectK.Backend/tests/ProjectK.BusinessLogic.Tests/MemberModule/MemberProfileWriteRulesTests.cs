@@ -2,6 +2,7 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;

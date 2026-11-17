@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.IdentityModule;
@@ -36,12 +37,12 @@ public sealed class ActivateAccountCommandHandler : IRequestHandler<ActivateAcco
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly UserManager<AppUser> _userManager;
-    private readonly IMemberActivationWriter _activation;
+    private readonly IKurinFounderWriter _activation;
     private readonly TimeProvider _timeProvider;
     private readonly ILoginResponseService _loginResponseService;
     private readonly IDomainEventPublisher _events;
 
-    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMemberActivationWriter activation, TimeProvider timeProvider, ILoginResponseService loginResponseService, IDomainEventPublisher events)
+    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IKurinFounderWriter activation, TimeProvider timeProvider, ILoginResponseService loginResponseService, IDomainEventPublisher events)
     {
         _loginResponseService = loginResponseService;
         _events = events;

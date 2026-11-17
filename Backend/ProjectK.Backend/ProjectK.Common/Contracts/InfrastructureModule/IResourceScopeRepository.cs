@@ -1,7 +1,7 @@
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.InfrastructureModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.InfrastructureModule;
 

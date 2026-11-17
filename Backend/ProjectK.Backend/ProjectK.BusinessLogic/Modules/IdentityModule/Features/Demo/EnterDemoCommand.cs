@@ -1,9 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;
-using ProjectK.BusinessLogic.Modules.IdentityModule.Features.DevTools;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.IdentityModule;

@@ -124,36 +124,6 @@ public class MemberController : ControllerBase
     }
 
     /// <summary>
-    /// Lists the members of one group.
-    /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("groups/{groupKey:guid}/members")]
-    [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
-    [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAllByGroup(Guid groupKey)
-    {
-        var request = new GetMembersQuery(groupKey, Guid.Empty);
-        var response = await _mediator.Send(request);
-        return response.ToActionResult(this);
-    }
-
-    /// <summary>
-    /// Lists the members of one kurin.
-    /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("kurins/{kurinKey:guid}/members")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<MemberDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAllByKurin(Guid kurinKey)
-    {
-        var request = new GetMembersQuery(Guid.Empty, kurinKey);
-        var response = await _mediator.Send(request);
-        return response.ToActionResult(this);
-    }
-
-    /// <summary>
     /// Creates a member in a group, with an optional photo.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
@@ -373,34 +343,6 @@ public class MemberController : ControllerBase
     {
         var command = new DeleteMemberCommand(memberKey);
         var response = await _mediator.Send(command);
-        return response.ToActionResult(this);
-    }
-
-    /// <summary>
-    /// Lists the members who sit in the kurin's governing body.
-    /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("members/kv/{kurinKey:guid}")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetKurinKvMembers(Guid kurinKey)
-    {
-        var request = new GetKurinKvMembersQuery(kurinKey);
-        var response = await _mediator.Send(request);
-        return response.ToActionResult(this);
-    }
-
-    /// <summary>
-    /// Lists the members eligible to be assigned as mentors.
-    /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
-    [HttpGet("members/mentor-candidates/{kurinKey:guid}")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetKurinMentorCandidates(Guid kurinKey)
-    {
-        var request = new GetKurinMentorCandidatesQuery(kurinKey);
-        var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
 }

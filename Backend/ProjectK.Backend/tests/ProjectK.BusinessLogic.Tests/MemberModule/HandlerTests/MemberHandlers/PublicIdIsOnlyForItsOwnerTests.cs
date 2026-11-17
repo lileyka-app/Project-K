@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
@@ -10,7 +9,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
-using MembershipEntity = ProjectK.Common.Entities.MemberModule.Membership;
+using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberHandlers;
 
@@ -97,6 +96,6 @@ public class PublicIdIsOnlyForItsOwnerTests
             _kurinData.Object,
             new Mock<ProjectK.Common.Contracts.IdentityModule.IAccountProvisioningService>().Object,
             Mock.Of<IKurinTagVisibility>(),
-            KurinDirectories.WithoutGroups());
+            KurinDirectories.WithoutOffices());
     }
 }

@@ -13,10 +13,8 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
@@ -46,6 +44,7 @@ public sealed class KurinReportDataServiceTests
     private readonly List<Member> _members = [];
     private readonly List<Membership> _memberships = [];
     private readonly List<MentorAssignment> _mentorAssignments = [];
+    private readonly List<LeadershipHistory> _offices = [];
 
     public KurinReportDataServiceTests()
     {
@@ -175,7 +174,7 @@ public sealed class KurinReportDataServiceTests
             StartDate = new DateOnly(2024, 1, 1)
         };
 
-        member.LeadershipHistories.Add(new LeadershipHistory
+        _offices.Add(new LeadershipHistory
         {
             LeadershipHistoryKey = Guid.NewGuid(),
             MemberKey = member.MemberKey,
@@ -223,7 +222,7 @@ public sealed class KurinReportDataServiceTests
     }
 
     /// <summary>The person as the report's repository hands them over: values read off the entity.</summary>
-    private static KurinReportSourceMember ToSource(Member member) => new(
+    private KurinReportSourceMember ToSource(Member member) => new(
         member.MemberKey,
         member.UserKey,
         member.FirstName,
@@ -239,7 +238,8 @@ public sealed class KurinReportDataServiceTests
         member.PlastLevelHistory.Select(history => new KurinReportPlastLevel(history.PlastLevel, history.DateAchieved)).ToList(),
         member.MemberWarnings.Select(warning => new KurinReportSourceWarning(warning.Level, warning.IssuedAtUtc, warning.ExpiresAtUtc, warning.RevokedAtUtc)).ToList(),
         member.MemberAwards.Select(award => new KurinReportSourceAward(award.Level, award.CatalogId, award.DateAcquired, award.Note, award.Status)).ToList(),
-        member.LeadershipHistories
+        _offices
+            .Where(history => history.MemberKey == member.MemberKey)
             .Select(history => new KurinReportSourceOffice(
                 history.Leadership.Type,
                 history.Leadership.KurinKey,

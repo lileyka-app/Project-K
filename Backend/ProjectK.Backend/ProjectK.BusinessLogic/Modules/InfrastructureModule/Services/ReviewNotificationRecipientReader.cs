@@ -1,12 +1,13 @@
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.InfrastructureModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Rules.IdentityModule;
+using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
@@ -27,16 +28,16 @@ public sealed class ReviewNotificationRecipientReader : IReviewNotificationRecip
     ];
 
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IKurinAccessPolicyReader _policies;
 
     public ReviewNotificationRecipientReader(
         IUnitOfWork unitOfWork,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         IKurinAccessPolicyReader policies)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
+        _memberships = memberships;
         _policies = policies;
     }
 
@@ -136,7 +137,7 @@ public sealed class ReviewNotificationRecipientReader : IReviewNotificationRecip
             return;
         }
 
-        var memberToUser = (await _members.GetLookupByKurinAsync(kurinKey, cancellationToken))
+        var memberToUser = (await _memberships.GetLookupByKurinAsync(kurinKey, cancellationToken))
             .Where(candidate => candidate.UserKey.HasValue)
             .GroupBy(candidate => candidate.MemberKey)
             .ToDictionary(group => group.Key, group => group.First().UserKey!.Value);

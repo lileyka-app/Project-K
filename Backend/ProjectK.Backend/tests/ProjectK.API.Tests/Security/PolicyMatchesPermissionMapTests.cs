@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ProjectK.API.Authorization;
-using ProjectK.API.Controllers.MemberModule;
+using ProjectK.API.Controllers.KurinModule;
 using ProjectK.API.Filters;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Rules.IdentityModule;

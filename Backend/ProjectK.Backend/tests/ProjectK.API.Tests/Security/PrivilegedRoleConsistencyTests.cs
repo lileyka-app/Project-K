@@ -1,4 +1,4 @@
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;

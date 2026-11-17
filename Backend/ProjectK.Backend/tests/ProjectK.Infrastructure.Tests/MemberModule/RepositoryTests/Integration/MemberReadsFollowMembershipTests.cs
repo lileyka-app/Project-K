@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
@@ -51,7 +52,7 @@ public class MemberReadsFollowMembershipTests
         context.Memberships.Add(Joining(person.MemberKey, kurinKey, onlyGroup));
         await context.SaveChangesAsync();
 
-        var listed = Assert.Single(await uow.Members.GetListRowsByKurinKeyAsync(kurinKey));
+        var listed = Assert.Single(await uow.Memberships.GetRosterRowsByKurinAsync(kurinKey));
 
         Assert.Equal(onlyGroup, listed.GroupKey);
         Assert.Equal(kurinKey, listed.KurinKey);
@@ -71,7 +72,7 @@ public class MemberReadsFollowMembershipTests
         context.Memberships.Add(left);
         await context.SaveChangesAsync();
 
-        Assert.Empty(await uow.Members.GetListRowsByKurinKeyAsync(kurinKey));
+        Assert.Empty(await uow.Memberships.GetRosterRowsByKurinAsync(kurinKey));
         Assert.Empty(await uow.Members.GetSummariesByKurinKeyAsync(kurinKey));
         Assert.Null(await uow.Members.GetKurinKeyByMemberAsync(person.MemberKey));
     }
@@ -93,8 +94,8 @@ public class MemberReadsFollowMembershipTests
             Joining(person.MemberKey, seniorKurin));
         await context.SaveChangesAsync();
 
-        var inYouth = Assert.Single(await uow.Members.GetListRowsByKurinKeyAsync(youthKurin));
-        var inSenior = Assert.Single(await uow.Members.GetListRowsByKurinKeyAsync(seniorKurin));
+        var inYouth = Assert.Single(await uow.Memberships.GetRosterRowsByKurinAsync(youthKurin));
+        var inSenior = Assert.Single(await uow.Memberships.GetRosterRowsByKurinAsync(seniorKurin));
 
         Assert.Equal(person.MemberKey, inYouth.MemberKey);
         Assert.Equal(person.MemberKey, inSenior.MemberKey);

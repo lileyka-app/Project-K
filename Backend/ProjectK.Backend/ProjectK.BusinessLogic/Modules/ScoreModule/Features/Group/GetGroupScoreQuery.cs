@@ -6,7 +6,7 @@ using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Group;

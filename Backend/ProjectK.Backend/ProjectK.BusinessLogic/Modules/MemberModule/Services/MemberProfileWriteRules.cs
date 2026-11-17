@@ -2,7 +2,7 @@ using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Common.Rules.Shared;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
-using MembershipEntity = ProjectK.Common.Entities.MemberModule.Membership;
+using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Services;
 

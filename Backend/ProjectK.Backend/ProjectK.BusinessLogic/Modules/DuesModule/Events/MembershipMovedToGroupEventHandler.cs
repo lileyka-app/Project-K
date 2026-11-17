@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Services.Events;
-using ProjectK.Common.Events.MemberModule;
+using ProjectK.Common.Events.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Events;
 

@@ -9,7 +9,7 @@ using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.IdentityModule;

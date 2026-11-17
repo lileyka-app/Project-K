@@ -1,12 +1,9 @@
-using MediatR;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
+using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 
@@ -16,12 +13,12 @@ namespace ProjectK.BusinessLogic.Modules.MemberModule.Services;
 public sealed class MemberDirectory : IMemberDirectory
 {
     private readonly IMemberUnitOfWork _unitOfWork;
-    private readonly ISender _sender;
+    private readonly IBlobReadLinks _links;
 
-    public MemberDirectory(IMemberUnitOfWork unitOfWork, ISender sender)
+    public MemberDirectory(IMemberUnitOfWork unitOfWork, IBlobReadLinks links)
     {
         _unitOfWork = unitOfWork;
-        _sender = sender;
+        _links = links;
     }
 
     public Task<bool> ExistsAsync(Guid memberKey, CancellationToken cancellationToken = default)
@@ -91,22 +88,13 @@ public sealed class MemberDirectory : IMemberDirectory
             .Select(w => new WarningRecord(w.MemberKey, w.Level, w.IssuedAtUtc))
             .ToList();
 
-    public async Task<IReadOnlyCollection<MemberLookupDto>> GetLookupByKurinAsync(
-        Guid kurinKey,
+    public async Task<IReadOnlyDictionary<Guid, MemberLookupDto>> GetLookupsAsync(
+        IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default)
-        => (await _unitOfWork.Members.GetMentorCandidatesAsync(kurinKey, cancellationToken))
-            .Select(candidate => candidate.ToLookupDto())
-            .ToList();
-
-    /// <inheritdoc />
-    /// <remarks>
-    /// Sent through <see cref="GetMembersQuery"/> rather than read here, so the masking that use case
-    /// applies is applied once, in one place, for the screen and the file alike.
-    /// </remarks>
-    public async Task<IReadOnlyList<MemberDto>> GetVisibleRosterAsync(
-        Guid kurinKey,
-        CancellationToken cancellationToken = default)
-        => (await _sender.Send(new GetMembersQuery(Guid.Empty, kurinKey), cancellationToken)).Data?.ToList() ?? [];
+        => memberKeys.Count == 0
+            ? new Dictionary<Guid, MemberLookupDto>()
+            : (await _unitOfWork.Members.GetManyAsync(memberKeys, cancellationToken))
+                .ToDictionary(member => member.MemberKey, member => member.ToLookupDto(_links));
 
     public Task<IReadOnlyCollection<MemberIdentity>> FindPossibleMatchesAsync(
         IReadOnlyCollection<string> emails,
