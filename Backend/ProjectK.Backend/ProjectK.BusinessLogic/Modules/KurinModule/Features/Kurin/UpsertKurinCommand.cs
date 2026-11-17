@@ -2,8 +2,8 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.AuditModule;
@@ -250,4 +250,5 @@ public sealed class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinComma
         ("scoreEnabled", kurin.IsScoreEnabled),
         ("roleNames", kurin.RoleNames)
     ];
-}
+
+}

@@ -11,7 +11,7 @@ using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AgendaModule;

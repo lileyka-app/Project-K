@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;

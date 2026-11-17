@@ -1,7 +1,7 @@
 using System.Text.Encodings.Web;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.Shared;

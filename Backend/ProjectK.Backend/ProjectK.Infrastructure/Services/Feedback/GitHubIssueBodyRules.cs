@@ -1,5 +1,5 @@
 using System.Text;
-using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.Feedback;
 

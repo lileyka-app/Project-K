@@ -1,4 +1,4 @@
-using ProjectK.Common.Rules.InfrastructureModule;
+using ProjectK.Common.Rules.NotificationsModule;
 
 namespace ProjectK.API.Tests.Security;
 

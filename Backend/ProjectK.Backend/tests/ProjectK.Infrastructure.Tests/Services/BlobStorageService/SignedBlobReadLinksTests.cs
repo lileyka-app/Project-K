@@ -1,6 +1,6 @@
 using System.Web;
 using ProjectK.Infrastructure.Services.Blobs;
-using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Options.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Tests.Services.BlobStorageService;
 

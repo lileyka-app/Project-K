@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.InfrastructureModule;
+using ProjectK.Common.Dtos.NotificationsModule;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Enums.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.IdentityModule;
 

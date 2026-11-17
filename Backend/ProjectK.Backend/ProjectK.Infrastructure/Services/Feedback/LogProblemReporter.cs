@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Records.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.Feedback;
 

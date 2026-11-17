@@ -381,7 +381,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("WaitlistEntries");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.AppNotification", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.AppNotification", b =>
                 {
                     b.Property<Guid>("NotificationKey")
                         .ValueGeneratedOnAdd()
@@ -455,7 +455,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AppNotifications");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.PublicAnnouncementDraft", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.PublicAnnouncementDraft", b =>
                 {
                     b.Property<Guid>("PublicAnnouncementDraftKey")
                         .ValueGeneratedOnAdd()

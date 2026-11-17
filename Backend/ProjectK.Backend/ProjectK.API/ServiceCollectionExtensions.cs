@@ -1,6 +1,6 @@
 using ProjectK.API.Hosting;
 using ProjectK.BusinessLogic;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Infrastructure;
 
 namespace ProjectK.API;

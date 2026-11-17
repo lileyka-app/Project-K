@@ -6,8 +6,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.Infrastructure.Services.Blobs;
-using ProjectK.Common.Options.InfrastructureModule;
-using ProjectK.Common.Rules.InfrastructureModule;
+using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Rules.NotificationsModule;
 
 namespace ProjectK.Infrastructure.BackgroundServices;
 

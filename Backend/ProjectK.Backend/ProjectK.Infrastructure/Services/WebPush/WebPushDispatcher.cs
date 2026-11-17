@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Entities.InfrastructureModule;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Entities.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
 

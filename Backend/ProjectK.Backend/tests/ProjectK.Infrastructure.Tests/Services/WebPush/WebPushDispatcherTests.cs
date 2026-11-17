@@ -7,12 +7,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Enums.InfrastructureModule;
-using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Entities.NotificationsModule;
+using ProjectK.Common.Enums.NotificationsModule;
+using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.Services.WebPush;
 

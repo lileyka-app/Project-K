@@ -924,7 +924,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("KurinDuesRates");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.AppNotification", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.AppNotification", b =>
                 {
                     b.Property<Guid>("NotificationKey")
                         .ValueGeneratedOnAdd()
@@ -998,7 +998,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AppNotifications");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.SystemSetting", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.SystemSetting", b =>
                 {
                     b.Property<string>("Key")
                         .HasMaxLength(100)
@@ -1016,7 +1016,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("SystemSettings");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.WebPushSubscription", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.WebPushSubscription", b =>
                 {
                     b.Property<Guid>("WebPushSubscriptionKey")
                         .ValueGeneratedOnAdd()
@@ -3247,7 +3247,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("DuesEntry");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.WebPushSubscription", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.WebPushSubscription", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.AuthModule.AppUser", null)
                         .WithMany()

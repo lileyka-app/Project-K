@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Options.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Common.Rules.IdentityModule;
 using Resend;
 

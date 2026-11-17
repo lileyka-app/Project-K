@@ -1,5 +1,5 @@
-using ProjectK.Common.Dtos.InfrastructureModule;
-using ProjectK.Common.Enums.InfrastructureModule;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Enums.NotificationsModule;
 using ProjectK.Infrastructure.Services.WebPush;
 
 namespace ProjectK.Infrastructure.Tests.Services.WebPush;

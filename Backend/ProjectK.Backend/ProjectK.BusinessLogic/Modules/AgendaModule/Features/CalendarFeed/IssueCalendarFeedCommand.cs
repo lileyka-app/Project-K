@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
