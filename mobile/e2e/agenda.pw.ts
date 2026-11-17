@@ -134,7 +134,7 @@ function agendaApi(leader = false, busy = false): Fixtures {
     if (path.startsWith('agenda/item/')) {
       const key = path.split('/')[2];
       const found = [series, hike, knots, tent, done, ...archived].find((i) => i.agendaItemKey === key);
-      if (!found) return refuse(404, 'AGENDA_NOT_FOUND');
+      if (!found) return refuse(404, 'AgendaNotFound');
       // The item endpoint gives the series itself, not an occurrence.
       return ok(key === 'e1' ? { ...found, startUtc: found.seriesStartUtc, endUtc: found.seriesEndUtc, isRecurrenceInstance: false } : found);
     }

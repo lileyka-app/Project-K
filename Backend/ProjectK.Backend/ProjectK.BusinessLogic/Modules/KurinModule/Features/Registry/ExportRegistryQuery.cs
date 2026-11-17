@@ -63,7 +63,13 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
             return KurinErrors.NotFound<RegistryFile>();
         }
 
-        var members = (await _sender.Send(new GetMembersQuery(Guid.Empty, request.KurinKey), cancellationToken)).Data?.ToList() ?? [];
+        var listed = await _sender.Send(new GetMembersQuery(Guid.Empty, request.KurinKey), cancellationToken);
+        if (listed.Type != ResultType.Success)
+        {
+            return new ServiceResult<RegistryFile>(listed.Type) { ErrorCode = listed.ErrorCode, ErrorMessage = listed.ErrorMessage };
+        }
+
+        var members = listed.Data?.ToList() ?? [];
 
         var chosen = request.ColumnIds
             .Where(id => RegistryColumnRules.HeaderFor(id) is not null)

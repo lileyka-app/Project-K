@@ -284,7 +284,7 @@ public sealed class UpsertMemberProfileCommandHandler
                 // A senior ступінь that takes the person out of УПЮ waits for the Звʼязковий when they give it
                 // themselves, whatever offices they hold. Their улад is read before the write changes the rows.
                 var byThemselves = IsCurrentUserOwner(existing);
-                var youthBefore = byThemselves && await IsYouthAsync(existing, kurinKey, cancellationToken);
+                var youthBefore = byThemselves && await IsYouthAsync(existing, standing.Select(m => m.KurinKey), cancellationToken);
                 PlastLevelHistoryRules.Apply(
                     existing.MemberKey,
                     kurinKey,
@@ -333,12 +333,24 @@ public sealed class UpsertMemberProfileCommandHandler
 
     private bool CanEditRestrictedFields() => _currentUserContext.IsLeadership();
 
-    // The улад the card shows (UladRules): confirmed ступені first, the гілка of the kurin the edit is made in otherwise.
-    private async Task<bool> IsYouthAsync(MemberEntity member, Guid kurinKey, CancellationToken cancellationToken)
+    // The улад across every kurin the person stands in (UladRules): one УПЮ membership keeps them a юнак,
+    // so switching to a senior kurin does not let them step out of УПЮ unconfirmed.
+    private async Task<bool> IsYouthAsync(
+        MemberEntity member,
+        IEnumerable<Guid> standingKurinKeys,
+        CancellationToken cancellationToken)
     {
-        var kurin = await _kurinData.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
+        var branches = new List<KurinBranch>();
+        foreach (var kurinKey in standingKurinKeys.Distinct())
+        {
+            if (await _kurinData.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin)
+            {
+                branches.Add(kurin.Branch);
+            }
+        }
+
         var counting = PlastLevelHistoryRules.CountingLevels(member.PlastLevelHistory, member.LatestPlastLevel);
-        return UladRules.Of(counting, kurin?.Branch) == KurinBranch.UPYu;
+        return UladRules.Of(counting, branches) == KurinBranch.UPYu;
     }
 
     private bool IsAdmin() => _currentUserContext.IsAdmin();

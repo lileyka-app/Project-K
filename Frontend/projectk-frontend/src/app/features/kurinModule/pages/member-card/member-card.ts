@@ -1020,7 +1020,13 @@ export class MemberCardComponent implements OnInit {
           : this.memberService.verifyProfile(member.memberKey, null);
         request.pipe(finalize(() => this.profileVerificationSubmitting = false)).subscribe({
           next: updated => {
-            this.member = { ...member, ...updated };
+            this.member = {
+              ...member,
+              profileVerificationStatus: updated.profileVerificationStatus,
+              profileVerifiedAtUtc: updated.profileVerifiedAtUtc,
+              profileVerifiedByUserKey: updated.profileVerifiedByUserKey,
+              profileVerificationNote: updated.profileVerificationNote
+            };
             this.messageService.add({ severity: 'success', summary: verified ? 'Верифікацію знято.' : 'Профіль верифіковано.' });
           },
           error: (error: unknown) => this.messageService.add({

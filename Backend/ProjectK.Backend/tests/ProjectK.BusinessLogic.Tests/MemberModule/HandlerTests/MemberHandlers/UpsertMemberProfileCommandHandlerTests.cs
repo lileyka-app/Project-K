@@ -710,6 +710,39 @@ public class UpsertMemberProfileCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Update_ByOwner_InAnUpyuAndAUspKurin_FromTheUspOne_ASeniorLevel_Waits()
+    {
+        var youth = MakeGroup();
+        var senior = MakeGroup();
+        var ownerUserKey = Guid.NewGuid();
+        var existing = MakeExistingMember(youth.GroupKey, youth.KurinKey);
+        existing.UserKey = ownerUserKey;
+        var cmd = ProfileCommandFor(existing, senior);
+        cmd.PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2025, 10, 1) }];
+        _kurinsMock.Setup(k => k.GetByKeyAsync(youth.KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(4, KurinBranch.UPYu) { KurinKey = youth.KurinKey });
+        _kurinsMock.Setup(k => k.GetByKeyAsync(senior.KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(5, KurinBranch.USP) { KurinKey = senior.KurinKey });
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(senior.KurinKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        _membershipsMock
+            .Setup(m => m.GetActiveForMemberAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([
+                new Membership { MemberKey = existing.MemberKey, KurinKey = youth.KurinKey, GroupKey = youth.GroupKey },
+                new Membership { MemberKey = existing.MemberKey, KurinKey = senior.KurinKey, GroupKey = senior.GroupKey }
+            ]);
+        GroupIs(youth);
+        GroupIs(senior);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.PlastLevelHistory.Single().AwaitsConfirmation.Should().BeTrue("an УПЮ membership keeps them a юнак wherever they edit from");
+    }
+
+    [Fact]
     public async Task Handle_Update_ByLeadership_ASeniorLevel_CountsAtOnce()
     {
         var group = MakeGroup();

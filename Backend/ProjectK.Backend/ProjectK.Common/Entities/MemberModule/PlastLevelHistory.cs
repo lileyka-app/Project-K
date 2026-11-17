@@ -25,9 +25,9 @@ public class PlastLevelHistory
 
     public DateOnly DateAchieved { get; set; }
 
-    /// A senior ступінь a юнак entered on their own card — the step out of УПЮ — waiting for the Звʼязковий of a kurin they
-    /// A senior ступінь the person entered on their own card, waiting for the Звʼязковий of a kurin they
-    /// stand in. Until confirmed it counts for nothing — not the улад, not the highest ступінь, not
+    /// <summary>
+    /// A senior ступінь a юнак entered on their own card — the step out of УПЮ — waiting for the
+    /// Звʼязковий of a kurin they stand in. Until confirmed it counts for nothing — not the улад, not the highest ступінь, not
     /// <see cref="Member.LatestPlastLevel"/> — and the card shows it marked as waiting.
     /// </summary>
     public bool AwaitsConfirmation { get; set; }
