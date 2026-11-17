@@ -40,7 +40,7 @@ public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgr
             return ServiceResult<ProbeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.ProbeIdRequired, "A probe id is required.");
         }
 
-        var memberKurinKey = (await _memberships.GetCurrentKurinKeysForMemberAsync(request.MemberKey, cancellationToken)).Cast<Guid?>().FirstOrDefault();
+        var memberKurinKey = (await _memberships.FindInYouthKurinAsync(request.MemberKey, cancellationToken))?.KurinKey;
         if (memberKurinKey is null)
         {
             return ServiceResult<ProbeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");

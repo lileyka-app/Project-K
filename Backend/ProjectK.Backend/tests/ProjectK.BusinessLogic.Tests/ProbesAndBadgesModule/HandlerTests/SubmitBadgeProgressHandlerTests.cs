@@ -76,7 +76,7 @@ public class SubmitBadgeProgressHandlerTests
     {
         var memberKey = Guid.NewGuid();
         _memberships
-            .Setup(x => x.FindInLatestKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(KurinPeople.Of(memberKey, null, Guid.NewGuid(), null, "Ivan", "Petrenko", "ivan@example.com", null));
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
@@ -119,7 +119,7 @@ public class SubmitBadgeProgressHandlerTests
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
         _memberships
-            .Setup(x => x.FindInLatestKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(KurinPeople.Of(
                 memberKey, null, kurinKey, groupKey, "Ivan", "Petrenko", "ivan@example.com", null));
         _badgeProgressRepositoryMock

@@ -52,6 +52,18 @@ describe('MyDutiesTileComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__stretch')).toHaveLength(5);
   });
 
+  it('leads waiting ступені to the person’s card, named by them', () => {
+    fixture.componentRef.setInput('duties', [
+      duty({ kind: 'LevelsToConfirm', count: 2, memberKey: 'm-7', title: 'Олена Старша', key: 'LevelsToConfirm:k1:-:m-7:-' })
+    ]);
+    fixture.detectChanges();
+
+    const row = fixture.componentInstance.rows()[0];
+    expect(row.link).toEqual(['/member', 'm-7']);
+    expect(row.label).toBe('Ступінь підтвердити: Олена Старша');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.duties-tile__count')?.textContent).toBe('2');
+  });
+
   it('says a duty in another kurin without opening it, naming the kurin', () => {
     fixture.componentRef.setInput('namesKurin', true);
     fixture.componentRef.setInput('duties', [duty({ kurin: { kurinKey: 'k2', kurinNumber: 7, namedAfter: null, isCurrent: false }, count: 2 })]);

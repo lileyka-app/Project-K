@@ -3,6 +3,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Duties;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
@@ -27,8 +28,10 @@ using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.IdentityModule;
@@ -59,6 +62,8 @@ public class GetMyDutiesQueryTests
     private readonly Mock<IMemberProgressDirectory> _progress = new();
     private readonly List<DuesEntry> _duesEntries = [];
     private int _submittedBadges;
+    private readonly List<KurinPerson> _people = [];
+    private readonly List<WaitingLevel> _waitingLevels = [];
 
     public GetMyDutiesQueryTests()
     {
@@ -108,7 +113,9 @@ public class GetMyDutiesQueryTests
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(Person, User, "Тарас", "Чупринка", "t@x", null));
-        memberships.Setup(m => m.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        memberships.Setup(m => m.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
+        members.Setup(m => m.GetWaitingLevelsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => _waitingLevels.Where(l => keys.Contains(l.MemberKey)).ToList());
         var offices = new Mock<IOfficeDirectory>();
         offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
@@ -126,6 +133,7 @@ public class GetMyDutiesQueryTests
         [
             new AttendanceDutyReader(books, agenda, Mock.Of<IKraiProfileDirectory>(), kurins, _time),
             new DuesDutyReader(_dues.Object, kurins),
+            new PlastLevelDutyReader(memberships.Object, members.Object),
             new BadgeDutyReader(memberships.Object, _progress.Object),
         ];
 
@@ -151,15 +159,33 @@ public class GetMyDutiesQueryTests
         _permissions.Add(new(ResourceType.GroupDues, ResourceAction.Update, AccessScope.KurinWide));
     }
 
+    /// <summary>The Звʼязковий's right over the kurin's people, and these of them standing in it, each with waiting ступені.</summary>
+    private void ConfirmsLevels(params (Guid MemberKey, Guid? UserKey, string FirstName, int Waiting)[] people)
+    {
+        _permissions.Add(new(ResourceType.Member, ResourceAction.Update, AccessScope.KurinWide));
+        foreach (var (memberKey, userKey, firstName, waiting) in people)
+        {
+            _people.Add(KurinPeople.Of(memberKey, userKey, Kurin, Bobry, firstName, "Старший", $"{memberKey:N}@x", null));
+            for (var i = 0; i < waiting; i++)
+            {
+                _waitingLevels.Add(new WaitingLevel(memberKey, Guid.NewGuid(), PlastLevel.Starshoplastun, new DateOnly(2026, 9, 1)));
+            }
+        }
+    }
+
     /// <summary>
     /// Every kind at once, collected from the modules' sources, is the list «Справи» read before the
-    /// sources existed: the same items, in the same order, with the same keys and fingerprints.
+    /// sources existed: the same items, in the same order, with the same keys and fingerprints. Waiting
+    /// ступені come last, one per person, by name; the person's key stands where an event's would.
     /// </summary>
     [Fact]
     public async Task EveryKindAtOnce_ComesInTheOrderAndShapeItAlwaysHad()
     {
         ConfirmsBadges(3);
         KeepsTheBoxes();
+        var bohdan = Guid.NewGuid();
+        var andrii = Guid.NewGuid();
+        ConfirmsLevels((bohdan, null, "Богдан", 1), (andrii, Guid.NewGuid(), "Андрій", 2), (Person, User, "Тарас", 1));
         _duesEntries.AddRange(
         [
             new DuesEntry { KurinKey = Kurin, GroupKey = Bobry, Kind = DuesEntryKind.TransferToKurin, VerifiedAtUtc = Start },
@@ -189,8 +215,50 @@ public class GetMyDutiesQueryTests
                     Kind = MyDutyKind.EventWithoutAttendance, Kurin = kurin, Count = 1, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start,
                     Title = "Сходини", Key = $"EventWithoutAttendance:{Kurin:N}:-:{Skhodyny:N}:20261006T160000Z", Fingerprint = "1"
                 },
+                new MyDutyDto
+                {
+                    Kind = MyDutyKind.LevelsToConfirm, Kurin = kurin, Count = 2, Title = "Андрій Старший", MemberKey = andrii,
+                    Key = $"LevelsToConfirm:{Kurin:N}:-:{andrii:N}:-", Fingerprint = "2"
+                },
+                new MyDutyDto
+                {
+                    Kind = MyDutyKind.LevelsToConfirm, Kurin = kurin, Count = 1, Title = "Богдан Старший", MemberKey = bohdan,
+                    Key = $"LevelsToConfirm:{Kurin:N}:-:{bohdan:N}:-", Fingerprint = "1"
+                },
             },
             options => options.WithStrictOrdering());
+    }
+
+    [Fact]
+    public async Task WaitingLevels_AreNotADuty_WithoutTheKurinWideRightOverPeople()
+    {
+        ConfirmsLevels((Guid.NewGuid(), null, "Богдан", 1));
+        _permissions.RemoveAll(p => p.Resource == ResourceType.Member);
+        _permissions.Add(new(ResourceType.Member, ResourceAction.Update, AccessScope.OwnGroups));
+
+        (await DutiesAsync()).Should().NotContain(d => d.Kind == MyDutyKind.LevelsToConfirm);
+    }
+
+    [Fact]
+    public async Task OnesOwnWaitingLevel_IsNotOnesDuty()
+    {
+        ConfirmsLevels((Person, User, "Тарас", 1));
+
+        (await DutiesAsync()).Should().NotContain(d => d.Kind == MyDutyKind.LevelsToConfirm);
+    }
+
+    [Fact]
+    public async Task AHiddenPersonsLevels_ComeBack_WhenAnotherWaits()
+    {
+        var bohdan = Guid.NewGuid();
+        ConfirmsLevels((bohdan, null, "Богдан", 1));
+        var duty = (await DutiesAsync()).Single(d => d.Kind == MyDutyKind.LevelsToConfirm);
+        _dismissed.Add(new DismissedDuty { UserKey = User, DutyKey = duty.Key, Fingerprint = duty.Fingerprint });
+
+        (await DutiesAsync()).Should().NotContain(d => d.Kind == MyDutyKind.LevelsToConfirm);
+
+        _waitingLevels.Add(new WaitingLevel(bohdan, Guid.NewGuid(), PlastLevel.Senior, new DateOnly(2026, 10, 1)));
+        (await DutiesAsync()).Should().Contain(d => d.Kind == MyDutyKind.LevelsToConfirm && d.Count == 2);
     }
 
     [Fact]

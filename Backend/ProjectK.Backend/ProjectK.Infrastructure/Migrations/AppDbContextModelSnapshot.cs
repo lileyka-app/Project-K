@@ -2759,6 +2759,15 @@ namespace ProjectK.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("AwaitsConfirmation")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ConfirmedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ConfirmedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateOnly>("DateAchieved")
                         .HasColumnType("date");
 

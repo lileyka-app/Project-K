@@ -316,6 +316,18 @@ export class KurinApi {
     return this.api.put(`member/${memberKey}/profile-verification`, { note: null });
   }
 
+  /** The Звʼязковий confirms a ступінь the person gave themselves (web MemberService.confirmLevel). */
+  async confirmLevel(memberKey: string, levelKey: string): Promise<void> {
+    await this.api.post(`member/${memberKey}/levels/${levelKey}/confirm`, null);
+    this.membersChanged.update((n) => n + 1);
+  }
+
+  /** The Звʼязковий rejects it, and it leaves the card (web MemberService.rejectLevel). */
+  async rejectLevel(memberKey: string, levelKey: string): Promise<void> {
+    await this.api.post(`member/${memberKey}/levels/${levelKey}/reject`, null);
+    this.membersChanged.update((n) => n + 1);
+  }
+
   resetProfileVerification(memberKey: string): Promise<MemberDto> {
     return this.api.delete(`member/${memberKey}/profile-verification`);
   }

@@ -52,6 +52,9 @@ public sealed class MembershipDirectory : IMembershipDirectory
     public Task<KurinPerson?> FindInLatestKurinAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.FindInLatestKurinAsync(memberKey, cancellationToken);
 
+    public Task<KurinPerson?> FindInYouthKurinAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInYouthKurinAsync(memberKey, cancellationToken);
+
     public Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.FindInLatestKurinByAccountAsync(userKey, cancellationToken);
 

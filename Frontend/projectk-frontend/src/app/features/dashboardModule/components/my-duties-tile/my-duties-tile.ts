@@ -25,12 +25,13 @@ const DUTY_META: Record<MyDutyKind, { icon: string; label: string }> = {
   BadgesToReview: { icon: 'pi pi-star', label: 'Вмілості на перевірку' },
   TransfersToConfirm: { icon: 'pi pi-arrow-down-left', label: 'Передачі від гуртків підтвердити' },
   EntriesToVerify: { icon: 'pi pi-wallet', label: 'Операції перевірити' },
-  EventWithoutAttendance: { icon: 'pi pi-check-square', label: 'Відмітити присутність' }
+  EventWithoutAttendance: { icon: 'pi pi-check-square', label: 'Відмітити присутність' },
+  LevelsToConfirm: { icon: 'pi pi-verified', label: 'Ступінь підтвердити' }
 };
 
 /** One row of the tile, told apart from the others: what the page keys a pending action by. */
 export function dutyRowKey(duty: MyDutyDto): string {
-  return [duty.kind, duty.kurin.kurinKey, duty.groupKey ?? '', duty.agendaItemKey ?? '', duty.occurrenceStartUtc ?? ''].join('|');
+  return [duty.kind, duty.kurin.kurinKey, duty.groupKey ?? '', duty.agendaItemKey ?? duty.memberKey ?? '', duty.occurrenceStartUtc ?? ''].join('|');
 }
 
 /** Where each kind is done; every route is scoped by the kurin the token acts in. */
@@ -45,6 +46,8 @@ function linkOf(duty: MyDutyDto): unknown[] {
       return duty.groupKey ? ['/group', duty.groupKey, 'dues'] : ['/kurin', kurin, 'dues'];
     case 'EventWithoutAttendance':
       return ['/kurin', kurin, 'score', 'events', duty.agendaItemKey, duty.occurrenceStartUtc];
+    case 'LevelsToConfirm':
+      return ['/member', duty.memberKey];
   }
 }
 
@@ -110,7 +113,7 @@ export class MyDutiesTileComponent {
     return {
       duty,
       icon: meta.icon,
-      label: duty.kind === 'EventWithoutAttendance' && duty.title ? `${meta.label}: ${duty.title}` : meta.label,
+      label: (duty.kind === 'EventWithoutAttendance' || duty.kind === 'LevelsToConfirm') && duty.title ? `${meta.label}: ${duty.title}` : meta.label,
       detail: parts.join(' · '),
       link: duty.kurin.isCurrent ? linkOf(duty) : null,
       canSayNotHeld: duty.kind === 'EventWithoutAttendance' && duty.kurin.isCurrent && !!duty.agendaItemKey && !!duty.occurrenceStartUtc,

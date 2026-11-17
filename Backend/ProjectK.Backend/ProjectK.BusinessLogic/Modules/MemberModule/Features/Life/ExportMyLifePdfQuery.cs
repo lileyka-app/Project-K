@@ -90,7 +90,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         var sections = new List<LifeStorySection>
         {
             new("Членства", memberships.OrderBy(m => m.JoinedAtUtc).Select(MembershipRow).ToList()),
-            new("Ступені", (box.Levels ?? []).OrderBy(l => l.DateAchieved).Select(LevelRow).ToList()),
+            new("Ступені", (box.Levels ?? []).Where(l => !l.AwaitsConfirmation).OrderBy(l => l.DateAchieved).Select(LevelRow).ToList()),
             new("Ролі", (box.Offices ?? []).OrderBy(o => o.StartDate).Select(o => OfficeRow(o, memberships, roleNames)).ToList()),
             new("Відзначення", (box.Awards ?? [])
                 .Where(a => a.Status == BadgeProgressStatus.Confirmed)

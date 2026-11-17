@@ -108,6 +108,20 @@ export class MemberService {
     );
   }
 
+  /** Звʼязковий підтверджує старший ступінь, який людина внесла собі сама. */
+  confirmLevel(memberKey: string, levelKey: string): Observable<PlastLevelHistoryDto> {
+    return this.http.post<PlastLevelHistoryDto>(`${this.apiUrl}/${memberKey}/levels/${levelKey}/confirm`, null).pipe(
+      tap(() => this.invalidateMemberCache())
+    );
+  }
+
+  /** Звʼязковий відхиляє такий ступінь, і він зникає з картки. */
+  rejectLevel(memberKey: string, levelKey: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${memberKey}/levels/${levelKey}/reject`, null).pipe(
+      tap(() => this.invalidateMemberCache())
+    );
+  }
+
   resetProfileVerification(memberKey: string): Observable<MemberDto> {
     return this.http.delete<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { context: requestFeedback('auto', [400]) }).pipe(
       tap(() => this.invalidateMemberCache()),

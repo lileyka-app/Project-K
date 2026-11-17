@@ -25,6 +25,7 @@ import { AgendaService } from '../../../kurinModule/services/agenda-service/agen
 import { ScoreService } from '../../../scoreModule/services/score-service/score.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
 import { kurinName } from '../../../../shared/functions/kurin-label.function';
+import { hasYouthProgram } from '../../../kurinModule/models/enums/kurin-branch.enum';
 
 /**
  * The first screen of a signed-in person: who they are and where they stand, as tiles they may
@@ -86,8 +87,11 @@ export class DashboardComponent implements OnInit {
   /** The duty action on its way: a row's key for «Сходин не було», 'hide:' + it for hiding, 'restore'. */
   readonly dutySaving = signal<string | null>(null);
 
-  /** Проба and вмілості belong to a youth of УПЮ; the reply says so, and until it comes nothing is shown. */
-  readonly hasYouthProgram = computed(() => this.growth()?.hasYouthProgram ?? false);
+  /** Проба and вмілості belong to a youth of УПЮ: the server says the улад, and until it comes nothing is shown. */
+  readonly hasYouthProgram = computed(() => {
+    const growth = this.growth();
+    return !!growth?.hasYouthProgram && hasYouthProgram(growth.ulad);
+  });
 
   /** A row names its kurin only when there is more than one to tell apart. */
   readonly namesKurin = computed(() => this.kurins().length > 1);

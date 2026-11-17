@@ -171,9 +171,9 @@ BusinessLogic/Modules/<Module>/
 
 | Контракт | Хто відповідає | На що |
 |---|---|---|
-| `IMemberDirectory` | мембер | хто ця людина: за ключем, публічним кодом, акаунтом чи поштою; її ступені, дата народження, підтверджені відзначення; кілька людей одним читанням (`GetByKeysAsync`, `GetLookupsAsync`); чинні перестороги, видані куренем (для точкування); хто може стояти за рядками файлу (`FindPossibleMatchesAsync`, для імпорту). Про курінь не відповідає |
+| `IMemberDirectory` | мембер | хто ця людина: за ключем, публічним кодом, акаунтом чи поштою; її ступені, дата народження, підтверджені відзначення; кілька людей одним читанням (`GetByKeysAsync`, `GetLookupsAsync`); чинні перестороги, видані куренем (для точкування); хто може стояти за рядками файлу (`FindPossibleMatchesAsync`, для імпорту); старші ступені, що чекають підтвердження, у багатьох людей одним читанням (`GetWaitingLevelsAsync`). Про курінь не відповідає |
 | `ICurrentMember` | мембер | хто я: людина за токеном запиту, прочитана раз на запит |
-| `IMembershipDirectory` | курінь | де людина належить і належала; хто стоїть у курені й у якому гуртку (`GetPeopleInKurinAsync`, запис `KurinPerson`) і людина з її останнім членством (`FindInLatestKurinAsync`); скільки людей у курені зараз (`CountCurrentInKurinAsync`, `CountCurrentInKurinsAsync` — `currentUserCount` у картці куреня) |
+| `IMembershipDirectory` | курінь | де людина належить і належала; хто стоїть у курені й у якому гуртку (`GetPeopleInKurinAsync`, запис `KurinPerson`) і людина з її останнім членством (`FindInLatestKurinAsync`), з членством у курені, про який питають (`FindInKurinByAccountAsync`), чи в її курені УПЮ, де ведуться проби (`FindInYouthKurinAsync`); скільки людей у курені зараз (`CountCurrentInKurinAsync`, `CountCurrentInKurinsAsync` — `currentUserCount` у картці куреня) |
 | `IOfficeDirectory` | курінь | які діловодства акаунт тримає в цьому курені; проводи куреня, хто в них зараз сидить і в яких сидить людина — за ключем члена (для календаря) |
 | `IGroupProbeEditions` | курінь | яку редакцію проб обрав гурток |
 | `IKurinDirectory` | курінь | назви гуртків куреня; скільки зроблені задачі лишаються на дошці й скільки живе архів (`KurinTaskArchivePolicy`) — для календаря |
@@ -181,7 +181,7 @@ BusinessLogic/Modules/<Module>/
 | `IKurinTagVisibility` | курінь | чиї теги бачить глядач, перемикачі тегів куреня (`KurinTagSettingsState`), чи може він ставити теги; заповнює видимі теги в рядках людей |
 | `IAgendaDirectory` | календар | лише значеннями: задачі й події, які бачить глядач, зі станом для нього (`AgendaViewerItem`, `AgendaViewerOccurrence`) — для посилання на календар; категорії, подія та її повторення, відповіді на повторення (`AgendaCategorySummary`, `AgendaEventSummary`, `AgendaEventOccurrence`) — для точкування |
 | `IAgendaViewerDirectory` | календар | як людина бачить агенду в кожному своєму курені (`AgendaKurinViewer`): «мої» задачі й події, обовʼязки |
-| `IDutySource` | обовʼязки (Identity) | що чекає на людину з проводу в одному курені (`PendingDuty`); реалізують `BadgeDutyReader`, `DuesDutyReader`, `AttendanceDutyReader`, збирає `Features/Duties` |
+| `IDutySource` | обовʼязки (Identity) | що чекає на людину з проводу в одному курені (`PendingDuty`); реалізують `BadgeDutyReader`, `DuesDutyReader`, `AttendanceDutyReader`, `PlastLevelDutyReader`, збирає `Features/Duties` |
 | `IMemberProgressDirectory` | проби й вмілості | як далеко людина зайшла, підписані точки проби; що в курені підтверджено й підписано (для точкування) |
 | `IProbeEditionHolds` | проби й вмілості | де в черзі проб стоїть кожен юнак (для налаштувань редакції) |
 | `IBadgesCatalog`, `IProbesCatalog`, `IHonoursCatalog` | каталог | фіксовані довідники вмілостей, проб і відзначень |

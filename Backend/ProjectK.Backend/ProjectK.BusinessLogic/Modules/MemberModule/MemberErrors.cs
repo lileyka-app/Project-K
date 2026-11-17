@@ -39,6 +39,18 @@ public static class MemberErrors
     /// <summary>A senior's youth record (ступені, УПЮ відзначення) is changed by the person or the kurin-wide провід.</summary>
     public const string SeniorYouthRecord = "SeniorYouthRecord";
 
+    /// <summary>The ступінь is not on this person's card.</summary>
+    public const string LevelNotFound = "LevelNotFound";
+
+    /// <summary>The ступінь already counts: there is nothing to confirm or reject.</summary>
+    public const string LevelNotAwaitingConfirmation = "LevelNotAwaitingConfirmation";
+
+    /// <summary>
+    /// A waiting ступінь is confirmed or rejected by the Звʼязковий of a kurin the person stands in now,
+    /// and never by the person themselves.
+    /// </summary>
+    public const string LevelConfirmationNotAllowed = "LevelConfirmationNotAllowed";
+
     public const string InvalidImage = "InvalidImage";
 
     public const string AccountNotFound = "AccountNotFound";
@@ -61,6 +73,9 @@ public static class MemberErrors
     public const string ConfirmedAwardEditNotAllowed = "ConfirmedAwardEditNotAllowed";
     public const string SeniorAwardOutsideSeniorKurin = "SeniorAwardOutsideSeniorKurin";
     public const string YouthAwardInSeniorKurin = "YouthAwardInSeniorKurin";
+
+    /// <summary>A senior person records their own senior відзначення outside a senior kurin only once they are 18.</summary>
+    public const string OwnSeniorAwardNeedsAdult = "OwnSeniorAwardNeedsAdult";
     public const string UnknownSeniorAward = "UnknownSeniorAward";
 
     public const string WarningNotFound = "WarningNotFound";

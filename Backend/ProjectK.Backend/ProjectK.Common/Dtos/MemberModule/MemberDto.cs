@@ -1,6 +1,7 @@
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 
@@ -87,6 +88,15 @@ public sealed record MemberDto : IHasParentContacts, IMemberPersonalData, IHasCa
     /// <summary>Values of the край's own card fields, by key; empty when the viewer may not see them.</summary>
     public IDictionary<string, string> CardExtras { get; set; } = new Dictionary<string, string>();
     public required PlastLevel? LatestPlastLevel { get; set; }
+
+    /// <summary>
+    /// The person's улад in the kurin this read was about: their confirmed ступені, else that kurin's
+    /// гілка (<c>UladRules</c>). What the card renders youth or senior by. Filled only by the read of one person.
+    /// </summary>
+    public KurinBranch Ulad { get; set; }
+
+    /// <summary>Whether the person is 18 or older today; false without a date of birth. Filled only by the read of one person.</summary>
+    public bool IsAdult { get; set; }
     public required ICollection<PlastLevelHistoryDto> PlastLevelHistories { get; set; }
     public required ICollection<LeadershipHistoryDto> LeadershipHistories { get; set; }
     public required ICollection<MemberWarningDto> Warnings { get; set; }

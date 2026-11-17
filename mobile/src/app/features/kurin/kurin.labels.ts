@@ -398,13 +398,15 @@ export function plastLevelLabel(member: Pick<MemberLookupDto, 'latestPlastLevel'
 }
 
 /**
- * The person's branch where they are looked at: a senior ступінь outranks the kurin, else the
- * membership here decides (web memberBranchHere + personalBranch).
+ * The person's branch where they are looked at — the улад the server says (web MemberDto.ulad). Only a
+ * server that does not say it yet leaves the phone to work it out: a senior ступінь outranks the kurin,
+ * else the membership here decides.
  */
 export function memberBranch(
-  member: Pick<MemberLookupDto, 'latestPlastLevel' | 'plastLevelHistories'> & { kurinKey?: string | null },
+  member: Pick<MemberLookupDto, 'latestPlastLevel' | 'plastLevelHistories' | 'ulad'> & { kurinKey?: string | null },
   memberships: MembershipDto[],
 ): KurinBranch {
+  if (member.ulad) return member.ulad;
   const here = memberships.find((m) => m.isCurrent && m.kurinKey === member.kurinKey) ?? memberships.find((m) => m.isCurrent);
   const levels = (member.plastLevelHistories ?? []).map((h) => h.plastLevel);
   if (member.latestPlastLevel) levels.push(member.latestPlastLevel);
@@ -864,17 +866,35 @@ export const SENIOR_LADDER = ['Starshoplastun', 'Senior', 'SeniorPratsi', 'Senio
  */
 export const DEGREE_LADDER = [...YOUTH_LADDER, ...SENIOR_LADDER] as const;
 
-/** The person's current ступінь: the highest on the whole ladder, not on the kurin's (web currentDegree). */
-export function currentDegree(histories: PlastLevelHistoryDto[] | null | undefined, honours: readonly CatalogHonour[]): DegreeRow | null {
-  return degreeRows(histories, DEGREE_LADDER, honours).at(-1) ?? null;
+/** The ступені that wait for the Звʼязковий, each with the key an answer names (web MemberDegreesTileComponent.waiting). */
+export function waitingDegrees(histories: PlastLevelHistoryDto[] | null | undefined, honours: readonly CatalogHonour[]): DegreeRow[] {
+  return degreeRows((histories ?? []).filter((history) => history.awaitsConfirmation), DEGREE_LADDER, honours);
 }
 
 /**
- * A senior person (web isSeniorPerson): their current ступінь is старший пластун or a сеніор's, or they
+ * Who answers a waiting ступінь (web member-card canConfirmLevels): the Звʼязковий of a kurin the person
+ * stands in now — the one the session acts in — and never on their own card.
+ */
+export function mayConfirmLevels(
+  manageWholeKurin: boolean,
+  scopedKurin: string | null,
+  memberships: readonly MembershipDto[],
+  ownCard: boolean,
+): boolean {
+  return manageWholeKurin && !!scopedKurin && !ownCard && memberships.some((m) => m.isCurrent && m.kurinKey === scopedKurin);
+}
+
+/** The person's current ступінь: the highest on the whole ladder, not on the kurin's (web currentDegree). */
+export function currentDegree(histories: PlastLevelHistoryDto[] | null | undefined, honours: readonly CatalogHonour[]): DegreeRow | null {
+  return degreeRows((histories ?? []).filter((history) => !history.awaitsConfirmation), DEGREE_LADDER, honours).at(-1) ?? null;
+}
+
+/**
+ * A senior person (web isSeniorPerson): the улад the server says is УСП or УПС — a confirmed senior ступінь, or they
  * stand in a УСП or УПС kurin here. A сеніор who leads an УПЮ kurin is one, and keeps their own senior відзначення.
  */
 export function isSeniorPerson(
-  member: Pick<MemberLookupDto, 'latestPlastLevel' | 'plastLevelHistories'> & { kurinKey?: string | null },
+  member: Pick<MemberLookupDto, 'latestPlastLevel' | 'plastLevelHistories' | 'ulad'> & { kurinKey?: string | null },
   memberships: MembershipDto[],
 ): boolean {
   return isSeniorBranch(memberBranch(member, memberships));

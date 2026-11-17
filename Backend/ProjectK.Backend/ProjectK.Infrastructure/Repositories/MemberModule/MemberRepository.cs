@@ -159,6 +159,15 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
 
     #region PlastLevelHistory Methods
 
+    public async Task<IReadOnlyCollection<WaitingLevel>> GetWaitingLevelsAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+        => memberKeys.Count == 0
+            ? []
+            : await Context.PlastLevelHistories
+                .AsNoTracking()
+                .Where(h => h.AwaitsConfirmation && memberKeys.Contains(h.MemberKey))
+                .Select(h => new WaitingLevel(h.MemberKey, h.PlastLevelHistoryKey, h.PlastLevel, h.DateAchieved))
+                .ToListAsync(cancellationToken);
+
     #endregion
 
     #region LeadershipHistory Methods

@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -19,6 +20,7 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Common.Rules.Shared;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
 
@@ -48,6 +50,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
     private readonly IResourceScopeReader _scope;
+    private readonly TimeProvider _time;
 
     public UpsertMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -57,9 +60,11 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         IResourceAccessService access,
         IKurinAudit audit,
         IHonoursCatalog honours,
-        IResourceScopeReader scopeReader)
+        IResourceScopeReader scopeReader,
+        TimeProvider time)
     {
         _scope = scopeReader;
+        _time = time;
         _kurins = kurinData.Kurins;
         _honours = honours;
         _unitOfWork = unitOfWork;
@@ -96,11 +101,23 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         if (request.CatalogId is not null)
         {
             // A senior kurin's провід records its people's; anywhere else a senior person keeps their own.
+            // The catalogue goes by the улад; recording for oneself is a right over oneself, so it goes by age.
+            if (inSeniorKurin)
+            {
+                return await UpsertSeniorAsync(request, member, actingKurinKey, existingAward, cancellationToken);
+            }
+
             var ownsCard = member.UserKey is { } account && account == _currentUserContext.UserId;
-            return inSeniorKurin || (ownsCard && await IsSeniorAsync(member, cancellationToken))
+            if (!ownsCard || !await IsSeniorAsync(member, cancellationToken))
+            {
+                return ServiceResult<MemberAwardDto>.Failure(
+                    ResultType.BadRequest, MemberErrors.SeniorAwardOutsideSeniorKurin, "A senior відзначення is recorded in a УСП or УПС kurin, or by a senior person on their own card.");
+            }
+
+            return AdulthoodRules.IsAdult(member.DateOfBirth, DateOnly.FromDateTime(_time.GetUtcNow().UtcDateTime))
                 ? await UpsertSeniorAsync(request, member, actingKurinKey, existingAward, cancellationToken)
                 : ServiceResult<MemberAwardDto>.Failure(
-                    ResultType.BadRequest, MemberErrors.SeniorAwardOutsideSeniorKurin, "A senior відзначення is recorded in a УСП or УПС kurin, or by a senior person on their own card.");
+                    ResultType.Forbidden, MemberErrors.OwnSeniorAwardNeedsAdult, "A senior відзначення on one's own card outside a senior kurin is recorded by an adult.");
         }
 
         if (inSeniorKurin || existingAward?.CatalogId is not null)
@@ -281,15 +298,11 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     /// <summary>
     /// A senior person: their current ступінь, the highest on the whole ladder, is старший пластун or
     /// a сеніор's, or they stand in a УСП or УПС kurin. A сеніор who leads an УПЮ kurin is one.
+    /// Only confirmed ступені count: one the person gave themselves waits for the Звʼязковий.
     /// </summary>
     private async Task<bool> IsSeniorAsync(MemberEntity member, CancellationToken cancellationToken)
     {
-        var levels = member.PlastLevelHistory.Select(history => history.PlastLevel).ToList();
-        if (member.LatestPlastLevel is { } latest)
-        {
-            levels.Add(latest);
-        }
-
+        var levels = PlastLevelHistoryRules.CountingLevels(member.PlastLevelHistory, member.LatestPlastLevel);
         return PlastLadderRules.Highest(levels) is { } current && PlastLadderRules.BranchOf(current) != KurinBranch.UPYu
                || await _scope.StandsInSeniorKurinAsync(ResourceType.Member, member.MemberKey, cancellationToken);
     }

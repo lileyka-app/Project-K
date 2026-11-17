@@ -59,8 +59,9 @@ public sealed class CurrentMember : ICurrentMember
         var memberships = (await _memberships.GetCurrentForAccountAsync(userKey, cancellationToken))
             .OrderBy(m => m.KurinNumber)
             .ToList();
+        var born = await _members.GetDateOfBirthAsync(person.MemberKey, cancellationToken);
 
-        return new CurrentPerson(userKey, person, levels, memberships);
+        return new CurrentPerson(userKey, person, levels, memberships, born);
     }
 
     /// <inheritdoc />

@@ -59,7 +59,8 @@ public static class MemberMapping
         PlastLevel = history.PlastLevel,
         DateAchieved = history.DateAchieved,
         IsPlastunka = history.IsPlastunka,
-        CatalogId = PlastLevelDegreeRules.CatalogId(history.PlastLevel, history.IsPlastunka)
+        CatalogId = PlastLevelDegreeRules.CatalogId(history.PlastLevel, history.IsPlastunka),
+        AwaitsConfirmation = history.AwaitsConfirmation
     };
 
     /// <summary>A person in a picker. Which office they hold is the reader's to say, so <c>UserRole</c> stays empty.</summary>
@@ -139,9 +140,10 @@ public static class MemberMapping
         member.UpdatedDate = now;
     }
 
-    /// <summary>The newest ступінь on record; a record older than the history holds it alone.</summary>
+    /// <summary>The newest ступінь that counts; a record older than the history holds it alone.</summary>
     private static PlastLevel? LatestLevel(IEnumerable<PlastLevelHistory> history, PlastLevel? stored) =>
         history
+            .Where(entry => !entry.AwaitsConfirmation)
             .OrderByDescending(entry => entry.DateAchieved)
             .Select(entry => (PlastLevel?)entry.PlastLevel)
             .FirstOrDefault() ?? stored;

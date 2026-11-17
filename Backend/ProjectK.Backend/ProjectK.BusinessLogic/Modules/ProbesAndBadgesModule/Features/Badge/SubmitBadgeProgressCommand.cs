@@ -76,7 +76,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
 
         // Someone who stands nowhere is still found, placed in an empty kurin: their вмілість goes on
         // being theirs, and a new one is turned away as not offered rather than as nobody's.
-        var member = await _memberships.FindInLatestKurinAsync(request.MemberKey, cancellationToken)
+        var member = await _memberships.FindInYouthKurinAsync(request.MemberKey, cancellationToken)
             ?? (await _members.FindAsync(request.MemberKey, cancellationToken) is { } person
                 ? new KurinPerson(person, Guid.Empty, null)
                 : null);

@@ -10,6 +10,7 @@ using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.IdentityModule;
@@ -232,7 +233,40 @@ public class GetMemberByKeyHandlerTests
         return (memberKey, groupKey, member);
     }
 
-    private GetMemberByKeyQueryHandler Handler(IMemberFieldAccess fieldAccess) => new(
+    [Theory]
+    [InlineData(KurinBranch.UPYu, false, KurinBranch.UPYu)]
+    [InlineData(KurinBranch.UPS, false, KurinBranch.UPS)]
+    [InlineData(KurinBranch.UPYu, true, KurinBranch.UPYu)]
+    public async Task Handle_SaysTheUladInTheKurinItIsReadIn_AndAWaitingLevelDoesNotMoveIt(KurinBranch kurinBranch, bool waitingSenior, KurinBranch ulad)
+    {
+        var (memberKey, _, member) = ArrangeCardOfSomeoneElse();
+        member.PlastLevelHistory = [new PlastLevelHistory { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2022, 1, 1) }];
+        if (waitingSenior)
+        {
+            member.PlastLevelHistory.Add(new PlastLevelHistory { PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2025, 1, 1), AwaitsConfirmation = true });
+        }
+
+        var here = (await _membershipsMock.Object.GetActiveForMemberAsync(memberKey)).Single();
+        var record = new MembershipRecord(Guid.NewGuid(), here.KurinKey, 1, kurinBranch, null, here.GroupKey, null, MembershipKind.Youth, DateTime.UtcNow, null);
+
+        var result = await Handler(FieldAccess.SeesEverything(), record, new DateOnly(2026, 11, 17)).Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
+
+        result.Data!.Ulad.Should().Be(ulad);
+        result.Data.IsAdult.Should().BeFalse("born in 2010");
+    }
+
+    [Fact]
+    public async Task Handle_SaysAnAdultIsOne()
+    {
+        var (memberKey, _, member) = ArrangeCardOfSomeoneElse();
+        member.DateOfBirth = new DateOnly(2000, 1, 1);
+
+        var result = await Handler(FieldAccess.SeesEverything(), null, new DateOnly(2026, 11, 17)).Handle(new GetMemberByKeyQuery(memberKey), CancellationToken.None);
+
+        result.Data!.IsAdult.Should().BeTrue();
+    }
+
+    private GetMemberByKeyQueryHandler Handler(IMemberFieldAccess fieldAccess, MembershipRecord? record = null, DateOnly? today = null) => new(
         _uowMock.Object,
         FakeBlobReadLinks.Instance,
         _currentUserContextMock.Object,
@@ -241,5 +275,12 @@ public class GetMemberByKeyHandlerTests
         _kurinDataMock.Object,
         _accountsMock.Object,
         Mock.Of<IKurinTagVisibility>(),
-        KurinDirectories.WithoutOffices());
+        KurinDirectories.WithoutOffices(),
+        record is null ? KurinDirectories.MembershipsOf() : KurinDirectories.MembershipsOf(record),
+        today is { } day ? new FixedClock(day) : TimeProvider.System);
+
+    private sealed class FixedClock(DateOnly day) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(day.ToDateTime(new TimeOnly(12, 0)), TimeSpan.Zero);
+    }
 }

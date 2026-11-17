@@ -14,6 +14,7 @@ using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Services;
@@ -78,7 +79,7 @@ public sealed class MemberCardService
     {
         var today = DateOnly.FromDateTime(_time.GetUtcNow().UtcDateTime);
         var born = await _members.GetDateOfBirthAsync(memberKey, cancellationToken);
-        if (born is { } date && date.AddYears(18) <= today)
+        if (AdulthoodRules.IsAdult(born, today))
         {
             return new CardAllowanceDto(MayShare: true, IsAdult: true, CardField.All, MayLink: true);
         }

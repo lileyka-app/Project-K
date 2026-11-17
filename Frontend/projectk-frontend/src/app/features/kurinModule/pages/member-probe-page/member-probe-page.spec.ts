@@ -9,6 +9,7 @@ import { ProbesCatalogService } from '../../services/probes-and-badges/probes-ca
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
+import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { MemberProbePageComponent } from './member-probe-page';
 import { ConfirmationService } from '@openng/optimus-ui/api';
 
@@ -156,7 +157,7 @@ describe('MemberProbePageComponent', () => {
     expect(component.canManageProbePoints).toBe(true);
   });
 
-  it('у старшого пластуна проба — архів: видно, але не підписати', () => {
+  it('у старшого пластуна (улад з сервера) проба — архів: видно, але не підписати', () => {
     memberServiceSpy.getByKey.mockReturnValue(of({
       memberKey,
       groupKey: 'group-1',
@@ -170,6 +171,7 @@ describe('MemberProbePageComponent', () => {
       profilePhotoUrl: null,
       latestPlastLevel: PlastLevel.Starshoplastun,
       plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }],
+      ulad: KurinBranch.USP,
       leadershipHistories: []
     }));
     createComponent();

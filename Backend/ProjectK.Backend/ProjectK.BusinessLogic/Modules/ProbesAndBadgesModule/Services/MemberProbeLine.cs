@@ -94,7 +94,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         Guid memberKey,
         CancellationToken cancellationToken)
     {
-        if ((await _memberships.GetCurrentKurinKeysForMemberAsync(memberKey, cancellationToken)).Cast<Guid?>().FirstOrDefault() is not { } kurinKey)
+        if ((await _memberships.FindInYouthKurinAsync(memberKey, cancellationToken))?.KurinKey is not { } kurinKey)
         {
             return null;
         }

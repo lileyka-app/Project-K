@@ -2,6 +2,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Records.KurinModule;
 
@@ -27,6 +28,15 @@ internal static class KurinDirectories
         var directory = new Mock<IOfficeDirectory>();
         directory.Setup(d => d.GetHeldByMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(held);
+        return directory.Object;
+    }
+
+    /// <summary>A membership directory that holds these records for anyone asked about: the card reads its гілка from them.</summary>
+    public static IMembershipDirectory MembershipsOf(params MembershipRecord[] records)
+    {
+        var directory = new Mock<IMembershipDirectory>();
+        directory.Setup(d => d.GetForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(records);
         return directory.Object;
     }
 

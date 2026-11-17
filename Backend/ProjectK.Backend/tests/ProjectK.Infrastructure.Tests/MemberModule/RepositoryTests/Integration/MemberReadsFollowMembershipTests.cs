@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
@@ -272,6 +273,89 @@ public class MemberReadsFollowMembershipTests
         await uow.SaveChangesAsync();
 
         Assert.Single(context.Memberships.Where(ms => ms.MemberKey == person.MemberKey));
+    }
+
+    [Fact]
+    public async Task TheYouthKurin_IsTheNewestUpyuOne_EvenWhenASeniorOneWasJoinedLater()
+    {
+        await using var context = NewContext();
+        var uow = new InfraUnitOfWork(context);
+
+        var olderYouth = new Kurin(11);
+        var newerYouth = new Kurin(12);
+        var senior = new Kurin(5, KurinBranch.USP);
+        var person = Person();
+        var inOlder = Joining(person.MemberKey, olderYouth.KurinKey);
+        inOlder.JoinedAtUtc = DateTime.UtcNow.AddYears(-3);
+        var inNewer = Joining(person.MemberKey, newerYouth.KurinKey, Guid.NewGuid());
+        inNewer.JoinedAtUtc = DateTime.UtcNow.AddYears(-2);
+        var inSenior = Joining(person.MemberKey, senior.KurinKey);
+        inSenior.JoinedAtUtc = DateTime.UtcNow.AddDays(-1);
+        context.Kurins.AddRange(olderYouth, newerYouth, senior);
+        context.Members.Add(person);
+        context.Memberships.AddRange(inOlder, inNewer, inSenior);
+        await context.SaveChangesAsync();
+
+        var youth = await uow.Memberships.FindInYouthKurinAsync(person.MemberKey);
+
+        Assert.Equal((newerYouth.KurinKey, inNewer.GroupKey), (youth!.KurinKey, youth.GroupKey));
+        Assert.Equal(senior.KurinKey, (await uow.Memberships.FindInLatestKurinAsync(person.MemberKey))!.KurinKey);
+    }
+
+    [Fact]
+    public async Task TheYouthKurin_OfSomeoneInNoUpyuKurin_IsTheNewestOneAtAll()
+    {
+        await using var context = NewContext();
+        var uow = new InfraUnitOfWork(context);
+
+        var usp = new Kurin(5, KurinBranch.USP);
+        var ups = new Kurin(20, KurinBranch.UPS);
+        var person = Person();
+        var inUps = Joining(person.MemberKey, ups.KurinKey);
+        inUps.JoinedAtUtc = DateTime.UtcNow.AddDays(-1);
+        context.Kurins.AddRange(usp, ups);
+        context.Members.Add(person);
+        context.Memberships.AddRange(Joining(person.MemberKey, usp.KurinKey), inUps);
+        await context.SaveChangesAsync();
+
+        Assert.Equal(ups.KurinKey, (await uow.Memberships.FindInYouthKurinAsync(person.MemberKey))!.KurinKey);
+        Assert.Null(await uow.Memberships.FindInYouthKurinAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task WaitingLevels_AreReadForManyPeopleAtOnce_AndOnlyTheWaitingOnes()
+    {
+        await using var context = NewContext();
+        var uow = new InfraUnitOfWork(context);
+
+        var asked = Person();
+        var other = Person("Марта");
+        context.Members.AddRange(asked, other);
+        context.PlastLevelHistories.AddRange(
+            new PlastLevelHistory { MemberKey = asked.MemberKey, PlastLevel = PlastLevel.Skob },
+            new PlastLevelHistory { MemberKey = asked.MemberKey, PlastLevel = PlastLevel.Starshoplastun, AwaitsConfirmation = true },
+            new PlastLevelHistory { MemberKey = other.MemberKey, PlastLevel = PlastLevel.Senior, AwaitsConfirmation = true });
+        await context.SaveChangesAsync();
+
+        var waiting = Assert.Single(await uow.Members.GetWaitingLevelsAsync([asked.MemberKey]));
+
+        Assert.Equal((asked.MemberKey, PlastLevel.Starshoplastun), (waiting.MemberKey, waiting.PlastLevel));
+        Assert.Empty(await uow.Members.GetWaitingLevelsAsync([]));
+    }
+
+    [Fact]
+    public async Task ALevelSavedWithoutAWord_CountsAtOnce()
+    {
+        await using var context = NewContext();
+
+        var person = Person();
+        context.Members.Add(person);
+        context.PlastLevelHistories.Add(new PlastLevelHistory { MemberKey = person.MemberKey, PlastLevel = PlastLevel.Senior });
+        await context.SaveChangesAsync();
+
+        var stored = await context.PlastLevelHistories.AsNoTracking().SingleAsync();
+        Assert.False(stored.AwaitsConfirmation);
+        Assert.Null(stored.ConfirmedByUserKey);
     }
 
     [Fact]

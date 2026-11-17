@@ -1,3 +1,5 @@
+using ProjectK.Common.Enums.KurinModule;
+
 namespace ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 /// <summary>
@@ -9,6 +11,13 @@ public sealed record MyGrowthDto
 {
     public required Guid MemberKey { get; init; }
     public required bool HasYouthProgram { get; init; }
+
+    /// <summary>The person's улад across the kurins they stand in, from their confirmed ступені (<c>UladRules</c>).</summary>
+    public required KurinBranch Ulad { get; init; }
+
+    /// <summary>Whether the person is 18 or older today; false without a date of birth.</summary>
+    public required bool IsAdult { get; init; }
+
     /// <summary>The проба in hand, or the next one to start; null once every проба is verified.</summary>
     public required MyProbeDto? Probe { get; init; }
     public required MyBadgesDto Badges { get; init; }

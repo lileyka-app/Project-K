@@ -122,6 +122,7 @@ public sealed class KurinReportRepository : IKurinReportRepository
         member.ProfilePhotoBlobName,
         member.LatestPlastLevel,
         member.PlastLevelHistory
+            .Where(history => !history.AwaitsConfirmation)
             .Select(history => new KurinReportPlastLevel(history.PlastLevel, history.DateAchieved))
             .ToList(),
         member.MemberWarnings

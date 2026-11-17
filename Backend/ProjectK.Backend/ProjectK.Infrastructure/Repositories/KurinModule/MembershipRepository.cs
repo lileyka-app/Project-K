@@ -3,6 +3,7 @@ using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
@@ -61,6 +62,7 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                 ProfileVerifiedByUserKey = x.Person.ProfileVerifiedByUserKey,
                 ProfileVerificationNote = x.Person.ProfileVerificationNote,
                 PlastLevels = x.Person.PlastLevelHistory
+                    .Where(h => !h.AwaitsConfirmation)
                     .Select(h => new MemberListLevel(h.PlastLevelHistoryKey, h.MemberKey, h.PlastLevel, h.DateAchieved, h.IsPlastunka))
                     .ToList(),
                 // Offices of this kurin only: a role held in another kurin is not this kurin's to
@@ -108,6 +110,19 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
 
     public Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
         => InLatestKurin(Context.Members.Where(m => m.UserKey == userKey)).FirstOrDefaultAsync(cancellationToken);
+
+    public Task<KurinPerson?> FindInYouthKurinAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => (from m in Context.Members.Where(m => m.MemberKey == memberKey)
+            from ms in OpenMemberships
+                .Where(candidate => candidate.MemberKey == m.MemberKey)
+                .OrderByDescending(candidate => Context.Kurins.Any(k => k.KurinKey == candidate.KurinKey && k.Branch == KurinBranch.UPYu))
+                .ThenByDescending(candidate => candidate.JoinedAtUtc)
+                .Take(1)
+            select new KurinPerson(
+                new MemberSummary(m.MemberKey, m.UserKey, m.FirstName, m.LastName, m.Email, m.ProfilePhotoBlobName),
+                ms.KurinKey,
+                ms.GroupKey))
+            .FirstOrDefaultAsync(cancellationToken);
 
     public Task<KurinPerson?> FindInKurinByAccountAsync(Guid userKey, Guid kurinKey, CancellationToken cancellationToken = default)
         => (from m in Context.Members.Where(m => m.UserKey == userKey)

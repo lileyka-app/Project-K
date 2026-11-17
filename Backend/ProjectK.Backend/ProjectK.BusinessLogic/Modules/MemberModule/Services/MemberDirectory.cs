@@ -45,8 +45,11 @@ public sealed class MemberDirectory : IMemberDirectory
     public async Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
-        return member?.PlastLevelHistory.Select(h => h.PlastLevel).ToList() ?? [];
+        return member?.PlastLevelHistory.Where(h => !h.AwaitsConfirmation).Select(h => h.PlastLevel).ToList() ?? [];
     }
+
+    public Task<IReadOnlyCollection<WaitingLevel>> GetWaitingLevelsAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+        => _unitOfWork.Members.GetWaitingLevelsAsync(memberKeys, cancellationToken);
 
     public async Task<string?> GetPublicIdAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => (await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken))?.PublicId;

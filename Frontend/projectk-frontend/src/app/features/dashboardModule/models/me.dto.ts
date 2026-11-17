@@ -1,4 +1,5 @@
 import { ScoreAlgorithm, ScoreSource } from '../../scoreModule/models/score.enums';
+import { KurinBranch } from '../../kurinModule/models/enums/kurin-branch.enum';
 import { AgendaItemStatus, AgendaRsvpStatus } from '../../kurinModule/models/agenda';
 
 /** The kurin a row belongs to; named on screen only when the person stands in more than one. */
@@ -75,6 +76,10 @@ export interface MyBadgesDto {
 export interface MyGrowthDto {
   memberKey: string;
   hasYouthProgram: boolean;
+  /** The person's улад across the kurins they stand in, from their confirmed ступені. */
+  ulad?: KurinBranch;
+  /** Whether the person is 18 or older; false without a date of birth. */
+  isAdult?: boolean;
   /** The проба in hand or the next to start; null once every проба is verified. */
   probe: MyProbeDto | null;
   badges: MyBadgesDto;
@@ -110,7 +115,7 @@ export interface MyScoreDto {
   algorithm: ScoreAlgorithm;
 }
 
-export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance';
+export type MyDutyKind = 'BadgesToReview' | 'TransfersToConfirm' | 'EntriesToVerify' | 'EventWithoutAttendance' | 'LevelsToConfirm';
 
 export interface MyDutyDto {
   kind: MyDutyKind;
@@ -120,7 +125,10 @@ export interface MyDutyDto {
   groupName: string | null;
   agendaItemKey: string | null;
   occurrenceStartUtc: string | null;
+  /** An event's title; for waiting ступені, the person's name. */
   title: string | null;
+  /** For waiting ступені: whose card they are on. */
+  memberKey?: string | null;
   /** Which duty this is, the same on every read: what hiding it names. Empty from a server that cannot hide. */
   key: string;
   /** How big it is now; hidden, it comes back when this grows. */

@@ -78,18 +78,3 @@ export function highestLevel(levels: readonly PlastLevel[]): PlastLevel | null {
     (best, level) => best === null || PLAST_LADDER.indexOf(level) > PLAST_LADDER.indexOf(best) ? level : best,
     null);
 }
-
-/**
- * Гілка самої людини там, де на неї дивляться. Старший ступінь переважає курінь: впорядник у курені
- * УПЮ — сам старший пластун чи сеніор, і юнацький вишкіл йому не належить. Без старшого ступеня
- * вирішує гілка куреня.
- */
-export function personalBranch(
-  levels: readonly PlastLevel[],
-  membershipBranch: KurinBranch | null | undefined
-): KurinBranch {
-  const top = highestLevel(levels);
-  const levelBranch = top === null ? KurinBranch.UPYu : branchOfLevel(top);
-
-  return levelBranch !== KurinBranch.UPYu ? levelBranch : membershipBranch ?? KurinBranch.UPYu;
-}

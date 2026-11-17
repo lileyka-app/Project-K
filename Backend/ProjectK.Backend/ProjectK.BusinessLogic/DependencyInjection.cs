@@ -158,6 +158,7 @@ public static class DependencyInjection
     private static void AddKurinModule(this IServiceCollection services)
     {
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IDutySource, PlastLevelDutyReader>();
         services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IKurinFounderWriter, KurinFounderWriter>();
         services.AddScoped<MembershipMoves>();
@@ -179,5 +180,6 @@ public static class DependencyInjection
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
         services.AddScoped<MemberCardService>();
+        services.AddScoped<PlastLevelConfirmationService>();
     }
 }

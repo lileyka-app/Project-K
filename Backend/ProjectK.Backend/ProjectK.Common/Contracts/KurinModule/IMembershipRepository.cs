@@ -37,6 +37,12 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
     Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// A person placed by the open membership in an УПЮ kurin they joined most recently, or, standing in
+    /// none, by the one they joined most recently at all; in one query. Null when they stand nowhere.
+    /// </summary>
+    Task<KurinPerson?> FindInYouthKurinAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The person behind an account, placed by their open membership in this kurin, in one query; null
     /// when they do not stand in it.
     /// </summary>

@@ -71,8 +71,8 @@ public class UpdateProbePointSignatureHandlerTests
     {
         var memberKey = Guid.NewGuid();
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([_kurinKey]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, _kurinKey));
         _line.Setup(x => x.CanStartAsync(memberKey, "probe-2", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ProbeStart.WaitsForPrevious);
 
@@ -88,8 +88,8 @@ public class UpdateProbePointSignatureHandlerTests
     {
         var memberKey = Guid.NewGuid();
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([_kurinKey]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, _kurinKey));
         _probeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndProbeIdAsync(memberKey, "probe-2", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProbeProgress { MemberKey = memberKey, KurinKey = _kurinKey, ProbeId = "probe-2", Status = ProbeProgressStatus.InProgress });
@@ -106,8 +106,8 @@ public class UpdateProbePointSignatureHandlerTests
         var groupKey = Guid.NewGuid();
         _journal.Knows(memberKey, _kurinKey, groupKey, "Олесь", "Юнак");
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([_kurinKey]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, _kurinKey));
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(Guid.NewGuid(), _currentUserContextMock.Object.UserId, "Марта", "Впорядниця", "m@example.com", null));
@@ -143,8 +143,8 @@ public class UpdateProbePointSignatureHandlerTests
         var request = new UpdateProbePointSignatureCommand(memberKey, "probe-1", "point-1", false, null);
 
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([Guid.NewGuid()]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, Guid.NewGuid()));
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -197,8 +197,8 @@ public class UpdateProbePointSignatureHandlerTests
         var request = new UpdateProbePointSignatureCommand(memberKey, "probe-1", "point-1", false, null);
 
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([Guid.NewGuid()]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, Guid.NewGuid()));
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))

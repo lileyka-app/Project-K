@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
@@ -36,7 +37,7 @@ public class MemberProbeLineTests
             Probe("probe-2-2026", 2, New),
         ]);
         var members = new Mock<IMembershipDirectory>();
-        members.Setup(x => x.GetCurrentKurinKeysForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync([_kurinKey]);
+        members.Setup(x => x.FindInYouthKurinAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(KurinPeople.In(_memberKey, _kurinKey));
         Given();
 
         _line = new MemberProbeLine(unitOfWork.Object, catalog.Object, members.Object, _groupEditions.Object);
