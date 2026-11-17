@@ -9,7 +9,7 @@ namespace ProjectK.Infrastructure.Tests.Persistence;
 /// </summary>
 public class PlastLevelConfirmationMigrationTests
 {
-    private static IReadOnlyList<string> UpSql() =>
+    private static List<string> UpSql() =>
         new AddPlastLevelConfirmation().UpOperations.OfType<SqlOperation>().Select(op => op.Sql).ToList();
 
     [Fact]

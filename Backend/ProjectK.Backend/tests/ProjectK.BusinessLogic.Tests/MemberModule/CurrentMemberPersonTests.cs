@@ -68,4 +68,33 @@ public class CurrentMemberPersonTests
 
         (await new CurrentMember(user.Object, members.Object, Mock.Of<IMembershipDirectory>()).ReadPersonAsync(CancellationToken.None)).Should().BeNull();
     }
+
+    [Fact]
+    public async Task TheUladAndAge_ComeWithThePerson()
+    {
+        var reader = Reader([PlastLevel.Starshoplastun], In(KurinBranch.UPYu));
+        var me = (await reader.ReadPersonAsync(CancellationToken.None))!;
+
+        me.Ulad.Should().Be(KurinBranch.USP);
+        me.IsAdultOn(new DateOnly(2026, 11, 17)).Should().BeFalse("no date of birth means a minor");
+        (me with { BornOn = new DateOnly(2008, 11, 17) }).IsAdultOn(new DateOnly(2026, 11, 17)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AYouthLevelInAYouthKurin_LeavesTheUladUpyu()
+    {
+        var me = (await Reader([PlastLevel.Skob], In(KurinBranch.USP), In(KurinBranch.UPYu)).ReadPersonAsync(CancellationToken.None))!;
+
+        me.Ulad.Should().Be(KurinBranch.UPYu);
+    }
+
+    [Fact]
+    public async Task TheLevelsAreTheDirectorysCountingOnes()
+    {
+        // The directory leaves a waiting ступінь out; the person is read with what it answers.
+        var me = (await Reader([PlastLevel.Skob], In(KurinBranch.UPYu)).ReadPersonAsync(CancellationToken.None))!;
+
+        me.Levels.Should().Equal(PlastLevel.Skob);
+        me.HasYouthProgram.Should().BeTrue();
+    }
 }

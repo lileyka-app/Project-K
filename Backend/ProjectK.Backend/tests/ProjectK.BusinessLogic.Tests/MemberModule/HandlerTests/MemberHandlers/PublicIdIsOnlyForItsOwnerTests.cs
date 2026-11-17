@@ -96,6 +96,8 @@ public class PublicIdIsOnlyForItsOwnerTests
             _kurinData.Object,
             new Mock<ProjectK.Common.Contracts.IdentityModule.IAccountProvisioningService>().Object,
             Mock.Of<IKurinTagVisibility>(),
-            KurinDirectories.WithoutOffices());
+            KurinDirectories.WithoutOffices(),
+            KurinDirectories.MembershipsOf(),
+            TimeProvider.System);
     }
 }

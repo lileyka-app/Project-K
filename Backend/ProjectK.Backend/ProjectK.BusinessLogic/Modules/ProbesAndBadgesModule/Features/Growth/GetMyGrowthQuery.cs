@@ -22,19 +22,22 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
     private readonly IProbesCatalogReader _probes;
     private readonly IBadgesCatalogReader _badges;
     private readonly IMemberProbeLine _line;
+    private readonly TimeProvider _time;
 
     public GetMyGrowthQueryHandler(
         ICurrentMember me,
         IMemberProgressDirectory progress,
         IProbesCatalogReader probes,
         IBadgesCatalogReader badges,
-        IMemberProbeLine line)
+        IMemberProbeLine line,
+        TimeProvider time)
     {
         _me = me;
         _progress = progress;
         _probes = probes;
         _badges = badges;
         _line = line;
+        _time = time;
     }
 
     public async Task<ServiceResult<MyGrowthDto>> Handle(GetMyGrowthQuery request, CancellationToken cancellationToken)
@@ -45,12 +48,15 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
             return ProbesAndBadgesErrors.NoMember<MyGrowthDto>();
         }
 
+        var isAdult = me.IsAdultOn(DateOnly.FromDateTime(_time.GetUtcNow().UtcDateTime));
         if (!me.HasYouthProgram)
         {
             return new ServiceResult<MyGrowthDto>(ResultType.Success, new MyGrowthDto
             {
                 MemberKey = me.Person.MemberKey,
                 HasYouthProgram = false,
+                Ulad = me.Ulad,
+                IsAdult = isAdult,
                 Probe = null,
                 Badges = new MyBadgesDto { OnReview = [], InWork = [], Confirmed = [], ConfirmedCount = 0 }
             });
@@ -63,6 +69,8 @@ public sealed class GetMyGrowthQueryHandler : IRequestHandler<GetMyGrowthQuery, 
         {
             MemberKey = memberKey,
             HasYouthProgram = true,
+            Ulad = me.Ulad,
+            IsAdult = isAdult,
             Probe = await ProbeAsync(memberKey, progress.Probes, cancellationToken),
             Badges = Badges(progress.Badges)
         });

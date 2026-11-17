@@ -19,6 +19,21 @@ public static class PlastLevelHistoryRules
             .FirstOrDefault()?.PlastLevel;
 
     /// <summary>
+    /// The ступені that count for the улад and the highest ступінь: the confirmed rows, and the stored
+    /// latest that a record older than the history holds alone.
+    /// </summary>
+    public static IReadOnlyList<PlastLevel> CountingLevels(IEnumerable<PlastLevelHistory> history, PlastLevel? stored)
+    {
+        var levels = history.Where(entry => !entry.AwaitsConfirmation).Select(entry => entry.PlastLevel).ToList();
+        if (stored is { } latest)
+        {
+            levels.Add(latest);
+        }
+
+        return levels;
+    }
+
+    /// <summary>
     /// Whether a ступінь entered this way waits for the Звʼязковий: a senior one the person entered on
     /// their own card, adult or not. The провід's entries, and every юнацький ступінь, count at once.
     /// </summary>

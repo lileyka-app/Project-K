@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -7,6 +8,8 @@ using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.MemberModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 
@@ -31,6 +34,8 @@ public sealed class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQ
     private readonly IAccountProvisioningService _accounts;
     private readonly IKurinTagVisibility _tagVisibility;
     private readonly IOfficeDirectory _offices;
+    private readonly IMembershipDirectory _membershipRecords;
+    private readonly TimeProvider _time;
 
     public GetMemberByKeyQueryHandler(
         IMemberUnitOfWork unitOfWork,
@@ -41,9 +46,13 @@ public sealed class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQ
         IUnitOfWork kurinData,
         IAccountProvisioningService accounts,
         IKurinTagVisibility tagVisibility,
-        IOfficeDirectory offices)
+        IOfficeDirectory offices,
+        IMembershipDirectory membershipRecords,
+        TimeProvider time)
     {
         _offices = offices;
+        _membershipRecords = membershipRecords;
+        _time = time;
         _accounts = accounts;
         _tagVisibility = tagVisibility;
         _unitOfWork = unitOfWork;
@@ -71,6 +80,14 @@ public sealed class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQ
         var memberResponse = member.ToDto(_links, offices);
         memberResponse.KurinKey = here?.KurinKey ?? Guid.Empty;
         memberResponse.GroupKey = here?.GroupKey ?? Guid.Empty;
+
+        // The улад as seen in this kurin: a confirmed senior ступінь outweighs it, else its гілка decides.
+        var branchHere = here is null
+            ? null
+            : (await _membershipRecords.GetForMemberAsync(member.MemberKey, cancellationToken))
+                .FirstOrDefault(m => m.IsCurrent && m.KurinKey == here.KurinKey)?.Branch;
+        memberResponse.Ulad = UladRules.Of(PlastLevelHistoryRules.CountingLevels(member.PlastLevelHistory, member.LatestPlastLevel), branchHere);
+        memberResponse.IsAdult = AdulthoodRules.IsAdult(member.DateOfBirth, DateOnly.FromDateTime(_time.GetUtcNow().UtcDateTime));
 
         // Assignments are kept per account, so a person without one runs no гурток.
         if (here is not null && member.UserKey.HasValue)
