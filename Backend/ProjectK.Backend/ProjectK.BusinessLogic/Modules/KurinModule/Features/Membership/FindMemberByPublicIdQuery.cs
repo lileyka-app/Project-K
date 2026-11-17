@@ -60,7 +60,7 @@ public sealed class FindMemberByPublicIdQueryHandler
         return new ServiceResult<MembershipCandidateDto>(
             ResultType.Success,
             new MembershipCandidateDto(
-                card,
+                card.ToCandidateDto(standing.Count),
                 standing.Any(m => m.KurinKey == request.KurinKey),
                 elsewhere,
                 await _routing.OfferAsync(card.MemberKey, request.KurinKey, cancellationToken)));

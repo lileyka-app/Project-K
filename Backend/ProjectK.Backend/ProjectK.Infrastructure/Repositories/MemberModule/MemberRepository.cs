@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.MemberModule;
@@ -14,9 +13,6 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     public MemberRepository(AppDbContext context) : base(context)
     {
     }
-
-    /// <summary>Every membership that is still open; read only to count, for the public-code card.</summary>
-    private IQueryable<Membership> ActiveMemberships => Context.Memberships.Where(ms => ms.LeftAtUtc == null);
 
     public override void Create(Member member, CancellationToken cancellationToken = default)
     {
@@ -125,10 +121,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                 m.PublicId,
                 m.FirstName,
                 m.LastName,
-                m.ProfilePhotoBlobName,
-                // How many, never which: the count says "this person is already somewhere", which
-                // is enough to give a провід pause, without naming the kurins.
-                ActiveMemberships.Count(ms => ms.MemberKey == m.MemberKey)))
+                m.ProfilePhotoBlobName))
             .FirstOrDefaultAsync(cancellationToken);
 
     public Task<MemberAccountLink?> GetAccountLinkAsync(Guid memberKey, CancellationToken cancellationToken = default)

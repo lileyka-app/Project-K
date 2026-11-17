@@ -81,7 +81,7 @@ public class MembershipRequestTests
         var summary = new MemberSummary(_person, _account, "Назар", "Коваль", "n@x", null);
         _members.Setup(d => d.FindAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(summary);
         _members.Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberCard(_person, Code, "Назар", "Коваль", null, 1));
+            .ReturnsAsync(new MemberCard(_person, Code, "Назар", "Коваль", null));
     }
 
     private void ActingIn(Guid kurinKey) => _user.SetupGet(u => u.KurinKey).Returns(kurinKey);

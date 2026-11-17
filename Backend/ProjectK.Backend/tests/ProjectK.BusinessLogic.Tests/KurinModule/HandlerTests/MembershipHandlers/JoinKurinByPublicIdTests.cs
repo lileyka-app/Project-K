@@ -9,6 +9,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.KurinModule;
@@ -54,7 +55,7 @@ public class JoinKurinByPublicIdTests
 
         _members
             .Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberCard(_memberKey, Code, "Оксана", "Тестова", null, 1));
+            .ReturnsAsync(new MemberCard(_memberKey, Code, "Оксана", "Тестова", null));
         _members
             .Setup(d => d.FindAsync(_memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(
@@ -148,10 +149,15 @@ public class JoinKurinByPublicIdTests
         result.Data!.Member.FullName.Should().Be("Оксана Тестова");
         result.Data.AlreadyInThisKurin.Should().BeFalse();
         result.Data.CurrentKurins.Should().ContainSingle().Which.Number.Should().Be(7);
+        result.Data.Member.CurrentMembershipCount.Should().Be(1);
 
         // The card is a record with a fixed shape; this pins that nothing kurin-shaped crept into it.
         typeof(MemberCard).GetProperties().Select(p => p.Name)
             .Should().NotContain(name => name.Contains("Kurin", StringComparison.OrdinalIgnoreCase));
+
+        // What the client reads: the card as it always was, with the count the kurin adds to it.
+        typeof(MembershipCandidateMemberDto).GetProperties().Select(p => p.Name).Should().Equal(
+            "MemberKey", "PublicId", "FirstName", "LastName", "ProfilePhotoBlobName", "CurrentMembershipCount", "FullName");
     }
 
     [Fact]
