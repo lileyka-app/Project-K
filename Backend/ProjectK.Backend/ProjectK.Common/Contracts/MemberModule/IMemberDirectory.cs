@@ -35,7 +35,10 @@ public interface IMemberDirectory
     /// <summary>The account a member is linked to. Null when the member has none, or does not exist.</summary>
     Task<Guid?> FindAccountKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>Every ступінь recorded for the person, in no particular order; empty for nobody.</summary>
+    /// <summary>
+    /// Every ступінь that counts for the person, in no particular order; empty for nobody. One that
+    /// awaits the Звʼязковий's confirmation is left out.
+    /// </summary>
     Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>The person's public code (<c>PL-…</c>); null when the person does not exist.</summary>

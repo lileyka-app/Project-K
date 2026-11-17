@@ -284,7 +284,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     /// </summary>
     private async Task<bool> IsSeniorAsync(MemberEntity member, CancellationToken cancellationToken)
     {
-        var levels = member.PlastLevelHistory.Select(history => history.PlastLevel).ToList();
+        var levels = member.PlastLevelHistory.Where(history => !history.AwaitsConfirmation).Select(history => history.PlastLevel).ToList();
         if (member.LatestPlastLevel is { } latest)
         {
             levels.Add(latest);

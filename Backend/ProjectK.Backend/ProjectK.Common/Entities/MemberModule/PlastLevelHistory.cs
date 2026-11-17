@@ -24,4 +24,17 @@ public class PlastLevelHistory
     public bool IsPlastunka { get; set; }
 
     public DateOnly DateAchieved { get; set; }
+
+    /// <summary>
+    /// A senior ступінь the person entered on their own card, waiting for the Звʼязковий of a kurin they
+    /// stand in. Until confirmed it counts for nothing — not the улад, not the highest ступінь, not
+    /// <see cref="Member.LatestPlastLevel"/> — and the card shows it marked as waiting.
+    /// </summary>
+    public bool AwaitsConfirmation { get; set; }
+
+    /// <summary>Who confirmed a ступінь that waited; null for one that never waited.</summary>
+    public Guid? ConfirmedByUserKey { get; set; }
+
+    /// <summary>When a ступінь that waited was confirmed; null for one that never waited.</summary>
+    public DateTime? ConfirmedAtUtc { get; set; }
 }

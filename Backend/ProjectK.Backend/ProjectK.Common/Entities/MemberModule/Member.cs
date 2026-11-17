@@ -49,6 +49,10 @@ public class Member : Entity, IHasParentContacts
     public DateTime? ProfileVerifiedAtUtc { get; set; }
     public Guid? ProfileVerifiedByUserKey { get; set; }
     public string? ProfileVerificationNote { get; set; }
+    /// <summary>
+    /// The newest ступінь that counts, kept beside the history for reads that do not load it. A ступінь
+    /// that awaits confirmation is left out, so this never says more than the Звʼязковий confirmed.
+    /// </summary>
     public PlastLevel? LatestPlastLevel { get; set; }
     public ICollection<PlastLevelHistory> PlastLevelHistory { get; set; } = new List<PlastLevelHistory>();
     public ICollection<MemberWarning> MemberWarnings { get; set; } = new List<MemberWarning>();

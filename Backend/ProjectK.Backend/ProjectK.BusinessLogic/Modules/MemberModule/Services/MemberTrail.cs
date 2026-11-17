@@ -18,6 +18,8 @@ public static class MemberTrail
     public const string PlastLevels = "plastLevels";
     public const string ProfileVerification = "profileVerification";
 
+    private const string PendingMark = " — чекає підтвердження";
+
     /// <summary>
     /// The card as it stands now. Taken before an edit it is what the edit is measured against, so
     /// it copies everything out — the ступені included, which an edit changes in place.
@@ -82,13 +84,17 @@ public static class MemberTrail
             KurinKey: before is null ? kurinKey : actingKurinKey ?? kurinKey);
     }
 
-    /// <summary>The ступені in the order they were reached, each with its date; null when there are none.</summary>
+    /// <summary>
+    /// The ступені in the order they were reached, each with its date and one that waits marked so;
+    /// null when there are none. The mark is what makes a confirmation a change the journal sees.
+    /// </summary>
     public static string? PlastLevelsOf(IEnumerable<PlastLevelHistory> history)
     {
         var levels = history
             .OrderBy(entry => entry.DateAchieved)
             .ThenBy(entry => entry.PlastLevel)
-            .Select(entry => $"{PlastLevelNames.Of(entry.PlastLevel)} ({entry.DateAchieved.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)})")
+            .Select(entry => $"{PlastLevelNames.Of(entry.PlastLevel)} ({entry.DateAchieved.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)})"
+                + (entry.AwaitsConfirmation ? PendingMark : string.Empty))
             .ToList();
 
         return levels.Count == 0 ? null : string.Join("; ", levels);

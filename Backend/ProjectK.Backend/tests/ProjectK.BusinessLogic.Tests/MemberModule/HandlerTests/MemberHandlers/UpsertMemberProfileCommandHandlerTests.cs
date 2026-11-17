@@ -626,6 +626,57 @@ public class UpsertMemberProfileCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Update_ByOwner_ASeniorLevel_WaitsAndLeavesTheLatestAsItWas()
+    {
+        var group = MakeGroup();
+        var ownerUserKey = Guid.NewGuid();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = ownerUserKey;
+        var skob = new PlastLevelHistory { PlastLevelHistoryKey = Guid.NewGuid(), MemberKey = existing.MemberKey, PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2020, 4, 22) };
+        existing.PlastLevelHistory = [skob];
+        existing.LatestPlastLevel = PlastLevel.Skob;
+        var cmd = ProfileCommandFor(existing, group);
+        cmd.PlastLevelHistories =
+        [
+            new PlastLevelHistoryDto { PlastLevelHistoryKey = skob.PlastLevelHistoryKey, PlastLevel = PlastLevel.Skob, DateAchieved = skob.DateAchieved },
+            new PlastLevelHistoryDto { PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2025, 10, 1) }
+        ];
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.PlastLevelHistory.Single(entry => entry.PlastLevel == PlastLevel.Starshoplastun).AwaitsConfirmation.Should().BeTrue();
+        existing.LatestPlastLevel.Should().Be(PlastLevel.Skob);
+    }
+
+    [Fact]
+    public async Task Handle_Update_ByLeadership_ASeniorLevel_CountsAtOnce()
+    {
+        var group = MakeGroup();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = Guid.NewGuid();
+        var cmd = ProfileCommandFor(existing, group);
+        cmd.PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2025, 10, 1) }];
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+        _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.PlastLevelHistory.Single().AwaitsConfirmation.Should().BeFalse();
+        existing.LatestPlastLevel.Should().Be(PlastLevel.Starshoplastun);
+    }
+
+    [Fact]
     public async Task Handle_Update_RecordsTheLevels_AsTheyWereAndAsTheyAre()
     {
         var group = MakeGroup();

@@ -61,6 +61,7 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                 ProfileVerifiedByUserKey = x.Person.ProfileVerifiedByUserKey,
                 ProfileVerificationNote = x.Person.ProfileVerificationNote,
                 PlastLevels = x.Person.PlastLevelHistory
+                    .Where(h => !h.AwaitsConfirmation)
                     .Select(h => new MemberListLevel(h.PlastLevelHistoryKey, h.MemberKey, h.PlastLevel, h.DateAchieved, h.IsPlastunka))
                     .ToList(),
                 // Offices of this kurin only: a role held in another kurin is not this kurin's to

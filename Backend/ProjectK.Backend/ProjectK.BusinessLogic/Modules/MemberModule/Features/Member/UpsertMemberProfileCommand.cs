@@ -280,7 +280,13 @@ public sealed class UpsertMemberProfileCommandHandler
 
             if (CanEditPlastLevels(existing))
             {
-                PlastLevelHistoryRules.Apply(existing.MemberKey, kurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
+                // A senior ступінь the person gives themselves waits for the Звʼязковий, whatever offices they hold.
+                PlastLevelHistoryRules.Apply(
+                    existing.MemberKey,
+                    kurinKey,
+                    request.PlastLevelHistories,
+                    existing.PlastLevelHistory,
+                    enteredByThemselves: IsCurrentUserOwner(existing));
                 existing.LatestPlastLevel = PlastLevelHistoryRules.LatestOf(existing.PlastLevelHistory);
             }
 

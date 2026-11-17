@@ -154,10 +154,10 @@ public sealed class GetMemberDossierQueryHandler
                 Progress: progress));
     }
 
-    /// <summary>Every ступінь on record and the latest one, which an older record may hold alone.</summary>
+    /// <summary>Every ступінь that counts and the latest one, which an older record may hold alone.</summary>
     private static List<PlastLevel> LevelsOf(ProjectK.Common.Entities.MemberModule.Member person)
     {
-        var levels = person.PlastLevelHistory.Select(h => h.PlastLevel).ToList();
+        var levels = person.PlastLevelHistory.Where(h => !h.AwaitsConfirmation).Select(h => h.PlastLevel).ToList();
         if (person.LatestPlastLevel is { } latest)
         {
             levels.Add(latest);
