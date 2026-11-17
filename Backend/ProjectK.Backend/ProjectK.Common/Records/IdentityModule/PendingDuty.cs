@@ -9,7 +9,8 @@ namespace ProjectK.Common.Records.IdentityModule;
 /// <param name="GroupName">That гурток's name.</param>
 /// <param name="AgendaItemKey">For an event: which one.</param>
 /// <param name="OccurrenceStartUtc">For an event: which occurrence.</param>
-/// <param name="Title">For an event: its title.</param>
+/// <param name="Title">For an event: its title; for a person's waiting ступені: their name.</param>
+/// <param name="MemberKey">For a person's waiting ступені: whose card they are on.</param>
 public sealed record PendingDuty(
     MyDutyKind Kind,
     int Count,
@@ -17,4 +18,5 @@ public sealed record PendingDuty(
     string? GroupName = null,
     Guid? AgendaItemKey = null,
     DateTime? OccurrenceStartUtc = null,
-    string? Title = null);
+    string? Title = null,
+    Guid? MemberKey = null);

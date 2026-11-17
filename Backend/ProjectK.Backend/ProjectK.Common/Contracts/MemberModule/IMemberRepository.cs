@@ -46,6 +46,10 @@ public interface IMemberRepository : IBaseEntityRepository<Member>
         CancellationToken cancellationToken = default);
 
     #region PlastLevelHistory Methods
+
+    /// <summary>The ступені of these people that wait for confirmation, in one query.</summary>
+    Task<IReadOnlyCollection<WaitingLevel>> GetWaitingLevelsAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
+
     #endregion
 
     #region LeadershipHistory Methods

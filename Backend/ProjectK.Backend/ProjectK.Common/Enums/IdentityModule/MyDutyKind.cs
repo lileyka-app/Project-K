@@ -10,5 +10,7 @@ public enum MyDutyKind
     /// <summary>Entries in a box nobody has verified yet.</summary>
     EntriesToVerify,
     /// <summary>A past event worth points where nobody has been marked present.</summary>
-    EventWithoutAttendance
+    EventWithoutAttendance,
+    /// <summary>A senior ступінь a person entered for themselves, waiting for the Звʼязковий; one duty per person.</summary>
+    LevelsToConfirm
 }

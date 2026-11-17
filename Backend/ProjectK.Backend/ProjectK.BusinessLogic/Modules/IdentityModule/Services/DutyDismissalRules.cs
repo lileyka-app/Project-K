@@ -12,12 +12,16 @@ namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 /// </summary>
 public static class DutyDismissalRules
 {
-    /// <summary>«EventWithoutAttendance:{kurin}:-:{event}:20261006T160000Z» — kind, kurin, гурток, event, occurrence; «-» for none.</summary>
+    /// <summary>
+    /// «EventWithoutAttendance:{kurin}:-:{event}:20261006T160000Z» — kind, kurin, гурток, the thing,
+    /// occurrence; «-» for none. The thing is the event, or the person whose ступені wait
+    /// («LevelsToConfirm:{kurin}:-:{member}:-»).
+    /// </summary>
     public static string KeyOf(MyDutyDto duty) => string.Join(':',
         duty.Kind.ToString(),
         duty.Kurin.KurinKey.ToString("N"),
         duty.GroupKey?.ToString("N") ?? "-",
-        duty.AgendaItemKey?.ToString("N") ?? "-",
+        (duty.AgendaItemKey ?? duty.MemberKey)?.ToString("N") ?? "-",
         duty.OccurrenceStartUtc?.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture) ?? "-");
 
     public static string FingerprintOf(MyDutyDto duty) => duty.Count.ToString(CultureInfo.InvariantCulture);

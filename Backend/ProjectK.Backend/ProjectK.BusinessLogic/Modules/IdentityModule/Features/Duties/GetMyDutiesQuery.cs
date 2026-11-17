@@ -92,7 +92,8 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
             GroupName = duty.GroupName,
             AgendaItemKey = duty.AgendaItemKey,
             OccurrenceStartUtc = duty.OccurrenceStartUtc,
-            Title = duty.Title
+            Title = duty.Title,
+            MemberKey = duty.MemberKey
         };
         return dto with { Key = DutyDismissalRules.KeyOf(dto), Fingerprint = DutyDismissalRules.FingerprintOf(dto) };
     }

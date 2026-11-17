@@ -17,6 +17,8 @@ public sealed record MyDutyDto
     public Guid? AgendaItemKey { get; init; }
     public DateTime? OccurrenceStartUtc { get; init; }
     public string? Title { get; init; }
+    /// <summary>For a person's waiting ступені: whose card to open; the person's name is the title.</summary>
+    public Guid? MemberKey { get; init; }
     /// <summary>Which duty this is, the same on every read: what hiding it names.</summary>
     public string Key { get; init; } = string.Empty;
     /// <summary>How big it is now; hidden, it comes back when this grows.</summary>
