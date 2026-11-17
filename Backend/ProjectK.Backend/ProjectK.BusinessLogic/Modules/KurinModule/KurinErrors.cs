@@ -78,6 +78,28 @@ public static class KurinErrors
     /// <summary>The caller's identity is missing from the token.</summary>
     public const string Unauthorized = "Unauthorized";
 
+    /// <summary>A senior kurin has no гуртки to import a roster into.</summary>
+    public const string RosterImportNotForSeniorKurin = "RosterImportNotForSeniorKurin";
+
+    /// <summary>The roster upload carried no file.</summary>
+    public const string NoFile = "NoFile";
+
+    public const string EmptyFile = "EmptyFile";
+    public const string UnreadableFile = "UnreadableFile";
+
+    public const string ArchiveOutOfReach = "ArchiveOutOfReach";
+    public const string ArchiveRecordNotFound = "ArchiveRecordNotFound";
+    public const string ArchiveOwnRecord = "ArchiveOwnRecord";
+    public const string ArchiveRecordCurrent = "ArchiveRecordCurrent";
+    public const string ArchiveInvalidRole = "ArchiveInvalidRole";
+    public const string DangerZoneClosed = "DangerZoneClosed";
+    public const string WrongCredentials = "WrongCredentials";
+    public const string NoSecondFactor = "NoSecondFactor";
+    public const string TooManyAttempts = "TooManyAttempts";
+    public const string ArchiveMembershipHasDues = "ArchiveMembershipHasDues";
+    public const string ArchiveOpenOffice = "ArchiveOpenOffice";
+    public const string ArchiveMembershipOverlap = "ArchiveMembershipOverlap";
+
     public static ServiceResult<T> NotFound<T>() =>
         ServiceResult<T>.Failure(ResultType.NotFound, KurinNotFound, "Kurin was not found.");
 

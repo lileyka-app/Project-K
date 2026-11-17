@@ -9,8 +9,8 @@ using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Migrations;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.AuditModule;
 
 namespace ProjectK.API.Tests.Services;

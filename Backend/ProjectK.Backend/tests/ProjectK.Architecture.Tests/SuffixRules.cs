@@ -60,7 +60,7 @@ public class SuffixRules
     /// </summary>
     private static readonly string[] DomainNouns =
     [
-        "ProjectK.BusinessLogic.Modules.ArchiveModule.Services.ArchiveReach",
+        "ProjectK.BusinessLogic.Modules.KurinModule.Services.ArchiveReach",
         "ProjectK.BusinessLogic.Modules.AgendaModule.Services.AgendaTargetNames",
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.LoginThrottle",
         "ProjectK.BusinessLogic.Modules.AuthModule.Services.Reauthentication",
