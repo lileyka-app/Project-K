@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Records.NotificationsModule;
-using ProjectK.Common.Rules.NotificationsModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;

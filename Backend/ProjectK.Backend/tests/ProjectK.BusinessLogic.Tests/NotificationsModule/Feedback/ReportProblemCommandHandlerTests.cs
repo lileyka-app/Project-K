@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.NotificationsModule.Features.Feedback;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.NotificationsModule;

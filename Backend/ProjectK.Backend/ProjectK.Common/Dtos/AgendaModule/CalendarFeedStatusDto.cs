@@ -1,5 +1,4 @@
-using ProjectK.Common.Entities.IdentityModule;
-using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.AgendaModule;
 
 namespace ProjectK.Common.Dtos.AgendaModule;
 
@@ -13,19 +12,4 @@ public sealed class CalendarFeedStatusDto
     public DateTime? LastFetchedUtc { get; set; }
     public DateTime? RevokedUtc { get; set; }
     public CalendarFeedRevokeReason? RevokedReason { get; set; }
-
-    public static CalendarFeedStatusDto Of(CalendarFeed? feed) => feed is null
-        ? new CalendarFeedStatusDto { State = CalendarFeedState.None }
-        : new CalendarFeedStatusDto
-        {
-            State = feed.RevokedAtUtc is null ? CalendarFeedState.Active : CalendarFeedState.Revoked,
-            IncludeSchedules = feed.IncludeSchedules,
-            IncludeTasks = feed.IncludeTasks,
-            CreatedUtc = Utc(feed.CreatedDate),
-            LastFetchedUtc = feed.LastFetchedAtUtc is { } fetched ? Utc(fetched) : null,
-            RevokedUtc = feed.RevokedAtUtc is { } revoked ? Utc(revoked) : null,
-            RevokedReason = feed.RevokedReason
-        };
-
-    private static DateTime Utc(DateTime value) => DateTime.SpecifyKind(value, DateTimeKind.Utc);
 }

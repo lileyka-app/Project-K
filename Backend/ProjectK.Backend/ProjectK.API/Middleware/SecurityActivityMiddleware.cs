@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Middleware;

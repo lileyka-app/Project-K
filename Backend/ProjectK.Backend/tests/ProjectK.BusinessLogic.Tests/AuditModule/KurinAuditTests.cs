@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Records.AuditModule;

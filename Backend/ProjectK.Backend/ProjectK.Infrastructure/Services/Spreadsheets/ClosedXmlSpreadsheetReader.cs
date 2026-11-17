@@ -1,7 +1,7 @@
 using System.Globalization;
 using ClosedXML.Excel;
-using ProjectK.Common.Contracts.NotificationsModule;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Infrastructure.Services.Spreadsheets;
 

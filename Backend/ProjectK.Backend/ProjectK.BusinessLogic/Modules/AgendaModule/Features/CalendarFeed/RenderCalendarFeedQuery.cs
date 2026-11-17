@@ -4,12 +4,11 @@ using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Models;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
-using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Common.Records.AgendaModule;
@@ -124,7 +123,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
 
     private async Task<IReadOnlyList<IcsEvent>> EventsOfAsync(
         AgendaKurinViewer context,
-        ProjectK.Common.Entities.IdentityModule.CalendarFeed feed,
+        ProjectK.Common.Entities.AgendaModule.CalendarFeed feed,
         TimeZoneInfo zone,
         DateTime now,
         bool severalKurins,

@@ -32,6 +32,7 @@ using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AgendaModule;
 using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.Shared;
 

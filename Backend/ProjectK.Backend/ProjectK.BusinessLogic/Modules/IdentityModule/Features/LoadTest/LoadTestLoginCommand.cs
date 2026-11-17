@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.Shared;

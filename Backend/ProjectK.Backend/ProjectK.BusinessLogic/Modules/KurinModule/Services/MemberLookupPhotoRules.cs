@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;

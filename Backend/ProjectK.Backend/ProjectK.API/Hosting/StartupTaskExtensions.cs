@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Seeding;
 using Spectre.Console;

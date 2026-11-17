@@ -2,7 +2,7 @@ using FluentValidation;
 using MediatR;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.AgendaModule;

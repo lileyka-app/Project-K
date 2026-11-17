@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Entities.IdentityModule;
-using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Stores;

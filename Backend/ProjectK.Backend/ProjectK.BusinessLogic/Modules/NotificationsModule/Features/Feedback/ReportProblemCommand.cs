@@ -1,11 +1,12 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.NotificationsModule;
 using ProjectK.Common.Records.Shared;
-using ProjectK.Common.Rules.NotificationsModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.NotificationsModule.Features.Feedback;

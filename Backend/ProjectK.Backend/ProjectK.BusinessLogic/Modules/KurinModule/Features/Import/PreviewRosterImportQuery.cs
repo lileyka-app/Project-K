@@ -1,8 +1,8 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
