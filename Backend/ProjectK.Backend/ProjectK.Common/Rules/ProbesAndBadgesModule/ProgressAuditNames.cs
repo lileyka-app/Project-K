@@ -1,4 +1,6 @@
-namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+
+namespace ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 /// <summary>
 /// What the kurin's journal calls a проба, its point or a вмілість: the catalogue's title at the

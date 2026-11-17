@@ -33,9 +33,6 @@ public class ModuleBoundaryRules
     /// <summary>The files that spell out another module's namespace, by the module they name.</summary>
     private static readonly string[] NamesAnotherModule =
     [
-        "ProjectK.BusinessLogic/Modules/AuditModule/Features/Journal/GetKurinJournalQuery.cs -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic/Modules/AuthModule/Features/Onboarding/ActivateAccountCommand.cs -> MemberModule",
-        "ProjectK.BusinessLogic/Modules/KurinModule/Services/KurinReportDataService.cs -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Dues/GetMyDuesQuery.cs -> DuesModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Duties/GetMyDutiesQuery.cs -> ScoreModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Growth/GetMyGrowthQuery.cs -> ProbesAndBadgesModule",
@@ -53,9 +50,6 @@ public class ModuleBoundaryRules
     /// </summary>
     private static readonly string[] ReachesIntoAnotherModule =
     [
-        "ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.GetKurinJournalQueryHandler -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.ActivateAccountCommandHandler -> MemberModule",
-        "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinReportDataService -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Dues.GetMyDuesQueryHandler -> DuesModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Duties.GetMyDutiesQueryHandler -> ScoreModule",
         "ProjectK.BusinessLogic.Modules.MeModule.Features.Growth.GetMyGrowthQueryHandler -> ProbesAndBadgesModule",

@@ -312,6 +312,7 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
             builder.Services.AddScoped<IMemberDirectory, MemberDirectory>();
             builder.Services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+            builder.Services.AddScoped<IMemberActivationWriter, MemberActivationWriter>();
 
             builder.Services.AddMediatR(cfg =>
             {

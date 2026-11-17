@@ -174,6 +174,7 @@ public static class DependencyInjection
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
         services.AddScoped<IOfficeDirectory, OfficeDirectory>();
         services.AddScoped<IMemberImportWriter, MemberImportWriter>();
+        services.AddScoped<IMemberActivationWriter, MemberActivationWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<MembershipMoves>();
         services.AddScoped<MembershipAskRouting>();

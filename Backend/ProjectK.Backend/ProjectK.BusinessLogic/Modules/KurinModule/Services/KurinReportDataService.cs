@@ -7,7 +7,6 @@ using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.Shared;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
