@@ -2,16 +2,11 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.Leadership;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.Membership;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuthModule;
-using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Dtos.MemberModule.Requests;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
-using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.AuthModule;
 using ProjectK.Common.Records.MemberModule;
@@ -41,19 +36,19 @@ public sealed class ActivateAccountCommandHandler : IRequestHandler<ActivateAcco
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly UserManager<AppUser> _userManager;
-    private readonly IMediator _mediator;
+    private readonly IMemberActivationWriter _activation;
     private readonly TimeProvider _timeProvider;
     private readonly ILoginResponseService _loginResponseService;
     private readonly IDomainEventPublisher _events;
 
-    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMediator mediator, TimeProvider timeProvider, ILoginResponseService loginResponseService, IDomainEventPublisher events)
+    public ActivateAccountCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, UserManager<AppUser> userManager, IMemberActivationWriter activation, TimeProvider timeProvider, ILoginResponseService loginResponseService, IDomainEventPublisher events)
     {
         _loginResponseService = loginResponseService;
         _events = events;
         _unitOfWork = unitOfWork;
         _members = members;
         _userManager = userManager;
-        _mediator = mediator;
+        _activation = activation;
         _timeProvider = timeProvider;
     }
 
@@ -136,38 +131,17 @@ public sealed class ActivateAccountCommandHandler : IRequestHandler<ActivateAcco
 
         // 5.5. A founder is taken into the kurin their approval opened for them. The queue entry
         // is what remembers that kurin, and here it is the only thing that can: the kurin was
-        // created moments ago and nobody belongs to it yet. Joining rather than placing matters —
-        // someone who already belongs to a kurin keeps it and founds the new one alongside.
+        // created moments ago and nobody belongs to it yet.
         var foundedKurinKey = entry?.FoundedKurinKey;
         if (foundedKurinKey.HasValue && foundedKurinKey.Value != Guid.Empty)
         {
-            await _mediator.Send(
-                new JoinKurinCommand(memberKey, foundedKurinKey.Value, GroupKey: null),
-                cancellationToken);
+            await _activation.JoinFoundedKurinAsync(memberKey, foundedKurinKey.Value, cancellationToken);
         }
 
         // 6. A kurin-leader candidate becomes the kurin's Зв'язковий; the office sync grants the role.
         if (isKurinLeaderCandidate && foundedKurinKey.HasValue && foundedKurinKey.Value != Guid.Empty)
         {
-            await _mediator.Send(new UpsertLeadershipCommand(new UpsertLeadershipRequest
-            {
-                Type = LeadershipType.KV.ToString(),
-                EntityKey = foundedKurinKey.Value,
-                StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
-                LeadershipHistories = new[]
-                {
-                    new LeadershipHistoryMemberDto
-                    {
-                        Role = LeadershipRole.Zvyazkovyi.ToString(),
-                        StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
-                        Member = new MemberLookupDto { MemberKey = memberKey }
-                    }
-                }
-            })
-            {
-                // The activating user is still anonymous here, so there is no assigner to check.
-                SeatedBySystem = true
-            }, cancellationToken);
+            await _activation.SeatFounderAsync(memberKey, foundedKurinKey.Value, cancellationToken);
         }
 
         // Signed in on the spot: the password was just chosen, asking for it again is a wall.

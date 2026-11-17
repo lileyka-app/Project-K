@@ -1,19 +1,15 @@
 using FluentAssertions;
-using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.BusinessLogic.Modules.MemberModule.Features.Leadership;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.AuthModule;
 using ProjectK.Common.Records.MemberModule;
@@ -36,7 +32,7 @@ public class ActivateAccountHandlerTests
     private readonly Mock<IInvitationRepository> _invitations = new();
     private readonly Mock<IWaitlistRepository> _waitlistEntries = new();
     private readonly Mock<IMemberRepository> _members = new();
-    private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<IMemberActivationWriter> _activation = new();
     private readonly Mock<ILoginResponseService> _loginResponses = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly Mock<UserManager<AppUser>> _userManager;
@@ -67,7 +63,7 @@ public class ActivateAccountHandlerTests
             .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid userKey, CancellationToken _) => new MemberSummary(Guid.NewGuid(), userKey, Guid.Empty, null, "Ліна", "Лідер", "leader@example.com", null));
 
-        _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _mediator.Object, _clock, _loginResponses.Object, _events.Object);
+        _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _activation.Object, _clock, _loginResponses.Object, _events.Object);
     }
 
     private Invitation GivenInvitation(Guid userKey, DateTime? expiresAtUtc = null)
@@ -174,42 +170,48 @@ public class ActivateAccountHandlerTests
 
         result.Type.Should().Be(ResultType.Success);
         _userManager.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), SystemRoleNames.Member), Times.Once);
-        _mediator.Verify(x => x.Send(It.IsAny<UpsertLeadershipCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+        _activation.Verify(x => x.SeatFounderAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         invitation.UsedAtUtc.Should().NotBeNull();
         _events.Verify(x => x.PublishAsync(It.Is<AccountActivated>(e => e.Account.UserKey == userKey), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
-    /// The regression this file exists for. The office must be seated with SeatedBySystem, because the
-    /// activating user is anonymous and there is nobody to authorize the assignment against — without
-    /// it a kurin's first leader activates into a kurin they cannot manage.
+    /// A founder lands in the kurin their approval opened, and a kurin-leader candidate is seated in
+    /// it too, both as the member the activation opened and read back after the save.
     /// </summary>
     [Fact]
-    public async Task SeatsTheKurinLeaderOfficeAsTheSystem()
+    public async Task TakesTheFounderIntoTheirKurinAndSeatsThem()
+    {
+        var userKey = Guid.NewGuid();
+        var kurinKey = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var invitation = GivenInvitation(userKey);
+        GivenUser(userKey);
+        GivenWaitlistEntry(invitation, isKurinLeaderCandidate: true, foundedKurinKey: kurinKey);
+        _memberDirectory
+            .Setup(x => x.FindByAccountAsync(userKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(memberKey, userKey, Guid.Empty, null, "Ліна", "Лідер", "leader@example.com", null));
+
+        var result = await _handler.Handle(new ActivateAccountCommand("token", "Password@1"), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _activation.Verify(x => x.JoinFoundedKurinAsync(memberKey, kurinKey, It.IsAny<CancellationToken>()), Times.Once);
+        _activation.Verify(x => x.SeatFounderAsync(memberKey, kurinKey, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task TakesAFounderWhoIsNoLeaderCandidateInWithoutSeatingThem()
     {
         var userKey = Guid.NewGuid();
         var kurinKey = Guid.NewGuid();
         var invitation = GivenInvitation(userKey);
         GivenUser(userKey);
-        GivenWaitlistEntry(invitation, isKurinLeaderCandidate: true, foundedKurinKey: kurinKey);
-        _members
-            .Setup(x => x.GetByEmailAsync("leader@example.com", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Member?)null);
-
-        UpsertLeadershipCommand? seated = null;
-        _mediator
-            .Setup(x => x.Send(It.IsAny<UpsertLeadershipCommand>(), It.IsAny<CancellationToken>()))
-            .Callback<object, CancellationToken>((request, _) => seated = (UpsertLeadershipCommand)request)
-            .ReturnsAsync(new ServiceResult<LeadershipDto>(ResultType.Success));
+        GivenWaitlistEntry(invitation, isKurinLeaderCandidate: false, foundedKurinKey: kurinKey);
 
         var result = await _handler.Handle(new ActivateAccountCommand("token", "Password@1"), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        seated.Should().NotBeNull();
-        seated!.SeatedBySystem.Should().BeTrue(
-            "the activating user is anonymous, so nothing else can authorize the assignment");
-        seated.EntityKey.Should().Be(kurinKey);
-        seated.LeadershipHistoryMembers.Should()
-            .ContainSingle(history => history.Role == LeadershipRole.Zvyazkovyi.ToString());
+        _activation.Verify(x => x.JoinFoundedKurinAsync(It.IsAny<Guid>(), kurinKey, It.IsAny<CancellationToken>()), Times.Once);
+        _activation.Verify(x => x.SeatFounderAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
