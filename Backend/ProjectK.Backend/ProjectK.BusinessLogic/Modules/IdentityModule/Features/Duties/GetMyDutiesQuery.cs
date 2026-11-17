@@ -1,106 +1,73 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
-using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.IdentityModule;
-using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Enums.DuesModule;
-using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.AgendaModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.Shared;
-using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Features.Duties;
 
 /// <summary>
-/// What waits on the person as провід, in every kurin where they hold an office: вмілості to
-/// confirm, money to acknowledge or verify, past events nobody marked attendance at. Each source is
-/// read only where their offices there give the right to act on it, so the list never names a thing
-/// the page behind it would refuse. What the person hid stays out while it has not grown, and is
-/// counted instead.
+/// What waits on the person as провід, in every kurin where they hold an office, collected from every
+/// <see cref="IDutySource"/>: вмілості to confirm, money to acknowledge or verify, past events nobody
+/// marked attendance at. Each source answers only what the person's offices there give the right to
+/// act on, so the list never names a thing the page behind it would refuse. What the person hid
+/// stays out while it has not grown, and is counted instead.
 /// </summary>
 public sealed record GetMyDutiesQuery : IRequest<ServiceResult<MyDutiesDto>>;
 
 public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, ServiceResult<MyDutiesDto>>
 {
-    private const int AttendanceWindowDays = 14;
-
-    private readonly AgendaViewerReader _scopes;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IDuesUnitOfWork _dues;
-    private readonly IMemberDirectory _members;
-    private readonly IMemberProgressDirectory _progress;
-    private readonly ScoreBookReader _books;
-    private readonly ICurrentUserContext _currentUser;
-    private readonly TimeProvider _time;
-    private readonly IKraiProfileDirectory _profiles;
+    private readonly IAgendaViewerDirectory _viewers;
+    private readonly IEnumerable<IDutySource> _sources;
     private readonly IPermissionResolver _permissions;
-    private readonly IAgendaDirectory _agenda;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserContext _currentUser;
 
     public GetMyDutiesQueryHandler(
-        AgendaViewerReader scopes,
-        IUnitOfWork unitOfWork,
-        IDuesUnitOfWork dues,
-        IMemberDirectory members,
-        IMemberProgressDirectory progress,
-        ScoreBookReader books,
-        ICurrentUserContext currentUser,
-        TimeProvider time,
-        IKraiProfileDirectory profiles,
+        IAgendaViewerDirectory viewers,
+        IEnumerable<IDutySource> sources,
         IPermissionResolver permissions,
-        IAgendaDirectory agenda)
+        IUnitOfWork unitOfWork,
+        ICurrentUserContext currentUser)
     {
-        _scopes = scopes;
-        _unitOfWork = unitOfWork;
-        _dues = dues;
-        _members = members;
-        _progress = progress;
-        _books = books;
-        _currentUser = currentUser;
-        _time = time;
-        _profiles = profiles;
+        _viewers = viewers;
+        _sources = sources;
         _permissions = permissions;
-        _agenda = agenda;
+        _unitOfWork = unitOfWork;
+        _currentUser = currentUser;
     }
 
     public async Task<ServiceResult<MyDutiesDto>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
     {
         var duties = new List<MyDutyDto>();
 
-        foreach (var context in await _scopes.BuildAsync(cancellationToken))
+        foreach (var context in await _viewers.GetForCurrentAccountAsync(cancellationToken))
         {
             if (context.Roles.Count == 0)
             {
                 continue;
             }
 
-            var permissions = await _permissions.ResolveAsync(context.Roles, context.Membership.KurinKey, cancellationToken);
-            var rights = new DutyRights(permissions, context.LedGroupKeys);
+            var kurinKey = context.Membership.KurinKey;
+            var permissions = await _permissions.ResolveAsync(context.Roles, kurinKey, cancellationToken);
+            var viewer = new DutyViewer(kurinKey, context.Viewer, new DutyRights(permissions, context.LedGroupKeys));
             var kurin = MyKurinRefDto.Of(context.Membership, _currentUser.KurinKey);
 
-            await AddBadgesAsync(duties, context, rights, kurin, cancellationToken);
-            await AddDuesAsync(duties, context, rights, kurin, cancellationToken);
-            // A kurin that switched точкування off asks nobody to fill in attendance.
-            if ((await _unitOfWork.Kurins.GetByKeyAsync(context.Membership.KurinKey, cancellationToken))?.IsScoreEnabled ?? true)
+            var found = new List<PendingDuty>();
+            foreach (var source in _sources)
             {
-                await AddAttendanceAsync(duties, context, rights, kurin, cancellationToken);
+                found.AddRange(await source.GetDutiesAsync(viewer, cancellationToken));
             }
-        }
 
-        for (var i = 0; i < duties.Count; i++)
-        {
-            duties[i] = duties[i] with { Key = DutyDismissalRules.KeyOf(duties[i]), Fingerprint = DutyDismissalRules.FingerprintOf(duties[i]) };
+            // By kind, not by the order the sources happen to be registered in; OrderBy is stable, so a source's own order stays.
+            duties.AddRange(found.OrderBy(duty => duty.Kind).Select(duty => ToDto(duty, kurin)));
         }
 
         var dismissed = _currentUser.UserId is { } userKey && duties.Count > 0
@@ -115,123 +82,19 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         });
     }
 
-    /// <summary>Вмілості handed in by the youths whose progress the person may confirm.</summary>
-    private async Task AddBadgesAsync(List<MyDutyDto> duties, AgendaKurinViewer context, DutyRights rights, MyKurinRefDto kurin, CancellationToken cancellationToken)
+    private static MyDutyDto ToDto(PendingDuty duty, MyKurinRefDto kurin)
     {
-        if (!rights.ForAnyGroup(ResourceType.BadgeProgress, ResourceAction.Update))
+        var dto = new MyDutyDto
         {
-            return;
-        }
-
-        var people = (await _members.GetByKurinAsync(context.Membership.KurinKey, cancellationToken))
-            .Where(p => rights.ForGroup(ResourceType.BadgeProgress, ResourceAction.Update, p.GroupKey))
-            .Select(p => p.MemberKey)
-            .ToList();
-        var count = await _progress.CountSubmittedBadgesAsync(people, cancellationToken);
-        if (count > 0)
-        {
-            duties.Add(new MyDutyDto { Kind = MyDutyKind.BadgesToReview, Kurin = kurin, Count = count });
-        }
-    }
-
-    /// <summary>
-    /// Money waiting on a скарбник: transfers the kurin's one has not acknowledged, and entries in
-    /// each box — a гурток's, or the kurin's own — that nobody has verified.
-    /// </summary>
-    private async Task AddDuesAsync(
-        List<MyDutyDto> duties, AgendaKurinViewer context, DutyRights rights, MyKurinRefDto kurin, CancellationToken cancellationToken)
-    {
-        var keepsKurinBox = rights.WholeKurin(ResourceType.KurinDues, ResourceAction.Update);
-        if (!keepsKurinBox && !rights.ForAnyGroup(ResourceType.GroupDues, ResourceAction.Update))
-        {
-            return;
-        }
-
-        var entries = await _dues.DuesEntries.GetForKurinAsync(context.Membership.KurinKey, cancellationToken);
-
-        if (keepsKurinBox)
-        {
-            var transfers = entries.Count(e => e.GroupKey.HasValue && e.Kind == DuesEntryKind.TransferToKurin && e.ReceivedAtUtc is null);
-            if (transfers > 0)
-            {
-                duties.Add(new MyDutyDto { Kind = MyDutyKind.TransfersToConfirm, Kurin = kurin, Count = transfers });
-            }
-
-            var own = entries.Count(e => e.GroupKey is null && !e.IsVerified);
-            if (own > 0)
-            {
-                duties.Add(new MyDutyDto { Kind = MyDutyKind.EntriesToVerify, Kurin = kurin, Count = own });
-            }
-        }
-
-        var unverified = entries
-            .Where(e => e.GroupKey.HasValue && !e.IsVerified)
-            .GroupBy(e => e.GroupKey!.Value)
-            .Where(g => rights.ForGroup(ResourceType.GroupDues, ResourceAction.Update, g.Key))
-            .ToList();
-        if (unverified.Count == 0)
-        {
-            return;
-        }
-
-        var groupNames = (await _unitOfWork.Groups.GetAllAsync(context.Membership.KurinKey, cancellationToken))
-            .ToDictionary(g => g.GroupKey, g => g.Name);
-        foreach (var group in unverified)
-        {
-            duties.Add(new MyDutyDto
-            {
-                Kind = MyDutyKind.EntriesToVerify,
-                Kurin = kurin,
-                Count = group.Count(),
-                GroupKey = group.Key,
-                GroupName = groupNames.GetValueOrDefault(group.Key, "—")
-            });
-        }
-    }
-
-    /// <summary>
-    /// Events of the last two weeks worth points where no one at all was marked present — the sheet
-    /// nobody opened — unless someone said that occurrence did not take place. Only for someone who
-    /// scores at least one гурток there.
-    /// </summary>
-    private async Task AddAttendanceAsync(List<MyDutyDto> duties, AgendaKurinViewer context, DutyRights rights, MyKurinRefDto kurin, CancellationToken cancellationToken)
-    {
-        if (!rights.ForAnyGroup(ResourceType.GroupScore, ResourceAction.Create))
-        {
-            return;
-        }
-
-        var now = _time.GetUtcNow().UtcDateTime;
-        var from = now.AddDays(-AttendanceWindowDays);
-        var book = await _books.OpenAttendanceAsync(context.Membership.KurinKey, cancellationToken);
-        var zone = await _profiles.ForKurinAsync(context.Membership.KurinKey, cancellationToken);
-        var settled = book.Attendances
-            .Where(a => a.RemovedAtUtc is null)
-            .Select(a => (a.AgendaItemKey, a.OccurrenceStartUtc))
-            .ToHashSet();
-        // An occurrence said not to have taken place has no sheet to fill.
-        settled.UnionWith(book.NotHeld.Select(n => (n.AgendaItemKey, n.OccurrenceStartUtc)));
-
-        var items = await _agenda.GetInWindowForViewerAsync(
-            context.Viewer, new AgendaWindow(from, now, zone, AgendaItemKind.Event), cancellationToken);
-
-        foreach (var item in items.Where(candidate => book.AttendancePoints(candidate.AgendaItemKey, candidate.AgendaCategoryKey) > 0))
-        {
-            var unmarkedStarts = item.Occurrences
-                .Select(occurrence => occurrence.StartUtc)
-                .Where(startUtc => startUtc <= now && !settled.Contains((item.AgendaItemKey, startUtc)));
-            foreach (var startUtc in unmarkedStarts)
-            {
-                duties.Add(new MyDutyDto
-                {
-                    Kind = MyDutyKind.EventWithoutAttendance,
-                    Kurin = kurin,
-                    Count = 1,
-                    AgendaItemKey = item.AgendaItemKey,
-                    OccurrenceStartUtc = DateTime.SpecifyKind(startUtc, DateTimeKind.Utc),
-                    Title = item.Title
-                });
-            }
-        }
+            Kind = duty.Kind,
+            Kurin = kurin,
+            Count = duty.Count,
+            GroupKey = duty.GroupKey,
+            GroupName = duty.GroupName,
+            AgendaItemKey = duty.AgendaItemKey,
+            OccurrenceStartUtc = duty.OccurrenceStartUtc,
+            Title = duty.Title
+        };
+        return dto with { Key = DutyDismissalRules.KeyOf(dto), Fingerprint = DutyDismissalRules.FingerprintOf(dto) };
     }
 }

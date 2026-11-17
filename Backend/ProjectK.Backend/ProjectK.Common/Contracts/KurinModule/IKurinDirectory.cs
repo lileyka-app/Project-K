@@ -20,6 +20,9 @@ public interface IKurinDirectory
     /// <summary>How long the kurin's done tasks stay on the board and its archive is kept; null when there is no such kurin.</summary>
     Task<KurinTaskArchivePolicy?> GetTaskArchivePolicyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
+    /// <summary>Whether the kurin keeps точкування on; true for a kurin there is no record of, as every kurin did before the switch.</summary>
+    Task<bool> IsScoreEnabledAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
     /// <summary>What each of these kurins lets its minors do with their card; a kurin that never said is absent.</summary>
     Task<IReadOnlyCollection<MinorCardSharing>> GetMinorCardSharingAsync(IReadOnlyCollection<Guid> kurinKeys, CancellationToken cancellationToken = default);
 }

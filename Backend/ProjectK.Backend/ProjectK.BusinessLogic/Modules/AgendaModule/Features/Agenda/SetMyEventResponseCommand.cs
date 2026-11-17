@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AgendaModule;
@@ -27,12 +26,12 @@ public sealed class SetMyEventResponseCommandValidator : AbstractValidator<SetMy
 
 public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEventResponseCommand, ServiceResult<Unit>>
 {
-    private readonly AgendaViewerReader _scopes;
+    private readonly IAgendaViewerDirectory _scopes;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _time;
     private readonly IAgendaRsvpWriter _rsvps;
 
-    public SetMyEventResponseCommandHandler(AgendaViewerReader scopes, IUnitOfWork unitOfWork, TimeProvider time, IAgendaRsvpWriter rsvps)
+    public SetMyEventResponseCommandHandler(IAgendaViewerDirectory scopes, IUnitOfWork unitOfWork, TimeProvider time, IAgendaRsvpWriter rsvps)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
@@ -42,7 +41,7 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
 
     public async Task<ServiceResult<Unit>> Handle(SetMyEventResponseCommand request, CancellationToken cancellationToken)
     {
-        var viewers = (await _scopes.BuildAsync(cancellationToken)).Select(context => context.Viewer).ToList();
+        var viewers = (await _scopes.GetForCurrentAccountAsync(cancellationToken)).Select(context => context.Viewer).ToList();
         var outcome = await _rsvps.AnswerAsync(
             viewers, request.AgendaItemKey, request.OccurrenceStartUtc, request.Status, _time.GetUtcNow().UtcDateTime, cancellationToken);
 

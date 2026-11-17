@@ -1,3 +1,4 @@
+using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -7,12 +8,13 @@ using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 
-/// <summary>
-/// How the person is seen by the agenda of every kurin they currently stand in. The token carries the
-/// rights of one kurin only, so the others are worked out here from the offices the person holds
-/// there — the same offices the token would be minted from after a switch. Read, never granted.
-/// </summary>
-public sealed class AgendaViewerReader
+/// <inheritdoc />
+/// <remarks>
+/// The token carries the rights of one kurin only, so the others are worked out here from the
+/// offices the person holds there — the same offices the token would be minted from after a switch.
+/// Read, never granted.
+/// </remarks>
+public sealed class AgendaViewerDirectory : IAgendaViewerDirectory
 {
     private readonly ICurrentMember _currentMember;
     private readonly IMembershipDirectory _memberships;
@@ -21,7 +23,7 @@ public sealed class AgendaViewerReader
     private readonly IResourceScopeReader _scopeReader;
     private readonly IKurinTagDirectory _tags;
 
-    public AgendaViewerReader(
+    public AgendaViewerDirectory(
         ICurrentMember currentMember,
         IMembershipDirectory memberships,
         IMemberDirectory members,
@@ -37,17 +39,12 @@ public sealed class AgendaViewerReader
         _tags = tags;
     }
 
-    /// <summary>Empty when nobody is signed in or no person stands behind the account.</summary>
-    public async Task<IReadOnlyList<AgendaKurinViewer>> BuildAsync(CancellationToken cancellationToken) =>
+    public async Task<IReadOnlyList<AgendaKurinViewer>> GetForCurrentAccountAsync(CancellationToken cancellationToken = default) =>
         _currentMember.UserKey is { } userKey
             ? await BuildAsync(userKey, await _currentMember.FindAsync(cancellationToken), cancellationToken)
             : [];
 
-    /// <summary>
-    /// The same for an account named by key rather than by the request's token — the calendar link,
-    /// fetched by a calendar app that signs nobody in. Empty when no person stands behind it.
-    /// </summary>
-    public async Task<IReadOnlyList<AgendaKurinViewer>> BuildForAsync(Guid userKey, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AgendaKurinViewer>> GetForAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
         => await BuildAsync(userKey, await _members.FindByAccountAsync(userKey, cancellationToken), cancellationToken);
 
     private async Task<IReadOnlyList<AgendaKurinViewer>> BuildAsync(Guid userKey, MemberSummary? person, CancellationToken cancellationToken)

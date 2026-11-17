@@ -1,8 +1,7 @@
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Rules.IdentityModule;
 
-namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+namespace ProjectK.Common.Records.IdentityModule;
 
 /// <summary>
 /// What the person's offices in one kurin let them see to: which гуртки's вмілості, boxes and

@@ -2,7 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
@@ -24,11 +24,11 @@ public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, Se
     private readonly ICurrentMember _me;
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IKurinDirectory _kurins;
 
-    public GetMyScoreQueryHandler(ICurrentMember me, ScoreBookReader books, ICurrentUserContext currentUser, IUnitOfWork unitOfWork)
+    public GetMyScoreQueryHandler(ICurrentMember me, ScoreBookReader books, ICurrentUserContext currentUser, IKurinDirectory kurins)
     {
-        _unitOfWork = unitOfWork;
+        _kurins = kurins;
         _me = me;
         _books = books;
         _currentUser = currentUser;
@@ -46,7 +46,7 @@ public sealed class GetMyScoreQueryHandler : IRequestHandler<GetMyScoreQuery, Se
         foreach (var membership in me.Memberships.Where(m => m.Kind == MembershipKind.Youth && m.GroupKey.HasValue && me.HasYouthProgramIn(m)))
         {
             // Switched off, точкування keeps its records but shows nowhere.
-            if (!((await _unitOfWork.Kurins.GetByKeyAsync(membership.KurinKey, cancellationToken))?.IsScoreEnabled ?? true))
+            if (!await _kurins.IsScoreEnabledAsync(membership.KurinKey, cancellationToken))
             {
                 continue;
             }

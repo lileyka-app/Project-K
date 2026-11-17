@@ -1,8 +1,10 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
+using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Duties;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AgendaModule;
@@ -18,9 +20,12 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.AgendaModule;
+using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Enums.AgendaModule;
+using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.AgendaModule;
@@ -40,6 +45,8 @@ public class GetMyDutiesQueryTests
     private static readonly Guid Kurin = Guid.NewGuid();
     private static readonly Guid Skhodyny = Guid.NewGuid();
     private static readonly DateTime Start = new(2026, 10, 6, 16, 0, 0, DateTimeKind.Utc);
+    private static readonly Guid Bobry = Guid.NewGuid();
+    private static readonly MembershipRecord Standing = new(Guid.NewGuid(), Kurin, 1, KurinBranch.UPYu, null, null, null, MembershipKind.Staff, Start.AddYears(-1), null);
 
     private readonly FixedTimeProvider _time = new(new DateTimeOffset(2026, 10, 9, 12, 0, 0, TimeSpan.Zero));
     private readonly List<Permission> _permissions = [new(ResourceType.GroupScore, ResourceAction.Create, AccessScope.KurinWide)];
@@ -47,9 +54,11 @@ public class GetMyDutiesQueryTests
     private readonly List<ScoreNotHeldOccurrence> _notHeld = [];
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IScoreUnitOfWork> _score = new();
+    private readonly Mock<IDuesUnitOfWork> _dues = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly List<DismissedDuty> _dismissed = [];
     private readonly Mock<IMemberProgressDirectory> _progress = new();
+    private readonly List<DuesEntry> _duesEntries = [];
     private int _submittedBadges;
 
     public GetMyDutiesQueryTests()
@@ -72,6 +81,12 @@ public class GetMyDutiesQueryTests
         _unitOfWork.SetupGet(u => u.DismissedDuties).Returns(dismissed.Object);
         // A kurin the repository does not know keeps точкування, as every kurin did before the switch.
         _unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<IKurinRepository>());
+        var groups = new Mock<IGroupRepository>();
+        groups.Setup(g => g.GetAllAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([new Group("Бобри", Kurin) { GroupKey = Bobry }]);
+        _unitOfWork.SetupGet(u => u.Groups).Returns(groups.Object);
+        var entries = new Mock<IDuesEntryRepository>();
+        entries.Setup(e => e.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _duesEntries);
+        _dues.SetupGet(d => d.DuesEntries).Returns(entries.Object);
         _progress.Setup(p => p.CountSubmittedBadgesAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => _submittedBadges);
 
         var rates = new Mock<IScoreAttendanceRateRepository>();
@@ -90,7 +105,7 @@ public class GetMyDutiesQueryTests
     {
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetCurrentForAccountAsync(User, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MembershipRecord(Guid.NewGuid(), Kurin, 1, KurinBranch.UPYu, null, null, null, MembershipKind.Staff, Start.AddYears(-1), null)]);
+            .ReturnsAsync([Standing]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(Person, User, Kurin, null, "Тарас", "Чупринка", "t@x", null));
@@ -98,16 +113,24 @@ public class GetMyDutiesQueryTests
         var offices = new Mock<IOfficeDirectory>();
         offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
-        var scopes = new AgendaViewerReader(new CurrentMember(_user.Object, members.Object, memberships.Object), memberships.Object, members.Object, offices.Object, Mock.Of<IKurinTagDirectory>(), Mock.Of<IResourceScopeReader>());
+        var scopes = new AgendaViewerDirectory(new CurrentMember(_user.Object, members.Object, memberships.Object), memberships.Object, members.Object, offices.Object, Mock.Of<IKurinTagDirectory>(), Mock.Of<IResourceScopeReader>());
 
         var permissions = new Mock<IPermissionResolver>();
         permissions.Setup(p => p.ResolveAsync(It.IsAny<IEnumerable<string>>(), Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _permissions);
 
-        var books = new ScoreBookReader(_score.Object, Agendas.Over(_unitOfWork.Object), KurinDirectories.Over(_unitOfWork.Object), memberships.Object, members.Object, Mock.Of<IScoreFactReader>(), _time);
+        var kurins = KurinDirectories.Over(_unitOfWork.Object);
+        var agenda = Agendas.Over(_unitOfWork.Object, members.Object);
+        var books = new ScoreBookReader(_score.Object, agenda, kurins, memberships.Object, members.Object, Mock.Of<IScoreFactReader>(), _time);
 
-        return new GetMyDutiesQueryHandler(
-            scopes, _unitOfWork.Object, Mock.Of<IDuesUnitOfWork>(), members.Object, _progress.Object,
-            books, _user.Object, _time, Mock.Of<IKraiProfileDirectory>(), permissions.Object, Agendas.Over(_unitOfWork.Object, members.Object));
+        // Registered against the order the list comes in: the collector, not the registration, orders it.
+        IDutySource[] sources =
+        [
+            new AttendanceDutyReader(books, agenda, Mock.Of<IKraiProfileDirectory>(), kurins, _time),
+            new DuesDutyReader(_dues.Object, kurins),
+            new BadgeDutyReader(members.Object, _progress.Object),
+        ];
+
+        return new GetMyDutiesQueryHandler(scopes, sources, permissions.Object, _unitOfWork.Object, _user.Object);
     }
 
     private async Task<MyDutiesDto> ReadAsync() =>
@@ -120,6 +143,55 @@ public class GetMyDutiesQueryTests
     {
         _permissions.Add(new(ResourceType.BadgeProgress, ResourceAction.Update, AccessScope.KurinWide));
         _submittedBadges = count;
+    }
+
+    /// <summary>A скарбник too, of the kurin's box and of every гурток's.</summary>
+    private void KeepsTheBoxes()
+    {
+        _permissions.Add(new(ResourceType.KurinDues, ResourceAction.Update, AccessScope.KurinWide));
+        _permissions.Add(new(ResourceType.GroupDues, ResourceAction.Update, AccessScope.KurinWide));
+    }
+
+    /// <summary>
+    /// Every kind at once, collected from the modules' sources, is the list «Справи» read before the
+    /// sources existed: the same items, in the same order, with the same keys and fingerprints.
+    /// </summary>
+    [Fact]
+    public async Task EveryKindAtOnce_ComesInTheOrderAndShapeItAlwaysHad()
+    {
+        ConfirmsBadges(3);
+        KeepsTheBoxes();
+        _duesEntries.AddRange(
+        [
+            new DuesEntry { KurinKey = Kurin, GroupKey = Bobry, Kind = DuesEntryKind.TransferToKurin, VerifiedAtUtc = Start },
+            new DuesEntry { KurinKey = Kurin, GroupKey = Bobry, Kind = DuesEntryKind.TransferToKurin, VerifiedAtUtc = Start },
+            new DuesEntry { KurinKey = Kurin, Kind = DuesEntryKind.Contribution },
+            new DuesEntry { KurinKey = Kurin, GroupKey = Bobry, Kind = DuesEntryKind.Contribution },
+            new DuesEntry { KurinKey = Kurin, GroupKey = Bobry, Kind = DuesEntryKind.Contribution },
+        ]);
+
+        var read = await ReadAsync();
+
+        var kurin = MyKurinRefDto.Of(Standing, Kurin);
+        read.HiddenCount.Should().Be(0);
+        read.Items.Should().BeEquivalentTo(
+            new[]
+            {
+                new MyDutyDto { Kind = MyDutyKind.BadgesToReview, Kurin = kurin, Count = 3, Key = $"BadgesToReview:{Kurin:N}:-:-:-", Fingerprint = "3" },
+                new MyDutyDto { Kind = MyDutyKind.TransfersToConfirm, Kurin = kurin, Count = 2, Key = $"TransfersToConfirm:{Kurin:N}:-:-:-", Fingerprint = "2" },
+                new MyDutyDto { Kind = MyDutyKind.EntriesToVerify, Kurin = kurin, Count = 1, Key = $"EntriesToVerify:{Kurin:N}:-:-:-", Fingerprint = "1" },
+                new MyDutyDto
+                {
+                    Kind = MyDutyKind.EntriesToVerify, Kurin = kurin, Count = 2, GroupKey = Bobry, GroupName = "Бобри",
+                    Key = $"EntriesToVerify:{Kurin:N}:{Bobry:N}:-:-", Fingerprint = "2"
+                },
+                new MyDutyDto
+                {
+                    Kind = MyDutyKind.EventWithoutAttendance, Kurin = kurin, Count = 1, AgendaItemKey = Skhodyny, OccurrenceStartUtc = Start,
+                    Title = "Сходини", Key = $"EventWithoutAttendance:{Kurin:N}:-:{Skhodyny:N}:20261006T160000Z", Fingerprint = "1"
+                },
+            },
+            options => options.WithStrictOrdering());
     }
 
     [Fact]

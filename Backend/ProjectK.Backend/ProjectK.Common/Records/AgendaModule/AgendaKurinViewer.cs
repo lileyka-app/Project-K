@@ -1,5 +1,4 @@
 using ProjectK.Common.Dtos.KurinModule;
-using ProjectK.Common.Records.AgendaModule;
 
 namespace ProjectK.Common.Records.AgendaModule;
 

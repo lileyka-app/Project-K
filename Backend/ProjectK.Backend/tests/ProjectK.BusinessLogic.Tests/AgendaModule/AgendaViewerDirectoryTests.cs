@@ -18,7 +18,7 @@ namespace ProjectK.BusinessLogic.Tests.AgendaModule;
 /// The token knows one kurin; the dashboard has to see the person in every kurin they stand in, with
 /// the rights they hold there and nowhere else.
 /// </summary>
-public class AgendaViewerReaderTests
+public class AgendaViewerDirectoryTests
 {
     private static readonly Guid User = Guid.NewGuid();
     private static readonly Guid Person = Guid.NewGuid();
@@ -32,13 +32,13 @@ public class AgendaViewerReaderTests
     private readonly List<MembershipRecord> _memberships = [];
 
     // The fallbacks go first so a test's own setup for one kurin wins over them.
-    public AgendaViewerReaderTests()
+    public AgendaViewerDirectoryTests()
     {
         _offices.Setup(o => o.GetForAccountInKurinAsync(User, It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _scopeReader.Setup(r => r.GetLedGroupSourcesAsync(User, It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([]));
     }
 
-    private AgendaViewerReader Scopes(Guid? userKey = null)
+    private AgendaViewerDirectory Scopes(Guid? userKey = null)
     {
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(u => u.UserId).Returns(userKey ?? User);
@@ -52,7 +52,7 @@ public class AgendaViewerReaderTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
         unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
-        return new AgendaViewerReader(new CurrentMember(user.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, Mock.Of<IKurinTagDirectory>(), ScopeFacts.Reader(_scopeReader.Object));
+        return new AgendaViewerDirectory(new CurrentMember(user.Object, members.Object, memberships.Object), memberships.Object, members.Object, _offices.Object, Mock.Of<IKurinTagDirectory>(), ScopeFacts.Reader(_scopeReader.Object));
     }
 
     private void StandIn(Guid kurin, int number, Guid? group, MembershipKind kind = MembershipKind.Youth) =>
@@ -64,7 +64,7 @@ public class AgendaViewerReaderTests
         StandIn(KurinA, 1, GroupA);
         StandIn(KurinB, 7, null, MembershipKind.Staff);
 
-        var contexts = await Scopes().BuildAsync(CancellationToken.None);
+        var contexts = await Scopes().GetForCurrentAccountAsync(CancellationToken.None);
 
         contexts.Select(c => c.Membership.KurinNumber).Should().Equal(1, 7);
         contexts[0].Viewer.Should().BeEquivalentTo(new { KurinKey = KurinA, ViewerMemberKey = (Guid?)Person, CanSeeWholeKurin = false, IsLeadership = false });
@@ -81,7 +81,7 @@ public class AgendaViewerReaderTests
         _offices.Setup(o => o.GetForAccountInKurinAsync(User, KurinB, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
 
-        var contexts = await Scopes().BuildAsync(CancellationToken.None);
+        var contexts = await Scopes().GetForCurrentAccountAsync(CancellationToken.None);
 
         contexts[0].Viewer.CanSeeWholeKurin.Should().BeFalse();
         contexts[1].Viewer.Should().BeEquivalentTo(new { CanSeeWholeKurin = true, IsLeadership = true });
@@ -95,7 +95,7 @@ public class AgendaViewerReaderTests
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)]);
         _scopeReader.Setup(r => r.GetLedGroupSourcesAsync(User, KurinB, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([LedInB]));
 
-        var contexts = await Scopes().BuildAsync(CancellationToken.None);
+        var contexts = await Scopes().GetForCurrentAccountAsync(CancellationToken.None);
 
         contexts.Single().Viewer.VisibilityGroupKeys.Should().Equal(LedInB);
         contexts.Single().Viewer.CanSeeWholeKurin.Should().BeFalse();
@@ -106,6 +106,6 @@ public class AgendaViewerReaderTests
     {
         StandIn(KurinA, 1, GroupA);
 
-        (await Scopes(Guid.Empty).BuildAsync(CancellationToken.None)).Should().BeEmpty();
+        (await Scopes(Guid.Empty).GetForCurrentAccountAsync(CancellationToken.None)).Should().BeEmpty();
     }
 }

@@ -121,6 +121,7 @@ public static class DependencyInjection
         services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
+        services.AddScoped<IDutySource, BadgeDutyReader>();
 
         return services;
     }
@@ -131,7 +132,7 @@ public static class DependencyInjection
         services.AddScoped<AgendaStatusWriter>();
         services.AddScoped<IAgendaRsvpWriter, AgendaRsvpWriter>();
         services.AddScoped<IAgendaDirectory, AgendaDirectory>();
-        services.AddScoped<AgendaViewerReader>();
+        services.AddScoped<IAgendaViewerDirectory, AgendaViewerDirectory>();
     }
 
     private static void AddDuesModule(this IServiceCollection services)
@@ -143,6 +144,7 @@ public static class DependencyInjection
         services.AddScoped<IDuesDirectory, DuesDirectory>();
         services.AddScoped<DuesAccess>();
         services.AddScoped<DuesEntryWriter>();
+        services.AddScoped<IDutySource, DuesDutyReader>();
     }
 
     private static void AddScoreModule(this IServiceCollection services)
@@ -150,6 +152,7 @@ public static class DependencyInjection
         services.AddScoped<ScoreAccess>();
         services.AddScoped<ScoreBookReader>();
         services.AddScoped<IScoreFactReader, ScoreFactReader>();
+        services.AddScoped<IDutySource, AttendanceDutyReader>();
     }
 
     private static void AddKurinModule(this IServiceCollection services)

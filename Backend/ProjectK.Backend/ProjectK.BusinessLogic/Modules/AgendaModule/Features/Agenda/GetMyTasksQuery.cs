@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.AgendaModule;
@@ -22,11 +21,11 @@ public sealed record GetMyTasksQuery : IRequest<ServiceResult<IReadOnlyList<MyTa
 
 public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, ServiceResult<IReadOnlyList<MyTaskDto>>>
 {
-    private readonly AgendaViewerReader _scopes;
+    private readonly IAgendaViewerDirectory _scopes;
     private readonly ICurrentUserContext _currentUser;
     private readonly IAgendaDirectory _agenda;
 
-    public GetMyTasksQueryHandler(AgendaViewerReader scopes, ICurrentUserContext currentUser, IAgendaDirectory agenda)
+    public GetMyTasksQueryHandler(IAgendaViewerDirectory scopes, ICurrentUserContext currentUser, IAgendaDirectory agenda)
     {
         _scopes = scopes;
         _currentUser = currentUser;
@@ -37,7 +36,7 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, Se
     {
         var rows = new List<MyTaskDto>();
 
-        foreach (var context in await _scopes.BuildAsync(cancellationToken))
+        foreach (var context in await _scopes.GetForCurrentAccountAsync(cancellationToken))
         {
             var kurin = MyKurinRefDto.Of(context.Membership, _currentUser.KurinKey);
             foreach (var item in await _agenda.GetTasksForViewerAsync(context.Viewer, cancellationToken))

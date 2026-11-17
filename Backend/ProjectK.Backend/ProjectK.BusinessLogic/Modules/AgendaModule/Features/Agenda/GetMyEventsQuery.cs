@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
@@ -27,13 +26,13 @@ public sealed class GetMyEventsQueryValidator : AbstractValidator<GetMyEventsQue
 
 public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, ServiceResult<IReadOnlyList<MyEventDto>>>
 {
-    private readonly AgendaViewerReader _scopes;
+    private readonly IAgendaViewerDirectory _scopes;
     private readonly IAgendaDirectory _agenda;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
     private readonly IKraiProfileDirectory _profiles;
 
-    public GetMyEventsQueryHandler(AgendaViewerReader scopes, IAgendaDirectory agenda, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
+    public GetMyEventsQueryHandler(IAgendaViewerDirectory scopes, IAgendaDirectory agenda, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _scopes = scopes;
         _agenda = agenda;
@@ -48,7 +47,7 @@ public sealed class GetMyEventsQueryHandler : IRequestHandler<GetMyEventsQuery, 
         var until = now.AddDays(request.Days);
         var rows = new List<MyEventDto>();
 
-        foreach (var context in await _scopes.BuildAsync(cancellationToken))
+        foreach (var context in await _scopes.GetForCurrentAccountAsync(cancellationToken))
         {
             var kurin = MyKurinRefDto.Of(context.Membership, _currentUser.KurinKey);
             var zone = await _profiles.ForKurinAsync(context.Membership.KurinKey, cancellationToken);

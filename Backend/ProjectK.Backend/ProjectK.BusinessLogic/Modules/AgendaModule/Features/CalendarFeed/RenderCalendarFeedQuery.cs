@@ -49,7 +49,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
 
     private readonly ICalendarFeedStore _feeds;
     private readonly UserManager<AppUser> _userManager;
-    private readonly AgendaViewerReader _scopes;
+    private readonly IAgendaViewerDirectory _scopes;
     private readonly IAgendaDirectory _agenda;
     private readonly IKurinDirectory _kurins;
     private readonly IKraiProfileDirectory _profiles;
@@ -59,7 +59,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
     public RenderCalendarFeedQueryHandler(
         ICalendarFeedStore feeds,
         UserManager<AppUser> userManager,
-        AgendaViewerReader scopes,
+        IAgendaViewerDirectory scopes,
         IAgendaDirectory agenda,
         IKurinDirectory kurins,
         IKraiProfileDirectory profiles,
@@ -110,7 +110,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
 
         var events = new List<IcsEvent>();
         string? zoneId = null;
-        var contexts = await _scopes.BuildForAsync(feed.UserId, cancellationToken);
+        var contexts = await _scopes.GetForAccountAsync(feed.UserId, cancellationToken);
 
         foreach (var context in contexts)
         {

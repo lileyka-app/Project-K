@@ -31,21 +31,13 @@ public class ModuleBoundaryRules
         @"\bProjectK\.BusinessLogic\.Modules\.(?<module>\w+)\b", RegexOptions.CultureInvariant);
 
     /// <summary>The files that spell out another module's namespace, by the module they name.</summary>
-    private static readonly string[] NamesAnotherModule =
-    [
-        "ProjectK.BusinessLogic/Modules/IdentityModule/Features/Duties/GetMyDutiesQuery.cs -> AgendaModule",
-        "ProjectK.BusinessLogic/Modules/IdentityModule/Features/Duties/GetMyDutiesQuery.cs -> ScoreModule",
-    ];
+    private static readonly string[] NamesAnotherModule = [];
 
     /// <summary>
     /// The crossings that were there when the rule was written, one by one. The list only gets
     /// shorter: a new line here is a boundary broken on purpose, and needs a task in the tracker.
     /// </summary>
-    private static readonly string[] ReachesIntoAnotherModule =
-    [
-        "ProjectK.BusinessLogic.Modules.IdentityModule.Features.Duties.GetMyDutiesQueryHandler -> AgendaModule",
-        "ProjectK.BusinessLogic.Modules.IdentityModule.Features.Duties.GetMyDutiesQueryHandler -> ScoreModule",
-    ];
+    private static readonly string[] ReachesIntoAnotherModule = [];
 
     [Fact]
     public void Modules_ShouldNotReachIntoEachOther()
