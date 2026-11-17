@@ -150,4 +150,7 @@ public static class KurinErrors
 
     public static ServiceResult<T> ChangedMeanwhile<T>() =>
         ServiceResult<T>.Failure(ResultType.Conflict, TagsChangedMeanwhile, "The tags were changed by someone else at the same time.");
+
+    public static ServiceResult<T> NoMember<T>() =>
+        ServiceResult<T>.Failure(ResultType.Forbidden, NotAMember, "The account has no member record.");
 }

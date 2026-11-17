@@ -78,9 +78,7 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.KurinTagVisibility",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipAskRouting",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipMoves",
-        "ProjectK.BusinessLogic.Modules.MeModule.Services.DutyRights",
-        "ProjectK.BusinessLogic.Modules.MeModule.Services.MeAgendaScopes",
-        "ProjectK.BusinessLogic.Modules.MeModule.Services.MemberCards",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.DutyRights",
         "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services.CampCertificateHandlerBase",
         "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services.KurinCatalog",
         "ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services.KurinCatalogView",
@@ -102,7 +100,6 @@ public class SuffixRules
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesKrai",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesPrice",
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.MembershipAskRoute",
-        "ProjectK.BusinessLogic.Modules.MeModule.Services.MeKurinContext",
         "ProjectK.BusinessLogic.Modules.ScoreModule.Services.EventOccurrence",
     ];
 

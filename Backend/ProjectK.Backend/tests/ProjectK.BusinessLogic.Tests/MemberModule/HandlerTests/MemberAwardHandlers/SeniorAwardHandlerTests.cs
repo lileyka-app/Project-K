@@ -293,15 +293,15 @@ public class SeniorAwardHandlerTests
         _directory.Setup(m => m.FindByAccountAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, _kurinKey, null, "Ірина", "Федорів", "i@example.com", null));
         _awards.Setup(a => a.GetByMemberKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
-        var pin = new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommandHandler(_unitOfWork.Object, new CurrentMember(_currentUser.Object, _directory.Object, Mock.Of<IMembershipDirectory>()));
+        var pin = new ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.PinMyAwardCommandHandler(_unitOfWork.Object, new CurrentMember(_currentUser.Object, _directory.Object, Mock.Of<IMembershipDirectory>()));
 
-        var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
+        var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _stored.Where(a => a.CatalogId == "usp-hramota-podiaky").Should().OnlyContain(a => a.IsPinned);
         other.IsPinned.Should().BeFalse();
 
-        (await pin.Handle(new ProjectK.BusinessLogic.Modules.MeModule.Features.Awards.PinMyAwardCommand { CatalogId = "nema", Pinned = true }, CancellationToken.None))
+        (await pin.Handle(new ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.PinMyAwardCommand { CatalogId = "nema", Pinned = true }, CancellationToken.None))
             .Type.Should().Be(ResultType.NotFound);
     }
 }

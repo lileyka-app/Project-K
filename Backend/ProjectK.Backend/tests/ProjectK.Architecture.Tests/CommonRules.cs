@@ -113,13 +113,10 @@ public class CommonRules
     ];
 
     /// <summary>
-    /// Debt. The calendar-feed answer is returned to the client from the MeModule's Models and
-    /// belongs in Common/Dtos/MeModule; the provisioning value never leaves the server and wants a
-    /// name without the API's suffix.
+    /// Debt. The provisioning value never leaves the server and wants a name without the API's suffix.
     /// </summary>
     private static readonly string[] DtosAndRequestsAwayFromDtos =
     [
-        "ProjectK.BusinessLogic.Modules.MeModule.Models.IssuedCalendarFeedDto",
         "ProjectK.Common.Records.IdentityModule.AccountProvisioningRequest",
     ];
 }

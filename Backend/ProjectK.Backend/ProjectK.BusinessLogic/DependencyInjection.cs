@@ -11,7 +11,6 @@ using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -100,9 +99,7 @@ public static class DependencyInjection
         services.AddDuesModule();
         services.AddScoreModule();
         services.AddKurinModule();
-        services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
-        services.AddScoped<MemberCards>();
 
         services.AddScoped<KurinReportHeaderReader>();
         services.AddScoped<KurinReportTagReader>();
@@ -134,6 +131,7 @@ public static class DependencyInjection
         services.AddScoped<AgendaStatusWriter>();
         services.AddScoped<IAgendaRsvpWriter, AgendaRsvpWriter>();
         services.AddScoped<IAgendaDirectory, AgendaDirectory>();
+        services.AddScoped<AgendaViewerReader>();
     }
 
     private static void AddDuesModule(this IServiceCollection services)
@@ -177,5 +175,6 @@ public static class DependencyInjection
         services.AddScoped<IMemberImportWriter, MemberImportWriter>();
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
+        services.AddScoped<MemberCardService>();
     }
 }

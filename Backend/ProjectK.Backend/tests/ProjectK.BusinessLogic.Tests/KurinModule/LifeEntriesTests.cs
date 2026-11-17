@@ -1,5 +1,5 @@
 using FluentAssertions;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.Life;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.Life;
 using ProjectK.Common.Dtos.MemberModule.Requests;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;

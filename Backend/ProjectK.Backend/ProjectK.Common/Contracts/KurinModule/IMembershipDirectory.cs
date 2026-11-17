@@ -27,6 +27,9 @@ public interface IMembershipDirectory
 
     Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>The kurins a person stands in now, each once; read without the rest of the membership.</summary>
+    Task<IReadOnlyCollection<Guid>> GetCurrentKurinKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// The kurins an account may currently act in. Asked by the access layer, so it is answered from
     /// the account key that memberships carry and never by way of the person behind it.

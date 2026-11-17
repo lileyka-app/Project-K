@@ -33,14 +33,8 @@ public class ModuleBoundaryRules
     /// <summary>The files that spell out another module's namespace, by the module they name.</summary>
     private static readonly string[] NamesAnotherModule =
     [
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Dues/GetMyDuesQuery.cs -> DuesModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Duties/GetMyDutiesQuery.cs -> ScoreModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Growth/GetMyGrowthQuery.cs -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Invitations/AnswerMyInvitationCommand.cs -> KurinModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Invitations/GetMyInvitationsQuery.cs -> KurinModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Life/ExportMyLifePdfQuery.cs -> MemberModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Score/GetMyScoreQuery.cs -> ScoreModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Services/MemberCards.cs -> ProbesAndBadgesModule",
+        "ProjectK.BusinessLogic/Modules/IdentityModule/Features/Duties/GetMyDutiesQuery.cs -> AgendaModule",
+        "ProjectK.BusinessLogic/Modules/IdentityModule/Features/Duties/GetMyDutiesQuery.cs -> ScoreModule",
     ];
 
     /// <summary>
@@ -49,15 +43,8 @@ public class ModuleBoundaryRules
     /// </summary>
     private static readonly string[] ReachesIntoAnotherModule =
     [
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Dues.GetMyDuesQueryHandler -> DuesModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Duties.GetMyDutiesQueryHandler -> ScoreModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Growth.GetMyGrowthQueryHandler -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations.AnswerMyInvitationCommandHandler -> KurinModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations.GetMyInvitationsQueryHandler -> KurinModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Life.ExportMyLifePdfQueryHandler -> MemberModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Life.ExportMyLifePdfQueryHandler -> ProbesAndBadgesModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Features.Score.GetMyScoreQueryHandler -> ScoreModule",
-        "ProjectK.BusinessLogic.Modules.MeModule.Services.MemberCards -> ProbesAndBadgesModule",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Features.Duties.GetMyDutiesQueryHandler -> AgendaModule",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Features.Duties.GetMyDutiesQueryHandler -> ScoreModule",
     ];
 
     [Fact]

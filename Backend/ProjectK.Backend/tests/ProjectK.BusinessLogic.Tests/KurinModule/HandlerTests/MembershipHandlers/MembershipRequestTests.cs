@@ -4,7 +4,6 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.Invitations;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.IdentityModule;

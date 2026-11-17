@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Moq;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Member;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
-using ProjectK.BusinessLogic.Modules.MeModule.Features.Dues;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.InfrastructureModule;

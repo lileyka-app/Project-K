@@ -26,4 +26,9 @@ public sealed class KurinDirectory : IKurinDirectory
         => await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin
             ? new KurinTaskArchivePolicy(kurin.TaskAutoArchiveAfterDays, kurin.TaskArchivePurgeAfterDays)
             : null;
+
+    public async Task<IReadOnlyCollection<MinorCardSharing>> GetMinorCardSharingAsync(IReadOnlyCollection<Guid> kurinKeys, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.KurinCardSharing.GetForKurinsAsync(kurinKeys, cancellationToken))
+            .Select(s => new MinorCardSharing(s.KurinKey, s.MinorsMayShare, s.MinorFields, s.MinorsMayLink))
+            .ToList();
 }

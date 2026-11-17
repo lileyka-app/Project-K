@@ -32,4 +32,10 @@ public static class ScoreErrors
 
     public static ServiceResult<T> NotFound<T>(string what) =>
         ServiceResult<T>.Failure(ResultType.NotFound, ScoreNotFound, what);
+
+    /// <summary>The account stands behind no member record, so there is no «me» to read.</summary>
+    public const string NotAMember = "NotAMember";
+
+    public static ServiceResult<T> NoMember<T>() =>
+        ServiceResult<T>.Failure(ResultType.Forbidden, NotAMember, "The account has no member record.");
 }
