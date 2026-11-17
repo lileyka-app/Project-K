@@ -112,6 +112,12 @@ public static class AuditActionNames
         public const string Deleted = "Member.Deleted";
         public const string ProfileVerified = "Member.ProfileVerified";
         public const string VerificationReset = "Member.VerificationReset";
+
+        /// <summary>The Звʼязковий confirmed a senior ступінь the person entered for themselves.</summary>
+        public const string LevelConfirmed = "Member.LevelConfirmed";
+
+        /// <summary>The Звʼязковий rejected it, and it was removed from the card.</summary>
+        public const string LevelRejected = "Member.LevelRejected";
     }
 
     /// <summary>Ролі проводу and впорядники of гуртки.</summary>

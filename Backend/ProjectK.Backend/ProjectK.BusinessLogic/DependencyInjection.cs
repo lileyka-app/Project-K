@@ -179,5 +179,6 @@ public static class DependencyInjection
         services.AddScoped<ICurrentMember, CurrentMember>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
         services.AddScoped<MemberCardService>();
+        services.AddScoped<PlastLevelConfirmationService>();
     }
 }
