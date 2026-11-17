@@ -13,6 +13,7 @@ import { isPlatform, provideIonicAngular } from '@ionic/angular';
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios27';
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth.interceptor';
+import { AppUpdate } from './core/app-update';
 import { AppearanceService } from './features/account/appearance.service';
 import { KurinRoleNames } from './features/kurin/kurin-role-names.service';
 
@@ -33,6 +34,7 @@ export const appConfig: ApplicationConfig = {
       enabled: !isDevMode() && !Capacitor.isNativePlatform(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
+    provideAppInitializer(() => inject(AppUpdate).start()),
   ],
 };
 
