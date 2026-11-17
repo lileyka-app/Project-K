@@ -1,6 +1,8 @@
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -25,6 +27,11 @@ public sealed class KurinDirectory : IKurinDirectory
     public async Task<KurinTaskArchivePolicy?> GetTaskArchivePolicyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         => await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin
             ? new KurinTaskArchivePolicy(kurin.TaskAutoArchiveAfterDays, kurin.TaskArchivePurgeAfterDays)
+            : null;
+
+    public async Task<IReadOnlyDictionary<LeadershipRole, string>?> GetRoleNamesAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin
+            ? KurinRoleNames.Read(kurin.RoleNames)
             : null;
 
     public async Task<bool> IsScoreEnabledAsync(Guid kurinKey, CancellationToken cancellationToken = default)

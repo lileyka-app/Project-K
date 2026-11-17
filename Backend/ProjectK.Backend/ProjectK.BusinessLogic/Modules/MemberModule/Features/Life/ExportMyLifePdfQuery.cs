@@ -1,9 +1,9 @@
 using System.Globalization;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
-using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
@@ -38,7 +38,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
     private readonly ICurrentMember _owner;
     private readonly ISender _sender;
     private readonly IMemberUnitOfWork _members;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IKurinDirectory _kurins;
     private readonly IHonoursCatalog _honours;
     private readonly IProbesCatalogReader _probes;
     private readonly IBadgesCatalogReader _badges;
@@ -49,7 +49,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         ICurrentMember owner,
         ISender sender,
         IMemberUnitOfWork members,
-        IUnitOfWork unitOfWork,
+        IKurinDirectory kurins,
         IHonoursCatalog honours,
         IProbesCatalogReader probes,
         IBadgesCatalogReader badges,
@@ -59,7 +59,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         _owner = owner;
         _sender = sender;
         _members = members;
-        _unitOfWork = unitOfWork;
+        _kurins = kurins;
         _honours = honours;
         _probes = probes;
         _badges = badges;
@@ -125,9 +125,9 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         var names = new Dictionary<Guid, IReadOnlyDictionary<LeadershipRole, string>>();
         foreach (var kurinKey in offices.Select(o => o.KurinKey).OfType<Guid>().Distinct())
         {
-            if (await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin)
+            if (await _kurins.GetRoleNamesAsync(kurinKey, cancellationToken) is { } own)
             {
-                names[kurinKey] = KurinRoleNames.Read(kurin.RoleNames);
+                names[kurinKey] = own;
             }
         }
 

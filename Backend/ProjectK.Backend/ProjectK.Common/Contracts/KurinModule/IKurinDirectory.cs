@@ -1,3 +1,4 @@
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;
@@ -19,6 +20,9 @@ public interface IKurinDirectory
 
     /// <summary>How long the kurin's done tasks stay on the board and its archive is kept; null when there is no such kurin.</summary>
     Task<KurinTaskArchivePolicy?> GetTaskArchivePolicyAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>The kurin's own names for its roles, every role named; null when there is no such kurin.</summary>
+    Task<IReadOnlyDictionary<LeadershipRole, string>?> GetRoleNamesAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>Whether the kurin keeps точкування on; true for a kurin there is no record of, as every kurin did before the switch.</summary>
     Task<bool> IsScoreEnabledAsync(Guid kurinKey, CancellationToken cancellationToken = default);
