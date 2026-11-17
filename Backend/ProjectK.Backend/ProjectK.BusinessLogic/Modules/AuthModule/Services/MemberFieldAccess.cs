@@ -19,7 +19,7 @@ public sealed class MemberFieldAccess : IMemberFieldAccess
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly ResourceScopeReader _scopeReader;
     private readonly IBackendCache _cache;
 
     private MemberFieldMask? _mask;

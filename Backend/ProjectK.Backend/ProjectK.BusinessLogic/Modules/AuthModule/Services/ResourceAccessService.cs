@@ -26,7 +26,7 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 public class ResourceAccessService : IResourceAccessService
 {
     private readonly IResourceScopeRepository _scopeRepository;
-    private readonly IResourceScopeReader _scopeReader;
+    private readonly ResourceScopeReader _scopeReader;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly ICurrentPermissions _permissions;
     private readonly ResourceScopeService _scopes;
