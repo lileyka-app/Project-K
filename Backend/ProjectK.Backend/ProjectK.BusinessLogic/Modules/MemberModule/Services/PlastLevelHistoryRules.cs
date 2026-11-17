@@ -34,24 +34,28 @@ public static class PlastLevelHistoryRules
     }
 
     /// <summary>
-    /// Whether a ступінь entered this way waits for the Звʼязковий: a senior one the person entered on
-    /// their own card, adult or not. The провід's entries, and every юнацький ступінь, count at once.
+    /// Whether a ступінь entered this way waits for the Звʼязковий: only one that would move the person out
+    /// of УПЮ — a senior ступінь they entered on their own card while their улад before the write was
+    /// УПЮ, adult or not. Someone already in УСП or УПС manages their further ступені themselves; the
+    /// провід's entries and every юнацький ступінь count at once.
     /// </summary>
-    public static bool WaitsForConfirmation(PlastLevel level, bool enteredByThemselves) =>
-        enteredByThemselves && PlastLadderRules.BranchOf(level) != KurinBranch.UPYu;
+    public static bool WaitsForConfirmation(PlastLevel level, bool enteredByThemselves, bool youthBefore) =>
+        enteredByThemselves && youthBefore && PlastLadderRules.BranchOf(level) != KurinBranch.UPYu;
 
     /// <summary>
     /// Makes <paramref name="plastLevelHistory"/> what the form sent: rows it left out are removed, rows
     /// without a key are added in <paramref name="kurinKey"/>, the rest take the sent values. A row the
     /// write adds or moves to another ступінь waits when <see cref="WaitsForConfirmation"/> says so,
-    /// and counts at once otherwise; a row left as it was keeps its state.
+    /// and counts at once otherwise; a row left as it was keeps its state. <paramref name="youthBefore"/>
+    /// says whether the person's улад before the write was УПЮ; the caller works it out where it knows the kurin.
     /// </summary>
     public static void Apply(
         Guid memberKey,
         Guid? kurinKey,
         ICollection<PlastLevelHistoryDto> plastLevelHistoryDto,
         ICollection<PlastLevelHistory> plastLevelHistory,
-        bool enteredByThemselves = false)
+        bool enteredByThemselves = false,
+        bool youthBefore = false)
     {
         if (plastLevelHistoryDto == null || !plastLevelHistoryDto.Any())
         {
@@ -83,7 +87,7 @@ public static class PlastLevelHistoryRules
                     PlastLevel = dto.PlastLevel,
                     DateAchieved = dto.DateAchieved,
                     IsPlastunka = dto.IsPlastunka,
-                    AwaitsConfirmation = WaitsForConfirmation(dto.PlastLevel, enteredByThemselves)
+                    AwaitsConfirmation = WaitsForConfirmation(dto.PlastLevel, enteredByThemselves, youthBefore)
                 });
             }
             else
@@ -95,7 +99,7 @@ public static class PlastLevelHistoryRules
                 {
                     if (existingHistory.PlastLevel != dto.PlastLevel)
                     {
-                        existingHistory.AwaitsConfirmation = WaitsForConfirmation(dto.PlastLevel, enteredByThemselves);
+                        existingHistory.AwaitsConfirmation = WaitsForConfirmation(dto.PlastLevel, enteredByThemselves, youthBefore);
                         existingHistory.ConfirmedByUserKey = null;
                         existingHistory.ConfirmedAtUtc = null;
                     }

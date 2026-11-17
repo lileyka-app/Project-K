@@ -8,23 +8,26 @@ using ProjectK.Common.Enums.Shared;
 namespace ProjectK.BusinessLogic.Tests.MemberModule;
 
 /// <summary>
-/// A senior ступінь the person enters on their own card waits for the Звʼязковий and counts for
-/// nothing until then; the провід's entries and every юнацький ступінь count at once.
+/// A senior ступінь a юнак enters on their own card — the step out of УПЮ — waits for the Звʼязковий
+/// and counts for nothing until then. Someone already in УСП or УПС, the провід's entries and every
+/// юнацький ступінь count at once.
 /// </summary>
 public class PlastLevelConfirmationTests
 {
     private static readonly Guid KurinKey = Guid.NewGuid();
 
     [Theory]
-    [InlineData(PlastLevel.Starshoplastun, true, true)]
-    [InlineData(PlastLevel.SeniorPratsi, true, true)]
-    [InlineData(PlastLevel.Skob, true, false)]
-    [InlineData(PlastLevel.HetmanskiySkob, true, false)]
-    [InlineData(PlastLevel.Starshoplastun, false, false)]
-    [InlineData(PlastLevel.SeniorKerivnytstva, false, false)]
-    public void WaitsForConfirmation_OnlyForASeniorLevelTheyGaveThemselves(PlastLevel level, bool byThemselves, bool waits)
+    [InlineData(PlastLevel.Starshoplastun, true, true, true)]
+    [InlineData(PlastLevel.SeniorPratsi, true, true, true)]
+    [InlineData(PlastLevel.Senior, true, false, false)]
+    [InlineData(PlastLevel.SeniorKerivnytstva, true, false, false)]
+    [InlineData(PlastLevel.Skob, true, true, false)]
+    [InlineData(PlastLevel.HetmanskiySkob, true, true, false)]
+    [InlineData(PlastLevel.Starshoplastun, false, true, false)]
+    [InlineData(PlastLevel.SeniorKerivnytstva, false, true, false)]
+    public void WaitsForConfirmation_OnlyForTheStepOutOfUpyuTheyGaveThemselves(PlastLevel level, bool byThemselves, bool youthBefore, bool waits)
     {
-        PlastLevelHistoryRules.WaitsForConfirmation(level, byThemselves).Should().Be(waits);
+        PlastLevelHistoryRules.WaitsForConfirmation(level, byThemselves, youthBefore).Should().Be(waits);
     }
 
     [Fact]
@@ -36,7 +39,7 @@ public class PlastLevelConfirmationTests
         {
             new() { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2020, 1, 1) },
             new() { PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2024, 1, 1) }
-        }, history, enteredByThemselves: true);
+        }, history, enteredByThemselves: true, youthBefore: true);
 
         history.Single(h => h.PlastLevel == PlastLevel.Skob).AwaitsConfirmation.Should().BeFalse();
         history.Single(h => h.PlastLevel == PlastLevel.Starshoplastun).AwaitsConfirmation.Should().BeTrue();
@@ -58,6 +61,22 @@ public class PlastLevelConfirmationTests
     }
 
     [Fact]
+    public void Apply_ByThemselves_AlreadyOutOfUpyu_CountsAFurtherSeniorLevelAtOnce()
+    {
+        var starshyi = new PlastLevelHistory { PlastLevelHistoryKey = Guid.NewGuid(), PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2022, 1, 1) };
+        var history = new List<PlastLevelHistory> { starshyi };
+
+        PlastLevelHistoryRules.Apply(Guid.NewGuid(), KurinKey, new List<PlastLevelHistoryDto>
+        {
+            new() { PlastLevelHistoryKey = starshyi.PlastLevelHistoryKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = starshyi.DateAchieved },
+            new() { PlastLevel = PlastLevel.SeniorPratsi, DateAchieved = new DateOnly(2026, 1, 1) }
+        }, history, enteredByThemselves: true, youthBefore: false);
+
+        history.Should().OnlyContain(h => !h.AwaitsConfirmation);
+        PlastLevelHistoryRules.LatestOf(history).Should().Be(PlastLevel.SeniorPratsi);
+    }
+
+    [Fact]
     public void Apply_ByThemselves_TurningAConfirmedRowSenior_MakesItWait_AndKeepsAnUntouchedOneAsItWas()
     {
         var moved = new PlastLevelHistory { PlastLevelHistoryKey = Guid.NewGuid(), PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2022, 1, 1) };
@@ -68,7 +87,7 @@ public class PlastLevelConfirmationTests
         {
             new() { PlastLevelHistoryKey = moved.PlastLevelHistoryKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = moved.DateAchieved },
             new() { PlastLevelHistoryKey = waiting.PlastLevelHistoryKey, PlastLevel = PlastLevel.Senior, DateAchieved = waiting.DateAchieved }
-        }, history, enteredByThemselves: true);
+        }, history, enteredByThemselves: true, youthBefore: true);
 
         moved.AwaitsConfirmation.Should().BeTrue();
         waiting.AwaitsConfirmation.Should().BeTrue();

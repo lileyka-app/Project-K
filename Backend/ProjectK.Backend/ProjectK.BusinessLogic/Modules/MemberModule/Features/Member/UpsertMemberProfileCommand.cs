@@ -8,6 +8,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
@@ -280,13 +281,17 @@ public sealed class UpsertMemberProfileCommandHandler
 
             if (CanEditPlastLevels(existing))
             {
-                // A senior ступінь the person gives themselves waits for the Звʼязковий, whatever offices they hold.
+                // A senior ступінь that takes the person out of УПЮ waits for the Звʼязковий when they give it
+                // themselves, whatever offices they hold. Their улад is read before the write changes the rows.
+                var byThemselves = IsCurrentUserOwner(existing);
+                var youthBefore = byThemselves && await IsYouthAsync(existing, kurinKey, cancellationToken);
                 PlastLevelHistoryRules.Apply(
                     existing.MemberKey,
                     kurinKey,
                     request.PlastLevelHistories,
                     existing.PlastLevelHistory,
-                    enteredByThemselves: IsCurrentUserOwner(existing));
+                    enteredByThemselves: byThemselves,
+                    youthBefore: youthBefore);
                 existing.LatestPlastLevel = PlastLevelHistoryRules.LatestOf(existing.PlastLevelHistory);
             }
 
@@ -327,6 +332,14 @@ public sealed class UpsertMemberProfileCommandHandler
     }
 
     private bool CanEditRestrictedFields() => _currentUserContext.IsLeadership();
+
+    // The улад the card shows (UladRules): confirmed ступені first, the гілка of the kurin the edit is made in otherwise.
+    private async Task<bool> IsYouthAsync(MemberEntity member, Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var kurin = await _kurinData.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
+        var counting = PlastLevelHistoryRules.CountingLevels(member.PlastLevelHistory, member.LatestPlastLevel);
+        return UladRules.Of(counting, kurin?.Branch) == KurinBranch.UPYu;
+    }
 
     private bool IsAdmin() => _currentUserContext.IsAdmin();
 

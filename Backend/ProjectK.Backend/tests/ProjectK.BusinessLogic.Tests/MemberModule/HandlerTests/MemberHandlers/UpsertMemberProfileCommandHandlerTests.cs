@@ -15,6 +15,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
@@ -34,6 +35,7 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<IMemberRepository> _memberRepoMock;
     private readonly Mock<IGroupRepository> _groupRepoMock;
     private readonly Mock<IMembershipRepository> _membershipsMock = new();
+    private readonly Mock<IKurinRepository> _kurinsMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
@@ -54,6 +56,7 @@ public class UpsertMemberProfileCommandHandlerTests
         _uowMock.Setup(u => u.Members).Returns(_memberRepoMock.Object);
         _kurinDataMock.Setup(u => u.Groups).Returns(_groupRepoMock.Object);
         _kurinDataMock.Setup(u => u.Memberships).Returns(_membershipsMock.Object);
+        _kurinDataMock.Setup(u => u.Kurins).Returns(_kurinsMock.Object);
         _membershipsMock
             .Setup(m => m.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
@@ -652,6 +655,58 @@ public class UpsertMemberProfileCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         existing.PlastLevelHistory.Single(entry => entry.PlastLevel == PlastLevel.Starshoplastun).AwaitsConfirmation.Should().BeTrue();
         existing.LatestPlastLevel.Should().Be(PlastLevel.Skob);
+    }
+
+    [Fact]
+    public async Task Handle_Update_ByOwner_AlreadyUsp_AUpsLevel_CountsAtOnce()
+    {
+        var group = MakeGroup();
+        var ownerUserKey = Guid.NewGuid();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = ownerUserKey;
+        var starshyi = new PlastLevelHistory { PlastLevelHistoryKey = Guid.NewGuid(), MemberKey = existing.MemberKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2021, 4, 22) };
+        existing.PlastLevelHistory = [starshyi];
+        existing.LatestPlastLevel = PlastLevel.Starshoplastun;
+        var cmd = ProfileCommandFor(existing, group);
+        cmd.PlastLevelHistories =
+        [
+            new PlastLevelHistoryDto { PlastLevelHistoryKey = starshyi.PlastLevelHistoryKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = starshyi.DateAchieved },
+            new PlastLevelHistoryDto { PlastLevel = PlastLevel.Senior, DateAchieved = new DateOnly(2026, 10, 1) }
+        ];
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.PlastLevelHistory.Should().OnlyContain(entry => !entry.AwaitsConfirmation);
+        existing.LatestPlastLevel.Should().Be(PlastLevel.Senior);
+    }
+
+    [Fact]
+    public async Task Handle_Update_ByOwner_InAUspKurin_ASeniorLevel_CountsAtOnce()
+    {
+        var group = MakeGroup();
+        var ownerUserKey = Guid.NewGuid();
+        var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
+        existing.UserKey = ownerUserKey;
+        var cmd = ProfileCommandFor(existing, group);
+        cmd.PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2025, 10, 1) }];
+        _kurinsMock.Setup(k => k.GetByKeyAsync(group.KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(5, KurinBranch.USP) { KurinKey = group.KurinKey });
+
+        _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
+        ExistingMemberIs(existing, existing.MemberKey);
+        AlreadyPlacedIn(existing.MemberKey, group.KurinKey, group.GroupKey);
+        GroupIs(group);
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        existing.PlastLevelHistory.Single().AwaitsConfirmation.Should().BeFalse("their улад is already УСП by the kurin they stand in");
     }
 
     [Fact]
