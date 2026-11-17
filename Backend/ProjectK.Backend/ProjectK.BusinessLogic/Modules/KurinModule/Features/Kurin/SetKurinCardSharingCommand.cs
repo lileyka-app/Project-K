@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using MediatR;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;

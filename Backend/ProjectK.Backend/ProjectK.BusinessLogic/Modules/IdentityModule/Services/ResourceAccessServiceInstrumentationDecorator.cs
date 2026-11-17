@@ -1,9 +1,8 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Records.NotificationsModule;
-
+using ProjectK.Common.Records.IdentityModule;
 namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 
 public class ResourceAccessServiceInstrumentationDecorator : IResourceAccessService

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Filters;

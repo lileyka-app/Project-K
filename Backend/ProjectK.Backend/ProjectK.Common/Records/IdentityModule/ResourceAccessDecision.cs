@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Records.NotificationsModule;
+namespace ProjectK.Common.Records.IdentityModule;
 
 public sealed record ResourceAccessDecision(bool IsAllowed, string Reason)
 {

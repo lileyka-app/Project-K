@@ -1,5 +1,4 @@
 using MediatR;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;

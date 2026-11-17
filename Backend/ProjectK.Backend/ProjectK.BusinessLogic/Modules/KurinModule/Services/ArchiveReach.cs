@@ -1,7 +1,6 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.IdentityModule;
 

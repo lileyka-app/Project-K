@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Contracts.NotificationsModule;
-using ProjectK.Common.Entities.NotificationsModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories.NotificationsModule;
+namespace ProjectK.Infrastructure.Repositories.IdentityModule;
 
 public class SystemSettingRepository : BaseEntityRepository<SystemSetting>, ISystemSettingRepository
 {

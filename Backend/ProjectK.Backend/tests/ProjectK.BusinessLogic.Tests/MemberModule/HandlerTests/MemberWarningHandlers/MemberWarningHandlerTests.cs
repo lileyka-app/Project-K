@@ -2,8 +2,8 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberWarning;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.MemberModule;
@@ -12,7 +12,7 @@ using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberWarningHandlers;

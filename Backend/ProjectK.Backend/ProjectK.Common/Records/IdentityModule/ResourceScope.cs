@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Records.NotificationsModule;
+namespace ProjectK.Common.Records.IdentityModule;
 
 /// <summary>
 /// The keys an authorization decision is made from. MemberUserKey is the user a member

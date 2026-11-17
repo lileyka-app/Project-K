@@ -2,7 +2,7 @@ using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
 
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.IdentityModule;
 
 public interface IJwtService
 {

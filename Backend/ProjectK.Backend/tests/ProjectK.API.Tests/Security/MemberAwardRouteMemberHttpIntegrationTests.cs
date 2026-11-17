@@ -21,7 +21,6 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
@@ -29,7 +28,7 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Tests.Security;

@@ -1,15 +1,14 @@
 using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Records.NotificationsModule;
 using ProjectK.Infrastructure.DbContexts;
 
-namespace ProjectK.Infrastructure.Repositories.NotificationsModule;
+namespace ProjectK.Infrastructure.Repositories.IdentityModule;
 
 public class ResourceScopeRepository : IResourceScopeRepository
 {

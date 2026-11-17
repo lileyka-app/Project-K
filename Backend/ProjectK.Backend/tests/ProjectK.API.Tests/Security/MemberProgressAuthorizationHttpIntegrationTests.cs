@@ -20,12 +20,12 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Tests.Security;

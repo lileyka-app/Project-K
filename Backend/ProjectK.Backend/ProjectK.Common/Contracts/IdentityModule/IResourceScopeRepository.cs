@@ -1,9 +1,7 @@
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Records.NotificationsModule;
-
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.IdentityModule;
 
 /// <summary>
 /// Reads only the keys an authorization decision needs. The entity repositories load a

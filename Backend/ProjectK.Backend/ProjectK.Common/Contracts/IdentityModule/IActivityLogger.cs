@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Contracts.NotificationsModule;
+namespace ProjectK.Common.Contracts.IdentityModule;
 
 public interface IActivityLogger
 {

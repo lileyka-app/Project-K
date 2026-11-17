@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ProjectK.Common.Entities.NotificationsModule;
+namespace ProjectK.Common.Entities.IdentityModule;
 
 public class SystemSetting
 {

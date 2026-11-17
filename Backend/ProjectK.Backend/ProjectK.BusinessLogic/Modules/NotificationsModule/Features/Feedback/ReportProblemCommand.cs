@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.NotificationsModule;

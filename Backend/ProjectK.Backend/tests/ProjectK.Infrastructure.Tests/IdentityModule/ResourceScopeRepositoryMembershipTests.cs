@@ -8,9 +8,8 @@ using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
-using ProjectK.Infrastructure.Repositories.NotificationsModule;
-
-namespace ProjectK.Infrastructure.Tests.NotificationsModule;
+using ProjectK.Infrastructure.Repositories.IdentityModule;
+namespace ProjectK.Infrastructure.Tests.IdentityModule;
 
 /// <summary>
 /// The release's load-bearing claim, as a test: whether a person is within reach is answered by their

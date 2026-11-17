@@ -1,7 +1,6 @@
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Entities.NotificationsModule;
-
-namespace ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Entities.IdentityModule;
+namespace ProjectK.Common.Contracts.IdentityModule;
 
 public interface ISystemSettingRepository : IListableRepository<SystemSetting>
 {

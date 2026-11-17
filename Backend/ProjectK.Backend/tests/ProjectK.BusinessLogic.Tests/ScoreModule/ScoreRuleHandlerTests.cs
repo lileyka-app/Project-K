@@ -3,14 +3,15 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;

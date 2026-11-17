@@ -2,12 +2,12 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.IdentityModule;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.IdentityModule;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 

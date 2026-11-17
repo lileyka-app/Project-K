@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Options.NotificationsModule;
+namespace ProjectK.Common.Options.IdentityModule;
 
 public sealed class SecurityMonitoringOptions
 {

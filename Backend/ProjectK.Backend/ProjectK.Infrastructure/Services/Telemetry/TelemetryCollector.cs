@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Entities.NotificationsModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.DbContexts;
 

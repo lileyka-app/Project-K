@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.Shared;

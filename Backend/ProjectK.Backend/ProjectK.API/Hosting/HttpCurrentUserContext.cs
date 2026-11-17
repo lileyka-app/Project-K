@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Hosting;

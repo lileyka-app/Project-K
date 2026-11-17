@@ -1,14 +1,13 @@
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.AgendaModule;
-using ProjectK.Common.Records.NotificationsModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Rules.AgendaModule;
 using ProjectK.Common.Rules.IdentityModule;
 
