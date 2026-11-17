@@ -60,7 +60,9 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                 ProfileVerifiedAtUtc = x.Person.ProfileVerifiedAtUtc,
                 ProfileVerifiedByUserKey = x.Person.ProfileVerifiedByUserKey,
                 ProfileVerificationNote = x.Person.ProfileVerificationNote,
-                PlastLevels = x.Person.PlastLevelHistory.ToList(),
+                PlastLevels = x.Person.PlastLevelHistory
+                    .Select(h => new MemberListLevel(h.PlastLevelHistoryKey, h.MemberKey, h.PlastLevel, h.DateAchieved, h.IsPlastunka))
+                    .ToList(),
                 // Offices of this kurin only: a role held in another kurin is not this kurin's to
                 // show, and would be named by this kurin's own role names.
                 Offices = Context.LeadershipHistories
@@ -93,6 +95,8 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                     .ToList(),
                 Warnings = x.Person.MemberWarnings
                     .Where(w => w.RevokedAtUtc == null)
+                    .Select(w => new MemberListWarning(
+                        w.MemberWarningKey, w.MemberKey, w.Level, w.IssuedAtUtc, w.ExpiresAtUtc, w.IssuedByUserKey, w.RevokedByUserKey, w.RevokedAtUtc))
                     .ToList()
             })
             .AsNoTracking()

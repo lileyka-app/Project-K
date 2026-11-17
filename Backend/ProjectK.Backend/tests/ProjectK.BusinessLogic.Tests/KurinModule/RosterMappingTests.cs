@@ -2,7 +2,6 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.IdentityModule;
@@ -23,7 +22,7 @@ public class RosterMappingTests
         {
             ProfilePhotoBlobName = "row.jpg",
             Assignments = [new MemberListAssignment("Соколи", kurinKey, null)],
-            Warnings = [new MemberWarning()]
+            Warnings = [new MemberListWarning(Guid.NewGuid(), Guid.NewGuid(), default, default, default, Guid.NewGuid(), null, null)]
         };
 
         var dto = row.ToDto(FakeBlobReadLinks.Instance);
@@ -86,8 +85,8 @@ public class RosterMappingTests
             StoredPlastLevel = PlastLevel.Uchasnyk,
             PlastLevels =
             [
-                new PlastLevelHistory { PlastLevel = PlastLevel.Prykhylnyk, DateAchieved = new DateOnly(2022, 1, 1) },
-                new PlastLevelHistory { PlastLevel = PlastLevel.Rozviduvach, DateAchieved = new DateOnly(2024, 1, 1) }
+                new MemberListLevel(Guid.NewGuid(), Guid.Empty, PlastLevel.Prykhylnyk, new DateOnly(2022, 1, 1), false),
+                new MemberListLevel(Guid.NewGuid(), Guid.Empty, PlastLevel.Rozviduvach, new DateOnly(2024, 1, 1), false)
             ]
         };
 
