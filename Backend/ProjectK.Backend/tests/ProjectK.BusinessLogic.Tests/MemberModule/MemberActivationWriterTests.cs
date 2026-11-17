@@ -61,10 +61,10 @@ public class MemberActivationWriterTests
         await _writer.SeatFounderAsync(memberKey, kurinKey);
 
         seated.Should().NotBeNull();
-        seated!.SeatedBySystem.Should().BeTrue(
+        seated.SeatedBySystem.Should().BeTrue(
             "the activating user is anonymous, so nothing else can authorize the assignment");
         seated.EntityKey.Should().Be(kurinKey);
         seated.LeadershipHistoryMembers.Should().ContainSingle(history =>
-            history.Role == LeadershipRole.Zvyazkovyi.ToString() && history.Member!.MemberKey == memberKey);
+            history.Role == LeadershipRole.Zvyazkovyi.ToString() && history.Member.MemberKey == memberKey);
     }
 }
