@@ -5,9 +5,8 @@ using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.MemberModule;
-using ProjectK.Common.Events.AuthModule;
+using ProjectK.Common.Events.IdentityModule;
 using ProjectK.Common.Events.MemberModule;
-using ProjectK.Common.Events.UsersModule;
 using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberHandlers;

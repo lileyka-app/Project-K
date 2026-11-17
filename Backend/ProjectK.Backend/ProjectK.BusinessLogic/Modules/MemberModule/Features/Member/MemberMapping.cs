@@ -8,7 +8,7 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.KraiModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.MemberModule;

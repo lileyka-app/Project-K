@@ -11,7 +11,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
 

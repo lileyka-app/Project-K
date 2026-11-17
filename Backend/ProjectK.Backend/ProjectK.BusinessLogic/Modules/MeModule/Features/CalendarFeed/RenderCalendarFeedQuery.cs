@@ -4,18 +4,18 @@ using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Options.InfrastructureModule;
 using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AgendaModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed;
@@ -124,7 +124,7 @@ public sealed class RenderCalendarFeedQueryHandler : IRequestHandler<RenderCalen
 
     private async Task<IReadOnlyList<IcsEvent>> EventsOfAsync(
         MeKurinContext context,
-        ProjectK.Common.Entities.AuthModule.CalendarFeed feed,
+        ProjectK.Common.Entities.IdentityModule.CalendarFeed feed,
         TimeZoneInfo zone,
         DateTime now,
         bool severalKurins,

@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.MemberModule;
-using ProjectK.Common.Events.UsersModule;
+using ProjectK.Common.Events.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Events;
 

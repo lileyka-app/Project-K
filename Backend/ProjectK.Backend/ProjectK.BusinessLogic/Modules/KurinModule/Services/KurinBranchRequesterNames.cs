@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Identity;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Rules.Shared;
 

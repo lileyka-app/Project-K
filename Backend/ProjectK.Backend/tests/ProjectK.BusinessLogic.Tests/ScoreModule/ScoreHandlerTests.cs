@@ -18,7 +18,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;

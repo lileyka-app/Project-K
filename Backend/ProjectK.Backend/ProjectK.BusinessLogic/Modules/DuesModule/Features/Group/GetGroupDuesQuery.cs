@@ -6,7 +6,7 @@ using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.DuesModule;
 using ProjectK.Common.Records.Shared;

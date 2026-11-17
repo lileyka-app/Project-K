@@ -2,23 +2,23 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
-using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MeModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AgendaModule;
-using ProjectK.Common.Records.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Features.Duties;
 

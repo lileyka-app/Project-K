@@ -13,7 +13,7 @@ using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.KurinModule;

@@ -1,6 +1,6 @@
-using ProjectK.Common.Dtos.AuthModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Records.ArchiveModule;
+using ProjectK.Common.Records.IdentityModule;
 
 namespace ProjectK.Common.Contracts.InfrastructureModule;
 

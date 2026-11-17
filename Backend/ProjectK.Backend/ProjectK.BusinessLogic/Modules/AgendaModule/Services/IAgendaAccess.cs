@@ -1,5 +1,5 @@
 using ProjectK.Common.Dtos.AgendaModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.InfrastructureModule;
 

@@ -7,7 +7,7 @@ using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using MemberEntity = ProjectK.Common.Entities.MemberModule.Member;
 using MembershipEntity = ProjectK.Common.Entities.MemberModule.Membership;
@@ -95,7 +95,7 @@ public class PublicIdIsOnlyForItsOwnerTests
             FieldAccess.SeesEverything(_currentUser.Object.UserId),
             access.Object,
             _kurinData.Object,
-            new Mock<ProjectK.Common.Contracts.AuthModule.IAccountProvisioningService>().Object,
+            new Mock<ProjectK.Common.Contracts.IdentityModule.IAccountProvisioningService>().Object,
             Mock.Of<IKurinTagVisibility>(),
             KurinDirectories.WithoutGroups());
     }

@@ -10,7 +10,7 @@ using ProjectK.BusinessLogic.Modules.RosterModule;
 using ProjectK.BusinessLogic.Modules.RosterModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.RosterModule.Features.Registry;
 using ProjectK.Common.Dtos.RosterModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.RosterModule;

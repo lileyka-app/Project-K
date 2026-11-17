@@ -7,7 +7,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Events.MemberModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Tests.AgendaModule;
 

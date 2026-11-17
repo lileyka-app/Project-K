@@ -1,4 +1,4 @@
-using ProjectK.Common.Dtos.AuthModule;
+using ProjectK.Common.Dtos.IdentityModule;
 
 namespace ProjectK.API.Tests.TestHelpers;
 

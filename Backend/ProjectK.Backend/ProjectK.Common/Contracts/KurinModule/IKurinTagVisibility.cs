@@ -1,5 +1,5 @@
-using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Common.Contracts.KurinModule;

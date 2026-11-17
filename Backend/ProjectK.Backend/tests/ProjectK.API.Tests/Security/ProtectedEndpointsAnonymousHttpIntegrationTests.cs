@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
-using ProjectK.API.Controllers.AuthModule;
+using ProjectK.API.Controllers.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -30,12 +30,10 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
     {
         var g = "11111111-1111-1111-1111-111111111111";
 
-        // Auth module
+        // Identity module
         yield return Row("POST", "/api/auth/logout");
         yield return Row("POST", "/api/auth/register/kurin", "{}");
         yield return Row("POST", "/api/auth/check-access", "{}");
-
-        // Users module
         yield return Row("GET", "/api/user/users");
 
         // Member module

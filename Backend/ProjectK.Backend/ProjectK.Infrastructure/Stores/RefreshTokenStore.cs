@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using ProjectK.Common.Contracts.AuthModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Stores;

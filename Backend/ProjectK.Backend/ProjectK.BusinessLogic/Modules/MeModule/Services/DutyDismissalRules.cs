@@ -1,6 +1,6 @@
 using System.Globalization;
 using ProjectK.Common.Dtos.MeModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Enums.MeModule;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;

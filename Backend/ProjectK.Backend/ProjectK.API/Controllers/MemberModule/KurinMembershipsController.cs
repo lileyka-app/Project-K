@@ -7,7 +7,7 @@ using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Membership;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.MemberModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.MemberModule;
 

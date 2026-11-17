@@ -4,7 +4,7 @@ using ProjectK.BusinessLogic.Modules.ArchiveModule.Services;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ArchiveModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.ArchiveModule;
 using ProjectK.Common.Records.Shared;

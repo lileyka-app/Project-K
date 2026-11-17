@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
