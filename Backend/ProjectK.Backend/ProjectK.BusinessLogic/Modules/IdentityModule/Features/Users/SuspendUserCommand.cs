@@ -4,7 +4,6 @@ using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.IdentityModule;
-using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.Shared;
@@ -69,7 +68,7 @@ public sealed class SuspendUserCommandHandler : IRequestHandler<SuspendUserComma
 
         // Only once the status is stored: RevokeAllAsync commits on its own, and ending the
         // sessions of an account that then stayed active would just have signed them out once.
-        await _sessions.RevokeRefreshTokenAsync(target, CalendarFeedRevokeReason.Suspended, cancellationToken);
+        await _sessions.RevokeRefreshTokenAsync(target, SessionEndReason.Suspended, cancellationToken);
 
         _activityLogger.LogAudit(
             action: "Admin.UserSuspended",

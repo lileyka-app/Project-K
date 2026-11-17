@@ -2,11 +2,13 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProjectK.BusinessLogic.Modules.AgendaModule.Events;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Features.CalendarFeed;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
+using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.IdentityModule;
@@ -27,6 +29,7 @@ using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.NotificationsModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Events.IdentityModule;
 using ProjectK.Common.Options.NotificationsModule;
 using ProjectK.Common.Records.AgendaModule;
 using ProjectK.Common.Records.IdentityModule;
@@ -238,9 +241,9 @@ public class CalendarFeedTests
     {
         var notifications = new Mock<INotificationService>();
         _feeds.Setup(f => f.RevokeActiveAsync(User, CalendarFeedRevokeReason.SecurityChange, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        var sessions = Revocations.Of(new Mock<IRefreshTokenStore>().Object, _feeds.Object, notifications.Object);
+        var handler = new AccountSessionsEndedEventHandler(_feeds.Object, notifications.Object);
 
-        await sessions.RevokeRefreshTokenAsync(new AppUser { Id = User });
+        await handler.Handle(new DomainEventNotification<AccountSessionsEnded>(new AccountSessionsEnded(User, SessionEndReason.SecurityChange)), CancellationToken.None);
 
         notifications.Verify(n => n.NotifyAsync(
             It.Is<NotificationRequest>(r => r.RecipientUserKey == User && r.Type == AppNotificationType.CalendarFeedRevoked && r.Route == CalendarFeedNames.SettingsRoute),
@@ -248,12 +251,34 @@ public class CalendarFeedTests
     }
 
     [Fact]
+    public async Task ASuspension_RevokesTheLinkAsSuspended()
+    {
+        var handler = new AccountSessionsEndedEventHandler(_feeds.Object, new Mock<INotificationService>().Object);
+
+        await handler.Handle(new DomainEventNotification<AccountSessionsEnded>(new AccountSessionsEnded(User, SessionEndReason.Suspended)), CancellationToken.None);
+
+        _feeds.Verify(f => f.RevokeActiveAsync(User, CalendarFeedRevokeReason.Suspended, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task EndingSessions_RevokesThemAndAnnouncesIt()
+    {
+        var refreshTokens = new Mock<IRefreshTokenStore>();
+        var events = new Mock<IDomainEventPublisher>();
+
+        await Revocations.Of(refreshTokens.Object, events.Object).RevokeRefreshTokenAsync(new AppUser { Id = User });
+
+        refreshTokens.Verify(r => r.RevokeAllAsync(User, It.IsAny<CancellationToken>()), Times.Once);
+        events.Verify(e => e.PublishAsync(new AccountSessionsEnded(User, SessionEndReason.SecurityChange), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task ASecurityChange_WithoutALink_NotifiesNobody()
     {
         var notifications = new Mock<INotificationService>();
-        var sessions = Revocations.Of(new Mock<IRefreshTokenStore>().Object, _feeds.Object, notifications.Object);
+        var handler = new AccountSessionsEndedEventHandler(_feeds.Object, notifications.Object);
 
-        await sessions.RevokeRefreshTokenAsync(new AppUser { Id = User });
+        await handler.Handle(new DomainEventNotification<AccountSessionsEnded>(new AccountSessionsEnded(User, SessionEndReason.SecurityChange)), CancellationToken.None);
 
         notifications.Verify(n => n.NotifyAsync(It.IsAny<NotificationRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
