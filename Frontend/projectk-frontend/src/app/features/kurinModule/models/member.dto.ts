@@ -1,3 +1,4 @@
+import { KurinBranch } from "./enums/kurin-branch.enum";
 import { PlastLevelHistoryDto } from "./plast-level-history.dto";
 import { LeadershipHistoryDto } from "./requests/leadership/leadership.dto";
 import { MemberWarningDto } from "./member-warning.dto";
@@ -61,6 +62,10 @@ export interface MemberDto {
     cardExtras?: Record<string, string>;
     latestPlastLevel?: string | null;
     latestPlastLevelDisplay?: string | null;
+    /** Улад людини в курені, де її дивимось: підтверджені ступені, а без старшого — гілка куреня. Рахує сервер. */
+    ulad?: KurinBranch;
+    /** Чи людині вже 18; без дати народження — ні. Рахує сервер. */
+    isAdult?: boolean;
     plastLevelHistories: PlastLevelHistoryDto[];
     leadershipHistories: LeadershipHistoryDto[];
     warnings?: MemberWarningDto[];

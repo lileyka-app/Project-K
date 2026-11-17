@@ -372,7 +372,11 @@
             <app-member-degrees-tile
                 [histories]="member.plastLevelHistories"
                 [canEdit]="canEditMember"
-                (edit)="onEditMember()" />
+                [canConfirm]="canConfirmLevels"
+                [busyKey]="levelAnswering"
+                (edit)="onEditMember()"
+                (confirm)="confirmLevel($event)"
+                (reject)="rejectLevel($event)" />
             </section>
         </ng-template>
 

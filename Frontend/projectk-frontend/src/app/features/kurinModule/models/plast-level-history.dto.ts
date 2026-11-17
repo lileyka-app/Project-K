@@ -9,4 +9,6 @@ export interface PlastLevelHistoryDto {
     isPlastunka?: boolean;
     /** The ступінь in the catalogue, for its name and відзнака; null for the day of joining. Read only. */
     catalogId?: string | null;
+    /** Старший ступінь, який людина внесла собі сама: чекає на Звʼязкового і ще не рахується. Лише читання. */
+    awaitsConfirmation?: boolean;
 }

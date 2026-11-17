@@ -74,6 +74,8 @@ const ACTION_LABELS: Record<string, string> = {
   'Member.Deleted': 'Видалено картку',
   'Member.ProfileVerified': 'Профіль верифіковано',
   'Member.VerificationReset': 'Знято верифікацію профілю',
+  'Member.LevelConfirmed': 'Підтверджено ступінь',
+  'Member.LevelRejected': 'Відхилено ступінь',
   'Office.Assigned': 'Призначено на роль',
   'Office.Ended': 'Роль звільнено',
   'Office.MentorAssigned': 'Закріплено впорядника за гуртком',

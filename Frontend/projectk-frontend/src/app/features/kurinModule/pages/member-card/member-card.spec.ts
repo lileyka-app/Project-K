@@ -84,7 +84,9 @@ describe('MemberCardComponent', () => {
       getMemberships: vi.fn(),
       getAbilities: vi.fn(),
       verifyProfile: vi.fn(),
-      resetProfileVerification: vi.fn()
+      resetProfileVerification: vi.fn(),
+      confirmLevel: vi.fn(),
+      rejectLevel: vi.fn()
     } as MockedObject<MemberService>;
     kurinServiceSpy = {
       getByKey: vi.fn(),
@@ -828,6 +830,7 @@ describe('MemberCardComponent', () => {
         { plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2022-10-01' }
       ],
       latestPlastLevel: PlastLevel.Starshoplastun,
+      ulad: KurinBranch.USP,
       leadershipHistories: [
         { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', kurinKey: 'kurin-youth', startDate: '2020-09-01', endDate: '2022-06-30', member: null as never }
       ]
@@ -962,7 +965,7 @@ describe('MemberCardComponent', () => {
     });
 
     it('у курені УСП проби й вмілості не показуються і навіть не запитуються', () => {
-      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, ulad: KurinBranch.USP }));
       memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.USP)]));
 
       createComponent();
@@ -1032,7 +1035,7 @@ describe('MemberCardComponent', () => {
     });
 
     it('гілку бере членство в тому курені, де ми дивимось людину', () => {
-      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, ulad: KurinBranch.USP }));
       memberServiceSpy.getMemberships.mockReturnValue(of([
         { ...membershipIn(KurinBranch.UPYu), kurinKey: 'kurin-elsewhere', membershipKey: 'ms-2' },
         membershipIn(KurinBranch.USP)
@@ -1050,6 +1053,7 @@ describe('MemberCardComponent', () => {
       memberServiceSpy.getByKey.mockReturnValue(of({
         ...member,
         latestPlastLevel: PlastLevel.Starshoplastun,
+        ulad: KurinBranch.USP,
         plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }]
       }));
       memberServiceSpy.getMemberships.mockReturnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
@@ -1070,6 +1074,8 @@ describe('MemberCardComponent', () => {
       const zvyazkovyi = {
         ...member,
         latestPlastLevel: PlastLevel.Senior,
+        ulad: KurinBranch.UPS,
+        isAdult: true,
         plastLevelHistories: [
           { plastLevel: PlastLevel.Skob, dateAchieved: '2002-06-01' },
           { plastLevel: PlastLevel.Senior, dateAchieved: '2015-04-26' }
@@ -1117,6 +1123,70 @@ describe('MemberCardComponent', () => {
         const element = fixture.nativeElement as HTMLElement;
         expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
         expect(element.querySelector('[data-testid="senior-award-add"]')).toBeNull();
+      });
+
+      it('неповнолітній старший на своїй картці в курені УПЮ старших відзначень собі не вносить', () => {
+        authServiceSpy.getAuthStateValue.mockReturnValue({
+          userKey: 'user-viewer', memberKey: member.memberKey, email: 'viewer@example.com', isAdmin: false,
+          permissions: [], roles: [], kurinKey: member.kurinKey, accessToken: 'token'
+        });
+        memberServiceSpy.getByKey.mockReturnValue(of({ ...zvyazkovyi, isAdult: false }));
+        memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
+        createComponent();
+        fixture.detectChanges();
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+        expect(element.querySelector('[data-testid="senior-award-add"]')).toBeNull();
+      });
+    });
+
+    describe('ступінь, що чекає', () => {
+      const waiting = {
+        ...member,
+        latestPlastLevel: PlastLevel.Skob,
+        ulad: KurinBranch.UPYu,
+        plastLevelHistories: [
+          { plastLevelHistoryKey: 'lvl-skob', plastLevel: PlastLevel.Skob, dateAchieved: '2021-06-01' },
+          { plastLevelHistoryKey: 'lvl-sp', plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2025-09-01', awaitsConfirmation: true }
+        ]
+      };
+
+      function openAs(memberKey: string, permissions: string[]): void {
+        authServiceSpy.getAuthStateValue.mockReturnValue({
+          userKey: 'user-viewer', memberKey, email: 'viewer@example.com', isAdmin: false,
+          permissions, roles: [], kurinKey: member.kurinKey, accessToken: 'token'
+        });
+        memberServiceSpy.getByKey.mockReturnValue(of(waiting));
+        memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
+        createComponent();
+        fixture.detectChanges();
+      }
+
+      it('стоїть окремо з позначкою і не стає поточним ступенем', () => {
+        openAs(member.memberKey, []);
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(element.querySelector('[data-testid="degree-highest"]')?.textContent).toContain('пл. скоб');
+        expect(element.querySelector('[data-testid="degree-waiting"]')?.textContent).toContain('чекає підтвердження');
+        expect(component.hasYouthProgram).toBe(true);
+        expect(element.textContent).not.toContain('Підтвердити');
+      });
+
+      it('Звʼязковий підтверджує його з картки', () => {
+        memberServiceSpy.confirmLevel.mockReturnValue(of({ plastLevel: PlastLevel.Starshoplastun }));
+        openAs('someone-else', ['Group:Manage:KurinWide', 'Member:Update:KurinWide']);
+
+        expect(component.canConfirmLevels).toBe(true);
+        component.confirmLevel('lvl-sp');
+
+        expect(memberServiceSpy.confirmLevel).toHaveBeenCalledWith(member.memberKey, 'lvl-sp');
+      });
+
+      it('впорядник без права на весь курінь не відповідає', () => {
+        openAs('someone-else', ['Group:Update:OwnGroups']);
+
+        expect(component.canConfirmLevels).toBe(false);
       });
     });
 

@@ -58,7 +58,6 @@ import { hasYouthProgram, isSeniorBranch, KURIN_BRANCH_LABELS, KurinBranch } fro
 import { degreeRows, DegreeRow, SENIOR_LADDER, YOUTH_LADDER } from './components/member-degrees-tile/member-degrees.function';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
-import { memberBranchHere } from '../../functions/member-branch.function';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { DuesEntryDto, MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { duesAmountLabel, money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
@@ -220,6 +219,8 @@ export class MemberCardComponent implements OnInit {
   abilities: MemberAbilitiesDto = NO_ABILITIES;
   profileVerificationEnabled = false;
   profileVerificationSubmitting = false;
+  /** Ключ ступеня, відповідь на який їде на сервер. */
+  levelAnswering: string | null = null;
   isWarningsDialogVisible = false;
   private readonly moreMenuCache = new MenuItemsCache();
 
@@ -472,10 +473,6 @@ export class MemberCardComponent implements OnInit {
     return emailHref(this.member?.email);
   }
 
-  get personalBranch(): KurinBranch {
-    return memberBranchHere(this.member, this.memberships);
-  }
-
   /** Членство в курені, де людину дивляться; перше чинне, якщо такого немає. */
   get membershipHere(): MembershipDto | null {
     return this.memberships.find(m => m.isCurrent && m.kurinKey === this.member?.kurinKey)
@@ -492,11 +489,11 @@ export class MemberCardComponent implements OnInit {
   }
 
   /**
-   * Старша людина: поточний ступінь — старший пластун чи сеніор, або вона стоїть у курені УСП/УПС.
-   * Сеніор, що веде УПЮ-курінь, теж старший, і свої старші відзначення веде сам (сервер — той самий поділ).
+   * Старша людина: улад, який каже сервер (підтверджений старший ступінь або курінь УСП/УПС, де її дивимось),
+   * або закрите юнацтво. Сеніор, що веде УПЮ-курінь, теж старший.
    */
   get isSeniorPerson(): boolean {
-    return this.isSeniorKurinCard || isSeniorBranch(this.personalBranch) || this.isClosedYouthRecord;
+    return isSeniorBranch(this.member?.ulad) || this.isClosedYouthRecord;
   }
 
   /** Плитка старших відзначень: на старшій картці й на картці старшої людини в УПЮ-курені. */
@@ -504,9 +501,9 @@ export class MemberCardComponent implements OnInit {
     return !this.isLifeView && this.isSeniorPerson;
   }
 
-  /** У старшому курені вносить і провід; в УПЮ-курені старша людина вносить лише собі. */
+  /** У старшому курені вносить і провід; в УПЮ-курені старша людина вносить лише собі, і лише повнолітня. */
   get canAddSeniorAwards(): boolean {
-    return this.isSeniorKurinCard ? this.canEditMember : this.isOwnCard;
+    return this.isSeniorKurinCard ? this.canEditMember : this.isOwnCard && !!this.member?.isAdult;
   }
 
   /** Назва куреня першою; без назви — його гілки. */
@@ -543,9 +540,9 @@ export class MemberCardComponent implements OnInit {
       .slice(0, 5);
   }
 
-  /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву. */
+  /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву: улад каже сервер. */
   get hasYouthProgram(): boolean {
-    return hasYouthProgram(this.personalBranch);
+    return hasYouthProgram(this.member?.ulad);
   }
 
   /**
@@ -601,7 +598,7 @@ export class MemberCardComponent implements OnInit {
    * пластуна чи пластунки (`degreeRows`, як на плитці картки). Картка показує лише найвищий.
    */
   get lifeStages(): { branch: string; levels: DegreeRow[] }[] {
-    const histories = this.member?.plastLevelHistories ?? [];
+    const histories = (this.member?.plastLevelHistories ?? []).filter(history => !history.awaitsConfirmation);
     const honours = this.honours();
     return LIFE_LADDERS
       .map(stage => ({
@@ -614,6 +611,38 @@ export class MemberCardComponent implements OnInit {
   /** Ступені виправляє Звʼязковий куреня, у якому людина зараз, і сама людина; юнакові — як на картці. */
   get canCorrectLevels(): boolean {
     return this.canEditMember && (this.hasYouthProgram || this.isZvyazkovyiHere || this.isOwnCard);
+  }
+
+  /** Старший ступінь, що чекає, підтверджує Звʼязковий куреня, де людина стоїть, — і не собі. */
+  get canConfirmLevels(): boolean {
+    return this.isZvyazkovyiHere && !this.isOwnCard;
+  }
+
+  confirmLevel(levelKey: string): void {
+    const memberKey = this.member?.memberKey;
+    if (!memberKey || this.levelAnswering) return;
+    this.levelAnswering = levelKey;
+    this.memberService.confirmLevel(memberKey, levelKey)
+      .pipe(finalize(() => this.levelAnswering = null))
+      .subscribe({ next: () => this.refreshData() });
+  }
+
+  rejectLevel(levelKey: string): void {
+    const memberKey = this.member?.memberKey;
+    if (!memberKey || this.levelAnswering) return;
+    this.confirmationService.confirm({
+      header: 'Відхилити ступінь?',
+      message: 'Ступінь зникне з картки.',
+      icon: 'pi pi-times-circle',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Відхилити', severity: 'danger' },
+      accept: () => {
+        this.levelAnswering = levelKey;
+        this.memberService.rejectLevel(memberKey, levelKey)
+          .pipe(finalize(() => this.levelAnswering = null))
+          .subscribe({ next: () => this.refreshData() });
+      }
+    });
   }
 
   /** Усі ролі людини в усіх куренях, найновіші першими, з куренем, де їх тримали. */
@@ -1537,7 +1566,6 @@ export class MemberCardComponent implements OnInit {
       orderedPreview: []
     };
   }
-
 
   private formatDate(value: string): string {
     return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;
