@@ -2,13 +2,14 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 
@@ -22,14 +23,14 @@ public class GetThirdProbersQueryTests
     private readonly Mock<IProbeProjectRepository> _projects = new();
     private readonly Mock<IProbeProgressRepository> _progress = new();
     private readonly Mock<IBadgeProgressRepository> _badges = new();
-    private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<IMembershipDirectory> _members = new();
     private readonly Mock<IMemberProbeLine> _line = new();
     private readonly Mock<IProbesAndBadgesAccess> _access = new();
     private readonly Guid _kurinKey = Guid.NewGuid();
-    private readonly MemberSummary _withFile;
-    private readonly MemberSummary _justClosed;
-    private readonly MemberSummary _stillOnSecond;
-    private readonly MemberSummary _notMine;
+    private readonly KurinPerson _withFile;
+    private readonly KurinPerson _justClosed;
+    private readonly KurinPerson _stillOnSecond;
+    private readonly KurinPerson _notMine;
 
     public GetThirdProbersQueryTests()
     {
@@ -42,7 +43,7 @@ public class GetThirdProbersQueryTests
         _unitOfWork.SetupGet(u => u.ProbeProjects).Returns(_projects.Object);
         _unitOfWork.SetupGet(u => u.ProbeProgresses).Returns(_progress.Object);
         _unitOfWork.SetupGet(u => u.BadgeProgresses).Returns(_badges.Object);
-        _members.Setup(m => m.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(everyone);
+        _members.Setup(m => m.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(everyone);
         _line.Setup(l => l.ForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(
         [
             new ProbeSummaryDto("probe-2", "Друга", 10, 2, null, 2, "", ""),
@@ -78,7 +79,7 @@ public class GetThirdProbersQueryTests
         ]);
     }
 
-    private MemberSummary Person(string first, string last) => new(Guid.NewGuid(), null, _kurinKey, null, first, last, "x@example.com", null);
+    private KurinPerson Person(string first, string last) => KurinPeople.Of(Guid.NewGuid(), null, _kurinKey, null, first, last, "x@example.com", null);
 
     [Fact]
     public async Task ListsTheThirdProbersTheCallerMaySign_WithStagesAndCounts()

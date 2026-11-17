@@ -27,7 +27,7 @@ public class GetAssignTargetsHandlerTests
     private const CapabilityReach N = CapabilityReach.None;
 
     private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IMembershipDirectory> _people = new();
     private readonly Mock<IAgendaAccess> _access = new();
     private readonly Mock<IGroupRepository> _groupRepo = new();
     private readonly Mock<ILeadershipRepository> _leadershipRepo = new();
@@ -56,19 +56,19 @@ public class GetAssignTargetsHandlerTests
             new("Gurtok 1", _kurinKey) { GroupKey = _g1 },
             new("Gurtok 2", _kurinKey) { GroupKey = _g2 }
         };
-        var members = new List<MemberSummary>
+        var members = new List<KurinPerson>
         {
-            new(_inG1, null, _kurinKey, _g1, "A", "One", "a@example.com", null),
-            new(_inG2, null, _kurinKey, _g2, "B", "Two", "b@example.com", null),
-            new(_viewerMemberKey, _viewerUserKey, _kurinKey, _g2, "C", "Viewer", "c@example.com", null),
-            new(_kvStaff, null, _kurinKey, null, "D", "Staff", "d@example.com", null),
-            new(_loner, null, _kurinKey, null, "E", "Loner", "e@example.com", null)
+            KurinPeople.Of(_inG1, null, _kurinKey, _g1, "A", "One", "a@example.com", null),
+            KurinPeople.Of(_inG2, null, _kurinKey, _g2, "B", "Two", "b@example.com", null),
+            KurinPeople.Of(_viewerMemberKey, _viewerUserKey, _kurinKey, _g2, "C", "Viewer", "c@example.com", null),
+            KurinPeople.Of(_kvStaff, null, _kurinKey, null, "D", "Staff", "d@example.com", null),
+            KurinPeople.Of(_loner, null, _kurinKey, null, "E", "Loner", "e@example.com", null)
         };
 
         _uow.Setup(u => u.Groups).Returns(_groupRepo.Object);
         _uow.Setup(u => u.Leaderships).Returns(_leadershipRepo.Object);
         _groupRepo.Setup(r => r.GetAllAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(groups);
-        _memberDirectory.Setup(r => r.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(members);
+        _people.Setup(r => r.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(members);
         _leadershipRepo.Setup(r => r.GetLeadershipRefsForKurinAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[]
             {
@@ -85,7 +85,7 @@ public class GetAssignTargetsHandlerTests
             .ReturnsAsync([new ProjectK.Common.Records.KurinModule.KurinTagSummary(_novices.KurinTagKey, _novices.Name, _novices.ColorHex)]);
         TagsOn(true);
 
-        _handler = new GetAssignTargetsQueryHandler(_memberDirectory.Object, _access.Object, _tags.Object, KurinDirectories.Over(_uow.Object), new OfficeDirectory(_uow.Object));
+        _handler = new GetAssignTargetsQueryHandler(_people.Object, _access.Object, _tags.Object, KurinDirectories.Over(_uow.Object), new OfficeDirectory(_uow.Object));
     }
 
     private void Reach(CapabilityReach kurin, CapabilityReach groups, CapabilityReach members, CapabilityReach provid, params Guid[] led) =>

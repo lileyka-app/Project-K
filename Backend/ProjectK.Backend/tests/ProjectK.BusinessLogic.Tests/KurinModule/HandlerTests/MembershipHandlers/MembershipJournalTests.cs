@@ -50,7 +50,7 @@ public class MembershipJournalTests
         _groups.Setup(r => r.GetByKeyAsync(_sokoly.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_sokoly);
         _groups.Setup(r => r.GetByKeyAsync(_orly.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_orly);
         _members.Setup(d => d.FindAsync(_membership.MemberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_membership.MemberKey, null, _kurinKey, _sokoly.GroupKey, "Олесь", "Юнак", "o@x", null));
+            .ReturnsAsync(new MemberSummary(_membership.MemberKey, null, "Олесь", "Юнак", "o@x", null));
         _journal.Knows(_membership.MemberKey, _kurinKey, _sokoly.GroupKey, "Олесь", "Юнак");
     }
 

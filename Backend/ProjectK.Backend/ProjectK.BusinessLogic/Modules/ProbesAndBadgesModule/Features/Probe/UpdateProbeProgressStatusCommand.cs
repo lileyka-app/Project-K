@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
@@ -37,7 +38,7 @@ public sealed class UpdateProbeProgressStatusCommand : IRequest<ServiceResult<Pr
 public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<UpdateProbeProgressStatusCommand, ServiceResult<ProbeProgressDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly ICurrentMember _actors;
     private readonly IKurinAudit _audit;
     private readonly IKurinJournalRepository _journal;
@@ -47,7 +48,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
 
     public UpdateProbeProgressStatusCommandHandler(
         IUnitOfWork unitOfWork,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         ICurrentMember actors,
         IKurinAudit audit,
         IAuditUnitOfWork journal,
@@ -57,7 +58,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
     {
         _line = line;
         _unitOfWork = unitOfWork;
-        _members = members;
+        _memberships = memberships;
         _actors = actors;
         _audit = audit;
         _journal = journal.KurinJournal;
@@ -72,7 +73,7 @@ public sealed class UpdateProbeProgressStatusCommandHandler : IRequestHandler<Up
             return ServiceResult<ProbeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.InvalidProbeStatus, "A probe id and a status other than NotStarted are required.");
         }
 
-        var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
+        var memberKurinKey = (await _memberships.GetCurrentKurinKeysForMemberAsync(request.MemberKey, cancellationToken)).Cast<Guid?>().FirstOrDefault();
         if (memberKurinKey is null)
         {
             return ServiceResult<ProbeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");

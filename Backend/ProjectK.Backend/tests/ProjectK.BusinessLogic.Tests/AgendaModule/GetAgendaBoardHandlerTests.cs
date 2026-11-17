@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
@@ -49,9 +50,9 @@ public class GetAgendaBoardHandlerTests
         uow.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
         uow.SetupGet(u => u.AgendaCategories).Returns(categories.Object);
 
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
-        members.Setup(m => m.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(m => m.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        members.Setup(m => m.GetPeopleInKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var access = new Mock<IAgendaAccess>();
         access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))

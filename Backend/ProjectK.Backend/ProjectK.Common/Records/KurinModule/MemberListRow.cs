@@ -1,4 +1,3 @@
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.Shared;
 
@@ -45,7 +44,7 @@ public sealed record MemberListRow
     /// Every ступінь this person has reached, with the date. Read here and not only on the card
     /// because the registry is a column per ступінь across the whole kurin.
     /// </summary>
-    public required List<PlastLevelHistory> PlastLevels { get; init; }
+    public required List<MemberListLevel> PlastLevels { get; init; }
 
     /// <summary>The offices held now in this kurin — its own and its гуртки's. One held elsewhere is not this kurin's to show.</summary>
     public required List<MemberListOffice> Offices { get; init; }
@@ -57,5 +56,5 @@ public sealed record MemberListRow
     public required List<MemberListAssignment> Assignments { get; init; }
 
     /// <summary>The перестороги not revoked.</summary>
-    public required List<MemberWarning> Warnings { get; init; }
+    public required List<MemberListWarning> Warnings { get; init; }
 }

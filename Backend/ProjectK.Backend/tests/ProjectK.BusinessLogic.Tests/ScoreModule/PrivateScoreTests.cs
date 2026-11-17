@@ -39,7 +39,7 @@ public class PrivateScoreTests
     private readonly List<PrivateScoreEntry> _entries = [];
     private readonly List<ScoreEntry> _publicEntries = [];
     private readonly List<KurinMembershipRecord> _memberships = [];
-    private readonly List<MemberSummary> _people = [];
+    private readonly List<KurinPerson> _people = [];
     private readonly Mock<IScoreUnitOfWork> _score = new();
     private readonly Mock<IResourceAccessService> _resourceAccess = new();
     private readonly Guid _oksana;
@@ -88,7 +88,7 @@ public class PrivateScoreTests
         var membership = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(membership, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), null));
-        _people.Add(new MemberSummary(member, Guid.NewGuid(), Kurin, Sokoly, name, "Пластун", $"{name}@x", null));
+        _people.Add(KurinPeople.Of(member, Guid.NewGuid(), Kurin, Sokoly, name, "Пластун", $"{name}@x", null));
         return membership;
     }
 
@@ -113,7 +113,7 @@ public class PrivateScoreTests
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(d => d.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
         var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
+        memberships.Setup(m => m.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Groups).Returns(Mock.Of<IGroupRepository>(g =>
             g.GetAllAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult<IEnumerable<Group>>(new[] { new Group("Соколи", Kurin, null) { GroupKey = Sokoly } })));

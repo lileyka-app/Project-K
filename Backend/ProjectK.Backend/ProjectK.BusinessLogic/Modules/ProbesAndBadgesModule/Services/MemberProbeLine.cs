@@ -1,5 +1,4 @@
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
@@ -13,18 +12,18 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProbesCatalogReader _catalog;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IGroupProbeEditions _groupEditions;
 
     public MemberProbeLine(
         IUnitOfWork unitOfWork,
         IProbesCatalogReader catalog,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         IGroupProbeEditions groupEditions)
     {
         _unitOfWork = unitOfWork;
         _catalog = catalog;
-        _members = members;
+        _memberships = memberships;
         _groupEditions = groupEditions;
     }
 
@@ -95,7 +94,7 @@ public sealed class MemberProbeLine : IMemberProbeLine, IProbeEditionHolds
         Guid memberKey,
         CancellationToken cancellationToken)
     {
-        if (await _members.FindKurinKeyAsync(memberKey, cancellationToken) is not { } kurinKey)
+        if ((await _memberships.GetCurrentKurinKeysForMemberAsync(memberKey, cancellationToken)).Cast<Guid?>().FirstOrDefault() is not { } kurinKey)
         {
             return null;
         }

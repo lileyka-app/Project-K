@@ -1,7 +1,6 @@
 using ProjectK.Common.Contracts.DuesModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Enums.DuesModule;
@@ -19,15 +18,13 @@ public sealed class DuesEntryWriter
 {
     private readonly IDuesUnitOfWork _dues;
     private readonly IMembershipDirectory _memberships;
-    private readonly IMemberDirectory _members;
     private readonly IKraiProfileDirectory _profiles;
     private readonly IDuesKurinShape _shape;
 
-    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IMemberDirectory members, IKraiProfileDirectory profiles, IDuesKurinShape shape)
+    public DuesEntryWriter(IDuesUnitOfWork dues, IMembershipDirectory memberships, IKraiProfileDirectory profiles, IDuesKurinShape shape)
     {
         _dues = dues;
         _memberships = memberships;
-        _members = members;
         _profiles = profiles;
         _shape = shape;
     }
@@ -93,7 +90,7 @@ public sealed class DuesEntryWriter
     private async Task<ServiceResult<T>?> CheckCollectorAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
     {
         if (request.CollectedByMemberKey is { } collector
-            && await _members.FindKurinKeyAsync(collector, cancellationToken) != kurinKey)
+            && (await _memberships.GetCurrentKurinKeysForMemberAsync(collector, cancellationToken)).Cast<Guid?>().FirstOrDefault() != kurinKey)
         {
             return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.CollectorNotInKurin, "Whoever collected it has to be of this kurin.");
         }

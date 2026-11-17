@@ -11,7 +11,7 @@ namespace ProjectK.BusinessLogic.Tests.CommonTests;
 public class MemberSummaryNamesTests
 {
     private static MemberSummary Person(Guid memberKey, Guid? userKey, string first, string last)
-        => new(memberKey, userKey, Guid.NewGuid(), null, first, last, "person@example.com", null);
+        => new(memberKey, userKey, first, last, "person@example.com", null);
 
     [Fact]
     public void ByMember_NamesEachPersonOnce_ByTheFirstRowRead()

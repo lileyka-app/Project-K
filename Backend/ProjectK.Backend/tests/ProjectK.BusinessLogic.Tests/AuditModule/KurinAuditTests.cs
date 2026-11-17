@@ -5,7 +5,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.IdentityModule;
 
@@ -77,7 +77,7 @@ public class KurinAuditTests
 
         // Two entries, one lookup of each: the actor and the subject are worked out once a request.
         journal.People.Verify(x => x.FindByAccountAsync(_actorUserKey, It.IsAny<CancellationToken>()), Times.Once);
-        journal.People.Verify(x => x.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()), Times.Once);
+        journal.Placements.Verify(x => x.GetPeopleInKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -35,8 +35,8 @@ public class MemberProbeLineTests
             Probe("probe-1-2026", 1, New),
             Probe("probe-2-2026", 2, New),
         ]);
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(x => x.FindKurinKeyAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(_kurinKey);
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(x => x.GetCurrentKurinKeysForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync([_kurinKey]);
         Given();
 
         _line = new MemberProbeLine(unitOfWork.Object, catalog.Object, members.Object, _groupEditions.Object);

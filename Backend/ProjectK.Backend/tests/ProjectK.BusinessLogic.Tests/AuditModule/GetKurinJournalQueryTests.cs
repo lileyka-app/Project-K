@@ -45,7 +45,7 @@ public class GetKurinJournalQueryTests
             })
             .ReturnsAsync([]);
         _members.Setup(x => x.FindByAccountAsync(_access.ActorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, _access.KurinKey, _access.GroupKey, "Марта", "Впорядниця", "m@example.com", null));
+            .ReturnsAsync(new MemberSummary(_ownMemberKey, _access.ActorUserKey, "Марта", "Впорядниця", "m@example.com", null));
     }
 
     private Task<ServiceResult<ProjectK.Common.Dtos.AuditModule.KurinJournalPageDto>> ReadAsync(

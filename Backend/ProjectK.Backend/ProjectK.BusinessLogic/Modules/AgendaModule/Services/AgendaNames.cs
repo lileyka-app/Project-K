@@ -1,9 +1,8 @@
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 
@@ -29,7 +28,7 @@ public sealed record AgendaNames(
 
     public static async Task<AgendaNames> LoadAsync(
         IUnitOfWork uow,
-        IMemberDirectory directory,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinDirectory kurins,
         IKurinTagDirectory tags,
@@ -38,12 +37,12 @@ public sealed record AgendaNames(
         CancellationToken cancellationToken)
     {
         var groupNames = await kurins.GetGroupNamesAsync(kurinKey, cancellationToken);
-        var members = await AgendaPeopleRules.ReadAsync(directory, kurinKey, AgendaPeopleRules.ToLabel(items), cancellationToken);
+        var members = await AgendaPeopleRules.ReadAsync(memberships, kurinKey, AgendaPeopleRules.ToLabel(items), cancellationToken);
 
-        var memberNames = members.ToDictionary(m => m.MemberKey, m => m.FullName);
+        var memberNames = members.ToDictionary(m => m.MemberKey, m => m.Person.FullName);
 
         // Creators are app users; resolve their display name through the linked member record.
-        var creatorNames = AgendaCreatorNames.FromMembers(members);
+        var creatorNames = AgendaCreatorNames.FromMembers(members.Select(m => m.Person));
 
         var leadershipRefs = await offices.GetLeadershipsInKurinAsync(kurinKey, cancellationToken);
         // Проводи and tags are named by the kurin, not by a person or a гурток; one table labels both.

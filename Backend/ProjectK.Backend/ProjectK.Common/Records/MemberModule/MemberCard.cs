@@ -13,8 +13,7 @@ public sealed record MemberCard(
     string PublicId,
     string FirstName,
     string LastName,
-    string? ProfilePhotoBlobName,
-    int CurrentMembershipCount)
+    string? ProfilePhotoBlobName)
 {
     public string FullName => PersonNames.FirstLast(FirstName, LastName);
 }

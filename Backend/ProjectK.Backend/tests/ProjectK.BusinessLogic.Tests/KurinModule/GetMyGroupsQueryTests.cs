@@ -41,7 +41,7 @@ public class GetMyGroupsQueryTests
         ]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Person, User, Kurin, ownGroup, "Оксана", "Паливода", "o@x", null));
+            .ReturnsAsync(new MemberSummary(Person, User, "Оксана", "Паливода", "o@x", null));
         members.Setup(m => m.GetLevelsAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var scopes = ScopeFacts.Repository();

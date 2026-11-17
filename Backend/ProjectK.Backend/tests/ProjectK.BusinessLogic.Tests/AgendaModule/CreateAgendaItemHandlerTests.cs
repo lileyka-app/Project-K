@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
@@ -24,7 +25,7 @@ namespace ProjectK.BusinessLogic.Tests.AgendaModule;
 public class CreateAgendaItemHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IMembershipDirectory> _people = new();
     private readonly Mock<IAgendaAccess> _access = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
@@ -36,14 +37,14 @@ public class CreateAgendaItemHandlerTests
     public CreateAgendaItemHandlerTests()
     {
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
-        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<MemberSummary>());
-        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<MemberSummary>());
+        _people.Setup(r => r.GetPeopleInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<KurinPerson>());
+        _people.Setup(r => r.GetPeopleInKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<KurinPerson>());
         _uow.Setup(u => u.Groups).Returns(Mock.Of<IGroupRepository>());
         _access.Setup(a => a.CanAuthorAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _journal = new JournalRecorder(_currentUser.Object);
-        _handler = new CreateAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
+        _handler = new CreateAgendaItemCommandHandler(_uow.Object, _people.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
     }
 
     private static CreateAgendaItemCommand CommandWith(Guid kurinKey, params AgendaTargetInput[] targets) => new()
@@ -92,8 +93,8 @@ public class CreateAgendaItemHandlerTests
         var groups = new Mock<IGroupRepository>();
         groups.Setup(g => g.GetAllAsync(kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([group]);
         _uow.Setup(u => u.Groups).Returns(groups.Object);
-        _memberDirectory.Setup(r => r.GetByKurinAsync(kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MemberSummary(memberKey, null, kurinKey, null, "Олесь", "Юнак", "o@x", null)]);
+        _people.Setup(r => r.GetPeopleInKurinAsync(kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([KurinPeople.Of(memberKey, null, kurinKey, null, "Олесь", "Юнак", "o@x", null)]);
         _currentUser.Setup(c => c.UserId).Returns(Guid.NewGuid());
         _access.Setup(a => a.AuthorizeTargetAsync(It.IsAny<AgendaTargetInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Allow());

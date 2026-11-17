@@ -24,6 +24,7 @@ public class SubmitBadgeProgressHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IMemberDirectory> _memberDirectoryMock = new();
+    private readonly Mock<IMembershipDirectory> _memberships = new();
     private readonly Mock<IBadgeProgressRepository> _badgeProgressRepositoryMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepositoryMock = new();
     private readonly Mock<ICurrentUserContext> _currentUserContextMock = new();
@@ -52,6 +53,7 @@ public class SubmitBadgeProgressHandlerTests
         _handler = new SubmitBadgeProgressCommandHandler(
             _unitOfWorkMock.Object,
             _memberDirectoryMock.Object,
+            _memberships.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
             _kurinCatalogMock.Object,
@@ -73,9 +75,9 @@ public class SubmitBadgeProgressHandlerTests
     private Guid GivenMember(string badgeId, BadgeProgress? progress)
     {
         var memberKey = Guid.NewGuid();
-        _memberDirectoryMock
-            .Setup(x => x.FindAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(memberKey, null, Guid.NewGuid(), null, "Ivan", "Petrenko", "ivan@example.com", null));
+        _memberships
+            .Setup(x => x.FindInLatestKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.Of(memberKey, null, Guid.NewGuid(), null, "Ivan", "Petrenko", "ivan@example.com", null));
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(progress);
@@ -116,9 +118,9 @@ public class SubmitBadgeProgressHandlerTests
         var badgeId = "badge-1";
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(actorUserKey);
-        _memberDirectoryMock
-            .Setup(x => x.FindAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(
+        _memberships
+            .Setup(x => x.FindInLatestKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.Of(
                 memberKey, null, kurinKey, groupKey, "Ivan", "Petrenko", "ivan@example.com", null));
         _badgeProgressRepositoryMock
             .Setup(x => x.GetByMemberAndBadgeIdAsync(memberKey, badgeId, It.IsAny<CancellationToken>()))

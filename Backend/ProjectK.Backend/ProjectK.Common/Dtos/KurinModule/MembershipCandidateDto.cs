@@ -1,4 +1,3 @@
-using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.Common.Dtos.KurinModule;
 
@@ -9,7 +8,7 @@ namespace ProjectK.Common.Dtos.KurinModule;
 /// No contact details, and nothing about kurins they once left.
 /// </summary>
 public sealed record MembershipCandidateDto(
-    MemberCard Member,
+    MembershipCandidateMemberDto Member,
     bool AlreadyInThisKurin,
     IReadOnlyList<MembershipRequestKurinDto> CurrentKurins,
     MembershipAskOfferDto Offer);

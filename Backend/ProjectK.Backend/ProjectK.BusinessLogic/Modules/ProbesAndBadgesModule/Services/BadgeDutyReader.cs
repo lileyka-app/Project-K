@@ -1,5 +1,5 @@
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.IdentityModule;
@@ -9,12 +9,12 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 /// <summary>«Справи» from вмілості: those handed in by the youths whose progress the viewer may confirm.</summary>
 public sealed class BadgeDutyReader : IDutySource
 {
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IMemberProgressDirectory _progress;
 
-    public BadgeDutyReader(IMemberDirectory members, IMemberProgressDirectory progress)
+    public BadgeDutyReader(IMembershipDirectory memberships, IMemberProgressDirectory progress)
     {
-        _members = members;
+        _memberships = memberships;
         _progress = progress;
     }
 
@@ -26,7 +26,7 @@ public sealed class BadgeDutyReader : IDutySource
             return [];
         }
 
-        var people = (await _members.GetByKurinAsync(viewer.KurinKey, cancellationToken))
+        var people = (await _memberships.GetPeopleInKurinAsync(viewer.KurinKey, cancellationToken))
             .Where(p => rights.ForGroup(ResourceType.BadgeProgress, ResourceAction.Update, p.GroupKey))
             .Select(p => p.MemberKey)
             .ToList();

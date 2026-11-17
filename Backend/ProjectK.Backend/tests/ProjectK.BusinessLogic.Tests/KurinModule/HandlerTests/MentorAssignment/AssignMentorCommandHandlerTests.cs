@@ -65,7 +65,7 @@ public class AssignMentorCommandHandlerTests
         // The summary names the kurin they joined last, not the one this гурток is in.
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(mentorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, Guid.NewGuid(), null, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
 
@@ -97,7 +97,7 @@ public class AssignMentorCommandHandlerTests
         _groupRepoMock.Setup(x => x.GetByKeyAsync(groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(group);
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(mentorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, Guid.NewGuid(), null, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, "A", "B", "a@example.com", null));
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
@@ -119,7 +119,7 @@ public class AssignMentorCommandHandlerTests
         _mentorAssignmentRepoMock.Setup(x => x.GetSpecificAssignmentAsync(mentorUserKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync((MentorAssignmentEntity?)null);
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
@@ -144,7 +144,7 @@ public class AssignMentorCommandHandlerTests
             .ReturnsAsync(new MentorAssignmentEntity { MentorAssignmentKey = Guid.NewGuid(), MentorUserKey = mentorUserKey, GroupKey = groupKey, AssignedAtUtc = DateTime.UtcNow });
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);
@@ -176,7 +176,7 @@ public class AssignMentorCommandHandlerTests
             .ReturnsAsync(revoked);
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, kurinKey, groupKey, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, "A", "B", "a@example.com", null));
         BelongsTo(kurinKey, member.MemberKey, mentorUserKey);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
 

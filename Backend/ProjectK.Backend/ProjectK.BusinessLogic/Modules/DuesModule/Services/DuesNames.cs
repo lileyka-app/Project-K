@@ -47,7 +47,7 @@ public sealed class DuesNames
         CancellationToken cancellationToken)
     {
         var inKurin = (await memberships.GetInKurinAsync(kurinKey, cancellationToken)).ToDictionary(m => m.MembershipKey);
-        var people = await members.GetByKurinAsync(kurinKey, cancellationToken);
+        var people = (await memberships.GetPeopleInKurinAsync(kurinKey, cancellationToken)).Select(p => p.Person).ToList();
 
         // The kurin's people are those who stand in it now, but its dues still hold everyone who left
         // or moved on with a debt; read those by key, or their rows in «вибулі з боргом» say «—».

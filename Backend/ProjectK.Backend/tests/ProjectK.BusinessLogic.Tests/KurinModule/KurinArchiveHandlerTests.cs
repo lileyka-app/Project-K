@@ -55,10 +55,10 @@ public class KurinArchiveHandlerTests
         _user.Setup(u => u.UserId).Returns(_userKey);
         _user.Setup(u => u.KurinKey).Returns(_kurinKey);
         _members.Setup(m => m.FindByAccountAsync(_userKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_selfMemberKey, _userKey, _kurinKey, null, "Ірина", "Звʼязкова", "z@example.com", null));
+            .ReturnsAsync(new MemberSummary(_selfMemberKey, _userKey, "Ірина", "Звʼязкова", "z@example.com", null));
         _members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) =>
-                keys.Select(key => new MemberSummary(key, null, _kurinKey, null, "Марко", "Бойко", "m@example.com", null)).ToList());
+                keys.Select(key => new MemberSummary(key, null, "Марко", "Бойко", "m@example.com", null)).ToList());
         _scopes.Setup(s => s.GetLedGroupSourcesAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([_ledGroup]));
         _reauth.Setup(r => r.GetSecurityStampAsync(_userKey, It.IsAny<CancellationToken>())).ReturnsAsync(Stamp);
         _jwt.Setup(j => j.GenerateArchiveDangerTicket(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>()))

@@ -1,6 +1,5 @@
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.IdentityModule;
@@ -85,7 +84,7 @@ public static class RegistryMapping
     }
 
     /// <summary>An open пересторога on a roster row, as the card would show it.</summary>
-    private static MemberWarningDto ToDto(MemberWarning warning) => new()
+    private static MemberWarningDto ToDto(MemberListWarning warning) => new()
     {
         MemberWarningKey = warning.MemberWarningKey,
         MemberKey = warning.MemberKey,
@@ -98,7 +97,7 @@ public static class RegistryMapping
     };
 
     /// <summary>The newest ступінь on record; a record older than the history holds it alone.</summary>
-    private static PlastLevel? LatestLevel(IEnumerable<PlastLevelHistory> history, PlastLevel? stored) =>
+    private static PlastLevel? LatestLevel(IEnumerable<MemberListLevel> history, PlastLevel? stored) =>
         history
             .OrderByDescending(entry => entry.DateAchieved)
             .Select(entry => (PlastLevel?)entry.PlastLevel)

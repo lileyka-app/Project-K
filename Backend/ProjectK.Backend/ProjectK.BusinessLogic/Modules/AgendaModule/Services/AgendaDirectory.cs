@@ -1,6 +1,5 @@
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
@@ -13,14 +12,14 @@ namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 public sealed class AgendaDirectory : IAgendaDirectory
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IOfficeDirectory _offices;
     private readonly IKurinTagDirectory _tags;
 
-    public AgendaDirectory(IUnitOfWork uow, IMemberDirectory members, IOfficeDirectory offices, IKurinTagDirectory tags)
+    public AgendaDirectory(IUnitOfWork uow, IMembershipDirectory memberships, IOfficeDirectory offices, IKurinTagDirectory tags)
     {
         _uow = uow;
-        _members = members;
+        _memberships = memberships;
         _offices = offices;
         _tags = tags;
     }
@@ -31,7 +30,7 @@ public sealed class AgendaDirectory : IAgendaDirectory
     {
         var scope = viewer.ToScope();
         var items = (await _uow.AgendaItems.GetForViewerAsync(scope, null, null, onlyDated: false, kind: AgendaItemKind.Task, cancellationToken)).ToList();
-        var roster = await AgendaRosterRules.LoadAsync(_members, _offices, _tags, viewer.KurinKey, items, cancellationToken);
+        var roster = await AgendaRosterRules.LoadAsync(_memberships, _offices, _tags, viewer.KurinKey, items, cancellationToken);
         return items.Select(item => ToViewerItem(item, viewer, scope, roster, [])).ToList();
     }
 
@@ -52,7 +51,7 @@ public sealed class AgendaDirectory : IAgendaDirectory
 
         var tasks = items.Where(item => item.Kind == AgendaItemKind.Task).ToList();
         var roster = tasks.Count > 0
-            ? await AgendaRosterRules.LoadAsync(_members, _offices, _tags, viewer.KurinKey, tasks, cancellationToken)
+            ? await AgendaRosterRules.LoadAsync(_memberships, _offices, _tags, viewer.KurinKey, tasks, cancellationToken)
             : AgendaRoster.Empty;
 
         // The person's answers for the whole window in one read, then matched per occurrence: a

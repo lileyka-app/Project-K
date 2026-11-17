@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
@@ -11,7 +12,7 @@ using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.ProbesAndBadgesModule;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.ProbesAndBadgesModule;
@@ -36,6 +37,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IKurinCatalog _kurinCatalog;
@@ -46,6 +48,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     public SubmitBadgeProgressCommandHandler(
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
+        IMembershipDirectory memberships,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
         IKurinCatalog kurinCatalog,
@@ -55,6 +58,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     {
         _unitOfWork = unitOfWork;
         _members = members;
+        _memberships = memberships;
         _currentUserContext = currentUserContext;
         _events = events;
         _kurinCatalog = kurinCatalog;
@@ -70,7 +74,12 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
             return ServiceResult<BadgeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.BadgeIdRequired, "A badge id is required.");
         }
 
-        var member = await _members.FindAsync(request.MemberKey, cancellationToken);
+        // Someone who stands nowhere is still found, placed in an empty kurin: their вмілість goes on
+        // being theirs, and a new one is turned away as not offered rather than as nobody's.
+        var member = await _memberships.FindInLatestKurinAsync(request.MemberKey, cancellationToken)
+            ?? (await _members.FindAsync(request.MemberKey, cancellationToken) is { } person
+                ? new KurinPerson(person, Guid.Empty, null)
+                : null);
         if (member is null)
         {
             return ServiceResult<BadgeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");
@@ -159,7 +168,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
     }
 
     private async Task PublishSubmittedAsync(
-        MemberSummary member,
+        KurinPerson member,
         BadgeProgress progress,
         CancellationToken cancellationToken)
     {
@@ -168,7 +177,7 @@ public sealed class SubmitBadgeProgressCommandHandler : IRequestHandler<SubmitBa
                 progress.BadgeProgressKey,
                 progress.BadgeId,
                 member.MemberKey,
-                member.FullName,
+                member.Person.FullName,
                 member.KurinKey,
                 member.GroupKey,
                 _currentUserContext.UserId),

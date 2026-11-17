@@ -43,7 +43,7 @@ public class UpsertLeadershipHandlerTests
         _membersMock
             .Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => keys
-                .Select(key => new MemberSummary(key, AccountOf(key), Guid.NewGuid(), null, _firstNames.GetValueOrDefault(key, "A"), "B", "a@example.com", null))
+                .Select(key => new MemberSummary(key, AccountOf(key), _firstNames.GetValueOrDefault(key, "A"), "B", "a@example.com", null))
                 .ToList());
         _membersMock
             .Setup(m => m.GetLookupsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))

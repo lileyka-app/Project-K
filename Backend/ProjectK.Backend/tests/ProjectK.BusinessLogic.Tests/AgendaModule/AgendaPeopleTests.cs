@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.MemberModule;
@@ -89,16 +90,16 @@ public sealed class AgendaPeopleTests
     [Fact]
     public async Task ReadAsync_AsksForTheSelection_AndForTheKurinOnlyWithoutOne()
     {
-        var directory = new Mock<IMemberDirectory>();
-        directory.Setup(d => d.GetByKurinAsync(Kurin, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-        directory.Setup(d => d.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        var directory = new Mock<IMembershipDirectory>();
+        directory.Setup(d => d.GetPeopleInKurinAsync(Kurin, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        directory.Setup(d => d.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         var selection = new MemberSelection([Guid.NewGuid()], [], []);
 
         await AgendaPeopleRules.ReadAsync(directory.Object, Kurin, selection, CancellationToken.None);
-        directory.Verify(d => d.GetByKurinAsync(Kurin, selection, It.IsAny<CancellationToken>()), Times.Once);
-        directory.Verify(d => d.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>()), Times.Never);
+        directory.Verify(d => d.GetPeopleInKurinAsync(Kurin, selection, It.IsAny<CancellationToken>()), Times.Once);
+        directory.Verify(d => d.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>()), Times.Never);
 
         await AgendaPeopleRules.ReadAsync(directory.Object, Kurin, null, CancellationToken.None);
-        directory.Verify(d => d.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>()), Times.Once);
+        directory.Verify(d => d.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

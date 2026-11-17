@@ -17,6 +17,26 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
     Task<IReadOnlyList<MemberListRow>> GetRosterRowsByGroupAsync(Guid groupKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The people standing in a kurin now, each placed by their membership there: the membership
+    /// joined with the person behind it in one query.
+    /// </summary>
+    Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The same, narrowed to the members, гуртки and accounts the selection names; still one query.
+    /// </summary>
+    Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(Guid kurinKey, MemberSelection selection, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// A person placed by the open membership they joined most recently, in one query; null when
+    /// they have none or do not exist.
+    /// </summary>
+    Task<KurinPerson?> FindInLatestKurinAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>The same for the person behind an account.</summary>
+    Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The kurin's people who have an account, each with the first office they hold in this kurin
     /// (by провід, then role), or none.
     /// </summary>

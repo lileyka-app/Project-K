@@ -60,7 +60,7 @@ public sealed class StartupWarmUpService : BackgroundService
             var members = provider.GetRequiredService<IMemberDirectory>();
             await members.FindByAccountAsync(Guid.Empty, stoppingToken);
             await members.GetLevelsAsync(Guid.Empty, stoppingToken);
-            await members.GetByKurinAsync(Guid.Empty, stoppingToken);
+            await provider.GetRequiredService<IMembershipDirectory>().GetPeopleInKurinAsync(Guid.Empty, stoppingToken);
             await provider.GetRequiredService<IMembershipDirectory>().GetCurrentForAccountAsync(Guid.Empty, stoppingToken);
             await provider.GetRequiredService<ScoreBookReader>().OpenAsync(Guid.Empty, stoppingToken);
 

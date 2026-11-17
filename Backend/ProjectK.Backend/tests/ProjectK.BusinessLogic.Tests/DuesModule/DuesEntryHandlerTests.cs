@@ -69,9 +69,8 @@ public class DuesEntryHandlerTests
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetInKurinAsync(_kurin.KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync([_youth, _moved]);
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(_kurin.KurinKey);
-        return new DuesEntryWriter(_dues.Object, memberships.Object, members.Object, Mock.Of<ProjectK.Common.Contracts.KraiModule.IKraiProfileDirectory>(), Mock.Of<IDuesKurinShape>());
+        memberships.Setup(m => m.GetCurrentKurinKeysForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([_kurin.KurinKey]);
+        return new DuesEntryWriter(_dues.Object, memberships.Object, Mock.Of<ProjectK.Common.Contracts.KraiModule.IKraiProfileDirectory>(), Mock.Of<IDuesKurinShape>());
     }
 
     private static UpsertDuesEntryRequest Contribution(Guid membershipKey, decimal amount = 300) => new()

@@ -258,7 +258,7 @@ public class OnboardingBaselineHttpIntegrationTests
                 .Callback<Member, CancellationToken>((member, _) => opened = member);
             mockMemberRepo.Setup(r => r.GetSummaryByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Guid userKey, CancellationToken _) => opened is { } m && m.UserKey == userKey
-                    ? new MemberSummary(m.MemberKey, m.UserKey, Guid.Empty, null, m.FirstName, m.LastName, m.Email, null)
+                    ? new MemberSummary(m.MemberKey, m.UserKey, m.FirstName, m.LastName, m.Email, null)
                     : null);
 
             mockInvitationRepo.Setup(r => r.GetByTokenAsync("valid-token-123", It.IsAny<CancellationToken>())).ReturnsAsync(dummyInvitation);

@@ -53,7 +53,7 @@ public sealed class ScoreBookReader
         var kurinFacts = await _facts.ForKurinAsync(kurinKey, cancellationToken);
 
         var inKurin = (await _memberships.GetInKurinAsync(kurinKey, cancellationToken)).ToDictionary(m => m.MembershipKey);
-        var current = await _members.GetByKurinAsync(kurinKey, cancellationToken);
+        var current = (await _memberships.GetPeopleInKurinAsync(kurinKey, cancellationToken)).Select(p => p.Person).ToList();
 
         // The kurin's people are those who stand in it now, but a youth who left still has a row in
         // their гурток's table below; read them by key, or that row is named «—».

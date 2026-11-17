@@ -100,7 +100,7 @@ public class ReviewBadgeProgressHandlerTests
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(reviewerUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(
-                Guid.NewGuid(), reviewerUserKey, Guid.NewGuid(), null,
+                Guid.NewGuid(), reviewerUserKey,
                 "Іван", "Петренко", "ivan@example.com", null));
 
         var progress = CreateProgress(memberKey, badgeId, BadgeProgressStatus.Submitted);

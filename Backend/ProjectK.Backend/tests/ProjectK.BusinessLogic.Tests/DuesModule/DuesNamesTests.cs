@@ -28,13 +28,13 @@ public class DuesNamesTests
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([Staying, Left]);
-        _members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([Person(Staying.MemberKey, "Остап", "Бондаренко")]);
+        memberships.Setup(m => m.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new KurinPerson(Person(Staying.MemberKey, "Остап", "Бондаренко"), Kurin, null)]);
         return DuesNames.LoadAsync(memberships.Object, _members.Object, Kurin, CancellationToken.None);
     }
 
     private static MemberSummary Person(Guid memberKey, string first, string last) =>
-        new(memberKey, Guid.NewGuid(), Guid.Empty, null, first, last, $"{memberKey}@example.org", null);
+        new(memberKey, Guid.NewGuid(), first, last, $"{memberKey}@example.org", null);
 
     [Fact]
     public async Task Names_someone_who_left_from_their_member_record()

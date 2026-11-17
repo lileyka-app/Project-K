@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
@@ -104,6 +105,72 @@ public class MemberBoundaryRules
         ProjectKArchitecture.Violations(rule).Should().BeSubsetOf(
             ReadsProgressDataDirectly,
             "what a person has earned is asked of the module that holds it, through IMemberProgressDirectory");
+    }
+
+    private static readonly Regex MemberSide = new(
+        @"^ProjectK\.(Common\.\w+|BusinessLogic\.Modules|Infrastructure\.Repositories|Infrastructure\.Persistence\.Configurations|API\.Controllers)\.MemberModule(\.|$)",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex KurinSide = new(
+        @"^ProjectK\.(Common\.\w+|BusinessLogic\.Modules|Infrastructure\.Repositories|Infrastructure\.Persistence\.Configurations|API\.Controllers)\.KurinModule(\.|$)",
+        RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// The member types that still name something of the kurin's, by top-level type. Most read the
+    /// kurin through its contracts until the person keeps their own path (LIFE-03); the rest use its
+    /// rules and enums. The door other modules ask by — <c>IMemberDirectory</c>, what it answers with,
+    /// and the repository behind it — is not here, and may not come back.
+    /// </summary>
+    private static readonly string[] MemberStillNamesTheKurin =
+    [
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.Life.ExportMyLifePdfQueryHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.Member.GetMemberByKeyQueryHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.Member.GetMemberDossierQueryHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.Member.UpsertMemberCommandHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.Member.UpsertMemberProfileCommandHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.DeleteMemberAwardCommandHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.ReviewMemberAwardCommandHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.UpsertMemberAwardCommandHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberWarning.AssignMemberWarningCommandHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberWarning.CancelMemberWarningCommandHandler",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.CurrentMember",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MemberCardService",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MemberProfileVerificationService",
+        "ProjectK.BusinessLogic.Modules.MemberModule.Services.MemberProfileWriteRules",
+        "ProjectK.Common.Dtos.MemberModule.LeadershipHistoryDto",
+        "ProjectK.Common.Dtos.MemberModule.MemberDossierDto",
+        "ProjectK.Common.Dtos.MemberModule.MemberDto",
+        "ProjectK.Common.Dtos.MemberModule.PublicCardKurinDto",
+        "ProjectK.Common.Records.MemberModule.CurrentPerson",
+        "ProjectK.Common.Rules.MemberModule.SeniorStandingRules",
+    ];
+
+    /// <summary>
+    /// The person does not depend on the kurin: where someone stands is the kurin's to say, and the
+    /// kurin may ask the member module, never the other way round. Read from IL, so asserted as a subset
+    /// for the same reason as the rules above; a fixed entry is struck by hand.
+    /// </summary>
+    [Fact]
+    public void Member_ShouldNotNameTheKurin()
+    {
+        var offenders = ProjectKArchitecture.Loaded.Types
+            .Where(type => MemberSide.IsMatch(type.Namespace?.FullName ?? ""))
+            .Where(type => type.Dependencies.Any(dependency => KurinSide.IsMatch(dependency.Target.Namespace?.FullName ?? "")))
+            .Select(type => TopLevel(type.FullName))
+            .Distinct()
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+
+        offenders.Should().BeSubsetOf(
+            MemberStillNamesTheKurin,
+            "the member module answers who a person is and never where they stand (CONTRIBUTING.md › Бекенд › «Карта модулів»); "
+            + "ask IMembershipDirectory from the kurin's side instead");
+    }
+
+    private static string TopLevel(string fullName)
+    {
+        var cut = fullName.IndexOfAny(['/', '+']);
+        return cut < 0 ? fullName : fullName[..cut];
     }
 
     [Fact]

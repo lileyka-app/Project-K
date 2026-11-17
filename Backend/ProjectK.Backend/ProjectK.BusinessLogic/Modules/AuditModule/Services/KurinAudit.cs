@@ -1,9 +1,10 @@
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.AuditModule.Services;
 
@@ -22,6 +23,7 @@ public sealed class KurinAudit : IKurinAudit
     private readonly ICurrentMember _actors;
     private readonly ICurrentUserContext _currentUser;
     private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IKurinAuditRepository _writer;
     private readonly Dictionary<(Guid? KurinKey, Guid MemberKey), Subject> _subjects = new();
 
@@ -29,11 +31,13 @@ public sealed class KurinAudit : IKurinAudit
         ICurrentMember actors,
         ICurrentUserContext currentUser,
         IMemberDirectory members,
+        IMembershipDirectory memberships,
         IAuditUnitOfWork audit)
     {
         _actors = actors;
         _currentUser = currentUser;
         _members = members;
+        _memberships = memberships;
         _writer = audit.KurinAudit;
     }
 
@@ -86,22 +90,28 @@ public sealed class KurinAudit : IKurinAudit
             return known;
         }
 
-        MemberSummary? standing = null;
+        KurinPerson? standing = null;
         if (kurinKey is { } inKurin)
         {
-            var found = await _members.GetByKurinAsync(inKurin, new MemberSelection([memberKey], [], []), cancellationToken);
+            var found = await _memberships.GetPeopleInKurinAsync(inKurin, new MemberSelection([memberKey], [], []), cancellationToken);
             standing = found.FirstOrDefault(member => member.MemberKey == memberKey);
         }
 
         Subject subject;
         if (standing is not null)
         {
-            subject = new Subject(standing.FullName, standing.GroupKey, standing.KurinKey);
+            subject = new Subject(standing.Person.FullName, standing.GroupKey, standing.KurinKey);
+        }
+        else if (await _memberships.FindInLatestKurinAsync(memberKey, cancellationToken) is { } latest)
+        {
+            subject = new Subject(latest.Person.FullName, null, latest.KurinKey);
         }
         else
         {
+            // Someone who stands nowhere answers with an empty kurin rather than none, so an unscoped
+            // entry about them is still written.
             var person = await _members.FindAsync(memberKey, cancellationToken);
-            subject = new Subject(person?.FullName, null, person?.KurinKey);
+            subject = new Subject(person?.FullName, null, person is null ? null : Guid.Empty);
         }
 
         _subjects[(kurinKey, memberKey)] = subject;

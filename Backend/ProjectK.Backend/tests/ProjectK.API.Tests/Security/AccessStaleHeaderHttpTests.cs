@@ -107,7 +107,7 @@ public class AccessStaleHeaderHttpTests
 
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MemberSummary(memberKey, memberUserKey, kurinKey, null, "A", "B", "a@example.com", null)]);
+            .ReturnsAsync([new MemberSummary(memberKey, memberUserKey, "A", "B", "a@example.com", null)]);
 
         var handler = new UpsertLeadershipCommandHandler(
             unitOfWork.Object, assigner.Object, members.Object, new Mock<IBackendCache>().Object, signal, new Mock<IKurinAudit>().Object);

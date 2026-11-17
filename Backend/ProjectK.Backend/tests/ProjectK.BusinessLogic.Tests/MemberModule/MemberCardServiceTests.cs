@@ -61,7 +61,7 @@ public class MemberCardServiceTests
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => _settings.Where(s => keys.Contains(s.KurinKey)).ToList());
         _shares.Setup(r => r.GetForMemberAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(() => _share);
         _members.Setup(m => m.FindAsync(_person, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_person, null, _kurinA, null, "Назар", "Коваль", "n@x", "photo.jpg"));
+            .ReturnsAsync(new MemberSummary(_person, null, "Назар", "Коваль", "n@x", "photo.jpg"));
         _members.Setup(m => m.GetLevelsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync([PlastLevel.Uchasnyk]);
     }
 

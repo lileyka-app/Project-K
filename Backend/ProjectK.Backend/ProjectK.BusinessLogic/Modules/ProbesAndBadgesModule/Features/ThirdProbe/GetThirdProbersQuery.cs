@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
@@ -21,21 +21,21 @@ public sealed class GetThirdProbersQueryHandler
     : IRequestHandler<GetThirdProbersQuery, ServiceResult<IReadOnlyList<ThirdProberStatusDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IMemberProbeLine _line;
     private readonly IProbesAndBadgesAccess _access;
 
-    public GetThirdProbersQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IMemberProbeLine line, IProbesAndBadgesAccess access)
+    public GetThirdProbersQueryHandler(IUnitOfWork unitOfWork, IMembershipDirectory memberships, IMemberProbeLine line, IProbesAndBadgesAccess access)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
+        _memberships = memberships;
         _line = line;
         _access = access;
     }
 
     public async Task<ServiceResult<IReadOnlyList<ThirdProberStatusDto>>> Handle(GetThirdProbersQuery request, CancellationToken cancellationToken)
     {
-        var people = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
+        var people = await _memberships.GetPeopleInKurinAsync(request.KurinKey, cancellationToken);
         var keys = people.Select(person => person.MemberKey).ToList();
         var files = (await _unitOfWork.ProbeProjects.GetFilesForMembersAsync(keys, cancellationToken))
             .GroupBy(file => (file.MemberKey, file.ProbeId))
@@ -47,7 +47,7 @@ public sealed class GetThirdProbersQueryHandler
             .ToList();
 
         var result = new List<ThirdProberStatusDto>();
-        foreach (var person in people.OrderBy(p => p.LastName).ThenBy(p => p.FirstName))
+        foreach (var person in people.OrderBy(p => p.Person.LastName).ThenBy(p => p.Person.FirstName))
         {
             var line = await _line.ForMemberAsync(person.MemberKey, cancellationToken);
             var place = line.ToList().FindIndex(probe => probe.Order == ProbeProjectRules.ProbeOrder);
@@ -76,8 +76,8 @@ public sealed class GetThirdProbersQueryHandler
             var own = projects.Where(p => p.MemberKey == person.MemberKey && p.ProbeId == probeId && !p.IsSpare).ToList();
             result.Add(new ThirdProberStatusDto(
                 person.MemberKey,
-                person.FirstName,
-                person.LastName,
+                person.Person.FirstName,
+                person.Person.LastName,
                 probeId,
                 ThirdProbeReader.Stages(file),
                 own.Count,

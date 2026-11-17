@@ -291,7 +291,7 @@ public class SeniorAwardHandlerTests
         _stored.Add(new MemberAward { MemberKey = _member.MemberKey, CatalogId = "usp-hramota-podiaky" });
         _stored.Add(other);
         _directory.Setup(m => m.FindByAccountAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, _kurinKey, null, "Ірина", "Федорів", "i@example.com", null));
+            .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, "Ірина", "Федорів", "i@example.com", null));
         _awards.Setup(a => a.GetByMemberKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
         var pin = new ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward.PinMyAwardCommandHandler(_unitOfWork.Object, new CurrentMember(_currentUser.Object, _directory.Object, Mock.Of<IMembershipDirectory>()));
 

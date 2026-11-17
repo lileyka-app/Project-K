@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.Shared;
@@ -18,7 +19,7 @@ public sealed record DeleteAgendaItemCommand(Guid AgendaItemKey) : IRequest<Serv
 public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgendaItemCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IOfficeDirectory _offices;
     private readonly IKurinDirectory _kurins;
     private readonly IKurinTagDirectory _tags;
@@ -29,7 +30,7 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
 
     public DeleteAgendaItemCommandHandler(
         IUnitOfWork uow,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinDirectory kurins,
         IKurinTagDirectory tags,
@@ -39,7 +40,7 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
         IKurinAudit audit)
     {
         _uow = uow;
-        _members = members;
+        _memberships = memberships;
         _offices = offices;
         _kurins = kurins;
         _tags = tags;
@@ -70,13 +71,13 @@ public sealed class DeleteAgendaItemCommandHandler : IRequestHandler<DeleteAgend
 
         // Resolve who was assigned before the row (and its assignments) are gone.
         var actorUserKey = viewer.ViewerUserKey ?? Guid.Empty;
-        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_members, _offices, _tags, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_memberships, _offices, _tags, item, actorUserKey, cancellationToken);
         var title = item.Title;
         var kind = item.Kind;
         var kurinKey = item.KurinKey;
 
         var targets = AgendaTrail.TargetsOf(item);
-        var names = await AgendaTargetNames.LoadAsync(_members, _offices, _kurins, _tags, kurinKey, targets, cancellationToken);
+        var names = await AgendaTargetNames.LoadAsync(_memberships, _offices, _kurins, _tags, kurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,

@@ -60,7 +60,7 @@ public class ActivateAccountHandlerTests
         // The member side answers the activation by opening a person; read back, it is this one.
         _memberDirectory
             .Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid userKey, CancellationToken _) => new MemberSummary(Guid.NewGuid(), userKey, Guid.Empty, null, "Ліна", "Лідер", "leader@example.com", null));
+            .ReturnsAsync((Guid userKey, CancellationToken _) => new MemberSummary(Guid.NewGuid(), userKey, "Ліна", "Лідер", "leader@example.com", null));
 
         _handler = new ActivateAccountCommandHandler(_unitOfWork.Object, _memberDirectory.Object, _userManager.Object, _activation.Object, _clock, _loginResponses.Object, _events.Object);
     }
@@ -189,7 +189,7 @@ public class ActivateAccountHandlerTests
         GivenWaitlistEntry(invitation, isKurinLeaderCandidate: true, foundedKurinKey: kurinKey);
         _memberDirectory
             .Setup(x => x.FindByAccountAsync(userKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(memberKey, userKey, Guid.Empty, null, "Ліна", "Лідер", "leader@example.com", null));
+            .ReturnsAsync(new MemberSummary(memberKey, userKey, "Ліна", "Лідер", "leader@example.com", null));
 
         var result = await _handler.Handle(new ActivateAccountCommand("token", "Password@1"), CancellationToken.None);
 

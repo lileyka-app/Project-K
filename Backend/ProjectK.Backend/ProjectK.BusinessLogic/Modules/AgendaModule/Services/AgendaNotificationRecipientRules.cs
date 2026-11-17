@@ -1,9 +1,8 @@
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 
@@ -15,7 +14,7 @@ namespace ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 public static class AgendaNotificationRecipientRules
 {
     public static async Task<IReadOnlyCollection<Guid>> ResolveAsync(
-        IMemberDirectory directory,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinTagDirectory tags,
         AgendaItem item,
@@ -24,7 +23,7 @@ public static class AgendaNotificationRecipientRules
     {
         // This runs on every agenda write: only the people the targets reach are read, and the
         // whole kurin only when the kurin itself is a target.
-        var members = await AgendaPeopleRules.ReadAsync(directory, item.KurinKey, AgendaPeopleRules.ToNotify(item), cancellationToken);
+        var members = await AgendaPeopleRules.ReadAsync(memberships, item.KurinKey, AgendaPeopleRules.ToNotify(item), cancellationToken);
         var recipients = new HashSet<Guid>();
 
         foreach (var assignment in item.Assignments)
@@ -52,9 +51,9 @@ public static class AgendaNotificationRecipientRules
 
                 case AgendaTargetType.Tag:
                     var carriers = (await tags.GetCarriersAsync([assignment.TargetKey], cancellationToken))[assignment.TargetKey];
-                    IReadOnlyCollection<MemberSummary> carrierAccounts = carriers.Count == 0
+                    IReadOnlyCollection<KurinPerson> carrierAccounts = carriers.Count == 0
                         ? []
-                        : await directory.GetByKurinAsync(item.KurinKey, new MemberSelection(carriers.ToList(), [], []), cancellationToken);
+                        : await memberships.GetPeopleInKurinAsync(item.KurinKey, new MemberSelection(carriers.ToList(), [], []), cancellationToken);
                     foreach (var carrier in carrierAccounts)
                     {
                         AddIfLinked(recipients, carrier.UserKey);
