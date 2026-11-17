@@ -70,7 +70,7 @@ const ZVYAZKOVYI = ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Leaders
 const VYKHOVNYK = ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups', 'Leadership:Update:OwnGroups'];
 
 const sheetOf = (page: Page) => page.locator('ion-modal app-profile-edit-sheet');
-const input = (scope: Locator, testId: string) => scope.locator(`[data-testid=${testId}] input`);
+const input = (scope: Locator, testId: string) => scope.locator(`[data-testid=${testId}] input:not(.cloned-input)`);
 const sentBody = (log: { writes: { method: string; path: string; body: any }[] }, method: string, path: string) =>
   String(log.writes.find((w) => w.method === method && w.path === path)?.body ?? '');
 
