@@ -1,6 +1,6 @@
 using FluentValidation;
-using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using MediatR;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
