@@ -1,6 +1,6 @@
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
-namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+namespace ProjectK.Common.Contracts.ProbesAndBadgesModule;
 
 public interface IProbesCatalogReader
 {

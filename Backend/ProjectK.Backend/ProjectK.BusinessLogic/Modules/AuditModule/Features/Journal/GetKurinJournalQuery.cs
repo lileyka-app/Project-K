@@ -1,9 +1,9 @@
 using MediatR;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
@@ -12,6 +12,7 @@ using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
