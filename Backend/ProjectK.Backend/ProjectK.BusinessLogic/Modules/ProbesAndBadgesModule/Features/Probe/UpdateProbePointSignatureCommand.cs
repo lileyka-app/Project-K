@@ -73,7 +73,7 @@ public sealed class UpdateProbePointSignatureCommandHandler : IRequestHandler<Up
         var normalizedProbeId = request.ProbeId.Trim();
         var normalizedPointId = request.PointId.Trim();
 
-        var memberKurinKey = (await _memberships.GetCurrentKurinKeysForMemberAsync(request.MemberKey, cancellationToken)).Cast<Guid?>().FirstOrDefault();
+        var memberKurinKey = (await _memberships.FindInYouthKurinAsync(request.MemberKey, cancellationToken))?.KurinKey;
         if (memberKurinKey is null)
         {
             return ServiceResult<ProbeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");

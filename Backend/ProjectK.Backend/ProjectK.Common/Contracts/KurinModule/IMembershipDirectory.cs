@@ -53,6 +53,14 @@ public interface IMembershipDirectory
     /// </summary>
     Task<KurinPerson?> FindInLatestKurinAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// A person as their youth programme's kurin holds them: the УПЮ kurin they joined most recently
+    /// among those they stand in now, or — standing in no УПЮ kurin — the one they joined most recently
+    /// at all. Where проби and вмілості are filed, which гурток's probe edition applies and which край's
+    /// offer counts. One read. Null when they stand nowhere, or do not exist.
+    /// </summary>
+    Task<KurinPerson?> FindInYouthKurinAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
     /// <summary>The same for the person behind an account.</summary>
     Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default);
 

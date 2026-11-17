@@ -212,7 +212,7 @@ public class ProgressTrailTests
         unitOfWork.SetupGet(x => x.ProbeProgresses).Returns(probes.Object);
         unitOfWork.SetupGet(x => x.ProbePointProgresses).Returns(points.Object);
         var members = new Mock<IMembershipDirectory>();
-        members.Setup(x => x.GetCurrentKurinKeysForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync([_kurinKey]);
+        members.Setup(x => x.FindInYouthKurinAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(KurinPeople.In(_memberKey, _kurinKey));
 
         var result = await new GetProbeProgressQueryHandler(unitOfWork.Object, members.Object, journal.Reader)
             .Handle(new GetProbeProgressQuery(_memberKey, "probe-1"), CancellationToken.None);

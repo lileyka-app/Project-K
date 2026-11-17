@@ -16,4 +16,8 @@ internal static class KurinPeople
         string email,
         string? profilePhotoBlobName)
         => new(new MemberSummary(memberKey, userKey, firstName, lastName, email, profilePhotoBlobName), kurinKey, groupKey);
+
+    /// <summary>Someone nameless standing in a kurin, for setups that only ask where.</summary>
+    public static KurinPerson In(Guid memberKey, Guid kurinKey)
+        => Of(memberKey, null, kurinKey, null, string.Empty, string.Empty, string.Empty, null);
 }

@@ -85,8 +85,8 @@ public class UpdateProbeProgressStatusHandlerTests
     {
         var memberKey = Guid.NewGuid();
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([_kurinKey]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, _kurinKey));
         _line.Setup(x => x.CanStartAsync(memberKey, "probe-1-2026", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ProbeStart.NotInLine);
 
@@ -107,8 +107,8 @@ public class UpdateProbeProgressStatusHandlerTests
         var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.InProgress, "unsign");
 
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([Guid.NewGuid()]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, Guid.NewGuid()));
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
@@ -164,8 +164,8 @@ public class UpdateProbeProgressStatusHandlerTests
         var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([Guid.NewGuid()]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, Guid.NewGuid()));
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
@@ -221,8 +221,8 @@ public class UpdateProbeProgressStatusHandlerTests
         var request = new UpdateProbeProgressStatusCommand(memberKey, "probe-1", ProbeProgressStatus.Completed, null);
 
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([Guid.NewGuid()]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, Guid.NewGuid()));
 
         _memberDirectoryMock
             .Setup(x => x.FindByAccountAsync(actorUserKey, It.IsAny<CancellationToken>()))
@@ -278,8 +278,8 @@ public class UpdateProbeProgressStatusHandlerTests
         _access.Setup(x => x.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mayUnsign ? ResourceAccessDecision.Allow() : ResourceAccessDecision.Deny("Refused by the test."));
         _memberships
-            .Setup(x => x.GetCurrentKurinKeysForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([Guid.NewGuid()]);
+            .Setup(x => x.FindInYouthKurinAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(KurinPeople.In(memberKey, Guid.NewGuid()));
         var progress = new ProbeProgress
         {
             MemberKey = memberKey,
