@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.IdentityModule;
@@ -16,13 +17,13 @@ public sealed record ChangeOwnPasswordCommand(Guid UserKey, string CurrentPasswo
 public sealed class ChangeOwnPasswordCommandHandler : IRequestHandler<ChangeOwnPasswordCommand, ServiceResult<Unit>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IAccountSessionWriter _sessions;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IActivityLogger _activityLogger;
 
     public ChangeOwnPasswordCommandHandler(
         UserManager<AppUser> userManager,
         IActivityLogger activityLogger,
-        IAccountSessionWriter sessions)
+        RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
         _activityLogger = activityLogger;

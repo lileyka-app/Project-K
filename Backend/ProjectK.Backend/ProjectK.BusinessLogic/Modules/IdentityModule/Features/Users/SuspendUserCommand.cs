@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Entities.IdentityModule;
@@ -23,13 +24,13 @@ public sealed class SuspendUserCommandHandler : IRequestHandler<SuspendUserComma
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IAccountSessionWriter _sessions;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IActivityLogger _activityLogger;
 
     public SuspendUserCommandHandler(
         UserManager<AppUser> userManager,
         ICurrentUserContext currentUserContext,
-        IAccountSessionWriter sessions,
+        RefreshTokenInvalidation sessions,
         IActivityLogger activityLogger)
     {
         _userManager = userManager;

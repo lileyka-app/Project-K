@@ -23,7 +23,7 @@ namespace ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 /// notification.
 /// </para>
 /// </summary>
-public class RefreshTokenInvalidation : IAccountSessionWriter
+public class RefreshTokenInvalidation
 {
     private readonly IRefreshTokenStore _refreshTokens;
     private readonly ICalendarFeedStore _calendarFeeds;

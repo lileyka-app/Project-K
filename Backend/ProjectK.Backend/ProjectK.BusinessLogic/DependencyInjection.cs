@@ -104,7 +104,6 @@ public static class DependencyInjection
         services.AddArchiveModule();
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
-        services.AddScoped<IAccountSessionWriter>(sp => sp.GetRequiredService<RefreshTokenInvalidation>());
         services.AddScoped<MemberCards>();
 
         services.AddScoped<KurinReportHeaderReader>();

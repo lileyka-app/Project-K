@@ -1,6 +1,7 @@
 using System.Net.Mail;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.Shared;
@@ -20,7 +21,7 @@ public sealed record ConfirmAccountEmailChangeCommand(Guid UserKey, string Email
 public sealed class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<ConfirmAccountEmailChangeCommand, ServiceResult<AccountSettingsDto>>
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly IAccountSessionWriter _sessions;
+    private readonly RefreshTokenInvalidation _sessions;
     private readonly IDomainEventPublisher _events;
     private readonly IMediator _mediator;
     private readonly IActivityLogger _activityLogger;
@@ -30,7 +31,7 @@ public sealed class ConfirmAccountEmailChangeCommandHandler : IRequestHandler<Co
         IDomainEventPublisher events,
         IMediator mediator,
         IActivityLogger activityLogger,
-        IAccountSessionWriter sessions)
+        RefreshTokenInvalidation sessions)
     {
         _userManager = userManager;
         _events = events;
