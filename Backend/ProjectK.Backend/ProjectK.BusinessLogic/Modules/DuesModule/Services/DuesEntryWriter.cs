@@ -90,7 +90,7 @@ public sealed class DuesEntryWriter
     private async Task<ServiceResult<T>?> CheckCollectorAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
     {
         if (request.CollectedByMemberKey is { } collector
-            && (await _memberships.GetCurrentKurinKeysForMemberAsync(collector, cancellationToken)).Cast<Guid?>().FirstOrDefault() != kurinKey)
+            && !(await _memberships.GetCurrentKurinKeysForMemberAsync(collector, cancellationToken)).Contains(kurinKey))
         {
             return ServiceResult<T>.Failure(ResultType.BadRequest, DuesErrors.CollectorNotInKurin, "Whoever collected it has to be of this kurin.");
         }

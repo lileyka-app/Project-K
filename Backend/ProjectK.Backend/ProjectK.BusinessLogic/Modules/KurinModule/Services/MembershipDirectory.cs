@@ -55,6 +55,9 @@ public sealed class MembershipDirectory : IMembershipDirectory
     public Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.FindInLatestKurinByAccountAsync(userKey, cancellationToken);
 
+    public Task<KurinPerson?> FindInKurinByAccountAsync(Guid userKey, Guid kurinKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInKurinByAccountAsync(userKey, kurinKey, cancellationToken);
+
     public Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
         Guid userKey,
         CancellationToken cancellationToken = default)

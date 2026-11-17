@@ -14,6 +14,7 @@ using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.KraiModule;
+using ProjectK.BusinessLogic.Modules.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -44,10 +45,12 @@ public class KurinDuesHandlerTests
 
     private DuesAccess Access() => new(Mock.Of<IUnitOfWork>(), _dues.Object, _user.Object, Mock.Of<IDuesKurinShape>());
 
+    private IReadOnlyCollection<Guid> _collectorKurins = [Kurin];
+
     private DuesEntryWriter Writer()
     {
         var memberships = new Mock<IMembershipDirectory>();
-        memberships.Setup(m => m.GetCurrentKurinKeysForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([Kurin]);
+        memberships.Setup(m => m.GetCurrentKurinKeysForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => _collectorKurins);
         return new DuesEntryWriter(_dues.Object, memberships.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
     }
 
@@ -133,6 +136,32 @@ public class KurinDuesHandlerTests
         entry.KurinKey.Should().Be(Kurin);
         delete.Type.Should().Be(ResultType.Conflict);
         entry.Events.Select(e => e.Action).Should().Equal(DuesEntryTrail.Created, DuesEntryTrail.Verified);
+    }
+
+    [Theory]
+    [InlineData(true, ResultType.Created)]
+    [InlineData(false, ResultType.BadRequest)]
+    public async Task WhoeverCollected_MayStandInAnotherKurinToo_ButMustStandInThisOne(bool standsHere, ResultType expected)
+    {
+        // Newest first, as the directory answers: this kurin is the one joined earlier.
+        _collectorKurins = standsHere ? [Guid.NewGuid(), Kurin] : [Guid.NewGuid()];
+        var request = new UpsertDuesEntryRequest
+        {
+            Kind = DuesEntryKind.TransferToStanytsia,
+            Method = DuesPaymentMethod.Cash,
+            Amount = 240,
+            OccurredOn = new DateOnly(2026, 10, 5),
+            CollectedByMemberKey = Guid.NewGuid()
+        };
+
+        var result = await new CreateKurinDuesEntryCommandHandler(Access(), Writer(), _dues.Object, _user.Object, _time)
+            .Handle(new CreateKurinDuesEntryCommand(Kurin, request), CancellationToken.None);
+
+        result.Type.Should().Be(expected);
+        if (!standsHere)
+        {
+            result.ErrorCode.Should().Be(DuesErrors.CollectorNotInKurin);
+        }
     }
 
     [Theory]

@@ -57,6 +57,12 @@ public interface IMembershipDirectory
     Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The person behind an account as this kurin holds them: their гурток here, not in the kurin
+    /// they joined last. Null when they do not stand in it. For anything asked about one kurin.
+    /// </summary>
+    Task<KurinPerson?> FindInKurinByAccountAsync(Guid userKey, Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The kurins an account may currently act in. Asked by the access layer, so it is answered from
     /// the account key that memberships carry and never by way of the person behind it.
     /// </summary>

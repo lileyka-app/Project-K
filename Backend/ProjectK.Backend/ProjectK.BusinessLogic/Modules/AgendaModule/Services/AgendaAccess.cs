@@ -62,8 +62,10 @@ public sealed class AgendaAccess : IAgendaAccess
         Guid? ownGroupKey = null;
         if (userKey.HasValue)
         {
-            var member = await _memberships.FindInLatestKurinByAccountAsync(userKey.Value, cancellationToken);
-            if (member is not null && member.KurinKey == kurinKey)
+            // The membership in this kurin, not the newest one: someone who stands in two kurins is
+            // a member of both, and an item aimed at them or their гурток here must reach them here.
+            var member = await _memberships.FindInKurinByAccountAsync(userKey.Value, kurinKey, cancellationToken);
+            if (member is not null)
             {
                 memberKey = member.MemberKey;
                 ownGroupKey = member.GroupKey;

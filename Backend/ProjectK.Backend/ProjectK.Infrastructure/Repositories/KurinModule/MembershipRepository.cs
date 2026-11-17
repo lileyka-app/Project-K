@@ -109,6 +109,18 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
     public Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
         => InLatestKurin(Context.Members.Where(m => m.UserKey == userKey)).FirstOrDefaultAsync(cancellationToken);
 
+    public Task<KurinPerson?> FindInKurinByAccountAsync(Guid userKey, Guid kurinKey, CancellationToken cancellationToken = default)
+        => (from m in Context.Members.Where(m => m.UserKey == userKey)
+            from ms in OpenMemberships
+                .Where(candidate => candidate.MemberKey == m.MemberKey && candidate.KurinKey == kurinKey)
+                .OrderByDescending(candidate => candidate.JoinedAtUtc)
+                .Take(1)
+            select new KurinPerson(
+                new MemberSummary(m.MemberKey, m.UserKey, m.FirstName, m.LastName, m.Email, m.ProfilePhotoBlobName),
+                ms.KurinKey,
+                ms.GroupKey))
+            .FirstOrDefaultAsync(cancellationToken);
+
     private IQueryable<KurinPerson> InLatestKurin(IQueryable<Member> people)
         => from m in people
            from ms in OpenMemberships

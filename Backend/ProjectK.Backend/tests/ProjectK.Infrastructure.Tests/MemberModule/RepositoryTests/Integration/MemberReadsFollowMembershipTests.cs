@@ -186,6 +186,30 @@ public class MemberReadsFollowMembershipTests
     }
 
     [Fact]
+    public async Task SomeoneInTwoKurins_ShouldBePlacedByTheMembershipOfTheKurinAskedAbout()
+    {
+        await using var context = NewContext();
+        var uow = new InfraUnitOfWork(context);
+
+        var first = Guid.NewGuid();
+        var firstGroup = Guid.NewGuid();
+        var latest = Guid.NewGuid();
+        var person = Person();
+        person.UserKey = Guid.NewGuid();
+        var joinedLater = Joining(person.MemberKey, latest);
+        joinedLater.JoinedAtUtc = DateTime.UtcNow.AddDays(-1);
+        context.Members.Add(person);
+        context.Memberships.AddRange(Joining(person.MemberKey, first, firstGroup), joinedLater);
+        await context.SaveChangesAsync();
+
+        var inFirst = await uow.Memberships.FindInKurinByAccountAsync(person.UserKey.Value, first);
+
+        Assert.Equal((first, (Guid?)firstGroup), (inFirst!.KurinKey, inFirst.GroupKey));
+        Assert.Equal(person.MemberKey, inFirst.MemberKey);
+        Assert.Null(await uow.Memberships.FindInKurinByAccountAsync(person.UserKey.Value, Guid.NewGuid()));
+    }
+
+    [Fact]
     public async Task Placing_SomeoneInAnotherKurin_ShouldKeepTheOneTheyWereIn()
     {
         await using var context = NewContext();
