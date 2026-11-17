@@ -2,12 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using ProjectK.Infrastructure.Tests.MemberModule.RepositoryTests.Integration;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
 

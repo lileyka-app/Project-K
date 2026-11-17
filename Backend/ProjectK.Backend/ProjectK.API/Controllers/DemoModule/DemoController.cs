@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Cookies;
 using ProjectK.API.Extensions;
 using ProjectK.API.Hosting;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Demo;
-using ProjectK.Common.Dtos.AuthModule;
-using ProjectK.Common.Dtos.AuthModule.Requests;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Demo;
+using ProjectK.Common.Dtos.IdentityModule;
+using ProjectK.Common.Dtos.IdentityModule.Requests;
 using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.API.Controllers.DemoModule;

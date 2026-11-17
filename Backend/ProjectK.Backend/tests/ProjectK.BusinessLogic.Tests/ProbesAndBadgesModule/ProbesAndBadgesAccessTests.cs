@@ -4,7 +4,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Records.InfrastructureModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;

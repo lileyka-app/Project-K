@@ -1,6 +1,6 @@
 using System.Globalization;
-using ProjectK.Common.Contracts.AuthModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Middleware;
 

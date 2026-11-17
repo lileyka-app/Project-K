@@ -5,7 +5,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;

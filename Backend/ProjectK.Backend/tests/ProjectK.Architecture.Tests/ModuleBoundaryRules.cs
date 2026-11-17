@@ -39,7 +39,6 @@ public class ModuleBoundaryRules
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Invitations/AnswerMyInvitationCommand.cs -> KurinModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Invitations/GetMyInvitationsQuery.cs -> KurinModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Life/ExportMyLifePdfQuery.cs -> MemberModule",
-        "ProjectK.BusinessLogic/Modules/MeModule/Features/Life/ExportMyLifePdfQuery.cs -> ProbesAndBadgesModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Features/Score/GetMyScoreQuery.cs -> ScoreModule",
         "ProjectK.BusinessLogic/Modules/MeModule/Services/MemberCards.cs -> ProbesAndBadgesModule",
     ];

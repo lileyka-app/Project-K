@@ -120,6 +120,6 @@ public class CommonRules
     private static readonly string[] DtosAndRequestsAwayFromDtos =
     [
         "ProjectK.BusinessLogic.Modules.MeModule.Models.IssuedCalendarFeedDto",
-        "ProjectK.Common.Records.AuthModule.AccountProvisioningRequest",
+        "ProjectK.Common.Records.IdentityModule.AccountProvisioningRequest",
     ];
 }

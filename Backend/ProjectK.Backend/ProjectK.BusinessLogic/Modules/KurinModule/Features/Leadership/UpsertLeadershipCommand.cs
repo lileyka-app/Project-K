@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuditModule;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
@@ -15,7 +15,7 @@ using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
 using ProjectK.Common.Rules.MemberModule;
 using LeadershipEntity = ProjectK.Common.Entities.KurinModule.Leadership;

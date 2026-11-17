@@ -2,7 +2,7 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -12,7 +12,7 @@ using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
@@ -20,7 +20,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Events.MemberModule;
 using ProjectK.Common.Records.InfrastructureModule;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Tests.MemberModule.HandlerTests.MemberAwardHandlers;
 

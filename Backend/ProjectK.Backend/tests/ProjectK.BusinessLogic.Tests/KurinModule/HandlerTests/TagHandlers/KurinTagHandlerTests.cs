@@ -16,7 +16,7 @@ using ProjectK.Common.Events.KurinModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.TagHandlers;

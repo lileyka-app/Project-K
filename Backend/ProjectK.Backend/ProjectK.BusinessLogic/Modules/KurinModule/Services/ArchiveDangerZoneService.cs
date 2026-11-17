@@ -1,5 +1,5 @@
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Records.AuditModule;

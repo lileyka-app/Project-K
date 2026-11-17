@@ -7,7 +7,7 @@ using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.BusinessLogic.Tests.AuditModule;
 

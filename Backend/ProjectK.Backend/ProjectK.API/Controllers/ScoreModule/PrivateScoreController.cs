@@ -7,7 +7,7 @@ using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.ScoreModule;
 

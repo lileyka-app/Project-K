@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Filters;
 

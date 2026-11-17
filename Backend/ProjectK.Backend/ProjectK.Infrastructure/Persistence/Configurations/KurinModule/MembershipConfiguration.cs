@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Infrastructure.Persistence.Configurations.MemberModule;
 
 namespace ProjectK.Infrastructure.Persistence.Configurations.KurinModule;
 

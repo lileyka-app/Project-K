@@ -3,7 +3,7 @@ using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry;

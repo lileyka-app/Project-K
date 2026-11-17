@@ -8,7 +8,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Dtos.KurinModule.Requests;
 using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 

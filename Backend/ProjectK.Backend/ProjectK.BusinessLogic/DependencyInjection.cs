@@ -5,8 +5,8 @@ using Microsoft.Extensions.Logging;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.AuditModule.Services;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Services;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
@@ -18,15 +18,15 @@ using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.AuditModule;
-using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KraiModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Contracts.Shared;
-using ProjectK.Common.Options.AuthModule;
+using ProjectK.Common.Options.IdentityModule;
 using ProjectK.Common.Options.KraiModule;
 using ProjectK.Common.Options.KurinModule;
 using ProjectK.Common.Rules.AgendaModule;
@@ -102,7 +102,6 @@ public static class DependencyInjection
         services.AddKurinModule();
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
-        services.AddScoped<IAccountSessionWriter>(sp => sp.GetRequiredService<RefreshTokenInvalidation>());
         services.AddScoped<MemberCards>();
 
         services.AddScoped<KurinReportHeaderReader>();
@@ -159,7 +158,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
         services.AddScoped<IOfficeDirectory, OfficeDirectory>();
-        services.AddScoped<IMemberActivationWriter, MemberActivationWriter>();
+        services.AddScoped<IKurinFounderWriter, KurinFounderWriter>();
         services.AddScoped<MembershipMoves>();
         services.AddScoped<MembershipAskRouting>();
         services.AddScoped<ArchiveReach>();

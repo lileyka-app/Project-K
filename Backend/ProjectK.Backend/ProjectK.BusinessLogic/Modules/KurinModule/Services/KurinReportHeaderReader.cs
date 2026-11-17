@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using ProjectK.Common.Contracts.InfrastructureModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.Shared;
 

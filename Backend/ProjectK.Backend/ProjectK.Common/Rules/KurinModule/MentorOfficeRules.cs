@@ -1,7 +1,8 @@
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.AuthModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
-using ProjectK.Common.Rules.MemberModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.Common.Rules.KurinModule;
 

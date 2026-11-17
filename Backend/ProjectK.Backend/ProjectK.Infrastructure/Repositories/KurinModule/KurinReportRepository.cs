@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Records.KurinModule;

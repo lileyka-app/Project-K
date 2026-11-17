@@ -4,7 +4,6 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using ProjectK.Infrastructure.Tests.MemberModule.RepositoryTests.Integration;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
 

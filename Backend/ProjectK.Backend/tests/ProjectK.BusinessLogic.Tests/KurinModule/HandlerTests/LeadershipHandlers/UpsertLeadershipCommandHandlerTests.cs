@@ -2,7 +2,7 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Contracts.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
@@ -36,7 +36,7 @@ public class UpsertLeadershipHandlerTests
         _unitOfWorkMock.Setup(u => u.Kurins).Returns(_kurinsMock.Object);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[]
         {
-            ProjectK.Common.Rules.AuthModule.SystemRoleNames.ForOffice(
+            ProjectK.Common.Rules.IdentityModule.SystemRoleNames.ForOffice(
                 ProjectK.Common.Enums.KurinModule.LeadershipType.KV,
                 ProjectK.Common.Enums.KurinModule.LeadershipRole.Zvyazkovyi)
         });

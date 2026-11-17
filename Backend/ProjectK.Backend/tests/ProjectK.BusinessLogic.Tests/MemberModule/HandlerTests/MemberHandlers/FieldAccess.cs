@@ -1,6 +1,6 @@
 using Moq;
-using ProjectK.Common.Contracts.AuthModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.MemberModule;

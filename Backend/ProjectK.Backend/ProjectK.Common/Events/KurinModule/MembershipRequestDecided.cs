@@ -1,6 +1,5 @@
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Events.MemberModule;
 
 namespace ProjectK.Common.Events.KurinModule;
 

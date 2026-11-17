@@ -7,7 +7,7 @@ using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
 using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Enums.AuditModule;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.AuditModule;
 

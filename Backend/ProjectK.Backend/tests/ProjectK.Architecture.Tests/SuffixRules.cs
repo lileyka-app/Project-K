@@ -45,10 +45,10 @@ public class SuffixRules
     private static readonly string[] NamedInTheVocabulary =
     [
         "ProjectK.BusinessLogic.Modules.AuditModule.Services.KurinAudit",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.AccessContextResolver",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.AccessSnapshotFactory",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.CurrentPermissions",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.PermissionResolver",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.AccessContextResolver",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.AccessSnapshotFactory",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.CurrentPermissions",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.PermissionResolver",
         "ProjectK.BusinessLogic.Modules.MemberModule.Services.CurrentMember",
     ];
 
@@ -61,11 +61,11 @@ public class SuffixRules
     [
         "ProjectK.BusinessLogic.Modules.KurinModule.Services.ArchiveReach",
         "ProjectK.BusinessLogic.Modules.AgendaModule.Services.AgendaTargetNames",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.LoginThrottle",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.Reauthentication",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.RefreshTokenInvalidation",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.ResourceAccessServiceInstrumentationDecorator",
-        "ProjectK.BusinessLogic.Modules.AuthModule.Services.SavedSessionList",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.LoginThrottle",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.Reauthentication",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.RefreshTokenInvalidation",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.ResourceAccessServiceInstrumentationDecorator",
+        "ProjectK.BusinessLogic.Modules.IdentityModule.Services.SavedSessionList",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesAccountRows",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesAccrual",
         "ProjectK.BusinessLogic.Modules.DuesModule.Services.DuesKurinShape",

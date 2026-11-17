@@ -1,5 +1,4 @@
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.Common.Records.KurinModule;
 

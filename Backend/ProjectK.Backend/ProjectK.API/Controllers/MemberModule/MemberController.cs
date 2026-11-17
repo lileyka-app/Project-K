@@ -10,7 +10,7 @@ using ProjectK.BusinessLogic.Modules.MemberModule;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.Member;
 using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Dtos.MemberModule.Requests;
-using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Enums.IdentityModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Rules.MemberModule;
 

@@ -1,4 +1,3 @@
-using ProjectK.Common.Dtos.MemberModule.Requests;
 namespace ProjectK.Common.Dtos.KurinModule.Requests;
 
 public class UpsertLeadershipRequest

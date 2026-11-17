@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Options;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Options.InfrastructureModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using Resend;
 
 namespace ProjectK.Infrastructure.Services.Email;

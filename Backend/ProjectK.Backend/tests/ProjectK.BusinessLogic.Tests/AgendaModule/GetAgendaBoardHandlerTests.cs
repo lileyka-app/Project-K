@@ -12,7 +12,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Entities.AgendaModule;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Records.AgendaModule;

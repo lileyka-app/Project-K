@@ -5,7 +5,7 @@ using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Rules.AuditModule;
-using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.Infrastructure.Seeding.Demo;
