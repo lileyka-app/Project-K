@@ -19,16 +19,42 @@ public interface IMembershipDirectory
         Guid memberKey,
         CancellationToken cancellationToken = default);
 
-    /// <summary>How many, without reading them.</summary>
     /// <summary>The same for several people in one read, by member; someone with none is absent.</summary>
     Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetForMembersAsync(
         IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default);
 
+    /// <summary>How many, without reading them.</summary>
     Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>The kurins a person stands in now, each once; read without the rest of the membership.</summary>
+    /// <summary>
+    /// The kurins a person stands in now, each once, the one joined most recently first; read without
+    /// the rest of the membership. Where one kurin has to stand for the person, it is the first.
+    /// </summary>
     Task<IReadOnlyCollection<Guid>> GetCurrentKurinKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>Everyone who stands in a kurin now, each placed by their membership there, in one read.</summary>
+    Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Some of a kurin's people, as they stand in it: the members, гуртки and accounts the
+    /// selection names, in one read. For a page that labels a few people out of the whole kurin.
+    /// </summary>
+    Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(
+        Guid kurinKey,
+        MemberSelection selection,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// A person as the kurin they joined most recently holds them, among those they stand in now —
+    /// where one kurin has to stand for the person. One read. Null when they stand nowhere, or do not exist.
+    /// </summary>
+    Task<KurinPerson?> FindInLatestKurinAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>The same for the person behind an account.</summary>
+    Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// The kurins an account may currently act in. Asked by the access layer, so it is answered from

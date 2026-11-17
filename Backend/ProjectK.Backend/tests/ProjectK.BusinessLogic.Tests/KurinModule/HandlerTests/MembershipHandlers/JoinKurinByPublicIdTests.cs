@@ -58,7 +58,7 @@ public class JoinKurinByPublicIdTests
         _members
             .Setup(d => d.FindAsync(_memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(
-                _memberKey, Guid.NewGuid(), Guid.NewGuid(), null, "Оксана", "Тестова", "o@example.com", null));
+                _memberKey, Guid.NewGuid(), "Оксана", "Тестова", "o@example.com", null));
 
         _memberships.Setup(r => r.GetRecordsForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, _accessChanges.Object, _journal.Audit);

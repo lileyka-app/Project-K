@@ -42,7 +42,7 @@ public class GetGroupMentorsQueryHandlerTests
                 new Common.Entities.KurinModule.MentorAssignment { GroupKey = groupKey, MentorUserKey = mentorAccount },
                 new Common.Entities.KurinModule.MentorAssignment { GroupKey = groupKey, MentorUserKey = revokedAccount, RevokedAtUtc = DateTime.UtcNow }
             ]);
-        var mentor = new MemberSummary(Guid.NewGuid(), mentorAccount, Guid.NewGuid(), groupKey, "Оксана", "Виховниця", "o@example.com", null);
+        var mentor = new MemberSummary(Guid.NewGuid(), mentorAccount, "Оксана", "Виховниця", "o@example.com", null);
         _members.Setup(d => d.FindByAccountAsync(mentorAccount, It.IsAny<CancellationToken>())).ReturnsAsync(mentor);
 
         var result = await _handler.Handle(new GetGroupMentorsQuery(groupKey), CancellationToken.None);

@@ -35,9 +35,6 @@ public interface IMemberDirectory
     /// <summary>The account a member is linked to. Null when the member has none, or does not exist.</summary>
     Task<Guid?> FindAccountKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>The kurin a member belongs to. Null when the member does not exist.</summary>
-    Task<Guid?> FindKurinKeyAsync(Guid memberKey, CancellationToken cancellationToken = default);
-
     /// <summary>Every ступінь recorded for the person, in no particular order; empty for nobody.</summary>
     Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
@@ -50,24 +47,10 @@ public interface IMemberDirectory
     /// <summary>The person's confirmed відзначення, УПЮ and senior alike, newest first.</summary>
     Task<IReadOnlyList<ConfirmedAward>> GetConfirmedAwardsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>Everyone in a kurin, in one read.</summary>
-    Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
-        Guid kurinKey,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Some of a kurin's people, as they stand in it: the members, гуртки and accounts the
-    /// selection names, in one read. For a page that labels a few people out of the whole kurin.
-    /// </summary>
-    Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
-        Guid kurinKey,
-        MemberSelection selection,
-        CancellationToken cancellationToken = default);
-
     /// <summary>
     /// These people, in one read, whether or not they still stand in any kurin. For naming someone a
-    /// kurin's records still hold after they left it: <see cref="GetByKurinAsync(Guid, CancellationToken)"/>
-    /// reads only those who stand in it now.
+    /// kurin's records still hold after they left it; who stands in a kurin now is the kurin's to say
+    /// (<c>IMembershipDirectory.GetPeopleInKurinAsync</c>).
     /// </summary>
     Task<IReadOnlyCollection<MemberSummary>> GetByKeysAsync(
         IReadOnlyCollection<Guid> memberKeys,

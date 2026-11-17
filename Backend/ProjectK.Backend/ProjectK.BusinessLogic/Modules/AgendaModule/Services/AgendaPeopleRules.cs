@@ -1,6 +1,5 @@
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Records.KurinModule;
@@ -54,12 +53,12 @@ public static class AgendaPeopleRules
     }
 
     /// <summary>One read either way: the selection, or the whole kurin when the selection is null.</summary>
-    public static Task<IReadOnlyCollection<MemberSummary>> ReadAsync(
-        IMemberDirectory directory,
+    public static Task<IReadOnlyCollection<KurinPerson>> ReadAsync(
+        IMembershipDirectory memberships,
         Guid kurinKey,
         MemberSelection? selection,
         CancellationToken cancellationToken)
         => selection is null
-            ? directory.GetByKurinAsync(kurinKey, cancellationToken)
-            : directory.GetByKurinAsync(kurinKey, selection, cancellationToken);
+            ? memberships.GetPeopleInKurinAsync(kurinKey, cancellationToken)
+            : memberships.GetPeopleInKurinAsync(kurinKey, selection, cancellationToken);
 }

@@ -15,19 +15,8 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     {
     }
 
-    /// <summary>
-    /// Every membership that is still open. Where a person stands in a kurin is said here and
-    /// nowhere else, so every read that means "the people of this kurin" or "of this гурток"
-    /// starts from this and not from the columns still left on the member record.
-    /// </summary>
+    /// <summary>Every membership that is still open; read only to count, for the public-code card.</summary>
     private IQueryable<Membership> ActiveMemberships => Context.Memberships.Where(ms => ms.LeftAtUtc == null);
-
-    /// <summary>
-    /// The people behind a set of memberships, as a query still rooted in <c>Members</c> — a join
-    /// would project the entity out of its own query and take <c>Include</c> with it.
-    /// </summary>
-    private IQueryable<Member> PeopleOf(IQueryable<Membership> memberships)
-        => Context.Members.Where(m => memberships.Any(ms => ms.MemberKey == m.MemberKey));
 
     public override void Create(Member member, CancellationToken cancellationToken = default)
     {
@@ -62,24 +51,6 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
             .AsNoTracking()
             .Where(m => memberKeys.Contains(m.MemberKey))
             .ToListAsync(cancellationToken);
-
-    /// <summary>The people currently placed in one гурток.</summary>
-    public async Task<IEnumerable<Member>> GetAllAsync(Guid groupKey, CancellationToken cancellationToken = default)
-    {
-        return await PeopleOf(ActiveMemberships.Where(ms => ms.GroupKey == groupKey))
-                            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<Member>> GetAllByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
-    {
-        return await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
-                                     .Include(m => m.PlastLevelHistory)
-                                     .Include(m => m.MemberWarnings)
-                                     .Include(m => m.MemberAwards)
-                                     .AsSplitQuery()
-                                     .AsNoTracking()
-                                     .ToListAsync(cancellationToken);
-    }
 
     public async Task<IReadOnlyCollection<MemberIdentity>> FindPossibleMatchesAsync(
         IReadOnlyCollection<string> emails,
@@ -117,27 +88,15 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
             .Select(m => m.UserKey)
             .FirstOrDefaultAsync(cancellationToken);
 
-    /// <summary>
-    /// People as another module sees them, each placed by their most recent open membership.
-    /// Someone who belongs to no kurin — an account activated but not yet joined to anything —
-    /// still answers, with an empty kurin, because the caller asked about the person.
-    /// </summary>
-    private IQueryable<MemberSummary> SummariesOf(IQueryable<Member> people)
-        => from m in people
-           from ms in ActiveMemberships
-               .Where(candidate => candidate.MemberKey == m.MemberKey)
-               .OrderByDescending(candidate => candidate.JoinedAtUtc)
-               .Take(1)
-               .DefaultIfEmpty()
-           select new MemberSummary(
-               m.MemberKey,
-               m.UserKey,
-               ms == null ? Guid.Empty : ms.KurinKey,
-               ms == null ? (Guid?)null : ms.GroupKey,
-               m.FirstName,
-               m.LastName,
-               m.Email,
-               m.ProfilePhotoBlobName);
+    /// <summary>People as another module sees them: named and linked to their account, nothing more.</summary>
+    private static IQueryable<MemberSummary> SummariesOf(IQueryable<Member> people)
+        => people.Select(m => new MemberSummary(
+            m.MemberKey,
+            m.UserKey,
+            m.FirstName,
+            m.LastName,
+            m.Email,
+            m.ProfilePhotoBlobName));
 
     public Task<MemberSummary?> GetSummaryByKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => SummariesOf(Context.Members.Where(m => m.MemberKey == memberKey))
@@ -146,50 +105,6 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     public Task<MemberSummary?> GetSummaryByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)
         => SummariesOf(Context.Members.Where(m => m.UserKey == userKey))
             .FirstOrDefaultAsync(cancellationToken);
-
-    // Asked with a kurin in hand, so the placement is that kurin's membership and not whichever
-    // one happens to be newest — the same person read from another kurin answers differently.
-    public async Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
-        => await (from ms in ActiveMemberships.Where(ms => ms.KurinKey == kurinKey)
-                  join m in Context.Members on ms.MemberKey equals m.MemberKey
-                  select new MemberSummary(
-                      m.MemberKey,
-                      m.UserKey,
-                      ms.KurinKey,
-                      ms.GroupKey,
-                      m.FirstName,
-                      m.LastName,
-                      m.Email,
-                      m.ProfilePhotoBlobName))
-            .ToListAsync(cancellationToken);
-
-    public async Task<IReadOnlyCollection<MemberSummary>> GetSummariesByKurinKeyAsync(Guid kurinKey, MemberSelection selection, CancellationToken cancellationToken = default)
-    {
-        if (selection.IsEmpty)
-        {
-            return [];
-        }
-
-        var memberKeys = selection.MemberKeys.ToList();
-        var groupKeys = selection.GroupKeys.ToList();
-        var accountKeys = selection.AccountKeys.ToList();
-
-        return await (from ms in ActiveMemberships.Where(ms => ms.KurinKey == kurinKey)
-                      join m in Context.Members on ms.MemberKey equals m.MemberKey
-                      where memberKeys.Contains(m.MemberKey)
-                          || (ms.GroupKey != null && groupKeys.Contains(ms.GroupKey.Value))
-                          || (m.UserKey != null && accountKeys.Contains(m.UserKey.Value))
-                      select new MemberSummary(
-                          m.MemberKey,
-                          m.UserKey,
-                          ms.KurinKey,
-                          ms.GroupKey,
-                          m.FirstName,
-                          m.LastName,
-                          m.Email,
-                          m.ProfilePhotoBlobName))
-            .ToListAsync(cancellationToken);
-    }
 
     public async Task<IReadOnlyCollection<MemberSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default)
         => await SummariesOf(Context.Members).ToListAsync(cancellationToken);
@@ -220,13 +135,6 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         => Context.Members
             .Where(m => m.MemberKey == memberKey)
             .Select(m => new MemberAccountLink(m.MemberKey, m.UserKey))
-            .FirstOrDefaultAsync(cancellationToken);
-
-    public Task<Guid?> GetKurinKeyByMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
-        => ActiveMemberships
-            .Where(ms => ms.MemberKey == memberKey)
-            .OrderByDescending(ms => ms.JoinedAtUtc)
-            .Select(ms => (Guid?)ms.KurinKey)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<Member?> GetByUserKeyAsync(Guid userKey, CancellationToken cancellationToken = default)

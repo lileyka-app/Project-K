@@ -72,7 +72,7 @@ public class AgendaAccessAuthorizeTargetTests
 
         var permissions = new CurrentPermissions(user.Object, _policies);
         var resourceAccess = new ResourceAccessService(UnitOfWorks.WithScopes(_scopes.Object), user.Object, new PassThroughBackendCache(), permissions);
-        return new AgendaAccess(user.Object, UnitOfWorks.WithScopes(_scopes.Object), new CurrentMember(user.Object, Mock.Of<IMemberDirectory>(), Mock.Of<IMembershipDirectory>()), resourceAccess, permissions, _tags.Object, Mock.Of<IOfficeDirectory>(), ScopeFacts.Reader(_scopes.Object));
+        return new AgendaAccess(user.Object, UnitOfWorks.WithScopes(_scopes.Object), Mock.Of<IMembershipDirectory>(), resourceAccess, permissions, _tags.Object, Mock.Of<IOfficeDirectory>(), ScopeFacts.Reader(_scopes.Object));
     }
 
     private static AgendaTargetInput Target(AgendaTargetType type, Guid key) => new() { TargetType = type, TargetKey = key };

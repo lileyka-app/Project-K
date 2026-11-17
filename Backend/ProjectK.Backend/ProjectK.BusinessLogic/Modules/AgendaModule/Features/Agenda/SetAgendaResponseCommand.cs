@@ -2,7 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.KraiModule;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
@@ -23,16 +23,16 @@ public sealed record SetAgendaResponseCommand(Guid AgendaItemKey, DateTime? Occu
 public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaResponseCommand, ServiceResult<AgendaResponsesDto>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
     private readonly IKraiProfileDirectory _profiles;
     private readonly IAgendaRsvpWriter _rsvps;
 
-    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileDirectory profiles, IAgendaRsvpWriter rsvps)
+    public SetAgendaResponseCommandHandler(IUnitOfWork uow, IMembershipDirectory memberships, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileDirectory profiles, IAgendaRsvpWriter rsvps)
     {
         _uow = uow;
-        _members = members;
+        _memberships = memberships;
         _access = access;
         _currentUser = currentUser;
         _profiles = profiles;
@@ -81,7 +81,7 @@ public sealed class SetAgendaResponseCommandHandler : IRequestHandler<SetAgendaR
         await _uow.SaveChangesAsync(cancellationToken);
 
         var responses = await _uow.AgendaResponses.GetForItemAsync(item.AgendaItemKey, occurrenceKey, cancellationToken);
-        var names = AgendaCreatorNames.FromMembers(await _members.GetByKurinAsync(item.KurinKey, cancellationToken));
+        var names = AgendaCreatorNames.FromMembers((await _memberships.GetPeopleInKurinAsync(item.KurinKey, cancellationToken)).Select(person => person.Person));
 
         int? capacity = null;
         var waitlistEnabled = false;

@@ -1,5 +1,4 @@
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Enums.AgendaModule;
@@ -12,7 +11,7 @@ public static class AgendaRosterRules
 {
     /// <summary>Reads the people the items stand for and the holders of every провід they aim at.</summary>
     public static async Task<AgendaRoster> LoadAsync(
-        IMemberDirectory directory,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinTagDirectory tags,
         Guid kurinKey,
@@ -20,7 +19,7 @@ public static class AgendaRosterRules
         CancellationToken cancellationToken)
     {
         var list = items as IReadOnlyCollection<AgendaItem> ?? items.ToList();
-        var members = await AgendaPeopleRules.ReadAsync(directory, kurinKey, AgendaPeopleRules.ToLabel(list), cancellationToken);
+        var members = await AgendaPeopleRules.ReadAsync(memberships, kurinKey, AgendaPeopleRules.ToLabel(list), cancellationToken);
         return await LoadAsync(offices, tags, members.GroupBy(m => m.MemberKey).ToDictionary(g => g.Key, g => g.First().GroupKey), list, cancellationToken);
     }
 

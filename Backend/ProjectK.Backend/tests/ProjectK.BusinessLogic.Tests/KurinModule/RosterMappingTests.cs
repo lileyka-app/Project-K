@@ -143,7 +143,7 @@ public class RosterMappingTests
     [Fact]
     public void ToLookupDto_FromASummary_ShouldSignThePhoto()
     {
-        var summary = new MemberSummary(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null, "Ірина", "Нова", "i@example.com", "s.jpg");
+        var summary = new MemberSummary(Guid.NewGuid(), Guid.NewGuid(), "Ірина", "Нова", "i@example.com", "s.jpg");
 
         var dto = summary.ToLookupDto(FakeBlobReadLinks.Instance);
 

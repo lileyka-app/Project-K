@@ -50,7 +50,7 @@ public class RevokeMentorCommandHandlerTests
         _groups.Setup(r => r.GetByKeyAsync(_group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_group);
         _assignments.Setup(r => r.GetSpecificAssignmentAsync(_mentorUserKey, _group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_assignment);
         _members.Setup(d => d.FindByAccountAsync(_mentorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_mentorMemberKey, _mentorUserKey, _kurinKey, null, "Марта", "Впорядниця", "m@x", null));
+            .ReturnsAsync(new MemberSummary(_mentorMemberKey, _mentorUserKey, "Марта", "Впорядниця", "m@x", null));
 
         _handler = new RevokeMentorCommandHandler(_uow.Object, Mock.Of<IBackendCache>(), Mock.Of<IAccessChangeStore>(), _members.Object, _journal.Audit);
     }

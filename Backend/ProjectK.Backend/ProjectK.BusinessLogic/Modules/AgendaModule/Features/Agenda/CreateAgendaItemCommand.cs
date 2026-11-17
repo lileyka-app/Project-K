@@ -3,7 +3,6 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
@@ -41,7 +40,7 @@ public sealed record CreateAgendaItemCommand : IRequest<ServiceResult<Guid>>
 public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgendaItemCommand, ServiceResult<Guid>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IOfficeDirectory _offices;
     private readonly IKurinDirectory _kurins;
     private readonly IKurinTagDirectory _tags;
@@ -52,7 +51,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
 
     public CreateAgendaItemCommandHandler(
         IUnitOfWork uow,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinDirectory kurins,
         IKurinTagDirectory tags,
@@ -62,7 +61,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         IKurinAudit audit)
     {
         _uow = uow;
-        _members = members;
+        _memberships = memberships;
         _offices = offices;
         _kurins = kurins;
         _tags = tags;
@@ -122,7 +121,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
         _uow.AgendaItems.Create(item, cancellationToken);
 
         var targets = AgendaTrail.TargetsOf(item);
-        var names = await AgendaTargetNames.LoadAsync(_members, _offices, _kurins, _tags, item.KurinKey, targets, cancellationToken);
+        var names = await AgendaTargetNames.LoadAsync(_memberships, _offices, _kurins, _tags, item.KurinKey, targets, cancellationToken);
         await _audit.RecordAsync(
             new AuditRecord(
                 AuditArea.Agenda,
@@ -142,7 +141,7 @@ public sealed class CreateAgendaItemCommandHandler : IRequestHandler<CreateAgend
 
     private async Task PublishAssignedAsync(AgendaItem item, Guid actorUserKey, CancellationToken cancellationToken)
     {
-        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_members, _offices, _tags, item, actorUserKey, cancellationToken);
+        var recipients = await AgendaNotificationRecipientRules.ResolveAsync(_memberships, _offices, _tags, item, actorUserKey, cancellationToken);
 
         await _events.PublishAsync(
             new AgendaItemAssigned(

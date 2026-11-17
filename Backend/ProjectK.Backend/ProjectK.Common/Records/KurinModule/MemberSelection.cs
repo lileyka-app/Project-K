@@ -1,4 +1,4 @@
-namespace ProjectK.Common.Records.MemberModule;
+namespace ProjectK.Common.Records.KurinModule;
 
 /// <summary>
 /// Which of a kurin's people a caller needs: these members, everyone in these гуртки, and the

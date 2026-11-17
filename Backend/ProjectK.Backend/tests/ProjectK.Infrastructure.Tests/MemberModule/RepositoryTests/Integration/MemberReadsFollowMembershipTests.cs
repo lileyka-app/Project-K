@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
@@ -73,8 +73,8 @@ public class MemberReadsFollowMembershipTests
         await context.SaveChangesAsync();
 
         Assert.Empty(await uow.Memberships.GetRosterRowsByKurinAsync(kurinKey));
-        Assert.Empty(await uow.Members.GetSummariesByKurinKeyAsync(kurinKey));
-        Assert.Null(await uow.Members.GetKurinKeyByMemberAsync(person.MemberKey));
+        Assert.Empty(await uow.Memberships.GetPeopleInKurinAsync(kurinKey));
+        Assert.Null(await uow.Memberships.FindInLatestKurinAsync(person.MemberKey));
     }
 
     [Fact]
@@ -133,14 +133,14 @@ public class MemberReadsFollowMembershipTests
         await context.SaveChangesAsync();
 
         var selection = new MemberSelection([byKey.MemberKey, elsewhere.MemberKey], [group], [byAccount.UserKey!.Value]);
-        var found = await uow.Members.GetSummariesByKurinKeyAsync(kurinKey, selection);
+        var found = await uow.Memberships.GetPeopleInKurinAsync(kurinKey, selection);
 
         Assert.Equal(
             new[] { byAccount.MemberKey, byKey.MemberKey, inGroup.MemberKey }.OrderBy(k => k),
             found.Select(f => f.MemberKey).OrderBy(k => k));
         Assert.All(found, f => Assert.Equal(kurinKey, f.KurinKey));
         Assert.Equal(group, found.Single(f => f.MemberKey == inGroup.MemberKey).GroupKey);
-        Assert.Empty(await uow.Members.GetSummariesByKurinKeyAsync(kurinKey, MemberSelection.None));
+        Assert.Empty(await uow.Memberships.GetPeopleInKurinAsync(kurinKey, MemberSelection.None));
     }
 
     [Fact]
@@ -157,8 +157,32 @@ public class MemberReadsFollowMembershipTests
 
         Assert.NotNull(summary);
         Assert.Equal(person.MemberKey, summary!.MemberKey);
-        Assert.Equal(Guid.Empty, summary.KurinKey);
-        Assert.Null(summary.GroupKey);
+        Assert.Null(await uow.Memberships.FindInLatestKurinAsync(person.MemberKey));
+    }
+
+    [Fact]
+    public async Task SomeoneInTwoKurins_ShouldStandForTheOneJoinedLast_WhereOneKurinHasTo()
+    {
+        await using var context = NewContext();
+        var uow = new InfraUnitOfWork(context);
+
+        var first = Guid.NewGuid();
+        var latest = Guid.NewGuid();
+        var latestGroup = Guid.NewGuid();
+        var person = Person();
+        person.UserKey = Guid.NewGuid();
+        var joinedLater = Joining(person.MemberKey, latest, latestGroup);
+        joinedLater.JoinedAtUtc = DateTime.UtcNow.AddDays(-1);
+        context.Members.Add(person);
+        context.Memberships.AddRange(Joining(person.MemberKey, first), joinedLater);
+        await context.SaveChangesAsync();
+
+        var byMember = await uow.Memberships.FindInLatestKurinAsync(person.MemberKey);
+        var byAccount = await uow.Memberships.FindInLatestKurinByAccountAsync(person.UserKey.Value);
+
+        Assert.Equal((latest, (Guid?)latestGroup), (byMember!.KurinKey, byMember.GroupKey));
+        Assert.Equal(byMember, byAccount);
+        Assert.Equal(person.FirstName, byMember.Person.FirstName);
     }
 
     [Fact]

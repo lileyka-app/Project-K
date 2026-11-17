@@ -1,6 +1,5 @@
 using MediatR;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
@@ -8,7 +7,7 @@ using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Dtos.AgendaModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.AgendaModule.Features.Agenda;
@@ -20,20 +19,20 @@ public sealed record GetAssignTargetsQuery(Guid KurinKey)
 public sealed class GetAssignTargetsQueryHandler
     : IRequestHandler<GetAssignTargetsQuery, ServiceResult<AgendaAssignTargetsDto>>
 {
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IAgendaAccess _access;
     private readonly IKurinTagDirectory _tags;
     private readonly IKurinDirectory _kurins;
     private readonly IOfficeDirectory _offices;
 
     public GetAssignTargetsQueryHandler(
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         IAgendaAccess access,
         IKurinTagDirectory tags,
         IKurinDirectory kurins,
         IOfficeDirectory offices)
     {
-        _members = members;
+        _memberships = memberships;
         _access = access;
         _tags = tags;
         _kurins = kurins;
@@ -52,7 +51,7 @@ public sealed class GetAssignTargetsQueryHandler
         }
 
         var groupNames = await _kurins.GetGroupNamesAsync(request.KurinKey, cancellationToken);
-        var members = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
+        var members = await _memberships.GetPeopleInKurinAsync(request.KurinKey, cancellationToken);
 
         var leaderships = await _offices.GetLeadershipsInKurinAsync(request.KurinKey, cancellationToken);
         var groupLeaderships = leaderships
@@ -62,13 +61,13 @@ public sealed class GetAssignTargetsQueryHandler
 
         // People in no гурток are picked one by one: the КВ's under the КВ, everyone else on their own.
         // In a senior kurin, with no гуртки at all, that is the whole kurin.
-        AgendaMemberTargetDto Person(MemberSummary m) => new()
+        AgendaMemberTargetDto Person(KurinPerson m) => new()
         {
             MemberKey = m.MemberKey,
-            FullName = m.FullName,
+            FullName = m.Person.FullName,
             CanTarget = reach.ReachesMember(m.GroupKey, m.UserKey)
         };
-        var unplaced = members.Where(m => m.GroupKey is null).OrderBy(m => m.LastName).ToList();
+        var unplaced = members.Where(m => m.GroupKey is null).OrderBy(m => m.Person.LastName).ToList();
         var kv = leaderships.FirstOrDefault(l => l.Type == LeadershipType.KV);
         var kvMembers = kv is null
             ? new HashSet<Guid>()
@@ -107,11 +106,11 @@ public sealed class GetAssignTargetsQueryHandler
                     : null,
                 Members = members
                     .Where(m => m.GroupKey == g.GroupKey)
-                    .OrderBy(m => m.LastName)
+                    .OrderBy(m => m.Person.LastName)
                     .Select(m => new AgendaMemberTargetDto
                     {
                         MemberKey = m.MemberKey,
-                        FullName = m.FullName,
+                        FullName = m.Person.FullName,
                         CanTarget = reach.ReachesMember(m.GroupKey, m.UserKey)
                     })
                     .ToList()

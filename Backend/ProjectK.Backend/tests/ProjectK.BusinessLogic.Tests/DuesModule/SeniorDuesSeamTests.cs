@@ -77,8 +77,8 @@ public class SeniorDuesSeamTests
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetInKurinAsync(KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([Membership]);
         var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.GetByKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MemberSummary(MemberKey, Guid.NewGuid(), Guid.Empty, null, "Ірина", "Коваль", "i@example.org", null)]);
+        memberships.Setup(m => m.GetPeopleInKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([KurinPeople.Of(MemberKey, Guid.NewGuid(), Guid.Empty, null, "Ірина", "Коваль", "i@example.org", null)]);
         return await DuesNames.LoadAsync(memberships.Object, members.Object, KurinKey, CancellationToken.None);
     }
 
@@ -108,7 +108,7 @@ public class SeniorDuesSeamTests
             [new MembershipRecord(Membership.MembershipKey, KurinKey, 1, KurinBranch.USP, null, null, null, MembershipKind.Youth, Membership.JoinedAtUtc, null)]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(userKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(MemberKey, userKey, Guid.Empty, null, "Ірина", "Коваль", "i@example.org", null));
+            .ReturnsAsync(new MemberSummary(MemberKey, userKey, "Ірина", "Коваль", "i@example.org", null));
         members.Setup(m => m.GetLevelsAsync(MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var dues = new Mock<IDuesUnitOfWork>();

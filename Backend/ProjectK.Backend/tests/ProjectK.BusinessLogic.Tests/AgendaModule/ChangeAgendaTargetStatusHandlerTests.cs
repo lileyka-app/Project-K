@@ -26,7 +26,7 @@ namespace ProjectK.BusinessLogic.Tests.AgendaModule;
 public class ChangeAgendaTargetStatusHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<IMembershipDirectory> _people = new();
     private readonly Mock<IAgendaAccess> _access = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IAgendaItemRepository> _agendaRepo = new();
@@ -57,15 +57,15 @@ public class ChangeAgendaTargetStatusHandlerTests
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _agendaRepo.Setup(r => r.GetByKeyWithAssignmentsAsync(_item.AgendaItemKey, It.IsAny<CancellationToken>())).ReturnsAsync(_item);
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
-        _members.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        _people.Setup(d => d.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberSummary(_hurtkovyi, _hurtkovyiUser, _kurinKey, _groupKey, "Богдан", "Гончар", "b@x", null),
-            new MemberSummary(_youth, Guid.NewGuid(), _kurinKey, _groupKey, "Марта", "Мельник", "m@x", null)
+            KurinPeople.Of(_hurtkovyi, _hurtkovyiUser, _kurinKey, _groupKey, "Богдан", "Гончар", "b@x", null),
+            KurinPeople.Of(_youth, Guid.NewGuid(), _kurinKey, _groupKey, "Марта", "Мельник", "m@x", null)
         ]);
-        _members.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync(
+        _people.Setup(d => d.GetPeopleInKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberSummary(_hurtkovyi, _hurtkovyiUser, _kurinKey, _groupKey, "Богдан", "Гончар", "b@x", null),
-            new MemberSummary(_youth, Guid.NewGuid(), _kurinKey, _groupKey, "Марта", "Мельник", "m@x", null)
+            KurinPeople.Of(_hurtkovyi, _hurtkovyiUser, _kurinKey, _groupKey, "Богдан", "Гончар", "b@x", null),
+            KurinPeople.Of(_youth, Guid.NewGuid(), _kurinKey, _groupKey, "Марта", "Мельник", "m@x", null)
         ]);
         _access.Setup(a => a.BuildViewerAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AgendaViewerContext(_kurinKey, _hurtkovyiUser, _hurtkovyi, _groupKey, [_groupKey], [], false, true, [_groupKey]));
@@ -78,7 +78,7 @@ public class ChangeAgendaTargetStatusHandlerTests
         _journal = new JournalRecorder(_currentUser.Object).Knows(_youth, _kurinKey, _groupKey, "Марта", "Мельник");
         var events = Mock.Of<IDomainEventPublisher>();
         _handler = new ChangeAgendaTargetStatusCommandHandler(
-            _uow.Object, _members.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, events, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, events));
+            _uow.Object, _people.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, events, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, events));
     }
 
     [Fact]

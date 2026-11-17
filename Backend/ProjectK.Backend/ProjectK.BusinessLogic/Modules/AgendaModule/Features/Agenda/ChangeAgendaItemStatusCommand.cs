@@ -2,7 +2,6 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AgendaModule;
@@ -22,7 +21,7 @@ public sealed record ChangeAgendaItemStatusCommand(Guid AgendaItemKey, AgendaIte
 public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<ChangeAgendaItemStatusCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IOfficeDirectory _offices;
     private readonly IKurinTagDirectory _tags;
     private readonly IAgendaAccess _access;
@@ -34,7 +33,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
 
     public ChangeAgendaItemStatusCommandHandler(
         IUnitOfWork uow,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinTagDirectory tags,
         IAgendaAccess access,
@@ -45,7 +44,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
         AgendaStatusWriter statuses)
     {
         _uow = uow;
-        _members = members;
+        _memberships = memberships;
         _offices = offices;
         _tags = tags;
         _access = access;
@@ -95,7 +94,7 @@ public sealed class ChangeAgendaItemStatusCommandHandler : IRequestHandler<Chang
             }
 
             var movedFrom = AgendaCompletionRules.StatusOf(moves[0]);
-            var roster = await AgendaRosterRules.LoadAsync(_members, _offices, _tags, item.KurinKey, [item], cancellationToken);
+            var roster = await AgendaRosterRules.LoadAsync(_memberships, _offices, _tags, item.KurinKey, [item], cancellationToken);
             foreach (var stake in moves)
             {
                 _statuses.Apply(item, stake, request.Status, actor, roster, now);

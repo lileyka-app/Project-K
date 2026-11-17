@@ -193,7 +193,7 @@ public class LoginUserCommandHandlerTests
             .Returns(refreshToken);
 
         _memberDirectoryMock.Setup(x => x.FindByAccountAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(memberKey, userId, Guid.Empty, null, "A", "B", "a@example.com", null));
+            .ReturnsAsync(new MemberSummary(memberKey, userId, "A", "B", "a@example.com", null));
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

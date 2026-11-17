@@ -1,6 +1,5 @@
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule.Requests;
@@ -23,7 +22,7 @@ public sealed class AgendaAccess : IAgendaAccess
     ];
 
     private readonly ICurrentUserContext _currentUser;
-    private readonly ICurrentMember _currentMember;
+    private readonly IMembershipDirectory _memberships;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentPermissions _permissions;
@@ -33,7 +32,7 @@ public sealed class AgendaAccess : IAgendaAccess
     public AgendaAccess(
         ICurrentUserContext currentUser,
         IUnitOfWork uow,
-        ICurrentMember currentMember,
+        IMembershipDirectory memberships,
         IResourceAccessService resourceAccess,
         ICurrentPermissions permissions,
         IKurinTagDirectory tags,
@@ -43,7 +42,7 @@ public sealed class AgendaAccess : IAgendaAccess
         _tags = tags;
         _offices = offices;
         _currentUser = currentUser;
-        _currentMember = currentMember;
+        _memberships = memberships;
         _scopeReader = scopeReader;
         _resourceAccess = resourceAccess;
         _permissions = permissions;
@@ -62,7 +61,7 @@ public sealed class AgendaAccess : IAgendaAccess
         Guid? ownGroupKey = null;
         if (userKey.HasValue)
         {
-            var member = await _currentMember.FindAsync(cancellationToken);
+            var member = await _memberships.FindInLatestKurinByAccountAsync(userKey.Value, cancellationToken);
             if (member is not null && member.KurinKey == kurinKey)
             {
                 memberKey = member.MemberKey;

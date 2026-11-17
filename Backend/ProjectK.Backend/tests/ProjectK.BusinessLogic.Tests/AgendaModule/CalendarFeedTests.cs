@@ -83,7 +83,7 @@ public class CalendarFeedTests
             [new MembershipRecord(Guid.NewGuid(), Kurin, 12, KurinBranch.UPYu, null, Sokoly, "Соколи", MembershipKind.Youth, DateTime.UtcNow, null)]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Person, User, Kurin, Sokoly, "Оксана", "Паливода", "o@x", null));
+            .ReturnsAsync(new MemberSummary(Person, User, "Оксана", "Паливода", "o@x", null));
         var scopeReader = ScopeFacts.Repository();
         scopeReader.Setup(r => r.GetLedGroupSourcesAsync(User, Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([]));
 
@@ -116,7 +116,7 @@ public class CalendarFeedTests
         userManager.Setup(m => m.FindByIdAsync(User.ToString())).ReturnsAsync(() => new AppUser { Id = User, OnboardingStatus = _status });
 
         return new RenderCalendarFeedQueryHandler(
-            _feeds.Object, userManager.Object, scopes, new AgendaDirectory(unitOfWork.Object, members.Object, new OfficeDirectory(unitOfWork.Object), KurinDirectories.TagsOver(unitOfWork.Object)), KurinDirectories.Over(unitOfWork.Object),
+            _feeds.Object, userManager.Object, scopes, new AgendaDirectory(unitOfWork.Object, memberships.Object, new OfficeDirectory(unitOfWork.Object), KurinDirectories.TagsOver(unitOfWork.Object)), KurinDirectories.Over(unitOfWork.Object),
             new Mock<IKraiProfileDirectory>().Object, new FixedTimeProvider(Now),
             Options.Create(new EmailOptions { BaseUrl = "https://lileyka.app" }));
     }

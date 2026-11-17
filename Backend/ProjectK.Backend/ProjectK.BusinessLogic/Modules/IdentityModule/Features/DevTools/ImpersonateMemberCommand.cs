@@ -78,7 +78,9 @@ public sealed class ImpersonateMemberCommandHandler : IRequestHandler<Impersonat
         var kurins = await _memberships.GetKurinKeysForAccountAsync(target.Id, cancellationToken);
         var kurinKey = _currentUser.KurinKey is { } onScreen && kurins.Contains(onScreen)
             ? onScreen
-            : kurins.FirstOrDefault(person.KurinKey);
+            : kurins.Count > 0
+                ? kurins.First()
+                : (await _memberships.GetCurrentKurinKeysForMemberAsync(person.MemberKey, cancellationToken)).FirstOrDefault();
 
         target.ActiveKurinKey = kurinKey;
         await _userManager.UpdateAsync(target);

@@ -122,9 +122,9 @@ public class ThirdProbeReaderTests
         ]);
         _unitOfWork.SetupGet(u => u.MentorAssignments).Returns(mentors.Object);
         _members.Setup(d => d.FindByAccountAsync(ownMentor, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), ownMentor, kurinKey, null, "Марта", "Шевчук", "m@x", null));
+            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), ownMentor, "Марта", "Шевчук", "m@x", null));
         _members.Setup(d => d.FindByAccountAsync(otherMentor, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), otherMentor, kurinKey, null, "Андрій", "Гнатюк", "a@x", null));
+            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), otherMentor, "Андрій", "Гнатюк", "a@x", null));
 
         var tab = await _reader.ReadAsync(_memberKey, "probe-3");
 

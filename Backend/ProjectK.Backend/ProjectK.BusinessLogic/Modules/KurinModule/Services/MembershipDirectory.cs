@@ -36,6 +36,25 @@ public sealed class MembershipDirectory : IMembershipDirectory
             .Distinct()
             .ToList();
 
+    public Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.GetPeopleInKurinAsync(kurinKey, cancellationToken);
+
+    public async Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(
+        Guid kurinKey,
+        MemberSelection selection,
+        CancellationToken cancellationToken = default)
+        => selection.IsEmpty
+            ? []
+            : await _unitOfWork.Memberships.GetPeopleInKurinAsync(kurinKey, selection, cancellationToken);
+
+    public Task<KurinPerson?> FindInLatestKurinAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInLatestKurinAsync(memberKey, cancellationToken);
+
+    public Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInLatestKurinByAccountAsync(userKey, cancellationToken);
+
     public Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
         Guid userKey,
         CancellationToken cancellationToken = default)

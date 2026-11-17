@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.AgendaModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
@@ -24,7 +25,7 @@ namespace ProjectK.BusinessLogic.Tests.AgendaModule;
 public class ChangeAgendaItemStatusHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IMembershipDirectory> _people = new();
     private readonly Mock<IAgendaAccess> _access = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
@@ -40,10 +41,10 @@ public class ChangeAgendaItemStatusHandlerTests
     {
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
-        _memberDirectory.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
-        _memberDirectory.Setup(d => d.GetByKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _people.Setup(d => d.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _people.Setup(d => d.GetPeopleInKurinAsync(_kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _journal = new JournalRecorder(_currentUser.Object);
-        _handler = new ChangeAgendaItemStatusCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, _events.Object));
+        _handler = new ChangeAgendaItemStatusCommandHandler(_uow.Object, _people.Object, new OfficeDirectory(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, TimeProvider.System, _journal.Audit, new AgendaStatusWriter(_uow.Object, _journal.Audit, _events.Object));
     }
 
     private AgendaItem TaskAssignedToMember(Guid? createdBy = null)

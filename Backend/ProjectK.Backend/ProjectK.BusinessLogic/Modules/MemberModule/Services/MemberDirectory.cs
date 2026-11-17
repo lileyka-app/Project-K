@@ -42,9 +42,6 @@ public sealed class MemberDirectory : IMemberDirectory
     public Task<Guid?> FindAccountKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Members.GetUserKeyByMemberAsync(memberKey, cancellationToken);
 
-    public Task<Guid?> FindKurinKeyAsync(Guid memberKey, CancellationToken cancellationToken = default)
-        => _unitOfWork.Members.GetKurinKeyByMemberAsync(memberKey, cancellationToken);
-
     public async Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default)
     {
         var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
@@ -63,17 +60,6 @@ public sealed class MemberDirectory : IMemberDirectory
             .OrderByDescending(a => a.DateAcquired)
             .Select(a => new ConfirmedAward(a.Level, a.CatalogId, a.DateAcquired))
             .ToList();
-
-    public Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
-        Guid kurinKey,
-        CancellationToken cancellationToken = default)
-        => _unitOfWork.Members.GetSummariesByKurinKeyAsync(kurinKey, cancellationToken);
-
-    public Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(
-        Guid kurinKey,
-        MemberSelection selection,
-        CancellationToken cancellationToken = default)
-        => _unitOfWork.Members.GetSummariesByKurinKeyAsync(kurinKey, selection, cancellationToken);
 
     public Task<IReadOnlyCollection<MemberSummary>> GetByKeysAsync(
         IReadOnlyCollection<Guid> memberKeys,

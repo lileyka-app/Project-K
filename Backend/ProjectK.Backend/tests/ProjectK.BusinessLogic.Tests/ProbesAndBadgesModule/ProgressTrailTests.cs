@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.ProbesAndBadgesModule;
@@ -165,11 +166,11 @@ public class ProgressTrailTests
         var done = new BadgeProgress { MemberKey = _memberKey, KurinKey = _kurinKey, BadgeId = "c", Status = BadgeProgressStatus.Confirmed };
         journal.Entries.Add(Entry(waiting.BadgeProgressKey, AuditActionNames.Badge.Submitted, null, "Submitted", 0, "прошу"));
 
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(x => x.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(x => x.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberSummary(_memberKey, null, _kurinKey, null, "Олесь", "Юнак", "", null),
-            new MemberSummary(otherMember, null, _kurinKey, null, "Петро", "Юнак", "", null)
+            KurinPeople.Of(_memberKey, null, _kurinKey, null, "Олесь", "Юнак", "", null),
+            KurinPeople.Of(otherMember, null, _kurinKey, null, "Петро", "Юнак", "", null)
         ]);
         var progresses = new Mock<IBadgeProgressRepository>();
         progresses.Setup(x => x.GetByMemberKeysAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
@@ -211,8 +212,8 @@ public class ProgressTrailTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(x => x.ProbeProgresses).Returns(probes.Object);
         unitOfWork.SetupGet(x => x.ProbePointProgresses).Returns(points.Object);
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(x => x.FindKurinKeyAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(_kurinKey);
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(x => x.GetCurrentKurinKeysForMemberAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync([_kurinKey]);
 
         var result = await new GetProbeProgressQueryHandler(unitOfWork.Object, members.Object, journal.Reader)
             .Handle(new GetProbeProgressQuery(_memberKey, "probe-1"), CancellationToken.None);

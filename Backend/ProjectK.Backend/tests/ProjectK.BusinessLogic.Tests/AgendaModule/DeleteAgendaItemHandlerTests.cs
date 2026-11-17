@@ -24,7 +24,7 @@ namespace ProjectK.BusinessLogic.Tests.AgendaModule;
 public class DeleteAgendaItemHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<IMemberDirectory> _memberDirectory = new();
+    private readonly Mock<IMembershipDirectory> _people = new();
     private readonly Mock<IAgendaAccess> _access = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
@@ -39,13 +39,13 @@ public class DeleteAgendaItemHandlerTests
     public DeleteAgendaItemHandlerTests()
     {
         _uow.Setup(u => u.AgendaItems).Returns(_agendaRepo.Object);
-        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<MemberSummary>());
-        _memberDirectory.Setup(r => r.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<MemberSummary>());
+        _people.Setup(r => r.GetPeopleInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<KurinPerson>());
+        _people.Setup(r => r.GetPeopleInKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<KurinPerson>());
         _currentUser.Setup(c => c.KurinKey).Returns(_kurinKey);
         _journal = new JournalRecorder(_currentUser.Object);
-        _handler = new DeleteAgendaItemCommandHandler(_uow.Object, _memberDirectory.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
+        _handler = new DeleteAgendaItemCommandHandler(_uow.Object, _people.Object, new OfficeDirectory(_uow.Object), KurinDirectories.Over(_uow.Object), KurinDirectories.TagsOver(_uow.Object), _access.Object, _currentUser.Object, _events.Object, _journal.Audit);
     }
 
     private AgendaItem Item() => new()

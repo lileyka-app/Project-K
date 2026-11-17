@@ -108,8 +108,8 @@ public class GetMyDutiesQueryTests
             .ReturnsAsync([Standing]);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Person, User, Kurin, null, "Тарас", "Чупринка", "t@x", null));
-        members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            .ReturnsAsync(new MemberSummary(Person, User, "Тарас", "Чупринка", "t@x", null));
+        memberships.Setup(m => m.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         var offices = new Mock<IOfficeDirectory>();
         offices.Setup(o => o.GetForAccountInKurinAsync(User, Kurin, It.IsAny<CancellationToken>()))
             .ReturnsAsync([new MemberOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
@@ -119,7 +119,7 @@ public class GetMyDutiesQueryTests
         permissions.Setup(p => p.ResolveAsync(It.IsAny<IEnumerable<string>>(), Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _permissions);
 
         var kurins = KurinDirectories.Over(_unitOfWork.Object);
-        var agenda = Agendas.Over(_unitOfWork.Object, members.Object);
+        var agenda = Agendas.Over(_unitOfWork.Object, memberships.Object);
         var books = new ScoreBookReader(_score.Object, agenda, kurins, memberships.Object, members.Object, Mock.Of<IScoreFactReader>(), _time);
 
         // Registered against the order the list comes in: the collector, not the registration, orders it.
@@ -127,7 +127,7 @@ public class GetMyDutiesQueryTests
         [
             new AttendanceDutyReader(books, agenda, Mock.Of<IKraiProfileDirectory>(), kurins, _time),
             new DuesDutyReader(_dues.Object, kurins),
-            new BadgeDutyReader(members.Object, _progress.Object),
+            new BadgeDutyReader(memberships.Object, _progress.Object),
         ];
 
         return new GetMyDutiesQueryHandler(scopes, sources, permissions.Object, _unitOfWork.Object, _user.Object);

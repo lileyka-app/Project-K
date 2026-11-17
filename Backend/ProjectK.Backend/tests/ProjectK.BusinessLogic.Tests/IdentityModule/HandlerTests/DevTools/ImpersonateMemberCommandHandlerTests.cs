@@ -57,7 +57,7 @@ public class ImpersonateMemberCommandHandlerTests
 
     private MemberSummary Person(AppUser? account, Guid ownKurin, params Guid[] standsIn)
     {
-        var summary = new MemberSummary(Guid.NewGuid(), account?.Id, ownKurin, null, "Марта", "Сова", "m@example.com", null);
+        var summary = new MemberSummary(Guid.NewGuid(), account?.Id, "Марта", "Сова", "m@example.com", null);
         _members.Setup(d => d.FindAsync(summary.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(summary);
         if (account is not null)
         {

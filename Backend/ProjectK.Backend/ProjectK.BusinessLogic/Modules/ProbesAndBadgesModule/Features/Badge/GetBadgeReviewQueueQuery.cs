@@ -1,7 +1,7 @@
 using MediatR;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.IdentityModule;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
@@ -17,7 +17,7 @@ public sealed record GetBadgeReviewQueueQuery(Guid KurinKey) : IRequest<ServiceR
 public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeReviewQueueQuery, ServiceResult<IEnumerable<BadgeProgressDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IResourceScopeReader _scopeReader;
     private readonly IBlobReadLinks _links;
@@ -26,7 +26,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
 
     public GetBadgeReviewQueueQueryHandler(
         IUnitOfWork unitOfWork,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         ICurrentUserContext currentUserContext,
         IBlobReadLinks links,
         ICurrentPermissions permissions,
@@ -34,7 +34,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
         IResourceScopeReader scopeReader)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
+        _memberships = memberships;
         _currentUserContext = currentUserContext;
         _scopeReader = scopeReader;
         _links = links;
@@ -64,7 +64,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
             allowedGroupKeys = await _scopeReader.GetLedGroupKeysAsync(_currentUserContext.UserId.Value, request.KurinKey, cancellationToken);
         }
 
-        var membersInKurin = await _members.GetByKurinAsync(request.KurinKey, cancellationToken);
+        var membersInKurin = await _memberships.GetPeopleInKurinAsync(request.KurinKey, cancellationToken);
         var membersDict = membersInKurin.ToDictionary(m => m.MemberKey);
 
         var filteredMembers = allowedGroupKeys != null
@@ -80,7 +80,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
             .ToLookup(entry => entry.SubjectKey);
 
         var allProgresses = submitted
-            .Select(p => BadgeMapping.ToDto(p, journal[p.BadgeProgressKey], membersDict[p.MemberKey], _links.For(membersDict[p.MemberKey].ProfilePhotoBlobName)))
+            .Select(p => BadgeMapping.ToDto(p, journal[p.BadgeProgressKey], membersDict[p.MemberKey].Person, _links.For(membersDict[p.MemberKey].Person.ProfilePhotoBlobName)))
             .OrderByDescending(p => p.SubmittedAtUtc)
             .ToList();
 

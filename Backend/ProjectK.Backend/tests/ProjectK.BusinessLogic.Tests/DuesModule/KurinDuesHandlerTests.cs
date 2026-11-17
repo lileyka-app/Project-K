@@ -47,9 +47,9 @@ public class KurinDuesHandlerTests
 
     private DuesEntryWriter Writer()
     {
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(Kurin);
-        return new DuesEntryWriter(_dues.Object, new Mock<IMembershipDirectory>().Object, members.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
+        var memberships = new Mock<IMembershipDirectory>();
+        memberships.Setup(m => m.GetCurrentKurinKeysForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([Kurin]);
+        return new DuesEntryWriter(_dues.Object, memberships.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
     }
 
     private DuesEntry Transfer(decimal amount)
@@ -165,7 +165,7 @@ public class KurinDuesHandlerTests
         _dues.SetupGet(d => d.DuesCharges).Returns(Mock.Of<IDuesChargeRepository>(r =>
             r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult<IReadOnlyList<DuesCharge>>(new List<DuesCharge>())));
         _shape.Setup(s => s.IsSeniorAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        var writer = new DuesEntryWriter(_dues.Object, directory.Object, Mock.Of<IMemberDirectory>(), KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
+        var writer = new DuesEntryWriter(_dues.Object, directory.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
         var request = new UpsertDuesEntryRequest
         {
             Kind = DuesEntryKind.Contribution,

@@ -53,7 +53,7 @@ public class ScoreHandlerTests
     private readonly List<AuditRecord> _journal = [];
     private readonly Mock<IKurinAudit> _audit = new();
     private readonly List<KurinMembershipRecord> _memberships = [];
-    private readonly List<MemberSummary> _people = [];
+    private readonly List<KurinPerson> _people = [];
     // People who stand in no kurin any more: the directory reads them only by key.
     private readonly List<MemberSummary> _gone = [];
     private readonly List<AgendaResponse> _responses = [];
@@ -152,7 +152,7 @@ public class ScoreHandlerTests
         var membership = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(membership, member, group, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), null));
-        _people.Add(new MemberSummary(member, Guid.NewGuid(), Kurin, group, name, "Пластун", $"{name}@x", null));
+        _people.Add(KurinPeople.Of(member, Guid.NewGuid(), Kurin, group, name, "Пластун", $"{name}@x", null));
         return membership;
     }
 
@@ -176,6 +176,7 @@ public class ScoreHandlerTests
     {
         var directory = new Mock<IMembershipDirectory>();
         directory.Setup(d => d.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
+        directory.Setup(d => d.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
         return directory.Object;
     }
 
@@ -188,7 +189,6 @@ public class ScoreHandlerTests
     private ScoreBookReader Books()
     {
         var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
         members.Setup(m => m.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) => _gone.Where(p => keys.Contains(p.MemberKey)).ToList());
         return new ScoreBookReader(_score.Object, Agendas.Over(_unitOfWork.Object), KurinDirectories.Over(_unitOfWork.Object), Memberships(), members.Object, NoFacts(), _time);
@@ -204,7 +204,7 @@ public class ScoreHandlerTests
     [Fact]
     public async Task TheSheet_SaysWhoAnswered_WhoWasAimedAt_AndWhoIsMine()
     {
-        var oksanaUser = _people.Single(p => p.FirstName == "Оксана").UserKey!.Value;
+        var oksanaUser = _people.Single(p => p.Person.FirstName == "Оксана").UserKey!.Value;
         _responses.Add(new AgendaResponse { AgendaItemKey = Skhodyny, UserKey = oksanaUser, Status = AgendaRsvpStatus.Going });
 
         var result = await new GetAttendanceSheetQueryHandler(Access(), Books(), Agendas.Over(_unitOfWork.Object), Mock.Of<IKraiProfileDirectory>(), _tagVisibility.Object, KurinDirectories.TagsOver(_unitOfWork.Object))
@@ -458,7 +458,7 @@ public class ScoreHandlerTests
         var left = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(left, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc)));
-        _people.Add(new MemberSummary(member, Guid.NewGuid(), Kurin, Sokoly, "Ярема", "Пластун", "yarema@x", null));
+        _people.Add(KurinPeople.Of(member, Guid.NewGuid(), Kurin, Sokoly, "Ярема", "Пластун", "yarema@x", null));
         _entries.Add(new ScoreEntry { KurinKey = Kurin, MembershipKey = left, Points = 4, Reason = "ватра", OccurredOn = new DateOnly(2026, 10, 1) });
 
         var book = await Books().OpenAsync(Kurin, CancellationToken.None);
@@ -477,7 +477,7 @@ public class ScoreHandlerTests
         var left = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(left, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc)));
-        _gone.Add(new MemberSummary(member, null, Guid.Empty, null, "Ярема", "Пластун", "yarema@x", null));
+        _gone.Add(new MemberSummary(member, null, "Ярема", "Пластун", "yarema@x", null));
 
         var book = await Books().OpenAsync(Kurin, CancellationToken.None);
 

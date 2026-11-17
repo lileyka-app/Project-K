@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberWarning;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
@@ -303,12 +304,12 @@ public class KurinPolicyEnforcementTests
     {
         var inGroup = Guid.NewGuid();
         var inOtherGroup = Guid.NewGuid();
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(x => x.GetByKurinAsync(_access.KurinKey, It.IsAny<CancellationToken>()))
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(x => x.GetPeopleInKurinAsync(_access.KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
-                new MemberSummary(inGroup, null, _access.KurinKey, _access.GroupKey, "Ivan", "Led", "", null),
-                new MemberSummary(inOtherGroup, null, _access.KurinKey, _access.OtherGroupKey, "Petro", "Other", "", null)
+                KurinPeople.Of(inGroup, null, _access.KurinKey, _access.GroupKey, "Ivan", "Led", "", null),
+                KurinPeople.Of(inOtherGroup, null, _access.KurinKey, _access.OtherGroupKey, "Petro", "Other", "", null)
             ]);
         var progresses = new Mock<IBadgeProgressRepository>();
         progresses.Setup(x => x.GetByMemberKeysAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))

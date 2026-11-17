@@ -128,7 +128,7 @@ public class DeleteMemberHandlerTests
         _journal.Knows(memberKey, _kurinKey, groupKey, "Олесь", "Юнак");
         _memberDirectory
             .Setup(d => d.FindAsync(memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(memberKey, null, _kurinKey, groupKey, "Олесь", "Юнак", "o@x", null));
+            .ReturnsAsync(new MemberSummary(memberKey, null, "Олесь", "Юнак", "o@x", null));
 
         await _handler.Handle(new DeleteMemberCommand(memberKey), CancellationToken.None);
 

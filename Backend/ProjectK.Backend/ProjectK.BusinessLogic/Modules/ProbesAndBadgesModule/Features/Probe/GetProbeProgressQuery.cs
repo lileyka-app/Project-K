@@ -1,6 +1,6 @@
 using MediatR;
 using ProjectK.Common.Contracts.AuditModule;
-using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
@@ -23,13 +23,13 @@ public sealed class GetProbeProgressQuery : IRequest<ServiceResult<ProbeProgress
 public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgressQuery, ServiceResult<ProbeProgressDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IKurinJournalRepository _journal;
 
-    public GetProbeProgressQueryHandler(IUnitOfWork unitOfWork, IMemberDirectory members, IAuditUnitOfWork audit)
+    public GetProbeProgressQueryHandler(IUnitOfWork unitOfWork, IMembershipDirectory memberships, IAuditUnitOfWork audit)
     {
         _unitOfWork = unitOfWork;
-        _members = members;
+        _memberships = memberships;
         _journal = audit.KurinJournal;
     }
 
@@ -40,7 +40,7 @@ public sealed class GetProbeProgressQueryHandler : IRequestHandler<GetProbeProgr
             return ServiceResult<ProbeProgressDto>.Failure(ResultType.BadRequest, ProbesAndBadgesErrors.ProbeIdRequired, "A probe id is required.");
         }
 
-        var memberKurinKey = await _members.FindKurinKeyAsync(request.MemberKey, cancellationToken);
+        var memberKurinKey = (await _memberships.GetCurrentKurinKeysForMemberAsync(request.MemberKey, cancellationToken)).Cast<Guid?>().FirstOrDefault();
         if (memberKurinKey is null)
         {
             return ServiceResult<ProbeProgressDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.MemberNotFound, "Member not found.");

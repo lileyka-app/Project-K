@@ -7,7 +7,7 @@ using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 
@@ -17,20 +17,22 @@ namespace ProjectK.BusinessLogic.Tests.TestHelpers;
 /// </summary>
 internal sealed class JournalRecorder : IKurinAuditRepository, IAuditUnitOfWork
 {
-    private readonly List<MemberSummary> _people = [];
+    private readonly List<KurinPerson> _people = [];
 
     public JournalRecorder(ICurrentUserContext user, CurrentMember? actors = null)
     {
-        People.Setup(x => x.GetByKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
+        Placements.Setup(x => x.GetPeopleInKurinAsync(It.IsAny<Guid>(), It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid kurinKey, MemberSelection selection, CancellationToken _) =>
                 _people.Where(p => p.KurinKey == kurinKey && selection.MemberKeys.Contains(p.MemberKey)).ToList());
-        People.Setup(x => x.FindAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        Placements.Setup(x => x.FindInLatestKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid memberKey, CancellationToken _) => _people.FirstOrDefault(p => p.MemberKey == memberKey));
+        People.Setup(x => x.FindAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid memberKey, CancellationToken _) => _people.FirstOrDefault(p => p.MemberKey == memberKey)?.Person);
         People.Setup(x => x.FindByAccountAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid userKey, CancellationToken _) => _people.FirstOrDefault(p => p.UserKey == userKey));
+            .ReturnsAsync((Guid userKey, CancellationToken _) => _people.FirstOrDefault(p => p.UserKey == userKey)?.Person);
 
         Actors = actors ?? new CurrentMember(user, People.Object, Mock.Of<IMembershipDirectory>());
-        Audit = new KurinAudit(Actors, user, People.Object, this);
+        Audit = new KurinAudit(Actors, user, People.Object, Placements.Object, this);
     }
 
     /// <summary>What reached the writer, in order.</summary>
@@ -39,6 +41,9 @@ internal sealed class JournalRecorder : IKurinAuditRepository, IAuditUnitOfWork
     /// <summary>The directory the journal names people from.</summary>
     public Mock<IMemberDirectory> People { get; } = new();
 
+    /// <summary>The directory the journal places people from: their kurin and гурток.</summary>
+    public Mock<IMembershipDirectory> Placements { get; } = new();
+
     public CurrentMember Actors { get; }
 
     public IKurinAudit Audit { get; }
@@ -46,7 +51,7 @@ internal sealed class JournalRecorder : IKurinAuditRepository, IAuditUnitOfWork
     /// <summary>Someone the journal can name: their kurin and гурток as they stand now.</summary>
     public JournalRecorder Knows(Guid memberKey, Guid kurinKey, Guid? groupKey, string firstName, string lastName, Guid? userKey = null)
     {
-        _people.Add(new MemberSummary(memberKey, userKey, kurinKey, groupKey, firstName, lastName, $"{memberKey:N}@example.com", null));
+        _people.Add(KurinPeople.Of(memberKey, userKey, kurinKey, groupKey, firstName, lastName, $"{memberKey:N}@example.com", null));
         return this;
     }
 

@@ -64,7 +64,7 @@ public class MemberRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task GetAllAsync_ByGroupKey_ShouldReturnOnlyThatGroupMembers()
+    public async Task PeopleInKurin_SelectedByGroup_ShouldBeOnlyThatGroupsMembers()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -84,14 +84,14 @@ public class MemberRepositoryIntegrationTests
         Placed(uow, BuildMember(group2, kurin, "B1", "L3"), kurin.KurinKey, group2.GroupKey);
         await uow.SaveChangesAsync();
 
-        var group1Members = (await uow.Members.GetAllAsync(group1.GroupKey)).ToList();
+        var group1Members = (await uow.Memberships.GetPeopleInKurinAsync(kurin.KurinKey, new MemberSelection([], [group1.GroupKey], []))).ToList();
 
         Assert.Equal(2, group1Members.Count);
         Assert.All(group1Members, m => Assert.Contains(context.Memberships, ms => ms.MemberKey == m.MemberKey && ms.GroupKey == group1.GroupKey));
     }
 
     [Fact]
-    public async Task GetAllByKurinKeyAsync_ShouldReturnMembersAcrossGroups()
+    public async Task PeopleInKurin_ShouldBeEveryoneAcrossItsGroups()
     {
         using var context = CreateInMemoryDbContext();
         var uow = new InfraUnitOfWork(context);
@@ -115,7 +115,7 @@ public class MemberRepositoryIntegrationTests
         Placed(uow, BuildMember(g2a, kurin2, "M3", "L3"), kurin2.KurinKey, g2a.GroupKey);
         await uow.SaveChangesAsync();
 
-        var kurin1Members = (await uow.Members.GetAllByKurinKeyAsync(kurin1.KurinKey)).ToList();
+        var kurin1Members = (await uow.Memberships.GetPeopleInKurinAsync(kurin1.KurinKey)).ToList();
 
         Assert.Equal(2, kurin1Members.Count);
         Assert.All(kurin1Members, m => Assert.Contains(context.Memberships, ms => ms.MemberKey == m.MemberKey && ms.KurinKey == kurin1.KurinKey));

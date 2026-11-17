@@ -1,8 +1,6 @@
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.KurinModule;
-using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Common.Records.KurinModule;
@@ -39,7 +37,7 @@ public sealed class AgendaTargetNames
 
     /// <summary>Reads the names <paramref name="targets"/> need, all of them at once.</summary>
     public static async Task<AgendaTargetNames> LoadAsync(
-        IMemberDirectory directory,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinDirectory kurins,
         IKurinTagDirectory kurinTags,
@@ -59,8 +57,8 @@ public sealed class AgendaTargetNames
         var memberKeys = list.Where(target => target.Type == AgendaTargetType.Member).Select(target => target.Key).Distinct().ToList();
         if (memberKeys.Count > 0)
         {
-            members = MemberSummaryNames.ByMember(
-                await directory.GetByKurinAsync(kurinKey, new MemberSelection(memberKeys, [], []), cancellationToken));
+            members = MemberSummaryNames.ByMember((
+                await memberships.GetPeopleInKurinAsync(kurinKey, new MemberSelection(memberKeys, [], []), cancellationToken)).Select(person => person.Person));
         }
 
         IReadOnlyDictionary<Guid, string> leaderships = new Dictionary<Guid, string>();

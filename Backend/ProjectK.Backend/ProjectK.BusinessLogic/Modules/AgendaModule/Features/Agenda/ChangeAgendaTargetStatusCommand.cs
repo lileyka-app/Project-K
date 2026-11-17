@@ -2,7 +2,6 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.AuditModule;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.AgendaModule;
@@ -24,7 +23,7 @@ public sealed record ChangeAgendaTargetStatusCommand(Guid AgendaItemKey, Guid Ag
 public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<ChangeAgendaTargetStatusCommand, ServiceResult<Unit>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IOfficeDirectory _offices;
     private readonly IKurinDirectory _kurins;
     private readonly IKurinTagDirectory _tags;
@@ -37,7 +36,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
 
     public ChangeAgendaTargetStatusCommandHandler(
         IUnitOfWork uow,
-        IMemberDirectory members,
+        IMembershipDirectory memberships,
         IOfficeDirectory offices,
         IKurinDirectory kurins,
         IKurinTagDirectory tags,
@@ -49,7 +48,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         AgendaStatusWriter statuses)
     {
         _uow = uow;
-        _members = members;
+        _memberships = memberships;
         _offices = offices;
         _kurins = kurins;
         _tags = tags;
@@ -83,7 +82,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
                 perMember ? "This target is done by each person; name whose part moves." : "This target has one state; no person is named.");
         }
 
-        var roster = await AgendaRosterRules.LoadAsync(_members, _offices, _tags, item.KurinKey, [item], cancellationToken);
+        var roster = await AgendaRosterRules.LoadAsync(_memberships, _offices, _tags, item.KurinKey, [item], cancellationToken);
         if (request.MemberKey is { } memberKey)
         {
             if (!roster.PeopleIn(assignment).Contains(memberKey))
@@ -112,7 +111,7 @@ public sealed class ChangeAgendaTargetStatusCommandHandler : IRequestHandler<Cha
         if (request.MemberKey is null)
         {
             (AgendaTargetType, Guid)[] target = [(assignment.TargetType, assignment.TargetKey)];
-            var names = await AgendaTargetNames.LoadAsync(_members, _offices, _kurins, _tags, item.KurinKey, target, cancellationToken);
+            var names = await AgendaTargetNames.LoadAsync(_memberships, _offices, _kurins, _tags, item.KurinKey, target, cancellationToken);
             label = $"{item.Title} — {names.Describe(target)}";
         }
 

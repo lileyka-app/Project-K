@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Records.IdentityModule;
 using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -94,6 +96,52 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                     .ToList()
             })
             .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<KurinPerson?> FindInLatestKurinAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => InLatestKurin(Context.Members.Where(m => m.MemberKey == memberKey)).FirstOrDefaultAsync(cancellationToken);
+
+    public Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
+        => InLatestKurin(Context.Members.Where(m => m.UserKey == userKey)).FirstOrDefaultAsync(cancellationToken);
+
+    private IQueryable<KurinPerson> InLatestKurin(IQueryable<Member> people)
+        => from m in people
+           from ms in OpenMemberships
+               .Where(candidate => candidate.MemberKey == m.MemberKey)
+               .OrderByDescending(candidate => candidate.JoinedAtUtc)
+               .Take(1)
+           select new KurinPerson(
+               new MemberSummary(m.MemberKey, m.UserKey, m.FirstName, m.LastName, m.Email, m.ProfilePhotoBlobName),
+               ms.KurinKey,
+               ms.GroupKey);
+
+    // Read across the module line, like the roster: the placement and the person in one SQL, so a
+    // kurin's people cost one round trip and not one per membership.
+    public async Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => await (from ms in OpenMemberships.Where(ms => ms.KurinKey == kurinKey)
+                  join m in Context.Members on ms.MemberKey equals m.MemberKey
+                  select new KurinPerson(
+                      new MemberSummary(m.MemberKey, m.UserKey, m.FirstName, m.LastName, m.Email, m.ProfilePhotoBlobName),
+                      ms.KurinKey,
+                      ms.GroupKey))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(Guid kurinKey, MemberSelection selection, CancellationToken cancellationToken = default)
+    {
+        var memberKeys = selection.MemberKeys.ToList();
+        var groupKeys = selection.GroupKeys.ToList();
+        var accountKeys = selection.AccountKeys.ToList();
+
+        return await (from ms in OpenMemberships.Where(ms => ms.KurinKey == kurinKey)
+                      join m in Context.Members on ms.MemberKey equals m.MemberKey
+                      where memberKeys.Contains(m.MemberKey)
+                          || (ms.GroupKey != null && groupKeys.Contains(ms.GroupKey.Value))
+                          || (m.UserKey != null && accountKeys.Contains(m.UserKey.Value))
+                      select new KurinPerson(
+                          new MemberSummary(m.MemberKey, m.UserKey, m.FirstName, m.LastName, m.Email, m.ProfilePhotoBlobName),
+                          ms.KurinKey,
+                          ms.GroupKey))
             .ToListAsync(cancellationToken);
     }
 

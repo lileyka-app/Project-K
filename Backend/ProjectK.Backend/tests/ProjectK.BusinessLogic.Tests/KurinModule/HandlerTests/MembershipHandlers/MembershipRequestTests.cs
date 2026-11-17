@@ -78,7 +78,7 @@ public class MembershipRequestTests
         _requests.Setup(r => r.GetPendingFromAsync(_person, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid _, Guid from, CancellationToken _) => _asked.Where(r => r.FromKurinKey == from && r.Status == MembershipRequestStatus.Pending).ToList());
 
-        var summary = new MemberSummary(_person, _account, _kurinA, null, "Назар", "Коваль", "n@x", null);
+        var summary = new MemberSummary(_person, _account, "Назар", "Коваль", "n@x", null);
         _members.Setup(d => d.FindAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(summary);
         _members.Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberCard(_person, Code, "Назар", "Коваль", null, 1));
@@ -531,7 +531,7 @@ public class MembershipRequestTests
         request.FromKurinKey = null;
         _user.SetupGet(u => u.UserId).Returns(_account);
         _members.Setup(d => d.FindByAccountAsync(_account, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_person, _account, _kurinA, null, "Назар", "Коваль", "n@x", null));
+            .ReturnsAsync(new MemberSummary(_person, _account, "Назар", "Коваль", "n@x", null));
         return request;
     }
 

@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AgendaModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.AgendaModule;
@@ -18,7 +17,7 @@ public sealed record GetAgendaItemQuery(Guid AgendaItemKey) : IRequest<ServiceRe
 public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQuery, ServiceResult<AgendaItemDto>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMemberDirectory _members;
+    private readonly IMembershipDirectory _memberships;
     private readonly IOfficeDirectory _offices;
     private readonly IKurinDirectory _kurins;
     private readonly IKurinTagDirectory _tags;
@@ -26,10 +25,10 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
     private readonly ICurrentUserContext _currentUser;
     private readonly UserManager<AppUser> _userManager;
 
-    public GetAgendaItemQueryHandler(IUnitOfWork uow, IMemberDirectory members, IOfficeDirectory offices, IKurinDirectory kurins, IKurinTagDirectory tags, IAgendaAccess access, ICurrentUserContext currentUser, UserManager<AppUser> userManager)
+    public GetAgendaItemQueryHandler(IUnitOfWork uow, IMembershipDirectory memberships, IOfficeDirectory offices, IKurinDirectory kurins, IKurinTagDirectory tags, IAgendaAccess access, ICurrentUserContext currentUser, UserManager<AppUser> userManager)
     {
         _uow = uow;
-        _members = members;
+        _memberships = memberships;
         _offices = offices;
         _kurins = kurins;
         _tags = tags;
@@ -53,7 +52,7 @@ public sealed class GetAgendaItemQueryHandler : IRequestHandler<GetAgendaItemQue
             return AgendaErrors.NotFound<AgendaItemDto>();
         }
 
-        var lookups = await AgendaNames.LoadAsync(_uow, _members, _offices, _kurins, _tags, item.KurinKey, [item], cancellationToken);
+        var lookups = await AgendaNames.LoadAsync(_uow, _memberships, _offices, _kurins, _tags, item.KurinKey, [item], cancellationToken);
         var roster = await AgendaRosterRules.LoadAsync(_offices, _tags, lookups.MemberGroups, [item], cancellationToken);
         var userNames = await AgendaCreatorNames.ResolveAsync(_userManager, lookups.CreatorNames, [item], cancellationToken);
 

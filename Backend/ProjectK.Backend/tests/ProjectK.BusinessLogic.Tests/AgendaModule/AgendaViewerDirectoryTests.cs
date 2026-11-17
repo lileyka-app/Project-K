@@ -46,7 +46,7 @@ public class AgendaViewerDirectoryTests
         memberships.Setup(m => m.GetCurrentForAccountAsync(User, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindByAccountAsync(User, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(Person, User, KurinA, GroupA, "Оксана", "Паливода", "o@x", null));
+            .ReturnsAsync(new MemberSummary(Person, User, "Оксана", "Паливода", "o@x", null));
         var leaderships = new Mock<ILeadershipRepository>();
         leaderships.Setup(l => l.GetActiveLeadershipKeysForMemberAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         var unitOfWork = new Mock<IUnitOfWork>();

@@ -127,8 +127,8 @@ public class GroupProbeEditionHandlerTests
         var members = new Mock<IMemberDirectory>();
         members.Setup(x => x.GetByKeysAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberSummary(held, null, _kurin.KurinKey, _group.GroupKey, "Олесь", "Коваль", "olesj@example.com", null),
-            new MemberSummary(free, null, _kurin.KurinKey, _group.GroupKey, "Ірина", "Бойко", "iryna@example.com", null),
+            new MemberSummary(held, null, "Олесь", "Коваль", "olesj@example.com", null),
+            new MemberSummary(free, null, "Ірина", "Бойко", "iryna@example.com", null),
         ]);
         var access = new Mock<IResourceAccessService>();
         access.Setup(x => x.CheckAccessAsync(ResourceType.GroupProbeEdition, ResourceAction.Update, _group.GroupKey, It.IsAny<CancellationToken>()))
