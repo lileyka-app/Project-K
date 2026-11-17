@@ -8,7 +8,6 @@ using ProjectK.Common.Enums.AuditModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
-using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Common.Rules.KurinModule;
@@ -50,11 +49,8 @@ public sealed class AssignMentorCommandHandler : IRequestHandler<AssignMentorCom
 
         // A person can belong to several kurins, and the summary above names only the newest one.
         // What matters is a membership in this гурток's kurin, wherever else they are.
-        var belongsHere = await _members.GetByKurinAsync(
-            group.KurinKey,
-            new MemberSelection([], [], [request.MentorUserKey]),
-            cancellationToken);
-        if (belongsHere.Count == 0)
+        var belongsHere = await _unitOfWork.Memberships.GetActiveAsync(mentorMember.MemberKey, group.KurinKey, cancellationToken);
+        if (belongsHere is null)
         {
             return ServiceResult<Guid>.Failure(ResultType.Forbidden, KurinErrors.MentorFromAnotherKurin, "Mentor must belong to the same Kurin as the Group.");
         }

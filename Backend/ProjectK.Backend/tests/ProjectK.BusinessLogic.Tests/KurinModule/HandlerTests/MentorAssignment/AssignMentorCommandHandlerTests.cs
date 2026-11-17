@@ -26,6 +26,7 @@ public class AssignMentorCommandHandlerTests
     private readonly Mock<IGroupRepository> _groupRepoMock = new();
     private readonly Mock<IMemberRepository> _memberRepoMock = new();
     private readonly Mock<IMentorAssignmentRepository> _mentorAssignmentRepoMock = new();
+    private readonly Mock<IMembershipRepository> _membershipRepoMock = new();
     private readonly Mock<IBackendCache> _cacheMock = new();
     private readonly Mock<IAccessChangeStore> _accessChanges = new();
     private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
@@ -34,6 +35,7 @@ public class AssignMentorCommandHandlerTests
     {
         _uowMock.SetupGet(x => x.Groups).Returns(_groupRepoMock.Object);
         _uowMock.SetupGet(x => x.MentorAssignments).Returns(_mentorAssignmentRepoMock.Object);
+        _uowMock.SetupGet(x => x.Memberships).Returns(_membershipRepoMock.Object);
         _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
     }
 
@@ -46,9 +48,9 @@ public class AssignMentorCommandHandlerTests
 
     private void BelongsTo(Guid kurinKey, Guid memberKey, Guid userKey)
     {
-        _memberDirectory
-            .Setup(d => d.GetByKurinAsync(kurinKey, It.Is<MemberSelection>(s => s.AccountKeys.Contains(userKey)), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new MemberSummary(memberKey, userKey, kurinKey, null, "A", "B", "a@example.com", null)]);
+        _membershipRepoMock
+            .Setup(r => r.GetActiveAsync(memberKey, kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Membership { MemberKey = memberKey, UserKey = userKey, KurinKey = kurinKey });
     }
 
     [Fact]
@@ -97,9 +99,6 @@ public class AssignMentorCommandHandlerTests
         _memberDirectory
             .Setup(d => d.FindByAccountAsync(mentorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(member.MemberKey, mentorUserKey, Guid.NewGuid(), null, "A", "B", "a@example.com", null));
-        _memberDirectory
-            .Setup(d => d.GetByKurinAsync(kurinKey, It.IsAny<MemberSelection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
         var handler = new AssignMentorCommandHandler(_uowMock.Object, _memberDirectory.Object, _cacheMock.Object, _accessChanges.Object, _journal.Audit);
 
         var result = await handler.Handle(new AssignMentorCommand(mentorUserKey, groupKey), CancellationToken.None);

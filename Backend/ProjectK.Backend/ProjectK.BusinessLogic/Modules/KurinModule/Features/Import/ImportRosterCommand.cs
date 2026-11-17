@@ -237,8 +237,8 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
 
     private async Task<HashSet<Guid>> MemberKeysInKurinAsync(Guid kurinKey, CancellationToken cancellationToken)
     {
-        var summaries = await _members.GetByKurinAsync(kurinKey, cancellationToken);
-        return summaries.Select(summary => summary.MemberKey).ToHashSet();
+        var memberships = await _kurinData.Memberships.GetRecordsInKurinAsync(kurinKey, cancellationToken);
+        return memberships.Where(membership => membership.LeftAtUtc is null).Select(membership => membership.MemberKey).ToHashSet();
     }
 
     /// <summary>

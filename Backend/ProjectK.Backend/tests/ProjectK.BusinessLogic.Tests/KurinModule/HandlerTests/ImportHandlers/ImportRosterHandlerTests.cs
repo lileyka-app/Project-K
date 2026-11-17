@@ -11,6 +11,7 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
 
@@ -34,7 +35,8 @@ public class ImportRosterHandlerTests
     private readonly ImportRosterCommandHandler _handler;
 
     private List<MemberIdentity> _knownPeople = [];
-    private List<MemberSummary> _peopleHere = [];
+    private List<KurinMembershipRecord> _peopleHere = [];
+    private readonly Mock<IMembershipRepository> _memberships = new();
 
     public ImportRosterHandlerTests()
     {
@@ -48,8 +50,9 @@ public class ImportRosterHandlerTests
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _knownPeople);
-        _members.Setup(r => r.GetByKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
+        _memberships.Setup(r => r.GetRecordsInKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _peopleHere);
+        _kurinData.Setup(u => u.Memberships).Returns(_memberships.Object);
 
         _kurinData.Setup(u => u.Kurins).Returns(_kurins.Object);
         _kurinData.Setup(u => u.Groups).Returns(_groups.Object);
@@ -273,7 +276,7 @@ public class ImportRosterHandlerTests
         ];
         _peopleHere =
         [
-            new MemberSummary(memberKey, null, KurinKey, GroupKey, "Іван", "Петренко", "ivan@example.com", null)
+            new KurinMembershipRecord(Guid.NewGuid(), memberKey, GroupKey, MembershipKind.Youth, DateTime.UtcNow, null)
         ];
 
         var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
