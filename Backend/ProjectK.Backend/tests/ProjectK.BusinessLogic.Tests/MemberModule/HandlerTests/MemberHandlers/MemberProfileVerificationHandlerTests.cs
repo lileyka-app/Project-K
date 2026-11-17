@@ -44,10 +44,10 @@ public class MemberProfileVerificationHandlerTests
         _currentUserContextMock = new Mock<ICurrentUserContext>();
         _journal = new JournalRecorder(_currentUserContextMock.Object);
         _eventsMock = new Mock<IDomainEventPublisher>();
-        _scopeReaderMock = new Mock<IResourceScopeRepository>();
+        _scopeReaderMock = ScopeFacts.Repository();
         _scopeReaderMock
-            .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Guid>());
+            .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ScopeFacts.Leading(Array.Empty<Guid>()));
 
         _kurinDataMock.SetupGet(x => x.Memberships).Returns(_membershipsMock.Object);
         _kurinDataMock.SetupGet(x => x.Kurins).Returns(_kurinsMock.Object);
@@ -61,7 +61,9 @@ public class MemberProfileVerificationHandlerTests
             FakeBlobReadLinks.Instance,
             UnitOfWorks.WithScopes(_scopeReaderMock.Object, _kurinDataMock),
             FieldAccess.SeesEverything(),
-            _journal.Audit);
+            _journal.Audit,
+            ScopeFacts.Reader(_scopeReaderMock.Object),
+            KurinDirectories.WithoutGroups());
     }
 
     [Fact]
@@ -207,7 +209,7 @@ public class MemberProfileVerificationHandlerTests
 
         SetupCurrentUser(mentorUserKey, kurinKey, "KV.Vykhovnyk");
         SetupMember(member);
-        _scopeReaderMock.Setup(x => x.GetLedGroupKeysAsync(mentorUserKey, kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(new[] { groupKey });
+        _scopeReaderMock.Setup(x => x.GetLedGroupSourcesAsync(mentorUserKey, kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading(new[] { groupKey }));
         _mentorAssignmentRepoMock
             .Setup(x => x.GetByMentorUserKeyAsync(mentorUserKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MentorAssignmentEntity>

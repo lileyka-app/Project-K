@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -47,7 +48,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IHonoursCatalog _honours;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
-    private readonly IResourceScopeRepository _scope;
+    private readonly IResourceScopeReader _scope;
 
     public UpsertMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -56,9 +57,10 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         IUnitOfWork kurinData,
         IResourceAccessService access,
         IKurinAudit audit,
-        IHonoursCatalog honours)
+        IHonoursCatalog honours,
+        IResourceScopeReader scopeReader)
     {
-        _scope = kurinData.ResourceScopes;
+        _scope = scopeReader;
         _kurins = kurinData.Kurins;
         _honours = honours;
         _unitOfWork = unitOfWork;

@@ -19,7 +19,7 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly ICurrentUserContext _currentUserContext;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly IBlobReadLinks _links;
     private readonly ICurrentPermissions _permissions;
     private readonly IKurinJournalRepository _journal;
@@ -30,12 +30,13 @@ public sealed class GetBadgeReviewQueueQueryHandler : IRequestHandler<GetBadgeRe
         ICurrentUserContext currentUserContext,
         IBlobReadLinks links,
         ICurrentPermissions permissions,
-        IAuditUnitOfWork audit)
+        IAuditUnitOfWork audit,
+        IResourceScopeReader scopeReader)
     {
         _unitOfWork = unitOfWork;
         _members = members;
         _currentUserContext = currentUserContext;
-        _scopeReader = unitOfWork.ResourceScopes;
+        _scopeReader = scopeReader;
         _links = links;
         _permissions = permissions;
         _journal = audit.KurinJournal;

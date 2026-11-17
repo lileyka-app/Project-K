@@ -24,7 +24,7 @@ public sealed class AgendaAccess : IAgendaAccess
 
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentMember _currentMember;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentPermissions _permissions;
     private readonly IKurinTagDirectory _tags;
@@ -37,13 +37,14 @@ public sealed class AgendaAccess : IAgendaAccess
         IResourceAccessService resourceAccess,
         ICurrentPermissions permissions,
         IKurinTagDirectory tags,
-        IOfficeDirectory offices)
+        IOfficeDirectory offices,
+        IResourceScopeReader scopeReader)
     {
         _tags = tags;
         _offices = offices;
         _currentUser = currentUser;
         _currentMember = currentMember;
-        _scopeReader = uow.ResourceScopes;
+        _scopeReader = scopeReader;
         _resourceAccess = resourceAccess;
         _permissions = permissions;
     }

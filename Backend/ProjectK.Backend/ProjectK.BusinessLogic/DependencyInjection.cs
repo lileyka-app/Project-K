@@ -72,6 +72,7 @@ public static class DependencyInjection
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
         services.AddScoped<IKraiProfileDirectory, KraiProfileDirectory>();
         services.AddScoped<IKurinAccessPolicyReader, KurinAccessPolicyReader>();
+        services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
         services.AddScoped<IPermissionResolver, PermissionResolver>();
         services.AddScoped<IAccessSnapshotFactory, AccessSnapshotFactory>();
         services.AddSingleton<IAccessChangeStore, AccessChangeStore>();

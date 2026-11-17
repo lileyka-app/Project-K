@@ -246,7 +246,9 @@ public class KurinArchivePersistenceTests
         var member = await new MemberRepository(read).GetByKeyAsync(_person);
 
         var office = Assert.Single(member!.LeadershipHistories);
-        Assert.Equal("Соколи", office.Leadership.Group?.Name);
-        Assert.Equal(_kurinKey, office.Leadership.Group?.KurinKey);
+        Assert.Equal(_sokoly.GroupKey, office.Leadership.GroupKey);
+        var gurtok = Assert.Single(await new GroupRepository(read).GetByKeysIncludingDissolvedAsync([_sokoly.GroupKey]));
+        Assert.Equal("Соколи", gurtok.Name);
+        Assert.Equal(_kurinKey, gurtok.KurinKey);
     }
 }

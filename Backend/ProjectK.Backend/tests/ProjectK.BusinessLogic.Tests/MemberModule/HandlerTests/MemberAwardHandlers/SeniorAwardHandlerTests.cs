@@ -42,7 +42,7 @@ public class SeniorAwardHandlerTests
     private readonly Mock<IHonoursCatalog> _honours = new();
     private readonly Mock<IMemberDirectory> _directory = new();
     private readonly Mock<IResourceAccessService> _access = new();
-    private readonly Mock<IResourceScopeRepository> _scope = new();
+    private readonly Mock<IResourceScopeRepository> _scope = ScopeFacts.Repository();
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _ownerUserKey = Guid.NewGuid();
     private readonly Member _member;
@@ -86,7 +86,7 @@ public class SeniorAwardHandlerTests
 
     private UpsertMemberAwardCommandHandler Upsert() => new(
         _unitOfWork.Object, _currentUser.Object, _events.Object, UnitOfWorks.WithScopes(_scope.Object, _kurinData), _access.Object,
-        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object);
+        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, ScopeFacts.Reader(_scope.Object));
 
     private DeleteMemberAwardCommandHandler Delete() => new(
         _unitOfWork.Object, _currentUser.Object, _directory.Object, _access.Object,
@@ -200,7 +200,7 @@ public class SeniorAwardHandlerTests
 
         (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.BadRequest);
 
-        _scope.Setup(s => s.StandsInSeniorKurinAsync(ResourceType.Member, _member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _scope.Setup(s => s.GetOpenMembershipBranchesAsync(ResourceType.Member, _member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
         (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.Success);
     }
 

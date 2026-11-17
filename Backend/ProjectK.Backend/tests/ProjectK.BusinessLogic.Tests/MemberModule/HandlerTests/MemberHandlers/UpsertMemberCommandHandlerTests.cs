@@ -47,7 +47,8 @@ public class UpsertMemberHandlerTests
             _accountProvisioningMock.Object,
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            FieldAccess.SeesEverything());
+            FieldAccess.SeesEverything(),
+            KurinDirectories.WithoutGroups());
     }
 
     private Member GivenWrittenMember(bool isCreated, Guid? userKey = null)

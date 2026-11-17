@@ -4,6 +4,8 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Rules.AuthModule;
+using ProjectK.Common.Rules.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
@@ -145,9 +147,9 @@ public class ResourceScopeRepositoryMembershipTests
         await context.SaveChangesAsync();
 
         var ledElsewhere = await new ResourceScopeRepository(context)
-            .GetLedGroupKeysAsync(userKey, otherKurin);
+            .GetLedGroupSourcesAsync(userKey, otherKurin);
 
-        Assert.Empty(ledElsewhere);
+        Assert.Empty(LedGroupRules.LedGroupKeys(ledElsewhere));
     }
 
     /// <summary>
@@ -219,9 +221,9 @@ public class ResourceScopeRepositorySeniorTests
 
         var reader = new ResourceScopeRepository(_context);
 
-        Assert.True(await reader.StandsInSeniorKurinAsync(ResourceType.Member, senior));
-        Assert.False(await reader.StandsInSeniorKurinAsync(ResourceType.Member, formerSenior));
-        Assert.False(await reader.StandsInSeniorKurinAsync(ResourceType.Member, staffInUpyu));
+        Assert.True(SeniorStandingRules.StandsInSeniorKurin(await reader.GetOpenMembershipBranchesAsync(ResourceType.Member, senior)));
+        Assert.False(SeniorStandingRules.StandsInSeniorKurin(await reader.GetOpenMembershipBranchesAsync(ResourceType.Member, formerSenior)));
+        Assert.False(SeniorStandingRules.StandsInSeniorKurin(await reader.GetOpenMembershipBranchesAsync(ResourceType.Member, staffInUpyu)));
     }
 }
 
@@ -251,7 +253,7 @@ public class ResourceScopeRepositoryTwoMembershipsTests
         await context.SaveChangesAsync();
         var reader = new ResourceScopeRepository(context);
 
-        Assert.False(await reader.StandsInSeniorKurinAsync(ResourceType.Member, youth));
-        Assert.True(await reader.StandsInSeniorKurinAsync(ResourceType.Member, staff));
+        Assert.False(SeniorStandingRules.StandsInSeniorKurin(await reader.GetOpenMembershipBranchesAsync(ResourceType.Member, youth)));
+        Assert.True(SeniorStandingRules.StandsInSeniorKurin(await reader.GetOpenMembershipBranchesAsync(ResourceType.Member, staff)));
     }
 }

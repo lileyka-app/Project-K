@@ -12,15 +12,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
-using ProjectK.API.Hosting;
 using ProjectK.API.Filters;
+using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
+using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Services.Caching;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -89,7 +89,7 @@ public class ResourceAuthorizationHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeRepository>();
+            var scopeReader = ScopeFacts.Repository();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(memberKurinKey, null, null));

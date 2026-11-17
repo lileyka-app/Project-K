@@ -51,42 +51,11 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         var member = await Context.Members.AsSplitQuery()
                                      .Include(m => m.PlastLevelHistory)
                                      .Include(m => m.LeadershipHistories)
-                                        .ThenInclude(h => h.Leadership.Group)
+                                        .ThenInclude(h => h.Leadership)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
                                      .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
-        if (member is not null)
-        {
-            await AttachDissolvedGroupsAsync(member, cancellationToken);
-        }
-
         return member;
-    }
-
-    /// <summary>
-    /// The include above passes through the dissolved-гурток filter, so an office held in a гурток
-    /// since dissolved comes back with no гурток — and with it no name and no kurin. The person's
-    /// history keeps them: they are read here past the filter.
-    /// </summary>
-    private async Task AttachDissolvedGroupsAsync(Member member, CancellationToken cancellationToken)
-    {
-        var missing = member.LeadershipHistories
-            .Where(history => history.Leadership.GroupKey is not null && history.Leadership.Group is null)
-            .Select(history => history.Leadership.GroupKey!.Value)
-            .Distinct()
-            .ToList();
-        if (missing.Count == 0)
-        {
-            return;
-        }
-
-        var groups = await Context.Groups.IgnoreQueryFilters()
-            .Where(group => missing.Contains(group.GroupKey))
-            .ToDictionaryAsync(group => group.GroupKey, cancellationToken);
-        foreach (var history in member.LeadershipHistories.Where(history => history.Leadership.GroupKey is not null && history.Leadership.Group is null))
-        {
-            history.Leadership.Group = groups.GetValueOrDefault(history.Leadership.GroupKey!.Value);
-        }
     }
 
     /// <summary>The people currently placed in one гурток.</summary>
@@ -101,7 +70,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
         return await PeopleOf(ActiveMemberships.Where(ms => ms.KurinKey == kurinKey))
                                      .Include(m => m.PlastLevelHistory)
                                      .Include(m => m.LeadershipHistories)
-                                        .ThenInclude(h => h.Leadership.Group)
+                                        .ThenInclude(h => h.Leadership)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
                                      .AsSplitQuery()
@@ -157,7 +126,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                     .Where(h => h.EndDate == null
                         && h.Leadership.EndDate == null
                         && (h.Leadership.KurinKey == x.Placement.KurinKey
-                            || (h.Leadership.GroupKey != null && h.Leadership.Group!.KurinKey == x.Placement.KurinKey)))
+                            || Context.Groups.Any(g => g.GroupKey == h.Leadership.GroupKey && g.KurinKey == x.Placement.KurinKey)))
                     .Select(h => new MemberListOffice(
                         h.LeadershipHistoryKey,
                         h.MemberKey,
@@ -165,7 +134,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                         h.Role,
                         h.Leadership.Type,
                         h.Leadership.KurinKey,
-                        h.Leadership.Group != null ? h.Leadership.Group.Name : null,
+                        Context.Groups.Where(g => g.GroupKey == h.Leadership.GroupKey).Select(g => g.Name).FirstOrDefault(),
                         h.StartDate,
                         h.EndDate,
                         h.Leadership.EndDate))
@@ -359,7 +328,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                               on history.LeadershipKey equals office.LeadershipKey
                           where office.EndDate == null
                               && (office.KurinKey == kurinKey
-                                  || (office.GroupKey != null && office.Group!.KurinKey == kurinKey))
+                                  || Context.Groups.Any(g => g.GroupKey == office.GroupKey && g.KurinKey == kurinKey))
                           orderby office.Type, history.Role
                           select new { office.Type, history.Role }).FirstOrDefault()
             })

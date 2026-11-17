@@ -18,6 +18,10 @@ public sealed class KurinDirectory : IKurinDirectory
         => (await _unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken))
             .ToDictionary(group => group.GroupKey, group => group.Name);
 
+    public async Task<IReadOnlyDictionary<Guid, GroupSummary>> GetGroupsAsync(IReadOnlyCollection<Guid> groupKeys, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.Groups.GetByKeysIncludingDissolvedAsync(groupKeys, cancellationToken))
+            .ToDictionary(group => group.GroupKey, group => new GroupSummary(group.GroupKey, group.KurinKey, group.Name));
+
     public async Task<KurinTaskArchivePolicy?> GetTaskArchivePolicyAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         => await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is { } kurin
             ? new KurinTaskArchivePolicy(kurin.TaskAutoArchiveAfterDays, kurin.TaskArchivePurgeAfterDays)

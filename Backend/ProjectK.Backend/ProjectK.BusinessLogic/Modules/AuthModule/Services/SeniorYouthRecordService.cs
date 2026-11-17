@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
 
@@ -15,10 +15,10 @@ public sealed class SeniorYouthRecordService
     private const string SeniorOwnYouthRecord = "A senior does not enter their own youth record.";
     private const string SeniorYouthRecordKurinWide = "A senior's youth record is changed only by who holds the kurin-wide right where they stand now.";
 
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly ResourceScopeService _scopes;
 
-    public SeniorYouthRecordService(IResourceScopeRepository scopeReader, ResourceScopeService scopes)
+    public SeniorYouthRecordService(IResourceScopeReader scopeReader, ResourceScopeService scopes)
     {
         _scopeReader = scopeReader;
         _scopes = scopes;

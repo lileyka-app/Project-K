@@ -1,4 +1,3 @@
-using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.MemberModule;
 
 namespace ProjectK.Common.Entities.MemberModule;
@@ -13,7 +12,4 @@ public class Leadership
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
-
-    public Kurin? Kurin { get; set; }
-    public Group? Group { get; set; }
 }

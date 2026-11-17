@@ -15,18 +15,19 @@ public sealed class ArchiveReach
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly ICurrentMember _currentMember;
 
     public ArchiveReach(
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
         IUnitOfWork unitOfWork,
-        ICurrentMember currentMember)
+        ICurrentMember currentMember,
+        IResourceScopeReader scopeReader)
     {
         _currentUser = currentUser;
         _permissions = permissions;
-        _scopeReader = unitOfWork.ResourceScopes;
+        _scopeReader = scopeReader;
         _currentMember = currentMember;
     }
 

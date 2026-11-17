@@ -1,5 +1,7 @@
 using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Records.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.Common.Contracts.InfrastructureModule;
 
@@ -23,11 +25,11 @@ public interface IResourceScopeRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Whether the person a resource is about stands in a УСП or УПС kurin now and is no longer a
-    /// юнак anywhere — no open юнацьке membership in an УПЮ kurin. Their probes,
-    /// вмілості and УПЮ відзначення are then a closed youth record, which the rules guard harder.
+    /// The open memberships of the person a resource is about — a person, their data, their progress —
+    /// one row per гілка of each kurin; empty for anything else. Whether they make the person a
+    /// senior is <c>SeniorStandingRules</c>' to say.
     /// </summary>
-    Task<bool> StandsInSeniorKurinAsync(
+    Task<IReadOnlyList<MembershipBranchRow>> GetOpenMembershipBranchesAsync(
         ResourceType resourceType,
         Guid resourceKey,
         CancellationToken cancellationToken = default);
@@ -43,10 +45,11 @@ public interface IResourceScopeRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Groups the user leads in this kurin: active гуртковий offices, explicit mentor assignments
-    /// (legacy) and the group they are a member of. This is the "own groups" scope tier.
+    /// What the user holds over гуртки in this kurin, each source apart: active гуртковий offices,
+    /// mentor assignments in force and the group they are a member of. Which of them the "own groups"
+    /// tier counts is <c>LedGroupRules</c>' to say.
     /// </summary>
-    Task<IReadOnlyCollection<Guid>> GetLedGroupKeysAsync(
+    Task<LedGroupSourcesRow> GetLedGroupSourcesAsync(
         Guid userKey,
         Guid kurinKey,
         CancellationToken cancellationToken = default);

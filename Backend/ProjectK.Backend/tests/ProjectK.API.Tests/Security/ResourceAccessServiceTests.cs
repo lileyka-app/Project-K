@@ -442,7 +442,7 @@ public class ResourceAccessServiceTests
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(
-            x => x.GetLedGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            x => x.GetLedGroupSourcesAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -464,7 +464,7 @@ public class ResourceAccessServiceTests
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(
-            x => x.GetLedGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            x => x.GetLedGroupSourcesAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
             Times.Exactly(2));
     }
 
@@ -484,10 +484,10 @@ public class ResourceAccessServiceTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
 
-        var scopeReader = new Mock<IResourceScopeRepository>();
+        var scopeReader = ScopeFacts.Repository();
         scopeReader
-            .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { groupKey });
+            .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ScopeFacts.Leading(new[] { groupKey }));
 
         var cache = new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), NullLogger<MemoryBackendCache>.Instance);
         var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object), currentUserContext.Object, cache, new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
@@ -521,15 +521,15 @@ public class ResourceAccessServiceTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
 
-        var scopeReader = new Mock<IResourceScopeRepository>();
+        var scopeReader = ScopeFacts.Repository();
         scopeReader
             .Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ResourceScope?)null);
 
         // A mentor covers the group they belong to unless a test says otherwise.
         scopeReader
-            .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>());
+            .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ScopeFacts.Leading(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>()));
 
         var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object), currentUserContext.Object, new PassThroughBackendCache(), new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
         return new ResourceAccessFixture(service, scopeReader);
@@ -568,8 +568,8 @@ public class ResourceAccessServiceTests
         public void MentorGroups(params Guid[] groupKeys)
         {
             ScopeReader
-                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(groupKeys);
+                .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ScopeFacts.Leading(groupKeys));
         }
     }
 }

@@ -1,13 +1,13 @@
+using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Enums.AuthModule;
+using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Rules.AuthModule;
 using ProjectK.Common.Rules.KurinModule;
-using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Contracts.KurinModule;
-using ProjectK.Common.Dtos.MemberModule;
-using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -21,19 +21,20 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly IBackendCache _cache;
 
     public KurinTagVisibility(
         IUnitOfWork unitOfWork,
         ICurrentUserContext currentUser,
         ICurrentPermissions permissions,
-        IBackendCache cache)
+        IBackendCache cache,
+        IResourceScopeReader scopeReader)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _permissions = permissions;
-        _scopeReader = unitOfWork.ResourceScopes;
+        _scopeReader = scopeReader;
         _cache = cache;
     }
 

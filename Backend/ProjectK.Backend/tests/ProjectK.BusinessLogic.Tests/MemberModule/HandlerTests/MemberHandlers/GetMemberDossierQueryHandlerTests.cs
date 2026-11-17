@@ -210,5 +210,5 @@ public class GetMemberDossierHandlerTests
     }
 
     private GetMemberDossierQueryHandler Handler(IMemberFieldAccess fieldAccess) => new(
-        _uow.Object, _memberships.Object, _progress.Object, FakeBlobReadLinks.Instance, fieldAccess, _currentUser.Object);
+        _uow.Object, _memberships.Object, _progress.Object, FakeBlobReadLinks.Instance, fieldAccess, _currentUser.Object, KurinDirectories.WithoutGroups());
 }

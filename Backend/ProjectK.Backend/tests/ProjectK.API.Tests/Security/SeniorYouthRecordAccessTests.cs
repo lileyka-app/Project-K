@@ -38,12 +38,12 @@ public class SeniorYouthRecordAccessTests
         user.SetupGet(x => x.Roles).Returns([role]);
         user.Setup(x => x.IsInRole(It.IsAny<string>())).Returns((string candidate) => candidate == role);
 
-        var reader = new Mock<IResourceScopeRepository>();
+        var reader = ScopeFacts.Repository();
         reader.Setup(x => x.GetScopeAsync(ResourceType.Member, _memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(inKurin ? new ResourceScope(_kurinKey, _groupKey, _ownerUserKey) : null);
         reader.Setup(x => x.GetPersonAccountKeyAsync(ResourceType.Member, _memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(_ownerUserKey);
-        reader.Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([_groupKey]);
-        reader.Setup(x => x.StandsInSeniorKurinAsync(It.IsAny<ResourceType>(), _memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(senior);
+        reader.Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([_groupKey]));
+        reader.Setup(x => x.GetOpenMembershipBranchesAsync(It.IsAny<ResourceType>(), _memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(senior));
 
         var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == reader.Object), user.Object, new PassThroughCache(), new CurrentPermissions(user.Object, new FixedKurinAccessPolicyProvider()));
         return (service, reader);
@@ -144,8 +144,8 @@ public class SeniorYouthRecordAccessTests
         permissions.Setup(p => p.WidestScopeAsync(ResourceType.MemberAward, ResourceAction.Update, It.IsAny<CancellationToken>())).ReturnsAsync(AccessScope.KurinWide);
         permissions.Setup(p => p.ReachAsync(KurinCapability.ConfirmAward1, It.IsAny<CancellationToken>())).ReturnsAsync(CapabilityReach.Kurin);
         permissions.Setup(p => p.ReachAsync(KurinCapability.ConfirmAward4, It.IsAny<CancellationToken>())).ReturnsAsync(CapabilityReach.OwnGroup);
-        var reader = new Mock<IResourceScopeRepository>();
-        reader.Setup(x => x.StandsInSeniorKurinAsync(It.IsAny<ResourceType>(), _memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var reader = ScopeFacts.Repository();
+        reader.Setup(x => x.GetOpenMembershipBranchesAsync(It.IsAny<ResourceType>(), _memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
         var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == reader.Object), user.Object, new PassThroughCache(), permissions.Object);
 
         var first = await service.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, _memberKey, capability: KurinCapability.ConfirmAward1);

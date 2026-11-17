@@ -39,7 +39,7 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
 {
     private readonly ICurrentUserContext _currentUser;
     private readonly ICurrentPermissions _permissions;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly ICurrentMember _currentMember;
     private readonly IKurinJournalRepository _journal;
     private readonly IProbesCatalogReader _probes;
@@ -52,11 +52,12 @@ public sealed class GetKurinJournalQueryHandler : IRequestHandler<GetKurinJourna
         ICurrentMember currentMember,
         IAuditUnitOfWork audit,
         IProbesCatalogReader probes,
-        IBadgesCatalogReader badges)
+        IBadgesCatalogReader badges,
+        IResourceScopeReader scopeReader)
     {
         _currentUser = currentUser;
         _permissions = permissions;
-        _scopeReader = unitOfWork.ResourceScopes;
+        _scopeReader = scopeReader;
         _currentMember = currentMember;
         _journal = audit.KurinJournal;
         _probes = probes;

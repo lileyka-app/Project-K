@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
@@ -78,7 +79,8 @@ public class MemberAwardHandlerTests
             UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), _kurinDataMock),
             _access.Object,
             _journal.Audit,
-            _honours.Object);
+            _honours.Object,
+            Mock.Of<IResourceScopeReader>());
         _reviewHandler = new ReviewMemberAwardCommandHandler(
             _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,

@@ -31,6 +31,7 @@ public sealed class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQ
     private readonly IMentorAssignmentRepository _mentorAssignments;
     private readonly IAccountProvisioningService _accounts;
     private readonly IKurinTagVisibility _tagVisibility;
+    private readonly IKurinDirectory _kurins;
 
     public GetMemberByKeyQueryHandler(
         IMemberUnitOfWork unitOfWork,
@@ -40,8 +41,10 @@ public sealed class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQ
         IResourceAccessService resourceAccess,
         IUnitOfWork kurinData,
         IAccountProvisioningService accounts,
-        IKurinTagVisibility tagVisibility)
+        IKurinTagVisibility tagVisibility,
+        IKurinDirectory kurins)
     {
+        _kurins = kurins;
         _accounts = accounts;
         _tagVisibility = tagVisibility;
         _unitOfWork = unitOfWork;
@@ -65,7 +68,8 @@ public sealed class GetMemberByKeyQueryHandler : IRequestHandler<GetMemberByKeyQ
         var here = placement.FirstOrDefault(m => m.KurinKey == _currentUserContext.KurinKey)
             ?? placement.FirstOrDefault();
 
-        var memberResponse = member.ToDto(_links);
+        var officeGroups = await _kurins.GetGroupsAsync(MemberMapping.OfficeGroupKeys(member), cancellationToken);
+        var memberResponse = member.ToDto(_links, officeGroups);
         memberResponse.KurinKey = here?.KurinKey ?? Guid.Empty;
         memberResponse.GroupKey = here?.GroupKey ?? Guid.Empty;
 

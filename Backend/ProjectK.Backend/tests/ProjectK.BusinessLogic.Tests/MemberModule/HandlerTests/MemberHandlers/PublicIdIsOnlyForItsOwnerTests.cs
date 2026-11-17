@@ -96,6 +96,7 @@ public class PublicIdIsOnlyForItsOwnerTests
             access.Object,
             _kurinData.Object,
             new Mock<ProjectK.Common.Contracts.AuthModule.IAccountProvisioningService>().Object,
-            Mock.Of<IKurinTagVisibility>());
+            Mock.Of<IKurinTagVisibility>(),
+            KurinDirectories.WithoutGroups());
     }
 }

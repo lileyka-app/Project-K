@@ -31,6 +31,19 @@ public class GroupRepository : BaseEntityRepository<Group>, IGroupRepository
         return await Context.Groups.Where(g => g.KurinKey == kurinKey).Include(g => g.Kurin).AsNoTracking().ToListAsync(token);
     }
 
+    public async Task<IReadOnlyList<Group>> GetByKeysIncludingDissolvedAsync(IReadOnlyCollection<Guid> groupKeys, CancellationToken cancellationToken = default)
+    {
+        if (groupKeys.Count == 0)
+        {
+            return [];
+        }
+
+        return await Context.Groups.IgnoreQueryFilters()
+            .Where(g => groupKeys.Contains(g.GroupKey))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public override void Update(Group group, CancellationToken cancellationToken = default)
     {
         Context.Groups.Update(group);

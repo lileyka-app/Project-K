@@ -105,12 +105,7 @@ public class ModuleBoundaryRules
     /// The navigations across a module boundary still standing, one by one, with the module they reach.
     /// The list only gets shorter.
     /// </summary>
-    private static readonly string[] NavigatesIntoAnotherModule =
-    [
-        "ProjectK.Common.Entities.KurinModule.Group.Leadership -> MemberModule",
-        "ProjectK.Common.Entities.MemberModule.Leadership.Group -> KurinModule",
-        "ProjectK.Common.Entities.MemberModule.Leadership.Kurin -> KurinModule",
-    ];
+    private static readonly string[] NavigatesIntoAnotherModule = [];
 
     /// <summary>
     /// An entity holds another module's entity by key, never by navigation: the navigation is a hidden

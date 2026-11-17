@@ -25,7 +25,8 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 /// </remarks>
 public class ResourceAccessService : IResourceAccessService
 {
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeRepository _scopeRepository;
+    private readonly ResourceScopeReader _scopeReader;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly ICurrentPermissions _permissions;
     private readonly ResourceScopeService _scopes;
@@ -37,10 +38,11 @@ public class ResourceAccessService : IResourceAccessService
         IBackendCache cache,
         ICurrentPermissions permissions)
     {
-        _scopeReader = unitOfWork.ResourceScopes;
+        _scopeRepository = unitOfWork.ResourceScopes;
+        _scopeReader = new ResourceScopeReader(unitOfWork);
         _currentUserContext = currentUserContext;
         _permissions = permissions;
-        _scopes = new ResourceScopeService(_scopeReader, currentUserContext, cache);
+        _scopes = new ResourceScopeService(_scopeRepository, _scopeReader, currentUserContext, cache);
         _seniorYouthRecord = new SeniorYouthRecordService(_scopeReader, _scopes);
     }
 
@@ -169,7 +171,7 @@ public class ResourceAccessService : IResourceAccessService
             return reachable;
         }
 
-        var scope = await _scopeReader.GetScopeAsync(scopeResourceType, scopeResourceKey, currentKurinKey, cancellationToken);
+        var scope = await _scopeRepository.GetScopeAsync(scopeResourceType, scopeResourceKey, currentKurinKey, cancellationToken);
         if (scope is null || scope.KurinKey != currentKurinKey)
         {
             return reachable;

@@ -182,7 +182,7 @@ public class ProgressTrailTests
 
         var result = await new GetBadgeReviewQueueQueryHandler(
                 UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), unitOfWork), members.Object, user.Object, FakeBlobReadLinks.Instance,
-                permissions.Object, journal.Reader)
+                permissions.Object, journal.Reader, Mock.Of<IResourceScopeReader>())
             .Handle(new GetBadgeReviewQueueQuery(_kurinKey), CancellationToken.None);
 
         var read = Assert.Single(journal.SubjectReads);

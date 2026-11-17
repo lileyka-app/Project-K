@@ -18,17 +18,17 @@ public sealed class ResourceAccessPartsTests
     private readonly Guid _groupKey = Guid.NewGuid();
     private readonly Guid _userKey = Guid.NewGuid();
     private readonly Guid _resourceKey = Guid.NewGuid();
-    private readonly Mock<IResourceScopeRepository> _reader = new();
+    private readonly Mock<IResourceScopeRepository> _reader = ScopeFacts.Repository();
     private readonly Mock<ICurrentUserContext> _user = new();
 
     public ResourceAccessPartsTests()
     {
         _user.SetupGet(u => u.KurinKey).Returns(_kurinKey);
         _user.SetupGet(u => u.UserId).Returns(_userKey);
-        _reader.Setup(r => r.GetLedGroupKeysAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([_groupKey]);
+        _reader.Setup(r => r.GetLedGroupSourcesAsync(_userKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading([_groupKey]));
     }
 
-    private ResourceScopeService Scopes() => new(_reader.Object, _user.Object, new PassThroughBackendCache());
+    private ResourceScopeService Scopes() => new(_reader.Object, ScopeFacts.Reader(_reader.Object), _user.Object, new PassThroughBackendCache());
 
     private void ResourceIn(Guid kurinKey, Guid? groupKey, Guid? ownerUserKey) =>
         _reader.Setup(r => r.GetScopeAsync(ResourceType.Member, _resourceKey, _kurinKey, It.IsAny<CancellationToken>()))
@@ -74,13 +74,13 @@ public sealed class ResourceAccessPartsTests
     [Fact]
     public async Task SeniorGuard_LetsANonSeniorThrough_AndKeepsASeniorsProbesAnArchive()
     {
-        var guard = new SeniorYouthRecordService(_reader.Object, Scopes());
-        _reader.Setup(r => r.StandsInSeniorKurinAsync(ResourceType.Member, _resourceKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var guard = new SeniorYouthRecordService(ScopeFacts.Reader(_reader.Object), Scopes());
+        _reader.Setup(r => r.GetOpenMembershipBranchesAsync(ResourceType.Member, _resourceKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(false));
 
         (await guard.RefusalAsync(ResourceType.ProbeProgress, AccessScope.KurinWide, ResourceType.Member, _resourceKey, ownerMayChange: false, default))
             .Should().BeNull();
 
-        _reader.Setup(r => r.StandsInSeniorKurinAsync(ResourceType.Member, _resourceKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _reader.Setup(r => r.GetOpenMembershipBranchesAsync(ResourceType.Member, _resourceKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
         (await guard.RefusalAsync(ResourceType.ProbeProgress, AccessScope.KurinWide, ResourceType.Member, _resourceKey, ownerMayChange: false, default))!
             .IsAllowed.Should().BeFalse();
         (await guard.RefusalAsync(ResourceType.BadgeProgress, AccessScope.KurinWide, ResourceType.Member, _resourceKey, ownerMayChange: false, default))
@@ -92,8 +92,8 @@ public sealed class ResourceAccessPartsTests
     [Fact]
     public async Task SeniorGuard_LetsTheOwnerChangeWhatTheyMay_AndNothingElse()
     {
-        var guard = new SeniorYouthRecordService(_reader.Object, Scopes());
-        _reader.Setup(r => r.StandsInSeniorKurinAsync(ResourceType.Member, _resourceKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var guard = new SeniorYouthRecordService(ScopeFacts.Reader(_reader.Object), Scopes());
+        _reader.Setup(r => r.GetOpenMembershipBranchesAsync(ResourceType.Member, _resourceKey, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
         _reader.Setup(r => r.GetPersonAccountKeyAsync(ResourceType.Member, _resourceKey, It.IsAny<CancellationToken>())).ReturnsAsync(_userKey);
 
         (await guard.RefusalAsync(ResourceType.Member, AccessScope.Own, ResourceType.Member, _resourceKey, ownerMayChange: true, default))

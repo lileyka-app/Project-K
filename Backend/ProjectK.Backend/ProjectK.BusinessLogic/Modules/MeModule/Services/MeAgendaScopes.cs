@@ -1,4 +1,4 @@
-using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Records.AgendaModule;
@@ -18,7 +18,7 @@ public sealed class MeAgendaScopes
     private readonly IMembershipDirectory _memberships;
     private readonly IMemberDirectory _members;
     private readonly IOfficeDirectory _offices;
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly IUnitOfWork _unitOfWork;
 
     public MeAgendaScopes(
@@ -26,13 +26,14 @@ public sealed class MeAgendaScopes
         IMembershipDirectory memberships,
         IMemberDirectory members,
         IOfficeDirectory offices,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IResourceScopeReader scopeReader)
     {
         _currentMember = currentMember;
         _memberships = memberships;
         _members = members;
         _offices = offices;
-        _scopeReader = unitOfWork.ResourceScopes;
+        _scopeReader = scopeReader;
         _unitOfWork = unitOfWork;
     }
 

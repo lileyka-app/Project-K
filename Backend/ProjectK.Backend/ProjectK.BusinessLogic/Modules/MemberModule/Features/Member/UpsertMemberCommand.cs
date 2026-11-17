@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.MemberModule;
@@ -63,6 +64,7 @@ public sealed class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCom
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IDomainEventPublisher _events;
     private readonly IMemberFieldAccess _fieldAccess;
+    private readonly IKurinDirectory _kurins;
 
     public UpsertMemberCommandHandler(
         IMediator mediator,
@@ -71,8 +73,10 @@ public sealed class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCom
         IAccountProvisioningService accountProvisioning,
         ICurrentUserContext currentUserContext,
         IDomainEventPublisher events,
-        IMemberFieldAccess fieldAccess)
+        IMemberFieldAccess fieldAccess,
+        IKurinDirectory kurins)
     {
+        _kurins = kurins;
         _fieldAccess = fieldAccess;
         _mediator = mediator;
         _unitOfWork = unitOfWork;
@@ -177,7 +181,8 @@ public sealed class UpsertMemberCommandHandler : IRequestHandler<UpsertMemberCom
         }
 
         // The writer is answered like any reader: what they may not see stays kept, and unsaid.
-        var response = member.ToDto(_links)
+        var officeGroups = await _kurins.GetGroupsAsync(MemberMapping.OfficeGroupKeys(member), cancellationToken);
+        var response = member.ToDto(_links, officeGroups)
             .MaskFor(await _fieldAccess.ForViewerAsync(cancellationToken), profile.Data.GroupKey);
         response.InvitationSent = invitationSent;
 

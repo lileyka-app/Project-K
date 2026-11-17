@@ -43,7 +43,7 @@ public class MemberCardsTests
     private readonly Mock<IMemberCardShareRepository> _shares = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<ICardTokenSigner> _signer = new();
-    private readonly Mock<IResourceScopeRepository> _scope = new();
+    private readonly Mock<IResourceScopeRepository> _scope = ScopeFacts.Repository();
     private readonly Mock<IHonoursCatalog> _honours = new();
     private readonly List<KurinCardSharing> _settings = [];
     private readonly List<Membership> _standing = [];
@@ -83,7 +83,8 @@ public class MemberCardsTests
         new FakeBlobReadLinks(),
         _honours.Object,
         Options.Create(new EmailOptions { BaseUrl = "https://lileyka.test" }),
-        new FixedTimeProvider(Now));
+        new FixedTimeProvider(Now),
+        ScopeFacts.Reader(_scope.Object));
 
     private ReadCheckedCardQueryHandler Checked() => new(Cards(), _signer.Object, new FixedTimeProvider(Now));
 
@@ -232,7 +233,7 @@ public class MemberCardsTests
     {
         Born(25);
         Earned();
-        _scope.Setup(s => s.StandsInSeniorKurinAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _scope.Setup(s => s.GetOpenMembershipBranchesAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
 
         var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
 
@@ -244,7 +245,7 @@ public class MemberCardsTests
     {
         Born(25);
         Earned();
-        _scope.Setup(s => s.StandsInSeniorKurinAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _scope.Setup(s => s.GetOpenMembershipBranchesAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Standing(true));
 
         var card = await Cards().ReadAsync(_person, CardField.Awards | CardField.AwardsHistory, null, default);
 

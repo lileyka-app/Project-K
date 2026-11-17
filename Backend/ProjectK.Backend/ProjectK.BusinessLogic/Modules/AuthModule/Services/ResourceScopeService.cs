@@ -1,4 +1,5 @@
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.AuthModule;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Enums.AuthModule;
 using ProjectK.Common.Records.InfrastructureModule;
@@ -12,15 +13,18 @@ namespace ProjectK.BusinessLogic.Modules.AuthModule.Services;
 /// </summary>
 public sealed class ResourceScopeService
 {
-    private readonly IResourceScopeRepository _scopeReader;
+    private readonly IResourceScopeRepository _scopeRepository;
+    private readonly IResourceScopeReader _scopeReader;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IBackendCache _cache;
 
     public ResourceScopeService(
-        IResourceScopeRepository scopeReader,
+        IResourceScopeRepository scopeRepository,
+        IResourceScopeReader scopeReader,
         ICurrentUserContext currentUserContext,
         IBackendCache cache)
     {
+        _scopeRepository = scopeRepository;
         _scopeReader = scopeReader;
         _currentUserContext = currentUserContext;
         _cache = cache;
@@ -34,7 +38,7 @@ public sealed class ResourceScopeService
             return false;
         }
 
-        return await _scopeReader.GetPersonAccountKeyAsync(resourceType, resourceKey, cancellationToken) == userKey;
+        return await _scopeRepository.GetPersonAccountKeyAsync(resourceType, resourceKey, cancellationToken) == userKey;
     }
 
     /// <summary>
@@ -53,7 +57,7 @@ public sealed class ResourceScopeService
             return ResourceAccessDecision.Deny("Current user does not have kurin scope claim.");
         }
 
-        var scope = await _scopeReader.GetScopeAsync(scopeResourceType, scopeResourceKey, currentKurinKey.Value, cancellationToken);
+        var scope = await _scopeRepository.GetScopeAsync(scopeResourceType, scopeResourceKey, currentKurinKey.Value, cancellationToken);
         if (scope is null)
         {
             return ResourceAccessDecision.Deny("Resource was not found or has no resolvable scope.");

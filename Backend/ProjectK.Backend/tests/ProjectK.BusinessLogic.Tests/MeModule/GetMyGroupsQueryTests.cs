@@ -1,9 +1,9 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Groups;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
-using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Contracts.InfrastructureModule;
 using ProjectK.Common.Contracts.KurinModule;
@@ -48,8 +48,8 @@ public class GetMyGroupsQueryTests
             .ReturnsAsync(new MemberSummary(Person, User, Kurin, ownGroup, "Оксана", "Паливода", "o@x", null));
         members.Setup(m => m.GetLevelsAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
-        var scopes = new Mock<IResourceScopeRepository>();
-        scopes.Setup(s => s.GetLedGroupKeysAsync(User, Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(led);
+        var scopes = ScopeFacts.Repository();
+        scopes.Setup(s => s.GetLedGroupSourcesAsync(User, Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(ScopeFacts.Leading(led));
 
         var groups = new Mock<IGroupRepository>();
         groups.Setup(g => g.GetAllAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([_other, _led, _own]);
@@ -64,7 +64,7 @@ public class GetMyGroupsQueryTests
             .ReturnsAsync(holdsOffice ? [new MemberOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy)] : []);
 
         return new GetMyGroupsQueryHandler(
-            new CurrentMember(user.Object, members.Object, memberships.Object), offices.Object, UnitOfWorks.WithScopes(scopes.Object, unitOfWork), links.Object, user.Object);
+            new CurrentMember(user.Object, members.Object, memberships.Object), offices.Object, UnitOfWorks.WithScopes(scopes.Object, unitOfWork), links.Object, user.Object, ScopeFacts.Reader(scopes.Object));
     }
 
     [Fact]
