@@ -184,9 +184,8 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         project.StartsOn = input.StartsOn;
         project.EndsOn = input.EndsOn;
         project.Location = input.Location;
-        project.EventLeads = input.EventLeads;
-        project.CoordinatorName = input.CoordinatorName;
-        project.CoordinatorContact = input.CoordinatorContact;
+        project.CommandantName = input.CommandantName;
+        project.CommandantContact = input.CommandantContact;
         project.Description = input.Description!;
         project.Goal = input.Goal!;
         project.Plan = input.Plan!;
@@ -198,9 +197,8 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         Title = input.Title?.Trim() ?? string.Empty,
         SharedWith = TextRules.TrimOrNull(input.SharedWith),
         Location = TextRules.TrimOrNull(input.Location),
-        EventLeads = TextRules.TrimOrNull(input.EventLeads),
-        CoordinatorName = TextRules.TrimOrNull(input.CoordinatorName),
-        CoordinatorContact = TextRules.TrimOrNull(input.CoordinatorContact),
+        CommandantName = TextRules.TrimOrNull(input.CommandantName),
+        CommandantContact = TextRules.TrimOrNull(input.CommandantContact),
         Description = input.Description?.Trim() ?? string.Empty,
         Goal = input.Goal?.Trim() ?? string.Empty,
         Plan = input.Plan?.Trim() ?? string.Empty,
@@ -218,7 +216,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             return (ProbesAndBadgesErrors.TitleRequired, "A project needs a title.");
         }
 
-        if (new[] { input.Title, input.SharedWith, input.Location, input.EventLeads, input.CoordinatorName, input.CoordinatorContact }
+        if (new[] { input.Title, input.SharedWith, input.Location, input.CommandantName, input.CommandantContact }
             .Any(text => text?.Length > shortText))
         {
             return (ProbesAndBadgesErrors.FieldTooLong, $"Short fields hold at most {shortText} characters.");

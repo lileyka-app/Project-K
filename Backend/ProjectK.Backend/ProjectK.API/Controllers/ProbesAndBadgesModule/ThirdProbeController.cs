@@ -111,7 +111,7 @@ public class ThirdProbeController : ControllerBase
     {
         var stages = new ThirdProbeStagesInput(
             request.MotivationLetterOn, request.SelfReflectionOn, request.ApplicationSubmittedOn, request.OpenedOn,
-            request.CompletedOn, request.NamedOn, request.ArchivedOn);
+            request.RecommendedOn, request.ClosingSubmittedOn, request.NamedOn, request.FrozenOn, request.ArchivedOn);
         return (await _mediator.Send(new SetThirdProbeStagesCommand(memberKey, probeId, stages), cancellationToken)).ToActionResult(this);
     }
 
@@ -266,7 +266,7 @@ public class ThirdProbeController : ControllerBase
         SignAsync(memberKey, probeId, ThirdProbeSignPart.ProjectApproval, false, projectKey, null, cancellationToken);
 
     /// <summary>
-    /// «Успішно виконав»: the project is done, with what its coordinator said.
+    /// «Успішно виконав»: the project is done, with what its комендант said.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("projects/{projectKey:guid}/completion")]
@@ -281,7 +281,7 @@ public class ThirdProbeController : ControllerBase
         Guid projectKey,
         [FromBody] CompleteProbeProjectRequest? request,
         CancellationToken cancellationToken) =>
-        SignAsync(memberKey, probeId, ThirdProbeSignPart.ProjectCompletion, true, projectKey, request?.CoordinatorComment, cancellationToken);
+        SignAsync(memberKey, probeId, ThirdProbeSignPart.ProjectCompletion, true, projectKey, request?.CommandantComment, cancellationToken);
 
     /// <summary>
     /// Takes the completion back.
@@ -339,9 +339,8 @@ public class ThirdProbeController : ControllerBase
         request.StartsOn,
         request.EndsOn,
         request.Location,
-        request.EventLeads,
-        request.CoordinatorName,
-        request.CoordinatorContact,
+        request.CommandantName,
+        request.CommandantContact,
         request.Description,
         request.Goal,
         request.Plan,

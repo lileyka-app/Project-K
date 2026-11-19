@@ -66,10 +66,9 @@
             @if (item.reach.length) { <dt>Корисний для</dt><dd>{{ item.reach.join(', ') }}</dd> }
             @if (item.dates) { <dt>Коли</dt><dd>{{ item.dates }}</dd> }
             @if (item.project.location) { <dt>Де</dt><dd>{{ item.project.location }}</dd> }
-            @if (item.project.eventLeads) { <dt>Провід заходу</dt><dd>{{ item.project.eventLeads }}</dd> }
-            @if (item.project.coordinatorName || item.project.coordinatorContact) {
-            <dt>Координатор</dt>
-            <dd>{{ item.project.coordinatorName || 'без імені' }}@if (item.project.coordinatorContact) { · {{ item.project.coordinatorContact }} }</dd>
+            @if (item.project.commandantName || item.project.commandantContact) {
+            <dt>Комендант</dt>
+            <dd>{{ item.project.commandantName || 'без імені' }}@if (item.project.commandantContact) { · {{ item.project.commandantContact }} }</dd>
             }
             @if (item.project.isShared && item.project.sharedWith) { <dt>Разом з</dt><dd>{{ item.project.sharedWith }}</dd> }
         </dl>
@@ -90,8 +89,8 @@
             }
             @if (item.project.completedAtUtc) {
             <p><span class="pi pi-check-circle" aria-hidden="true"></span> Успішно виконано: {{ item.project.completedByName || 'провід' }}</p>
-            @if (item.project.coordinatorComment) {
-            <blockquote class="project-comment">«{{ item.project.coordinatorComment }}» — координатор</blockquote>
+            @if (item.project.commandantComment) {
+            <blockquote class="project-comment">«{{ item.project.commandantComment }}» — комендант</blockquote>
             }
             }
         </div>
@@ -164,12 +163,12 @@
     <div class="project-field-row">
         <div class="project-field">
             <label for="project-start">Дата початку</label>
-            <p-datepicker inputId="project-start" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+            <p-datepicker inputId="project-start" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
                 [ngModel]="startsOn()" (ngModelChange)="startsOn.set($event)" />
         </div>
         <div class="project-field">
             <label for="project-end">Дата закінчення</label>
-            <p-datepicker inputId="project-end" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+            <p-datepicker inputId="project-end" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
                 [minDate]="startsOn()" [ngModel]="endsOn()" (ngModelChange)="endsOn.set($event)" />
         </div>
     </div>
@@ -183,24 +182,19 @@
 
     <div class="project-field-row">
         <div class="project-field">
-            <label for="project-leads">Провід заходу</label>
-            <input pInputText id="project-leads" class="w-full" [attr.maxlength]="200"
-                [ngModel]="eventLeads()" (ngModelChange)="eventLeads.set($event)" />
-        </div>
-        <div class="project-field">
-            <label for="project-coordinator">Координатор / комендант</label>
-            <input pInputText id="project-coordinator" class="w-full" [attr.maxlength]="200"
+            <label for="project-commandant">Комендант</label>
+            <input pInputText id="project-commandant" class="w-full" [attr.maxlength]="200"
                 placeholder="Хто курує проєкт і дає рекомендацію"
-                [ngModel]="coordinatorName()" (ngModelChange)="coordinatorName.set($event)" />
+                [ngModel]="commandantName()" (ngModelChange)="commandantName.set($event)" />
         </div>
         <div class="project-field">
-            <label for="project-coordinator-contact">Контакт координатора</label>
-            <input pInputText id="project-coordinator-contact" class="w-full" [attr.maxlength]="200"
+            <label for="project-commandant-contact">Контакт коменданта</label>
+            <input pInputText id="project-commandant-contact" class="w-full" [attr.maxlength]="200"
                 placeholder="Телефон чи пошта"
-                [ngModel]="coordinatorContact()" (ngModelChange)="coordinatorContact.set($event)" />
+                [ngModel]="commandantContact()" (ngModelChange)="commandantContact.set($event)" />
         </div>
     </div>
-    <p class="projects-muted project-hint">Координатором може бути й не пластун: тренер, майстер, учитель.</p>
+    <p class="projects-muted project-hint">Комендант — повнолітній; може бути й не пластун: тренер, майстер, учитель.</p>
 
     <div class="project-field project-field--inline">
         <p-checkbox inputId="project-shared" [binary]="true" [ngModel]="isShared()" (ngModelChange)="isShared.set($event)" />
@@ -263,11 +257,11 @@
 
 <p-dialog header="Проєкт виконано" [visible]="!!completing()" (visibleChange)="!$event && completing.set(null)"
     [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 32rem)' }" styleClass="probe-project-dialog">
-    <p class="projects-muted project-hint">«{{ completing()?.title }}». Перепиши коментар координатора, якщо він його дав.</p>
+    <p class="projects-muted project-hint">«{{ completing()?.title }}». Перепиши коментар коменданта, якщо він його дав.</p>
     <div class="project-field">
-        <label for="coordinator-comment">Коментар координатора</label>
-        <textarea pTextarea id="coordinator-comment" rows="4" class="w-full" maxlength="2000"
-            [ngModel]="coordinatorComment()" (ngModelChange)="coordinatorComment.set($event)"></textarea>
+        <label for="commandant-comment">Коментар коменданта</label>
+        <textarea pTextarea id="commandant-comment" rows="4" class="w-full" maxlength="2000"
+            [ngModel]="commandantComment()" (ngModelChange)="commandantComment.set($event)"></textarea>
     </div>
     <ng-template #footer>
         <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="completing.set(null)" />
@@ -287,8 +281,9 @@
         </span>
         }
     </div>
+    @if (swapError(); as message) { <p class="project-error" role="alert">{{ message }}</p> }
     <ng-template #footer>
         <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="swapping.set(null)" />
-        <p-button label="Поміняти" icon="pi pi-arrow-right-arrow-left" [disabled]="!swapWith()" (onClick)="swap()" />
+        <p-button label="Поміняти" icon="pi pi-arrow-right-arrow-left" [disabled]="!swapWith()" [loading]="swapBusy()" (onClick)="swap()" />
     </ng-template>
 </p-dialog>

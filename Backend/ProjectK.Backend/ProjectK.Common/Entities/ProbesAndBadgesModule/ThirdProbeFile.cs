@@ -53,14 +53,18 @@ public class ThirdProbeFile : Entity
     /// <summary>
     /// The stages a referent of the third probe tracks, each the day it happened. Opening: the
     /// motivation letter (a plan of the probe; asked of a 15-year-old), the self-reflection, the
-    /// application sent to the край, the day the probe opened. Closing: done, named, archived.
+    /// application sent to the край, the day the probe opened. Closing: recommended by the старшина,
+    /// submitted for closing, named. Aside from that path: frozen, and archived — a probe that
+    /// stopped somewhere and never reached the naming.
     /// </summary>
     public DateOnly? MotivationLetterOn { get; set; }
     public DateOnly? SelfReflectionOn { get; set; }
     public DateOnly? ApplicationSubmittedOn { get; set; }
     public DateOnly? OpenedOn { get; set; }
-    public DateOnly? CompletedOn { get; set; }
+    public DateOnly? RecommendedOn { get; set; }
+    public DateOnly? ClosingSubmittedOn { get; set; }
     public DateOnly? NamedOn { get; set; }
+    public DateOnly? FrozenOn { get; set; }
     public DateOnly? ArchivedOn { get; set; }
 
     public DateTime? StagesUpdatedAtUtc { get; set; }

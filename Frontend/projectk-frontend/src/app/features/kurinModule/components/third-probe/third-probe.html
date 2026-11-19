@@ -119,8 +119,8 @@
             <p-button label="Редагувати" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openFileDialog()" />
             }
         </div>
-        @if (t.file?.campName) {
-        <p class="tp-line"><strong>{{ t.file.campName }}</strong>@if (campKindLabel()) { <span class="tp-muted"> · {{ campKindLabel() }}</span> }</p>
+        @if (campGiven()) {
+        <p class="tp-line">@if (t.file?.campName) { <strong>{{ t.file.campName }}</strong>@if (campKindLabel()) { <span class="tp-muted"> · {{ campKindLabel() }}</span> } } @else { <strong>{{ campKindLabel() }}</strong> }</p>
         @if (campDates()) { <p class="tp-muted text-xs">{{ campDates() }}</p> }
         } @else {
         <p class="tp-muted text-sm">Ще не вказано. Потрібен один пластовий табір, який край зараховує на третю пробу: КВТ або інший.</p>
@@ -242,7 +242,7 @@
     <div class="tp-field-row">
         <div class="tp-field">
             <label for="tp-reflection">Рефлексія відбулася</label>
-            <p-datepicker inputId="tp-reflection" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+            <p-datepicker inputId="tp-reflection" dateFormat="dd.mm.yy" [showIcon]="true" [showOnFocus]="false" appendTo="body" styleClass="w-full"
                 [ngModel]="reflectionOn()" (ngModelChange)="reflectionOn.set($event)" />
         </div>
         <div class="tp-field">
@@ -267,12 +267,12 @@
     <div class="tp-field-row">
         <div class="tp-field">
             <label for="tp-camp-from">Від</label>
-            <p-datepicker inputId="tp-camp-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+            <p-datepicker inputId="tp-camp-from" dateFormat="dd.mm.yy" [showIcon]="true" [showOnFocus]="false" appendTo="body" styleClass="w-full"
                 [ngModel]="campFrom()" (ngModelChange)="campFrom.set($event)" />
         </div>
         <div class="tp-field">
             <label for="tp-camp-to">До</label>
-            <p-datepicker inputId="tp-camp-to" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+            <p-datepicker inputId="tp-camp-to" dateFormat="dd.mm.yy" [showIcon]="true" [showOnFocus]="false" appendTo="body" styleClass="w-full"
                 [minDate]="campFrom()" [ngModel]="campTo()" (ngModelChange)="campTo.set($event)" />
         </div>
     </div>
@@ -286,14 +286,14 @@
 </p-dialog>
 
 <p-dialog header="Етапи проби" [visible]="stagesDialogVisible()" (visibleChange)="stagesDialogVisible.set($event)"
-    [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 34rem)' }" styleClass="third-probe-dialog">
+    [modal]="true" [focusOnShow]="false" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 34rem)' }" styleClass="third-probe-dialog">
     <p class="tp-muted tp-hint">День, коли етап відбувся. Порожньо — ще не було. Ці етапи бачить і інструмент референта.</p>
     @for (stage of stageList; track stage.key) {
     @if (!stage.closing || isOpened()) {
-    @if (stage.key === 'completedOn') { <p class="tp-legend">Закриття</p> } @else if ($first) { <p class="tp-legend">Відкриття</p> }
+    @if (stage.key === 'recommendedOn') { <p class="tp-legend">Закриття</p> } @else if (stage.key === 'frozenOn') { <p class="tp-legend">Якщо проба зупинилась</p> } @else if ($first) { <p class="tp-legend">Відкриття</p> }
     <div class="tp-field">
         <label [for]="'stage-' + stage.key">{{ stage.label }}@if (stage.hint) { <span class="tp-muted"> · {{ stage.hint }}</span> }</label>
-        <p-datepicker [inputId]="'stage-' + stage.key" dateFormat="dd.mm.yy" [showIcon]="true" [showClear]="true" appendTo="body" styleClass="w-full"
+        <p-datepicker [inputId]="'stage-' + stage.key" dateFormat="dd.mm.yy" [showIcon]="true" [showOnFocus]="false" [showClear]="true" appendTo="body" styleClass="w-full"
             [ngModel]="stageDates()[stage.key]" (ngModelChange)="setStage(stage.key, $event)" />
     </div>
     }

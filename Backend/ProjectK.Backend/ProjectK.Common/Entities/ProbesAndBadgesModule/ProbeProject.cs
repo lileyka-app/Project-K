@@ -39,15 +39,13 @@ public class ProbeProject : Entity
     public DateOnly? EndsOn { get; set; }
     public string? Location { get; set; }
 
-    /// <summary>«Провід заходу»: who runs the event the project lives in.</summary>
-    public string? EventLeads { get; set; }
-
     /// <summary>
-    /// «Координатор / комендант»: who guides the project and recommends it. May be someone outside
-    /// Plast, without an account, hence a name and a contact.
+    /// «Комендант»: who guides the project and recommends it. Always an adult — unlike a
+    /// координатор, who may be a minor. May be someone outside Plast, without an account, hence a
+    /// name and a contact.
     /// </summary>
-    public string? CoordinatorName { get; set; }
-    public string? CoordinatorContact { get; set; }
+    public string? CommandantName { get; set; }
+    public string? CommandantContact { get; set; }
 
     /// <summary>
     /// The texts, in Markdown as the editor's delta turns into it: what the project is and the
@@ -64,11 +62,11 @@ public class ProbeProject : Entity
     public Guid? ApprovedByUserKey { get; set; }
     public string? ApprovedByName { get; set; }
 
-    /// <summary>«Юнак успішно виконав проєкт», with the coordinator's words as they gave them.</summary>
+    /// <summary>«Юнак успішно виконав проєкт», with the commandant's words as they gave them.</summary>
     public DateTime? CompletedAtUtc { get; set; }
     public Guid? CompletedByUserKey { get; set; }
     public string? CompletedByName { get; set; }
-    public string? CoordinatorComment { get; set; }
+    public string? CommandantComment { get; set; }
 
     public Guid? UpdatedByUserKey { get; set; }
     public string? UpdatedByName { get; set; }

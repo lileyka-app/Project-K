@@ -13,9 +13,8 @@ public class SaveProbeProjectRequest
     public DateOnly? StartsOn { get; set; }
     public DateOnly? EndsOn { get; set; }
     public string? Location { get; set; }
-    public string? EventLeads { get; set; }
-    public string? CoordinatorName { get; set; }
-    public string? CoordinatorContact { get; set; }
+    public string? CommandantName { get; set; }
+    public string? CommandantContact { get; set; }
 
     /// <summary>Markdown, like Goal, Plan and Results; pictures as <c>![…](project-image:{key})</c>.</summary>
     public string? Description { get; set; }

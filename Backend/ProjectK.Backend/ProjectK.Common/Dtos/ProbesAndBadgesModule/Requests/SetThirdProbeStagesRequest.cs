@@ -7,7 +7,9 @@ public class SetThirdProbeStagesRequest
     public DateOnly? SelfReflectionOn { get; set; }
     public DateOnly? ApplicationSubmittedOn { get; set; }
     public DateOnly? OpenedOn { get; set; }
-    public DateOnly? CompletedOn { get; set; }
+    public DateOnly? RecommendedOn { get; set; }
+    public DateOnly? ClosingSubmittedOn { get; set; }
     public DateOnly? NamedOn { get; set; }
+    public DateOnly? FrozenOn { get; set; }
     public DateOnly? ArchivedOn { get; set; }
 }

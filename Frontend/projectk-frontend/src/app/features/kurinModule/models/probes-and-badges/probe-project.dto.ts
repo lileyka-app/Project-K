@@ -25,9 +25,8 @@ export interface ProbeProjectDto {
   startsOn: string | null;
   endsOn: string | null;
   location: string | null;
-  eventLeads: string | null;
-  coordinatorName: string | null;
-  coordinatorContact: string | null;
+  commandantName: string | null;
+  commandantContact: string | null;
   /** Markdown, like the goal, plan and results; pictures are written as `project-image:{imageKey}`. */
   description: string;
   goal: string;
@@ -37,7 +36,7 @@ export interface ProbeProjectDto {
   approvedByName: string | null;
   completedAtUtc: string | null;
   completedByName: string | null;
-  coordinatorComment: string | null;
+  commandantComment: string | null;
   updatedAtUtc: string;
   updatedByName: string | null;
   images: ProbeProjectImageDto[];
@@ -58,8 +57,12 @@ export interface ThirdProbeStagesDto {
   /** «Зголошення» sent to the край. */
   applicationSubmittedOn: string | null;
   openedOn: string | null;
-  completedOn: string | null;
+  /** Закриття: рекомендовано старшиною, подано на завершення, іменовано. */
+  recommendedOn: string | null;
+  closingSubmittedOn: string | null;
   namedOn: string | null;
+  /** Поза шляхом закриття: проба заморожена; в архіві — так і не дійшла до іменування. */
+  frozenOn: string | null;
   archivedOn: string | null;
   updatedAtUtc: string | null;
   updatedByName: string | null;
@@ -145,9 +148,8 @@ export interface SaveProbeProjectRequestDto {
   startsOn: string | null;
   endsOn: string | null;
   location: string | null;
-  eventLeads: string | null;
-  coordinatorName: string | null;
-  coordinatorContact: string | null;
+  commandantName: string | null;
+  commandantContact: string | null;
   description: string;
   goal: string;
   plan: string;

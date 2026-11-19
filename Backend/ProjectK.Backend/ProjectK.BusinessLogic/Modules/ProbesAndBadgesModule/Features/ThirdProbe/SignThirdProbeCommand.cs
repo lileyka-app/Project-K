@@ -111,7 +111,7 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
             else
             {
                 (project.CompletedAtUtc, project.CompletedByUserKey, project.CompletedByName) = (at, by, name);
-                project.CoordinatorComment = request.Sign ? comment : null;
+                project.CommandantComment = request.Sign ? comment : null;
             }
 
             subjectKey = project.ProbeProjectKey;

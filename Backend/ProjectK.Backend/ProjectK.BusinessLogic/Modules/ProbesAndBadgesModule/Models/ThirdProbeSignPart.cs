@@ -9,6 +9,6 @@ public enum ThirdProbeSignPart
     /// <summary>«Дозвіл»: the project may go ahead.</summary>
     ProjectApproval,
 
-    /// <summary>«Успішно виконав»: the project is done, with the coordinator's comment.</summary>
+    /// <summary>«Успішно виконав»: the project is done, with the commandant's comment.</summary>
     ProjectCompletion
 }

@@ -181,13 +181,13 @@ export class MemberProgressService {
     projectKey: string,
     part: 'approval' | 'completion',
     sign: boolean,
-    coordinatorComment: string | null = null
+    commandantComment: string | null = null
   ): Observable<ThirdProbeDto> {
     const url = `${this.projectsUrl(memberKey, probeId)}/${projectKey}/${part}`;
     if (!sign) {
       return this.http.delete<ThirdProbeDto>(url);
     }
-    const body = part === 'completion' ? { coordinatorComment } : {};
+    const body = part === 'completion' ? { commandantComment } : {};
     return this.http.put<ThirdProbeDto>(url, body, { context: requestFeedback('auto', [400]) });
   }
 

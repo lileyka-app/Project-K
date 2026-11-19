@@ -75,8 +75,10 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         file.SelfReflectionOn = stages.SelfReflectionOn;
         file.ApplicationSubmittedOn = stages.ApplicationSubmittedOn;
         file.OpenedOn = stages.OpenedOn;
-        file.CompletedOn = stages.CompletedOn;
+        file.RecommendedOn = stages.RecommendedOn;
+        file.ClosingSubmittedOn = stages.ClosingSubmittedOn;
         file.NamedOn = stages.NamedOn;
+        file.FrozenOn = stages.FrozenOn;
         file.ArchivedOn = stages.ArchivedOn;
         file.StagesUpdatedAtUtc = DateTime.UtcNow;
         file.StagesUpdatedByName = actor.Name;
@@ -93,8 +95,10 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
                     ("selfReflection", before.SelfReflectionOn, stages.SelfReflectionOn),
                     ("applicationSubmitted", before.ApplicationSubmittedOn, stages.ApplicationSubmittedOn),
                     ("opened", before.OpenedOn, stages.OpenedOn),
-                    ("completed", before.CompletedOn, stages.CompletedOn),
+                    ("recommended", before.RecommendedOn, stages.RecommendedOn),
+                    ("closingSubmitted", before.ClosingSubmittedOn, stages.ClosingSubmittedOn),
                     ("named", before.NamedOn, stages.NamedOn),
+                    ("frozen", before.FrozenOn, stages.FrozenOn),
                     ("archived", before.ArchivedOn, stages.ArchivedOn))),
             cancellationToken);
 
@@ -103,22 +107,41 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
     }
 
     /// <summary>
-    /// Closing comes after opening, and naming after closing. The opening steps are not ordered
-    /// among themselves (a 16-year-old writes no motivation letter at all), and the archive may come
-    /// at any time: a person who leaves or ages out is archived without closing the probe.
+    /// The closing path runs in order after the opening: the старшина recommends, the probe is
+    /// submitted for closing, it is named. The opening steps are not ordered among themselves (a
+    /// 16-year-old writes no motivation letter at all). Freezing and the archive stand aside from
+    /// the path: a probe is frozen once it is open, and archived at any time (a person who leaves or
+    /// ages out) — but only one that never reached the naming.
     /// </summary>
     private static string? OutOfOrder(ThirdProbeStagesInput stages)
     {
-        if (stages.CompletedOn is { } completed && stages.OpenedOn is { } opened && completed < opened)
+        if (Before(stages.RecommendedOn, stages.OpenedOn))
         {
-            return "The probe cannot be done before it was opened.";
+            return "The probe cannot be recommended before it was opened.";
         }
 
-        if (stages.NamedOn is { } named && (stages.CompletedOn is not { } done || named < done))
+        if (stages.ClosingSubmittedOn is { } submitted && (stages.RecommendedOn is not { } recommended || submitted < recommended))
         {
-            return "Naming comes after the probe is done.";
+            return "The probe is submitted for closing after it is recommended.";
+        }
+
+        if (stages.NamedOn is { } named && (stages.ClosingSubmittedOn is not { } sent || named < sent))
+        {
+            return "Naming comes after the probe is submitted for closing.";
+        }
+
+        if (Before(stages.FrozenOn, stages.OpenedOn))
+        {
+            return "The probe cannot be frozen before it was opened.";
+        }
+
+        if (stages.NamedOn is not null && stages.ArchivedOn is not null)
+        {
+            return "A named probe is not archived: the archive is for a probe that never reached the naming.";
         }
 
         return null;
     }
+
+    private static bool Before(DateOnly? day, DateOnly? floor) => day is { } d && floor is { } f && d < f;
 }

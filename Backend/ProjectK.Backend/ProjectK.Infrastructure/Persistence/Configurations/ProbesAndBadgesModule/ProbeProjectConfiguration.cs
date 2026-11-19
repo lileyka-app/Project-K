@@ -17,14 +17,13 @@ internal sealed class ProbeProjectConfiguration : IEntityTypeConfiguration<Probe
         builder.Property(e => e.Reach).HasConversion<int>();
         builder.Property(e => e.SharedWith).HasMaxLength(shortText);
         builder.Property(e => e.Location).HasMaxLength(shortText);
-        builder.Property(e => e.EventLeads).HasMaxLength(shortText);
-        builder.Property(e => e.CoordinatorName).HasMaxLength(shortText);
-        builder.Property(e => e.CoordinatorContact).HasMaxLength(shortText);
+        builder.Property(e => e.CommandantName).HasMaxLength(shortText);
+        builder.Property(e => e.CommandantContact).HasMaxLength(shortText);
         builder.Property(e => e.Description).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
         builder.Property(e => e.Goal).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
         builder.Property(e => e.Plan).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
         builder.Property(e => e.Results).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
-        builder.Property(e => e.CoordinatorComment).HasMaxLength(ProbeProjectRules.MaxCommentLength);
+        builder.Property(e => e.CommandantComment).HasMaxLength(ProbeProjectRules.MaxCommentLength);
         builder.Property(e => e.ApprovedByName).HasMaxLength(200);
         builder.Property(e => e.CompletedByName).HasMaxLength(200);
         builder.Property(e => e.UpdatedByName).HasMaxLength(200);

@@ -1,3 +1,5 @@
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+
 namespace ProjectK.Common.Rules.ProbesAndBadgesModule;
 
 /// <summary>
@@ -38,6 +40,13 @@ public static class ProbeProjectRules
 
     public const int MaxResumeLength = 10_000;
     public const int MaxShortTextLength = 200;
+
+    /// <summary>
+    /// Whether the probe's camp is in. A КВТ is one camp and needs no name; another camp is told
+    /// apart by its name, so without one it is not yet said which camp it was.
+    /// </summary>
+    public static bool HasCamp(ThirdProbeCampKind? kind, string? name)
+        => kind == ThirdProbeCampKind.Kvt || !string.IsNullOrWhiteSpace(name);
     public const int MaxCommentLength = 2_000;
 
     /// <summary>The probe's place in its edition (знак прихильника is 0).</summary>

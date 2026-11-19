@@ -91,7 +91,7 @@ public class ProbeProjectHandlerTests
 
     private static ProbeProjectInput Input(string goal = "", string plan = "", string results = "", bool shared = false, string title = "Похід") =>
         new(title, ProbeProjectArea.Nature, [ProbeProjectReach.GroupOrKurin, ProbeProjectReach.Stanytsia], shared, shared ? "Олег, Марта" : null,
-            new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 3), "Чорногора", "Провід куреня", "Олена Коваль", "+380501112233",
+            new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 3), "Чорногора", "Олена Коваль", "+380501112233",
             "Що це за проєкт і моя роль", goal, plan, results);
 
     private SaveProbeProjectCommand Save(Guid? key, ProbeProjectInput input) => new(_memberKey, ProbeId, key, input);
@@ -105,7 +105,7 @@ public class ProbeProjectHandlerTests
         var project = _stored.Single();
         project.IsSpare.Should().BeFalse();
         project.Reach.Should().Be(ProbeProjectReach.GroupOrKurin | ProbeProjectReach.Stanytsia);
-        project.CoordinatorName.Should().Be("Олена Коваль");
+        project.CommandantName.Should().Be("Олена Коваль");
         result.Data!.ProjectKey.Should().Be(project.ProbeProjectKey);
         _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectAdded);
     }
@@ -301,7 +301,7 @@ public class ProbeProjectHandlerTests
     }
 
     [Fact]
-    public async Task Sign_ShouldMarkAProjectDone_WithTheCoordinatorsWords()
+    public async Task Sign_ShouldMarkAProjectDone_WithTheCommandantsWords()
     {
         var project = Given();
 
@@ -310,7 +310,7 @@ public class ProbeProjectHandlerTests
             CancellationToken.None);
 
         project.CompletedAtUtc.Should().NotBeNull();
-        project.CoordinatorComment.Should().Be("Взірцево");
+        project.CommandantComment.Should().Be("Взірцево");
         _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.ProjectCompleted);
     }
 
@@ -476,7 +476,7 @@ public class ProbeProjectHandlerTests
     public async Task Stages_ShouldBeSetByWhoeverMaySign_AndJournaled()
     {
         var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
-        var stages = new ThirdProbeStagesInput(new DateOnly(2025, 9, 1), new DateOnly(2025, 9, 20), new DateOnly(2025, 10, 1), new DateOnly(2025, 11, 1), null, null, null);
+        var stages = new ThirdProbeStagesInput(new DateOnly(2025, 9, 1), new DateOnly(2025, 9, 20), new DateOnly(2025, 10, 1), new DateOnly(2025, 11, 1), null, null, null, null, null);
 
         var result = await handler.Handle(new SetThirdProbeStagesCommand(_memberKey, ProbeId, stages), CancellationToken.None);
 
@@ -486,17 +486,48 @@ public class ProbeProjectHandlerTests
         _journal.Entries.Should().ContainSingle(e => e.Action == AuditActionNames.Probe.StagesChanged);
     }
 
-    [Theory]
-    [InlineData("2026-01-01", "2025-12-01", null)]
-    [InlineData("2026-01-01", null, "2026-02-01")]
-    [InlineData("2026-01-01", "2026-03-01", "2026-02-01")]
-    public async Task Stages_ShouldRefuseAClosingBeforeTheOpeningOrANamingBeforeTheClosing(string opened, string? completed, string? named)
-    {
-        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
-        var stages = new ThirdProbeStagesInput(null, null, null, DateOnly.Parse(opened),
-            completed is null ? null : DateOnly.Parse(completed), named is null ? null : DateOnly.Parse(named), null);
+    private static DateOnly? Day(string? day) => day is null ? null : DateOnly.Parse(day);
 
-        var result = await handler.Handle(new SetThirdProbeStagesCommand(_memberKey, ProbeId, stages), CancellationToken.None);
+    private static ThirdProbeStagesInput Closing(
+        string? recommended = null, string? submitted = null, string? named = null, string? frozen = null, string? archived = null) =>
+        new(null, null, null, new DateOnly(2026, 1, 1), Day(recommended), Day(submitted), Day(named), Day(frozen), Day(archived));
+
+    private Task<ServiceResult<ThirdProbeDto>> SetStages(ThirdProbeStagesInput stages) =>
+        new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object))
+            .Handle(new SetThirdProbeStagesCommand(_memberKey, ProbeId, stages), CancellationToken.None);
+
+    /// <summary>The край's closing path: recommended by the старшина, submitted for closing, named.</summary>
+    [Fact]
+    public async Task Stages_ShouldTakeTheClosingPathInOrder()
+    {
+        var result = await SetStages(Closing(recommended: "2026-03-01", submitted: "2026-03-10", named: "2026-04-01"));
+
+        result.Type.Should().Be(ResultType.Success);
+        (_file!.RecommendedOn, _file.ClosingSubmittedOn, _file.NamedOn)
+            .Should().Be((new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10), new DateOnly(2026, 4, 1)));
+    }
+
+    /// <summary>Freezing and the archive stand aside from the path: a frozen probe that never got named is archived.</summary>
+    [Fact]
+    public async Task Stages_ShouldArchiveAProbeThatStoppedBeforeTheNaming()
+    {
+        var result = await SetStages(Closing(recommended: "2026-03-01", frozen: "2026-05-01", archived: "2026-09-01"));
+
+        result.Type.Should().Be(ResultType.Success);
+        (_file!.FrozenOn, _file.ArchivedOn).Should().Be((new DateOnly(2026, 5, 1), new DateOnly(2026, 9, 1)));
+    }
+
+    [Theory]
+    [InlineData("2025-12-01", null, null, null, null)]          // recommended before the opening
+    [InlineData(null, "2026-03-10", null, null, null)]          // submitted with no recommendation
+    [InlineData("2026-03-10", "2026-03-01", null, null, null)]  // submitted before the recommendation
+    [InlineData("2026-03-01", null, "2026-04-01", null, null)]  // named with no submission
+    [InlineData("2026-03-01", "2026-03-10", "2026-03-05", null, null)] // named before the submission
+    [InlineData(null, null, null, "2025-12-01", null)]          // frozen before the opening
+    [InlineData("2026-03-01", "2026-03-10", "2026-04-01", null, "2026-05-01")] // a named probe archived
+    public async Task Stages_ShouldRefuseAClosingOutOfOrder(string? recommended, string? submitted, string? named, string? frozen, string? archived)
+    {
+        var result = await SetStages(Closing(recommended, submitted, named, frozen, archived));
 
         result.ErrorCode.Should().Be("StagesOutOfOrder");
     }
@@ -508,7 +539,7 @@ public class ProbeProjectHandlerTests
         var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object, new ThirdProbeFileWriter(_unitOfWork.Object));
 
         var result = await handler.Handle(
-            new SetThirdProbeStagesCommand(_memberKey, ProbeId, new ThirdProbeStagesInput(null, null, null, null, null, null, null)), CancellationToken.None);
+            new SetThirdProbeStagesCommand(_memberKey, ProbeId, new ThirdProbeStagesInput(null, null, null, null, null, null, null, null, null)), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Forbidden);
     }

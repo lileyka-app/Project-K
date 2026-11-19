@@ -162,8 +162,10 @@ public sealed class ThirdProbeReader : IThirdProbeReader
         file?.SelfReflectionOn,
         file?.ApplicationSubmittedOn,
         file?.OpenedOn,
-        file?.CompletedOn,
+        file?.RecommendedOn,
+        file?.ClosingSubmittedOn,
         file?.NamedOn,
+        file?.FrozenOn,
         file?.ArchivedOn,
         file?.StagesUpdatedAtUtc,
         file?.StagesUpdatedByName);

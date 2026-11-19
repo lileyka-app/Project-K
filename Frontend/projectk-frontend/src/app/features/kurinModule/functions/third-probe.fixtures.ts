@@ -12,8 +12,8 @@ export function thirdProbeTab(overrides: Partial<ThirdProbeDto> = {}): ThirdProb
       reflectionOn: null, reflectionWith: null, reflectionConfirmedAtUtc: null, reflectionConfirmedByName: null,
       campKind: null, campName: null, campFrom: null, campTo: null, campCertificate: null, physicalBadgeId: null, resume: '',
       stages: {
-        motivationLetterOn: null, selfReflectionOn: null, applicationSubmittedOn: null, openedOn: null, completedOn: null,
-        namedOn: null, archivedOn: null, updatedAtUtc: null, updatedByName: null
+        motivationLetterOn: null, selfReflectionOn: null, applicationSubmittedOn: null, openedOn: null, recommendedOn: null, closingSubmittedOn: null,
+        namedOn: null, frozenOn: null, archivedOn: null, updatedAtUtc: null, updatedByName: null
       },
       storedBytes: 0, updatedAtUtc: null, updatedByName: null
     },
@@ -30,9 +30,9 @@ export function thirdProbeTab(overrides: Partial<ThirdProbeDto> = {}): ThirdProb
 export function probeProject(overrides: Partial<ProbeProjectDto> = {}): ProbeProjectDto {
   return {
     projectKey: 'p-1', title: 'Мандрівка Чорногорою', area: 'Nature', reach: ['GroupOrKurin'], isShared: false, sharedWith: null,
-    isSpare: false, startsOn: '2026-11-07', endsOn: '2026-11-09', location: 'Чорногора', eventLeads: null,
-    coordinatorName: 'Олена Коваль', coordinatorContact: '+380501112233', description: '', goal: '**Мета**', plan: '', results: '',
-    approvedAtUtc: null, approvedByName: null, completedAtUtc: null, completedByName: null, coordinatorComment: null,
+    isSpare: false, startsOn: '2026-11-07', endsOn: '2026-11-09', location: 'Чорногора',
+    commandantName: 'Олена Коваль', commandantContact: '+380501112233', description: '', goal: '**Мета**', plan: '', results: '',
+    approvedAtUtc: null, approvedByName: null, completedAtUtc: null, completedByName: null, commandantComment: null,
     updatedAtUtc: '2026-10-30T10:00:00Z', updatedByName: 'Віталій Романюк', images: [],
     ...overrides
   };

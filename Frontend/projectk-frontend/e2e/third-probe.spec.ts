@@ -34,7 +34,7 @@ test.describe('Third-probe notebook', () => {
     await test.step('before the opening only the way there shows: no countdown, camp or projects', async () => {
       await expect(page.getByTestId('third-probe-stages')).toContainText('Відкриття проби');
       await expect(page.getByTestId('third-probe-stages')).toContainText('Мотиваційний лист');
-      await expect(page.getByTestId('third-probe-stages')).not.toContainText('Пробу завершено');
+      await expect(page.getByTestId('third-probe-stages')).not.toContainText('Рекомендовано старшиною');
       await expect(page.getByTestId('third-probe-countdown')).toHaveCount(0);
       await expect(page.getByTestId('third-probe-camp')).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Додати проєкт' })).toHaveCount(0);
@@ -88,7 +88,7 @@ test.describe('Third-probe notebook', () => {
       const editor = projectEditor(page);
       await editor.getByLabel('Назва проєкту').fill('Мандрівка Чорногорою');
       await editor.getByLabel('Локація').fill('Чорногора');
-      await editor.getByLabel('Координатор / комендант').fill('Олена Коваль');
+      await editor.getByLabel('Комендант', { exact: true }).fill('Олена Коваль');
       const description = textField(editor, 'Опис і моя роль');
       // One atomic fill: keys typed one by one race the dialog's own focus and land in the title.
       await description.locator('.ql-editor').fill('Я склав маршрут і веду групу.');

@@ -147,7 +147,7 @@ export async function addProject(request: APIRequestContext, actor: E2eUser, mem
 export function projectBody(title: string, plan: string): Record<string, unknown> {
   return {
     title, area: 'Nature', reach: ['GroupOrKurin'], isShared: false, sharedWith: null, startsOn: null, endsOn: null,
-    location: 'Чорногора', eventLeads: null, coordinatorName: 'Олена Коваль', coordinatorContact: null,
+    location: 'Чорногора', commandantName: 'Олена Коваль', commandantContact: null,
     description: 'Мандрівка для новачків гуртка.', goal: 'Пройти хребет.', plan, results: ''
   };
 }
@@ -160,7 +160,7 @@ export function projectBody(title: string, plan: string): Record<string, unknown
 export async function openProbe(request: APIRequestContext, kurin: ProbeKurin, memberKey: string, probeId: string): Promise<void> {
   const status = await apiStatus(request, kurin.founder, 'PUT', `member/${memberKey}/probes/${probeId}/third-probe/stages`, {
     motivationLetterOn: null, selfReflectionOn: null, applicationSubmittedOn: null, openedOn: '2026-03-01',
-    completedOn: null, namedOn: null, archivedOn: null
+    recommendedOn: null, closingSubmittedOn: null, namedOn: null, frozenOn: null, archivedOn: null
   });
   expect(status, 'the Звʼязковий could not open the probe').toBe(200);
 }

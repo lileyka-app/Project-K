@@ -9,8 +9,10 @@ public sealed record ThirdProbeStagesDto(
     DateOnly? SelfReflectionOn,
     DateOnly? ApplicationSubmittedOn,
     DateOnly? OpenedOn,
-    DateOnly? CompletedOn,
+    DateOnly? RecommendedOn,
+    DateOnly? ClosingSubmittedOn,
     DateOnly? NamedOn,
+    DateOnly? FrozenOn,
     DateOnly? ArchivedOn,
     DateTime? UpdatedAtUtc,
     string? UpdatedByName);

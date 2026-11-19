@@ -84,7 +84,7 @@ public sealed class GetThirdProbersQueryHandler
                 own.Count(p => p.CompletedAtUtc is not null),
                 badges.Count(badge => badge.MemberKey == person.MemberKey
                                       && opened is { } from && badge.ReviewedAtUtc is { } confirmed && DateOnly.FromDateTime(confirmed) >= from),
-                !string.IsNullOrEmpty(file?.CampName),
+                ProbeProjectRules.HasCamp(file?.CampKind, file?.CampName),
                 !string.IsNullOrWhiteSpace(file?.Resume),
                 file?.ReflectionConfirmedAtUtc is not null));
         }

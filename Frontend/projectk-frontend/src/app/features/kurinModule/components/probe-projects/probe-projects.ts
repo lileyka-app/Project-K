@@ -95,7 +95,7 @@ const REFUSALS: Record<string, string> = {
  * The third probe's projects as the УПЮ template lays them out: area, whom it serves, dates,
  * place, who runs and who coordinates it, then the goal, the plan and the results — each a text
  * with formatting and a few small pictures. Five count, one more waits as the spare. A leader gives
- * «дозвіл» before and marks «успішно виконав» after, with the coordinator's words.
+ * «дозвіл» before and marks «успішно виконав» after, with the commandant's words.
  *
  * Texts leave the editors as Markdown, the same path as «Повідомити про проблему», pictures as keys
  * since their links expire. Every write answers with the whole tab, passed up through `tabChange`.
@@ -140,9 +140,8 @@ export class ProbeProjectsComponent {
   readonly startsOn = signal<Date | null>(null);
   readonly endsOn = signal<Date | null>(null);
   readonly location = signal('');
-  readonly eventLeads = signal('');
-  readonly coordinatorName = signal('');
-  readonly coordinatorContact = signal('');
+  readonly commandantName = signal('');
+  readonly commandantContact = signal('');
   readonly imageCount = signal(0);
   readonly isSaving = signal(false);
   private readonly uploads = signal(0);
@@ -150,9 +149,12 @@ export class ProbeProjectsComponent {
   readonly errorMessage = signal<string | null>(null);
 
   readonly completing = signal<ProbeProjectDto | null>(null);
-  readonly coordinatorComment = signal('');
+  readonly commandantComment = signal('');
   readonly swapping = signal<ProbeProjectDto | null>(null);
   readonly swapWith = signal<string | null>(null);
+  /** Чому обмін не пройшов. Діалог лишається відкритим: закритий, він ковтав відмову мовчки. */
+  readonly swapError = signal<string | null>(null);
+  readonly swapBusy = signal(false);
 
   readonly editorFormats = ['bold', 'italic', 'strike', 'code', 'list', 'link', 'image', 'header', 'blockquote', 'indent'];
   readonly imageAccept = PROJECT_IMAGE_MIME_TYPES.join(',');
@@ -197,7 +199,7 @@ export class ProbeProjectsComponent {
   }
 
   openCompletion(project: ProbeProjectDto): void {
-    this.coordinatorComment.set('');
+    this.commandantComment.set('');
     this.completing.set(project);
   }
 
@@ -206,7 +208,7 @@ export class ProbeProjectsComponent {
     if (!project) {
       return;
     }
-    const comment = this.coordinatorComment().trim() || null;
+    const comment = this.commandantComment().trim() || null;
     this.completing.set(null);
     this.apply(this.progress.signProbeProject(this.memberKey(), this.probeId(), project.projectKey, 'completion', true, comment));
   }
@@ -217,6 +219,7 @@ export class ProbeProjectsComponent {
 
   openSwap(spare: ProbeProjectDto): void {
     this.swapWith.set(null);
+    this.swapError.set(null);
     this.swapping.set(spare);
   }
 
@@ -226,8 +229,19 @@ export class ProbeProjectsComponent {
     if (!spare || !mainKey) {
       return;
     }
-    this.swapping.set(null);
-    this.apply(this.progress.swapSpareProject(this.memberKey(), this.probeId(), spare.projectKey, mainKey));
+    this.swapBusy.set(true);
+    this.swapError.set(null);
+    this.progress.swapSpareProject(this.memberKey(), this.probeId(), spare.projectKey, mainKey).subscribe({
+      next: tab => {
+        this.swapBusy.set(false);
+        this.swapping.set(null);
+        this.tabChange.emit(tab);
+      },
+      error: error => {
+        this.swapBusy.set(false);
+        this.swapError.set(refusal(error, 'Не вдалося поміняти. Спробуй ще раз.'));
+      }
+    });
   }
 
   toggleReach(value: ProbeProjectReach, on: boolean): void {
@@ -328,9 +342,8 @@ export class ProbeProjectsComponent {
     this.startsOn.set(fromIsoDate(project?.startsOn ?? null));
     this.endsOn.set(fromIsoDate(project?.endsOn ?? null));
     this.location.set(project?.location ?? '');
-    this.eventLeads.set(project?.eventLeads ?? '');
-    this.coordinatorName.set(project?.coordinatorName ?? '');
-    this.coordinatorContact.set(project?.coordinatorContact ?? '');
+    this.commandantName.set(project?.commandantName ?? '');
+    this.commandantContact.set(project?.commandantContact ?? '');
     this.errorMessage.set(null);
     this.imageKeys.clear();
     project?.images.forEach(image => this.imageKeys.set(image.url, image.imageKey));
@@ -386,9 +399,8 @@ export class ProbeProjectsComponent {
       startsOn: toIsoDate(this.startsOn()),
       endsOn: toIsoDate(this.endsOn()),
       location: this.location().trim() || null,
-      eventLeads: this.eventLeads().trim() || null,
-      coordinatorName: this.coordinatorName().trim() || null,
-      coordinatorContact: this.coordinatorContact().trim() || null,
+      commandantName: this.commandantName().trim() || null,
+      commandantContact: this.commandantContact().trim() || null,
       description: this.markdown('description'),
       goal: this.markdown('goal'),
       plan: this.markdown('plan'),

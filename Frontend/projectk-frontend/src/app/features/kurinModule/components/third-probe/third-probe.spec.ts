@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { MockedObject } from 'vitest';
 import { ConfirmationService } from '@openng/optimus-ui/api';
 import { MemberDto } from '../../models/member.dto';
-import { ThirdProbeDto } from '../../models/probes-and-badges/probe-project.dto';
+import { ThirdProbeDto, ThirdProbeStagesDto } from '../../models/probes-and-badges/probe-project.dto';
 import { BadgeImageBlobService } from '../../services/probes-and-badges/badge-image-blob.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { thirdProbeTab } from '../../functions/third-probe.fixtures';
@@ -51,6 +51,24 @@ describe('ThirdProbeComponent', () => {
     file: { ...tab.file!, stages: { ...tab.file!.stages, openedOn: '2026-03-01' } }
   });
 
+  it('walks the closing path and shows a stop only once it happened', async () => {
+    const withStages = (stages: Partial<ThirdProbeStagesDto>) => {
+      const tab = opened();
+      return { ...tab, file: { ...tab.file!, stages: { ...tab.file!.stages, ...stages } } };
+    };
+
+    let page = await render(withStages({ recommendedOn: '2026-05-01' }));
+    const stages = () => page.querySelector('[data-testid="third-probe-stages"]')!.textContent!;
+    expect(stages()).toContain('Рекомендовано старшиною');
+    expect(stages()).toContain('Подано на завершення');
+    expect(stages()).not.toContain('Пробу заморожено');
+    expect(stages()).not.toContain('В архіві');
+
+    page = await render(withStages({ recommendedOn: '2026-05-01', frozenOn: '2026-06-01' }));
+    expect(stages()).toContain('Пробу заморожено');
+    expect(stages()).not.toContain('В архіві');
+  });
+
   it('shows nothing for a probe that is not the third', async () => {
     const page = await render(thirdProbeTab({ isProjectProbe: false, file: null }));
 
@@ -71,7 +89,7 @@ describe('ThirdProbeComponent', () => {
     expect(page.textContent).toContain('КВТ «Говерла»');
     expect(page.textContent).toContain('Пробу відкрито 1 березня 2026');
     // Of the closing stages only the next one is drawn.
-    expect(page.textContent).toContain('Пробу завершено');
+    expect(page.textContent).toContain('Рекомендовано старшиною');
     expect(page.textContent).not.toContain('Іменовано');
     expect(page.textContent).toContain('Референт ІІІ проби');
     expect(page.textContent).toContain('Зараховує табір край');
@@ -131,7 +149,7 @@ describe('ThirdProbeComponent', () => {
     expect(page.textContent).toContain('Мотиваційний лист');
     expect(page.textContent).toContain('Саморефлексія');
     expect(page.textContent).not.toContain('Зголошення до краю');
-    expect(page.textContent).not.toContain('Пробу завершено');
+    expect(page.textContent).not.toContain('Рекомендовано старшиною');
   });
 
   it('offers the kurin’s people as mentors, keeping a name already written', async () => {
@@ -157,7 +175,7 @@ describe('ThirdProbeComponent', () => {
 
     expect(progress.setThirdProbeStages).toHaveBeenCalledWith('m-1', 'probe-3', {
       motivationLetterOn: null, selfReflectionOn: null, applicationSubmittedOn: '2025-10-01', openedOn: null,
-      completedOn: null, namedOn: null, archivedOn: null
+      recommendedOn: null, closingSubmittedOn: null, namedOn: null, frozenOn: null, archivedOn: null
     });
   });
 });

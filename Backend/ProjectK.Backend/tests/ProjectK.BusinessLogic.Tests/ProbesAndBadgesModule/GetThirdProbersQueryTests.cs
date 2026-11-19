@@ -57,7 +57,7 @@ public class GetThirdProbersQueryTests
             new ThirdProbeFile
             {
                 MemberKey = _withFile.MemberKey, ProbeId = "probe-3", OpenedOn = new DateOnly(2026, 1, 1),
-                ApplicationSubmittedOn = new DateOnly(2025, 12, 1), CampName = "КВТ", Resume = "Шлях"
+                ApplicationSubmittedOn = new DateOnly(2025, 12, 1), CampKind = ThirdProbeCampKind.Kvt, Resume = "Шлях"
             },
             new ThirdProbeFile { MemberKey = _notMine.MemberKey, ProbeId = "probe-3" }
         ]);
@@ -93,6 +93,7 @@ public class GetThirdProbersQueryTests
         vitalii.Stages.ApplicationSubmittedOn.Should().Be(new DateOnly(2025, 12, 1));
         vitalii.Stages.OpenedOn.Should().Be(new DateOnly(2026, 1, 1));
         (vitalii.MainProjects, vitalii.CompletedProjects, vitalii.BadgesDuringProbe).Should().Be((2, 1, 1));
+        // A КВТ is the camp without a name: it is one camp, and nobody is asked to name it.
         (vitalii.HasCamp, vitalii.HasResume, vitalii.ReflectionConfirmed).Should().Be((true, true, false));
         result.Data!.Single(p => p.MemberKey == _justClosed.MemberKey).Stages.OpenedOn.Should().BeNull();
     }

@@ -18,6 +18,7 @@ import {
   CAMP_KINDS,
   THIRD_PROBE_STAGES,
   campKindLabel,
+  hasCamp,
   dayLabel,
   fromIsoDate,
   megabytesLabel,
@@ -57,7 +58,7 @@ const FILE_REFUSALS: Record<string, string> = {
   CertificateTooLarge: 'Посвідка завелика: до 2 МБ.',
   InvalidCertificate: 'Посвідка — це фото (PNG, JPEG, WebP) або PDF.',
   StorageFull: 'Файли третьої проби вже займають майже все місце. Прибери зайві фото.',
-  StagesOutOfOrder: 'Етапи не по черзі: завершити можна після відкриття, іменувати — після завершення.',
+  StagesOutOfOrder: 'Етапи не по черзі: рекомендація — після відкриття, подання — після рекомендації, іменування — після подання. Іменовану пробу не архівують.',
   NotProjectProbe: 'Це не третя проба.'
 };
 
@@ -132,6 +133,7 @@ export class ThirdProbeComponent {
     return from && to ? `${from} — ${to}` : from ?? to;
   });
   readonly campKindLabel = computed(() => campKindLabel(this.file()?.campKind ?? null));
+  readonly campGiven = computed(() => hasCamp(this.file()?.campKind, this.file()?.campName));
   readonly isPdf = computed(() => this.file()?.campCertificate?.contentType === 'application/pdf');
   readonly duringBadges = computed(() => this.tab()?.badges.filter(badge => badge.duringProbe) ?? []);
   readonly earlierBadges = computed(() => this.tab()?.badges.filter(badge => !badge.duringProbe) ?? []);
@@ -169,15 +171,17 @@ export class ThirdProbeComponent {
 
   /**
    * The stages that matter now: before the opening, the opening ones; after it, the closing ones.
-   * Of those, the ones done and the next one — later stages are not drawn ahead of time.
+   * Of those, the ones done and the next one — later stages are not drawn ahead of time. A stop
+   * (frozen, archived) is never «next»: it shows only once it happened.
    */
   readonly stageParts = computed(() => {
     const opened = this.isOpened();
     const phase = this.stages().filter(stage => stage.closing === opened);
-    const next = phase.findIndex(stage => !stage.day);
+    const path = phase.filter(stage => !stage.aside);
+    const next = path.find(stage => !stage.day);
     return [{
       title: opened ? 'Закриття' : 'Відкриття',
-      stages: phase.filter((stage, index) => !!stage.day || index === next)
+      stages: phase.filter(stage => !!stage.day || stage === next)
     }];
   });
 

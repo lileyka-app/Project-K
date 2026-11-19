@@ -52,6 +52,16 @@ describe('third probe helpers', () => {
     expect(thirdProbeChecklist(full).every(item => item.done)).toBe(true);
   });
 
+  it('counts a КВТ without a name as the camp, and another camp only with its name', () => {
+    const camp = (campKind: 'Kvt' | 'Alternative' | null, campName: string | null) =>
+      thirdProbeChecklist(thirdProbeTab({ file: { ...thirdProbeTab().file!, campKind, campName } })).find(item => item.key === 'camp')!.done;
+
+    expect(camp('Kvt', null)).toBe(true);
+    expect(camp('Alternative', null)).toBe(false);
+    expect(camp('Alternative', 'Говерла')).toBe(true);
+    expect(camp(null, null)).toBe(false);
+  });
+
   it('does not count the spare, nor a badge from before the probe', () => {
     const tab = thirdProbeTab({
       projects: [probeProject({ isSpare: true, completedAtUtc: '2026-10-01T00:00:00Z' })],

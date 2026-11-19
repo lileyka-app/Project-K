@@ -49,14 +49,14 @@ describe('ProbeProjectsComponent', () => {
       projects: [probeProject({
         results: `Дійшли.\n\n![зображення](project-image:${IMAGE_KEY})`,
         images: [{ imageKey: IMAGE_KEY, url: 'https://blob/probe-project-images/a.jpg?sig' }],
-        completedAtUtc: '2026-11-10T00:00:00Z', completedByName: 'Звʼязковий', coordinatorComment: 'Рекомендую'
+        completedAtUtc: '2026-11-10T00:00:00Z', completedByName: 'Звʼязковий', commandantComment: 'Рекомендую'
       })]
     }));
 
     expect(page.textContent).toContain('Г. Життя в природі');
     expect(page.textContent).toContain('Олена Коваль');
     expect(page.textContent).toContain('Підсумки виконання');
-    expect(page.textContent).toContain('«Рекомендую» — координатор');
+    expect(page.textContent).toContain('«Рекомендую» — комендант');
     expect(page.querySelector<HTMLImageElement>('.md__image')?.src).toContain('probe-project-images/a.jpg');
   });
 
@@ -67,6 +67,43 @@ describe('ProbeProjectsComponent', () => {
 
     expect(page.textContent).toContain('Запасний проєкт');
     expect(page.textContent).toContain('Поставити замість');
+  });
+
+  it('lets a main project be picked for the swap, and swaps it', async () => {
+    await render(thirdProbeTab({
+      projects: [probeProject({ projectKey: 'main', title: 'Похід' }), probeProject({ projectKey: 'spare', title: 'Ватра', isSpare: true })]
+    }));
+    const component = fixture.componentInstance;
+    const swapped = thirdProbeTab();
+    progress.swapSpareProject.mockReturnValue(of(swapped));
+
+    component.openSwap(component.spares()[0].project);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    document.querySelector<HTMLLabelElement>('label[for="swap-main"]')!.click();
+    fixture.detectChanges();
+
+    expect(component.swapWith()).toBe('main');
+    component.swap();
+
+    expect(progress.swapSpareProject).toHaveBeenCalledWith('m-1', 'upyu-2026-3', 'spare', 'main');
+    expect(component.swapping()).toBeNull();
+    expect(emitted).toEqual([swapped]);
+  });
+
+  it('keeps the swap open and says why when the server refuses it', async () => {
+    await render(thirdProbeTab({
+      projects: [probeProject({ projectKey: 'main' }), probeProject({ projectKey: 'spare', isSpare: true })]
+    }));
+    const component = fixture.componentInstance;
+    progress.swapSpareProject.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { error: 'TooManyShared' } })));
+
+    component.openSwap(component.spares()[0].project);
+    component.swapWith.set('main');
+    component.swap();
+
+    expect(component.swapping()).not.toBeNull();
+    expect(component.swapError()).toBe('Спільних з іншими третьопробниками може бути лише два з пʼяти основних.');
   });
 
   it('gives leaders the confirmations and youths none', async () => {

@@ -40,6 +40,14 @@ export function campKindLabel(kind: ThirdProbeCampKind | null): string | null {
 }
 
 /**
+ * Чи табір уже вказано. КВТ — один табір, назви не потребує; інший розрізняють за назвою, тож без
+ * неї ще не сказано, що за табір. Дзеркалить `ProbeProjectRules.HasCamp`.
+ */
+export function hasCamp(kind: ThirdProbeCampKind | null | undefined, name: string | null | undefined): boolean {
+  return kind === 'Kvt' || !!name?.trim();
+}
+
+/**
  * The day youth ends: the 18th birthday. A person born on 29 February gets 1 March in a year
  * without one, the way the calendar rolls it.
  */
@@ -123,8 +131,8 @@ export function thirdProbeChecklist(tab: ThirdProbeDto): ChecklistItem[] {
     {
       key: 'camp',
       label: 'Табір',
-      detail: file?.campName ? 'додано' : 'ще не вказано',
-      done: !!file?.campName
+      detail: hasCamp(file?.campKind, file?.campName) ? 'додано' : 'ще не вказано',
+      done: hasCamp(file?.campKind, file?.campName)
     },
     {
       key: 'badges',
@@ -174,14 +182,26 @@ export function dayLabel(value: string | null): string | null {
 }
 
 /** The referent's stages, in the order a probe goes through them. */
-export const THIRD_PROBE_STAGES: readonly { key: keyof SetThirdProbeStagesRequestDto; label: string; hint?: string; closing: boolean }[] = [
+/**
+ * Етапи, які веде референт. `aside` — не крок шляху, а зупинка: заморожена проба й архів малюються,
+ * лише коли настали, і не бувають «наступним етапом».
+ */
+export const THIRD_PROBE_STAGES: readonly {
+  key: keyof SetThirdProbeStagesRequestDto;
+  label: string;
+  hint?: string;
+  closing: boolean;
+  aside?: boolean;
+}[] = [
   { key: 'motivationLetterOn', label: 'Мотиваційний лист', hint: 'план здачі проби; пише 15-річний', closing: false },
   { key: 'selfReflectionOn', label: 'Саморефлексія', closing: false },
   { key: 'applicationSubmittedOn', label: 'Зголошення до краю', closing: false },
   { key: 'openedOn', label: 'Пробу відкрито', closing: false },
-  { key: 'completedOn', label: 'Пробу завершено', closing: true },
+  { key: 'recommendedOn', label: 'Рекомендовано старшиною', closing: true },
+  { key: 'closingSubmittedOn', label: 'Подано на завершення', closing: true },
   { key: 'namedOn', label: 'Іменовано', closing: true },
-  { key: 'archivedOn', label: 'В архіві', closing: true }
+  { key: 'frozenOn', label: 'Пробу заморожено', closing: true, aside: true },
+  { key: 'archivedOn', label: 'В архіві', hint: 'не дійшло до іменування', closing: true, aside: true }
 ];
 
 /** Bytes as people read them: «3,2 МБ». */
