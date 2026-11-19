@@ -18,6 +18,6 @@ public class WaitlistRepository : BaseEntityRepository<WaitlistEntry>, IWaitlist
     }
 
     public async Task<IEnumerable<WaitlistEntry>> GetAllAsync(CancellationToken cancellationToken = default)
-        => await Context.WaitlistEntries.ToListAsync(cancellationToken);
+        => await Context.WaitlistEntries.OrderByDescending(e => e.RequestedAtUtc).ToListAsync(cancellationToken);
 
 }

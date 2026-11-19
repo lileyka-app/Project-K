@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { OnboardingService, WaitlistEntry } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { KurinBranchRequestService } from '../../../kurinModule/services/kurin-branch-request-service/kurin-branch-request.service';
+import { KurinBranchRequestDto } from '../../../kurinModule/models/kurin-branch-request.dto';
 import { isWaitlistAwaitingDecision } from '../../functions/waitlist-status.function';
 
 /**
@@ -26,8 +27,8 @@ export class WaitlistAttentionService {
       // A failed read is not worth a toast here; the page itself reports it when opened.
       error: () => undefined
     });
-    this.branchRequests.getPending().subscribe({
-      next: requests => this.countRequests(requests.length),
+    this.branchRequests.getAll().subscribe({
+      next: requests => this.countRequests(requests),
       error: () => undefined
     });
   }
@@ -36,7 +37,7 @@ export class WaitlistAttentionService {
     this.applications.set(entries.filter(entry => isWaitlistAwaitingDecision(entry.verificationStatus)).length);
   }
 
-  countRequests(count: number): void {
-    this.requests.set(count);
+  countRequests(requests: KurinBranchRequestDto[]): void {
+    this.requests.set(requests.filter(request => request.status === 'Pending').length);
   }
 }

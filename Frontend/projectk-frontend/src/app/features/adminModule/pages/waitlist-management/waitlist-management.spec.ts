@@ -9,6 +9,9 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { WaitlistManagementComponent } from './waitlist-management';
 import { OnboardingService, WaitlistEntry } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
+import { KurinBranchRequestService } from '../../../kurinModule/services/kurin-branch-request-service/kurin-branch-request.service';
+import { KurinBranchRequestDto } from '../../../kurinModule/models/kurin-branch-request.dto';
+import { KurinBranch } from '../../../kurinModule/models/enums/kurin-branch.enum';
 
 function entry(overrides: Partial<WaitlistEntry>): WaitlistEntry {
   return {
@@ -24,6 +27,23 @@ function entry(overrides: Partial<WaitlistEntry>): WaitlistEntry {
     verificationStatus: 'Submitted',
     source: 'Application',
     requestedAtUtc: '2026-10-18T10:00:00Z',
+    ...overrides
+  };
+}
+
+function branchRequest(overrides: Partial<KurinBranchRequestDto>): KurinBranchRequestDto {
+  return {
+    kurinBranchRequestKey: 'req-1',
+    kurinKey: 'kurin-1',
+    kraiCode: 'ua',
+    kurinNamedAfter: 'Лісові Чорти',
+    currentBranches: [{ branch: KurinBranch.USP, number: 7 }],
+    wantedBranches: [{ branch: KurinBranch.USP, number: 7 }, { branch: KurinBranch.UPS, number: 21 }],
+    note: null,
+    status: 'Pending',
+    requestedByName: 'Тарас',
+    requestedAtUtc: '2026-10-19T09:00:00Z',
+    reviewedAtUtc: null,
     ...overrides
   };
 }
@@ -49,7 +69,7 @@ describe('WaitlistManagementComponent', () => {
       { code: 'ua', name: 'Україна', isDefault: true },
       { code: 'pl', name: 'Польща', isDefault: false }
     ]));
-    onboarding.approveWaitlistEntry.mockReturnValue(of('invitation-key'));
+    onboarding.approveWaitlistEntry.mockReturnValue(of({ invitationKey: 'invitation-key', invitationSent: true }));
 
     await TestBed.configureTestingModule({
       imports: [WaitlistManagementComponent],
@@ -57,7 +77,11 @@ describe('WaitlistManagementComponent', () => {
         provideNoopAnimations(),
         MessageService,
         { provide: OnboardingService, useValue: onboarding },
-        { provide: AuthService, useValue: {} }
+        { provide: AuthService, useValue: {} },
+        { provide: KurinBranchRequestService, useValue: { getAll: () => of([
+          branchRequest({}),
+          branchRequest({ kurinBranchRequestKey: 'req-2', status: 'Approved', requestedAtUtc: '2026-09-01T09:00:00Z' })
+        ]) } }
       ]
     }).compileComponents();
 
@@ -112,5 +136,30 @@ describe('WaitlistManagementComponent', () => {
     component.confirmApproval();
 
     expect(add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Такого краю немає в списку.' }));
+  });
+
+  it('lists what waits, applications and kurin requests together, newest first', () => {
+    expect(component.visibleItems.map(item => item.key)).toEqual(['req-1', 'key-1', 'key-2']);
+    expect(component.stateOptions[0].label).toBe('Чекають · 3');
+  });
+
+  it('narrows the list to one kind, settled ones included', () => {
+    component.setState('all');
+    component.setKind('branch');
+
+    expect(component.visibleItems.map(item => item.key)).toEqual(['req-1', 'req-2']);
+    // A settled kurin already has the wanted улади, so its row names only them.
+    expect(component.visibleItems[1].from).toBeNull();
+    expect(component.visibleItems[0].from).toBe('7-й курінь УСП');
+  });
+
+  it('says so when the approval stood but the letter did not go', () => {
+    const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+    onboarding.approveWaitlistEntry.mockReturnValue(of({ invitationKey: 'k', invitationSent: false }));
+
+    component.approve(component.entries[0]);
+    component.confirmApproval();
+
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'warn' }));
   });
 });

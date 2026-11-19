@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
@@ -28,6 +29,7 @@ public class ApproveWaitlistEntryHandlerTests
     private readonly Mock<IKraiRepository> _krais = new();
     private readonly Mock<IAccountProvisioningService> _provisioning = new();
     private readonly Mock<IBackendCache> _cache = new();
+    private readonly Mock<IEmailService> _email = new();
     private readonly ApproveWaitlistEntryCommandHandler _handler;
     private Kurin? _openedKurin;
 
@@ -48,11 +50,40 @@ public class ApproveWaitlistEntryHandlerTests
         _handler = new ApproveWaitlistEntryCommandHandler(
             _unitOfWork.Object,
             _provisioning.Object,
-            new Mock<IEmailService>().Object,
+            _email.Object,
             new Mock<ICurrentUserContext>().Object,
             Options.Create(new KurinNumberOptions()),
             Options.Create(new KraiOptions()),
-            _cache.Object);
+            _cache.Object,
+            NullLogger<ApproveWaitlistEntryCommandHandler>.Instance);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldStillApprove_WhenTheLetterDoesNotGo()
+    {
+        var entry = Given(claimed: "47");
+        _email
+            .Setup(x => x.SendInvitationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("API key is invalid"));
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        // The approval is stored before the letter; a throw used to become a 500, and the retry a 409.
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.InvitationSent.Should().BeFalse();
+        entry.VerificationStatus.Should().Be(WaitlistVerificationStatus.ApprovedForInvitation);
+        entry.InvitationSentAtUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldMarkTheLetterSent_WhenItGoes()
+    {
+        var entry = Given(claimed: "47");
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        result.Data!.InvitationSent.Should().BeTrue();
+        entry.InvitationSentAtUtc.Should().NotBeNull();
     }
 
     [Fact]

@@ -30,7 +30,8 @@ export class KurinBranchRequestService {
     });
   }
 
-  getPending(): Observable<KurinBranchRequestDto[]> {
+  /** Every kurin's request, waiting and settled, newest first. */
+  getAll(): Observable<KurinBranchRequestDto[]> {
     return this.http.get<KurinBranchRequestDto[]>(`${this.apiUrl}/branch-requests`, { context: requestFeedback('silent') });
   }
 

@@ -9,26 +9,26 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.BranchRequest;
 
-/// <summary>Every request still waiting for an administrator, beside the applications.</summary>
-public sealed record GetPendingKurinBranchRequestsQuery : IRequest<ServiceResult<IReadOnlyList<KurinBranchRequestDto>>>;
+/// <summary>Every kurin's request, waiting and settled, newest first, for the administrators' inbox beside the applications.</summary>
+public sealed record GetKurinBranchRequestsQuery : IRequest<ServiceResult<IReadOnlyList<KurinBranchRequestDto>>>;
 
-public sealed class GetPendingKurinBranchRequestsQueryHandler
-    : IRequestHandler<GetPendingKurinBranchRequestsQuery, ServiceResult<IReadOnlyList<KurinBranchRequestDto>>>
+public sealed class GetKurinBranchRequestsQueryHandler
+    : IRequestHandler<GetKurinBranchRequestsQuery, ServiceResult<IReadOnlyList<KurinBranchRequestDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<AppUser> _userManager;
 
-    public GetPendingKurinBranchRequestsQueryHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager)
+    public GetKurinBranchRequestsQueryHandler(IUnitOfWork unitOfWork, UserManager<AppUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
     }
 
-    public async Task<ServiceResult<IReadOnlyList<KurinBranchRequestDto>>> Handle(GetPendingKurinBranchRequestsQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<IReadOnlyList<KurinBranchRequestDto>>> Handle(GetKurinBranchRequestsQuery request, CancellationToken cancellationToken)
     {
-        var pending = await _unitOfWork.KurinBranchRequests.GetPendingAsync(cancellationToken);
-        var responses = new List<KurinBranchRequestDto>(pending.Count);
-        foreach (var open in pending)
+        var requests = await _unitOfWork.KurinBranchRequests.GetAllAsync(cancellationToken);
+        var responses = new List<KurinBranchRequestDto>(requests.Count);
+        foreach (var open in requests)
         {
             // A handful at most, so one read each is cheaper than a contract for it.
             if (await _unitOfWork.Kurins.GetByKeyAsync(open.KurinKey, cancellationToken) is { } kurin)

@@ -16,6 +16,6 @@ public interface IKurinBranchRequestRepository : IBaseEntityRepository<KurinBran
     /// </summary>
     Task<bool> TrySettleAsync(Guid requestKey, KurinBranchRequestStatus status, Guid? reviewedByUserKey, DateTime reviewedAtUtc, CancellationToken cancellationToken = default);
 
-    /// <summary>Every request still waiting for an administrator, oldest first.</summary>
-    Task<IReadOnlyList<KurinBranchRequest>> GetPendingAsync(CancellationToken cancellationToken = default);
+    /// <summary>Every request, waiting and settled, newest first: the administrators' inbox.</summary>
+    Task<IReadOnlyList<KurinBranchRequest>> GetAllAsync(CancellationToken cancellationToken = default);
 }

@@ -80,7 +80,7 @@ public class OnboardingController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost("waitlist/{key:guid}/approve")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(WaitlistApprovalDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ApproveWaitlistEntry(Guid key, [FromBody] ApproveWaitlistEntryRequest? request)

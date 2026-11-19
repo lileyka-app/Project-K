@@ -62,6 +62,12 @@ export interface WaitlistEntry extends WaitlistRegistration {
   onboardingStatus?: string | number;
 }
 
+/** The invitation an approval made; `invitationSent` is false when the letter did not go and needs sending again. */
+export interface WaitlistApproval {
+  invitationKey: string;
+  invitationSent: boolean;
+}
+
 export interface InvitationValidationResponse {
   email: string;
   firstName: string;
@@ -108,8 +114,8 @@ export class OnboardingService {
   }
 
   /** Without a край the kurin opens in the one the applicant picked, or in the default. */
-  approveWaitlistEntry(key: string, kraiCode?: string | null): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/waitlist/${key}/approve`, kraiCode ? { kraiCode } : {});
+  approveWaitlistEntry(key: string, kraiCode?: string | null): Observable<WaitlistApproval> {
+    return this.http.post<WaitlistApproval>(`${this.apiUrl}/waitlist/${key}/approve`, kraiCode ? { kraiCode } : {});
   }
 
   rejectWaitlistEntry(key: string, note?: string): Observable<string> {

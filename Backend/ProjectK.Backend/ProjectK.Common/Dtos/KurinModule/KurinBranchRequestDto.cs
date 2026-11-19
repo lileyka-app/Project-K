@@ -17,4 +17,5 @@ public sealed record KurinBranchRequestDto(
     string? Note,
     KurinBranchRequestStatus Status,
     string? RequestedByName,
-    DateTime RequestedAtUtc);
+    DateTime RequestedAtUtc,
+    DateTime? ReviewedAtUtc);

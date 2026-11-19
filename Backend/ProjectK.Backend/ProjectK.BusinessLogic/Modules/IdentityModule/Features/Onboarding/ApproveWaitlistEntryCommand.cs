@@ -1,9 +1,11 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Contracts.IdentityModule;
 using ProjectK.Common.Contracts.NotificationsModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.IdentityModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.IdentityModule;
@@ -19,9 +21,9 @@ namespace ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
 /// The край the admin settled on, overriding the applicant's pick. Without it the entry's own край
 /// stands, and without that the instance's default.
 /// </param>
-public sealed record ApproveWaitlistEntryCommand(Guid WaitlistEntryKey, string? KraiCode = null) : IRequest<ServiceResult<Guid>>;
+public sealed record ApproveWaitlistEntryCommand(Guid WaitlistEntryKey, string? KraiCode = null) : IRequest<ServiceResult<WaitlistApprovalDto>>;
 
-public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlistEntryCommand, ServiceResult<Guid>>
+public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<ApproveWaitlistEntryCommand, ServiceResult<WaitlistApprovalDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAccountProvisioningService _accountProvisioning;
@@ -30,6 +32,7 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
     private readonly KurinNumberOptions _numbers;
     private readonly KraiOptions _krai;
     private readonly IBackendCache _cache;
+    private readonly ILogger<ApproveWaitlistEntryCommandHandler> _logger;
 
     public ApproveWaitlistEntryCommandHandler(
         IUnitOfWork unitOfWork,
@@ -38,8 +41,10 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
         ICurrentUserContext currentUserContext,
         IOptions<KurinNumberOptions> numbers,
         IOptions<KraiOptions> krai,
-        IBackendCache cache)
+        IBackendCache cache,
+        ILogger<ApproveWaitlistEntryCommandHandler> logger)
     {
+        _logger = logger;
         _numbers = numbers.Value;
         _krai = krai.Value;
         _cache = cache;
@@ -49,17 +54,17 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
         _currentUserContext = currentUserContext;
     }
 
-    public async Task<ServiceResult<Guid>> Handle(ApproveWaitlistEntryCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<WaitlistApprovalDto>> Handle(ApproveWaitlistEntryCommand request, CancellationToken cancellationToken)
     {
         var entry = await _unitOfWork.WaitlistEntries.GetByKeyAsync(request.WaitlistEntryKey, cancellationToken);
         if (entry == null)
         {
-            return ServiceResult<Guid>.Failure(ResultType.NotFound, IdentityErrors.WaitlistEntryNotFound, "Waitlist entry not found.");
+            return ServiceResult<WaitlistApprovalDto>.Failure(ResultType.NotFound, IdentityErrors.WaitlistEntryNotFound, "Waitlist entry not found.");
         }
 
         if (entry.VerificationStatus == WaitlistVerificationStatus.ApprovedForInvitation)
         {
-            return ServiceResult<Guid>.Failure(ResultType.Conflict, IdentityErrors.WaitlistEntryAlreadyApproved, "Waitlist entry is already approved.");
+            return ServiceResult<WaitlistApprovalDto>.Failure(ResultType.Conflict, IdentityErrors.WaitlistEntryAlreadyApproved, "Waitlist entry is already approved.");
         }
 
         // The admin's pick wins over the applicant's; an entry from before the form asked has neither,
@@ -67,7 +72,7 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
         var chosenKrai = Krai.NormalizeCode(request.KraiCode);
         if (chosenKrai is not null && !await _unitOfWork.Krais.ExistsAsync(chosenKrai, cancellationToken))
         {
-            return ServiceResult<Guid>.Failure(ResultType.BadRequest, IdentityErrors.KraiNotFound, "There is no such krai.");
+            return ServiceResult<WaitlistApprovalDto>.Failure(ResultType.BadRequest, IdentityErrors.KraiNotFound, "There is no such krai.");
         }
 
         var kraiCode = chosenKrai ?? entry.KraiCode ?? _krai.Default;
@@ -85,7 +90,7 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
             // A number is the kurin's within its край, so it is only taken if this край has it.
             if (await _unitOfWork.Kurins.ExistsAsync(kraiCode, claimed, cancellationToken))
             {
-                return ServiceResult<Guid>.Failure(ResultType.Conflict, IdentityErrors.KurinNumberTaken, "A kurin with this number already exists in this krai.");
+                return ServiceResult<WaitlistApprovalDto>.Failure(ResultType.Conflict, IdentityErrors.KurinNumberTaken, "A kurin with this number already exists in this krai.");
             }
         }
 
@@ -96,7 +101,7 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
             {
                 if (await _unitOfWork.Kurins.IsNumberTakenAsync(kraiCode, numbering.Branch, numbering.Number!.Value, null, cancellationToken))
                 {
-                    return ServiceResult<Guid>.Failure(ResultType.Conflict, IdentityErrors.KurinNumberTaken, "A kurin with this number already exists in this krai.");
+                    return ServiceResult<WaitlistApprovalDto>.Failure(ResultType.Conflict, IdentityErrors.KurinNumberTaken, "A kurin with this number already exists in this krai.");
                 }
             }
         }
@@ -112,7 +117,7 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
 
         if (provisioned.Type != ResultType.Success || provisioned.Data is null)
         {
-            return ServiceResult<Guid>.Failure(
+            return ServiceResult<WaitlistApprovalDto>.Failure(
                 provisioned.Type,
                 provisioned.ErrorCode ?? IdentityErrors.UserNotCreated,
                 provisioned.ErrorMessage ?? "Failed to create user.");
@@ -138,7 +143,6 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
         entry.ApprovedAtUtc = DateTime.UtcNow;
         entry.ReviewedAtUtc = DateTime.UtcNow;
         entry.ReviewedByUserKey = _currentUserContext.UserId;
-        entry.InvitationSentAtUtc = DateTime.UtcNow;
         _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -147,9 +151,23 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
             _cache.Invalidate(BackendCacheRules.KurinReads);
         }
 
-        // 5. Send Invitation Email
-        await _emailService.SendInvitationEmailAsync(entry.Email, provisioned.Data.InvitationToken, cancellationToken);
+        // 5. Send Invitation Email. Everything is stored by now, so a letter that does not go is
+        // reported, not failed on: a 500 here left the entry approved, and the admin's retry then met
+        // «already approved» (409). The letter goes again from the entry («Надіслати ще раз»).
+        try
+        {
+            await _emailService.SendInvitationEmailAsync(entry.Email, provisioned.Data.InvitationToken, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Waitlist entry {WaitlistEntryKey} was approved, but the invitation letter could not be sent.", entry.WaitlistEntryKey);
+            return new ServiceResult<WaitlistApprovalDto>(ResultType.Success, new WaitlistApprovalDto(provisioned.Data.InvitationKey, InvitationSent: false));
+        }
 
-        return new ServiceResult<Guid>(ResultType.Success, provisioned.Data.InvitationKey);
+        entry.InvitationSentAtUtc = DateTime.UtcNow;
+        _unitOfWork.WaitlistEntries.Update(entry, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new ServiceResult<WaitlistApprovalDto>(ResultType.Success, new WaitlistApprovalDto(provisioned.Data.InvitationKey, InvitationSent: true));
     }
 }

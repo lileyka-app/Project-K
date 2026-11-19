@@ -17,5 +17,6 @@ public static class BranchRequestMapping
         Note: request.Note,
         Status: request.Status,
         RequestedByName: requestedByName,
-        RequestedAtUtc: request.RequestedAtUtc);
+        RequestedAtUtc: request.RequestedAtUtc,
+        ReviewedAtUtc: request.ReviewedAtUtc);
 }

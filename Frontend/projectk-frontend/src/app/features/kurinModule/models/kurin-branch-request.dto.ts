@@ -14,6 +14,7 @@ export interface KurinBranchRequestDto {
   status: 'Pending' | 'Approved' | 'Rejected';
   requestedByName: string | null;
   requestedAtUtc: string;
+  reviewedAtUtc: string | null;
 }
 
 /** Порожнє число — курінь виходить із цієї гілки. */

@@ -26,10 +26,9 @@ public class KurinBranchRequestRepository : BaseEntityRepository<KurinBranchRequ
                     .SetProperty(r => r.ReviewedAtUtc, reviewedAtUtc),
                 cancellationToken) == 1;
 
-    public async Task<IReadOnlyList<KurinBranchRequest>> GetPendingAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<KurinBranchRequest>> GetAllAsync(CancellationToken cancellationToken = default)
         => await Context.KurinBranchRequests
             .AsNoTracking()
-            .Where(r => r.Status == KurinBranchRequestStatus.Pending)
-            .OrderBy(r => r.RequestedAtUtc)
+            .OrderByDescending(r => r.RequestedAtUtc)
             .ToListAsync(cancellationToken);
 }

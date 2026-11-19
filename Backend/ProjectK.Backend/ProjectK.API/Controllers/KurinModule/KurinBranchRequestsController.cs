@@ -56,13 +56,13 @@ public class KurinBranchRequestsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    /// <summary>Every kurin's request still waiting, for the administrators' list beside the applications.</summary>
+    /// <summary>Every kurin's request, waiting and settled, newest first, for the administrators' inbox beside the applications.</summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("branch-requests")]
     [ProducesResponseType(typeof(IReadOnlyList<KurinBranchRequestDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPendingBranchRequests(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetBranchRequests(CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(new GetPendingKurinBranchRequestsQuery(), cancellationToken);
+        var response = await _mediator.Send(new GetKurinBranchRequestsQuery(), cancellationToken);
         return response.ToActionResult(this);
     }
 
