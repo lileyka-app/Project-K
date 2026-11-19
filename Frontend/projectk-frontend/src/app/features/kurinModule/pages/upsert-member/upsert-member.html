@@ -117,9 +117,6 @@
                                     [(ngModel)]="member.phoneNumber" (ngModelChange)="markFormDirty()"
                                     [required]="fieldMode('phoneNumber') === 'required'" #phoneNumberCtrl="ngModel"
                                     [invalid]="!!phoneNumberCtrl.invalid && !!(phoneNumberCtrl.dirty || phoneNumberCtrl.touched)" />
-                                @if (phoneNumberCtrl.errors?.['phone'] && (phoneNumberCtrl.dirty || phoneNumberCtrl.touched)) {
-                                    <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
-                                }
                             </div>
                         }
                         @if (shows('address')) {
@@ -164,9 +161,6 @@
                                     [defaultCountry]="phoneCountry"
                                     [(ngModel)]="member[parent.phone]" (ngModelChange)="markFormDirty()" #parentPhoneCtrl="ngModel"
                                     [invalid]="!!parentPhoneCtrl.invalid && !!(parentPhoneCtrl.dirty || parentPhoneCtrl.touched)" />
-                                @if (parentPhoneCtrl.errors?.['phone'] && (parentPhoneCtrl.dirty || parentPhoneCtrl.touched)) {
-                                    <small class="member-form__error">Схоже, номер неповний або зайвий.</small>
-                                }
                             </div>
                         }
                     </div>

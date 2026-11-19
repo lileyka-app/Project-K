@@ -10,6 +10,7 @@ public class PhoneNumberRulesTests
     [InlineData("+380 50 123 45 67", "+380501234567")]
     [InlineData(" +420 (777) 123-456 ", "+420777123456")]
     [InlineData("+1.202.555.0100", "+12025550100")]
+    [InlineData("+123 4567 8901 2345", "+123456789012345")]
     [InlineData("", "")]
     [InlineData("   ", "")]
     [InlineData(null, "")]
@@ -25,16 +26,18 @@ public class PhoneNumberRulesTests
     [InlineData("+380 50 abc")]
     [InlineData("+12345")]
     [InlineData("+38050123456789012345")]
+    [InlineData("+1234567890123456")]
     public void Normalize_RejectsWhatIsNotAnInternationalNumber(string raw)
     {
         PhoneNumberRules.Normalize(raw).Should().BeNull();
     }
 
     [Fact]
-    public void Normalize_KeepsTwentyCharactersAtMost()
+    public void Normalize_TakesFifteenDigitsAtMostForAnyCountry()
     {
-        PhoneNumberRules.Normalize("+3805012345678901234"[..20]).Should().HaveLength(20);
-        PhoneNumberRules.Normalize("+380501234567890123456").Should().BeNull();
+        PhoneNumberRules.Normalize("+380501234567890").Should().HaveLength(16);
+        PhoneNumberRules.Normalize("+3805012345678901").Should().BeNull();
+        PhoneNumberRules.MaxLength.Should().BeGreaterThanOrEqualTo(16);
     }
 
     [Theory]

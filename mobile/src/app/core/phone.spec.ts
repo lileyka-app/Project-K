@@ -25,4 +25,11 @@ describe('phone', () => {
     expect(isPossiblePhone('', 'CZ')).toBe(true);
     expect(isPossiblePhone('77', 'CZ')).toBe(false);
   });
+
+  it('holds one length range for every country instead of each country own', () => {
+    expect(isPossiblePhone('050 123 45', 'UA')).toBe(true);
+    expect(isPossiblePhone('+123 4567 8901 2345', 'UA')).toBe(true);
+    expect(isPossiblePhone('+1234 5678 9012 3456', 'UA')).toBe(false);
+    expect(isPossiblePhone('050 123 45 67 89 01 2', 'UA')).toBe(false);
+  });
 });

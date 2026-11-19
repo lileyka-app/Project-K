@@ -3,7 +3,6 @@ import {
   CountryCode,
   getCountries,
   getCountryCallingCode,
-  isPossiblePhoneNumber,
   parsePhoneNumberFromString
 } from 'libphonenumber-js';
 
@@ -64,9 +63,32 @@ export function toStoredPhone(country: CountryCode, national: string | null | un
   return parsed ? parsed.number : `+${getCountryCallingCode(country)}${digits.replace(/^0+/, '')}`;
 }
 
+/**
+ * How many digits a number has with its calling code, the same for every country: E.164 allows at
+ * most 15, and no country's numbers come shorter than 7. A country's own lengths are not checked,
+ * so a number from any край goes through. The server holds the same bounds (`PhoneNumberRules`).
+ */
+export const PHONE_DIGITS = { min: 7, max: 15 } as const;
+
+export type PhoneLengthIssue = 'short' | 'long';
+
+/** What is wrong with a stored number's length, or null; empty counts as fine, a required check is separate. */
+export function phoneLengthIssue(stored: string | null | undefined): PhoneLengthIssue | null {
+  const digits = (stored ?? '').replaceAll(/\D/g, '').length;
+  if (!digits) {
+    return null;
+  }
+
+  if (digits < PHONE_DIGITS.min) {
+    return 'short';
+  }
+
+  return digits > PHONE_DIGITS.max ? 'long' : null;
+}
+
 /** Whether a stored number could be a real one; empty counts as fine, a required check is separate. */
 export function isPossiblePhone(stored: string | null | undefined): boolean {
-  return !stored || isPossiblePhoneNumber(stored);
+  return phoneLengthIssue(stored) === null;
 }
 
 /** The national part formatted as it is typed, as 777 123 456 for Czechia. */

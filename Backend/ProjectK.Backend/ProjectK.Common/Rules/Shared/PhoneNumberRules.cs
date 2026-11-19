@@ -13,7 +13,7 @@ public static partial class PhoneNumberRules
 
     public const string ErrorCode = "InvalidPhoneNumber";
 
-    public const string InvalidMessage = "Номер телефону має починатися з «+» і коду країни, далі лише цифри (до 20 символів).";
+    public const string InvalidMessage = "Номер телефону має починатися з «+» і коду країни; разом від 7 до 15 цифр.";
 
     /// <summary>
     /// The number in the stored shape: <c>""</c> for an empty one, <c>null</c> when it cannot be
@@ -67,7 +67,8 @@ public static partial class PhoneNumberRules
     [GeneratedRegex(@"[\s\-().]")]
     private static partial Regex Separators();
 
-    // «+», a country code that does not start with 0, and 7–19 digits in all: at most 20 characters.
-    [GeneratedRegex(@"^\+[1-9]\d{6,18}$")]
+    // «+», a country code that does not start with 0, and 7–15 digits in all — E.164 allows no more,
+    // and the clients (phone.function.ts, mobile core/phone.ts) hold the same bounds.
+    [GeneratedRegex(@"^\+[1-9]\d{6,14}$")]
     private static partial Regex Stored();
 }

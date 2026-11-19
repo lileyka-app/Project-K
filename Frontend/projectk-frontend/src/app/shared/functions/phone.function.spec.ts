@@ -1,4 +1,4 @@
-import { formatPhone, isPossiblePhone, phoneCountryOfKrai, splitPhone, toStoredPhone } from './phone.function';
+import { formatPhone, isPossiblePhone, phoneCountryOfKrai, phoneLengthIssue, splitPhone, toStoredPhone } from './phone.function';
 
 describe('phone.function', () => {
   it('stores a number as + and digits, in the chosen country', () => {
@@ -31,5 +31,13 @@ describe('phone.function', () => {
     expect(isPossiblePhone('+420777123456')).toBe(true);
     expect(isPossiblePhone('')).toBe(true);
     expect(isPossiblePhone('+42077')).toBe(false);
+  });
+
+  it('holds one length range for every country instead of each country own', () => {
+    expect(phoneLengthIssue('+3805012345')).toBeNull();
+    expect(phoneLengthIssue('+123456789012345')).toBeNull();
+    expect(phoneLengthIssue('+1234567890123456')).toBe('long');
+    expect(phoneLengthIssue('+420123')).toBe('short');
+    expect(phoneLengthIssue('')).toBeNull();
   });
 });
