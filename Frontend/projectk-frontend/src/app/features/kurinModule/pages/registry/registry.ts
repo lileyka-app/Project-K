@@ -5,7 +5,8 @@ import { catchError, filter, of } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { MembershipService } from '../../services/membership-service/membership.service';
-import { KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { KURIN_BRANCH_LABELS, KurinBranch, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { KurinNaming, kurinWithName } from '../../../../shared/functions/kurin-label.function';
 import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
 import { RegistryModeLink, RegistryModes } from './registry-modes';
 
@@ -39,16 +40,23 @@ export class RegistryComponent {
     countLabel: `Чекають відповіді: ${this.waiting()}`,
     testId: `registry-mode-${mode.mode}`
   })));
-  private readonly kurinNumber = signal<number | null>(null);
-  private readonly branch = signal<KurinBranch | null>(null);
+  private readonly kurin = signal<KurinNaming | null>(null);
   private readonly kurinLoaded = signal(false);
 
   readonly kurinLine = computed(() => {
     if (!this.kurinLoaded()) {
       return '';
     }
-    const number = this.kurinNumber();
-    const branch = this.branch();
+    const kurin = this.kurin();
+    if (!kurin) {
+      return '';
+    }
+    // A senior kurin goes by its own name and every гілка, as everywhere else.
+    if (isSeniorBranch(kurin.branch)) {
+      return kurinWithName(kurin);
+    }
+    const number = kurin.number;
+    const branch = kurin.branch;
     const name = number ? `${number} курінь` : 'Підготовчий курінь';
     return branch ? `${name} · ${KURIN_BRANCH_LABELS[branch]}` : name;
   });
@@ -81,8 +89,7 @@ export class RegistryComponent {
   private loadKurin(kurinKey: string): void {
     this.kurins.getByKey(kurinKey).subscribe({
       next: kurin => {
-        this.kurinNumber.set(kurin.number);
-        this.branch.set(kurin.branch ?? KurinBranch.UPYu);
+        this.kurin.set({ number: kurin.number, branch: kurin.branch ?? KurinBranch.UPYu, branches: kurin.branches, namedAfter: kurin.namedAfter });
         this.kurinLoaded.set(true);
       },
       error: () => this.kurinLoaded.set(false)

@@ -23,7 +23,7 @@ public sealed record ReviewKurinBranchRequestCommand(Guid KurinBranchRequestKey,
 public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<ReviewKurinBranchRequestCommand, ServiceResult<Unit>>
 {
     /// <summary>What the kurin's journal calls the change.</summary>
-    public const string Label = "Гілки куреня";
+    public const string Label = "Улади й числа";
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;

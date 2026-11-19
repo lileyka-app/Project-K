@@ -44,7 +44,7 @@ public sealed class KurinBranchRequestReviewedEventHandler
                 RecipientUserKey = raised.RequesterUserKey,
                 Type = AppNotificationType.KurinBranchRequestReviewed,
                 Severity = raised.Approved ? AppNotificationSeverity.Success : AppNotificationSeverity.Info,
-                Title = raised.Approved ? "Гілки куреня змінено" : "Запит на зміну гілок відхилено",
+                Title = raised.Approved ? "Улади й числа змінено" : "Запит на улади й числа відхилено",
                 Body = raised.Branches,
                 EntityType = "KurinBranchRequest",
                 EntityKey = raised.KurinBranchRequestKey,

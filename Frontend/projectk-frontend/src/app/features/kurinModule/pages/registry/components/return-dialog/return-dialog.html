@@ -31,7 +31,7 @@
 
       @if (!p.offer.seniorKurin) {
         <div class="lil-dialog-field">
-          <span class="lil-dialog-label" id="return-as">У вашому курені як</span>
+          <span class="lil-dialog-label" id="return-as">У твоєму курені як</span>
           <p-selectbutton [options]="membershipKindOptions" [ngModel]="membershipKind()" (ngModelChange)="membershipKind.set($event)"
             [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="return-as" />
         </div>

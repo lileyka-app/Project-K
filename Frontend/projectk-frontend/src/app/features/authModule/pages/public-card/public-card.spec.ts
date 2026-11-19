@@ -55,6 +55,17 @@ describe('PublicCardComponent', () => {
     expect(text).not.toContain('к. ч. 5');
   });
 
+  it('names a senior kurin by its own name first, without «ім.»', () => {
+    cards.checked.mockReturnValue(of({
+      ...card,
+      kurins: [{ number: 5, namedAfter: 'Орден Хрестоносців', groupName: null, branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 25 }] }]
+    }));
+    const text = (create('check').nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Орден Хрестоносців · 5-й курінь УСП · 25-й курінь УПС');
+    expect(text).not.toContain('ім. Орден');
+  });
+
   it('shows a senior відзначення with the catalogue title and picture', () => {
     cards.checked.mockReturnValue(of({
       ...card,

@@ -237,7 +237,7 @@ export class KurinSettingsComponent implements OnInit {
       case 'KurinNumberOutOfRange':
         return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
       case 'ProbeEditionNotOffered':
-        return 'Пробу гуртка не збережено: такої проби для вашого краю вже немає. Онови сторінку.';
+        return 'Пробу гуртка не збережено: такої проби для твого краю вже немає. Онови сторінку.';
       case 'AccessPolicyInvalid':
         return 'Права й видимість не збережено: сервер не прийняв цю таблицю. Онови сторінку й спробуй ще раз.';
       default:

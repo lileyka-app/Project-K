@@ -11,6 +11,11 @@ import { RegistryComponent } from './registry';
 describe('RegistryComponent', () => {
   let allowed: RegistryMode[];
   let waiting: ReturnType<typeof vi.fn>;
+  let kurin: object;
+
+  beforeEach(() => {
+    kurin = { kurinKey: 'k1', number: 12, branch: KurinBranch.UPYu };
+  });
 
   function create() {
     waiting = vi.fn().mockReturnValue(of(2));
@@ -19,7 +24,7 @@ describe('RegistryComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: { getAuthState: () => new BehaviorSubject({ kurinKey: 'k1' }) } },
-        { provide: KurinService, useValue: { getByKey: () => of({ kurinKey: 'k1', number: 12, branch: KurinBranch.UPYu }) } },
+        { provide: KurinService, useValue: { getByKey: () => of(kurin) } },
         { provide: MembershipService, useValue: { waitingRequests: waiting } },
         {
           provide: RegistryModes,
@@ -45,6 +50,17 @@ describe('RegistryComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('12 курінь · УПЮ');
     expect(tabs(fixture)).toEqual(['Склад', 'Переходи 2', 'Архів', 'Імпорт']);
     expect(waiting).toHaveBeenCalledWith('k1');
+  });
+
+  it('names a senior kurin by its name and every гілка', () => {
+    allowed = ['roster'];
+    kurin = {
+      kurinKey: 'k1', number: 5, branch: KurinBranch.USP, namedAfter: 'Орден Хрестоносців',
+      branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 25 }]
+    };
+    const fixture = create();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Орден Хрестоносців · 5-й курінь УСП · 25-й курінь УПС');
   });
 
   it('shows a гурток\'s провід only their modes, and asks nothing about requests', () => {

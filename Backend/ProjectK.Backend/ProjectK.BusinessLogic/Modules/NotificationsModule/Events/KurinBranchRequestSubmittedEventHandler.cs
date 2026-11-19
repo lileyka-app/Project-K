@@ -48,7 +48,7 @@ public sealed class KurinBranchRequestSubmittedEventHandler
                 {
                     RecipientUserKey = admin.Id,
                     Type = AppNotificationType.KurinBranchRequestSubmitted,
-                    Title = "Запит на зміну гілок куреня",
+                    Title = "Запит на улади й числа",
                     Body = $"{raised.Kurin} → {raised.Wanted}",
                     EntityType = "KurinBranchRequest",
                     EntityKey = raised.KurinBranchRequestKey,

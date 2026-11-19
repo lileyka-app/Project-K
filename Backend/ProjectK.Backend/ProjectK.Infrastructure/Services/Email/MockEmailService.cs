@@ -44,7 +44,7 @@ public class MockEmailService : IEmailService
 
     public Task SendKurinBranchRequestEmailAsync(string to, string kurin, string wanted, CancellationToken cancellationToken = default)
     {
-        var body = $"Запит на зміну гілок: {kurin} → {wanted}";
-        return SendEmailAsync(to, "Лілейка · запит на зміну гілок куреня", body, cancellationToken);
+        var body = $"Запит на улади й числа: {kurin} → {wanted}";
+        return SendEmailAsync(to, "Лілейка · запит на улади й числа", body, cancellationToken);
     }
 }

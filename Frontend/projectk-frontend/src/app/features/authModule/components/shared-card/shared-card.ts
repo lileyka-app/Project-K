@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { DatePipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
 import { kurinInText } from '../../../../shared/functions/kurin-label.function';
+import { isSeniorBranch } from '../../../kurinModule/models/enums/kurin-branch.enum';
 import { CardUlad, PublicCardDto } from '../../services/card-service/card.service';
 
 type SharedAward = NonNullable<PublicCardDto['awards']>[number];
@@ -36,7 +37,9 @@ export class SharedCardComponent {
 
   readonly kurinLine = computed(() =>
     (this.card().kurins ?? [])
-      .map(k => [kurinInText(k.branches, k.number), k.namedAfter ? `ім. ${k.namedAfter}` : null, k.groupName ? `гурток «${k.groupName}»` : null]
+      .map(k => (k.branches.some(b => isSeniorBranch(b.branch))
+        ? [k.namedAfter, kurinInText(k.branches, k.number)]
+        : [kurinInText(k.branches, k.number), k.namedAfter ? `ім. ${k.namedAfter}` : null, k.groupName ? `гурток «${k.groupName}»` : null])
         .filter(Boolean).join(' · '))
       .join('; '));
 

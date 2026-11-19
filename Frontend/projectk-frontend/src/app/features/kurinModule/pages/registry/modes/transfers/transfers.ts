@@ -218,7 +218,7 @@ export class TransfersComponent implements OnInit {
     this.confirmation.confirm({
       header: transfer ? 'Перевести людину?' : 'Прийняти ще й туди?',
       message: transfer
-        ? `${request.memberName}: з вашого куреня до ${kurinInText(request.toKurin.branches, request.toKurin.number)}.`
+        ? `${request.memberName}: з твого куреня до ${kurinInText(request.toKurin.branches, request.toKurin.number)}.`
         : `${request.memberName}: ще й до ${kurinInText(request.toKurin.branches, request.toKurin.number)}.`,
       icon: transfer ? 'pi pi-sign-out' : 'pi pi-user-plus',
       acceptButtonProps: transfer ? { label: 'Перевести', severity: 'danger' } : { label: 'Підтвердити' },

@@ -7,7 +7,7 @@
       <ng-template #caption>
         <div class="lil-tile-head">
           <div>
-            <h2>Чекають вашої відповіді <span class="lil-count">{{ pendingIncoming() }}</span></h2>
+            <h2>Чекають твоєї відповіді <span class="lil-count">{{ pendingIncoming() }}</span></h2>
           </div>
         </div>
       </ng-template>
@@ -68,7 +68,7 @@
       <div class="transfers__candidate">
         <p class="transfers__name">{{ c.member.fullName }}</p>
         @if (c.alreadyInThisKurin) {
-          <p class="transfers__hint">Уже у вашому курені.</p>
+          <p class="transfers__hint">Уже в твоєму курені.</p>
         } @else if (standsNowhere()) {
           <p class="transfers__hint">Ніде не стоїть</p>
         } @else {
@@ -101,7 +101,7 @@
 
           @if (!c.offer.seniorKurin) {
             <div class="lil-dialog-field">
-              <span class="lil-dialog-label" id="transfer-as">У вашому курені як</span>
+              <span class="lil-dialog-label" id="transfer-as">У твоєму курені як</span>
               <p-selectbutton [options]="membershipKindOptions" [ngModel]="membershipKind()" (ngModelChange)="membershipKind.set($event)"
                 [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="transfer-as" />
             </div>

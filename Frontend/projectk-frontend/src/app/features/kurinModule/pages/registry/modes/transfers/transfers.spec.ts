@@ -149,7 +149,7 @@ describe('TransfersComponent', () => {
     expect(text(fixture)).toContain('Відповідає сама людина');
     expect(text(fixture)).toContain('Надіслати запрошення');
     expect(text(fixture)).not.toContain('Що просимо');
-    expect(text(fixture)).not.toContain('У вашому курені як');
+    expect(text(fixture)).not.toContain('У твоєму курені як');
     component.send();
     expect(memberships.createRequest).toHaveBeenCalledWith('k15', {
       publicId: 'PL-4F7A2-9D4A1', kind: 'AlsoJoin', membershipKind: 'Youth', fromKurinKey: null

@@ -37,7 +37,7 @@ type Ulad = 'UPYu' | 'USP' | 'UPS';
     <main class="flex justify-center items-center min-h-screen p-4">
       <p-card
         header="Приєднатися до списку очікування"
-        subheader="Залиште заявку, щоб отримати доступ до Лілейки"
+        subheader="Залиш заявку, щоб отримати доступ до Лілейки"
         [style]="{ width: 'min(100%, 480px)' }"
       >
         @if (submitted) {

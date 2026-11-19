@@ -127,17 +127,17 @@ public class ResendEmailService : IEmailService
     public async Task SendKurinBranchRequestEmailAsync(string to, string kurin, string wanted, CancellationToken cancellationToken = default)
     {
         var letter = new Letter(
-            Title: "Запит на зміну гілок куреня",
+            Title: "Запит на улади й числа",
             Paragraphs:
             [
-                $"{kurin} просить змінити свої гілки й числа: {wanted}.",
+                $"{kurin} просить змінити свої улади й числа: {wanted}.",
                 "Запит чекає на ваше рішення поруч із заявками: схвалити або відхилити.",
             ],
             ButtonText: "Переглянути запити",
             Url: $"{_settings.BaseUrl}/waitlist",
             Footer: "Цей лист приходить кожному адміністратору Лілейки, коли курінь надсилає такий запит.");
 
-        await SendAsync(to, "Лілейка · запит на зміну гілок куреня", Frame(letter), PlainText(letter), cancellationToken);
+        await SendAsync(to, "Лілейка · запит на улади й числа", Frame(letter), PlainText(letter), cancellationToken);
     }
 
     /// <summary>What every letter says: a title, the paragraphs, one button with its link, a footer.</summary>

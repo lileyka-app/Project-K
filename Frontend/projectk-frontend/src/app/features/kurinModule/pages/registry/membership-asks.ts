@@ -44,7 +44,7 @@ export const MEMBERSHIP_KIND_OPTIONS: { label: string; value: MembershipKindName
 
 /** What the registry says to the API's error codes for requests. */
 const REQUEST_ERRORS: Record<string, string> = {
-  AlreadyAMember: 'Ця людина вже у вашому курені.',
+  AlreadyAMember: 'Ця людина вже у твоєму курені.',
   RequestPending: 'Запит щодо цієї людини вже чекає відповіді.',
   ChooseKurin: 'Людина стоїть у кількох куренях — вибери, кого питати.',
   NotInThatKurin: 'Людина вже не стоїть у тому курені. Знайди її за кодом ще раз.',
@@ -77,6 +77,6 @@ export function requestSentMessage(sent: Pick<MembershipRequestSentDto, 'joined'
   }
 
   return sent.joined
-    ? { severity: 'success', summary: joinedSummary, detail: `${name} тепер у вашому курені.` }
+    ? { severity: 'success', summary: joinedSummary, detail: `${name} тепер у твоєму курені.` }
     : { severity: 'success', summary: 'Запит надіслано', detail: `Відповідь дасть Звʼязковий ${kurinInText(asked?.branches, asked?.number)}. Запит діє 14 днів.` };
 }
