@@ -36,3 +36,14 @@ public enum RosterField
 /// only for <see cref="RosterField.LevelDate"/>.
 /// </summary>
 public sealed record ColumnMapping(int Index, RosterField Field, PlastLevel? Level = null);
+
+/// <summary>
+/// What the mapping screen offers one kurin: the fields a row cannot go without, the ones it may
+/// carry, the ступені a date column can be, and whether rows go into гуртки at all. Sent with the
+/// preview, so the screen asks exactly what the import will check.
+/// </summary>
+public sealed record RosterImportShape(
+    IReadOnlyList<RosterField> Required,
+    IReadOnlyList<RosterField> Optional,
+    IReadOnlyList<PlastLevel> LevelDates,
+    bool PlacesInGroups);

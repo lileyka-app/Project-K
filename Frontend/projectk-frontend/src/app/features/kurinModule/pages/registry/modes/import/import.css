@@ -61,6 +61,13 @@
   background: var(--p-primary-hover-color);
 }
 
+.import__upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .import__row {
   display: flex;
   align-items: center;

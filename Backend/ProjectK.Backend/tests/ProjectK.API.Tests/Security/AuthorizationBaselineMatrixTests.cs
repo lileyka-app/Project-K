@@ -339,6 +339,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<KurinController>(nameof(KurinController.ExportReportPdf), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.ExportRegistry), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.PreviewRosterImport), AuthorizationPolicies.RequireKurinManagement);
+        yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.GetRosterImportTemplate), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.ImportRoster), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.GetAllByGroup), "RequireUser");
         yield return Endpoint<KurinRosterController>(nameof(KurinRosterController.GetAllByKurin), "RequireUser");

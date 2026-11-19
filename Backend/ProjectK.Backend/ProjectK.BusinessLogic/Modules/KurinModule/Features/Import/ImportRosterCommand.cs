@@ -1,13 +1,13 @@
 using MediatR;
 using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.Shared;
-using ProjectK.Common.Rules.KurinModule;
 using GroupEntity = ProjectK.Common.Entities.KurinModule.Group;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
@@ -114,28 +114,28 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
             return KurinErrors.NotFound<RosterImportReport>();
         }
 
-        // The roster places every row in a гурток, and a senior kurin has none: it is refused there
-        // rather than opening гуртки the kurin cannot have.
-        if (KurinBranchSetRules.IsSenior(kurin.Branch))
-        {
-            return ServiceResult<RosterImportReport>.Failure(ResultType.BadRequest, KurinErrors.RosterImportNotForSeniorKurin, "A УСП or УПС kurin has no гуртки to import a roster into.");
-        }
+        // A УПЮ kurin places every row in a гурток; a senior one has none, takes people into the
+        // kurin itself and ignores any гурток the file names.
+        var placesInGroups = RosterImportRules.PlacesInGroups(kurin.Branch);
 
         var rows = request.Rows.Select(row => RosterRow.From(row, request.Mapping)).ToList();
 
-        var groups = (await _kurinData.Groups.GetAllAsync(request.KurinKey, cancellationToken)).ToList();
+        List<GroupEntity> groups = placesInGroups
+            ? [.. await _kurinData.Groups.GetAllAsync(request.KurinKey, cancellationToken)]
+            : [];
         var groupsByName = groups.ToDictionary(
             group => group.Name.Trim(),
             group => group.GroupKey,
             StringComparer.CurrentCultureIgnoreCase);
 
-        var usable = rows.Where(row => row.Rejection() is null).ToList();
+        var usable = rows.Where(row => row.Rejection(placesInGroups) is null).ToList();
 
-        var missingGroups = usable
-            .Select(row => row.GroupName!.Trim())
-            .Where(name => !groupsByName.ContainsKey(name))
-            .Distinct(StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+        List<string> missingGroups = placesInGroups
+            ? [.. usable
+                .Select(row => row.GroupName!.Trim())
+                .Where(name => !groupsByName.ContainsKey(name))
+                .Distinct(StringComparer.CurrentCultureIgnoreCase)]
+            : [];
 
         var foreignKurinRows = usable
             .Where(row => row.KurinNumber is not null && kurin.Numbering.All(numbering => numbering.Number != row.KurinNumber))
@@ -169,14 +169,15 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
 
         foreach (var row in rows)
         {
-            if (row.Rejection() is { } reason)
+            if (row.Rejection(placesInGroups) is { } reason)
             {
                 results.Add(new RowResult(row.Number, row.DisplayName, RowOutcome.Rejected, reason));
                 continue;
             }
 
-            var groupName = row.GroupName!.Trim();
-            if (!groupsByName.TryGetValue(groupName, out var groupKey))
+            var groupKey = Guid.Empty;
+            var groupName = row.GroupName?.Trim();
+            if (placesInGroups && !groupsByName.TryGetValue(groupName!, out groupKey))
             {
                 if (!request.CreateMissingGroups)
                 {

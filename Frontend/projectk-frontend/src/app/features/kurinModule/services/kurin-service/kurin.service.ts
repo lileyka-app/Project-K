@@ -62,6 +62,15 @@ export class KurinService {
     });
   }
 
+  /** Порожній склад у колонках цього куреня: лише заголовки, кожен з яких імпорт упізнає. */
+  downloadImportTemplate(kurinKey: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.apiUrl}/${kurinKey}/import/template`, {
+      observe: 'response',
+      responseType: 'blob',
+      context: requestFeedback('errors')
+    });
+  }
+
   /** Читає завантажену таблицю й каже, на що вона схожа. Нічого не пише. */
   previewRoster(kurinKey: string, file: File): Observable<RosterPreview> {
     const form = new FormData();

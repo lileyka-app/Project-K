@@ -77,26 +77,48 @@ public class ImportRosterHandlerTests
 
     private static SheetRow Row(int number, params string[] cells) => new(number, cells);
 
+    /// <summary>
+    /// A senior kurin has no гуртки: a row needs none, goes into the kurin itself, and a гурток the
+    /// file names opens nothing.
+    /// </summary>
+    [Fact]
+    public async Task ASeniorKurin_TakesPeopleIntoTheKurin_WithoutGroups()
+    {
+        _kurins.Setup(r => r.GetByKeyAsync(KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(5, KurinBranch.USP) { KurinKey = KurinKey });
+        ImportedMember? written = null;
+        _people
+            .Setup(p => p.CreateAsync(It.IsAny<ImportedMember>(), It.IsAny<CancellationToken>()))
+            .Callback<ImportedMember, CancellationToken>((person, _) => written = person)
+            .ReturnsAsync(Guid.NewGuid());
+        _people
+            .Setup(p => p.InviteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<MemberInvitation>(ResultType.Success, new MemberInvitation(Guid.NewGuid(), true)));
+
+        var report = await _handler.Handle(
+            new ImportRosterCommand(
+                KurinKey,
+                [
+                    Row(2, "Петренко", "Іван", "01.01.1990", "ст. пл.", "01.05.2010", "Ведмеді", "5", "ivan@example.com"),
+                    Row(3, "Коваль", "Марта", "02.02.1991", "ст. пл.", "01.05.2011", "", "5", "marta@example.com")
+                ],
+                FullMapping,
+                CreateMissingGroups: true,
+                DryRun: false),
+            CancellationToken.None);
+
+        report.Data!.Rows.Should().OnlyContain(row => row.Outcome == RowOutcome.Created);
+        report.Data.MissingGroups.Should().BeEmpty();
+        written!.GroupKey.Should().BeNull();
+        written.KurinKey.Should().Be(KurinKey);
+        _groups.Verify(g => g.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
     /// <summary>
     /// Every imported person gets an account: the file is how a kurin brings its people in, and
     /// someone with no way to sign in is only half brought in. The dry run promises it, the real
     /// run does it, and a row without an address is rejected and says why.
     /// </summary>
-    [Fact]
-    public async Task ASeniorKurin_IsRefused_AndGetsNoGroups()
-    {
-        _kurins.Setup(r => r.GetByKeyAsync(KurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Kurin(5, KurinBranch.USP) { KurinKey = KurinKey });
-
-        var report = await _handler.Handle(
-            new ImportRosterCommand(KurinKey, [Row(2, "Петренко", "Іван", "01.01.1990", "", "", "Ведмеді", "5", "ivan@example.com")], FullMapping, CreateMissingGroups: true, DryRun: false),
-            CancellationToken.None);
-
-        report.ErrorCode.Should().Be(KurinErrors.RosterImportNotForSeniorKurin);
-        _groups.Verify(g => g.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
     [Fact]
     public async Task ARowWithAnAddress_IsPromisedAnAccount_OnADryRun_AndOneWithoutIsRejected()
     {

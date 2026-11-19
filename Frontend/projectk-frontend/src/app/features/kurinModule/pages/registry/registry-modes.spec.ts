@@ -50,10 +50,10 @@ describe('RegistryModes', () => {
     expect(modes()).toEqual([]);
   });
 
-  it('has no import in a senior kurin, which has no гуртки to put people in', () => {
+  it('has the import in a senior kurin too', () => {
     state.permissions = zvyazkovyi;
     branch.set(KurinBranch.USP);
-    expect(modes()).toEqual(['roster', 'transfers', 'archive']);
+    expect(modes()).toEqual(['roster', 'transfers', 'archive', 'import']);
   });
 
   describe('guards', () => {

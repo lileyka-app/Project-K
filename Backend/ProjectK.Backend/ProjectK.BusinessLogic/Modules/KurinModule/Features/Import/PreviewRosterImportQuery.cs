@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.KurinModule;
 using ProjectK.Common.Records.Shared;
@@ -8,7 +9,7 @@ using ProjectK.Common.Records.Shared;
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 
 /// <summary>Reads an uploaded roster and says what it looks like. Writes nothing.</summary>
-public sealed record PreviewRosterImportQuery(Stream Content) : IRequest<ServiceResult<RosterPreview>>;
+public sealed record PreviewRosterImportQuery(Guid KurinKey, Stream Content) : IRequest<ServiceResult<RosterPreview>>;
 
 /// <summary>One column of the file: its heading, an example of what is in it, and our guess.</summary>
 public sealed record RosterColumnPreview(
@@ -21,10 +22,12 @@ public sealed record RosterColumnPreview(
 /// <summary>
 /// The file as the mapping screen needs it: the columns to map, and every data row, so the
 /// import can be planned and applied without uploading the file a second time.
+/// <paramref name="Shape"/> is what this kurin's import asks for.
 /// </summary>
 public sealed record RosterPreview(
     IReadOnlyList<RosterColumnPreview> Columns,
-    IReadOnlyList<SheetRow> Rows);
+    IReadOnlyList<SheetRow> Rows,
+    RosterImportShape Shape);
 
 public sealed class PreviewRosterImportQueryHandler
     : IRequestHandler<PreviewRosterImportQuery, ServiceResult<RosterPreview>>
@@ -36,16 +39,24 @@ public sealed class PreviewRosterImportQueryHandler
     private const int MaxRows = 2_000;
 
     private readonly ISpreadsheetReader _reader;
+    private readonly IUnitOfWork _kurinData;
 
-    public PreviewRosterImportQueryHandler(ISpreadsheetReader reader)
+    public PreviewRosterImportQueryHandler(ISpreadsheetReader reader, IUnitOfWork kurinData)
     {
         _reader = reader;
+        _kurinData = kurinData;
     }
 
-    public Task<ServiceResult<RosterPreview>> Handle(
+    public async Task<ServiceResult<RosterPreview>> Handle(
         PreviewRosterImportQuery request,
         CancellationToken cancellationToken)
     {
+        var kurin = await _kurinData.Kurins.GetByKeyAsync(request.KurinKey, cancellationToken);
+        if (kurin is null)
+        {
+            return KurinErrors.NotFound<RosterPreview>();
+        }
+
         IReadOnlyList<SheetRow> rows;
         try
         {
@@ -55,14 +66,14 @@ public sealed class PreviewRosterImportQueryHandler
         {
             // Anything the spreadsheet library refuses is the same answer to the person holding
             // the file: this is not a workbook we can read.
-            return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, KurinErrors.UnreadableFile, "This file could not be read as a spreadsheet."));
+            return ServiceResult<RosterPreview>.Failure(
+                ResultType.BadRequest, KurinErrors.UnreadableFile, "This file could not be read as a spreadsheet.");
         }
 
         if (rows.Count == 0)
         {
-            return Task.FromResult(ServiceResult<RosterPreview>.Failure(
-                ResultType.BadRequest, KurinErrors.EmptyFile, "The spreadsheet has no rows."));
+            return ServiceResult<RosterPreview>.Failure(
+                ResultType.BadRequest, KurinErrors.EmptyFile, "The spreadsheet has no rows.");
         }
 
         var header = rows[0];
@@ -76,14 +87,14 @@ public sealed class PreviewRosterImportQueryHandler
                     index,
                     text,
                     FirstValueIn(body, index),
-                    field,
+                    RosterImportRules.Offered(field, kurin.Branch),
                     level);
             })
             .ToList();
 
-        return Task.FromResult(new ServiceResult<RosterPreview>(
+        return new ServiceResult<RosterPreview>(
             ResultType.Success,
-            new RosterPreview(columns, body)));
+            new RosterPreview(columns, body, RosterImportRules.ShapeFor(kurin.Branch)));
     }
 
     /// <summary>

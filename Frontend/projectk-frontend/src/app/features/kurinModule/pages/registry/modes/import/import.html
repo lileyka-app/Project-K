@@ -8,16 +8,16 @@
     @case ('upload') {
       <div class="kurin-tile import__panel">
         <h2>Крок 1 · Файл</h2>
-        <p class="import__hint">Excel (.xlsx), перший рядок — заголовки, назви будь-які.</p>
-        <p class="import__hint">
-          Обовʼязково: прізвище, імʼя, дата народження, ступінь <strong>і дата його здобуття</strong>,
-          гурток, пошта.
-        </p>
+        <p class="import__hint">Excel (.xlsx), перший рядок — заголовки, назви будь-які. Шаблон куреня зіставляється сам.</p>
 
-        <label class="import__file">
-          <input type="file" accept=".xlsx" (change)="onFileSelected($event)" [disabled]="busy()" />
-          <span><i class="pi pi-upload"></i> Вибрати файл</span>
-        </label>
+        <div class="import__upload">
+          <label class="import__file">
+            <input type="file" accept=".xlsx" (change)="onFileSelected($event)" [disabled]="busy()" />
+            <span><i class="pi pi-upload"></i> Вибрати файл</span>
+          </label>
+          <p-button label="Шаблон куреня" icon="pi pi-download" severity="secondary" [outlined]="true"
+            [loading]="downloadingTemplate()" (onClick)="downloadTemplate()" />
+        </div>
       </div>
     }
 
@@ -57,7 +57,7 @@
               <td data-mobile-label="Приклад значення" class="import__sample">{{ column.sample || '—' }}</td>
               <td data-mobile-label="Це в системі">
                 <p-select
-                  [options]="fieldOptions"
+                  [options]="fieldOptions()"
                   optionLabel="label"
                   optionValue="value"
                   [ngModel]="chosenFor(column.index)"
@@ -71,10 +71,12 @@
           </ng-template>
         </p-table>
 
-        <div class="import__row">
-          <p-toggleswitch [(ngModel)]="createMissingGroups" inputId="createGroups" />
-          <label for="createGroups">Створити гуртки, яких у курені ще немає</label>
-        </div>
+        @if (placesInGroups()) {
+          <div class="import__row">
+            <p-toggleswitch [(ngModel)]="createMissingGroups" inputId="createGroups" />
+            <label for="createGroups">Створити гуртки, яких у курені ще немає</label>
+          </div>
+        }
 
         <div class="import__actions">
           <p-button label="Назад" icon="pi pi-arrow-left" severity="secondary" [text]="true" (onClick)="startOver()" />

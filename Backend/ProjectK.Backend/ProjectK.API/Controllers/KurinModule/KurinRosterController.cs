@@ -58,8 +58,27 @@ public class KurinRosterController : ControllerBase
         }
 
         await using var content = request.File.OpenReadStream();
-        var result = await _mediator.Send(new PreviewRosterImportQuery(content), cancellationToken);
+        var result = await _mediator.Send(new PreviewRosterImportQuery(kurinKey, content), cancellationToken);
         return result.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// An empty roster in this kurin's columns: headings only, each one the import recognises.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("import/template")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, SpreadsheetContentType)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRosterImportTemplate(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetRosterImportTemplateQuery(kurinKey), cancellationToken);
+        if (result.Type != ResultType.Success || result.Data is null)
+        {
+            return result.ToActionResult(this);
+        }
+
+        return File(result.Data.Content, SpreadsheetContentType, result.Data.FileName);
     }
 
     /// <summary>

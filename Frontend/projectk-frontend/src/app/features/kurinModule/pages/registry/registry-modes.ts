@@ -3,8 +3,6 @@ import { CanActivateFn, RedirectFunction, Router } from '@angular/router';
 import { catchError, map, of } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
-import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
-import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 
 /** What the kurin's «Реєстр» does with its people: one page, one mode at a time. */
 export type RegistryMode = 'roster' | 'transfers' | 'archive' | 'import';
@@ -31,7 +29,6 @@ export const REGISTRY_MODES: readonly RegistryModeLink[] = [
 @Injectable({ providedIn: 'root' })
 export class RegistryModes {
   private readonly permissions = inject(PermissionService);
-  private readonly features = inject(KurinFeaturesService);
 
   allows(mode: RegistryMode): boolean {
     switch (mode) {
@@ -42,8 +39,8 @@ export class RegistryModes {
       case 'archive':
         return this.permissions.canReadArchive();
       case 'import':
-        // The import puts people into гуртки, so a senior kurin, which has none, has no import.
-        return this.permissions.canManageKurinSettings() && hasYouthProgram(this.features.branch());
+        // Every kurin imports; what a row needs (a гурток or not) the server says per branch.
+        return this.permissions.canManageKurinSettings();
     }
   }
 

@@ -120,9 +120,6 @@ public static class KurinErrors
     public const string MentorAlreadyAssigned = "MentorAlreadyAssigned";
     public const string MentorAssignmentNotFound = "MentorAssignmentNotFound";
 
-    /// <summary>A senior kurin has no гуртки to import a roster into.</summary>
-    public const string RosterImportNotForSeniorKurin = "RosterImportNotForSeniorKurin";
-
     /// <summary>The roster upload carried no file.</summary>
     public const string NoFile = "NoFile";
 

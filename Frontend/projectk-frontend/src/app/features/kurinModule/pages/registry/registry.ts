@@ -84,8 +84,6 @@ export class RegistryComponent {
         this.kurinNumber.set(kurin.number);
         this.branch.set(kurin.branch ?? KurinBranch.UPYu);
         this.kurinLoaded.set(true);
-        // Import depends on the branch, which is known only now.
-        this.modes.set(this.registryModes.available());
       },
       error: () => this.kurinLoaded.set(false)
     });

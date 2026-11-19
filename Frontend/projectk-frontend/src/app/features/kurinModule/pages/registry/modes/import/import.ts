@@ -10,17 +10,18 @@ import { MessageModule } from '@openng/optimus-ui/message';
 
 import { KurinService } from '../../../../services/kurin-service/kurin.service';
 import { AuthService } from '../../../../../authModule/services/auth-service/auth.service';
+import { fileNameFrom, saveBlob } from '../../../../../../shared/functions/save-file.function';
 import {
   ApplyRosterRequest,
   ColumnMapping,
-  FIELD_OPTIONS,
-  REQUIRED_FIELDS,
-  requiredFieldName,
   RosterColumnPreview,
   RosterField,
   RosterImportReport,
+  RosterImportShape,
   RowOutcome,
   SheetRow,
+  fieldName,
+  fieldOptionsFor,
   optionByValue,
   optionValueOf
 } from './import-model';
@@ -57,7 +58,14 @@ export class RosterImportComponent implements OnInit {
   readonly createMissingGroups = signal(true);
   readonly report = signal<RosterImportReport | null>(null);
 
-  readonly fieldOptions = FIELD_OPTIONS;
+  /** Що імпорт цього куреня питає; приходить з переглядом файлу. */
+  readonly shape = signal<RosterImportShape | null>(null);
+  readonly fieldOptions = computed(() => {
+    const shape = this.shape();
+    return shape ? fieldOptionsFor(shape) : [];
+  });
+  readonly placesInGroups = computed(() => this.shape()?.placesInGroups ?? true);
+  readonly downloadingTemplate = signal(false);
   readonly fileName = signal<string | null>(null);
 
   /** Скільки рядків файлу без заголовка — це те, що людина порівнює зі своєю таблицею. */
@@ -65,11 +73,12 @@ export class RosterImportComponent implements OnInit {
 
   /** Обов'язкові поля, які ще ніде не вибрані. Поки список не порожній, далі не пускаємо. */
   readonly unmappedRequired = computed(() => {
-    const used = new Set(Object.values(this.chosen()).map(value => optionByValue(value).field));
-    return REQUIRED_FIELDS.filter(field => !used.has(field));
+    const options = this.fieldOptions();
+    const used = new Set(Object.values(this.chosen()).map(value => optionByValue(options, value).field));
+    return (this.shape()?.required ?? []).filter(field => !used.has(field));
   });
 
-  readonly unmappedRequiredNames = computed(() => this.unmappedRequired().map(requiredFieldName));
+  readonly unmappedRequiredNames = computed(() => this.unmappedRequired().map(fieldName));
 
   readonly canProceed = computed(() => this.unmappedRequired().length === 0);
 
@@ -96,12 +105,14 @@ export class RosterImportComponent implements OnInit {
 
     this.kurinService.previewRoster(this.kurinKey, file).subscribe({
       next: preview => {
+        this.shape.set(preview.shape);
         this.columns.set(preview.columns);
         this.rows.set(preview.rows);
+        const options = this.fieldOptions();
         this.chosen.set(Object.fromEntries(
           preview.columns.map(column => [
             column.index,
-            optionValueOf(column.suggestedField, column.suggestedLevel)
+            optionValueOf(options, column.suggestedField, column.suggestedLevel)
           ])
         ));
         this.step.set('map');
@@ -142,7 +153,7 @@ export class RosterImportComponent implements OnInit {
     const request: ApplyRosterRequest = {
       rows: this.rows(),
       mapping: this.mapping(),
-      createMissingGroups: this.createMissingGroups(),
+      createMissingGroups: this.placesInGroups() && this.createMissingGroups(),
       dryRun
     };
 
@@ -160,9 +171,10 @@ export class RosterImportComponent implements OnInit {
   }
 
   private mapping(): ColumnMapping[] {
+    const options = this.fieldOptions();
     return Object.entries(this.chosen())
       .map(([index, value]) => {
-        const option = optionByValue(value);
+        const option = optionByValue(options, value);
         return { index: Number(index), field: option.field, level: option.level };
       })
       .filter(column => column.field !== RosterField.Ignore);
@@ -180,6 +192,25 @@ export class RosterImportComponent implements OnInit {
     this.chosen.set({});
     this.report.set(null);
     this.fileName.set(null);
+    this.shape.set(null);
+  }
+
+  /** Порожній файл у колонках цього куреня: заповнений, він зіставляється сам. */
+  downloadTemplate(): void {
+    if (!this.kurinKey || this.downloadingTemplate()) {
+      return;
+    }
+
+    this.downloadingTemplate.set(true);
+    this.kurinService.downloadImportTemplate(this.kurinKey).subscribe({
+      next: response => {
+        if (response.body) {
+          saveBlob(response.body, fileNameFrom(response, 'import-kurin.xlsx'));
+        }
+        this.downloadingTemplate.set(false);
+      },
+      error: () => this.downloadingTemplate.set(false)
+    });
   }
 
   openRegistry(): void {

@@ -1,5 +1,5 @@
 import { PlastLevel } from '../../../../models/enums/plast-level.enum';
-import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS } from '../../../../models/enums/plast-ladder';
+import { PLAST_LEVEL_COLUMN_LABELS } from '../../../../models/enums/plast-ladder';
 
 /** Дзеркалить `RosterField` на бекенді. Значення — контракт, підписи — ні. */
 export enum RosterField {
@@ -38,9 +38,19 @@ export interface SheetRow {
   cells: string[];
 }
 
+/** Що імпорт цього куреня питає. Каже сервер — за гілкою куреня, тими самими правилами, що й перевірка рядка. */
+export interface RosterImportShape {
+  required: RosterField[];
+  optional: RosterField[];
+  levelDates: PlastLevel[];
+  /** УПЮ кладе кожного в гурток; старший курінь гуртків не має. */
+  placesInGroups: boolean;
+}
+
 export interface RosterPreview {
   columns: RosterColumnPreview[];
   rows: SheetRow[];
+  shape: RosterImportShape;
 }
 
 export type RowOutcome = 'Created' | 'Attached' | 'AlreadyHere' | 'Rejected';
@@ -85,57 +95,55 @@ export interface FieldOption {
   level: PlastLevel | null;
 }
 
-const REQUIRED_LABELS: Record<string, string> = {
-  [RosterField.LastName]: 'Прізвище *',
-  [RosterField.FirstName]: "Ім'я *",
-  [RosterField.DateOfBirth]: 'Дата народження *',
-  [RosterField.PlastLevel]: 'Пластовий ступінь *',
-  [RosterField.PlastLevelDate]: 'Дата ступеня *',
-  [RosterField.GroupName]: 'Гурток *',
-  [RosterField.Email]: 'Пошта *'
-};
-
-/* Курінь тут необов'язковий: імпорт завжди йде в той курінь, з якого його запустили, а колонка
-   з іншим числом лише попереджає. */
-const OPTIONAL_LABELS: Record<string, string> = {
+/** Підписи полів. Що з них обовʼязкове і що взагалі питати, каже сервер у `RosterImportShape`. */
+const FIELD_LABELS: Partial<Record<RosterField, string>> = {
+  [RosterField.LastName]: 'Прізвище',
+  [RosterField.FirstName]: "Ім'я",
   [RosterField.MiddleName]: 'По батькові',
+  [RosterField.DateOfBirth]: 'Дата народження',
+  [RosterField.PlastLevel]: 'Пластовий ступінь',
+  [RosterField.PlastLevelDate]: 'Дата ступеня',
+  [RosterField.GroupName]: 'Гурток',
+  [RosterField.Email]: 'Пошта',
+  // Курінь лише попереджає: імпорт завжди йде в той курінь, з якого його запустили.
   [RosterField.KurinNumber]: 'Курінь',
   [RosterField.PhoneNumber]: 'Телефон'
 };
 
-function plain(field: RosterField, label: string): FieldOption {
-  return { value: field, label, field, level: null };
-}
+const IGNORE: FieldOption = { value: RosterField.Ignore, label: 'Не імпортувати', field: RosterField.Ignore, level: null };
 
-export const FIELD_OPTIONS: FieldOption[] = [
-  plain(RosterField.Ignore, 'Не імпортувати'),
-  ...Object.entries(REQUIRED_LABELS).map(([field, label]) => plain(field as RosterField, label)),
-  ...Object.entries(OPTIONAL_LABELS).map(([field, label]) => plain(field as RosterField, label)),
-  ...PLAST_LADDER.map(level => ({
-    value: `LevelDate:${level}`,
-    label: `Дата: ${PLAST_LEVEL_COLUMN_LABELS[level]}`,
-    field: RosterField.LevelDate,
-    level
-  }))
-];
-
-/** Поля, без яких рядок не імпортується — їх треба зіставити, перш ніж рухатись далі. */
-export const REQUIRED_FIELDS: RosterField[] = Object.keys(REQUIRED_LABELS) as RosterField[];
-
-/** Назва обов'язкового поля без зірочки — щоб назвати людині, чого саме ще бракує. */
-export function requiredFieldName(field: RosterField): string {
-  return (REQUIRED_LABELS[field] ?? field).replace(/\s\*$/, '');
+/** Назва поля, як її бачить людина. */
+export function fieldName(field: RosterField): string {
+  return FIELD_LABELS[field] ?? field;
 }
 
 /**
- * The option a column starts on. The server still suggests Address and School for such columns, but
- * those are not offered here (not shown or kept in the app yet), so they start on «Не імпортувати».
+ * Пункти випадайки для цього куреня: спершу обовʼязкові (із зірочкою), далі необовʼязкові, далі дати
+ * ступенів його гілки. Адреси й школи серед них нема: застосунок їх поки не показує й не тримає.
  */
-export function optionValueOf(field: RosterField, level: PlastLevel | null | undefined): string {
-  const value = field === RosterField.LevelDate && level ? `LevelDate:${level}` : field;
-  return FIELD_OPTIONS.some(option => option.value === value) ? value : RosterField.Ignore;
+export function fieldOptionsFor(shape: RosterImportShape): FieldOption[] {
+  const plain = (field: RosterField, mark: string): FieldOption =>
+    ({ value: field, label: fieldName(field) + mark, field, level: null });
+
+  return [
+    IGNORE,
+    ...shape.required.map(field => plain(field, ' *')),
+    ...shape.optional.map(field => plain(field, '')),
+    ...shape.levelDates.map(level => ({
+      value: `LevelDate:${level}`,
+      label: `Дата: ${PLAST_LEVEL_COLUMN_LABELS[level]}`,
+      field: RosterField.LevelDate,
+      level
+    }))
+  ];
 }
 
-export function optionByValue(value: string): FieldOption {
-  return FIELD_OPTIONS.find(option => option.value === value) ?? FIELD_OPTIONS[0];
+/** Пункт, з якого колонка починає: вгадане сервером, якщо цей курінь таке питає, інакше «Не імпортувати». */
+export function optionValueOf(options: FieldOption[], field: RosterField, level: PlastLevel | null | undefined): string {
+  const value = field === RosterField.LevelDate && level ? `LevelDate:${level}` : field;
+  return options.some(option => option.value === value) ? value : RosterField.Ignore;
+}
+
+export function optionByValue(options: FieldOption[], value: string): FieldOption {
+  return options.find(option => option.value === value) ?? IGNORE;
 }

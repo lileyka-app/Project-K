@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
-import { HttpResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -21,6 +20,7 @@ import { PlastLevel } from '../../../../models/enums/plast-level.enum';
 import { PLAST_LEVEL_COLUMN_LABELS, tallyLevelsFor } from '../../../../models/enums/plast-ladder';
 import { REGISTRY_COLUMNS, RegistryColumn, columnsFor, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
 import { emailHref, phoneHref } from '../../../../../../shared/functions/contact-href.function';
+import { fileNameFrom, saveBlob } from '../../../../../../shared/functions/save-file.function';
 import { KurinTagService } from '../../../../services/kurin-tag-service/kurin-tag.service';
 import { KurinTagChipsComponent } from '../../../../components/kurin-tag-chips/kurin-tag-chips';
 import { KurinTagManagerComponent, TagCandidate } from '../../../../components/kurin-tag-manager/kurin-tag-manager';
@@ -296,33 +296,12 @@ export class RosterComponent implements OnInit {
     this.kurinService.exportRegistry(this.kurinKey, columns).subscribe({
       next: response => {
         if (response.body) {
-          this.saveBlob(response.body, this.fileNameFrom(response));
+          saveBlob(response.body, fileNameFrom(response, `reyestr-kurin-${this.kurinNumber() ?? ''}.xlsx`));
         }
         this.exporting.set(false);
       },
       error: () => this.exporting.set(false)
     });
-  }
-
-  private fileNameFrom(response: HttpResponse<Blob>): string {
-    const disposition = response.headers.get('content-disposition');
-    const match = disposition?.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
-    if (match?.[1]) {
-      return decodeURIComponent(match[1].replace(/"$/g, ''));
-    }
-
-    return `reyestr-kurin-${this.kurinNumber() ?? ''}.xlsx`;
-  }
-
-  private saveBlob(blob: Blob, fileName: string): void {
-    const url = window.URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.URL.revokeObjectURL(url);
   }
 
   /**
