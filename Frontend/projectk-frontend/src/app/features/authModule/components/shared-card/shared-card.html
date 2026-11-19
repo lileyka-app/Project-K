@@ -8,7 +8,12 @@
     <div class="shared-card__who">
       <h2 class="shared-card__name">{{ card().fullName }}</h2>
       @if (card().level; as level) {
-        <span class="shared-card__level">{{ level }}</span>
+        <span class="shared-card__level">
+          @if (card().levelImageUrl; as src) {
+            <img [src]="src" alt="" (error)="hideBroken($event)" />
+          }
+          {{ level }}
+        </span>
       }
       @if (kurinLine()) {
         <span class="shared-card__kurin">{{ kurinLine() }}</span>
@@ -24,11 +29,11 @@
           @if (group.label) {
             <h4 class="shared-card__ulad" data-testid="award-ulad">{{ group.label }}</h4>
           }
-          <ul class="shared-card__awards">
+          <ul class="shared-card__marks">
             @for (award of group.awards; track $index) {
               <li>
                 @if (awardImage(award); as src) {
-                  <img [src]="src" alt="" />
+                  <img [src]="src" alt="" (error)="hideBroken($event)" />
                 }
                 <span>{{ awardName(award) }}</span>
                 <small>{{ award.dateAcquired | date:'dd.MM.yyyy' }}</small>
@@ -46,9 +51,14 @@
     <section class="shared-card__part">
       <h3>Вмілості</h3>
       @if (badges.length) {
-        <ul class="shared-card__chips">
+        <ul class="shared-card__marks">
           @for (badge of badges; track $index) {
-            <li>{{ badge.title }}</li>
+            <li>
+              @if (badgeImage(badge); as src) {
+                <img [src]="src" alt="" (error)="hideBroken($event)" />
+              }
+              <span>{{ badge.title }}</span>
+            </li>
           }
         </ul>
       } @else {

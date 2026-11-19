@@ -161,10 +161,12 @@ public sealed class MemberCardService
         }
 
         string? level = null;
+        string? levelImage = null;
         if (fields.HasFlag(CardField.Level)
-            && PlastLadderRules.Highest(await _members.GetLevelsAsync(memberKey, cancellationToken)) is { } highest)
+            && await _members.GetCurrentDegreeAsync(memberKey, cancellationToken) is { } degree)
         {
-            level = PlastLevelNames.Of(highest);
+            level = PlastLevelNames.Of(degree.Level);
+            levelImage = degree.CatalogId is { } id ? _honours.GetById(id)?.ImageUrl : null;
         }
 
         IReadOnlyList<PublicCardAwardDto>? awards = null;
@@ -212,6 +214,7 @@ public sealed class MemberCardService
             fields.HasFlag(CardField.Photo) ? _links.ForSharing(person.ProfilePhotoBlobName) : null,
             kurins,
             level,
+            levelImage,
             awards,
             badges,
             probes,

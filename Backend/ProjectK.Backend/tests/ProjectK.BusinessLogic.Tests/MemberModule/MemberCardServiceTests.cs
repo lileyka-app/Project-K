@@ -62,7 +62,7 @@ public class MemberCardServiceTests
         _shares.Setup(r => r.GetForMemberAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(() => _share);
         _members.Setup(m => m.FindAsync(_person, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(_person, null, "Назар", "Коваль", "n@x", "photo.jpg"));
-        _members.Setup(m => m.GetLevelsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync([PlastLevel.Uchasnyk]);
+        _members.Setup(m => m.GetCurrentDegreeAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(new CurrentDegree(PlastLevel.Uchasnyk, "upyu-uchasnyk"));
     }
 
     private void Born(int yearsAgo) =>
@@ -217,6 +217,20 @@ public class MemberCardServiceTests
         ]);
         _honours.Setup(h => h.GetById("usp-hramota-zaslugy"))
             .Returns(new CatalogHonour("usp-hramota-zaslugy", HonourKind.Award, "Грамота заслуги", "usp-vidznachennia", "usp", 0, "https://catalog.test/hramota.png"));
+    }
+
+    /// <summary>The ступінь comes with the catalogue's picture of it, as the відзначення do.</summary>
+    [Fact]
+    public async Task TheLevel_ComesWithTheCataloguePicture()
+    {
+        Born(18);
+        _honours.Setup(h => h.GetById("upyu-uchasnyk"))
+            .Returns(new CatalogHonour("upyu-uchasnyk", HonourKind.Degree, "Пластун учасник", "upyu", "upyu", 2, "https://catalog.test/uchasnyk.svg"));
+
+        var card = await Cards().ReadAsync(_person, CardField.Level, null, default);
+
+        card!.Level.Should().Be("пл. уч.");
+        card.LevelImageUrl.Should().Be("https://catalog.test/uchasnyk.svg");
     }
 
     [Fact]

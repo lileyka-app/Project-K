@@ -6,13 +6,25 @@
   padding: 2rem 1rem 3rem;
 }
 
+/* Знак і слово, як у брендбуку §3: горизонтально, відступ 0.4× висоти знака. */
 .public-card__brand {
-  color: var(--p-primary-color);
-  font-family: var(--lil-font-display, inherit);
-  font-size: 1.5rem;
-  font-weight: 800;
+  align-items: center;
+  color: var(--p-text-color);
+  display: inline-flex;
+  gap: 0.75rem;
   justify-self: center;
   text-decoration: none;
+}
+
+.public-card__brand svg {
+  color: var(--p-primary-color);
+  height: 1.9rem;
+  width: 1.9rem;
+}
+
+.public-card__brand .lil-wordmark {
+  font-size: 1.8125rem;
+  line-height: 1;
 }
 
 .public-card__missing {

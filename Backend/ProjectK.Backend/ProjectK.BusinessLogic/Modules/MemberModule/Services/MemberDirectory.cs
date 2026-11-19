@@ -6,6 +6,7 @@ using ProjectK.Common.Enums.ProbesAndBadgesModule;
 using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.MemberModule;
 using ProjectK.Common.Records.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Services;
 
@@ -46,6 +47,19 @@ public sealed class MemberDirectory : IMemberDirectory
     {
         var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
         return member?.PlastLevelHistory.Where(h => !h.AwaitsConfirmation).Select(h => h.PlastLevel).ToList() ?? [];
+    }
+
+    public async Task<CurrentDegree?> GetCurrentDegreeAsync(Guid memberKey, CancellationToken cancellationToken = default)
+    {
+        var member = await _unitOfWork.Members.GetByKeyAsync(memberKey, cancellationToken);
+        var counted = member?.PlastLevelHistory.Where(h => !h.AwaitsConfirmation).ToList() ?? [];
+        if (PlastLadderRules.Highest(counted.Select(h => h.PlastLevel)) is not { } highest)
+        {
+            return null;
+        }
+
+        var entry = counted.First(h => h.PlastLevel == highest);
+        return new CurrentDegree(highest, PlastLevelDegreeRules.CatalogId(highest, entry.IsPlastunka));
     }
 
     public Task<IReadOnlyCollection<WaitingLevel>> GetWaitingLevelsAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)

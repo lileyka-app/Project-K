@@ -1,5 +1,17 @@
 <main class="public-card">
-  <a class="public-card__brand" routerLink="/">Лілейка</a>
+  <a class="public-card__brand" routerLink="/" aria-label="Лілейка">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5.5"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <g transform="rotate(45 50 50)">
+        <path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51" />
+        <path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51" />
+        <path d="M33 60 H67" />
+        <path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z" />
+        <path class="lil-mark-center" d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z" />
+      </g>
+    </svg>
+    <span class="lil-wordmark">Лілейка</span>
+  </a>
 
   @if (card(); as value) {
     <app-shared-card [card]="value" />

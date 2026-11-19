@@ -42,6 +42,12 @@ public interface IMemberDirectory
     Task<IReadOnlyCollection<PlastLevel>> GetLevelsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The highest ступінь that counts for the person, with its catalogue entry; null without one. One that
+    /// awaits the Звʼязковий's confirmation is left out, as in <see cref="GetLevelsAsync"/>.
+    /// </summary>
+    Task<CurrentDegree?> GetCurrentDegreeAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The senior ступені these people entered for themselves that still wait for the Звʼязковий, in one
     /// read; someone with none is absent. What the kurin's «мої обовʼязки» shows its Звʼязковий.
     /// </summary>

@@ -46,7 +46,16 @@
 }
 
 .shared-card__level {
+  align-items: center;
+  display: inline-flex;
   font-weight: 600;
+  gap: 0.5rem;
+}
+
+.shared-card__level img {
+  height: 2.25rem;
+  object-fit: contain;
+  width: 2.25rem;
 }
 
 .shared-card__kurin {
@@ -68,7 +77,7 @@
   text-transform: uppercase;
 }
 
-.shared-card__awards,
+.shared-card__marks,
 .shared-card__chips {
   display: flex;
   flex-wrap: wrap;
@@ -78,22 +87,28 @@
   padding: 0;
 }
 
-.shared-card__awards li {
-  align-items: center;
+/* Відзначення й вмілості — зображенням, назва під ним. */
+.shared-card__marks {
+  gap: 0.75rem;
+}
+
+.shared-card__marks li {
+  align-content: start;
   display: grid;
-  gap: 0.125rem;
+  font-size: var(--lil-text-caption);
+  gap: 0.25rem;
   justify-items: center;
   text-align: center;
   width: 6.5rem;
 }
 
-.shared-card__awards img {
-  height: 3rem;
+.shared-card__marks img {
+  height: 4rem;
   object-fit: contain;
-  width: 3rem;
+  width: 4rem;
 }
 
-.shared-card__awards small,
+.shared-card__marks small,
 .shared-card__none {
   color: var(--p-text-muted-color);
   font-size: var(--lil-text-caption);

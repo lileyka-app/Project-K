@@ -47,4 +47,22 @@ describe('SharedCardComponent', () => {
 
     expect(headings(host)).toEqual([]);
   });
+
+  it('draws the ступінь and the вмілості with their pictures', () => {
+    const host = render({
+      ...base,
+      level: 'пл. скоб',
+      levelImageUrl: 'https://catalog.test/skob.svg',
+      badges: [
+        { title: 'Вузли', imagePath: 'https://catalog.test/vuzly.png', confirmedAtUtc: null },
+        { title: 'Стара', imagePath: 'badges/old.png', confirmedAtUtc: null }
+      ]
+    });
+
+    expect(host.querySelector('.shared-card__level img')?.getAttribute('src')).toBe('https://catalog.test/skob.svg');
+    const badgeImages = Array.from(host.querySelectorAll('.shared-card__marks img')).map(img => img.getAttribute('src'));
+    // A path into the app's own store needs a sign-in the reader may not have: the name stays, no picture.
+    expect(badgeImages).toEqual(['https://catalog.test/vuzly.png']);
+    expect(host.textContent).toContain('Стара');
+  });
 });

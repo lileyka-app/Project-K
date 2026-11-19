@@ -5,6 +5,7 @@ import { kurinInText } from '../../../../shared/functions/kurin-label.function';
 import { CardUlad, PublicCardDto } from '../../services/card-service/card.service';
 
 type SharedAward = NonNullable<PublicCardDto['awards']>[number];
+type SharedBadge = NonNullable<PublicCardDto['badges']>[number];
 
 const AWARD_NAMES: Record<1 | 2 | 3 | 4, string> = {
   1: 'Перше відзначення',
@@ -60,5 +61,18 @@ export class SharedCardComponent {
 
   awardImage(award: SharedAward): string | null {
     return award.level ? `${environment.apiUrl}/awards/images/${award.level}?colored=true` : award.imageUrl;
+  }
+
+  /**
+   * The catalogue's picture of the вмілість. Only a full address: the card is read by anyone, signed in
+   * or not, and a path into the app's own store asks for a sign-in the reader does not have.
+   */
+  badgeImage(badge: SharedBadge): string | null {
+    return badge.imagePath && /^https?:\/\//.test(badge.imagePath) ? badge.imagePath : null;
+  }
+
+  /** A picture that fails to load leaves the name alone rather than a broken image. */
+  hideBroken(event: Event): void {
+    (event.target as HTMLElement).hidden = true;
   }
 }

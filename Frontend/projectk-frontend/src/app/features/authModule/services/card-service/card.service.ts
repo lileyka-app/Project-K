@@ -45,6 +45,8 @@ export interface PublicCardDto {
   photoUrl: string | null;
   kurins: { number: number | null; namedAfter: string | null; groupName: string | null; branches: KurinNumbering[] }[] | null;
   level: string | null;
+  /** Зображення ступеня з каталогу; null, коли ступінь не показано або каталог його не має. */
+  levelImageUrl?: string | null;
 /**
    * An УПЮ відзначення by level; a senior one (no level) with the catalogue's title and picture.
    * `ulad` — where it was earned; null for a senior one the catalogue gives to both УСП and УПС.

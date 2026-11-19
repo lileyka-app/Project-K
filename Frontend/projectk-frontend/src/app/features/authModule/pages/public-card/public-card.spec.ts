@@ -63,7 +63,7 @@ describe('PublicCardComponent', () => {
     const element = create('check').nativeElement as HTMLElement;
 
     expect(element.textContent).toContain('Грамота заслуги');
-    expect(element.querySelector('.shared-card__awards img')?.getAttribute('src')).toBe('https://catalog.test/gramota.png');
+    expect(element.querySelector('.shared-card__marks img')?.getAttribute('src')).toBe('https://catalog.test/gramota.png');
   });
 
   it('reads a permanent link from its own address and says when it is gone', () => {
