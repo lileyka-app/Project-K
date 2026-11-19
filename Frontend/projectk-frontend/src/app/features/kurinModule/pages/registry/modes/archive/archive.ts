@@ -226,7 +226,8 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
     if (!this.canReturn || this.latestMembership().get(membership.memberKey) !== membership) {
       return null;
     }
-    return this.standing().get(membership.memberKey) ?? null;
+    const person = this.standing().get(membership.memberKey) ?? null;
+    return person?.offer.stillYouth ? null : person;
   }
 
   standingLine(membership: ArchivedMembershipDto): string {

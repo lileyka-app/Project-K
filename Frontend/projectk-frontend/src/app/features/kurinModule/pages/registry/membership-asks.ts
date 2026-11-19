@@ -52,7 +52,8 @@ const REQUEST_ERRORS: Record<string, string> = {
   RequestClosed: 'На цей запит уже відповіли, його скасовано або минув строк.',
   MemberNotHere: 'Людини вже немає в курені.',
   TransferAcrossLines: 'Між УПЮ і старшими куренями не переводять. Можна лише прийняти ще й до нас.',
-  SeniorKurinTakesMembers: 'Старший курінь приймає лише членом.'
+  SeniorKurinTakesMembers: 'Старший курінь приймає лише членом.',
+  PersonStillYouth: 'Людина ще в УПЮ.'
 };
 
 export function requestErrorText(error: unknown): string {

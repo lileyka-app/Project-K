@@ -97,6 +97,12 @@ public sealed class CreateMembershipRequestCommandHandler
         }
 
         var route = await _routing.ResolveAsync(person.MemberKey, request.ToKurinKey, cancellationToken);
+        if (route.StillYouth)
+        {
+            return ServiceResult<MembershipRequestSentDto>.Failure(
+                ResultType.BadRequest, KurinErrors.PersonStillYouth, "The person is still in УПЮ; a senior kurin does not ask for them.");
+        }
+
         if (route.ToSenior && request.MembershipKind != MembershipKind.Youth)
         {
             return ServiceResult<MembershipRequestSentDto>.Failure(

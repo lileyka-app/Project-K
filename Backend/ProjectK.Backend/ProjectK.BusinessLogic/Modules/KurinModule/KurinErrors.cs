@@ -109,6 +109,7 @@ public static class KurinErrors
     public const string ChooseKurin = "ChooseKurin";
     public const string NotInThatKurin = "NotInThatKurin";
     public const string SeniorKurinTakesMembers = "SeniorKurinTakesMembers";
+    public const string PersonStillYouth = "PersonStillYouth";
     public const string TransferAcrossLines = "TransferAcrossLines";
     public const string MemberNotHere = "MemberNotHere";
 

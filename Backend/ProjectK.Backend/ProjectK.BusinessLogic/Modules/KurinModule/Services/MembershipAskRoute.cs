@@ -12,9 +12,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// <param name="PersonAnswers">The request goes to the person, not to a kurin.</param>
 /// <param name="TransferAllowed">«Перевести» is possible: only between kurins of the same line.</param>
 /// <param name="AskableKurinKeys">The kurins whose Звʼязковий may answer; one is chosen when there are several.</param>
+/// <param name="StillYouth">
+/// The asking kurin is senior and the person is still in УПЮ: nothing may be sent. Read by the asking screen
+/// before it offers a button, and refused by the server whatever the screen says.
+/// </param>
 public sealed record MembershipAskRoute(
     bool ToSenior,
     bool JoinsAtOnce,
     bool PersonAnswers,
     bool TransferAllowed,
-    IReadOnlyList<Guid> AskableKurinKeys);
+    IReadOnlyList<Guid> AskableKurinKeys,
+    bool StillYouth = false);

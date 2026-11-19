@@ -79,6 +79,7 @@ public class MembershipRequestTests
 
         var summary = new MemberSummary(_person, _account, "Назар", "Коваль", "n@x", null);
         _members.Setup(d => d.FindAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(summary);
+        _members.Setup(d => d.GetLevelsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _members.Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberCard(_person, Code, "Назар", "Коваль", null));
     }
@@ -434,9 +435,47 @@ public class MembershipRequestTests
 
     private void Senior(Guid kurinKey) => _branches[kurinKey] = KurinBranch.USP;
 
+    private void HoldsASeniorLevel() =>
+        _members.Setup(d => d.GetLevelsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync([PlastLevel.Uchasnyk, PlastLevel.Starshoplastun]);
+
     private Task<ProjectK.Common.Records.Shared.ServiceResult<ProjectK.Common.Dtos.KurinModule.MembershipRequestSentDto>> AskFromB(
         MembershipRequestKind kind, MembershipKind as_ = MembershipKind.Youth, Guid? from = null) =>
         Create().Handle(new CreateMembershipRequestCommand(_kurinB, Code, null, kind, as_, from), default);
+
+    [Fact]
+    public async Task ASeniorKurin_DoesNotAskForSomeoneStillInUpyu()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinB);
+        StandsIn(_kurinA);
+
+        (await AskFromB(MembershipRequestKind.AlsoJoin)).ErrorCode.Should().Be("PersonStillYouth");
+        (await AskFromB(MembershipRequestKind.Transfer)).ErrorCode.Should().Be("PersonStillYouth");
+        _created.Should().BeEmpty();
+        _opened.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ASeniorKurin_DoesNotAskForSomeoneInNoKurinWithoutASeniorLevel()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinB);
+
+        (await AskFromB(MembershipRequestKind.AlsoJoin)).ErrorCode.Should().Be("PersonStillYouth");
+        _created.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TheAskingScreen_HearsThatThePersonIsStillInUpyu()
+    {
+        Senior(_kurinB);
+        StandsIn(_kurinA);
+
+        (await Routing().OfferAsync(_person, _kurinB, default)).StillYouth.Should().BeTrue();
+
+        HoldsASeniorLevel();
+        (await Routing().OfferAsync(_person, _kurinB, default)).StillYouth.Should().BeFalse();
+    }
 
     [Fact]
     public async Task ASeniorKurin_AsksTheYouthKurinOfAJunak_OnlyToTakeThemInAlongside()
@@ -444,6 +483,7 @@ public class MembershipRequestTests
         Senior(_kurinB);
         ActingIn(_kurinB);
         StandsIn(_kurinA);
+        HoldsASeniorLevel();
 
         var transfer = await AskFromB(MembershipRequestKind.Transfer);
         transfer.ErrorCode.Should().Be("TransferAcrossLines");
@@ -457,6 +497,7 @@ public class MembershipRequestTests
     public async Task ASeniorKurin_AsksAStaffMemberOfAYouthKurin_Themself()
     {
         Senior(_kurinB);
+        HoldsASeniorLevel();
         ActingIn(_kurinB);
         StandsIn(_kurinA).Kind = MembershipKind.Staff;
 
@@ -472,6 +513,7 @@ public class MembershipRequestTests
     public async Task ASeniorKurin_AsksSomeoneWhoLeftEveryKurin_Themself()
     {
         Senior(_kurinB);
+        HoldsASeniorLevel();
         ActingIn(_kurinB);
 
         var result = await AskFromB(MembershipRequestKind.AlsoJoin);
@@ -485,6 +527,7 @@ public class MembershipRequestTests
     public async Task ASeniorKurin_AsksTheOtherSeniorKurin_EvenWhenThePersonIsStillAJunakSomewhere()
     {
         Senior(_kurinB);
+        HoldsASeniorLevel();
         Senior(_kurinC);
         ActingIn(_kurinB);
         StandsIn(_kurinA);
@@ -500,6 +543,7 @@ public class MembershipRequestTests
     public async Task ASeniorKurin_TakesNobodyInAsStaff()
     {
         Senior(_kurinB);
+        HoldsASeniorLevel();
         ActingIn(_kurinB);
         StandsIn(_kurinA);
 

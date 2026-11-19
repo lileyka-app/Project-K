@@ -4,6 +4,7 @@ using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Rules.KurinModule;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -28,7 +29,7 @@ public sealed class MembershipAskRouting
             kurins.Add((await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken)).ToRequestKurinDto(kurinKey));
         }
 
-        return new MembershipAskOfferDto(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins);
+        return new MembershipAskOfferDto(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins, route.StillYouth);
     }
 
     public async Task<MembershipAskRoute> ResolveAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)
@@ -41,11 +42,25 @@ public sealed class MembershipAskRouting
             .Where(m => m.LeftAtUtc is null && m.KurinKey != toKurinKey)
             .ToList();
 
+        var route = Route(toSenior, memberUserKey.HasValue, open);
+        if (!toSenior)
+        {
+            return route;
+        }
+
+        // Someone still in УПЮ is not a senior kurin's to ask: the counting ступені and the kurins they
+        // stand in decide, as on their card. Moving up from УПЮ is a step of its own.
+        var levels = await _members.GetLevelsAsync(memberKey, cancellationToken);
+        return route with { StillYouth = UladRules.Of(levels, open.Select(m => m.Branch)) == KurinBranch.UPYu };
+    }
+
+    private static MembershipAskRoute Route(bool toSenior, bool hasAccount, List<MembershipRecord> open)
+    {
         if (open.Count == 0)
         {
             // Someone who has left every kurin decides for themselves where they go next as a senior;
             // a youth kurin takes them in at once, as before.
-            return toSenior && memberUserKey.HasValue
+            return toSenior && hasAccount
                 ? new MembershipAskRoute(toSenior, JoinsAtOnce: false, PersonAnswers: true, TransferAllowed: false, [])
                 : new MembershipAskRoute(toSenior, JoinsAtOnce: true, PersonAnswers: false, TransferAllowed: false, []);
         }
@@ -64,7 +79,7 @@ public sealed class MembershipAskRouting
             return new MembershipAskRoute(toSenior, JoinsAtOnce: false, PersonAnswers: false, TransferAllowed: false, youthIn);
         }
 
-        return memberUserKey.HasValue
+        return hasAccount
             ? new MembershipAskRoute(toSenior, JoinsAtOnce: false, PersonAnswers: true, TransferAllowed: false, [])
             // Without an account there is nobody to answer but the kurin they stand in.
             : new MembershipAskRoute(toSenior, JoinsAtOnce: false, PersonAnswers: false, TransferAllowed: false,

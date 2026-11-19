@@ -94,7 +94,9 @@
           }
         }
 
-        @if (!c.alreadyInThisKurin) {
+        @if (c.offer.stillYouth) {
+          <p class="transfers__hint">Ще в УПЮ</p>
+        } @else if (!c.alreadyInThisKurin) {
           @if (c.offer.personAnswers) {
             <p class="transfers__hint">Відповідає сама людина</p>
           }

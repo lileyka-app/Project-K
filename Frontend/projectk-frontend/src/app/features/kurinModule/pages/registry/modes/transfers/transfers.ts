@@ -101,7 +101,7 @@ export class TransfersComponent implements OnInit {
   readonly canSend = computed(() => {
     const candidate = this.candidate();
     const offer = candidate?.offer;
-    return !!candidate && !!offer && !candidate.alreadyInThisKurin && (offer.joinsAtOnce || offer.personAnswers || !!this.askedKurin());
+    return !!candidate && !!offer && !candidate.alreadyInThisKurin && !offer.stillYouth && (offer.joinsAtOnce || offer.personAnswers || !!this.askedKurin());
   });
 
   private kurinKey = '';

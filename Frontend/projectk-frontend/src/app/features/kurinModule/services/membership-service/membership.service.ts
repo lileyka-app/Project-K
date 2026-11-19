@@ -71,6 +71,8 @@ export interface MembershipAskOfferDto {
   /** «Перевести» — лише між куренями однієї лінії. */
   transferAllowed: boolean;
   askKurins: MembershipRequestKurinDto[];
+  /** Старший курінь, а людина ще в УПЮ: просити не можна. */
+  stillYouth?: boolean;
 }
 
 /** Людина за кодом: картка, курені, де вона стоїть зараз (лише номери), і що можна запропонувати. */
