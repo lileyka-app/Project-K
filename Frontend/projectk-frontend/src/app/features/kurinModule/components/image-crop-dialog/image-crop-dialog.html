@@ -1,0 +1,39 @@
+<p-dialog
+    [(visible)]="visible"
+    [modal]="true"
+    [closable]="!saving()"
+    [style]="{ width: 'min(96vw, 58rem)' }"
+    [header]="header()"
+    (onHide)="onHide()">
+    <div class="crop-editor">
+        <div class="crop-editor__cropper">
+            @if (file(); as source) {
+                <image-cropper [imageFile]="source"
+                    [maintainAspectRatio]="aspectRatio() !== null"
+                    [aspectRatio]="aspectRatio() ?? 1"
+                    format="png"
+                    [resizeToWidth]="1024"
+                    [onlyScaleDown]="true"
+                    (imageCropped)="onCropped($event)" />
+            }
+        </div>
+
+        <div class="crop-editor__side">
+            <div class="crop-preview">
+                @if (shownPreview(); as url) {
+                    <img [src]="url" [alt]="previewAlt()" />
+                }
+            </div>
+
+            <ng-content />
+        </div>
+    </div>
+
+    <ng-template #footer>
+        <div class="crop-dialog-actions">
+            <ng-content select="[cropActions]" />
+            <p-button label="Скасувати" type="button" severity="secondary" [outlined]="true" [disabled]="saving()" (onClick)="onCancel()" />
+            <p-button label="Завантажити" type="button" icon="pi pi-upload" [loading]="saving() || processing()" [disabled]="saving() || processing()" (onClick)="onSave()" />
+        </div>
+    </ng-template>
+</p-dialog>

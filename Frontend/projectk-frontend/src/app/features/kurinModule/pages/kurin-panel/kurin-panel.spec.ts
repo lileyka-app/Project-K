@@ -9,6 +9,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { KurinPanelComponent } from './kurin-panel';
 import { GroupService } from '../../services/group-service/group.service';
+import { KurinDto } from '../../models/kurin.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { GroupDto } from '../../models/group.dto';
@@ -56,7 +57,8 @@ describe('KurinPanelComponent', () => {
     } as MockedObject<GroupService>;
     kurinService = {
       getByKey: vi.fn(),
-      downloadReportPdf: vi.fn()
+      downloadReportPdf: vi.fn(),
+      uploadEmblem: vi.fn()
     } as MockedObject<KurinService>;
     memberService = {
       getAll: vi.fn(),
@@ -159,6 +161,37 @@ describe('KurinPanelComponent', () => {
     component.refreshData();
     expect(groupService.getAllByKurinKey).toHaveBeenCalledWith('k2');
     expect(kurinService.getByKey).toHaveBeenCalledWith('k2');
+  });
+
+  describe('emblem', () => {
+    function pick(file: File): void {
+      component.onEmblemPicked({ target: { files: [file], value: 'x' } } as unknown as Event);
+    }
+
+    it('opens the crop before anything is uploaded', () => {
+      component.kurinKey = 'k1';
+      const file = new File(['img'], 'shield.jpg', { type: 'image/jpeg' });
+
+      pick(file);
+
+      expect(component.emblemDialogVisible).toBe(true);
+      expect(component.emblemFile).toBe(file);
+      expect(kurinService.uploadEmblem).not.toHaveBeenCalled();
+    });
+
+    it('uploads the cropped area as PNG and closes the crop', () => {
+      component.kurinKey = 'k1';
+      kurinService.uploadEmblem.mockReturnValue(of({ kurinKey: 'k1', emblemUrl: 'e.png' } as KurinDto));
+      pick(new File(['img'], 'shield.jpg', { type: 'image/jpeg' }));
+
+      component.uploadCroppedEmblem(new Blob(['png'], { type: 'image/png' }));
+
+      const sent = kurinService.uploadEmblem.mock.calls[0][1] as File;
+      expect(sent.name).toBe('shield.png');
+      expect(sent.type).toBe('image/png');
+      expect(component.emblemDialogVisible).toBe(false);
+      expect(component.emblemFile).toBeUndefined();
+    });
   });
 
   describe('prepareItemActions', () => {

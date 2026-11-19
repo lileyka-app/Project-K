@@ -198,3 +198,13 @@
   [entity]="selectedGroup"
   [config]="groupPanelConfig"
   (actionPerformed)="onGroupManage($event)" />
+
+<app-image-crop-dialog
+  [(visible)]="emblemDialogVisible"
+  header="Емблема куреня"
+  [file]="emblemFile"
+  [aspectRatio]="null"
+  [saving]="emblemSaving"
+  previewAlt="Попередній перегляд емблеми"
+  (save)="uploadCroppedEmblem($event)"
+  (cancelled)="cancelEmblemCrop()" />

@@ -17,7 +17,7 @@ import { EntityService } from '../../../authModule/services/entity-service/entit
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { LeadershipPanelComponent } from '../../components/leadership/leadership-panel/leadership-panel';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
-import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
+import { ImageCropDialogComponent } from '../../components/image-crop-dialog/image-crop-dialog';
 import { MenuModule } from '@openng/optimus-ui/menu';
 import { MenuItem } from '@openng/optimus-ui/api';
 import { MenuItemsCache } from '../../functions/menu-items-cache';
@@ -38,7 +38,7 @@ import { MenuEndDirective } from '../../../../shared/menu-end/menu-end.directive
     ReactiveFormsModule,
     TextareaModule,
     LeadershipPanelComponent,
-    ImageCropperComponent,
+    ImageCropDialogComponent,
     MenuModule
   ],
   templateUrl: './group-panel.html',
@@ -282,13 +282,9 @@ export class GroupPanelComponent implements OnInit {
     this.silhouetteDialogVisible = true;
   }
 
-  onSilhouetteCropped(event: ImageCroppedEvent): void {
-    if (!event.blob) {
-      return;
-    }
-
-    this.silhouetteCroppedBlob = event.blob;
-    this.renderSilhouettePreview(event.blob);
+  onSilhouetteCropped(blob: Blob): void {
+    this.silhouetteCroppedBlob = blob;
+    this.renderSilhouettePreview(blob);
   }
 
   onSilhouetteOptionsChange(): void {

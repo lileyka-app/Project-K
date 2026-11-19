@@ -16,6 +16,7 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { KurinMarkComponent } from '../../components/kurin-mark/kurin-mark';
+import { ImageCropDialogComponent } from '../../components/image-crop-dialog/image-crop-dialog';
 import { MessageService } from '@openng/optimus-ui/api';
 import { MAX_IMAGE_BYTES, isImageTooLarge } from '../../../../shared/functions/image-upload.function';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
@@ -48,7 +49,8 @@ import { MenuEndDirective } from '../../../../shared/menu-end/menu-end.directive
     TooltipModule,
     KvPanelComponent,
     LeadershipPanelComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    ImageCropDialogComponent
   ],
   templateUrl: './kurin-panel.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -62,6 +64,9 @@ export class KurinPanelComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly emblemInput = viewChild<ElementRef<HTMLInputElement>>('emblemInput');
   emblemSaving = false;
+  /** Картинка, яку обрізають перед завантаженням емблеми. */
+  emblemFile?: File;
+  emblemDialogVisible = false;
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
   private readonly fb = inject(FormBuilder);
@@ -143,14 +148,37 @@ export class KurinPanelComponent implements OnInit {
       this.messageService.add({ severity: 'error', summary: 'Не завантажено', detail: `Емблема більша за ${MAX_IMAGE_BYTES / 1024 / 1024} МБ. Обери менший файл.` });
       return;
     }
+    this.emblemFile = file;
+    this.emblemDialogVisible = true;
+  }
+
+  /** Обрізана емблема йде як PNG: прозоре тло щита лишається прозорим. */
+  uploadCroppedEmblem(blob: Blob | null): void {
+    if (!blob || !this.kurinKey || this.emblemSaving) return;
+    const name = (this.emblemFile?.name ?? 'emblem').replace(/\.[^.]+$/, '') || 'emblem';
+    const file = new File([blob], `${name}.png`, { type: 'image/png' });
+    if (isImageTooLarge(file)) {
+      this.messageService.add({ severity: 'error', summary: 'Не завантажено', detail: `Емблема більша за ${MAX_IMAGE_BYTES / 1024 / 1024} МБ. Обери меншу область.` });
+      return;
+    }
     this.emblemSaving = true;
     this.kurinService.uploadEmblem(this.kurinKey, file).subscribe({
-      next: kurin => this.emblemSaved(kurin, 'Емблему збережено'),
+      next: kurin => {
+        this.emblemDialogVisible = false;
+        this.emblemFile = undefined;
+        this.emblemSaved(kurin, 'Емблему збережено');
+      },
       error: () => {
         this.emblemSaving = false;
-        this.messageService.add({ severity: 'error', summary: 'Не завантажено', detail: 'Емблему не збережено: потрібна картинка PNG, JPEG чи WebP.' });
+        this.messageService.add({ severity: 'error', summary: 'Не завантажено', detail: 'Емблему не збережено. Спробуй ще раз.' });
       }
     });
+  }
+
+  cancelEmblemCrop(): void {
+    if (this.emblemSaving) return;
+    this.emblemDialogVisible = false;
+    this.emblemFile = undefined;
   }
 
   private removeEmblem(): void {
