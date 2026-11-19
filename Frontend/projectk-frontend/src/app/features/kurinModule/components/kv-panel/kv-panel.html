@@ -26,7 +26,7 @@
               icon="pi pi-refresh"
               [text]="true"
               [rounded]="true"
-              pTooltip="Передати роль зв'язкового" ariaLabel="Передати роль зв'язкового"
+              [pTooltip]="'Передати роль: ' + managerTitle" [ariaLabel]="'Передати роль: ' + managerTitle"
               tooltipPosition="bottom"
               (onClick)="openTransferDialog()" />
           }
@@ -174,9 +174,9 @@
   [modal]="true"
   [closable]="true"
   [style]="{ width: 'min(92vw, 34rem)' }"
-  header="Передати роль зв'язкового">
+  [header]="'Передати роль: ' + managerTitle">
   <div class="kv-dialog-body">
-    <label for="managerSelect">Новий зв'язковий</label>
+    <label for="managerSelect">Кому</label>
     <p-select
       inputId="managerSelect"
       [options]="managerTransferOptions"
@@ -187,7 +187,7 @@
       filterBy="label"
       placeholder="Обери учасника"
       [style]="{ width: '100%' }" />
-    <p class="kv-muted">Поточний Звʼязковий втратить цю роль. У КВ він лишиться впорядником, лише якщо за ним закріплені гуртки.</p>
+    <p class="kv-muted">Поточний {{ managerTitle }} втратить цю роль. У КВ він лишиться впорядником, лише якщо за ним закріплені гуртки.</p>
   </div>
 
   <ng-template pTemplate="footer">

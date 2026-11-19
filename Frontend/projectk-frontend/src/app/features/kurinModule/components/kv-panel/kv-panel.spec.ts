@@ -12,6 +12,7 @@ import { KvPanelComponent } from './kv-panel';
 import { GroupDto } from '../../models/group.dto';
 import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { LeadershipDto } from '../../models/requests/leadership/leadership.dto';
+import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 describe('KvPanelComponent', () => {
   let component: KvPanelComponent;
@@ -157,6 +158,15 @@ describe('KvPanelComponent', () => {
     expect(component.getStatusLabel({ mentor: seatedMentor, groups: [] })).toBe('Інструктор');
     expect(component.getStatusLabel({ mentor: seatedInstructor, groups: [group] })).toBe('Впорядник');
     expect(component.getStatusLabel({ mentor: seatedMentor, groups: [], isManager: true })).toBe("Зв'язковий");
+  });
+
+  it('calls the Звʼязковий what the kurin renamed it to', () => {
+    rememberKurinRoleNames('orden', { Zvyazkovyi: 'Великий майстер' });
+    fixture.componentRef.setInput('kurinKey', 'orden');
+    const mentor = { memberKey: 'm', userKey: 'u', firstName: 'M', lastName: 'M', middleName: null, userRole: 'KV.Vykhovnyk' };
+
+    expect(component.getStatusLabel({ mentor, groups: [], isManager: true })).toBe('Великий майстер');
+    expect(component.managerTitle).toBe('Великий майстер');
   });
 
   describe('the КВ seat on save', () => {
