@@ -101,4 +101,17 @@ public static class PlastLadderRules
             KurinBranch.UPS => InOrder,
             _ => ThroughYouth
         };
+
+    /// <summary>
+    /// The ступені a kurin counts its people by: from where its own branch begins. Unlike
+    /// <see cref="DefaultFor"/> this is not cumulative: a person stands at one ступінь now, and a
+    /// senior kurin has no one at a youth one — anyone who is lands in the «інший» row.
+    /// </summary>
+    public static IReadOnlyList<PlastLevel> TallyFor(KurinBranch branch)
+        => branch switch
+        {
+            KurinBranch.USP => [PlastLevel.Starshoplastun, .. SeniorLevels],
+            KurinBranch.UPS => SeniorLevels,
+            _ => ThroughYouth
+        };
 }

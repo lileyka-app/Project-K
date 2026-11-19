@@ -86,15 +86,18 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         var youth = people.Where(member => !member.IsStaff).ToList();
         var staff = people.Where(member => member.IsStaff).ToList();
 
-        var sheets = new List<SheetTable>
-        {
-            People("Юнаки", chosen, youth, tagNames),
-            // The виховник's own гурток column is dropped: it says where they are placed, which
-            // for a виховник is usually nowhere. What is wanted is where they are закріплені,
-            // and that column is forced in whether or not the screen had it turned on.
-            People("Впорядники", Staffwise(chosen), staff, tagNames),
-            Tally(kurin.Branch, youth)
-        };
+        // A senior kurin has no гуртки, so nobody in it is a виховник: one sheet of its члени.
+        var sheets = KurinBranchSetRules.IsSenior(kurin.Branch)
+            ? new List<SheetTable> { People("Члени", chosen, people, tagNames), Tally(kurin.Branch, people) }
+            : new List<SheetTable>
+            {
+                People("Юнаки", chosen, youth, tagNames),
+                // The виховник's own гурток column is dropped: it says where they are placed, which
+                // for a виховник is usually nowhere. What is wanted is where they are закріплені,
+                // and that column is forced in whether or not the screen had it turned on.
+                People("Впорядники", Staffwise(chosen), staff, tagNames),
+                Tally(kurin.Branch, youth)
+            };
 
         var content = _spreadsheet.Write(sheets);
         var stamp = _timeProvider.GetUtcNow().UtcDateTime.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
@@ -131,15 +134,16 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         => ["mentoredGroups", .. columnIds.Where(id => id is not ("groupName" or "mentoredGroups"))];
 
     /// <summary>
-    /// How many юнаки stand at each ступінь. Counted by the ступінь they have reached — one
+    /// How many people stand at each ступінь of the kurin's branch. Counted by the ступінь they have reached — one
     /// person, one row — so the column sums to the юнацтво of the kurin and can be read against
-    /// the roster above it. Впорядники are left out: they are counted as кадра, not as юнацтво.
+    /// the roster above it. Впорядники are left out: they are counted as кадра, not as юнацтво;
+    /// a senior kurin has none and counts all its члени.
     /// </summary>
     private static SheetTable Tally(KurinBranch branch, IReadOnlyList<MemberDto> youth)
     {
         var rows = new List<IReadOnlyList<SheetCell>>();
 
-        foreach (var level in PlastLadderRules.DefaultFor(branch))
+        foreach (var level in PlastLadderRules.TallyFor(branch))
         {
             rows.Add([
                 SheetCell.Of(RegistryColumnRules.HeaderFor($"level:{level}")),
@@ -150,7 +154,7 @@ public sealed class ExportRegistryQueryHandler : IRequestHandler<ExportRegistryQ
         // Everyone whose ступінь is outside this branch's ladder, or who has none recorded at
         // all. Without it the column would not add up to the roster, and a missing ступінь is
         // exactly the thing a провід is looking for in this table.
-        var counted = PlastLadderRules.DefaultFor(branch).ToHashSet();
+        var counted = PlastLadderRules.TallyFor(branch).ToHashSet();
         var rest = youth.Count(member => member.LatestPlastLevel is null || !counted.Contains(member.LatestPlastLevel.Value));
         if (rest > 0)
         {

@@ -61,6 +61,22 @@ export function defaultLevelsFor(branch: KurinBranch | null | undefined): readon
   }
 }
 
+/**
+ * Ступені, за якими курінь рахує чисельність: від початку його гілки. Не накопичувально, як
+ * `defaultLevelsFor`: людина стоїть на одному ступені, а в старшому курені юнацьких рядків нема кому
+ * заповнювати — хто там є, йде в «Без ступеня / інший». Дзеркалить `PlastLadderRules.TallyFor`.
+ */
+export function tallyLevelsFor(branch: KurinBranch | null | undefined): readonly PlastLevel[] {
+  switch (branch) {
+    case KurinBranch.USP:
+      return PLAST_LADDER.slice(6);
+    case KurinBranch.UPS:
+      return PLAST_LADDER.slice(7);
+    default:
+      return THROUGH_YOUTH;
+  }
+}
+
 const SENIOR_LEVELS: ReadonlySet<PlastLevel> = new Set<PlastLevel>([PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.SeniorDovirja, PlastLevel.SeniorKerivnytstva]);
 
 /** Гілка, до якої належить сам ступінь: ст. пл. — УСП, будь-який сеніорський — УПС, решта — УПЮ. */

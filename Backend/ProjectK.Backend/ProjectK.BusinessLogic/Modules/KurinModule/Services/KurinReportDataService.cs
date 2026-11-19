@@ -195,22 +195,6 @@ public sealed class KurinReportDataService
                         item.VerifiedByName);
                 })
                 .ToArray(),
-            progress.SignedPoints
-                .OrderBy(item => item.ProbeId)
-                .ThenBy(item => item.PointId)
-                .Select(item =>
-                {
-                    var probe = _probesCatalogReader.GetGroupedProbeById(item.ProbeId);
-                    return new KurinReportProbePoint(
-                        item.ProbeId,
-                        KurinReportProgressNames.ProbeTitle(item.ProbeId, probe),
-                        item.PointId,
-                        KurinReportProgressNames.ProbePointLabel(item.PointId, probe),
-                        item.SignedAtUtc,
-                        item.SignedByName,
-                        item.SignedByRole);
-                })
-                .ToArray(),
             progress.ConfirmedBadges
                 .OrderBy(item => item.BadgeId)
                 .Select(item =>

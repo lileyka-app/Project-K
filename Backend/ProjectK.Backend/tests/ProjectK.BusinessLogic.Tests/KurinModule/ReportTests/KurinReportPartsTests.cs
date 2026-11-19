@@ -53,16 +53,13 @@ public sealed class KurinReportPartsTests
     }
 
     [Fact]
-    public void ProbePointLabel_GivesTheSectionCodeAndPlace_OrTheIdWhenUnknown()
+    public void ProbeTitle_GivesTheCataloguesTitle_OrTheIdWhenUnknown()
     {
         var probe = new GroupedProbeDto("p1", "Перша проба", 2, 1,
         [
             new ProbeSection("s1", "Б", "Section", [new ProbePoint("a", ""), new ProbePoint("b", "Вузли")])
         ]);
 
-        KurinReportProgressNames.ProbePointLabel("b", probe).Should().Be("точка Б2 - Вузли");
-        KurinReportProgressNames.ProbePointLabel("a", probe).Should().Be("точка Б1");
-        KurinReportProgressNames.ProbePointLabel("z", probe).Should().Be("z");
         KurinReportProgressNames.ProbeTitle("p1", null).Should().Be("p1");
         KurinReportProgressNames.ProbeTitle("p1", probe).Should().Be("Перша проба");
     }

@@ -95,7 +95,7 @@
     <ng-template #caption>
       <div class="lil-tile-head">
         <div>
-          <h2>Юнаки</h2>
+          <h2>{{ hasGroups() ? 'Юнаки' : 'Члени' }}</h2>
           <span class="lil-count">{{ youth().length }}</span>
         </div>
       </div>
@@ -157,7 +157,7 @@
             <app-empty-state
               art="list"
               title="Тут ще нікого немає"
-              body="Додай першого юнака — і реєстр почне жити." />
+              [body]="hasGroups() ? 'Додай першого юнака — і реєстр почне жити.' : 'Додай першого члена — і реєстр почне жити.'" />
           }
         </td>
       </tr>
@@ -165,6 +165,7 @@
   </p-table>
   </section>
 
+  @if (hasGroups()) {
   <section class="kurin-tile">
   <p-table
     [value]="staff()"
@@ -239,6 +240,7 @@
     </ng-template>
   </p-table>
   </section>
+  }
 
   <section class="kurin-tile">
   <p-table [value]="tally()" styleClass="project-table registry__tally" stripedRows>
@@ -246,7 +248,7 @@
       <div class="lil-tile-head">
         <div>
           <h2>Чисельність за ступенями</h2>
-          <p>Юнацтво за теперішнім ступенем</p>
+          <p>{{ hasGroups() ? 'Юнацтво' : 'Члени' }} за теперішнім ступенем</p>
         </div>
       </div>
     </ng-template>

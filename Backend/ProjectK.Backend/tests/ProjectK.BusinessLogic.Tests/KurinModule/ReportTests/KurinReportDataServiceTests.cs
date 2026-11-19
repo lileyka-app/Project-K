@@ -398,6 +398,7 @@ public sealed class KurinReportDataServiceTests
 
         counts.Should().ContainKey("пл. сен. праці");
         counts["пл. сен. праці"].Should().Be(1);
+        counts.Should().NotContainKey("пл. уч.", "a senior kurin counts no youth ступені");
         counts.Should().NotContainKey("Без ступеня / інший");
     }
 

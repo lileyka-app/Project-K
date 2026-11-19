@@ -203,5 +203,20 @@ public class ExportRegistryHandlerTests
         counts.Should().ContainKey("пл. сен. праці");
         counts["пл. сен. праці"].Should().Be(1);
         counts.Should().NotContainKey("Без ступеня / інший");
+        counts.Should().NotContainKey("пл. уч.");
+        counts.Should().NotContainKey("ст. пл.");
+    }
+
+    /// <summary>A senior kurin has no гуртки and no кадра: its people go on one sheet of члени.</summary>
+    [Fact]
+    public async Task ShouldWriteOneSheetOfMembers_ForASeniorKurin()
+    {
+        KurinOfBranch(KurinBranch.USP);
+        RosterIs(Person("Скоб", PlastLevel.Starshoplastun));
+
+        await Export();
+
+        _written.Select(sheet => sheet.Name).Should().Equal("Члени", "Чисельність");
+        _written[0].Rows.Should().ContainSingle();
     }
 }

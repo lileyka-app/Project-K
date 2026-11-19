@@ -98,7 +98,7 @@ public static class KurinReportRosterRules
     }
 
     /// <summary>
-    /// Скільки юнаків стоїть на кожному ступені драбини цієї гілки. Впорядники не рахуються — вони
+    /// Скільки людей стоїть на кожному ступені гілки куреня (старший курінь юнацьких не рахує). Впорядники не рахуються — вони
     /// кадра, а не склад юнацтва; рядок «Без ступеня / інший» є завжди, коли є кого в нього
     /// покласти, інакше стовпчик не сходився б зі складом. Те саме, що показує реєстр.
     /// </summary>
@@ -106,7 +106,7 @@ public static class KurinReportRosterRules
         KurinBranch branch,
         IReadOnlyList<KurinReportMember> youth)
     {
-        var ladder = PlastLadderRules.DefaultFor(branch);
+        var ladder = PlastLadderRules.TallyFor(branch);
         var rows = ladder
             .Select(level => new KurinReportLevelCount(
                 PlastLevelNames.Of(level),

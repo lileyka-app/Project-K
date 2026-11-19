@@ -55,13 +55,22 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             {
                 column.Spacing(14);
                 column.Item().Element(container => ComposeKurinSummary(container, report));
-                column.Item().Element(container => ComposeGroupsTable(container, report.Groups));
+                if (!report.Kurin.IsSenior)
+                {
+                    column.Item().Element(container => ComposeGroupsTable(container, report.Groups));
+                }
+
                 // Той самий порядок, що й на екрані реєстру: спершу юнаки, потім кадра, потім
                 // чисельність. Провід читає одне поруч з іншим, і різний порядок змушував би
-                // щоразу перевіряти, чи це та сама таблиця.
-                column.Item().Element(container => ComposeYouthSection(container, report.Youth, report.ShowsTags));
-                column.Item().Element(container => ComposeStaffSection(container, report.Staff, report.ShowsTags));
-                column.Item().Element(container => ComposeLevelTally(container, report.LevelTally));
+                // щоразу перевіряти, чи це та сама таблиця. Старший курінь гуртків не має, тож і кадри
+                // виховників у ньому немає: усі його люди — члени.
+                column.Item().Element(container => ComposeYouthSection(container, report.Youth, report.ShowsTags, report.Kurin.IsSenior));
+                if (!report.Kurin.IsSenior)
+                {
+                    column.Item().Element(container => ComposeStaffSection(container, report.Staff, report.ShowsTags));
+                }
+
+                column.Item().Element(container => ComposeLevelTally(container, report.LevelTally, report.Kurin.IsSenior));
             });
         });
     }
@@ -107,29 +116,41 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                     row.RelativeItem().Element(container => KeyValueGrid(container, MemberFacts(report, member)));
                 });
 
-                column.Item().Element(container => ComposeProbeState(container, member, zone));
-                column.Item().Element(container => ComposeBadges(container, member));
-                column.Item().Element(container => ComposeWarningsAndAwards(container, member, zone));
+                // Проби, вмілості й відзначення — програма УПЮ; старший курінь її не веде, лише перестороги.
+                if (!report.Kurin.IsSenior)
+                {
+                    column.Item().Element(container => ComposeProbeState(container, member));
+                    column.Item().Element(container => ComposeBadges(container, member));
+                }
+
+                column.Item().Element(container => ComposeWarningsAndAwards(container, member, zone, withAwards: !report.Kurin.IsSenior));
                 column.Item().Element(container => ComposeLeadershipHistory(container, member));
             });
         });
     }
 
-    // A person's facts on their картотека page; tags only when the kurin uses them.
+    // A person's facts on their картотека page; tags only when the kurin uses them, and no гурток or школа in a
+    // senior kurin, whose people are adults outside any гурток.
     private static List<(string Label, string Value)> MemberFacts(KurinReportData report, KurinReportMember member)
     {
-        var facts = new List<(string Label, string Value)>
+        var youth = !report.Kurin.IsSenior;
+        var facts = new List<(string Label, string Value)> { ("Ініціали", member.Initials) };
+        if (youth)
         {
-            ("Ініціали", member.Initials),
-            ("Гурток", member.GroupName ?? "-"),
-            ("Пошта", member.Email),
-            (PhoneLabel, member.PhoneNumber),
-            ("Дата народження", member.DateOfBirth.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
-            ("Адреса", member.Address ?? "-"),
-            ("Школа", member.School ?? "-"),
-            (LevelLabel, KurinReportNames.PlastLevel(member.LatestPlastLevel)),
-            ("Діловодство", FormatList(CurrentOffices(member)))
-        };
+            facts.Add(("Гурток", member.GroupName ?? "-"));
+        }
+
+        facts.Add(("Пошта", member.Email));
+        facts.Add((PhoneLabel, member.PhoneNumber));
+        facts.Add(("Дата народження", member.DateOfBirth.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        facts.Add(("Адреса", member.Address ?? "-"));
+        if (youth)
+        {
+            facts.Add(("Школа", member.School ?? "-"));
+        }
+
+        facts.Add((LevelLabel, KurinReportNames.PlastLevel(member.LatestPlastLevel)));
+        facts.Add(("Діловодство", FormatList(CurrentOffices(member))));
         if (report.ShowsTags)
         {
             facts.Add((TagsLabel, FormatList(member.Tags)));
@@ -344,16 +365,16 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         });
     }
 
-    private static void ComposeYouthSection(IContainer container, IReadOnlyList<KurinReportMember> members, bool showsTags)
+    private static void ComposeYouthSection(IContainer container, IReadOnlyList<KurinReportMember> members, bool showsTags, bool senior)
     {
         container.Column(column =>
         {
             column.Spacing(6);
-            column.Item().Element(item => SectionHeader(item, "Юнаки"));
+            column.Item().Element(item => SectionHeader(item, senior ? "Члени" : "Юнаки"));
 
             if (members.Count == 0)
             {
-                column.Item().Text("Юнаків немає.").FontColor(Colors.Grey.Darken1);
+                column.Item().Text(senior ? "Членів немає." : "Юнаків немає.").FontColor(Colors.Grey.Darken1);
                 return;
             }
 
@@ -362,7 +383,11 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 table.ColumnsDefinition(columns =>
                 {
                     columns.RelativeColumn(4);
-                    columns.RelativeColumn(3);
+                    if (!senior)
+                    {
+                        columns.RelativeColumn(3);
+                    }
+
                     columns.RelativeColumn(3);
                     columns.RelativeColumn(3);
                     if (showsTags)
@@ -372,7 +397,11 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 });
 
                 HeaderCell(table, "ПІБ");
-                HeaderCell(table, "Гурток");
+                if (!senior)
+                {
+                    HeaderCell(table, "Гурток");
+                }
+
                 HeaderCell(table, LevelLabel);
                 HeaderCell(table, PhoneLabel);
                 if (showsTags)
@@ -383,7 +412,11 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 foreach (var member in members)
                 {
                     BodyCell(table, member.FullName);
-                    BodyCell(table, member.GroupName ?? "-");
+                    if (!senior)
+                    {
+                        BodyCell(table, member.GroupName ?? "-");
+                    }
+
                     BodyCell(table, KurinReportNames.PlastLevel(member.LatestPlastLevel));
                     BodyCell(table, member.PhoneNumber);
                     if (showsTags)
@@ -453,13 +486,13 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         });
     }
 
-    private static void ComposeLevelTally(IContainer container, IReadOnlyList<KurinReportLevelCount> rows)
+    private static void ComposeLevelTally(IContainer container, IReadOnlyList<KurinReportLevelCount> rows, bool senior)
     {
         container.Column(column =>
         {
             column.Spacing(6);
             column.Item().Element(item => SectionHeader(item, "Чисельність за ступенями"));
-            column.Item().Text("Юнацтво куреня. Кожен рахується раз — за ступенем, який має зараз.")
+            column.Item().Text((senior ? "Члени" : "Юнацтво") + " куреня. Кожен рахується раз — за ступенем, який має зараз.")
                 .FontSize(8)
                 .FontColor(Colors.Grey.Darken1);
 
@@ -528,14 +561,16 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         });
     }
 
-    private static void ComposeProbeState(IContainer container, KurinReportMember member, TimeZoneInfo zone)
+    // One line per проба: its state and who signed it. The signed points are not listed — the звіт
+    // is a summary, and a проба in progress would otherwise fill a page with its точки.
+    private static void ComposeProbeState(IContainer container, KurinReportMember member)
     {
         container.Column(column =>
         {
             column.Spacing(5);
             column.Item().Element(item => SectionHeader(item, "Стан проби"));
 
-            if (member.Probes.Count == 0 && member.SignedProbePoints.Count == 0)
+            if (member.Probes.Count == 0)
             {
                 column.Item().Text("Прогрес проб не зафіксовано.").FontColor(Colors.Grey.Darken1);
                 return;
@@ -544,15 +579,6 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             foreach (var probe in member.Probes)
             {
                 column.Item().Text($"{probe.ProbeTitle}: {probe.StatusLabel}; підписав: {probe.CompletedByName ?? "-"}; підтвердив: {probe.VerifiedByName ?? "-"}");
-            }
-
-            if (member.SignedProbePoints.Count > 0)
-            {
-                column.Item().PaddingTop(2).Text("Підписані точки").SemiBold();
-                foreach (var point in member.SignedProbePoints)
-                {
-                    column.Item().Text($"{point.ProbeTitle}, {point.PointLabel}: {ReportClockRules.Format(point.SignedAtUtc, zone)}; {point.SignedByName ?? "-"} ({point.SignedByRole ?? "-"})");
-                }
             }
         });
     }
@@ -577,12 +603,12 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         });
     }
 
-    private static void ComposeWarningsAndAwards(IContainer container, KurinReportMember member, TimeZoneInfo zone)
+    private static void ComposeWarningsAndAwards(IContainer container, KurinReportMember member, TimeZoneInfo zone, bool withAwards)
     {
         container.Column(column =>
         {
             column.Spacing(5);
-            column.Item().Element(item => SectionHeader(item, "Перестороги та відзначення"));
+            column.Item().Element(item => SectionHeader(item, withAwards ? "Перестороги та відзначення" : "Перестороги"));
 
             if (member.ActiveWarnings.Count == 0)
             {
@@ -594,6 +620,11 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
                 {
                     column.Item().Text($"{warning.LevelLabel}: {ReportClockRules.Format(warning.IssuedAtUtc, zone)} - {ReportClockRules.Format(warning.ExpiresAtUtc, zone)}");
                 }
+            }
+
+            if (!withAwards)
+            {
+                return;
             }
 
             if (member.Awards.Count == 0)

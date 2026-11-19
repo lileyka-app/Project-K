@@ -158,6 +158,17 @@ describe('RosterComponent', () => {
 
     expect(counts.get('пл. сен. праці')).toBe(1);
     expect(counts.has('Без ступеня / інший')).toBe(false);
+    expect(counts.has('пл. уч.')).toBe(false);
+  });
+
+  it('should call a senior kurin\'s people члени and leave the впорядники table out', () => {
+    load([member({ lastName: 'Сеньйор', latestPlastLevel: PlastLevel.SeniorPratsi })], KurinBranch.UPS);
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Члени');
+    expect(text).not.toContain('Юнаки');
+    expect(text).not.toContain('Впорядники');
   });
 
   /**

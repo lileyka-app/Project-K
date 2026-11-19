@@ -21,7 +21,6 @@ public sealed record KurinReportMember(
     IReadOnlyList<string> MentoredGroupNames,
     IReadOnlyList<KurinReportPlastLevel> PlastLevels,
     IReadOnlyList<KurinReportProbe> Probes,
-    IReadOnlyList<KurinReportProbePoint> SignedProbePoints,
     IReadOnlyList<KurinReportBadge> ConfirmedBadges,
     IReadOnlyList<KurinReportWarning> ActiveWarnings,
     IReadOnlyList<KurinReportAward> Awards,

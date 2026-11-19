@@ -18,7 +18,7 @@ import { MemberDto } from '../../../../models/member.dto';
 import { KurinBranch, hasGroups } from '../../../../models/enums/kurin-branch.enum';
 import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-state';
 import { PlastLevel } from '../../../../models/enums/plast-level.enum';
-import { PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../../../models/enums/plast-ladder';
+import { PLAST_LEVEL_COLUMN_LABELS, tallyLevelsFor } from '../../../../models/enums/plast-ladder';
 import { REGISTRY_COLUMNS, RegistryColumn, columnsFor, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
 import { emailHref, phoneHref } from '../../../../../../shared/functions/contact-href.function';
 import { KurinTagService } from '../../../../services/kurin-tag-service/kurin-tag.service';
@@ -114,7 +114,7 @@ export class RosterComponent implements OnInit {
    */
   readonly tally = computed<TallyRow[]>(() => {
     const youth = this.youth();
-    const levels = defaultLevelsFor(this.branch());
+    const levels = tallyLevelsFor(this.branch());
     const rows: TallyRow[] = levels.map(level => ({
       label: PLAST_LEVEL_COLUMN_LABELS[level],
       count: youth.filter(member => member.latestPlastLevel === level).length,
