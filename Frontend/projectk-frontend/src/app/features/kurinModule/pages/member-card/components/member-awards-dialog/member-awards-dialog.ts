@@ -1,4 +1,4 @@
-﻿import { Component, OnChanges, inject, ChangeDetectionStrategy, output, input, model } from '@angular/core';
+﻿import { Component, OnChanges, SimpleChanges, inject, ChangeDetectionStrategy, output, input, model } from '@angular/core';
 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -60,7 +60,15 @@ export class MemberAwardsDialogComponent implements OnChanges {
     });
   }
 
-  ngOnChanges(): void {
+  /**
+   * The form is filled when the dialog opens or turns to another award — not on every input change.
+   * The card hands `existingAwards` in as a fresh array on each change detection, and resetting on
+   * that wiped the date the moment it was picked.
+   */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['visible'] && !changes['awardToEdit'] && !changes['canEdit']) {
+      return;
+    }
     if (this.visible()) {
       if (this.canEdit()) {
         this.form.enable();
