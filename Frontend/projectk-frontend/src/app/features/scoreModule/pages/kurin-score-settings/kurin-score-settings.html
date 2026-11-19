@@ -187,7 +187,7 @@
         </div>
         <div class="lil-dialog-field">
           <label for="rule-from">З дати</label>
-          <p-datepicker inputId="rule-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="ruleFrom()" (ngModelChange)="ruleFrom.set($event)" />
+          <p-datepicker inputId="rule-from" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="ruleFrom()" (ngModelChange)="ruleFrom.set($event)" />
         </div>
       </div>
       <ng-template #footer>
@@ -226,11 +226,11 @@
         <div class="lil-dialog-grid settings-stage-grid">
           <div class="lil-dialog-field">
             <label for="stage-from">З</label>
-            <p-datepicker inputId="stage-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageFrom()" (ngModelChange)="stageFrom.set($event)" />
+            <p-datepicker inputId="stage-from" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageFrom()" (ngModelChange)="stageFrom.set($event)" />
           </div>
           <div class="lil-dialog-field">
             <label for="stage-to">По</label>
-            <p-datepicker inputId="stage-to" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageTo()" (ngModelChange)="stageTo.set($event)" />
+            <p-datepicker inputId="stage-to" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageTo()" (ngModelChange)="stageTo.set($event)" />
           </div>
         </div>
         @if (stageError(); as message) { <p class="lil-dialog-error">{{ message }}</p> }

@@ -67,11 +67,11 @@
         <div class="life-form__dates">
             <div class="life-form__field">
                 <label for="life-start">Від</label>
-                <p-datepicker inputId="life-start" [(ngModel)]="startDate" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" />
+                <p-datepicker inputId="life-start" [showOnFocus]="false" [(ngModel)]="startDate" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" />
             </div>
             <div class="life-form__field">
                 <label for="life-end">До</label>
-                <p-datepicker inputId="life-end" [(ngModel)]="endDate" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" [minDate]="startDate" [showClear]="true" />
+                <p-datepicker inputId="life-end" [showOnFocus]="false" [(ngModel)]="endDate" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" [minDate]="startDate" [showClear]="true" />
             </div>
         </div>
 
