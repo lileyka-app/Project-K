@@ -103,7 +103,7 @@ export class InvitationsPage implements OnInit {
       await this.data.answerInvitation(invitation.membershipRequestKey, accept);
       await this.toasts.show(accept ? 'Запрошення прийнято.' : 'Запрошення відхилено.');
     } catch (error) {
-      await this.toasts.show(apiErrorText(error, 'Не вдалося відповісти. Спробуй ще раз.'), 'danger');
+      await this.toasts.show(apiErrorText(error, 'Не вдалося відповісти. Спробуй ще раз.', { PersonStillYouth: 'Ти ще в УПЮ.' }), 'danger');
     } finally {
       this.busy.set(false);
       await this.load();

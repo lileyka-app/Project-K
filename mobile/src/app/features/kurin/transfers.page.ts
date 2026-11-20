@@ -52,6 +52,7 @@ const ERRORS: Record<string, string> = {
   NoSuchCode: 'Такого коду немає. Перевір його з людиною.',
   TransferAcrossLines: 'Між УПЮ і старшими куренями не переводять. Можна лише прийняти ще й до нас.',
   SeniorKurinTakesMembers: 'Старший курінь приймає лише членом.',
+  PersonStillYouth: 'Людина ще в УПЮ.',
 };
 
 /** The toast after asking: taken in at once, an invitation the person answers, or a request to a kurin. */

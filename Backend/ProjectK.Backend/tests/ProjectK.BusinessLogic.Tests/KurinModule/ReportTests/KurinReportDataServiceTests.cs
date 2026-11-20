@@ -388,6 +388,24 @@ public sealed class KurinReportDataServiceTests
         counts["Разом"].Should().Be(2);
     }
 
+    /// <summary>
+    /// A senior kurin has no кадра виховників: its Звʼязковий holds a КВ office and is one of its члени,
+    /// in the list and in the tally, not dropped with a staff section the звіт does not print.
+    /// </summary>
+    [Fact]
+    public async Task ASeniorKurin_ShouldKeepItsKvOfficersAmongItsMembers()
+    {
+        Person("Член", level: PlastLevel.Starshoplastun);
+        var zvyazkovyi = Person("Звʼязкова", level: PlastLevel.Starshoplastun, withAccount: true);
+        GiveOffice(zvyazkovyi, LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+
+        var report = await Build(KurinBranch.USP);
+
+        report!.Staff.Should().BeEmpty();
+        report.Youth.Select(member => member.FullName).Should().BeEquivalentTo("Тест Член", "Тест Звʼязкова");
+        report.LevelTally.Single(row => row.Label == "ст. пл.").Count.Should().Be(2);
+    }
+
     [Fact]
     public async Task Tally_ShouldFollowTheKurinsBranch()
     {
@@ -446,7 +464,7 @@ public sealed class KurinReportDataServiceTests
 
         var report = await Build(KurinBranch.USP);
 
-        report!.Staff.SelectMany(member => member.LeadershipHistory).Select(history => history.RoleLabel)
+        report!.Youth.SelectMany(member => member.LeadershipHistory).Select(history => history.RoleLabel)
             .Should().BeEquivalentTo("Скриптор", "Впорядник");
     }
 

@@ -80,6 +80,7 @@ public class MembershipRequestTests
         var summary = new MemberSummary(_person, _account, "Назар", "Коваль", "n@x", null);
         _members.Setup(d => d.FindAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(summary);
         _members.Setup(d => d.GetLevelsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _members.Setup(d => d.GetWaitingLevelsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _members.Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberCard(_person, Code, "Назар", "Коваль", null));
     }
@@ -101,7 +102,7 @@ public class MembershipRequestTests
     private MembershipAskRouting Routing() => new(_unitOfWork.Object, _members.Object);
 
     private DecideMembershipRequestCommandHandler Decide() =>
-        new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
+        new(_unitOfWork.Object, _members.Object, Moves(), Routing(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
 
     private MembershipRequest Asked(MembershipRequestKind kind, DateTime? expires = null, Guid? by = null)
     {
@@ -466,6 +467,34 @@ public class MembershipRequestTests
     }
 
     [Fact]
+    public async Task ASeniorKurin_AsksSomeoneInNoKurin_ByTheSeniorLevelTheyEnteredThemself()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinB);
+        _members.Setup(d => d.GetWaitingLevelsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new WaitingLevel(_person, Guid.NewGuid(), PlastLevel.Starshoplastun, new DateOnly(2025, 5, 1))]);
+
+        var result = await AskFromB(MembershipRequestKind.AlsoJoin);
+
+        result.Data!.PersonAnswers.Should().BeTrue("nobody else could confirm the ступінь for them");
+    }
+
+    [Fact]
+    public async Task ApprovingASeniorKurinsRequest_IsRefused_WhileThePersonIsStillInUpyu()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinA);
+        StandsIn(_kurinA);
+        var request = Asked(MembershipRequestKind.AlsoJoin);
+
+        var result = await Decide().Handle(new DecideMembershipRequestCommand(_kurinA, request.MembershipRequestKey, Approve: true), default);
+
+        result.ErrorCode.Should().Be("PersonStillYouth");
+        request.IsOpen(Now.UtcDateTime).Should().BeFalse();
+        _opened.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task TheAskingScreen_HearsThatThePersonIsStillInUpyu()
     {
         Senior(_kurinB);
@@ -579,7 +608,7 @@ public class MembershipRequestTests
     }
 
     private AnswerMyInvitationCommandHandler Answer() =>
-        new(_unitOfWork.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
+        new(_unitOfWork.Object, new CurrentMember(_user.Object, _members.Object, Mock.Of<IMembershipDirectory>()), Moves(), Routing(), _events.Object, _user.Object, Mock.Of<IAccessChangeStore>(), _time);
 
     [Fact]
     public async Task AcceptingAnInvitation_AddsAMembership_AndClosesNothing()

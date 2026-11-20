@@ -532,6 +532,16 @@ public class ProbeProjectHandlerTests
         result.ErrorCode.Should().Be("StagesOutOfOrder");
     }
 
+    [Theory]
+    [InlineData("2026-03-01", null)] // recommended, never opened
+    [InlineData(null, "2026-03-01")] // frozen, never opened
+    public async Task Stages_ShouldRefuseAProbeThatWasNeverOpened(string? recommended, string? frozen)
+    {
+        var result = await SetStages(new ThirdProbeStagesInput(null, null, null, null, Day(recommended), null, null, Day(frozen), null));
+
+        result.ErrorCode.Should().Be("StagesOutOfOrder");
+    }
+
     [Fact]
     public async Task Stages_ShouldBeForbidden_ToTheYouthThemself()
     {

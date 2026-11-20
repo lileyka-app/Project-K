@@ -44,18 +44,12 @@ public sealed class MemberProgressDirectory : IMemberProgressDirectory
         }
 
         var probes = await _unitOfWork.ProbeProgresses.GetByMemberKeysAsync(memberKeys, cancellationToken);
-        var points = await _unitOfWork.ProbePointProgresses.GetByMemberKeysAsync(memberKeys, cancellationToken);
         var badges = await _unitOfWork.BadgeProgresses.GetByMemberKeysAsync(memberKeys, cancellationToken);
 
         var probesByMember = probes
             .GroupBy(p => p.MemberKey)
             .ToDictionary(g => g.Key, g => (IReadOnlyList<ProbeProgressDetail>)[.. g.Select(p => new ProbeProgressDetail(
                 p.ProbeId, p.Status, p.CompletedAtUtc, p.CompletedByName, p.VerifiedAtUtc, p.VerifiedByName))]);
-        var pointsByMember = points
-            .Where(p => p.IsSigned)
-            .GroupBy(p => p.MemberKey)
-            .ToDictionary(g => g.Key, g => (IReadOnlyList<ProbePointSignedDetail>)[.. g.Select(p => new ProbePointSignedDetail(
-                p.ProbeId, p.PointId, p.SignedAtUtc, p.SignedByName, p.SignedByRole))]);
         var badgesByMember = badges
             .Where(b => b.Status == BadgeProgressStatus.Confirmed)
             .GroupBy(b => b.MemberKey)
@@ -66,7 +60,6 @@ public sealed class MemberProgressDirectory : IMemberProgressDirectory
             .Distinct()
             .ToDictionary(key => key, key => new MemberProgressDetail(
                 probesByMember.GetValueOrDefault(key) ?? [],
-                pointsByMember.GetValueOrDefault(key) ?? [],
                 badgesByMember.GetValueOrDefault(key) ?? []));
     }
 

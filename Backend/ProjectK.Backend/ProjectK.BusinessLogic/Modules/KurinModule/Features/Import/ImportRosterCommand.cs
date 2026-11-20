@@ -91,13 +91,16 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
     private readonly IMemberDirectory _members;
     private readonly IMemberImportWriter _people;
     private readonly ISender _sender;
+    private readonly MembershipAskRouting _routing;
 
     public ImportRosterCommandHandler(
         IUnitOfWork kurinData,
         IMemberDirectory members,
         IMemberImportWriter people,
-        ISender sender)
+        ISender sender,
+        MembershipAskRouting routing)
     {
+        _routing = routing;
         _kurinData = kurinData;
         _members = members;
         _people = people;
@@ -202,6 +205,14 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
                 continue;
             }
 
+            // A senior kurin takes in someone already known only the way «Переведення» would: at once,
+            // or not from a file at all — the person answers, or their kurin does, and nobody still in УПЮ.
+            if (match is not null && !placesInGroups && await SeniorRefusalAsync(match.MemberKey, request.KurinKey, cancellationToken) is { } refusal)
+            {
+                results.Add(new RowResult(row.Number, row.DisplayName, RowOutcome.Rejected, refusal));
+                continue;
+            }
+
             var outcome = match is null ? RowOutcome.Created : RowOutcome.Attached;
 
             // A row with an address gets an account: the file is how a kurin brings its people
@@ -234,6 +245,17 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         return new ServiceResult<RosterImportReport>(
             ResultType.Success,
             new RosterImportReport(results, missingGroups, foreignKurinRows, request.DryRun));
+    }
+
+    private async Task<string?> SeniorRefusalAsync(Guid memberKey, Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var route = await _routing.ResolveAsync(memberKey, kurinKey, cancellationToken);
+        if (route.StillYouth)
+        {
+            return "Людина ще в УПЮ.";
+        }
+
+        return route.JoinsAtOnce ? null : "Людина вже є в Лілейці: запроси її в «Переведеннях».";
     }
 
     private async Task<HashSet<Guid>> MemberKeysInKurinAsync(Guid kurinKey, CancellationToken cancellationToken)

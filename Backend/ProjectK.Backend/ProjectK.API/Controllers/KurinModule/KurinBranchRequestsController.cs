@@ -56,7 +56,7 @@ public class KurinBranchRequestsController : ControllerBase
         return response.ToActionResult(this);
     }
 
-    /// <summary>Every kurin's request, waiting and settled, newest first, for the administrators' inbox beside the applications.</summary>
+    /// <summary>The administrators' inbox beside the applications: every request still waiting and the latest settled ones, newest first.</summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpGet("branch-requests")]
     [ProducesResponseType(typeof(IReadOnlyList<KurinBranchRequestDto>), StatusCodes.Status200OK)]

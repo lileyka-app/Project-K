@@ -53,9 +53,9 @@ public sealed class MembershipMoves
     /// </summary>
     public async Task CloseAsync(MembershipEntity membership, string personName, CancellationToken cancellationToken)
     {
-        membership.LeftAtUtc = DateTime.UtcNow;
-
         var now = _time.GetUtcNow().UtcDateTime;
+        membership.LeftAtUtc = now;
+
         // A request answered in this same unit of work is still pending in the database, not here.
         foreach (var asked in (await _unitOfWork.MembershipRequests.GetPendingFromAsync(membership.MemberKey, membership.KurinKey, cancellationToken))
                      .Where(r => r.Status == MembershipRequestStatus.Pending))
@@ -93,7 +93,7 @@ public sealed class MembershipMoves
             UserKey = person.UserKey,
             KurinKey = kurinKey,
             Kind = kind,
-            JoinedAtUtc = DateTime.UtcNow
+            JoinedAtUtc = _time.GetUtcNow().UtcDateTime
         };
 
         _unitOfWork.Memberships.Open(membership);

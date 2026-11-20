@@ -29,7 +29,7 @@ const REFUSALS = {
   FieldTooLong: 'Одне з полів задовге.',
   DescriptionTooLong: 'Резюме задовге.',
   EndsBeforeStart: 'Табір не може закінчитися раніше, ніж почався.',
-  StagesOutOfOrder: 'Етапи не по черзі: завершити можна після відкриття, іменувати — після завершення.',
+  StagesOutOfOrder: 'Етапи не по черзі: рекомендація й заморозка — після відкриття, подання — після рекомендації, іменування — після подання. Іменовану пробу не архівують.',
 };
 
 type FileField = 'mentorZvyazkovyi' | 'mentorVporiadnyk' | 'mentorReferent' | 'reflectionOn' | 'reflectionWith' | 'campName' | 'campFrom' | 'campTo';

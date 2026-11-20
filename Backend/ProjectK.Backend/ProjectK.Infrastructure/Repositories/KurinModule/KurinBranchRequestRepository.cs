@@ -26,9 +26,19 @@ public class KurinBranchRequestRepository : BaseEntityRepository<KurinBranchRequ
                     .SetProperty(r => r.ReviewedAtUtc, reviewedAtUtc),
                 cancellationToken) == 1;
 
-    public async Task<IReadOnlyList<KurinBranchRequest>> GetAllAsync(CancellationToken cancellationToken = default)
-        => await Context.KurinBranchRequests
+    public async Task<IReadOnlyList<KurinBranchRequest>> GetInboxAsync(int settledShown, CancellationToken cancellationToken = default)
+    {
+        var pending = await Context.KurinBranchRequests
             .AsNoTracking()
-            .OrderByDescending(r => r.RequestedAtUtc)
+            .Where(r => r.Status == KurinBranchRequestStatus.Pending)
             .ToListAsync(cancellationToken);
+        var settled = await Context.KurinBranchRequests
+            .AsNoTracking()
+            .Where(r => r.Status != KurinBranchRequestStatus.Pending)
+            .OrderByDescending(r => r.RequestedAtUtc)
+            .Take(settledShown)
+            .ToListAsync(cancellationToken);
+
+        return [.. pending.Concat(settled).OrderByDescending(r => r.RequestedAtUtc)];
+    }
 }

@@ -158,7 +158,7 @@ public sealed class ApproveWaitlistEntryCommandHandler : IRequestHandler<Approve
         {
             await _emailService.SendInvitationEmailAsync(entry.Email, provisioned.Data.InvitationToken, cancellationToken);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _logger.LogError(exception, "Waitlist entry {WaitlistEntryKey} was approved, but the invitation letter could not be sent.", entry.WaitlistEntryKey);
             return new ServiceResult<WaitlistApprovalDto>(ResultType.Success, new WaitlistApprovalDto(provisioned.Data.InvitationKey, InvitationSent: false));

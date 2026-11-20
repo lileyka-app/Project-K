@@ -21,6 +21,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMember _currentMember;
     private readonly MembershipMoves _moves;
+    private readonly MembershipAskRouting _routing;
     private readonly IDomainEventPublisher _events;
     private readonly ICurrentUserContext _currentUser;
     private readonly IAccessChangeStore _accessChanges;
@@ -30,6 +31,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         IUnitOfWork unitOfWork,
         ICurrentMember currentMember,
         MembershipMoves moves,
+        MembershipAskRouting routing,
         IDomainEventPublisher events,
         ICurrentUserContext currentUser,
         IAccessChangeStore accessChanges,
@@ -38,6 +40,7 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         _unitOfWork = unitOfWork;
         _currentMember = currentMember;
         _moves = moves;
+        _routing = routing;
         _events = events;
         _currentUser = currentUser;
         _accessChanges = accessChanges;
@@ -61,6 +64,14 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
 
         if (request.Accept)
         {
+            // A senior kurin takes nobody still in УПЮ — asked before that rule, or a ступінь withdrawn since.
+            if ((await _routing.ResolveAsync(asked.MemberKey, asked.ToKurinKey, cancellationToken)).StillYouth)
+            {
+                asked.Lapse(now);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                return ServiceResult<Unit>.Failure(ResultType.Conflict, KurinErrors.PersonStillYouth, "You are still in УПЮ; a senior kurin does not take you yet.");
+            }
+
             asked.Close(MembershipRequestStatus.Approved, now, _currentUser.UserId);
             if (await _unitOfWork.Memberships.GetActiveAsync(asked.MemberKey, asked.ToKurinKey, cancellationToken) is null)
             {

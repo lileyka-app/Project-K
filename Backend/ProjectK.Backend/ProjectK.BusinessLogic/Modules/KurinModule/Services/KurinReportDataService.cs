@@ -113,7 +113,10 @@ public sealed class KurinReportDataService
                     .ToArray()));
         }
 
-        var staffKeys = KurinReportRosterRules.StaffKeys(members, mentorAssignments, groups, kurinKey);
+        // A senior kurin has no кадра виховників: its Звʼязковий and курінний are its члени like everyone else.
+        var staffKeys = KurinBranchSetRules.IsSenior(kurin.Branch)
+            ? []
+            : KurinReportRosterRules.StaffKeys(members, mentorAssignments, groups, kurinKey);
 
         var staff = reportMembers
             .Where(member => staffKeys.Contains(member.MemberKey))

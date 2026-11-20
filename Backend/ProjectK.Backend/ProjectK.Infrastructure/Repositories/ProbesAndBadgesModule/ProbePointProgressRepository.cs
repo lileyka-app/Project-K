@@ -40,20 +40,6 @@ public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgr
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<ProbePointProgress>> GetByMemberKeysAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default)
-    {
-        var keys = memberKeys as IReadOnlyCollection<Guid> ?? memberKeys.ToList();
-        if (keys.Count == 0)
-        {
-            return Array.Empty<ProbePointProgress>();
-        }
-
-        return await Context.ProbePointProgresses
-            .Where(x => keys.Contains(x.MemberKey))
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-    }
-
     public async Task<IEnumerable<ProbePointProgress>> GetByMemberAndProbeAsync(
         Guid memberKey,
         string probeId,

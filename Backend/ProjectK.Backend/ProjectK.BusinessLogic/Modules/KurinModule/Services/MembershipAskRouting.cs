@@ -50,7 +50,14 @@ public sealed class MembershipAskRouting
 
         // Someone still in УПЮ is not a senior kurin's to ask: the counting ступені and the kurins they
         // stand in decide, as on their card. Moving up from УПЮ is a step of its own.
-        var levels = await _members.GetLevelsAsync(memberKey, cancellationToken);
+        // Someone who stands nowhere has no Звʼязковий to confirm the senior ступінь they entered for
+        // themselves, so here it counts: otherwise no senior kurin could ever ask for them.
+        var levels = (await _members.GetLevelsAsync(memberKey, cancellationToken)).ToList();
+        if (open.Count == 0)
+        {
+            levels.AddRange((await _members.GetWaitingLevelsAsync([memberKey], cancellationToken)).Select(waiting => waiting.PlastLevel));
+        }
+
         return route with { StillYouth = UladRules.Of(levels, open.Select(m => m.Branch)) == KurinBranch.UPYu };
     }
 

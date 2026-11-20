@@ -24,6 +24,7 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly MembershipMoves _moves;
+    private readonly MembershipAskRouting _routing;
     private readonly IDomainEventPublisher _events;
     private readonly ICurrentUserContext _currentUser;
     private readonly IAccessChangeStore _accessChanges;
@@ -33,6 +34,7 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         MembershipMoves moves,
+        MembershipAskRouting routing,
         IDomainEventPublisher events,
         ICurrentUserContext currentUser,
         IAccessChangeStore accessChanges,
@@ -41,6 +43,7 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
         _unitOfWork = unitOfWork;
         _members = members;
         _moves = moves;
+        _routing = routing;
         _events = events;
         _currentUser = currentUser;
         _accessChanges = accessChanges;
@@ -82,6 +85,14 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
                 asked.Lapse(now);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return ServiceResult<Unit>.Failure(ResultType.Conflict, KurinErrors.MemberNotHere, "They no longer stand in this kurin.");
+            }
+
+            // A senior kurin takes nobody still in УПЮ — asked before that rule, or a ступінь withdrawn since.
+            if ((await _routing.ResolveAsync(asked.MemberKey, asked.ToKurinKey, cancellationToken)).StillYouth)
+            {
+                asked.Lapse(now);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                return ServiceResult<Unit>.Failure(ResultType.Conflict, KurinErrors.PersonStillYouth, "The person is still in УПЮ; a senior kurin does not take them.");
             }
 
             if (asked.Kind == MembershipRequestKind.Transfer

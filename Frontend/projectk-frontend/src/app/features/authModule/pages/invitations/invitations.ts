@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { MessageService } from '@openng/optimus-ui/api';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
@@ -9,6 +10,10 @@ import {
   MembershipInvitationDto,
   MembershipService
 } from '../../../kurinModule/services/membership-service/membership.service';
+
+function stillYouth(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && (error.error as { error?: string } | null)?.error === 'PersonStillYouth';
+}
 
 /**
  * Kurins that invite the person themself: across the youth and senior lines, to someone who is no
@@ -47,7 +52,7 @@ export class InvitationsComponent implements OnInit {
       },
       error: (error: unknown) => {
         this.answering.set(null);
-        this.messages.add({ severity: 'error', summary: 'Не вдалося відповісти', detail: failureDetail(error) });
+        this.messages.add({ severity: 'error', summary: 'Не вдалося відповісти', detail: stillYouth(error) ? 'Ти ще в УПЮ.' : failureDetail(error) });
         this.load();
       }
     });

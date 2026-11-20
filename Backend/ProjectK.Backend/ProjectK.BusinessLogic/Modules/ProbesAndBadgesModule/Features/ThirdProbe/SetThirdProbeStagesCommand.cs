@@ -115,7 +115,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
     /// </summary>
     private static string? OutOfOrder(ThirdProbeStagesInput stages)
     {
-        if (Before(stages.RecommendedOn, stages.OpenedOn))
+        if (MissingOrBefore(stages.RecommendedOn, stages.OpenedOn))
         {
             return "The probe cannot be recommended before it was opened.";
         }
@@ -130,7 +130,7 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
             return "Naming comes after the probe is submitted for closing.";
         }
 
-        if (Before(stages.FrozenOn, stages.OpenedOn))
+        if (MissingOrBefore(stages.FrozenOn, stages.OpenedOn))
         {
             return "The probe cannot be frozen before it was opened.";
         }
@@ -143,5 +143,6 @@ public sealed class SetThirdProbeStagesCommandHandler : IRequestHandler<SetThird
         return null;
     }
 
-    private static bool Before(DateOnly? day, DateOnly? floor) => day is { } d && floor is { } f && d < f;
+    /// <summary>A day set without the one it follows, or earlier than it.</summary>
+    private static bool MissingOrBefore(DateOnly? day, DateOnly? floor) => day is { } d && (floor is not { } f || d < f);
 }

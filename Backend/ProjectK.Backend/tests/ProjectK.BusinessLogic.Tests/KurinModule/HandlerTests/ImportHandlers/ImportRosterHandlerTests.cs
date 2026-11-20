@@ -4,9 +4,11 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Contracts.MemberModule;
 using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Enums.Shared;
@@ -59,7 +61,7 @@ public class ImportRosterHandlerTests
         _sender.Setup(s => s.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ServiceResult<Guid>(ResultType.Created, Guid.NewGuid()));
 
-        _handler = new ImportRosterCommandHandler(_kurinData.Object, _members.Object, _people.Object, _sender.Object);
+        _handler = new ImportRosterCommandHandler(_kurinData.Object, _members.Object, _people.Object, _sender.Object, new MembershipAskRouting(_kurinData.Object, _members.Object));
     }
 
     /// <summary>Прізвище, Ім'я, Дата народження, Ступінь, Дата ступеня, Гурток, Курінь, Пошта.</summary>
@@ -112,6 +114,41 @@ public class ImportRosterHandlerTests
         written!.GroupKey.Should().BeNull();
         written.KurinKey.Should().Be(KurinKey);
         _groups.Verify(g => g.Create(It.IsAny<Group>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A senior kurin takes no one known from a file the way «Переведення» would refuse: a юнак of a УПЮ
+    /// kurin stays where they are, and someone with an account answers an invitation themself.
+    /// </summary>
+    [Theory]
+    [InlineData(KurinBranch.UPYu, PlastLevel.Skob, "Людина ще в УПЮ.")]
+    [InlineData(null, PlastLevel.Starshoplastun, "Людина вже є в Лілейці: запроси її в «Переведеннях».")]
+    public async Task ASeniorKurin_DoesNotTakeAKnownPersonStraightFromAFile(KurinBranch? standsIn, PlastLevel level, string reason)
+    {
+        var memberKey = Guid.NewGuid();
+        _kurins.Setup(r => r.GetByKeyAsync(KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(5, KurinBranch.USP) { KurinKey = KurinKey });
+        _knownPeople = [new MemberIdentity(memberKey, "Іван", "Петренко", "ivan@example.com", "0501112233", new DateOnly(2008, 1, 1))];
+        _members.Setup(m => m.FindAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(memberKey, Guid.NewGuid(), "Іван", "Петренко", "ivan@example.com", null));
+        _members.Setup(m => m.GetLevelsAsync(memberKey, It.IsAny<CancellationToken>())).ReturnsAsync([level]);
+        _members.Setup(m => m.GetWaitingLevelsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(standsIn is { } branch
+                ? [new MembershipRecord(Guid.NewGuid(), Guid.NewGuid(), 12, branch, null, null, null, MembershipKind.Youth, DateTime.UtcNow, null)]
+                : []);
+
+        var report = await _handler.Handle(
+            new ImportRosterCommand(
+                KurinKey,
+                [Row(2, "Петренко", "Іван", "01.01.2008", "ст. пл.", "01.05.2025", "", "5", "ivan@example.com")],
+                FullMapping,
+                CreateMissingGroups: false,
+                DryRun: false),
+            CancellationToken.None);
+
+        report.Data!.Rows.Should().ContainSingle(row => row.Outcome == RowOutcome.Rejected && row.Reason == reason);
+        _sender.Verify(s => s.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
