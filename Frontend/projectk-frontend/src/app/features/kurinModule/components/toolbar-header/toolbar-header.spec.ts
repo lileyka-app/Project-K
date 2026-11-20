@@ -5,7 +5,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { throwError } from 'rxjs';
 import { MessageService } from '@openng/optimus-ui/api';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { MFA_REQUIRED_MESSAGE } from '../../../../shared/functions/failure-detail.function';
+import { MFA_REQUIRED_CODE } from '../../../../shared/functions/failure-detail.function';
 
 describe('ToolbarHeaderComponent', () => {
   let component: ToolbarHeaderComponent;
@@ -32,7 +32,7 @@ describe('ToolbarHeaderComponent', () => {
   it('names the missing second factor instead of asking to retry when the MFA gate refuses', () => {
     const authService = TestBed.inject(AuthService);
     const messageService = TestBed.inject(MessageService);
-    vi.spyOn(authService, 'setKurinScope').mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403, error: { message: MFA_REQUIRED_MESSAGE } })));
+    vi.spyOn(authService, 'setKurinScope').mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403, error: { error: MFA_REQUIRED_CODE } })));
     const add = vi.spyOn(messageService, 'add').mockReturnValue(undefined);
 
     component.backToKurinPanel();

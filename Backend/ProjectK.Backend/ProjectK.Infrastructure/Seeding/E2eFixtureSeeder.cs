@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Seeding;
@@ -13,7 +14,7 @@ namespace ProjectK.Infrastructure.Seeding;
 /// Seeds the stable fixtures the Playwright suite addresses by name: a dedicated kurin holding
 /// "Gurtok 1"/"Gurtok 2" plus the manager1/mentor1/g1member1 accounts.
 /// <para>
-/// Lives in its own kurin so it never collides with <see cref="DemoDataSeeder"/>: the e2e manager
+/// Lives in its own kurin so it never collides with <see cref="Demo.DemoDataSeeder"/>: the e2e manager
 /// needs the Зв'язковий office (the only one granting whole-kurin management), and that office is
 /// single-holder, so it cannot be added to the demo kurin which already has one.
 /// </para>
@@ -38,7 +39,7 @@ public static class E2eFixtureSeeder
         var dbContext = services.GetRequiredService<AppDbContext>();
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
 
-        var kurin = await dbContext.Kurins.FirstOrDefaultAsync(k => k.Number == KurinNumber, cancellationToken);
+        var kurin = await dbContext.Kurins.FirstOrDefaultAsync(k => k.Branch == KurinBranch.UPYu && k.Number == KurinNumber, cancellationToken);
         if (kurin == null)
         {
             kurin = new Kurin(KurinNumber);
@@ -98,7 +99,7 @@ public static class E2eFixtureSeeder
         CancellationToken cancellationToken)
     {
         var secondKurin = await dbContext.Kurins
-            .FirstOrDefaultAsync(k => k.Number == SecondKurinNumber, cancellationToken);
+            .FirstOrDefaultAsync(k => k.Branch == KurinBranch.UPYu && k.Number == SecondKurinNumber, cancellationToken);
         if (secondKurin == null)
         {
             secondKurin = new Kurin(SecondKurinNumber);

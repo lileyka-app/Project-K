@@ -1,6 +1,9 @@
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 
@@ -19,8 +22,44 @@ public sealed class MembershipDirectory : IMembershipDirectory
         CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.GetRecordsForMemberAsync(memberKey, cancellationToken);
 
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetForMembersAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.GetRecordsForMembersAsync(memberKeys, cancellationToken);
+
     public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.CountForMemberAsync(memberKey, cancellationToken);
+
+    public async Task<IReadOnlyCollection<Guid>> GetCurrentKurinKeysForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => (await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken))
+            .Select(m => m.KurinKey)
+            .Distinct()
+            .ToList();
+
+    public Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.GetPeopleInKurinAsync(kurinKey, cancellationToken);
+
+    public async Task<IReadOnlyCollection<KurinPerson>> GetPeopleInKurinAsync(
+        Guid kurinKey,
+        MemberSelection selection,
+        CancellationToken cancellationToken = default)
+        => selection.IsEmpty
+            ? []
+            : await _unitOfWork.Memberships.GetPeopleInKurinAsync(kurinKey, selection, cancellationToken);
+
+    public Task<KurinPerson?> FindInLatestKurinAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInLatestKurinAsync(memberKey, cancellationToken);
+
+    public Task<KurinPerson?> FindInYouthKurinAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInYouthKurinAsync(memberKey, cancellationToken);
+
+    public Task<KurinPerson?> FindInLatestKurinByAccountAsync(Guid userKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInLatestKurinByAccountAsync(userKey, cancellationToken);
+
+    public Task<KurinPerson?> FindInKurinByAccountAsync(Guid userKey, Guid kurinKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.FindInKurinByAccountAsync(userKey, kurinKey, cancellationToken);
 
     public Task<IReadOnlyCollection<Guid>> GetKurinKeysForAccountAsync(
         Guid userKey,
@@ -42,8 +81,23 @@ public sealed class MembershipDirectory : IMembershipDirectory
         CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.GetAccountKeysInKurinAsync(kurinKey, cancellationToken);
 
+    public Task<int> CountCurrentInKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.CountCurrentInKurinAsync(kurinKey, cancellationToken);
+
+    public Task<IReadOnlyDictionary<Guid, int>> CountCurrentInKurinsAsync(
+        IReadOnlyCollection<Guid> kurinKeys,
+        CancellationToken cancellationToken = default)
+        => _unitOfWork.Memberships.CountCurrentInKurinsAsync(kurinKeys, cancellationToken);
+
     public Task<IReadOnlyCollection<KurinMembershipRecord>> GetInKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)
         => _unitOfWork.Memberships.GetRecordsInKurinAsync(kurinKey, cancellationToken);
+
+    public async Task<IReadOnlyCollection<MemberLookupDto>> GetLookupByKurinAsync(
+        Guid kurinKey,
+        CancellationToken cancellationToken = default)
+        => (await _unitOfWork.Memberships.GetMentorCandidatesAsync(kurinKey, cancellationToken))
+            .Select(candidate => candidate.ToLookupDto())
+            .ToList();
 }

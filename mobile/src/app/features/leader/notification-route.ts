@@ -18,6 +18,12 @@ export function mobileRouteOf(
   const review = /^\/kurin\/([^/]+)\/review\/skills\/?$/.exec(route);
   if (review) return review[1] === currentKurinKey ? '/tabs/kurin/review/skills' : null;
 
+  // A request from another kurin: the web's «Реєстр», mode «Переходи», is the phone's own page.
+  if (/^\/kurin(\/registry)?\/transfers\/?$/.test(route)) return '/tabs/kurin/transfers';
+
+  // A kurin invites the person themself (web «Запрошення»).
+  if (/^\/invitations\/?$/.test(route)) return '/tabs/more/invitations';
+
   // The calendar link switched off by a security change: its section on the account page.
   if (/^\/settings\/account\/?$/.test(route)) return '/tabs/more/account';
 

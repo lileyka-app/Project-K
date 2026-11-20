@@ -50,9 +50,9 @@ export function sameSeats(a: Seats, b: Seats): boolean {
   return [...roles].every((role) => keys(a, role) === keys(b, role));
 }
 
-/** What an office's row says: who holds it, or «Не обсаджено». */
+/** What an office's row says: who holds it, or nothing while nobody does. */
 export function holdersLine(members: MemberLookupDto[] | undefined): string {
-  return members?.length ? members.map((m) => `${m.lastName} ${m.firstName}`).join(', ') : 'Не обсаджено';
+  return members?.length ? members.map((m) => `${m.lastName} ${m.firstName}`).join(', ') : '';
 }
 
 const REQUEST_TYPE: Record<LeadershipKind, UpsertLeadershipRequest['type']> = { kurin: 'Kurin', group: 'Group', kv: 'KV' };

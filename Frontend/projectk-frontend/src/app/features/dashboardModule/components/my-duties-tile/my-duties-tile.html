@@ -16,45 +16,53 @@
   } @else if (!rows().length) {
     <app-empty-state art="list" title="Усе зроблено" [body]="hiddenCount() ? 'Решту приховано — вона повернеться, щойно в ній щось додасться.' : 'Нічого не чекає — ні вмілостей, ні каси, ні сходин без відмітки.'" />
   } @else {
-    <ul class="duties-tile__list">
+    <ul class="duties-tile__list lil-tile-scroll">
       @for (row of rows(); track rowKey(row)) {
         <li class="duties-tile__item">
-          @if (row.link; as link) {
-            <a class="duties-tile__row duties-tile__row--link" [routerLink]="link">
-              <ng-container *ngTemplateOutlet="body; context: { row }" />
-              <span class="pi pi-arrow-right duties-tile__go" aria-hidden="true"></span>
-            </a>
-          } @else {
-            <span class="duties-tile__row">
-              <ng-container *ngTemplateOutlet="body; context: { row }" />
+          <div class="duties-tile__row" [class.duties-tile__row--link]="!!row.link">
+            <span class="duties-tile__icon" aria-hidden="true"><span [class]="row.icon"></span></span>
+            <span class="duties-tile__body">
+              @if (row.link; as link) {
+                <a class="duties-tile__label duties-tile__stretch" [routerLink]="link">{{ row.label }}</a>
+              } @else {
+                <span class="duties-tile__label">{{ row.label }}</span>
+              }
+              @if (row.detail) { <span class="duties-tile__detail">{{ row.detail }}</span> }
             </span>
-          }
-          @if (row.canSayNotHeld || row.canHide) {
+            @if (row.canHide) {
+              <p-button
+                styleClass="duties-tile__hide"
+                icon="pi pi-eye-slash"
+                severity="secondary"
+                variant="text"
+                size="small"
+                [rounded]="true"
+                pTooltip="Приховати"
+                tooltipPosition="top"
+                [ariaLabel]="'Приховати: ' + row.label"
+                [loading]="savingKey() === 'hide:' + rowKey(row)"
+                [disabled]="!!savingKey()"
+                (onClick)="hide.emit(row.duty)" />
+            }
+            @if (row.duty.kind !== 'EventWithoutAttendance') {
+              <span class="duties-tile__count">{{ row.duty.count }}</span>
+            }
+            @if (row.link) {
+              <span class="pi pi-arrow-right duties-tile__go" aria-hidden="true"></span>
+            }
+          </div>
+          @if (row.canSayNotHeld) {
             <div class="duties-tile__actions">
-              @if (row.canSayNotHeld) {
-                <p-button
-                  label="Сходин не було"
-                  icon="pi pi-calendar-times"
-                  severity="secondary"
-                  variant="text"
-                  size="small"
-                  [ariaLabel]="'Сходин не було: ' + (row.duty.title ?? '')"
-                  [loading]="savingKey() === rowKey(row)"
-                  [disabled]="!!savingKey()"
-                  (onClick)="notHeld.emit(row.duty)" />
-              }
-              @if (row.canHide) {
-                <p-button
-                  label="Приховати"
-                  icon="pi pi-eye-slash"
-                  severity="secondary"
-                  variant="text"
-                  size="small"
-                  [ariaLabel]="'Приховати: ' + row.label"
-                  [loading]="savingKey() === 'hide:' + rowKey(row)"
-                  [disabled]="!!savingKey()"
-                  (onClick)="hide.emit(row.duty)" />
-              }
+              <p-button
+                label="Сходин не було"
+                icon="pi pi-calendar-times"
+                severity="secondary"
+                variant="text"
+                size="small"
+                [ariaLabel]="'Сходин не було: ' + (row.duty.title ?? '')"
+                [loading]="savingKey() === rowKey(row)"
+                [disabled]="!!savingKey()"
+                (onClick)="notHeld.emit(row.duty)" />
             </div>
           }
         </li>
@@ -76,14 +84,3 @@
     </div>
   }
 </section>
-
-<ng-template #body let-row="row">
-  <span class="duties-tile__icon" aria-hidden="true"><span [class]="row.icon"></span></span>
-  <span class="duties-tile__body">
-    <span class="duties-tile__label">{{ row.label }}</span>
-    @if (row.detail) { <span class="duties-tile__detail">{{ row.detail }}</span> }
-  </span>
-  @if (row.duty.kind !== 'EventWithoutAttendance') {
-    <span class="duties-tile__count">{{ row.duty.count }}</span>
-  }
-</ng-template>

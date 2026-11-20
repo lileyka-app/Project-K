@@ -1,21 +1,15 @@
 using System.Net;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectK.API.Authorization;
-using ProjectK.API.Controllers.AuthModule;
-using ProjectK.API.Helpers;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.API.Controllers.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -36,12 +30,10 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
     {
         var g = "11111111-1111-1111-1111-111111111111";
 
-        // Auth module
+        // Identity module
         yield return Row("POST", "/api/auth/logout");
         yield return Row("POST", "/api/auth/register/kurin", "{}");
         yield return Row("POST", "/api/auth/check-access", "{}");
-
-        // Users module
         yield return Row("GET", "/api/user/users");
 
         // Member module
@@ -70,6 +62,17 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         yield return Row("POST", "/api/kurin", "1");
         yield return Row("PUT", $"/api/kurin/{g}", "1");
         yield return Row("DELETE", $"/api/kurin/{g}");
+        yield return Row("GET", $"/api/kurin/{g}/members");
+        yield return Row("POST", $"/api/kurin/{g}/members");
+        yield return Row("GET", $"/api/kurin/{g}/groups");
+        yield return Row("GET", $"/api/kurin/{g}/kv");
+        yield return Row("GET", $"/api/kurin/{g}/mentor-assignments");
+        yield return Row("GET", $"/api/kurin/{g}/mentor-candidates");
+        yield return Row("GET", $"/api/group/{g}/members");
+        yield return Row("GET", "/api/kurin");
+        // Old addresses, kept for one release while PWAs still run the previous build.
+        yield return Row("POST", $"/api/member/kurins/{g}/members");
+        yield return Row("GET", $"/api/member/members/mentor-candidates/{g}");
 
         // Leadership module
         yield return Row("GET", $"/api/leadership/type/kurin/{g}");
@@ -161,6 +164,12 @@ public class ProtectedEndpointsAnonymousHttpIntegrationTests
         }
 
         if (route.EndsWith("/silhouette", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (route.StartsWith("/api/kurin/", StringComparison.OrdinalIgnoreCase)
+            && route.EndsWith("/members", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

@@ -32,7 +32,7 @@ describe('провід seats', () => {
     const seats = seatsOf('kurin', [office('Pysar', b, '2025-09-01'), office('Pysar', a, '2024-09-01')]);
     expect(seats['Pysar'].map((m) => m.memberKey)).toEqual(['m1', 'm2']);
     expect(holdersLine(seats['Pysar'])).toBe('Коваль Імʼя, Шевчук Імʼя');
-    expect(holdersLine([])).toBe('Не обсаджено');
+    expect(holdersLine([])).toBe('');
   });
 
   it('tells a changed провід from the one read, whatever the order of several', () => {

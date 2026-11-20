@@ -26,12 +26,12 @@ function newMemberApi(opts: { canCreateInGroup: boolean; emailTaken?: boolean })
     if (method === 'GET') {
       switch (path) {
         case 'kurin/k1': return ok(kurin);
-        case 'group/groups': return ok([group]);
+        case 'kurin/k1/groups': return ok([group]);
         case 'group/g1': return ok(group);
-        case 'member/kurins/k1/members': return ok([row('m2', 'Марта', 'Шевчук'), row('m3', 'Андрій', 'Мельник')]);
-        case 'member/groups/g1/members': return ok([row('m2', 'Марта', 'Шевчук')]);
-        case 'member/members/kv/k1':
-        case 'group/groups/k1/mentor-assignments':
+        case 'kurin/k1/members': return ok([row('m2', 'Марта', 'Шевчук'), row('m3', 'Андрій', 'Мельник')]);
+        case 'group/g1/members': return ok([row('m2', 'Марта', 'Шевчук')]);
+        case 'kurin/k1/kv':
+        case 'kurin/k1/mentor-assignments':
         case 'kurin/k1/dues/groups':
         case 'group/g1/mentors':
         case 'catalog/badges':
@@ -49,7 +49,7 @@ function newMemberApi(opts: { canCreateInGroup: boolean; emailTaken?: boolean })
       return null;
     }
     if (path === 'auth/check-access') return ok(body?.entityType === 'group' && body?.action === 'Create' && opts.canCreateInGroup);
-    if (method === 'POST' && (path === 'member' || path === 'member/kurins/k1/members')) {
+    if (method === 'POST' && (path === 'member' || path === 'kurin/k1/members')) {
       if (opts.emailTaken) return refuse(409);
       const sent = String(body);
       created = {
@@ -70,7 +70,7 @@ const ZVYAZKOVYI = ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Leaders
 const VYKHOVNYK = ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups', 'Leadership:Update:OwnGroups'];
 
 const sheetOf = (page: Page) => page.locator('ion-modal app-profile-edit-sheet');
-const input = (scope: Locator, testId: string) => scope.locator(`[data-testid=${testId}] input`);
+const input = (scope: Locator, testId: string) => scope.locator(`[data-testid=${testId}] input:not(.cloned-input)`);
 const sentBody = (log: { writes: { method: string; path: string; body: any }[] }, method: string, path: string) =>
   String(log.writes.find((w) => w.method === method && w.path === path)?.body ?? '');
 
@@ -135,8 +135,8 @@ test('lets the Звʼязковий add a member to the kurin and opens the new 
   await shot(page, project, 'member-new');
 
   await sheet.getByTestId('save-profile').click();
-  await expect.poll(() => sentBody(log, 'POST', 'member/kurins/k1/members')).toContain('yarema@example.com');
-  const sent = sentBody(log, 'POST', 'member/kurins/k1/members');
+  await expect.poll(() => sentBody(log, 'POST', 'kurin/k1/members')).toContain('yarema@example.com');
+  const sent = sentBody(log, 'POST', 'kurin/k1/members');
   expect(sent).toMatch(/name="kurinKey"\r\n\r\nk1/);
   expect(sent).not.toContain('name="groupKey"');
   expect(sent).toMatch(/name="createUserAccount"\r\n\r\ntrue/);

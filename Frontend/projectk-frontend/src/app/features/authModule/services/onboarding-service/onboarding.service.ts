@@ -20,6 +20,13 @@ export interface WaitlistRegistration {
   claimedKurinNameOrNumber?: string | null;
   /** The applicant leads a підготовчий курінь, which has no number yet. */
   isPreparatoryKurin?: boolean;
+  /**
+   * A senior kurin's number in УСП. With upsNumber, or alone, it makes this a senior kurin's
+   * application — one kurin in both гілки — and claimedKurinNameOrNumber stays empty.
+   */
+  uspNumber?: number | null;
+  /** A senior kurin's number in УПС; see uspNumber. */
+  upsNumber?: number | null;
 }
 
 /** How an entry came to be: a зв'язковий applied, or a провід added the person straight into a kurin. */
@@ -43,12 +50,22 @@ const kraiNameOrder = new Intl.Collator('uk');
 
 export interface WaitlistEntry extends WaitlistRegistration {
   waitlistEntryKey: string;
+  /** Read back by the server as claimedUspNumber / claimedUpsNumber. */
+  claimedUspNumber?: number | null;
+  claimedUpsNumber?: number | null;
+  isSeniorKurin?: boolean;
   verificationStatus: string | number;
   source?: WaitlistEntrySource;
   requestedAtUtc: string;
   approvedAtUtc?: string;
   invitationSentAtUtc?: string;
   onboardingStatus?: string | number;
+}
+
+/** The invitation an approval made; `invitationSent` is false when the letter did not go and needs sending again. */
+export interface WaitlistApproval {
+  invitationKey: string;
+  invitationSent: boolean;
 }
 
 export interface InvitationValidationResponse {
@@ -97,8 +114,8 @@ export class OnboardingService {
   }
 
   /** Without a край the kurin opens in the one the applicant picked, or in the default. */
-  approveWaitlistEntry(key: string, kraiCode?: string | null): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/waitlist/${key}/approve`, kraiCode ? { kraiCode } : {});
+  approveWaitlistEntry(key: string, kraiCode?: string | null): Observable<WaitlistApproval> {
+    return this.http.post<WaitlistApproval>(`${this.apiUrl}/waitlist/${key}/approve`, kraiCode ? { kraiCode } : {});
   }
 
   rejectWaitlistEntry(key: string, note?: string): Observable<string> {

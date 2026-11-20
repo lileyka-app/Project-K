@@ -62,8 +62,8 @@ export class MemberService {
     }
 
     const requestUrl = groupKey
-      ? `${this.apiUrl}/groups/${groupKey}/members`
-      : `${this.apiUrl}/kurins/${kurinKey}/members`;
+      ? `${environment.apiUrl}/group/${groupKey}/members`
+      : `${environment.apiUrl}/kurin/${kurinKey}/members`;
 
     const cacheKey = groupKey
       ? `${MEMBER_CACHE_PREFIX}list:group:${groupKey}`
@@ -108,6 +108,20 @@ export class MemberService {
     );
   }
 
+  /** Звʼязковий підтверджує старший ступінь, який людина внесла собі сама. */
+  confirmLevel(memberKey: string, levelKey: string): Observable<PlastLevelHistoryDto> {
+    return this.http.post<PlastLevelHistoryDto>(`${this.apiUrl}/${memberKey}/levels/${levelKey}/confirm`, null).pipe(
+      tap(() => this.invalidateMemberCache())
+    );
+  }
+
+  /** Звʼязковий відхиляє такий ступінь, і він зникає з картки. */
+  rejectLevel(memberKey: string, levelKey: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${memberKey}/levels/${levelKey}/reject`, null).pipe(
+      tap(() => this.invalidateMemberCache())
+    );
+  }
+
   resetProfileVerification(memberKey: string): Observable<MemberDto> {
     return this.http.delete<MemberDto>(`${this.apiUrl}/${memberKey}/profile-verification`, { context: requestFeedback('auto', [400]) }).pipe(
       tap(() => this.invalidateMemberCache()),
@@ -122,7 +136,7 @@ export class MemberService {
 
     const requestUrl = request.groupKey
       ? `${this.apiUrl}`
-      : `${this.apiUrl}/kurins/${request.kurinKey}/members`;
+      : `${environment.apiUrl}/kurin/${request.kurinKey}/members`;
 
     const formData = this.buildFormData(request, file);
     return this.http.post<MemberDto>(requestUrl, formData).pipe(
@@ -135,7 +149,7 @@ export class MemberService {
     return this.cache.get(
       `${MEMBER_CACHE_PREFIX}kv:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<MemberLookupDto[]>(`${this.apiUrl}/members/kv/${kurinKey}`)
+      () => this.http.get<MemberLookupDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/kv`)
     );
   }
 
@@ -143,7 +157,7 @@ export class MemberService {
     return this.cache.get(
       `${MEMBER_CACHE_PREFIX}mentor-candidates:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<MemberLookupDto[]>(`${this.apiUrl}/members/mentor-candidates/${kurinKey}`)
+      () => this.http.get<MemberLookupDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/mentor-candidates`)
     );
   }
 

@@ -6,7 +6,10 @@ import { ConfirmationService } from '@openng/optimus-ui/api';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
+import { DialogModule } from '@openng/optimus-ui/dialog';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { SelectModule } from '@openng/optimus-ui/select';
+import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TableModule } from '@openng/optimus-ui/table';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -14,21 +17,30 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { DuesRegisterComponent } from '../../components/dues-register/dues-register';
+import { KraiConcessionGrantsComponent } from '../../components/krai-concession-grants/krai-concession-grants';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
+import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import {
+  DUES_CHARGE_TIMING_HINTS,
+  DUES_CHARGE_TIMING_LABELS,
   DUES_ENTRY_KIND_LABELS,
+  DuesChargeTiming,
   DUES_PAYMENT_METHOD_LABELS,
   DuesEntryKind,
   DuesUpstream,
   KURIN_DUES_KINDS,
+  SENIOR_KURIN_DUES_KINDS,
   kurinDuesKinds,
   paysKrai,
   paysStanytsia
 } from '../../models/dues.enums';
 import {
+  DuesAccountDto,
   DuesEntryDto,
   DuesTransferDto,
+  KurinDuesRateDto,
   KurinDuesDto,
   KurinDuesQuarterDto,
   KurinGroupHandoverDto,
@@ -38,18 +50,22 @@ import {
 } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { DuesEntryDialogComponent } from '../group-dues/components/dues-entry-dialog/dues-entry-dialog';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
 
 /**
  * The kurin's box: what each гурток has collected for the станиця and the kurin and handed over,
  * the transfers waiting for the скарбник's word that they arrived, and the kurin's own operations
- * with the Звʼязковий's mark. One read, reloaded after every write.
+ * with the Звʼязковий's mark. A senior kurin has no гуртки: the same page keeps each person's own
+ * account in the register, and rates by tag. One read, reloaded after every write.
  */
 @Component({
   selector: 'app-kurin-dues',
   imports: [
+    PageTabsComponent,
     DatePipe, FormsModule, RouterLink, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule,
-    ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule,
-    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent
+    ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule, SelectButtonModule, DialogModule, InputTextModule,
+    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent, DuesRegisterComponent, KraiConcessionGrantsComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './kurin-dues.html',
@@ -65,9 +81,13 @@ export class KurinDuesComponent implements OnInit {
   readonly quarterShort = quarterShort;
   readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
   readonly upstream = computed(() => this.data()?.upstream ?? DuesUpstream.Stanytsia);
-  readonly kurinKinds = computed(() => kurinDuesKinds(this.upstream()));
+  readonly isSenior = computed(() => !!this.data()?.isSenior);
+  readonly kurinKinds = computed(() => kurinDuesKinds(this.upstream(), this.isSenior()));
 
   kurinKey = '';
+  private readonly pageGroups = inject(PageGroups);
+  /** Вкладка куреня і вкладки гуртків — одне місце в меню. */
+  readonly tabs = signal<PageTab[]>([]);
 
   readonly data = signal<KurinDuesDto | null>(null);
   readonly loading = signal(true);
@@ -108,25 +128,45 @@ export class KurinDuesComponent implements OnInit {
   readonly kindFilter = signal<DuesEntryKind | 'all'>('all');
   readonly quarterFilter = signal<string>('all');
 
-  readonly kindFilterOptions = [
+  readonly kindFilterOptions = computed(() => [
     { label: 'Усі види', value: 'all' as const },
-    ...KURIN_DUES_KINDS.map(kind => ({ label: DUES_ENTRY_KIND_LABELS[kind], value: kind }))
-  ];
+    ...(this.isSenior() ? [...SENIOR_KURIN_DUES_KINDS, ...KURIN_DUES_KINDS] : KURIN_DUES_KINDS)
+      .map(kind => ({ label: DUES_ENTRY_KIND_LABELS[kind], value: kind }))
+  ]);
 
   readonly quarterFilterOptions = computed(() => [
     { label: 'Усі квартали', value: 'all' },
     ...(this.data()?.years ?? []).flatMap(y => y.quarters).map(q => ({ label: quarterLabel(q), value: quarterKey(q) }))
   ]);
 
-  readonly rateNow = computed(() => {
+  readonly rateNow = computed(() => this.rateInForce(null));
+
+  /** A senior kurin's rates in force now: per tag that has one, then the one for everyone else. */
+  readonly tagRatesNow = computed(() => {
     const data = this.data();
     if (!data) {
-      return null;
+      return [];
     }
-    const index = (q: QuarterDto) => q.year * 4 + q.number;
-    return data.rates
-      .filter(r => index(r.fromQuarter) <= index(data.currentQuarter))
-      .sort((a, b) => index(b.fromQuarter) - index(a.fromQuarter))[0] ?? null;
+    const total = (rate: KurinDuesRateDto) => rate.articles.reduce((sum, a) => sum + a.amount, 0);
+    const rows = (data.tags ?? []).flatMap(tag => {
+      const rate = this.rateInForce(tag.tagKey);
+      return rate ? [{ name: tag.name, total: total(rate) }] : [];
+    });
+    const everyone = this.rateNow();
+    return [...rows, ...(everyone ? [{ name: rows.length ? 'Усім іншим' : 'Усім', total: total(everyone) }] : [])];
+  });
+
+  readonly accounts = computed(() => this.data()?.accounts ?? []);
+  readonly members = computed(() => this.accounts().filter(a => a.standing === 'Current'));
+  readonly debtors = computed(() => this.accounts().filter(a => a.balance < 0).length);
+  readonly personFilter = signal<string | null>(null);
+  readonly personFilterName = computed(() => {
+    const key = this.personFilter();
+    return key ? this.accounts().find(a => a.membershipKey === key)?.fullName ?? null : null;
+  });
+  readonly fromQuarterOptions = computed(() => {
+    const data = this.data();
+    return data ? fromQuarterOptions(data.years, data.currentQuarter) : [];
   });
 
   readonly pendingTransfers = computed(() => (this.data()?.transfers ?? []).filter(t => !t.isReceived));
@@ -145,20 +185,22 @@ export class KurinDuesComponent implements OnInit {
   readonly filteredEntries = computed(() => {
     const kind = this.kindFilter();
     const quarter = this.quarterFilter();
+    const person = this.personFilter();
     return (this.data()?.entries ?? []).filter(entry =>
       (kind === 'all' || entry.kind === kind)
+      && (!person || entry.membershipKey === person)
       && (quarter === 'all' || quarterKey(this.quarterOfDate(entry.occurredOn)) === quarter));
   });
 
   /** The край takes money straight, or the kurin still has some of it or sent it before: the край's money shows apart. */
   readonly hasKrai = computed(() => {
     const d = this.data();
-    return !!d && (paysKrai(this.upstream()) || d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some(r => r.kraiFull > 0));
+    return !!d && ((paysKrai(this.upstream()) && !d.isSenior) || d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some(r => r.kraiFull > 0));
   });
   /** The same for the станиця: a край paid straight has none, unless old money is still on the way. */
   readonly hasStanytsia = computed(() => {
     const d = this.data();
-    return !!d && (paysStanytsia(this.upstream()) || d.toStanytsia !== 0 || d.sentToStanytsia !== 0 || d.rates.some(r => r.stanytsiaFull > 0));
+    return !!d && ((paysStanytsia(this.upstream()) && !d.isSenior) || d.toStanytsia !== 0 || d.sentToStanytsia !== 0 || d.rates.some(r => r.stanytsiaFull > 0));
   });
   readonly upTo = computed(() => [this.hasStanytsia() ? 'станицю' : '', this.hasKrai() ? 'край' : ''].filter(Boolean).join(' і '));
   readonly outstandingTotal = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
@@ -171,10 +213,26 @@ export class KurinDuesComponent implements OnInit {
 
   readonly rateDialogVisible = signal(false);
   readonly savingRate = signal(false);
+  readonly savingTiming = signal(false);
+
+  readonly concessionDialogVisible = signal(false);
+  readonly concessionTarget = signal<DuesAccountDto | null>(null);
+  readonly concessionFromQuarter = signal<string>('');
+  readonly concessionOn = signal(true);
+  readonly savingConcession = signal(false);
+  readonly concessionAccount = computed(() => {
+    const target = this.concessionTarget();
+    return this.accounts().find(a => a.membershipKey === target?.membershipKey) ?? target;
+  });
+
+  readonly timingOptions = Object.values(DuesChargeTiming).map(value => ({ value, label: DUES_CHARGE_TIMING_LABELS[value] }));
+  readonly timingLabels = DUES_CHARGE_TIMING_LABELS;
+  readonly timingHints = DUES_CHARGE_TIMING_HINTS;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.kurinKey = params.get('kurinKey') ?? '';
+      this.pageGroups.dues(this.kurinKey).subscribe(tabs => this.tabs.set(tabs));
       this.groupFilter.set(null);
       this.load();
     });
@@ -212,6 +270,31 @@ export class KurinDuesComponent implements OnInit {
 
   kindLabel(entry: DuesEntryDto): string {
     return DUES_ENTRY_KIND_LABELS[entry.kind];
+  }
+
+  togglePerson(account: DuesAccountDto): void {
+    this.personFilter.set(this.personFilter() === account.membershipKey ? null : account.membershipKey);
+  }
+
+  openConcessionDialog(account: DuesAccountDto): void {
+    const data = this.data();
+    this.concessionTarget.set(account);
+    this.concessionFromQuarter.set(data ? quarterKey(data.currentQuarter) : '');
+    this.concessionOn.set(!account.isConcessionNow);
+    this.concessionDialogVisible.set(true);
+  }
+
+  saveConcession(): void {
+    const target = this.concessionTarget();
+    const from = this.fromQuarterOptions().find(o => o.value === this.concessionFromQuarter())?.quarter;
+    if (!target || !from) {
+      return;
+    }
+    this.savingConcession.set(true);
+    this.dues.setConcession({ kurinKey: this.kurinKey }, target.membershipKey, { fromQuarter: from, isConcession: this.concessionOn() }).subscribe({
+      next: () => { this.savingConcession.set(false); this.load(); },
+      error: () => this.savingConcession.set(false)
+    });
   }
 
   amountLabel(entry: DuesEntryDto): string {
@@ -259,9 +342,9 @@ export class KurinDuesComponent implements OnInit {
 
   confirmDelete(entry: DuesEntryDto): void {
     this.confirmation.confirm({
-      header: 'Видалити операцію',
+      header: 'Видалити операцію?',
       message: `${DUES_ENTRY_KIND_LABELS[entry.kind]} на ${this.money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
@@ -288,6 +371,29 @@ export class KurinDuesComponent implements OnInit {
       next: () => { this.savingRate.set(false); this.rateDialogVisible.set(false); this.load(); },
       error: () => this.savingRate.set(false)
     });
+  }
+
+  saveChargeTiming(timing: DuesChargeTiming): void {
+    if (!timing || timing === this.data()?.chargeTiming) {
+      return;
+    }
+    this.savingTiming.set(true);
+    this.dues.setKurinChargeTiming(this.kurinKey, timing).subscribe({
+      next: () => { this.savingTiming.set(false); this.load(); },
+      error: () => this.savingTiming.set(false)
+    });
+  }
+
+  /** The rate in force now for a tag, or for everyone with null. */
+  private rateInForce(tagKey: string | null) {
+    const data = this.data();
+    if (!data) {
+      return null;
+    }
+    const index = (q: QuarterDto) => q.year * 4 + q.number;
+    return data.rates
+      .filter(r => (r.tagKey ?? null) === tagKey && index(r.fromQuarter) <= index(data.currentQuarter))
+      .sort((a, b) => index(b.fromQuarter) - index(a.fromQuarter))[0] ?? null;
   }
 
   private quarterOfDate(date: string): QuarterDto {

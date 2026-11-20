@@ -5,12 +5,10 @@
     <div>
       <p class="lil-page-head__eyebrow">Точкування</p>
       <h1>Налаштування</h1>
-      <p>Як рахується бал гуртка і скільки варте кожне джерело</p>
-    </div>
-    <div class="lil-page-head__actions">
-      <p-button label="До таблиці" icon="pi pi-list" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score']" />
     </div>
   </header>
+
+  <app-page-tabs [tabs]="tabs" label="Розділи точкування" />
 
   @if (loading() && !data()) {
     <section class="kurin-tile">
@@ -44,7 +42,7 @@
         <div>
           <h2>Присутність</h2>
           <span class="lil-count">{{ d.attendanceRates.length }}</span>
-          <p>Скільки варта присутність на події кожної групи. Нуль — не точкується. Окремій події ставку змінюють на її аркуші.</p>
+          <p>За групою подій; нуль — не точкується. Ставку окремої події змінюють на її аркуші.</p>
         </div>
       </div>
       @if (!d.attendanceRates.length) {
@@ -77,7 +75,7 @@
       <div class="lil-tile-head">
         <div>
           <h2>Автоматично</h2>
-          <p>Система сама дає бали за те, що вже знає. Нове правило діє з дати, старі бали не переписує.</p>
+          <p>Нове правило діє з дати; старих балів не переписує.</p>
         </div>
       </div>
       <ul class="settings-list">
@@ -112,7 +110,7 @@
         <div>
           <h2>Перелік позицій</h2>
           <span class="lil-count">{{ activeItems().length }}</span>
-          <p>Що судді дають одним дотиком: однострій, запізнення, вирізнення. На одній події — один раз.</p>
+          <p>Однострій, запізнення, вирізнення — одним дотиком, раз на подію.</p>
         </div>
         <div class="lil-tile-head__actions">
           <p-button label="Додати" icon="pi pi-plus" severity="secondary" (onClick)="openItemDialog()" />
@@ -154,7 +152,7 @@
         <div>
           <h2>Етапи</h2>
           <span class="lil-count">{{ d.stages.length }}</span>
-          <p>Зріз за довільні дати — осінь, до табору, півріччя. Лише подання, бали не чіпає.</p>
+          <p>Зріз за довільні дати; бали не змінює.</p>
         </div>
         <div class="lil-tile-head__actions">
           <p-button label="Додати" icon="pi pi-plus" severity="secondary" (onClick)="openStageDialog()" />
@@ -189,7 +187,7 @@
         </div>
         <div class="lil-dialog-field">
           <label for="rule-from">З дати</label>
-          <p-datepicker inputId="rule-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="ruleFrom()" (ngModelChange)="ruleFrom.set($event)" />
+          <p-datepicker inputId="rule-from" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="ruleFrom()" (ngModelChange)="ruleFrom.set($event)" />
         </div>
       </div>
       <ng-template #footer>
@@ -228,11 +226,11 @@
         <div class="lil-dialog-grid settings-stage-grid">
           <div class="lil-dialog-field">
             <label for="stage-from">З</label>
-            <p-datepicker inputId="stage-from" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageFrom()" (ngModelChange)="stageFrom.set($event)" />
+            <p-datepicker inputId="stage-from" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageFrom()" (ngModelChange)="stageFrom.set($event)" />
           </div>
           <div class="lil-dialog-field">
             <label for="stage-to">По</label>
-            <p-datepicker inputId="stage-to" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageTo()" (ngModelChange)="stageTo.set($event)" />
+            <p-datepicker inputId="stage-to" [showOnFocus]="false" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="stageTo()" (ngModelChange)="stageTo.set($event)" />
           </div>
         </div>
         @if (stageError(); as message) { <p class="lil-dialog-error">{{ message }}</p> }

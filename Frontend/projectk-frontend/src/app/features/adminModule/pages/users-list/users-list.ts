@@ -14,6 +14,9 @@ import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { UserRow, usersByKurin } from '../../functions/user-kurin-groups.function';
+import { KurinService } from '../../../kurinModule/services/kurin-service/kurin.service';
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-users-list',
@@ -24,12 +27,15 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
   styleUrl: './users-list.css'
 })
 export class UsersListComponent implements OnInit {
-  users: UserDto[] = [];
-  clonedUsers: Record<string, UserDto> = {};
+  users: UserRow[] = [];
+  clonedUsers: Record<string, UserRow> = {};
   expandedRows: Record<string, boolean> = {};
   private readonly userService = inject(UserService);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly kurinService = inject(KurinService);
+  /** Краї by code, to name one where two kurins' headings would read the same. */
+  private kraiNames = new Map<string, string>();
 
   // System-level roles only. Kurin offices are managed on the Leadership screen.
   // Posted by name, so the backend enum's order is not part of the contract.
@@ -40,39 +46,33 @@ export class UsersListComponent implements OnInit {
 
   ngOnInit() {
     this.loadUsers();
+    this.kurinService.getKrais().pipe(catchError(() => of([]))).subscribe(krais => {
+      this.kraiNames = new Map(krais.map(krai => [krai.code, krai.name]));
+      this.users = usersByKurin(this.users, this.kraiNames);
+    });
   }
 
   loadUsers() {
     this.userService.getAllUsers().subscribe({
       next: (users) => {
-        this.users = users.sort((a, b) => (a.kurinNumber ?? 999) - (b.kurinNumber ?? 999));
-
-        this.users.forEach(user => {
-          if (user.kurinNumber !== null) {
-            this.expandedRows[user.kurinNumber.toString()] = false;
-          } else {
-            this.expandedRows['null'] = false;
-          }
-        });
+        this.users = usersByKurin(users, this.kraiNames);
+        this.users.forEach(user => this.expandedRows[user.group] = false);
       },
       error: () => this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося завантажити користувачів' })
     });
   }
 
-  getKurinGroupLabel(kurinNumber: number | null): string {
-    return kurinNumber === null ? 'Без куреня' : `${kurinNumber} курінь`;
-  }
-
-  toggleGroup(kurinNumber: number | null) {
-    const key = kurinNumber?.toString() ?? 'null';
-    this.expandedRows[key] = !this.expandedRows[key];
+  toggleGroup(group: string) {
+    this.expandedRows[group] = !this.expandedRows[group];
   }
 
   deleteUser(user: UserDto) {
     this.confirmationService.confirm({
-      message: `Видалити користувача ${user.firstName} ${user.lastName}? Цю дію неможливо скасувати.`,
-      header: 'Підтвердження видалення',
-      icon: 'pi pi-exclamation-triangle',
+      message: `${user.firstName} ${user.lastName} зникне з Лілейки разом з акаунтом. Цю дію неможливо скасувати.`,
+      header: 'Видалити користувача?',
+      icon: 'pi pi-trash',
+      acceptButtonProps: { label: 'Видалити', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.userService.deleteUser(user.userId).subscribe({
           next: () => {
@@ -97,7 +97,7 @@ export class UsersListComponent implements OnInit {
       icon: 'pi pi-pause',
       acceptLabel: 'Призупинити',
       rejectLabel: 'Скасувати',
-      acceptButtonProps: { label: 'Призупинити', severity: 'warn' },
+      acceptButtonProps: { label: 'Призупинити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.userService.suspendUser(user.userId).subscribe({
@@ -129,7 +129,7 @@ export class UsersListComponent implements OnInit {
     });
   }
 
-  onRowEditInit(user: UserDto) {
+  onRowEditInit(user: UserRow) {
     this.clonedUsers[user.userId] = { ...user };
   }
 
@@ -138,7 +138,7 @@ export class UsersListComponent implements OnInit {
     return this.roles.find(r => r.value === role)?.label ?? role;
   }
 
-  onRowEditSave(user: UserDto) {
+  onRowEditSave(user: UserRow) {
     // The select writes the API value into user.role; the label is for reading only.
     const newRoleValue = this.roles.find(r => r.value === user.role)?.value;
     
@@ -162,7 +162,7 @@ export class UsersListComponent implements OnInit {
     });
   }
 
-  onRowEditCancel(user: UserDto, index: number) {
+  onRowEditCancel(user: UserRow, index: number) {
     this.users[index] = this.clonedUsers[user.userId];
     delete this.clonedUsers[user.userId];
   }

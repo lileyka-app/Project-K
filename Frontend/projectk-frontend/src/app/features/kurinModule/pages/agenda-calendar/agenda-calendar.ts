@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -19,6 +19,8 @@ import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { AgendaItemDialogComponent } from '../../components/agenda-item-dialog/agenda-item-dialog';
 import { AgendaItemDto, UpdateAgendaItemRequest } from '../../models/agenda';
+import { PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../services/page-groups/page-groups.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -33,7 +35,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 @Component({
   selector: 'app-agenda-calendar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, SelectButtonModule, ToggleSwitchModule, FullCalendarModule, AgendaItemDialogComponent],
+  imports: [PageTabsComponent, FormsModule, ButtonModule, SelectButtonModule, ToggleSwitchModule, FullCalendarModule, AgendaItemDialogComponent],
   templateUrl: './agenda-calendar.html',
   styleUrl: './agenda-calendar.css'
 })
@@ -47,6 +49,9 @@ export class AgendaCalendarComponent implements OnInit {
   private readonly calendar = viewChild(FullCalendarComponent);
 
   protected readonly kurinKey = signal('');
+  private readonly pageGroups = inject(PageGroups);
+  /** Календар і Планування — одне місце в меню, дві вкладки. */
+  protected readonly tabs = computed(() => this.kurinKey() ? this.pageGroups.calendar(this.kurinKey()) : []);
   protected readonly items = signal<AgendaItemDto[]>([]);
   protected readonly dialogVisible = signal(false);
   protected readonly editing = signal<AgendaItemDto | null>(null);

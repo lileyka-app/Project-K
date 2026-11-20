@@ -9,6 +9,7 @@ import { ProbesCatalogService } from '../../services/probes-and-badges/probes-ca
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
+import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { MemberProbePageComponent } from './member-probe-page';
 import { ConfirmationService } from '@openng/optimus-ui/api';
 
@@ -63,7 +64,9 @@ describe('MemberProbePageComponent', () => {
       getProbeProgress: vi.fn(),
       updateProbeProgressStatus: vi.fn(),
       signProbePoint: vi.fn(),
-      unsignProbePoint: vi.fn()
+      unsignProbePoint: vi.fn(),
+      // A points probe is not the third: no projects to show.
+      getThirdProbe: vi.fn().mockReturnValue(of({ isProjectProbe: false, canEdit: false, canSign: false, canUnsign: false, file: null, projects: [], badges: [], limits: {} }))
     } as MockedObject<MemberProgressService>;
     authServiceSpy = {
       getAuthStateValue: vi.fn()
@@ -154,7 +157,7 @@ describe('MemberProbePageComponent', () => {
     expect(component.canManageProbePoints).toBe(true);
   });
 
-  it('у старшого пластуна проба — архів: видно, але не підписати', () => {
+  it('у старшого пластуна (улад з сервера) проба — архів: видно, але не підписати', () => {
     memberServiceSpy.getByKey.mockReturnValue(of({
       memberKey,
       groupKey: 'group-1',
@@ -168,6 +171,7 @@ describe('MemberProbePageComponent', () => {
       profilePhotoUrl: null,
       latestPlastLevel: PlastLevel.Starshoplastun,
       plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }],
+      ulad: KurinBranch.USP,
       leadershipHistories: []
     }));
     createComponent();

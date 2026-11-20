@@ -31,7 +31,7 @@ describe('KurinService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('getKurins should call GET /kurins and return data', () => {
+  it('getKurins should call GET /kurin and return data', () => {
     const mockKurins = [
       { kurinKey: 'k1', number: 1 },
       { kurinKey: 'k2', number: 2 }
@@ -40,7 +40,7 @@ describe('KurinService', () => {
     let result: KurinDto[] | undefined;
     service.getKurins().subscribe(res => (result = res));
 
-    const req = httpMock.expectOne(`${baseUrl}/kurins`);
+    const req = httpMock.expectOne(baseUrl);
     expect(req.request.method).toBe('GET');
     req.flush(mockKurins);
 
@@ -57,13 +57,13 @@ describe('KurinService', () => {
       expect(res).toEqual(mockKurins);
     });
 
-    httpMock.expectOne(`${baseUrl}/kurins`).flush(mockKurins);
+    httpMock.expectOne(baseUrl).flush(mockKurins);
 
     service.getKurins().subscribe(res => {
       expect(res).toEqual(mockKurins);
     });
 
-    httpMock.expectNone(`${baseUrl}/kurins`);
+    httpMock.expectNone(baseUrl);
   });
 
   it('createKurin should POST to /kurin with the number and край and return created entity', () => {
@@ -151,13 +151,13 @@ describe('KurinService', () => {
     const mockKurins = [{ kurinKey: 'k1', number: 1 }] as KurinDto[];
 
     service.getKurins().subscribe();
-    httpMock.expectOne(`${baseUrl}/kurins`).flush(mockKurins);
+    httpMock.expectOne(baseUrl).flush(mockKurins);
 
     service.updateKurin(input).subscribe();
     httpMock.expectOne(`${baseUrl}/${input.kurinKey}`).flush(input);
 
     service.getKurins().subscribe();
-    const req = httpMock.expectOne(`${baseUrl}/kurins`);
+    const req = httpMock.expectOne(baseUrl);
     expect(req.request.method).toBe('GET');
     req.flush([input]);
   });

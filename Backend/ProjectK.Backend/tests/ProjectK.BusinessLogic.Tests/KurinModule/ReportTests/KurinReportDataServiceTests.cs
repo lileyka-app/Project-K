@@ -1,18 +1,20 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
-using Xunit;
+using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
 
@@ -22,10 +24,13 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.ReportTests;
 /// </summary>
 public sealed class KurinReportDataServiceTests
 {
-    private readonly Mock<IKurinReportSource> _source = new();
+    private readonly Mock<IKurinReportRepository> _source = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IKurinReportMedia> _media = new();
     private readonly Mock<IMemberProgressDirectory> _progress = new();
+    private readonly Mock<IUnitOfWork> _uow = new();
+    private readonly Mock<IKurinTagRepository> _tags = new();
+    private readonly Mock<IKurinTagVisibility> _tagVisibility = new();
     private readonly KurinReportDataService _service;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -38,10 +43,11 @@ public sealed class KurinReportDataServiceTests
     private readonly List<Member> _members = [];
     private readonly List<Membership> _memberships = [];
     private readonly List<MentorAssignment> _mentorAssignments = [];
+    private readonly List<LeadershipHistory> _offices = [];
 
     public KurinReportDataServiceTests()
     {
-        _kurin = new Kurin(7) { KurinKey = _kurinKey, Branch = KurinBranch.UPYu };
+        _kurin = new Kurin(7) { KurinKey = _kurinKey };
         _alpha = new Group("Alpha", _kurinKey) { GroupKey = _alphaKey };
         _beta = new Group("Beta", _kurinKey) { GroupKey = _betaKey };
 
@@ -53,15 +59,71 @@ public sealed class KurinReportDataServiceTests
             .Setup(p => p.GetDetailsForMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, MemberProgressDetail>());
 
+        _uow.Setup(u => u.KurinTags).Returns(_tags.Object);
+        TagsOn(false);
+
+        var unitOfWork = UnitOfWorks.WithReports(_source.Object, _uow);
         _service = new KurinReportDataService(
-            _source.Object,
             _currentUser.Object,
             FakeBlobReadLinks.Instance,
             _media.Object,
-            Mock.Of<IProbesCatalogService>(),
-            Mock.Of<IBadgesCatalogService>(),
-            new ConfigurationBuilder().Build(),
-            _progress.Object);
+            Mock.Of<IProbesCatalogReader>(),
+            Mock.Of<IBadgesCatalogReader>(),
+            _progress.Object,
+            unitOfWork,
+            Mock.Of<ProjectK.Common.Contracts.ProbesAndBadgesModule.IHonoursCatalog>(),
+            new KurinReportHeaderReader(_currentUser.Object, new ConfigurationBuilder().Build()),
+            new KurinReportTagReader(unitOfWork, _tagVisibility.Object));
+    }
+
+    private void TagsOn(bool enabled, Func<Guid?, Guid?, bool>? shows = null)
+    {
+        _tagVisibility
+            .Setup(v => v.SettingsAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KurinTagSettingsState(enabled, EnabledByDefault: false, OwnTagsVisible: true));
+        _tagVisibility
+            .Setup(v => v.ShowsTagsOfAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(shows ?? ((_, _) => enabled));
+    }
+
+    private (Member Alpha, Member Beta) TaggedInBothGroups()
+    {
+        var alpha = Person("Альфа", _alphaKey);
+        var beta = Person("Бета", _betaKey);
+        var tag = new KurinTag { KurinKey = _kurinKey, Name = "Новики" };
+        _tags.Setup(t => t.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([tag]);
+        _tags.Setup(t => t.GetAssignmentsAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = alpha.MemberKey },
+            new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = beta.MemberKey }
+        ]);
+        return (alpha, beta);
+    }
+
+    /// <summary>The report names tags by the reader's own «Бачити теги людей»: a гурток's reach shows that гурток only.</summary>
+    [Fact]
+    public async Task ShouldNameOnlyTheTagsTheReaderMaySee()
+    {
+        TaggedInBothGroups();
+        TagsOn(true, (_, groupKey) => groupKey == _alphaKey);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeTrue();
+        report.Youth.Single(member => member.FullName == "Тест Альфа").Tags.Should().Equal("Новики");
+        report.Youth.Single(member => member.FullName == "Тест Бета").Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ShouldCarryNoTagsAtAll_ForAReaderTheKurinShowsNone()
+    {
+        TaggedInBothGroups();
+        TagsOn(true, (_, _) => false);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeFalse();
+        report.Members.Should().OnlyContain(member => member.Tags.Count == 0);
     }
 
     private Member Person(string lastName, Guid? groupKey = null, PlastLevel? level = null, bool withAccount = false)
@@ -111,7 +173,7 @@ public sealed class KurinReportDataServiceTests
             StartDate = new DateOnly(2024, 1, 1)
         };
 
-        member.LeadershipHistories.Add(new LeadershipHistory
+        _offices.Add(new LeadershipHistory
         {
             LeadershipHistoryKey = Guid.NewGuid(),
             MemberKey = member.MemberKey,
@@ -132,20 +194,98 @@ public sealed class KurinReportDataServiceTests
             RevokedAtUtc = revokedAtUtc
         });
 
-    private Task<Common.Models.Reports.KurinReportData?> Build(KurinBranch branch = KurinBranch.UPYu)
+    private Task<Common.Records.KurinModule.KurinReportData?> Build(KurinBranch branch = KurinBranch.UPYu)
     {
-        _kurin.Branch = branch;
+        _kurin.SetBranches([new KurinNumbering(branch, 7)]);
         _source
             .Setup(s => s.LoadAsync(_kurinKey, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new KurinReportSourceData(
                 _kurin,
                 [_alpha, _beta],
-                _mentorAssignments,
-                _members,
+                _mentorAssignments
+                    .Select(assignment => new KurinReportSourceMentor(assignment.MentorUserKey, assignment.GroupKey, assignment.RevokedAtUtc))
+                    .ToList(),
+                _members.Select(ToSource).ToList(),
                 new Dictionary<Guid, AppUser>(),
-                _memberships.ToDictionary(membership => membership.MemberKey)));
+                _memberships.ToDictionary(
+                    membership => membership.MemberKey,
+                    membership => new KurinMembershipRecord(
+                        membership.MembershipKey,
+                        membership.MemberKey,
+                        membership.GroupKey,
+                        membership.Kind,
+                        membership.JoinedAtUtc,
+                        membership.LeftAtUtc))));
 
         return _service.BuildAsync(_kurinKey, CancellationToken.None);
+    }
+
+    /// <summary>The person as the report's repository hands them over: values read off the entity.</summary>
+    private KurinReportSourceMember ToSource(Member member) => new(
+        member.MemberKey,
+        member.UserKey,
+        member.FirstName,
+        member.MiddleName,
+        member.LastName,
+        member.Email,
+        member.PhoneNumber,
+        member.DateOfBirth,
+        member.Address,
+        member.School,
+        member.ProfilePhotoBlobName,
+        member.LatestPlastLevel,
+        member.PlastLevelHistory.Select(history => new KurinReportPlastLevel(history.PlastLevel, history.DateAchieved)).ToList(),
+        member.MemberWarnings.Select(warning => new KurinReportSourceWarning(warning.Level, warning.IssuedAtUtc, warning.ExpiresAtUtc, warning.RevokedAtUtc)).ToList(),
+        member.MemberAwards.Select(award => new KurinReportSourceAward(award.Level, award.CatalogId, award.DateAcquired, award.Note, award.Status)).ToList(),
+        _offices
+            .Where(history => history.MemberKey == member.MemberKey)
+            .Select(history => new KurinReportSourceOffice(
+                history.Leadership.Type,
+                history.Leadership.KurinKey,
+                history.Leadership.GroupKey,
+                history.Leadership.Name,
+                history.Leadership.EndDate,
+                history.Role,
+                history.StartDate,
+                history.EndDate))
+            .ToList());
+
+    /// <summary>
+    /// The report is read only by whoever holds the whole kurin, so it names every tag a person
+    /// carries — by name, in order — and says it has tags at all only when the kurin uses them.
+    /// </summary>
+    [Fact]
+    public async Task ShouldNameEveryTag_WhenTheKurinUsesTags()
+    {
+        var tagged = Person("Юнак", _alphaKey);
+        Person("Без тегів", _alphaKey);
+        var camp = new KurinTag { KurinKey = _kurinKey, Name = "Табір" };
+        var novice = new KurinTag { KurinKey = _kurinKey, Name = "Новики" };
+        TagsOn(true);
+        _tags.Setup(t => t.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([camp, novice]);
+        _tags.Setup(t => t.GetAssignmentsAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new MemberTag { KurinTagKey = camp.KurinTagKey, MemberKey = tagged.MemberKey },
+            new MemberTag { KurinTagKey = novice.KurinTagKey, MemberKey = tagged.MemberKey }
+        ]);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeTrue();
+        report.Youth.Single(member => member.FullName == "Тест Юнак").Tags.Should().Equal("Новики", "Табір");
+        report.Youth.Single(member => member.FullName == "Тест Без тегів").Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ShouldLeaveTagsOut_WhenTheKurinHasThemOff()
+    {
+        Person("Юнак", _alphaKey);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeFalse();
+        report.Members.Should().OnlyContain(member => member.Tags.Count == 0);
+        _tags.Verify(t => t.GetAssignmentsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -248,6 +388,24 @@ public sealed class KurinReportDataServiceTests
         counts["Разом"].Should().Be(2);
     }
 
+    /// <summary>
+    /// A senior kurin has no кадра виховників: its Звʼязковий holds a КВ office and is one of its члени,
+    /// in the list and in the tally, not dropped with a staff section the звіт does not print.
+    /// </summary>
+    [Fact]
+    public async Task ASeniorKurin_ShouldKeepItsKvOfficersAmongItsMembers()
+    {
+        Person("Член", level: PlastLevel.Starshoplastun);
+        var zvyazkovyi = Person("Звʼязкова", level: PlastLevel.Starshoplastun, withAccount: true);
+        GiveOffice(zvyazkovyi, LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+
+        var report = await Build(KurinBranch.USP);
+
+        report!.Staff.Should().BeEmpty();
+        report.Youth.Select(member => member.FullName).Should().BeEquivalentTo("Тест Член", "Тест Звʼязкова");
+        report.LevelTally.Single(row => row.Label == "ст. пл.").Count.Should().Be(2);
+    }
+
     [Fact]
     public async Task Tally_ShouldFollowTheKurinsBranch()
     {
@@ -258,6 +416,7 @@ public sealed class KurinReportDataServiceTests
 
         counts.Should().ContainKey("пл. сен. праці");
         counts["пл. сен. праці"].Should().Be(1);
+        counts.Should().NotContainKey("пл. уч.", "a senior kurin counts no youth ступені");
         counts.Should().NotContainKey("Без ступеня / інший");
     }
 
@@ -291,6 +450,22 @@ public sealed class KurinReportDataServiceTests
         var report = await Build();
 
         report!.Staff.Single().LeadershipHistory.Single().RoleLabel.Should().Be("Впорядник");
+    }
+
+    /// <summary>A senior kurin's own names for its roles, as on its screens: its Писар is «Скриптор» in the звіт too.</summary>
+    [Fact]
+    public async Task ShouldNameOfficesByTheKurinsOwnRoleNames()
+    {
+        var scribe = Person("Федорів", withAccount: true);
+        GiveOffice(scribe, LeadershipType.KV, LeadershipRole.Pysar);
+        var mentor = Person("Виховна", withAccount: true);
+        GiveOffice(mentor, LeadershipType.KV, LeadershipRole.Vykhovnyk);
+        _kurin.RoleNames = """{"Pysar":"Скриптор"}""";
+
+        var report = await Build(KurinBranch.USP);
+
+        report!.Youth.SelectMany(member => member.LeadershipHistory).Select(history => history.RoleLabel)
+            .Should().BeEquivalentTo("Скриптор", "Впорядник");
     }
 
     /// <summary>

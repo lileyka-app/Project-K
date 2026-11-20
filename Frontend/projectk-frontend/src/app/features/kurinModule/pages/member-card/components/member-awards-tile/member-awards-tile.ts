@@ -3,24 +3,20 @@ import { Component, inject, ChangeDetectionStrategy, output, input } from '@angu
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService } from '@openng/optimus-ui/api';
-import { MemberAwardDto } from '../../../../models/member-award.dto';
+import { MemberAwardDto, YouthAwardDto, isYouthAward } from '../../../../models/member-award.dto';
+import { AwardBlocksComponent } from '../award-blocks/award-blocks';
+import { AwardBlock, groupGrants } from '../award-blocks/award-blocks.function';
 import { MemberAwardLevel } from '../../../../models/enums/member-award-level.enum';
 import { BadgeProgressStatus } from '../../../../models/enums/badge-progress-status.enum';
 import { MemberAwardsDialogComponent } from '../member-awards-dialog/member-awards-dialog';
 import { UpsertMemberAwardRequest } from '../../../../services/member-award-service/member-award.service';
 import { BadgeImageBlobService } from '../../../../services/probes-and-badges/badge-image-blob.service';
 import { environment } from '../../../../../../../environments/environment';
-import { dateOnlyTime } from '../../../../functions/to-date-only-string.function';
-
-interface AwardGroup {
-  level: MemberAwardLevel;
-  count: number;
-  latest: MemberAwardDto;
-}
 
 @Component({
   selector: 'app-member-awards-tile',
   imports: [
+    AwardBlocksComponent,
     ButtonModule,
     ConfirmDialogModule,
     MemberAwardsDialogComponent
@@ -31,7 +27,7 @@ interface AwardGroup {
   styleUrl: './member-awards-tile.css'
 })
 export class MemberAwardsTileComponent {
-  readonly awards = input<MemberAwardDto[]>([]);
+  readonly awards = input<YouthAwardDto[]>([]);
   /** Add an award and change one: whoever may change the card. */
   readonly canEdit = input(false);
   /**
@@ -49,6 +45,8 @@ export class MemberAwardsTileComponent {
   readonly ownCard = input(false);
 
   readonly saveAward = output<UpsertMemberAwardRequest>();
+  /** The person pins or unpins a відзначення on their own card. */
+  readonly pinAward = output<AwardBlock>();
   readonly deleteAward = output<string>();
   readonly reviewAward = output<{
     awardKey: string;
@@ -56,12 +54,12 @@ export class MemberAwardsTileComponent {
 }>();
 
   dialogVisible = false;
-  selectedAward: MemberAwardDto | null = null;
+  selectedAward: YouthAwardDto | null = null;
 
   private readonly confirmationService = inject(ConfirmationService);
   private readonly badgeImageBlobService = inject(BadgeImageBlobService);
 
-  awardStamp(award: MemberAwardDto): string | null {
+  awardStamp(award: YouthAwardDto): string | null {
     return this.kurinStamps()[award.kurinKey] ?? null;
   }
 
@@ -75,27 +73,34 @@ export class MemberAwardsTileComponent {
     }
   }
 
-  get groupedAwards() {
-    const map = new Map<string, AwardGroup>();
-    for (const award of this.awards().filter(item => this.isVisibleAward(item))) {
-      const existing = map.get(award.level);
-      if (existing) {
-        existing.count++;
-        if (dateOnlyTime(award.dateAcquired) > dateOnlyTime(existing.latest.dateAcquired)) {
-          existing.latest = award;
-        }
-      } else {
-        map.set(award.level, { level: award.level, count: 1, latest: award });
-      }
+  /** One block per level, every grant of it inside (award-blocks). */
+  get blocks(): AwardBlock[] {
+    const groups = groupGrants(this.awards().filter(item => this.isVisibleAward(item)), award => award.level);
+    return [...groups.values()].map(grants => ({
+      key: grants[0].level,
+      title: this.getAwardTitle(grants[0].level),
+      imageUrl: this.getAwardImageUrl(grants[0]),
+      section: '',
+      grants: grants.map(award => ({
+        award,
+        pending: this.isPendingConfirmation(award),
+        stamp: this.awardStamp(award),
+        canOpen: this.canOpen(award)
+      })),
+      pinned: grants.some(award => award.isPinned),
+      pending: grants.some(award => this.isPendingConfirmation(award)),
+      pin: { level: grants[0].level }
+    }));
+  }
+
+  /** The block hands back the grant as a plain award; this card only holds УПЮ ones. */
+  openGrant(award: MemberAwardDto): void {
+    if (isYouthAward(award)) {
+      this.openDialog(award);
     }
-    return Array.from(map.values()).sort((a, b) => this.getAwardLevelWeight(a.level) - this.getAwardLevelWeight(b.level));
   }
 
-  trackAwardGroup(_: number, group: AwardGroup): MemberAwardLevel {
-    return group.level;
-  }
-
-  getAwardImageUrl(award: MemberAwardDto): string | null {
+  getAwardImageUrl(award: YouthAwardDto): string | null {
     const status = this.normalizeStatus(award.status);
     const level = this.getAwardLevelWeight(award.level);
     const colored = status === BadgeProgressStatus.Confirmed;
@@ -103,7 +108,7 @@ export class MemberAwardsTileComponent {
     return this.badgeImageBlobService.resolveBadgeImageForDisplay(sourceUrl);
   }
 
-  isPendingConfirmation(award: MemberAwardDto): boolean {
+  isPendingConfirmation(award: YouthAwardDto): boolean {
     return this.normalizeStatus(award.status) === BadgeProgressStatus.Submitted;
   }
 
@@ -118,13 +123,13 @@ export class MemberAwardsTileComponent {
   }
 
   /** Confirming is the kurin's to give level by level; it does not need the right to change the card. */
-  canConfirm(award: MemberAwardDto | null): boolean {
+  canConfirm(award: YouthAwardDto | null): boolean {
     return !!award
       && this.normalizeStatus(award.status) === BadgeProgressStatus.Submitted
       && this.confirmLevels().includes(this.getAwardLevelWeight(award.level));
   }
 
-  canEditAward(award: MemberAwardDto | null): boolean {
+  canEditAward(award: YouthAwardDto | null): boolean {
     if (!this.canEdit()) {
       return false;
     }
@@ -132,7 +137,7 @@ export class MemberAwardsTileComponent {
   }
 
   /** The server's rule: removal rights, or withdrawing an unconfirmed one you submitted or that is yours. */
-  canDeleteAward(award: MemberAwardDto | null): boolean {
+  canDeleteAward(award: YouthAwardDto | null): boolean {
     if (!award) {
       return false;
     }
@@ -146,11 +151,11 @@ export class MemberAwardsTileComponent {
     return this.ownCard() || (!!viewer && award.submittedByUserKey?.toLowerCase() === viewer);
   }
 
-  canOpen(award: MemberAwardDto | null): boolean {
+  canOpen(award: YouthAwardDto | null): boolean {
     return this.canEditAward(award) || this.canConfirm(award) || this.canDeleteAward(award);
   }
 
-  openDialog(award?: MemberAwardDto): void {
+  openDialog(award?: YouthAwardDto): void {
     if (!this.canOpen(award ?? null)) return;
     this.selectedAward = award || null;
     this.dialogVisible = true;
@@ -160,11 +165,13 @@ export class MemberAwardsTileComponent {
     this.saveAward.emit(request);
   }
 
-  confirmDelete(award: MemberAwardDto): void {
+  confirmDelete(award: YouthAwardDto): void {
     this.confirmationService.confirm({
-      message: 'Ви впевнені, що хочете видалити це відзначення?',
-      header: 'Підтвердження видалення',
-      icon: 'pi pi-exclamation-triangle',
+      message: 'Відзначення зникне з картки людини.',
+      header: 'Видалити відзначення?',
+      icon: 'pi pi-trash',
+      acceptButtonProps: { label: 'Видалити', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.deleteAward.emit(award.memberAwardKey);
       }
@@ -175,7 +182,7 @@ export class MemberAwardsTileComponent {
     this.reviewAward.emit({ awardKey, isApproved: true });
   }
 
-  private isVisibleAward(award: MemberAwardDto): boolean {
+  private isVisibleAward(award: YouthAwardDto): boolean {
     const status = this.normalizeStatus(award.status);
     return status === BadgeProgressStatus.Submitted || status === BadgeProgressStatus.Confirmed;
   }

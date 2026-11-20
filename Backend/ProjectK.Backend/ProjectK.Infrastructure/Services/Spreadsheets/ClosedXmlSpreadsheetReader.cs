@@ -1,6 +1,7 @@
 using System.Globalization;
 using ClosedXML.Excel;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Records.KurinModule;
 
 namespace ProjectK.Infrastructure.Services.Spreadsheets;
 

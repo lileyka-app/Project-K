@@ -2,11 +2,9 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,23 +12,24 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
-using ProjectK.API.Controllers.KurinModule;
-using ProjectK.API.Helpers;
+using ProjectK.API.Controllers.MemberModule;
+using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Review;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Features.MemberAward;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -60,9 +59,9 @@ public class MemberAwardRouteMemberHttpIntegrationTests
     }
 
     [Theory]
-    [InlineData("KV.Vykhovnyk", "POST", "/api/member/{0}/awards/{1}/review", "{\"isApproved\":true}")]
-    [InlineData("Member", "DELETE", "/api/member/{0}/awards/{1}", null)]
-    public async Task AwardOfTheRouteMember_ShouldSucceed(string role, string method, string routeTemplate, string? jsonBody)
+    [InlineData("KV.Vykhovnyk", "POST", "/api/member/{0}/awards/{1}/review", "{\"isApproved\":true}", HttpStatusCode.OK)]
+    [InlineData("Member", "DELETE", "/api/member/{0}/awards/{1}", null, HttpStatusCode.NoContent)]
+    public async Task AwardOfTheRouteMember_ShouldSucceed(string role, string method, string routeTemplate, string? jsonBody, HttpStatusCode expected)
     {
         var routeMemberKey = Guid.NewGuid();
         var award = SubmittedAward(memberKey: routeMemberKey);
@@ -70,7 +69,7 @@ public class MemberAwardRouteMemberHttpIntegrationTests
 
         var response = await SendAsync(host.Client, method, string.Format(routeTemplate, routeMemberKey, award.MemberAwardKey), jsonBody);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(expected, response.StatusCode);
     }
 
     private static MemberAward SubmittedAward(Guid memberKey) => new()
@@ -132,13 +131,13 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                 .AddScheme<AuthenticationSchemeOptions, AwardAuthHandler>(AwardAuthHandler.SchemeName, _ => { });
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeReader>();
+            var scopeReader = ScopeFacts.Repository();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, routeMemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(kurinKey, groupKey, routeMemberUserKey));
             scopeReader
-                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[] { groupKey });
+                .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ScopeFacts.Leading(new[] { groupKey }));
 
             var awards = new Mock<IMemberAwardRepository>();
             awards
@@ -148,8 +147,6 @@ public class MemberAwardRouteMemberHttpIntegrationTests
             unitOfWork.SetupGet(x => x.MemberAwards).Returns(awards.Object);
             unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(x => x.Map<MemberAwardDto>(It.IsAny<MemberAward>())).Returns(new MemberAwardDto());
             var members = new Mock<IMemberDirectory>();
             members.Setup(x => x.FindAccountKeyAsync(routeMemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(routeMemberUserKey);
 
@@ -162,10 +159,9 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                     members.Object,
                     currentUser,
                     Mock.Of<IDomainEventPublisher>(),
-                    mapper.Object,
                     access,
                     Mock.Of<IKurinAudit>());
-                var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser, members.Object, access, Mock.Of<IKurinAudit>());
+                var delete = new DeleteMemberAwardCommandHandler(unitOfWork.Object, currentUser, members.Object, access, Mock.Of<IKurinAudit>(), Mock.Of<ProjectK.Common.Contracts.ProbesAndBadgesModule.IHonoursCatalog>(), Mock.Of<ProjectK.Common.Contracts.Shared.IUnitOfWork>());
 
                 var mediator = new Mock<IMediator>();
                 mediator
@@ -179,12 +175,12 @@ public class MemberAwardRouteMemberHttpIntegrationTests
                 return mediator.Object;
             });
 
-            builder.Services.AddScoped(_ => scopeReader.Object);
+            builder.Services.AddScoped(_ => Mock.Of<ProjectK.Common.Contracts.Shared.IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object));
             builder.Services.AddSingleton(Mock.Of<IAwardImagesCatalog>());
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
             builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
-            builder.Services.AddSingleton<IKurinAccessPolicyProvider>(new FixedKurinAccessPolicyProvider());
+            builder.Services.AddSingleton<IKurinAccessPolicyReader>(new FixedKurinAccessPolicyProvider());
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
             builder.Services.AddControllers().AddApplicationPart(typeof(MemberAwardsController).Assembly);

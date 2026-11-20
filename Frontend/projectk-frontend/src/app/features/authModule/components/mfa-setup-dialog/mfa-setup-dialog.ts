@@ -83,7 +83,7 @@ export class MfaSetupDialogComponent {
         this.messageService.add({
           severity: 'error',
           summary: 'MFA',
-          detail: 'Код не підійшов. Перевірте застосунок і спробуйте ще раз.'
+          detail: 'Код не підійшов. Перевір застосунок і спробуй ще раз.'
         });
       }
     });

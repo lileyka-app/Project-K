@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, forwardRef, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, forwardRef, input, signal } from '@angular/core';
 import { AbstractControl, ControlValueAccessor, FormsModule, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator } from '@angular/forms';
 import { CountryCode } from 'libphonenumber-js';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -6,8 +6,8 @@ import { SelectModule } from '@openng/optimus-ui/select';
 import {
   DEFAULT_PHONE_COUNTRY,
   formatAsYouType,
-  isPossiblePhone,
   PHONE_COUNTRIES,
+  phoneLengthIssue,
   splitPhone,
   toStoredPhone
 } from '../functions/phone.function';
@@ -55,10 +55,16 @@ import {
         (ngModelChange)="setNational($event)"
         (blur)="touched()"
         [disabled]="disabled()"
-        [attr.aria-invalid]="invalid()" />
+        [attr.aria-invalid]="invalid() || !!shownIssue()"
+        [attr.aria-describedby]="shownIssue() ? inputId() + '-issue' : null" />
     </div>
+    @if (shownIssue(); as issue) {
+      <small class="phone-input__issue" [id]="inputId() + '-issue'">{{ issue === 'long' ? 'Задовгий номер.' : 'Закороткий номер.' }}</small>
+    }
   `,
   styles: `
+    :host { display: flex; flex-direction: column; gap: 0.25rem; }
+    .phone-input__issue { color: var(--p-red-600); font-size: var(--lil-text-caption); }
     .phone-input { display: flex; gap: 0.5rem; width: 100%; max-width: 24rem; }
     .phone-input__country { flex: 0 0 8.5rem; }
     .phone-input__number { flex: 1 1 auto; min-width: 0; }
@@ -76,6 +82,16 @@ export class PhoneInputComponent implements ControlValueAccessor, Validator {
   readonly country = signal<CountryCode>(DEFAULT_PHONE_COUNTRY);
   readonly national = signal('');
   readonly disabled = signal(false);
+  private readonly left = signal(false);
+
+  /**
+   * The length the field complains about: too long at once, too short only once the person has
+   * left the box, so it does not nag while the number is still being typed.
+   */
+  readonly shownIssue = computed(() => {
+    const issue = phoneLengthIssue(toStoredPhone(this.country(), this.national()));
+    return issue === 'long' || (issue === 'short' && this.left()) ? issue : null;
+  });
 
   private written = false;
   private onChange: (value: string) => void = () => undefined;
@@ -111,7 +127,8 @@ export class PhoneInputComponent implements ControlValueAccessor, Validator {
   }
 
   validate(control: AbstractControl): ValidationErrors | null {
-    return isPossiblePhone(control.value) ? null : { phone: true };
+    const issue = phoneLengthIssue(control.value);
+    return issue ? { phone: issue } : null;
   }
 
   setCountry(country: CountryCode): void {
@@ -128,6 +145,7 @@ export class PhoneInputComponent implements ControlValueAccessor, Validator {
   /** Spaces go in once the number is typed, so they never fight the caret. */
   touched(): void {
     this.national.update(national => formatAsYouType(this.country(), national));
+    this.left.set(true);
     this.onTouched();
   }
 

@@ -49,7 +49,19 @@ describe('MyDutiesTileComponent', () => {
     expect(rows[3].detail).toBe('каса куреня');
     expect(rows[4].label).toBe('Відмітити присутність: Сходини куреня');
     expect(fixture.componentInstance.total()).toBe(11);
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__row')).toHaveLength(5);
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.duties-tile__stretch')).toHaveLength(5);
+  });
+
+  it('leads waiting ступені to the person’s card, named by them', () => {
+    fixture.componentRef.setInput('duties', [
+      duty({ kind: 'LevelsToConfirm', count: 2, memberKey: 'm-7', title: 'Олена Старша', key: 'LevelsToConfirm:k1:-:m-7:-' })
+    ]);
+    fixture.detectChanges();
+
+    const row = fixture.componentInstance.rows()[0];
+    expect(row.link).toEqual(['/member', 'm-7']);
+    expect(row.label).toBe('Ступінь підтвердити: Олена Старша');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.duties-tile__count')?.textContent).toBe('2');
   });
 
   it('says a duty in another kurin without opening it, naming the kurin', () => {
@@ -95,7 +107,7 @@ describe('MyDutiesTileComponent', () => {
     const root = fixture.nativeElement as HTMLElement;
 
     expect(fixture.componentInstance.rows().map(r => r.canHide)).toEqual([true, false]);
-    const hide = Array.from(root.querySelectorAll('.duties-tile__actions button')).find(b => b.textContent?.includes('Приховати')) as HTMLButtonElement;
+    const hide = root.querySelector('button[aria-label^="Приховати"]') as HTMLButtonElement;
     hide.click();
     const restore = root.querySelector('.duties-tile__hidden button') as HTMLButtonElement;
     expect(restore.textContent).toContain('Показати приховані (2)');

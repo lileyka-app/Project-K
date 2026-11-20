@@ -5,6 +5,7 @@ import { AdminPanelComponent } from './admin-panel';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinDto } from '../../models/kurin.dto';
+import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { AuthState } from '../../../authModule/models/auth-state.model';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -86,6 +87,47 @@ describe('AdminPanelComponent', () => {
       expect(component.data.map(k => k.kurinKey)).toEqual(['a', 'b', 'c']);
       expect(component.kraiName('cz')).toBe('Чехія');
       expect(component.kurinCountInKrai('ua')).toBe(2);
+    });
+
+    const orden = { kurinKey: 'orden', number: 5, kraiCode: 'ua', branch: KurinBranch.USP, namedAfter: 'Орден Хрестоносців',
+      branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }] } as KurinDto;
+    const chorty = { kurinKey: 'chorty', number: 7, kraiCode: 'ua', branch: KurinBranch.USP, namedAfter: 'Лісові Чорти',
+      branches: [{ branch: KurinBranch.USP, number: 7 }] } as KurinDto;
+    const youth = { kurinKey: 'youth', number: 5, kraiCode: 'ua', branch: KurinBranch.UPYu, branches: [{ branch: KurinBranch.UPYu, number: 5 }] } as KurinDto;
+    const rowsText = () => [...(fixture.nativeElement as HTMLElement).querySelectorAll('.admin-kurin-row')]
+      .map(row => row.textContent?.replace(/\s+/g, ' ').trim());
+    const openUlad = async (url: string) => {
+      await TestBed.inject(Router).navigateByUrl(url);
+      component.ngOnInit();
+      fixture.detectChanges();
+    };
+
+    it('lists one улад at a time: УПЮ kurins by default, without the senior ones', async () => {
+      kurinService.getKurins.mockReturnValue(of([orden, { kurinKey: 'seven', number: 7, kraiCode: 'ua' } as KurinDto, youth, chorty]));
+
+      await openUlad('/');
+
+      expect(component.data.map(k => k.kurinKey)).toEqual(['youth', 'seven']);
+      expect(rowsText()[0]).toContain('5 УПЮ');
+    });
+
+    it('lists a kurin of both senior улади under each, by its number there', async () => {
+      kurinService.getKurins.mockReturnValue(of([orden, youth, chorty]));
+
+      await openUlad('/?ulad=usp');
+      expect(component.data.map(k => k.kurinKey)).toEqual(['orden', 'chorty']);
+      expect(rowsText()[0]).toContain('5-й курінь УСП');
+      expect(rowsText()[0]).not.toContain('20-й курінь УПС');
+
+      await openUlad('/?ulad=ups');
+      expect(component.data.map(k => k.kurinKey)).toEqual(['orden']);
+      expect(rowsText()[0]).toContain('20-й курінь УПС');
+    });
+
+    it('names the kurins in the form as before', () => {
+      const senior = orden;
+      expect(component.managePanelConfig.displayName!(youth)).toBe('Курінь ч. 5 УПЮ');
+      expect(component.managePanelConfig.displayName!(senior)).toBe('Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС');
     });
 
     it('offers the краї as choices in the kurin form', () => {

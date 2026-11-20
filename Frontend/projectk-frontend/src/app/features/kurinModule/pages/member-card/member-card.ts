@@ -1,3 +1,5 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
@@ -9,7 +11,9 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
-import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+import { ConfirmationService, MenuItem, MessageService } from '@openng/optimus-ui/api';
+import { MenuModule } from '@openng/optimus-ui/menu';
+import { MenuItemsCache } from '../../functions/menu-items-cache';
 import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -39,12 +43,21 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MemberWarningDto } from '../../models/member-warning.dto';
 import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
+import { YouthAwardDto, isYouthAward } from '../../models/member-award.dto';
+import { MemberSeniorAwardsTileComponent } from './components/member-senior-awards-tile/member-senior-awards-tile';
+import { LifeEntriesTileComponent, LifeEntrySave } from './components/life-entries-tile/life-entries-tile';
+import { LifeStoryService } from '../../services/life-story/life-story.service';
+import { LifeEntryDto } from '../../models/life-entry.dto';
+import { AwardBlock } from './components/award-blocks/award-blocks.function';
+import { MemberDegreesTileComponent } from './components/member-degrees-tile/member-degrees-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
-import { hasYouthProgram, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { MembershipKind } from '../../models/enums/membership-kind.enum';
+import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { hasYouthProgram, isSeniorBranch, KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { degreeRows, DegreeRow, SENIOR_LADDER, YOUTH_LADDER } from './components/member-degrees-tile/member-degrees.function';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
-import { memberBranchHere } from '../../functions/member-branch.function';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { DuesEntryDto, MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { duesAmountLabel, money, quarterLabel } from '../../../duesModule/functions/dues-format.function';
@@ -66,15 +79,27 @@ import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.
 import { formatPhone } from '../../../../shared/functions/phone.function';
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
-import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
+import { kurinBranchesName, kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
 import { initials } from '../../../dashboardModule/functions/greeting.function';
 import { MemberWarningsDialogComponent } from './components/member-warnings-dialog/member-warnings-dialog';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { MemberTagsEditorComponent } from '../../components/member-tags-editor/member-tags-editor';
+import { HonoursService } from '../../services/honours-service/honours.service';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
+import { MenuEndDirective } from '../../../../shared/menu-end/menu-end.directive';
+
+/** The stages of a life story and their ladders; the day of joining Пласт opens the УПЮ one. */
+const LIFE_LADDERS: readonly { branch: KurinBranch; ladder: readonly PlastLevel[] }[] = [
+  { branch: KurinBranch.UPYu, ladder: [PlastLevel.Entry, ...YOUTH_LADDER] },
+  { branch: KurinBranch.USP, ladder: [PlastLevel.Starshoplastun] },
+  { branch: KurinBranch.UPS, ladder: SENIOR_LADDER.filter(level => level !== PlastLevel.Starshoplastun) }
+];
 
 @Component({
   selector: 'app-member-card',
   imports: [
+    MenuEndDirective,
     DatePipe,
     SkeletonModule,
     ProgressBarModule,
@@ -88,14 +113,20 @@ import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.
     InputIconModule,
     SelectModule,
     TooltipModule,
+    MenuModule,
     SkillMiniCardComponent,
     BadgeDetailsDialogComponent,
     MemberAwardsTileComponent,
+    MemberSeniorAwardsTileComponent,
+    LifeEntriesTileComponent,
+    MemberDegreesTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
     MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
+    MemberTagsEditorComponent,
+    EmptyStateComponent,
     RouterLink
   ],
   providers: [ConfirmationService],
@@ -115,6 +146,8 @@ export class MemberCardComponent implements OnInit {
   authService = inject(AuthService);
   entityService = inject(EntityService);
   permissionService = inject(PermissionService);
+  // The catalogue's ступені, named and drawn for a пластун or a пластунка, for the life story's list.
+  private readonly honours = toSignal(inject(HonoursService).all(), { initialValue: [] });
   kurinService = inject(KurinService);
   groupService = inject(GroupService);
   membershipService = inject(MembershipService);
@@ -147,6 +180,12 @@ export class MemberCardComponent implements OnInit {
   membershipsLoadFailed = false;
 
   /** Their вкладка here; null until read, and stays null when they have none or it is not ours to see. */
+  /** The вишколи, табори and заходи the person wrote into their own life story. */
+  lifeEntries: LifeEntryDto[] = [];
+  lifeSaving = false;
+  lifePdfLoading = false;
+  private readonly lifeStory = inject(LifeStoryService);
+
   dues: MemberDuesDto | null = null;
   isDuesLoading = false;
   readonly money = (amount: number): string => money(amount, this.dues?.currency, this.dues?.numberLocale);
@@ -180,7 +219,10 @@ export class MemberCardComponent implements OnInit {
   abilities: MemberAbilitiesDto = NO_ABILITIES;
   profileVerificationEnabled = false;
   profileVerificationSubmitting = false;
+  /** Ключ ступеня, відповідь на який їде на сервер. */
+  levelAnswering: string | null = null;
   isWarningsDialogVisible = false;
+  private readonly moreMenuCache = new MenuItemsCache();
 
   readonly addSkillPageSize = 12;
   readonly warningLevels = [
@@ -188,6 +230,13 @@ export class MemberCardComponent implements OnInit {
     MemberWarningLevel.Level2,
     MemberWarningLevel.Level3
   ];
+  /** Нові теги людини після збереження в редакторі тегів. */
+  onTagsChanged(tagKeys: string[]): void {
+    if (this.member) {
+      this.member = { ...this.member, tagKeys };
+    }
+  }
+
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.memberKey = params.get('memberKey');
@@ -227,29 +276,34 @@ export class MemberCardComponent implements OnInit {
     });
 
     this.loadMemberships(memberKey);
-    this.loadDues(memberKey);
+    this.dues = null;
     this.loadAbilities(memberKey);
+    if (this.isLifeView) {
+      this.loadLifeEntries();
+    }
   }
 
-  /** Quietly: without an answer the card simply offers none of the policy's actions. */
+  /** Quietly: without an answer the card simply offers none of the policy's actions. The вкладка waits for it. */
   private loadAbilities(memberKey: string): void {
     this.abilities = NO_ABILITIES;
     this.memberService.getAbilities(memberKey).subscribe({
-      next: abilities => this.abilities = abilities,
+      next: abilities => {
+        this.abilities = abilities;
+        if (abilities.dues) {
+          this.loadDues(memberKey);
+        }
+      },
       error: () => this.abilities = NO_ABILITIES
     });
   }
 
-  /**
-   * Quietly: a youth may read only their own, so for anyone else's card the server answers 403 and
-   * the tile simply does not appear — that is not an error the viewer needs told about.
-   */
+  /** Only when the abilities say the viewer may read it; a refusal after that still stays quiet. */
   private loadDues(memberKey: string): void {
     this.isDuesLoading = true;
     this.dues = null;
     this.duesService.getMemberDues(memberKey).subscribe({
       next: dues => {
-        this.dues = dues.hasAccount ? dues : null;
+        this.dues = dues.hasAccount || dues.elsewhere?.length ? dues : null;
         this.isDuesLoading = false;
       },
       error: () => {
@@ -261,6 +315,35 @@ export class MemberCardComponent implements OnInit {
 
   openGroupDues(groupKey: string): void {
     this.router.navigate(['/group', groupKey, 'dues']);
+  }
+
+  /** Whose вкладка this is: the kurin and the person's line in it, «Орден Хрестоносців · УПС». */
+  get duesKurinLine(): string | null {
+    const here = this.memberships.find(m => m.kurinKey === this.dues?.kurinKey && m.isCurrent)
+      ?? this.memberships.find(m => m.kurinKey === this.dues?.kurinKey);
+    return here ? this.kurinWithLine(here.kurinNumber, here.kurinNamedAfter, here.branch) : null;
+  }
+
+  /** The person's other kurins, each by its name and their line there, with the balance in its own currency. */
+  get duesElsewhere(): { key: string; kurin: string; balance: number; amount: string }[] {
+    return (this.dues?.elsewhere ?? []).map(other => ({
+      key: other.kurinKey,
+      kurin: this.kurinWithLine(other.kurinNumber, other.kurinNamedAfter, other.branch),
+      balance: other.balance,
+      amount: this.signedMoney(other.balance, other.currency, other.numberLocale)
+    }));
+  }
+
+  /** «сплачено», a debt as it is, a surplus with its plus. */
+  private signedMoney(balance: number, currency: string, locale: string): string {
+    if (balance === 0) return 'сплачено';
+    const amount = money(balance, currency, locale);
+    return balance > 0 ? `+${amount}` : amount;
+  }
+
+  private kurinWithLine(number: number | null | undefined, namedAfter: string | null | undefined, branch: KurinBranch): string {
+    const kurin = isSeniorBranch(branch) && namedAfter ? namedAfter : kurinLabel(number ?? null, branch);
+    return `${kurin} · ${KURIN_BRANCH_LABELS[branch]}`;
   }
 
   get duesEntriesPreview(): DuesEntryDto[] {
@@ -284,7 +367,7 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.youthProgressRequested = true;
-    if (!this.hasYouthProgram) {
+    if (!this.showsYouthRecord) {
       return;
     }
 
@@ -390,13 +473,208 @@ export class MemberCardComponent implements OnInit {
     return emailHref(this.member?.email);
   }
 
-  get personalBranch(): KurinBranch {
-    return memberBranchHere(this.member, this.memberships);
+  /** Членство в курені, де людину дивляться; перше чинне, якщо такого немає. */
+  get membershipHere(): MembershipDto | null {
+    return this.memberships.find(m => m.isCurrent && m.kurinKey === this.member?.kurinKey)
+      ?? this.memberships.find(m => m.isCurrent)
+      ?? null;
   }
 
-  /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву. */
+  /**
+   * Картка старшого куреня: у курені УСП чи УПС своя розкладка — членство й роль, відзначення
+   * старших, перестороги, теги, вкладка — а не юнацька з прихованими плитками.
+   */
+  get isSeniorKurinCard(): boolean {
+    return isSeniorBranch(this.membershipHere?.branch);
+  }
+
+  /**
+   * Старша людина: улад, який каже сервер (підтверджений старший ступінь або курінь УСП/УПС, де її дивимось),
+   * або закрите юнацтво. Сеніор, що веде УПЮ-курінь, теж старший.
+   */
+  get isSeniorPerson(): boolean {
+    return isSeniorBranch(this.member?.ulad) || this.isClosedYouthRecord;
+  }
+
+  /** Плитка старших відзначень: на старшій картці й на картці старшої людини в УПЮ-курені. */
+  get showsSeniorAwards(): boolean {
+    return !this.isLifeView && this.isSeniorPerson;
+  }
+
+  /** У старшому курені вносить і провід; в УПЮ-курені старша людина вносить лише собі, і лише повнолітня. */
+  get canAddSeniorAwards(): boolean {
+    return this.isSeniorKurinCard ? this.canEditMember : this.isOwnCard && !!this.member?.isAdult;
+  }
+
+  /** Назва куреня першою; без назви — його гілки. */
+  get seniorKurinName(): string {
+    const here = this.membershipHere;
+    return here?.kurinNamedAfter || kurinLabel(here?.kurinNumber ?? null, here?.branch);
+  }
+
+  /** Гілки під назвою: «5-й курінь УСП · 20-й курінь УПС». */
+  get seniorKurinBranches(): string | null {
+    const here = this.membershipHere;
+    if (!here?.kurinNamedAfter) return null;
+    return here.numbering?.length ? kurinBranchesName(here.numbering) : kurinLabel(here.kurinNumber, here.branch);
+  }
+
+  /** Чинні ролі людини — у проводі куреня й у КВ, назвами, які дав їм курінь. */
+  get currentOffices(): LeadershipHistoryDto[] {
+    return (this.member?.leadershipHistories ?? [])
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() !== 'group' && this.inThisKurin(office));
+  }
+
+  /** Перестороги на плитці: чинні першими, далі останні з минулих. */
+  get warningRows(): { key: string; level: string; issued: string; state: string; active: boolean }[] {
+    const now = Date.now();
+    return [...(this.member?.warnings ?? [])]
+      .map(warning => {
+        // Lifted by someone is «знято»; one the system closed when it ran out has no one behind it.
+        const revoked = !!warning.revokedAtUtc && !!warning.revokedByUserKey;
+        const active = !warning.revokedAtUtc && this.parseUtcDate(warning.expiresAtUtc) > now;
+        const state = revoked ? 'знято' : active ? `ще ${this.getWarningDaysLeft(warning.expiresAtUtc)} дн.` : 'минула';
+        return { key: warning.memberWarningKey, level: `${this.getWarningLevelLabel(warning.level)} пересторога`, issued: warning.issuedAtUtc, state, active };
+      })
+      .sort((a, b) => Number(b.active) - Number(a.active) || this.parseUtcDate(b.issued) - this.parseUtcDate(a.issued))
+      .slice(0, 5);
+  }
+
+  /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву: улад каже сервер. */
   get hasYouthProgram(): boolean {
-    return hasYouthProgram(this.personalBranch);
+    return hasYouthProgram(this.member?.ulad);
+  }
+
+  /**
+   * «Пластовий життєпис» (`/member/:key/life`): той самий компонент, але про всю історію людини, а
+   * не про те, хто вона зараз. Юнацьке старшого живе тут, бо з картки воно прибране (`BRANCH-02`).
+   */
+  get isLifeView(): boolean {
+    return this.route.snapshot.data['view'] === 'life';
+  }
+
+  /** Плитки проби, вмілостей і відзначень УПЮ: юнакові на картці, будь-кому в життєписі. */
+  get showsYouthRecord(): boolean {
+    return this.hasYouthProgram || this.isLifeView;
+  }
+
+  /** Звʼязковий куреня, у якому людина стоїть зараз, — той, хто виправляє її минуле. */
+  get isZvyazkovyiHere(): boolean {
+    const auth = this.authService.getAuthStateValue?.();
+    return this.permissionService.canManageWholeKurin()
+      && !!auth?.kurinKey
+      && this.memberships.some(m => m.isCurrent && m.kurinKey === auth.kurinKey);
+  }
+
+  /**
+   * Юнацьке старшого в життєписі виправляє лише Звʼязковий його куреня, і не про себе: проби,
+   * вмілості й відзначення УПЮ людина собі не ставить. У юнака все лишається як на картці.
+   */
+  get youthRecordLocked(): boolean {
+    return this.isLifeView && this.isClosedYouthRecord && (this.isOwnCard || !this.isZvyazkovyiHere);
+  }
+
+  /**
+   * The server's line (`StandsInSeniorKurinAsync`): someone who stands in a УСП or УПС kurin and is no
+   * longer a юнак in any УПЮ kurin. While a юнацьке membership in an УПЮ kurin is open, they are a юнак.
+   */
+  get isClosedYouthRecord(): boolean {
+    const current = this.memberships.filter(m => m.isCurrent);
+    const senior = current.some(m => isSeniorBranch(m.branch) || (m.numbering ?? []).some(n => isSeniorBranch(n.branch)));
+    const youthInUpyu = current.some(m => m.kind === MembershipKind.Youth && m.branch === KurinBranch.UPYu);
+    return senior && !youthInUpyu;
+  }
+
+  /**
+   * An УПЮ відзначення is added only in an УПЮ kurin (AWARD-02, the owner kept it so): in a senior's
+   * life story the Звʼязковий confirms or removes what is there, but adds and edits nothing.
+   */
+  get canEditYouthAwards(): boolean {
+    return this.canEditMember && !this.youthRecordLocked && !(this.isLifeView && this.isClosedYouthRecord);
+  }
+
+  /**
+   * Усі ступені з датами, по етапах: УПЮ → УСП → УПС, кожен з назвою й рисунком із каталогу для
+   * пластуна чи пластунки (`degreeRows`, як на плитці картки). Картка показує лише найвищий.
+   */
+  get lifeStages(): { branch: string; levels: DegreeRow[] }[] {
+    const histories = (this.member?.plastLevelHistories ?? []).filter(history => !history.awaitsConfirmation);
+    const honours = this.honours();
+    return LIFE_LADDERS
+      .map(stage => ({
+        branch: KURIN_BRANCH_LABELS[stage.branch],
+        levels: degreeRows(histories, stage.ladder, honours).map(row => ({ ...row, title: row.title || 'Вступ до Пласту' }))
+      }))
+      .filter((stage, index) => index === 0 || stage.levels.length > 0);
+  }
+
+  /** Ступені виправляє Звʼязковий куреня, у якому людина зараз, і сама людина; юнакові — як на картці. */
+  get canCorrectLevels(): boolean {
+    return this.canEditMember && (this.hasYouthProgram || this.isZvyazkovyiHere || this.isOwnCard);
+  }
+
+  /** Старший ступінь, що чекає, підтверджує Звʼязковий куреня, де людина стоїть, — і не собі. */
+  get canConfirmLevels(): boolean {
+    return this.isZvyazkovyiHere && !this.isOwnCard;
+  }
+
+  confirmLevel(levelKey: string): void {
+    const memberKey = this.member?.memberKey;
+    if (!memberKey || this.levelAnswering) return;
+    this.levelAnswering = levelKey;
+    this.memberService.confirmLevel(memberKey, levelKey)
+      .pipe(finalize(() => this.levelAnswering = null))
+      .subscribe({ next: () => this.refreshData() });
+  }
+
+  rejectLevel(levelKey: string): void {
+    const memberKey = this.member?.memberKey;
+    if (!memberKey || this.levelAnswering) return;
+    this.confirmationService.confirm({
+      header: 'Відхилити ступінь?',
+      message: 'Ступінь зникне з картки.',
+      icon: 'pi pi-times-circle',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Відхилити', severity: 'danger' },
+      accept: () => {
+        this.levelAnswering = levelKey;
+        this.memberService.rejectLevel(memberKey, levelKey)
+          .pipe(finalize(() => this.levelAnswering = null))
+          .subscribe({ next: () => this.refreshData() });
+      }
+    });
+  }
+
+  /** Усі ролі людини в усіх куренях, найновіші першими, з куренем, де їх тримали. */
+  get lifeOffices(): { key: string; label: string; kurin: string; period: string }[] {
+    return [...(this.member?.leadershipHistories ?? [])]
+      .sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''))
+      .map(office => ({
+        key: office.leadershipHistoryKey ?? `${office.role}-${office.startDate}`,
+        label: office.groupName ? `${this.officeLabel(office)} · ${office.groupName}` : this.officeLabel(office),
+        kurin: this.kurinOfOffice(office),
+        period: `${this.formatDate(office.startDate)} – ${office.endDate ? this.formatDate(office.endDate) : 'зараз'}`
+      }));
+  }
+
+  private kurinOfOffice(office: LeadershipHistoryDto): string {
+    const membership = this.memberships.find(m => m.kurinKey === office.kurinKey);
+    if (!membership) return '';
+    return isSeniorBranch(membership.branch) && membership.kurinNamedAfter ? membership.kurinNamedAfter : kurinLabel(membership.kurinNumber, membership.branch);
+  }
+
+  /** Архів куреня, де людина стоїть, — там виправляють її ролі й членства. */
+  get archiveKurinKey(): string | null {
+    const kurinKey = this.authService.getAuthStateValue?.()?.kurinKey ?? null;
+    return kurinKey && this.permissionService.canReadArchive() && this.memberships.some(m => m.kurinKey === kurinKey)
+      ? kurinKey
+      : null;
+  }
+
+  openArchive(): void {
+    if (this.archiveKurinKey) {
+      this.router.navigate(['/kurin/registry/archive']);
+    }
   }
 
   /**
@@ -405,7 +683,7 @@ export class MemberCardComponent implements OnInit {
    */
   get staffOffices(): LeadershipHistoryDto[] {
     return (this.member?.leadershipHistories ?? [])
-      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() === 'kv');
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() === 'kv' && this.inThisKurin(office));
   }
 
   /** Гуртки, за якими людина закріплена виховником у курені, де її дивимось. */
@@ -426,8 +704,14 @@ export class MemberCardComponent implements OnInit {
     return this.mentoredGroupNames.map(name => ({ groupKey: null, name }));
   }
 
-  officeLabel(role: string): string {
-    return leadershipRoleDisplayName(role);
+  /** Named by the kurin the office is in: a Писар of one kurin is not another kurin's «Скриптор». */
+  officeLabel(office: LeadershipHistoryDto): string {
+    return leadershipRoleDisplayName(office.role, office.kurinKey ?? undefined);
+  }
+
+  /** Whether the office is in the kurin the card is read in; one with no kurin known counts. */
+  private inThisKurin(office: LeadershipHistoryDto): boolean {
+    return !office.kurinKey || !this.member?.kurinKey || office.kurinKey === this.member.kurinKey;
   }
 
   officeSeverity(role: string): RoleSeverity {
@@ -444,9 +728,14 @@ export class MemberCardComponent implements OnInit {
     }
 
     return this.memberships.reduce<Record<string, string>>((stamps, membership) => {
-      stamps[membership.kurinKey] = kurinLabel(membership.kurinNumber);
+      stamps[membership.kurinKey] = this.membershipKurinLabel(membership);
       return stamps;
     }, {});
+  }
+
+  /** A kurin in a line of text: a senior kurin by its own name, else by its number in its гілка. */
+  private membershipKurinLabel(membership: MembershipDto): string {
+    return (isSeniorBranch(membership.branch) && membership.kurinNamedAfter) || kurinLabel(membership.kurinNumber, membership.branch);
   }
 
   /** Курінь, у якому дивиться той, хто дивиться. Дії над членством можливі тільки в ньому. */
@@ -491,11 +780,18 @@ export class MemberCardComponent implements OnInit {
   }
 
   confirmLeaveKurin(membership: MembershipDto): void {
+    // Борг з людиною не йде: спершу сплатити повністю. Сервер однаково відмовить, але краще
+    // сказати це до натискання, а не тостом після.
+    if (this.dues && this.dues.kurinKey === membership.kurinKey && this.dues.owedToLeave > 0) {
+      this.showDebtBlocksRelease(this.money(this.dues.owedToLeave));
+      return;
+    }
+
     this.confirmationService.confirm({
       header: 'Вивести з куреня',
       // Це не видалення людини, і про це варто сказати прямо: саме страх втратити історію
       // змушував провід тримати в курені тих, хто давно пішов.
-      message: `Членство (${kurinLabel(membership.kurinNumber)}) буде закрите. Людина, її проби, `
+      message: `Членство (${this.membershipKurinLabel(membership)}) буде закрите. Людина, її проби, `
         + 'вмілості й відзначення лишаються — вони належать їй, а не куреню.',
       icon: 'pi pi-sign-out',
       acceptLabel: 'Вивести',
@@ -512,17 +808,49 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.membershipService.leave(membership.kurinKey, this.memberKey).subscribe({
-      next: () => this.refreshData(),
-      error: (error: unknown) => this.messageService.add({
-        severity: 'error',
-        summary: 'Не вдалося вивести',
-        detail: failureDetail(error)
-      })
+      // Картки виведеної людини курінь більше не відкриває — вона тепер серед колишніх в архіві реєстру.
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Людину виведено',
+          detail: 'Вона тепер серед колишніх в архіві реєстру. Акаунт і вся історія лишаються в неї.'
+        });
+        this.router.navigate(['/kurin/registry/archive'], { queryParams: { former: 1 }, replaceUrl: true });
+      },
+      error: (error: unknown) => {
+        if (error instanceof HttpErrorResponse && error.error?.error === 'MemberOwesDues') {
+          this.showDebtBlocksRelease(null);
+          return;
+        }
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Не вдалося вивести',
+          detail: failureDetail(error)
+        });
+      }
+    });
+  }
+
+  private showDebtBlocksRelease(owed: string | null): void {
+    this.confirmationService.confirm({
+      header: 'Спершу — вкладка',
+      message: (owed ? `Людина винна куреню ${owed} за квартали, що минули. ` : 'Людина винна куреню вкладку за квартали, що минули. ')
+        + 'Борг не переходить разом із нею: вивести можна, коли вкладку сплачено повністю.',
+      icon: 'pi pi-wallet',
+      acceptLabel: 'Зрозуміло',
+      acceptButtonProps: { label: 'Зрозуміло', severity: 'secondary' },
+      rejectVisible: false
     });
   }
 
   get hasAnySkills(): boolean {
     return this.confirmedSkillsCount > 0 || this.pendingSkillsCount > 0;
+  }
+
+  /** The УПЮ відзначення, by level; a senior one is on the senior tile. */
+  get youthAwards(): YouthAwardDto[] {
+    return (this.member?.awards ?? []).filter(isYouthAward);
   }
 
   get canEditMember(): boolean {
@@ -543,6 +871,107 @@ export class MemberCardComponent implements OnInit {
 
   get canManageProfileVerification(): boolean {
     return this.canEditMember && this.profileVerificationEnabled && !this.isOwnCard && this.permissionService.isReviewer();
+  }
+
+  /** «Верифікувати» stands by «Редагувати» only while the profile waits for it; taking it back is rare and sits under «Ще». */
+  get needsProfileVerification(): boolean {
+    return this.canManageProfileVerification && !this.isProfileVerified;
+  }
+
+  get hasHeadActions(): boolean {
+    return this.canEditMember || this.needsProfileVerification || this.moreMenuItems.length > 0;
+  }
+
+  /** The rarer actions: «Зняти верифікацію», «Перестороги», «Журнал дій» on someone; «Пластовий життєпис» on one's own card. */
+  get moreMenuItems(): MenuItem[] {
+    const canUnverify = this.canManageProfileVerification && this.isProfileVerified;
+    return this.moreMenuCache.get(
+      [canUnverify, this.profileVerificationSubmitting, this.canManageWarnings, this.journalKurinKey, this.member?.memberKey, this.isOwnCard && !this.isLifeView],
+      () => this.buildMoreMenuItems(canUnverify));
+  }
+
+  private buildMoreMenuItems(canUnverify: boolean): MenuItem[] {
+    const items: MenuItem[] = [];
+    if (canUnverify) {
+      items.push({
+        label: 'Зняти верифікацію',
+        icon: 'pi pi-undo',
+        disabled: this.profileVerificationSubmitting,
+        command: () => this.onProfileVerificationAction()
+      });
+    }
+    if (this.canManageWarnings) {
+      items.push({ label: 'Перестороги', icon: 'pi pi-exclamation-triangle', command: () => this.openWarnings() });
+    }
+    if (this.journalKurinKey) {
+      items.push({ label: 'Журнал дій', icon: 'pi pi-history', command: () => this.openJournal() });
+    }
+    if (this.isOwnCard && !this.isLifeView) {
+      items.push({ label: 'Пластовий життєпис', icon: 'pi pi-book', command: () => this.openLife() });
+    }
+    return items;
+  }
+
+  private loadLifeEntries(): void {
+    this.lifeStory.entries().subscribe({
+      next: entries => this.lifeEntries = entries,
+      error: () => this.lifeEntries = []
+    });
+  }
+
+  onSaveLifeEntry({ key, request }: LifeEntrySave): void {
+    this.lifeSaving = true;
+    this.lifeStory.save(key, request).subscribe({
+      next: saved => {
+        this.lifeEntries = [...this.lifeEntries.filter(e => e.memberLifeEntryKey !== saved.memberLifeEntryKey), saved];
+        this.lifeSaving = false;
+      },
+      error: () => this.lifeSaving = false
+    });
+  }
+
+  onDeleteLifeEntry(key: string): void {
+    this.lifeStory.remove(key).subscribe({
+      next: () => this.lifeEntries = this.lifeEntries.filter(e => e.memberLifeEntryKey !== key)
+    });
+  }
+
+  /** The whole life story as one PDF, from where the person started to where they stand. */
+  downloadLifePdf(): void {
+    if (this.lifePdfLoading) return;
+    this.lifePdfLoading = true;
+    this.lifeStory.downloadPdf().subscribe({
+      next: response => {
+        if (response.body) {
+          const match = response.headers.get('content-disposition')?.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
+          const url = window.URL.createObjectURL(response.body);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = match?.[1] ? decodeURIComponent(match[1]) : 'zhyttiepys.pdf';
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          window.URL.revokeObjectURL(url);
+        }
+        this.lifePdfLoading = false;
+      },
+      error: () => this.lifePdfLoading = false
+    });
+  }
+
+  openLife(): void {
+    const key = this.member?.memberKey ?? this.memberKey;
+    this.router.navigate(['/member', key, 'life']);
+  }
+
+  /** Back from the life story to the card it belongs to. */
+  openCard(): void {
+    const key = this.member?.memberKey ?? this.memberKey;
+    this.router.navigate(['/member', key]);
+  }
+
+  openWarnings(): void {
+    this.isWarningsDialogVisible = true;
   }
 
   get canManageWarnings(): boolean {
@@ -579,8 +1008,8 @@ export class MemberCardComponent implements OnInit {
       message: verified
         ? 'Профіль знову чекатиме перевірки.'
         : 'Підтвердити, що дані в профілі правильні?',
-      icon: verified ? 'pi pi-exclamation-triangle' : 'pi pi-verified',
-      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', variant: 'text' },
+      icon: verified ? 'pi pi-times-circle' : 'pi pi-verified',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       acceptButtonProps: verified
         ? { label: 'Зняти', severity: 'danger' }
         : { label: 'Верифікувати' },
@@ -591,7 +1020,13 @@ export class MemberCardComponent implements OnInit {
           : this.memberService.verifyProfile(member.memberKey, null);
         request.pipe(finalize(() => this.profileVerificationSubmitting = false)).subscribe({
           next: updated => {
-            this.member = { ...member, ...updated };
+            this.member = {
+              ...member,
+              profileVerificationStatus: updated.profileVerificationStatus,
+              profileVerifiedAtUtc: updated.profileVerifiedAtUtc,
+              profileVerifiedByUserKey: updated.profileVerifiedByUserKey,
+              profileVerificationNote: updated.profileVerificationNote
+            };
             this.messageService.add({ severity: 'success', summary: verified ? 'Верифікацію знято.' : 'Профіль верифіковано.' });
           },
           error: (error: unknown) => this.messageService.add({
@@ -617,9 +1052,9 @@ export class MemberCardComponent implements OnInit {
     return initials(this.member?.firstName, this.member?.lastName);
   }
 
-  /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника. */
+  /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника, і не над собою. */
   get canManagePlacement(): boolean {
-    return this.permissionService.canManageWholeKurin();
+    return this.permissionService.canManageWholeKurin() && !this.isOwnCard;
   }
 
   get profileVerifiedAtDisplay(): string | null {
@@ -660,11 +1095,11 @@ export class MemberCardComponent implements OnInit {
 
   private loadProfileVerificationToggle(member: MemberDto): void {
     this.profileVerificationEnabled = false;
-    if (!member.kurinKey) {
+    if (!isUsableKey(member.kurinKey)) {
       return;
     }
 
-    this.kurinService.getByKey(member.kurinKey).subscribe({
+    this.kurinService.getByKey(member.kurinKey!).subscribe({
       next: (kurin) => {
         this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
       },
@@ -683,11 +1118,11 @@ export class MemberCardComponent implements OnInit {
   }
 
   get completedProbesCount(): number {
-    return this.probeRows.filter(row => !row.isDisabled && row.isCompleted).length;
+    return this.probeRows.filter(row => !row.isDisabled && !row.hasNoPoints && row.isCompleted).length;
   }
 
   get activeProbesCount(): number {
-    return this.probeRows.filter(row => !row.isDisabled).length;
+    return this.probeRows.filter(row => !row.isDisabled && !row.hasNoPoints).length;
   }
 
   get filteredAddSkillCandidates(): BadgeCatalogItemDto[] {
@@ -893,7 +1328,7 @@ export class MemberCardComponent implements OnInit {
     }
 
     if (row.hasNoPoints) {
-      return 'Поточкове відстеження цієї проби буде окремим етапом';
+      return 'Складається з проєктів: опис і фото на сторінці проби';
     }
 
     if (row.completedAtUtc) {
@@ -978,9 +1413,9 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.confirmationService.confirm({
-      header: 'Видалення підтвердженої вмілості',
+      header: 'Видалити підтверджену вмілість?',
       message: `Видалити підтверджену вмілість "${skill.title}"?`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       rejectLabel: 'Скасувати',
       rejectButtonProps: {
         label: 'Скасувати',
@@ -1138,7 +1573,6 @@ export class MemberCardComponent implements OnInit {
     };
   }
 
-
   private formatDate(value: string): string {
     return formatUtcDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' }) ?? value;
   }
@@ -1173,9 +1607,17 @@ export class MemberCardComponent implements OnInit {
       next: () => {
         this.refreshData();
       },
-      error: (error) => {
-        console.error('Error saving award:', error);
+      error: (error: unknown) => {
+        this.messageService.add({ severity: 'error', summary: 'Не вдалося зберегти відзначення', detail: failureDetail(error, 'Спробуй ще раз.') });
       }
+    });
+  }
+
+  /** The person pins or unpins a відзначення of their own; the card reads the order again. */
+  onPinAward(block: AwardBlock): void {
+    this.memberAwardService.pinAward({ ...block.pin, pinned: !block.pinned }).subscribe({
+      next: () => this.refreshData(),
+      error: (error) => console.error('Error pinning award:', error)
     });
   }
 

@@ -1,14 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -25,7 +22,6 @@ public class LeadershipRepository : ILeadershipRepository
     {
         return await _context.Leaderships
                              .Include(l => l.LeadershipHistories)
-                                .ThenInclude(h => h.Member)
                              .FirstOrDefaultAsync(l => l.LeadershipKey == leadershipKey, cancellationToken);
     }
 
@@ -53,7 +49,6 @@ public class LeadershipRepository : ILeadershipRepository
                                 )
                              )
                              .Include(l => l.LeadershipHistories)
-                                .ThenInclude(h => h.Member)
                              .AsNoTracking()
                              .ToListAsync(cancellationToken);
     }
@@ -85,9 +80,31 @@ public class LeadershipRepository : ILeadershipRepository
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<Guid>> CloseForGroupAsync(Guid groupKey, DateOnly on, CancellationToken cancellationToken = default)
+    {
+        var leaderships = await _context.Leaderships
+            .Where(leadership => leadership.GroupKey == groupKey)
+            .Include(leadership => leadership.LeadershipHistories.Where(history => history.EndDate == null))
+            .ToListAsync(cancellationToken);
+
+        foreach (var leadership in leaderships)
+        {
+            leadership.EndDate ??= on;
+            foreach (var history in leadership.LeadershipHistories)
+            {
+                history.EndDate = on;
+            }
+        }
+
+        return leaderships.Select(leadership => leadership.LeadershipKey).ToList();
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Guid>> DeleteForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)
     {
+        // Dissolved гуртки too: their провід is still there and would refuse the kurin's delete.
         var groupKeys = await _context.Groups
+            .IgnoreQueryFilters()
             .Where(group => group.KurinKey == kurinKey)
             .Select(group => group.GroupKey)
             .ToListAsync(cancellationToken);
@@ -106,10 +123,16 @@ public class LeadershipRepository : ILeadershipRepository
     {
         return await _context.LeadershipHistories
                              .Where(h => h.LeadershipKey == leadershipKey)
-                             .Include(h => h.Member)
                              .AsNoTracking()
                              .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<LeadershipHistory>> GetHistoriesForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
+        => await _context.LeadershipHistories
+            .AsNoTracking()
+            .Include(h => h.Leadership)
+            .Where(h => h.MemberKey == memberKey)
+            .ToListAsync(cancellationToken);
 
     public void LeadershipHistoriesRemoveRange(IEnumerable<LeadershipHistory> histories)
     {
@@ -142,32 +165,17 @@ public class LeadershipRepository : ILeadershipRepository
         var officesOfThisKurin = _context.Leaderships
             .Where(l => l.EndDate == null
                 && (l.KurinKey == kurinKey
-                    || (l.GroupKey != null && l.Group!.KurinKey == kurinKey)));
+                    || _context.Groups.Any(g => g.GroupKey == l.GroupKey && g.KurinKey == kurinKey)));
 
-        var held = await (from ms in belongsHere
-                          join history in _context.LeadershipHistories.Where(h => h.EndDate == null)
-                              on ms.MemberKey equals history.MemberKey
-                          join office in officesOfThisKurin
-                              on history.LeadershipKey equals office.LeadershipKey
-                          select new MemberOffice(office.Type, history.Role))
+        return await (from ms in belongsHere
+                      join history in _context.LeadershipHistories.Where(h => h.EndDate == null)
+                          on ms.MemberKey equals history.MemberKey
+                      join office in officesOfThisKurin
+                          on history.LeadershipKey equals office.LeadershipKey
+                      select new MemberOffice(office.Type, history.Role))
             .Distinct()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-
-        var mentorsHere = await _context.MentorAssignments
-            .AnyAsync(
-                assignment => assignment.MentorUserKey == userKey
-                    && assignment.RevokedAtUtc == null
-                    && assignment.Group.KurinKey == kurinKey,
-                cancellationToken);
-
-        var vykhovnyk = new MemberOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-        if (mentorsHere && !held.Contains(vykhovnyk))
-        {
-            held.Add(vykhovnyk);
-        }
-
-        return held;
     }
 
     public async Task<IReadOnlyList<Guid>> GetActiveOfficeMemberKeysAsync(
@@ -199,7 +207,7 @@ public class LeadershipRepository : ILeadershipRepository
                      .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MemberLookupDto>> GetOfficeMembersLookupAsync(
+    public async Task<IReadOnlyList<MemberLookupRow>> GetOfficeHoldersAsync(
         Guid kurinKey,
         LeadershipType type,
         CancellationToken cancellationToken = default)
@@ -217,52 +225,16 @@ public class LeadershipRepository : ILeadershipRepository
                                  .AsNoTracking()
                                  .ToListAsync(cancellationToken);
 
-        var lookup = rows
-            .Select(r => new MemberLookupDto
-            {
-                MemberKey = r.MemberKey,
-                UserKey = r.UserKey,
-                FirstName = r.FirstName,
-                MiddleName = r.MiddleName,
-                LastName = r.LastName,
-                ProfilePhotoBlobName = r.ProfilePhotoBlobName,
-                // The system-role name, not the bare enum: MemberLookupDto.UserRole is read as an
-                // office identity, and MemberRepository fills the same field the same way.
-                UserRole = SystemRole.ForOffice(type, r.Role)
-            })
+        return rows
+            .Select(r => new MemberLookupRow(
+                r.MemberKey,
+                r.UserKey,
+                r.FirstName,
+                r.MiddleName,
+                r.LastName,
+                r.ProfilePhotoBlobName,
+                new MemberOffice(type, r.Role)))
             .ToList();
-
-        // A person closed over a гурток is a впорядник of this КВ whether or not the провід screen
-        // ever seated them: access already reads the assignment that way, and the КВ list has to
-        // show the same person the sidebar does.
-        if (type == LeadershipType.KV)
-        {
-            var seated = lookup.Select(entry => entry.MemberKey).ToHashSet();
-            var mentors = await _context.MentorAssignments
-                .Where(assignment => assignment.RevokedAtUtc == null && assignment.Group.KurinKey == kurinKey)
-                .Join(_context.Members,
-                      assignment => assignment.MentorUserKey,
-                      member => member.UserKey,
-                      (assignment, member) => new { member.MemberKey, member.UserKey, member.FirstName, member.MiddleName, member.LastName, member.ProfilePhotoBlobName })
-                .Distinct()
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
-
-            lookup.AddRange(mentors
-                .Where(mentor => seated.Add(mentor.MemberKey))
-                .Select(mentor => new MemberLookupDto
-                {
-                    MemberKey = mentor.MemberKey,
-                    UserKey = mentor.UserKey,
-                    FirstName = mentor.FirstName,
-                    MiddleName = mentor.MiddleName,
-                    LastName = mentor.LastName,
-                    ProfilePhotoBlobName = mentor.ProfilePhotoBlobName,
-                    UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk)
-                }));
-        }
-
-        return lookup;
     }
 
     public async Task<IReadOnlyList<LeadershipRef>> GetLeadershipRefsForKurinAsync(Guid kurinKey, CancellationToken cancellationToken = default)

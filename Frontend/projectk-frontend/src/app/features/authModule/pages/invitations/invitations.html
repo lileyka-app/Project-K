@@ -1,0 +1,30 @@
+<main class="lil-page">
+  <header class="lil-page-head">
+    <div>
+      <h1>Запрошення</h1>
+    </div>
+  </header>
+
+  <section class="kurin-tile">
+    @if (loading()) {
+      <p class="invitations__muted">Завантаження…</p>
+    } @else {
+      @for (invitation of invitations(); track invitation.membershipRequestKey) {
+        <div class="invitations__row" data-testid="invitation">
+          <div class="invitations__text">
+            <p class="invitations__kurin">{{ kurinName(invitation.kurin) }}</p>
+            <p class="invitations__muted">до {{ invitation.expiresAtUtc | date:'dd.MM.yyyy' }}</p>
+          </div>
+          <div class="invitations__actions">
+            <p-button label="Прийняти" icon="pi pi-check" [loading]="answering() === invitation.membershipRequestKey"
+              [disabled]="answering() !== null" (onClick)="answer(invitation, true)" />
+            <p-button label="Відхилити" severity="secondary" variant="text"
+              [disabled]="answering() !== null" (onClick)="answer(invitation, false)" />
+          </div>
+        </div>
+      } @empty {
+        <app-empty-state art="list" title="Запрошень немає" />
+      }
+    }
+  </section>
+</main>

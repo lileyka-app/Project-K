@@ -13,7 +13,9 @@ import { isPlatform, provideIonicAngular } from '@ionic/angular';
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios27';
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth.interceptor';
+import { AppUpdate } from './core/app-update';
 import { AppearanceService } from './features/account/appearance.service';
+import { KurinRoleNames } from './features/kurin/kurin-role-names.service';
 
 // Zoneless: Angular 22 is zoneless by default, no zone.js in the bundle.
 // Ionic picks the mode from the platform: 'ios' on iPhone, 'md' on Android.
@@ -22,6 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     // Light or dark as chosen in «Ще → Вигляд», before the first screen is drawn.
     provideAppInitializer(() => inject(AppearanceService).init()),
+    provideAppInitializer(() => void inject(KurinRoleNames)),
     provideIonicAngular(isPlatform('ios') ? glassAnimations() : {}),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
@@ -31,6 +34,7 @@ export const appConfig: ApplicationConfig = {
       enabled: !isDevMode() && !Capacitor.isNativePlatform(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
+    provideAppInitializer(() => inject(AppUpdate).start()),
   ],
 };
 

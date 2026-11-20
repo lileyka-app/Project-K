@@ -85,6 +85,11 @@ export class KurinProbeEditionsComponent implements OnInit {
     return this.outcomes(group).filter(outcome => outcome.kind === kind).length;
   }
 
+  /** Гуртки, які перемкнуться після «Зберегти»: кожен — одна незбережена зміна. */
+  changeCount(): number {
+    return this.pendingCount();
+  }
+
   /** Гуртки, які перемкнуться після «Зберегти». */
   pendingCount(): number {
     return (this.state()?.groups ?? []).filter(group => group.canChange && this.isChanged(group)).length;

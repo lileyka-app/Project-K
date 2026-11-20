@@ -1,4 +1,5 @@
 import { DuesAmountDto, QuarterDto } from './group-dues.dto';
+import { KurinBranch, KurinNumbering } from '../../kurinModule/models/enums/kurin-branch.enum';
 
 /** How a пільга of the край changes the вкладка: a percent off, a sum off, or nothing to pay. */
 export type ConcessionKind = 'percent' | 'amount' | 'exempt';
@@ -20,6 +21,13 @@ export const DUES_PART_LABELS: Record<DuesPart, string> = {
   krai: 'Край',
   kurin: 'Курінь',
   group: 'Гурток'
+};
+
+/** Коди помилок пільг краю → що сказати людині. */
+export const CONCESSION_ERROR_TEXT: Record<string, string> = {
+  UnknownConcession: 'У краю куреня немає такої пільги.',
+  EndsBeforeStart: 'Пільга не може закінчитися раніше, ніж почнеться.',
+  ConcessionOverlaps: 'Ця пільга вже діє в цих кварталах.'
 };
 
 /** A пільга of the край as its profile keeps it. */
@@ -80,7 +88,18 @@ export interface KraiConcessionReportRowDto {
   name: string;
   people: number;
   reduction: DuesAmountDto;
-  kurins: { kurinKey: string; number: number | null; people: number; reduction: number }[];
+  kurins: KraiConcessionReportKurinDto[];
+}
+
+/** One kurin in a row of the report; its улад and name tell 5-й УПЮ from 5-й УСП. */
+export interface KraiConcessionReportKurinDto {
+  kurinKey: string;
+  number: number | null;
+  branch?: KurinBranch | null;
+  branches?: KurinNumbering[] | null;
+  namedAfter?: string | null;
+  people: number;
+  reduction: number;
 }
 
 /** «−20 % · станиця, курінь», «−100 ₴ · гурток», «звільнення · уся вкладка». */

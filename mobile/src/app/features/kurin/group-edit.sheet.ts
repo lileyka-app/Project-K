@@ -38,7 +38,7 @@ export type GroupEditResult = 'saved' | 'deleted' | null;
 /**
  * A new гурток, or the profile of one (web kurin-panel's manage-panel and group-panel's
  * «Редагувати»): its name, description and silhouette, cropped and processed as on the web. The
- * name and «Видалити гурток» are the Звʼязковий's (web canManageGroups); the description and
+ * name and «Розформувати гурток» are the Звʼязковий's (web canManageGroups); the description and
  * silhouette belong to whoever the server lets change the гурток. A new silhouette or its removal
  * goes up on «Зберегти», after the гурток itself.
  */
@@ -169,7 +169,7 @@ export type GroupEditResult = 'saved' | 'deleted' | null;
       @if (group && canDelete) {
         <div class="actions">
           <ion-button expand="block" fill="clear" color="danger" class="lk-danger" [disabled]="busy()" (click)="remove()" data-testid="delete-group">
-            Видалити гурток
+            Розформувати гурток
           </ion-button>
         </div>
       }
@@ -292,9 +292,9 @@ export class GroupEditSheet implements OnInit, OnDestroy {
     const group = this.group;
     if (!group || this.busy()) return;
     const sheet = await this.sheets.create({
-      header: `Видалити гурток «${group.name}»? Цю дію неможливо скасувати.`,
+      header: `Розформувати гурток «${group.name}»? Він лишиться в архіві куреня.`,
       buttons: [
-        { text: 'Видалити', role: 'destructive', data: 'remove' },
+        { text: 'Розформувати', role: 'destructive', data: 'remove' },
         { text: 'Скасувати', role: 'cancel' },
       ],
     });
@@ -304,10 +304,10 @@ export class GroupEditSheet implements OnInit, OnDestroy {
     this.busy.set(true);
     try {
       await this.data.deleteGroup(group.groupKey);
-      await this.toasts.show('Гурток видалено.');
+      await this.toasts.show('Гурток розформовано.');
       this.close('deleted');
     } catch (error) {
-      await this.toasts.show(apiErrorText(error, 'Не вдалося видалити гурток. Спробуй ще раз.'), 'danger');
+      await this.toasts.show(apiErrorText(error, 'Не вдалося розформувати гурток. Спробуй ще раз.'), 'danger');
     } finally {
       this.busy.set(false);
     }

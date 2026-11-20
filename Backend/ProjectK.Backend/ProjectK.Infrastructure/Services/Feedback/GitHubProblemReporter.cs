@@ -4,9 +4,10 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Records.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.Feedback;
 
@@ -45,7 +46,7 @@ public sealed class GitHubProblemReporter : IProblemReporter
         var labels = _options.Labels
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        var payload = new NewIssue(report.Title, GitHubIssueBody.Compose(report, _apiVersion), labels);
+        var payload = new NewIssue(report.Title, GitHubIssueBodyRules.Compose(report, _apiVersion), labels);
         using var response = await _http.PostAsJsonAsync($"repos/{_options.Repository}/issues", payload, cancellationToken);
 
         if (!response.IsSuccessStatusCode)

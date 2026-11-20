@@ -1,9 +1,8 @@
 using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Score;
-using Xunit;
+using ProjectK.Common.Enums.ScoreModule;
+using ProjectK.Common.Records.ScoreModule;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 

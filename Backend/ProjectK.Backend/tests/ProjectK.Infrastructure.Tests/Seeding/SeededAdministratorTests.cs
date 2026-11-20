@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 using ProjectK.Infrastructure.Seeding;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.Seeding;
 
@@ -97,7 +92,7 @@ public class SeededAdministratorTests
             new Mock<IUserStore<AppUser>>().Object, null, null, null, null, null, null, null, null);
 
         userManager
-            .Setup(m => m.GetUsersInRoleAsync(SystemRole.Admin))
+            .Setup(m => m.GetUsersInRoleAsync(SystemRoleNames.Admin))
             .ReturnsAsync(administrators.ToList<AppUser>());
         userManager
             .Setup(m => m.FindByEmailAsync(It.IsAny<string>()))

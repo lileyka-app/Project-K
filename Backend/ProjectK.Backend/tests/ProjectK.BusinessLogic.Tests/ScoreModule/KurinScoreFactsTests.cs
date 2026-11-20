@@ -2,14 +2,16 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Score;
-using Xunit;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Enums.ScoreModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
+using ProjectK.Common.Records.ScoreModule;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 
@@ -35,7 +37,7 @@ public class KurinScoreFactsTests
     private readonly List<WarningRecord> _warnings = [];
     private readonly List<PaidQuarterRecord> _paid = [];
 
-    private KurinScoreFacts Facts()
+    private ScoreFactReader Facts()
     {
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(m => m.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
@@ -45,7 +47,7 @@ public class KurinScoreFactsTests
         members.Setup(m => m.GetActiveWarningsInKurinAsync(Kurin, Now, It.IsAny<CancellationToken>())).ReturnsAsync(() => _warnings);
         var dues = new Mock<IDuesDirectory>();
         dues.Setup(d => d.GetPaidQuartersAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _paid);
-        return new KurinScoreFacts(memberships.Object, progress.Object, members.Object, dues.Object, new FixedTimeProvider(new DateTimeOffset(Now)));
+        return new ScoreFactReader(memberships.Object, progress.Object, members.Object, dues.Object, new FixedTimeProvider(new DateTimeOffset(Now)));
     }
 
     [Fact]

@@ -8,8 +8,7 @@ import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directi
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MemberDto } from '../../../kurinModule/models/member.dto';
-import { ROLE_DISPLAY_NAMES } from '../../../kurinModule/models/role-display-name.model';
-import { LeadershipRole } from '../../../kurinModule/models/enums/leadership-role.enum';
+import { leadershipRoleDisplayName } from '../../../kurinModule/functions/leadership-role-display.function';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
 import { MyDuesTileComponent } from '../../components/my-dues-tile/my-dues-tile';
 import { MyDutiesTileComponent, dutyRowKey } from '../../components/my-duties-tile/my-duties-tile';
@@ -26,6 +25,7 @@ import { AgendaService } from '../../../kurinModule/services/agenda-service/agen
 import { ScoreService } from '../../../scoreModule/services/score-service/score.service';
 import { greeting, todayLabel } from '../../functions/greeting.function';
 import { kurinName } from '../../../../shared/functions/kurin-label.function';
+import { hasYouthProgram } from '../../../kurinModule/models/enums/kurin-branch.enum';
 
 /**
  * The first screen of a signed-in person: who they are and where they stand, as tiles they may
@@ -87,8 +87,11 @@ export class DashboardComponent implements OnInit {
   /** The duty action on its way: a row's key for «Сходин не було», 'hide:' + it for hiding, 'restore'. */
   readonly dutySaving = signal<string | null>(null);
 
-  /** Проба and вмілості belong to a youth of УПЮ; the reply says so, and until it comes nothing is shown. */
-  readonly hasYouthProgram = computed(() => this.growth()?.hasYouthProgram ?? false);
+  /** Проба and вмілості belong to a youth of УПЮ: the server says the улад, and until it comes nothing is shown. */
+  readonly hasYouthProgram = computed(() => {
+    const growth = this.growth();
+    return !!growth?.hasYouthProgram && hasYouthProgram(growth.ulad);
+  });
 
   /** A row names its kurin only when there is more than one to tell apart. */
   readonly namesKurin = computed(() => this.kurins().length > 1);
@@ -107,7 +110,7 @@ export class DashboardComponent implements OnInit {
     (this.member()?.leadershipHistories ?? [])
       .filter(history => !history.endDate)
       .map(history => {
-        const role = ROLE_DISPLAY_NAMES[history.role as LeadershipRole] ?? history.role;
+        const role = leadershipRoleDisplayName(history.role);
         return history.groupName ? `${role} · ${history.groupName}` : role;
       })
   );

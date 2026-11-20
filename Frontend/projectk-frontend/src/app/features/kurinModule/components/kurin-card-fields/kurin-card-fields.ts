@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { map, Observable, of } from 'rxjs';
@@ -23,11 +23,19 @@ export class KurinCardFieldsComponent implements OnInit {
 
   protected readonly loaded = signal(false);
   protected readonly fields = signal<KurinCardFieldDto[]>([]);
+  /** Which fields the server hides, as it last answered. */
+  private readonly saved = signal<KurinCardFieldDto[]>([]);
+  /** How many fields are switched differently from what the server has. */
+  readonly changeCount = computed(() => {
+    const saved = new Map(this.saved().map(field => [field.key, field.hidden]));
+    return this.fields().filter(field => saved.get(field.key) !== field.hidden).length;
+  });
 
   ngOnInit(): void {
     this.kurins.getHideableCardFields(this.kurinKey()).subscribe({
       next: fields => {
         this.fields.set(fields);
+        this.saved.set(fields);
         this.loaded.set(true);
       },
       error: () => this.loaded.set(true)
@@ -46,6 +54,7 @@ export class KurinCardFieldsComponent implements OnInit {
     const hidden = this.fields().filter(field => field.hidden).map(field => field.key);
     return this.kurins.setHiddenCardFields(this.kurinKey(), hidden).pipe(map(fields => {
       this.fields.set(fields);
+      this.saved.set(fields);
     }));
   }
 }

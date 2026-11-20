@@ -244,3 +244,4 @@ test('signs out from the Меню tab', async ({ page }, info) => {
   await page.goto('./tabs/home');
   await expect(page).toHaveURL(/\/m\/login$/);
 });
+

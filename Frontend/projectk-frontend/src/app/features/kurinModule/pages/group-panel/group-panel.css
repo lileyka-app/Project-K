@@ -148,39 +148,6 @@
     gap: 0.5rem;
 }
 
-.silhouette-editor {
-    display: grid;
-    grid-template-columns: minmax(18rem, 1fr) minmax(16rem, 22rem);
-    gap: 1rem;
-    align-items: start;
-}
-
-.silhouette-editor__cropper {
-    min-width: 0;
-}
-
-.silhouette-editor__side {
-    display: grid;
-    gap: 1rem;
-}
-
-.silhouette-preview {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 1;
-    width: 100%;
-    border: 1px solid var(--p-content-border-color);
-    border-radius: 0.75rem;
-    background: var(--p-surface-50);
-    overflow: hidden;
-}
-
-.silhouette-preview img {
-    width: min(100%, 18rem);
-    height: min(100%, 18rem);
-    object-fit: contain;
-}
-
 .silhouette-controls {
     display: grid;
     gap: 0.85rem;
@@ -214,13 +181,6 @@
     color: var(--p-text-muted-color);
 }
 
-.silhouette-dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
 @media (max-width: 768px) {
     .group-hero__main {
         align-items: flex-start;
@@ -252,19 +212,6 @@
 
     .group-profile-actions p-button,
     :host ::ng-deep .group-profile-actions .p-button {
-        width: 100%;
-    }
-
-    .silhouette-editor {
-        grid-template-columns: 1fr;
-    }
-
-    .silhouette-dialog-actions {
-        flex-direction: column-reverse;
-    }
-
-    .silhouette-dialog-actions p-button,
-    :host ::ng-deep .silhouette-dialog-actions .p-button {
         width: 100%;
     }
 }

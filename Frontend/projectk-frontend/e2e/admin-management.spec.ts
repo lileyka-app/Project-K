@@ -54,19 +54,15 @@ describeRole('admin', 'Admin management surfaces', () => {
     await expect(confirm).toBeHidden();
   });
 
-  test('waitlist management renders queue table and conditional action area', async ({ page }) => {
+  test('waitlist management lists applications and kurin requests in one inbox', async ({ page }) => {
     await page.goto('/waitlist');
-    await expect(page.getByRole('heading', { name: 'Заявки на приєднання' })).toBeVisible();
-    await expect(page.locator('.p-datatable')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Заявки', exact: true })).toBeVisible();
 
-    const firstRow = page.locator('tbody tr').first();
-    await expect(firstRow).toBeVisible();
-    const rowText = await firstRow.textContent();
-    if (rowText?.includes('Заявок немає')) {
-      await expect(firstRow).toContainText('Заявок немає');
-    } else {
-      await expect(firstRow.locator('td').nth(5)).toBeVisible();
-      await expect(firstRow.locator('td').last()).toBeVisible();
-    }
+    const list = page.locator('.inbox');
+    await expect(list.or(page.getByText('Нічого не чекає'))).toBeVisible();
+
+    await page.getByRole('button', { name: 'Усі', exact: true }).click();
+    await expect(page.locator('.inbox__item').first()).toBeVisible();
+    await expect(page.locator('.inbox__item').first().locator('.inbox__actions')).toBeAttached();
   });
 });

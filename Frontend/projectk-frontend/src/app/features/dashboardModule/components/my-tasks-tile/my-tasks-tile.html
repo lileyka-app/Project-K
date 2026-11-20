@@ -21,7 +21,7 @@
   } @else if (!rows().length) {
     <app-empty-state art="list" title="Задач немає" body="Усе зроблено — або ще нічого не доручили." />
   } @else {
-    <ul class="tasks-tile__list">
+    <ul class="tasks-tile__list lil-tile-scroll">
       @for (row of rows(); track row.task.agendaItemKey) {
         <li class="tasks-tile__row">
           <span class="tasks-tile__body">

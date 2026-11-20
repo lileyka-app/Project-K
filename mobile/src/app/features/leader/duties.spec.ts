@@ -18,6 +18,18 @@ function duty(overrides: Partial<MyDutyDto>): MyDutyDto {
 }
 
 describe('dutyRows', () => {
+  it('leads waiting ступені to the person’s card, named by them', () => {
+    const [row] = dutyRows(
+      [duty({ kind: 'LevelsToConfirm', count: 2, memberKey: 'm-7', title: 'Олена Старша', key: 'LevelsToConfirm:k1:-:m-7:-' })],
+      new Date(2026, 9, 5, 9, 0),
+      false,
+    );
+
+    expect(row.link).toBe('/tabs/kurin/member/m-7');
+    expect(row.label).toBe('Ступінь підтвердити: Олена Старша');
+    expect(row.count).toBe(2);
+  });
+
   it('leads each duty to the phone screen where it is done', () => {
     const start = new Date(2026, 9, 5, 17, 0).toISOString();
     const rows = dutyRows(

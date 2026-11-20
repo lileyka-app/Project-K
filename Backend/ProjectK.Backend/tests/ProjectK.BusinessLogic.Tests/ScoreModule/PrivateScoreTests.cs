@@ -1,21 +1,26 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
-using ProjectK.BusinessLogic.Modules.ScoreModule.Models;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ScoreModule;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using ProjectK.Common.Models.Score;
-using Xunit;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Records.ScoreModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 
@@ -34,7 +39,7 @@ public class PrivateScoreTests
     private readonly List<PrivateScoreEntry> _entries = [];
     private readonly List<ScoreEntry> _publicEntries = [];
     private readonly List<KurinMembershipRecord> _memberships = [];
-    private readonly List<MemberSummary> _people = [];
+    private readonly List<KurinPerson> _people = [];
     private readonly Mock<IScoreUnitOfWork> _score = new();
     private readonly Mock<IResourceAccessService> _resourceAccess = new();
     private readonly Guid _oksana;
@@ -83,16 +88,16 @@ public class PrivateScoreTests
         var membership = Guid.NewGuid();
         var member = Guid.NewGuid();
         _memberships.Add(new KurinMembershipRecord(membership, member, Sokoly, MembershipKind.Youth, new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), null));
-        _people.Add(new MemberSummary(member, Guid.NewGuid(), Kurin, Sokoly, name, "Пластун", $"{name}@x", null));
+        _people.Add(KurinPeople.Of(member, Guid.NewGuid(), Kurin, Sokoly, name, "Пластун", $"{name}@x", null));
         return membership;
     }
 
-    private PrivateScoreAccess Access()
+    private ScoreAccess Access()
     {
         var user = new Mock<ICurrentUserContext>();
         user.SetupGet(u => u.UserId).Returns(Actor);
         user.SetupGet(u => u.KurinKey).Returns(Kurin);
-        return new PrivateScoreAccess(new ScoreAccess(user.Object, _resourceAccess.Object), _resourceAccess.Object);
+        return new ScoreAccess(user.Object, _resourceAccess.Object);
     }
 
     private ICurrentUserContext User()
@@ -108,25 +113,29 @@ public class PrivateScoreTests
         var memberships = new Mock<IMembershipDirectory>();
         memberships.Setup(d => d.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
         var members = new Mock<IMemberDirectory>();
-        members.Setup(m => m.GetByKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
+        memberships.Setup(m => m.GetPeopleInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _people);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(u => u.Groups).Returns(Mock.Of<IGroupRepository>(g =>
             g.GetAllAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult<IEnumerable<Group>>(new[] { new Group("Соколи", Kurin, null) { GroupKey = Sokoly } })));
         unitOfWork.SetupGet(u => u.AgendaItems).Returns(new Mock<IAgendaItemRepository>().Object);
         IReadOnlyList<ScoreFact> none = [];
-        var facts = Mock.Of<IScoreFactSource>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
-        return new ScoreBookReader(_score.Object, unitOfWork.Object, memberships.Object, members.Object, facts, _time);
+        var facts = Mock.Of<IScoreFactReader>(f => f.ForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(none));
+        return new ScoreBookReader(_score.Object, Agendas.Over(unitOfWork.Object), KurinDirectories.Over(unitOfWork.Object), memberships.Object, members.Object, facts, _time);
     }
 
     private Task<ServiceResult<Guid>> Write(int points, Guid? criterion, string? note = null) =>
         new CreatePrivateScoreEntryCommandHandler(Access(), Books(), _score.Object, User(), _time).Handle(
             new CreatePrivateScoreEntryCommand(Kurin, new UpsertPrivateScoreEntryRequest
             {
-                MembershipKey = _oksana, PrivateScoreCriterionKey = criterion, Points = points, Note = note, OccurredOn = new DateOnly(2026, 10, 6)
+                MembershipKey = _oksana,
+                PrivateScoreCriterionKey = criterion,
+                Points = points,
+                Note = note,
+                OccurredOn = new DateOnly(2026, 10, 6)
             }),
             CancellationToken.None);
 
-    private Task<ServiceResult<PrivateScoreResponse>> Read() =>
+    private Task<ServiceResult<PrivateScoreDto>> Read() =>
         new GetPrivateScoreQueryHandler(Access(), Books(), _score.Object).Handle(new GetPrivateScoreQuery(Kurin, new ScorePeriodQuery()), CancellationToken.None);
 
     [Fact]
@@ -147,8 +156,8 @@ public class PrivateScoreTests
     [Fact]
     public async Task NothingWithoutAWord_AndNoCriterionOffTheList()
     {
-        new UpsertPrivateScoreEntryRequestValidator(_time)
-            .Validate(new UpsertPrivateScoreEntryRequest { MembershipKey = _oksana, Points = 2, OccurredOn = new DateOnly(2026, 10, 6) })
+        new CreatePrivateScoreEntryCommandValidator(_time)
+            .Validate(new CreatePrivateScoreEntryCommand(Guid.NewGuid(), new UpsertPrivateScoreEntryRequest { MembershipKey = _oksana, Points = 2, OccurredOn = new DateOnly(2026, 10, 6) }))
             .IsValid.Should().BeFalse("neither a criterion nor a note");
 
         (await Write(2, Guid.NewGuid())).Type.Should().Be(ResultType.NotFound);

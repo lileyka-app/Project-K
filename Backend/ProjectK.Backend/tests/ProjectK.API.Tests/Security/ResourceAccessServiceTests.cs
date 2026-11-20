@@ -1,19 +1,15 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -21,10 +17,10 @@ public class ResourceAccessServiceTests
 {
     // System roles that reproduce the historic tiers: Зв'язковий = whole-kurin manager,
     // Гуртковий = group leader, Member = plain user.
-    private static readonly string AdminRole = SystemRole.Admin;
-    private static readonly string ManagerRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-    private static readonly string MentorRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-    private static readonly string MemberRole = SystemRole.Member;
+    private static readonly string AdminRole = SystemRoleNames.Admin;
+    private static readonly string ManagerRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string MentorRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string MemberRole = SystemRoleNames.Member;
 
     [Fact]
     public async Task UnauthenticatedUser_ShouldBeDenied()
@@ -282,6 +278,107 @@ public class ResourceAccessServiceTests
     }
 
     [Fact]
+    public async Task PersonStandingNowhere_ShouldReadTheirOwnRecord()
+    {
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, null, null, new[] { MemberRole }, userId);
+        fixture.Owner(ResourceType.Member, memberKey, userId);
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task PersonStandingNowhere_ShouldNotReadSomeoneElse()
+    {
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, null, null, new[] { MemberRole }, userId);
+        fixture.Owner(ResourceType.Member, memberKey, Guid.NewGuid());
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
+
+        Assert.False(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task PersonStandingNowhere_ShouldNotChangeTheirOwnRecord()
+    {
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, null, null, new[] { MemberRole }, userId);
+        fixture.Owner(ResourceType.Member, memberKey, userId);
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
+
+        Assert.False(decision.IsAllowed);
+    }
+
+    [Theory]
+    [InlineData(ResourceType.ProbeProgress, ResourceAction.Update)]
+    [InlineData(ResourceType.ProbeProgress, ResourceAction.Delete)]
+    [InlineData(ResourceType.BadgeProgress, ResourceAction.Update)]
+    public async Task Leader_ShouldNotSignOffTheirOwnProgress(ResourceType resourceType, ResourceAction action)
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+
+        foreach (var role in new[] { MentorRole, ManagerRole })
+        {
+            var fixture = CreateFixture(true, kurinKey, groupKey, new[] { role }, userId);
+            fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, groupKey, userId));
+            fixture.Owner(ResourceType.Member, memberKey, userId);
+
+            var decision = await fixture.Service.CheckAccessAsync(resourceType, action, ResourceType.Member, memberKey);
+
+            Assert.False(decision.IsAllowed, role);
+            Assert.Contains("their own", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public async Task Leader_ShouldStillSignOffSomeoneElseInTheirGroup()
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var memberUserId = Guid.NewGuid();
+        var fixture = CreateFixture(true, kurinKey, groupKey, new[] { MentorRole }, userId);
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, groupKey, memberUserId));
+        fixture.Owner(ResourceType.Member, memberKey, memberUserId);
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.ProbeProgress, ResourceAction.Update, ResourceType.Member, memberKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task Leader_ShouldNotReachSignOffCapabilitiesOnTheirOwnRecord()
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, kurinKey, groupKey, new[] { ManagerRole }, userId);
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, groupKey, userId));
+        fixture.Owner(ResourceType.Member, memberKey, userId);
+
+        var reachable = await fixture.Service.ReachableCapabilitiesAsync(ResourceType.Member, memberKey);
+        var sign = await fixture.Service.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey);
+
+        Assert.DoesNotContain(KurinCapability.SignProbe, reachable);
+        Assert.DoesNotContain(KurinCapability.UnsignProbe, reachable);
+        Assert.DoesNotContain(KurinCapability.ReviewBadge, reachable);
+        Assert.Contains(KurinCapability.SeeContacts, reachable);
+        Assert.False(sign.IsAllowed);
+    }
+
+    [Fact]
     public async Task ResourceNotFound_ShouldBeDenied()
     {
         var memberKey = Guid.NewGuid();
@@ -345,7 +442,7 @@ public class ResourceAccessServiceTests
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(
-            x => x.GetLedGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            x => x.GetLedGroupSourcesAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -363,15 +460,15 @@ public class ResourceAccessServiceTests
             .ReturnsAsync(new ResourceScope(kurinKey, groupKey, null));
 
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
-        cache.Invalidate(BackendCachePolicies.MentorScopeReads);
+        cache.Invalidate(BackendCacheRules.MentorScopeReads);
         await service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         scopeReader.Verify(
-            x => x.GetLedGroupKeysAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
+            x => x.GetLedGroupSourcesAsync(mentorUserId, kurinKey, It.IsAny<CancellationToken>()),
             Times.Exactly(2));
     }
 
-    private static (ResourceAccessService Service, Mock<IResourceScopeReader> ScopeReader, IBackendCache Cache) CreateCachingFixture(
+    private static (ResourceAccessService Service, Mock<IResourceScopeRepository> ScopeReader, IBackendCache Cache) CreateCachingFixture(
         Guid kurinKey,
         Guid groupKey,
         Guid mentorUserId)
@@ -387,13 +484,13 @@ public class ResourceAccessServiceTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
 
-        var scopeReader = new Mock<IResourceScopeReader>();
+        var scopeReader = ScopeFacts.Repository();
         scopeReader
-            .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { groupKey });
+            .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ScopeFacts.Leading(new[] { groupKey }));
 
         var cache = new MemoryBackendCache(new MemoryCache(new MemoryCacheOptions()), NullLogger<MemoryBackendCache>.Instance);
-        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, cache, new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
+        var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object), currentUserContext.Object, cache, new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
         return (service, scopeReader, cache);
     }
 
@@ -424,17 +521,17 @@ public class ResourceAccessServiceTests
             .Setup(x => x.IsInRole(It.IsAny<string>()))
             .Returns((string role) => roleValues.Contains(role, StringComparer.OrdinalIgnoreCase));
 
-        var scopeReader = new Mock<IResourceScopeReader>();
+        var scopeReader = ScopeFacts.Repository();
         scopeReader
             .Setup(x => x.GetScopeAsync(It.IsAny<ResourceType>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ResourceScope?)null);
 
         // A mentor covers the group they belong to unless a test says otherwise.
         scopeReader
-            .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>());
+            .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ScopeFacts.Leading(groupKey.HasValue ? new[] { groupKey.Value } : Array.Empty<Guid>()));
 
-        var service = new ResourceAccessService(scopeReader.Object, currentUserContext.Object, new PassThroughBackendCache(), new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
+        var service = new ResourceAccessService(Mock.Of<IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object), currentUserContext.Object, new PassThroughBackendCache(), new CurrentPermissions(currentUserContext.Object, new FixedKurinAccessPolicyProvider()));
         return new ResourceAccessFixture(service, scopeReader);
     }
 
@@ -452,7 +549,7 @@ public class ResourceAccessServiceTests
 
     private sealed record ResourceAccessFixture(
         ResourceAccessService Service,
-        Mock<IResourceScopeReader> ScopeReader)
+        Mock<IResourceScopeRepository> ScopeReader)
     {
         public void Scope(ResourceType resourceType, Guid resourceKey, ResourceScope? scope)
         {
@@ -461,11 +558,18 @@ public class ResourceAccessServiceTests
                 .ReturnsAsync(scope);
         }
 
+        public void Owner(ResourceType resourceType, Guid resourceKey, Guid accountKey)
+        {
+            ScopeReader
+                .Setup(x => x.GetPersonAccountKeyAsync(resourceType, resourceKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(accountKey);
+        }
+
         public void MentorGroups(params Guid[] groupKeys)
         {
             ScopeReader
-                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(groupKeys);
+                .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ScopeFacts.Leading(groupKeys));
         }
     }
 }

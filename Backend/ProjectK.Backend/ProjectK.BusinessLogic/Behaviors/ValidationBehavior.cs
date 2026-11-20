@@ -1,8 +1,8 @@
 using System.Reflection;
 using FluentValidation;
 using MediatR;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Behaviors;
 
@@ -17,7 +17,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private const string ValidationErrorCode = "VALIDATION_ERROR";
+    private const string ValidationErrorCode = "ValidationFailed";
 
     private readonly IEnumerable<IValidator<TRequest>> _validators;
 
@@ -77,7 +77,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>
         }
 
         var failureMethod = responseType.GetMethod(
-            nameof(ServiceResult<object>.Failure),
+            nameof(ServiceResult<Unit>.Failure),
             BindingFlags.Public | BindingFlags.Static);
 
         if (failureMethod is null)

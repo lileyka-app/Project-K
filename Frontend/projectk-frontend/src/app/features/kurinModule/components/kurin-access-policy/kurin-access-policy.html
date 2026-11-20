@@ -26,7 +26,7 @@
                       optionValue="value"
                       [allowEmpty]="false"
                       size="small"
-                      [disabled]="cell.locked"
+                      [disabled]="cell.locked || readOnly()"
                       [ariaLabel]="row.label + ': ' + cell.audienceLabel"
                       [ngModel]="cell.value"
                       (ngModelChange)="set(row.key, cell.audience, $event)" />
@@ -67,7 +67,7 @@
                     optionValue="value"
                     size="small"
                     appendTo="body"
-                    [disabled]="cell.locked"
+                    [disabled]="cell.locked || readOnly()"
                     [ariaLabel]="row.label + ': ' + cell.audienceLabel"
                     [ngModel]="cell.value"
                     (ngModelChange)="set(row.key, cell.audience, $event)" />

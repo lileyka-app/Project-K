@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Common.Models.Dtos.AuthModule;
+using ProjectK.Common.Dtos.IdentityModule;
 
 #nullable disable
 
@@ -381,7 +381,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("WaitlistEntries");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.AppNotification", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.AppNotification", b =>
                 {
                     b.Property<Guid>("NotificationKey")
                         .ValueGeneratedOnAdd()
@@ -455,7 +455,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AppNotifications");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.PublicAnnouncementDraft", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.PublicAnnouncementDraft", b =>
                 {
                     b.Property<Guid>("PublicAnnouncementDraftKey")
                         .ValueGeneratedOnAdd()
@@ -567,7 +567,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("PublicAnnouncementDrafts");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.SystemSetting", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.SystemSetting", b =>
                 {
                     b.Property<string>("Key")
                         .HasMaxLength(100)

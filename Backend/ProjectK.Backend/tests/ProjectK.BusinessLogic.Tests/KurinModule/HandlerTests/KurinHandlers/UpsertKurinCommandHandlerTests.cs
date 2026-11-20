@@ -1,31 +1,29 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Settings;
-using Xunit;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.KraiModule;
+using ProjectK.Common.Options.KurinModule;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.KurinModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
 public class UpsertKurinHandlerTests
 {
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IKraiRepository> _kraiRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
@@ -35,13 +33,7 @@ public class UpsertKurinHandlerTests
 
     public UpsertKurinHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var config = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = config.CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
 
         _kurinRepositoryMock = new Mock<IKurinRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -53,7 +45,7 @@ public class UpsertKurinHandlerTests
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
         _unitOfWorkMock.Setup(uow => uow.Krais).Returns(_kraiRepositoryMock.Object);
 
-        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions()), _journal.Audit);
+        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions()), _journal.Audit, Mock.Of<IMembershipDirectory>());
     }
 
     [Fact]
@@ -86,8 +78,8 @@ public class UpsertKurinHandlerTests
         _kurinRepositoryMock.Verify(r => r.Create(It.IsAny<Kurin>(), default), Times.Once);
         _kurinRepositoryMock.Verify(r => r.Update(It.IsAny<Kurin>(), default), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.KurinReads), Times.Once);
-        _cacheMock.Verify(c => c.Invalidate(BackendCachePolicies.GroupReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.KurinReads), Times.Once);
+        _cacheMock.Verify(c => c.Invalidate(BackendCacheRules.GroupReads), Times.Once);
     }
 
     [Fact]
@@ -125,6 +117,59 @@ public class UpsertKurinHandlerTests
         _kurinRepositoryMock.Verify(r => r.Update(existingKurin, default), Times.Once);
         _kurinRepositoryMock.Verify(r => r.Create(It.IsAny<Kurin>(), default), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenUpdating_ShouldWriteOnlyTheKurinsOwnRecord()
+    {
+        var kurinKey = Guid.NewGuid();
+        var created = new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        var kurin = new Kurin(12)
+        {
+            KurinKey = kurinKey,
+            KraiCode = "cz",
+            EmblemBlobName = "kurin-emblems/old.png",
+            RoleNames = "{\"Pysar\":\"Скриптор\"}",
+            AccessPolicy = "{\"policy\":1}",
+            HiddenCardFields = "school",
+            TaskAutoArchiveAfterDays = 7,
+            TaskArchivePurgeAfterDays = 70,
+            ScoreEnabled = false,
+            CreatedDate = created,
+            UpdatedDate = created
+        };
+        var command = new UpsertKurinCommand(Guid.NewGuid(), 13, " Brno ", " CZ ", " Patron ", " Notes ", profileVerificationEnabled: true)
+        {
+            KraiCode = "ua",
+            ScoreEnabled = true
+        };
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(command.KurinKey, default)).ReturnsAsync(kurin);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        var result = await _handler.Handle(command, default);
+
+        result.Type.Should().Be(ResultType.Success);
+        kurin.Should().BeEquivalentTo(new
+        {
+            Number = (int?)13,
+            Stanytsia = "Brno",
+            RegionOrCountry = "CZ",
+            NamedAfter = "Patron",
+            Description = "Notes",
+            ProfileVerificationEnabled = true,
+            ScoreEnabled = (bool?)true,
+            KurinKey = kurinKey,
+            KraiCode = "cz",
+            Branch = KurinBranch.UPYu,
+            EmblemBlobName = "kurin-emblems/old.png",
+            RoleNames = "{\"Pysar\":\"Скриптор\"}",
+            AccessPolicy = "{\"policy\":1}",
+            HiddenCardFields = "school",
+            TaskAutoArchiveAfterDays = (int?)7,
+            TaskArchivePurgeAfterDays = (int?)70,
+            CreatedDate = created
+        });
+        kurin.UpdatedDate.Should().BeAfter(created);
     }
 
     [Theory]
@@ -211,8 +256,7 @@ public class UpsertKurinHandlerTests
         var result = await _handler.Handle(command, default);
 
         // Assert
-        var directlyMapped = _mapper.Map<KurinResponse>(savedKurin);
-        result.Data.Should().BeEquivalentTo(directlyMapped);
+        result.Data.Should().BeEquivalentTo(new { savedKurin.KurinKey, Number = number, savedKurin.KraiCode, savedKurin.Branch, ScoreEnabled = true, CanRenameRoles = false, EmblemUrl = (string?)null });
     }
 
     [Theory]
@@ -233,7 +277,7 @@ public class UpsertKurinHandlerTests
     public async Task Handle_WhenTheRangeIsRaised_ShouldAcceptTheHigherNumber()
     {
         var handler = new UpsertKurinCommandHandler(
-            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }), Options.Create(new KraiOptions()), _journal.Audit);
+            _unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }), Options.Create(new KraiOptions()), _journal.Audit, Mock.Of<IMembershipDirectory>());
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         var result = await handler.Handle(new UpsertKurinCommand(300), default);
@@ -258,7 +302,7 @@ public class UpsertKurinHandlerTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Settings);
-        entry.Action.Should().Be(AuditActions.Settings.KurinChanged);
+        entry.Action.Should().Be(AuditActionNames.Settings.KurinChanged);
         entry.KurinKey.Should().Be(kurinKey);
         entry.Changes.Should().Equal(new AuditChange("stanytsia", null, "Lviv"));
     }
@@ -277,6 +321,45 @@ public class UpsertKurinHandlerTests
         _journal.Entries.Should().ContainSingle().Which.Changes.Should().Equal(
             new AuditChange("number", "47", "48"),
             new AuditChange("profileVerificationEnabled", "false", "true"));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRenameASeniorKurinsRoles_ButKeepTheUsualNamesInUpyu()
+    {
+        var senior = new Kurin(5, KurinBranch.USP);
+        var youth = new Kurin(47);
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(senior.KurinKey, default)).ReturnsAsync(senior);
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(youth.KurinKey, default)).ReturnsAsync(youth);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        var names = new Dictionary<string, string?> { ["Pysar"] = "  Скриптор ", ["Skarbnyk"] = "" };
+
+        var renamed = await _handler.Handle(new UpsertKurinCommand(senior.KurinKey, 5) { RoleNames = names }, default);
+        var refused = await _handler.Handle(new UpsertKurinCommand(youth.KurinKey, 47) { RoleNames = names }, default);
+        var unknown = await _handler.Handle(new UpsertKurinCommand(senior.KurinKey, 5) { RoleNames = new Dictionary<string, string?> { ["Hurtkoviy"] = "Ватажок" } }, default);
+
+        renamed.Data!.RoleNames.Should().Equal(new Dictionary<string, string> { ["Pysar"] = "Скриптор" });
+        refused.ErrorCode.Should().Be(KurinRoleNames.NotAvailableCode);
+        unknown.ErrorCode.Should().Be(KurinRoleNames.InvalidCode);
+        youth.RoleNames.Should().BeNull();
+
+        var wholeRecord = await _handler.Handle(new UpsertKurinCommand(youth.KurinKey, 47, "Lviv") { RoleNames = new Dictionary<string, string?>() }, default);
+        wholeRecord.Type.Should().Be(ResultType.Success, "an empty map from a client that sends the whole record is no change");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSwitchScoreOff_AndLeaveItAlone_WhenNotAsked()
+    {
+        var kurinKey = Guid.NewGuid();
+        var kurin = new Kurin(47) { KurinKey = kurinKey };
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default)).ReturnsAsync(kurin);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        var off = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47) { ScoreEnabled = false }, default);
+        off.Data!.ScoreEnabled.Should().BeFalse();
+
+        var untouched = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47, "Lviv"), default);
+        untouched.Data!.ScoreEnabled.Should().BeFalse();
+        kurin.ScoreEnabled.Should().BeFalse();
     }
 
     [Fact]
@@ -333,7 +416,7 @@ public class UpsertKurinHandlerTests
             .Callback<Kurin, CancellationToken>((k, _) => savedKurin = k);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
         var handler = new UpsertKurinCommandHandler(
-            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions { Default = "cz" }), _journal.Audit);
+            _unitOfWorkMock.Object, _links, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions { Default = "cz" }), _journal.Audit, Mock.Of<IMembershipDirectory>());
 
         var result = await handler.Handle(new UpsertKurinCommand(12), default);
 

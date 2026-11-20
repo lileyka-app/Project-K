@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { MembershipService } from '../../../kurinModule/services/membership-service/membership.service';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
+import { TransferCodeDialogComponent } from '../transfer-code-dialog/transfer-code-dialog';
+import { CardCheckDialogComponent } from '../card-check-dialog/card-check-dialog';
 import { AuthService } from '../../services/auth-service/auth.service';
 import { SavedAccount } from '../../models/saved-account.model';
 import { authenticatedHomeRoute } from '../../functions/authenticated-home-route';
@@ -22,7 +25,7 @@ interface SwitcherRow {
  */
 @Component({
   selector: 'app-account-switcher',
-  imports: [TagModule, ProgressSpinnerModule],
+  imports: [TagModule, ProgressSpinnerModule, TransferCodeDialogComponent, CardCheckDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './account-switcher.html',
   styleUrl: './account-switcher.css'
@@ -30,6 +33,7 @@ interface SwitcherRow {
 export class AccountSwitcherComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly memberships = inject(MembershipService);
 
   readonly email = input<string | null>(null);
   readonly roleTag = input<AccountRoleTag | null>(null);
@@ -41,13 +45,51 @@ export class AccountSwitcherComponent {
   readonly rows = signal<SwitcherRow[]>([]);
   /** The account being switched to, while the server answers. */
   readonly switching = signal<string | null>(null);
+  readonly codeVisible = signal(false);
+  readonly cardVisible = signal(false);
+  /** Kurins waiting on the person's own answer; the row shows only while there are some. */
+  readonly invitationCount = signal(0);
+
+  /** «Мій код для переходу» is a person's; an account with no member behind it (an admin) has none. */
+  get hasOwnCode(): boolean {
+    return !!this.authService.getAuthStateValue()?.memberKey;
+  }
+
+  showCode(): void {
+    this.open.set(false);
+    this.codeVisible.set(true);
+  }
+
+  /** «Показати картку»: the three-minute QR anyone may scan to check the person. */
+  showCard(): void {
+    this.open.set(false);
+    this.cardVisible.set(true);
+  }
 
   toggle(): void {
     const opening = !this.open();
     this.open.set(opening);
     if (opening) {
       this.load();
+      this.loadInvitations();
     }
+  }
+
+  showInvitations(): void {
+    this.open.set(false);
+    this.navigated.emit();
+    void this.router.navigate(['/invitations']);
+  }
+
+  private loadInvitations(): void {
+    if (!this.hasOwnCode) {
+      return;
+    }
+
+    this.memberships.myInvitations().subscribe({
+      next: invitations => this.invitationCount.set(invitations.length),
+      error: () => this.invitationCount.set(0)
+    });
   }
 
   switchTo(row: SwitcherRow): void {

@@ -1,17 +1,16 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.DuesModule.Requests;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -24,8 +23,11 @@ public class SetKurinDuesRateTests
 
     private readonly List<KurinDuesRate> _rates = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
+    private readonly Mock<IDuesKurinShape> _shape = new();
+    private readonly Mock<ProjectK.Common.Contracts.Shared.IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserContext> _user = new();
-    private string _upstream = KraiDues.Stanytsia;
+    private readonly Mock<IDuesAccrual> _accrual = new();
+    private string _upstream = KraiDuesNames.Stanytsia;
 
     public SetKurinDuesRateTests()
     {
@@ -39,8 +41,8 @@ public class SetKurinDuesRateTests
         _user.SetupGet(u => u.UserId).Returns(Guid.NewGuid());
     }
 
-    private Task<Common.Models.Records.ServiceResult<object>> Send(SetKurinDuesRateRequest request) =>
-        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream))
+    private Task<Common.Records.Shared.ServiceResult<MediatR.Unit>> Send(SetKurinDuesRateRequest request) =>
+        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object, _unitOfWork.Object, _accrual.Object)
             .Handle(new SetKurinDuesRateCommand(Kurin, request), CancellationToken.None);
 
     private static QuarterRequest From(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
@@ -78,7 +80,7 @@ public class SetKurinDuesRateTests
         await Send(new SetKurinDuesRateRequest { FromQuarter = From(Q1), StanytsiaFull = 240, StanytsiaReduced = 180, KurinShare = 15 });
 
         var rate = _rates.Single();
-        KurinDuesArticles.AreStandard(rate.Articles).Should().BeTrue();
+        KurinDuesArticleRules.AreStandard(rate.Articles).Should().BeTrue();
         rate.StanytsiaReduced.Should().Be(180);
         rate.KurinReduced.Should().Be(15);
     }
@@ -86,7 +88,7 @@ public class SetKurinDuesRateTests
     [Fact]
     public async Task InAKraiPaidStraight_ThreeAmounts_SendTheUpperPartToTheKrai()
     {
-        _upstream = KraiDues.Krai;
+        _upstream = KraiDuesNames.Krai;
 
         await Send(new SetKurinDuesRateRequest { FromQuarter = From(Q1), StanytsiaFull = 600, StanytsiaReduced = 300, KurinShare = 100 });
 
@@ -95,15 +97,15 @@ public class SetKurinDuesRateTests
         rate.KraiFull.Should().Be(600);
         rate.KraiReduced.Should().Be(300);
         rate.StanytsiaFull.Should().Be(0);
-        KurinDuesArticles.AreStandard(rate.Articles).Should().BeTrue();
+        KurinDuesArticleRules.AreStandard(rate.Articles).Should().BeTrue();
     }
 
     [Theory]
-    [InlineData(KraiDues.Stanytsia, DuesRecipient.Krai, false)]
-    [InlineData(KraiDues.Krai, DuesRecipient.Stanytsia, false)]
-    [InlineData(KraiDues.Krai, DuesRecipient.Krai, true)]
-    [InlineData(KraiDues.Both, DuesRecipient.Stanytsia, true)]
-    [InlineData(KraiDues.Both, DuesRecipient.Krai, true)]
+    [InlineData(KraiDuesNames.Stanytsia, DuesRecipient.Krai, false)]
+    [InlineData(KraiDuesNames.Krai, DuesRecipient.Stanytsia, false)]
+    [InlineData(KraiDuesNames.Krai, DuesRecipient.Krai, true)]
+    [InlineData(KraiDuesNames.Both, DuesRecipient.Stanytsia, true)]
+    [InlineData(KraiDuesNames.Both, DuesRecipient.Krai, true)]
     public async Task AnArticle_GoesOnlyWhereTheKraiTakesTheVkladka(string upstream, DuesRecipient recipient, bool taken)
     {
         _upstream = upstream;
@@ -178,5 +180,51 @@ public class SetKurinDuesRateTests
             FromQuarter = From(Q1),
             Articles = [Article(null!, DuesRecipient.Kurin, 15)]
         })).IsValid.Should().BeFalse();
+    }
+
+    private Guid SeniorWithTag(bool tagsOn)
+    {
+        var tag = Guid.NewGuid();
+        _shape.Setup(s => s.IsSeniorAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _shape.Setup(s => s.TagsOnAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(tagsOn);
+        var tags = new Mock<ProjectK.Common.Contracts.KurinModule.IKurinTagRepository>();
+        tags.Setup(t => t.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new ProjectK.Common.Entities.KurinModule.Tags.KurinTag { KurinTagKey = tag, KurinKey = Kurin, Name = "УСП" }]);
+        _unitOfWork.SetupGet(u => u.KurinTags).Returns(tags.Object);
+        return tag;
+    }
+
+    [Fact]
+    public async Task ATagRate_IsTurnedDown_WhileTheKurinHasItsTagsOff()
+    {
+        var tag = SeniorWithTag(tagsOn: false);
+
+        var result = await Send(new SetKurinDuesRateRequest
+        {
+            FromQuarter = From(Q1),
+            TagKey = tag,
+            Articles = [Article("Курінна", DuesRecipient.Kurin, 150)]
+        });
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("TagsOff");
+        _rates.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ARate_RepricesTheKurinFromItsQuarter()
+    {
+        var tag = SeniorWithTag(tagsOn: true);
+
+        var result = await Send(new SetKurinDuesRateRequest
+        {
+            FromQuarter = From(Q2),
+            TagKey = tag,
+            Articles = [Article("Курінна", DuesRecipient.Kurin, 150)]
+        });
+
+        result.Type.Should().Be(ResultType.Success);
+        _rates.Single().TagKey.Should().Be(tag);
+        _accrual.Verify(a => a.RepriceKurinAsync(Kurin, Q2, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -1,16 +1,14 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KraiModule.Features.Manage;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Krais;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 
@@ -54,7 +52,7 @@ public class KraiCommandsTests
         revision.Revision.Should().Be(1);
         revision.CreatedByUserKey.Should().Be(_admin);
         revision.Json.Should().Be("""{"catalog":{"badgeSources":["ua"]}}""");
-        _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _cache.Verify(c => c.Invalidate(BackendCacheRules.KraiProfileReads), Times.Once);
         _catalogNames.Verify(n => n.Name("sk", "Словаччина"), Times.Once);
     }
 
@@ -115,7 +113,7 @@ public class KraiCommandsTests
         result.Type.Should().Be(ResultType.Success);
         krai.Name.Should().Be("Пласт Чехія");
         result.Data!.KurinCount.Should().Be(1);
-        _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _cache.Verify(c => c.Invalidate(BackendCacheRules.KraiProfileReads), Times.Once);
         _catalogNames.Verify(n => n.Name("cz", "Пласт Чехія"), Times.Once);
     }
 

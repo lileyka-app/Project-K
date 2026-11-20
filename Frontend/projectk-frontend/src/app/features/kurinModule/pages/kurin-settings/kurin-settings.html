@@ -2,135 +2,193 @@
   <header class="lil-page-head">
     <div>
       <p class="lil-page-head__eyebrow">Налаштування куреня</p>
-      <h1>{{ kurin ? (kurin.number ?? 'Підготовчий') : '-' }} курінь</h1>
-    </div>
-    <div class="lil-page-head__actions">
-      <p-button
-        label="Назад"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        variant="text"
-        (onClick)="cancel()" />
+      <h1>{{ title }}</h1>
+      @if (readOnly) {
+        <p-tag value="Лише перегляд" severity="secondary" />
+      }
     </div>
   </header>
+
+  <app-page-tabs [tabs]="tabs" label="Розділи налаштувань" />
 
   @if (errorMessage) {
     <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
   }
 
-  <section class="kurin-tile" aria-labelledby="kurin-number-title">
-    <div class="setting-copy">
-      <h2 id="kurin-number-title">Число куреня</h2>
-      <p>
-        Підготовчий курінь ще не має числа, і його квадратик лишається порожнім. Коли курінь отримає
-        число, зніміть галочку і впишіть його: число не має бути зайняте іншим куренем.
-      </p>
-    </div>
-    <div class="number-row">
-      <div class="number-check">
-        <p-checkbox
-          [(ngModel)]="preparatory"
-          [binary]="true"
-          [disabled]="loading || saving"
-          inputId="preparatoryKurin" />
-        <label for="preparatoryKurin">Підготовчий курінь</label>
+  <fieldset class="settings-fieldset" [disabled]="readOnly">
+
+  <section class="kurin-tile settings-block" id="settings-kurin" aria-labelledby="settings-kurin-title" data-testid="settings-block-kurin">
+    <h2 id="settings-kurin-title">Курінь</h2>
+
+    @if (kurin && isSenior && kurinKey) {
+      <div class="settings-part">
+        <div class="setting-copy">
+          <h3 id="kurin-branches-title">Улади й числа</h3>
+          <p>Змінює адміністратор за запитом.</p>
+        </div>
+        <app-kurin-branch-request [kurinKey]="kurinKey" [branches]="kurin.branches ?? []" [numberRange]="numberRange" />
       </div>
-      @if (!preparatory) {
-        <div class="number-field">
-          <label for="kurinNumber">Число</label>
-          <p-inputNumber
-            [(ngModel)]="number"
-            [disabled]="loading || saving"
-            [useGrouping]="false"
-            [min]="keepsOwnNumber ? undefined : numberRange.min"
-            [max]="keepsOwnNumber ? undefined : numberRange.max"
-            inputId="kurinNumber" />
-          @if (numberProblem) {
-            <small class="number-problem">{{ numberProblem }}</small>
+    } @else {
+      <div class="settings-part">
+        <div class="setting-copy">
+          <h3 id="kurin-number-title">Число куреня</h3>
+        </div>
+        <div class="number-row">
+          <div class="number-check">
+            <p-checkbox
+              [(ngModel)]="preparatory"
+              [binary]="true"
+              [disabled]="loading || saving"
+              inputId="preparatoryKurin" />
+            <label for="preparatoryKurin">Підготовчий курінь</label>
+          </div>
+          @if (!preparatory) {
+            <div class="number-field">
+              <label for="kurinNumber">Число</label>
+              <p-inputNumber
+                [(ngModel)]="number"
+                [disabled]="loading || saving"
+                [useGrouping]="false"
+                [min]="keepsOwnNumber ? undefined : numberRange.min"
+                [max]="keepsOwnNumber ? undefined : numberRange.max"
+                inputId="kurinNumber" />
+              @if (numberProblem) {
+                <small class="number-problem">{{ numberProblem }}</small>
+              }
+            </div>
           }
         </div>
-      }
-    </div>
+      </div>
+    }
+
+    @if (kurin?.canRenameRoles) {
+      <div class="settings-part">
+        <div class="setting-copy">
+          <h3 id="role-names-title">Назви ролей</h3>
+          <p>Свої назви для ролей; права ті самі. Порожнє — звична назва.</p>
+        </div>
+        <div class="role-names">
+          @for (row of renamableRoles; track row.role) {
+            <label class="role-names__row" [for]="'role-name-' + row.role">
+              <span class="role-names__usual">{{ row.usual }}</span>
+              <input pInputText [id]="'role-name-' + row.role" maxlength="60" [placeholder]="row.usual"
+                [(ngModel)]="roleNames[row.role]" [disabled]="loading || saving" />
+            </label>
+          }
+        </div>
+      </div>
+    }
   </section>
 
-  <section class="kurin-tile" aria-labelledby="profile-verification-title">
-    <div class="setting-row">
+  <section class="kurin-tile settings-block" id="settings-features" aria-labelledby="settings-features-title" data-testid="settings-block-features">
+    <div class="setting-copy">
+      <h2 id="settings-features-title">Можливості</h2>
+      <p>Вимкнене зникає з меню й сторінок; записане лишається.</p>
+    </div>
+
+    <div class="setting-row settings-part">
       <div class="setting-copy">
-        <h2 id="profile-verification-title">Верифікація профілів</h2>
-        <p>
-          Дозволяє впорядникам і проводу позначати дані учасників як перевірені.
-          Коли функцію вимкнено, галочки і дії верифікації не показуються.
-        </p>
+        <h3 id="profile-verification-title">Верифікація профілів</h3>
+        <p>Позначка «перевірено» на даних людей.</p>
       </div>
       <p-toggleswitch
         [(ngModel)]="profileVerificationEnabled"
         [disabled]="loading || saving"
-        inputId="profileVerificationEnabled" />
+        inputId="profileVerificationEnabled"
+        ariaLabelledBy="profile-verification-title" />
     </div>
+
+    <div class="setting-row settings-part">
+      <div class="setting-copy">
+        <h3 id="score-enabled-title">Точкування</h3>
+        <p>{{ isSenior ? 'Бали людей за сходини й події.' : 'Бали гуртків і людей за сходини, проби й події.' }}</p>
+      </div>
+      <p-toggleswitch
+        [(ngModel)]="scoreEnabled"
+        [disabled]="loading || saving"
+        inputId="scoreEnabled"
+        ariaLabelledBy="score-enabled-title" />
+    </div>
+
+    @if (kurinKey) {
+      <div class="settings-part">
+        <div class="setting-copy">
+          <h3 id="kurin-tags-title">Теги</h3>
+          <p>Заводять і ставлять — у реєстрі.</p>
+        </div>
+        <app-kurin-tag-settings #tagSettings [kurinKey]="kurinKey" />
+      </div>
+    }
+
+    @if (kurinKey && kurin && hasYouthProgram(kurin.branch)) {
+      <!-- Hidden, not removed, while there is one edition: the component has to load to know. -->
+      <div class="settings-part" [hidden]="!probeEditions.offersChoice()">
+        <div class="setting-copy">
+          <h3 id="probe-editions-title">Проба гуртків</h3>
+          <p>Якою пробою йде кожен гурток, поки край переходить на оновлену.</p>
+        </div>
+        <app-kurin-probe-editions #probeEditions [kurinKey]="kurinKey" />
+      </div>
+    }
   </section>
 
   @if (kurinKey) {
-    <section class="kurin-tile" aria-labelledby="event-groups-title">
-      <div class="setting-copy">
-        <h2 id="event-groups-title">Групи подій</h2>
-        <p>
-          Табори, заходи, сходини — кожна група задає колір, іконку, ліміт місць і шаблон опису
-          для своїх подій у календарі.
-        </p>
-      </div>
-      <app-agenda-category-manager [kurinKey]="kurinKey" />
-    </section>
+    <section class="kurin-tile settings-block" id="settings-card" aria-labelledby="settings-card-title" data-testid="settings-block-card">
+      <h2 id="settings-card-title">Картка людини</h2>
 
-    <section class="kurin-tile" aria-labelledby="task-archive-title">
-      <div class="setting-copy">
-        <h2 id="task-archive-title">Архів задач</h2>
-        <p>
-          Зроблені задачі самі сходять з дошки в архів, щоб на ній лишалось те, що ще треба зробити.
-          З архіву задачу можна знайти й повернути. Видалення з архіву — назавжди.
-        </p>
-      </div>
-      <app-agenda-archive-policy #archivePolicy [kurinKey]="kurinKey" />
-    </section>
-
-    <section class="kurin-tile" aria-labelledby="card-fields-title">
-      <div class="setting-copy">
-        <h2 id="card-fields-title">Поля картки</h2>
-        <p>
-          Поля, які край дозволяє не заповнювати. Вимкнене поле зникає з картки й форми в цьому
-          курені; уже записані значення лишаються.
-        </p>
-      </div>
-      <app-kurin-card-fields #cardFields [kurinKey]="kurinKey" />
-    </section>
-
-    @if (kurin && hasYouthProgram(kurin.branch)) {
-      <!-- Hidden, not removed, while there is one edition: the component has to load to know. -->
-      <section class="kurin-tile" aria-labelledby="probe-editions-title" [hidden]="!probeEditions.offersChoice()">
+      <div class="settings-part">
         <div class="setting-copy">
-          <h2 id="probe-editions-title">Проба гуртків</h2>
-          <p>
-            Якою пробою іде кожен гурток, поки край переходить на оновлену. Хто вже закрив першу
-            пробу, продовжує свою пробу до кінця; решта йде пробою гуртка. Розгорни «Хто якою
-            пробою піде», щоб побачити це до збереження.
-          </p>
+          <h3 id="card-fields-title">Поля картки</h3>
+          <p>Поля, які край дозволяє вимкнути.</p>
         </div>
-        <app-kurin-probe-editions #probeEditions [kurinKey]="kurinKey" />
-      </section>
-    }
+        <app-kurin-card-fields #cardFields [kurinKey]="kurinKey" />
+      </div>
 
-    <section class="kurin-tile" aria-labelledby="access-policy-title">
+      @if (kurin && hasYouthProgram(kurin.branch)) {
+        <div class="settings-part" data-testid="settings-card-sharing">
+          <div class="setting-copy">
+            <h3 id="card-sharing-title">Картки до 18 років</h3>
+            <p>Що юнаки до 18 років можуть показувати на своїй картці.</p>
+          </div>
+          <app-kurin-card-sharing #cardSharing [kurinKey]="kurinKey" />
+        </div>
+      }
+    </section>
+
+    <section class="kurin-tile settings-block" id="settings-agenda" aria-labelledby="settings-agenda-title" data-testid="settings-block-agenda">
+      <h2 id="settings-agenda-title">Календар і задачі</h2>
+
+      <div class="settings-part">
+        <div class="setting-copy">
+          <h3 id="event-groups-title">Групи подій</h3>
+        </div>
+        <app-agenda-category-manager [kurinKey]="kurinKey" />
+      </div>
+
+      <div class="settings-part">
+        <div class="setting-copy">
+          <h3 id="task-archive-title">Архів задач</h3>
+          <p>Коли зроблені задачі сходять з дошки й коли зникають з архіву.</p>
+        </div>
+        <app-agenda-archive-policy #archivePolicy [kurinKey]="kurinKey" />
+      </div>
+    </section>
+
+    <section class="kurin-tile settings-block" id="settings-access" aria-labelledby="access-policy-title" data-testid="settings-block-access">
       <div class="setting-copy">
         <h2 id="access-policy-title">Права й видимість</h2>
-        <p>
-          Хто що бачить у картках юнаків і хто що може робити з пересторогами, відзначеннями, пробами
-          й вмілостями. «Свій гурток» — гурток, у якому людина є або який веде; «Увесь курінь» — усі.
-        </p>
+        <p>«Свій гурток» — гурток, у якому людина є або який веде.</p>
       </div>
-      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" />
+      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" [readOnly]="readOnly"
+        [youthProgram]="!kurin || hasYouthProgram(kurin.branch)" />
     </section>
   }
 
-  <footer class="settings-actions">
+  </fieldset>
+
+  @if (!readOnly) {
+  <footer class="settings-actions kurin-tile" data-testid="settings-save-bar">
+    <span class="settings-actions__count" aria-live="polite" data-testid="unsaved-count">{{ unsavedLabel(changeCount()) }}</span>
     <p-button
       label="Скасувати"
       severity="secondary"
@@ -141,7 +199,9 @@
       label="Зберегти"
       icon="pi pi-save"
       [loading]="saving"
-      [disabled]="loading || saving || !kurin || !!numberProblem"
+      [severity]="changeCount() > 0 ? 'primary' : 'secondary'"
+      [disabled]="loading || saving || !kurin || !!numberProblem || changeCount() === 0"
       (onClick)="save()" />
   </footer>
+  }
 </section>

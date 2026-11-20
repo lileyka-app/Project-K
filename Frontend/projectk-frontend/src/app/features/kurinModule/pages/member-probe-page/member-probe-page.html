@@ -13,7 +13,7 @@
                     @if (isArchive) {
                     <p class="probe-page-subtitle">Архів юнацтва · тільки перегляд</p>
                     }
-                    @if (groupedProbe) {
+                    @if (groupedProbe?.pointsCount) {
                     <p class="probe-page-subtitle">
                         Розділів: {{ groupedProbe.sectionsCount }} · Точок: {{ groupedProbe.pointsCount }}
                     </p>
@@ -30,14 +30,18 @@
                 </div>
 
                 <p-button (onClick)="goBackToMember()"
-                    label="До картки учасника"
+                    label="Назад"
                     icon="pi pi-arrow-left"
                     severity="secondary"
-                    styleClass="!rounded-lg !px-3 !py-2 !text-sm"
-                 />
+                    variant="text" />
             </div>
         </section>
 
+        @if (memberKey && probeId) {
+        <app-third-probe [memberKey]="memberKey" [probeId]="probeId" [member]="member" [readOnly]="isArchive" />
+        }
+
+        @if (!hasNoPoints) {
         <section class="kurin-tile">
             @if (isLoading) {
             <div class="space-y-3">
@@ -163,5 +167,6 @@
             }
             }
         </section>
+        }
     </div>
 </div>

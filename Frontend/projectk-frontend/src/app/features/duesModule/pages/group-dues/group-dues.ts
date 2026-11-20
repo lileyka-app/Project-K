@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -17,14 +17,14 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
 import { KraiConcessionGrantsComponent } from '../../components/krai-concession-grants/krai-concession-grants';
+import { DuesRegisterComponent } from '../../components/dues-register/dues-register';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
-  DUES_STANDING_LABELS,
   DuesEntryKind,
   DuesUpstream,
   GROUP_DUES_KINDS,
@@ -32,7 +32,6 @@ import {
 } from '../../models/dues.enums';
 import {
   DuesAccountDto,
-  DuesAccountQuarterDto,
   DuesEntryDto,
   GroupDuesDto,
   QuarterDto,
@@ -41,12 +40,9 @@ import {
 } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { DuesEntryDialogComponent } from './components/dues-entry-dialog/dues-entry-dialog';
-
-/** One person's row of the quarterly table: a cell per quarter of the chosen year, or null before they were charged. */
-interface AccountRow {
-  account: DuesAccountDto;
-  cells: (DuesAccountQuarterDto | null)[];
-}
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
+import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 
 /**
  * The гурток's box: who paid what by quarter, every operation with the впорядник's mark, and what
@@ -56,9 +52,10 @@ interface AccountRow {
 @Component({
   selector: 'app-group-dues',
   imports: [
-    DatePipe, NgTemplateOutlet, FormsModule, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule, DialogModule,
+    PageTabsComponent,
+    DatePipe, FormsModule, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule, DialogModule,
     InputTextModule, ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule,
-    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent, KraiConcessionGrantsComponent
+    EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent, KraiConcessionGrantsComponent, DuesRegisterComponent
   ],
   providers: [ConfirmationService],
   templateUrl: './group-dues.html',
@@ -66,6 +63,11 @@ interface AccountRow {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GroupDuesComponent implements OnInit {
+  private readonly pageGroups = inject(PageGroups);
+  private readonly authState = inject(AuthService);
+  /** Вкладка куреня і вкладки гуртків — одне місце в меню; курінь той, у якому людина діє. */
+  readonly tabs = signal<PageTab[]>([]);
+
   private readonly route = inject(ActivatedRoute);
   private readonly dues = inject(DuesService);
   private readonly confirmation = inject(ConfirmationService);
@@ -120,21 +122,8 @@ export class GroupDuesComponent implements OnInit {
     return data ? fromQuarterOptions(data.years, data.currentQuarter) : [];
   });
 
-  readonly rows = computed<AccountRow[]>(() => {
-    const data = this.data();
-    const year = this.year();
-    if (!data || !year) {
-      return [];
-    }
-    return data.accounts.map(account => ({
-      account,
-      cells: year.quarters.map(q => account.quarters.find(aq => sameQuarter(aq.quarter, q)) ?? null)
-    }));
-  });
-
-  readonly currentRows = computed(() => this.rows().filter(r => r.account.standing === 'Current'));
-  readonly formerRows = computed(() => this.rows().filter(r => r.account.standing !== 'Current'));
-  readonly debtors = computed(() => this.rows().filter(r => r.account.balance < 0).length);
+  readonly currentRows = computed(() => (this.data()?.accounts ?? []).filter(a => a.standing === 'Current'));
+  readonly debtors = computed(() => (this.data()?.accounts ?? []).filter(a => a.balance < 0).length);
 
   readonly filteredEntries = computed(() => {
     const data = this.data();
@@ -189,6 +178,10 @@ export class GroupDuesComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const kurinKey = this.authState.getAuthStateValue()?.kurinKey;
+    if (kurinKey) {
+      this.pageGroups.dues(kurinKey).subscribe(tabs => this.tabs.set(tabs));
+    }
     this.route.paramMap.subscribe(params => {
       this.groupKey = params.get('groupKey') ?? '';
       this.personFilter.set(null);
@@ -216,14 +209,6 @@ export class GroupDuesComponent implements OnInit {
 
   togglePerson(account: DuesAccountDto): void {
     this.personFilter.set(this.personFilter() === account.membershipKey ? null : account.membershipKey);
-  }
-
-  activeGrantNames(account: DuesAccountDto): string[] {
-    return (account.grants ?? []).filter(g => g.isActiveNow).map(g => g.name);
-  }
-
-  standingLabel(account: DuesAccountDto): string | null {
-    return DUES_STANDING_LABELS[account.standing];
   }
 
   kindLabel(entry: DuesEntryDto): string {
@@ -276,9 +261,9 @@ export class GroupDuesComponent implements OnInit {
 
   confirmDelete(entry: DuesEntryDto): void {
     this.confirmation.confirm({
-      header: 'Видалити операцію',
+      header: 'Видалити операцію?',
       message: `${DUES_ENTRY_KIND_LABELS[entry.kind]} на ${this.money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
@@ -346,7 +331,7 @@ export class GroupDuesComponent implements OnInit {
       return;
     }
     this.savingConcession.set(true);
-    this.dues.setConcession(this.groupKey, target.membershipKey, { fromQuarter: from, isConcession: this.concessionOn() }).subscribe({
+    this.dues.setConcession({ groupKey: this.groupKey }, target.membershipKey, { fromQuarter: from, isConcession: this.concessionOn() }).subscribe({
       next: () => { this.savingConcession.set(false); this.load(); },
       error: () => this.savingConcession.set(false)
     });

@@ -23,7 +23,7 @@ import { passwordRulesValidator } from '../../../../../shared/functions/password
       <p-card header="Новий пароль" [style]="{ width: 'min(100%, 420px)' }">
         @if (!token || !email) {
           <p class="mb-4">
-            Посилання неповне або застаріле. Спробуйте надіслати запит ще раз.
+            Посилання неповне або застаріле. Спробуй надіслати запит ще раз.
           </p>
           <a routerLink="/forgot-password">Надіслати новий лист</a>
         } @else {
@@ -41,7 +41,7 @@ import { passwordRulesValidator } from '../../../../../shared/functions/password
             </div>
 
             <div class="flex flex-col gap-2">
-              <label for="confirmPassword">Повторіть пароль</label>
+              <label for="confirmPassword">Повтори пароль</label>
               <p-password
                 inputId="confirmPassword"
                 formControlName="confirmPassword"
@@ -105,7 +105,7 @@ export class ResetPasswordComponent implements OnInit {
           this.messageService.add({
             severity: 'success',
             summary: 'Готово',
-            detail: 'Пароль оновлено. Тепер увійдіть із ним.'
+            detail: 'Пароль оновлено. Тепер увійди із ним.'
           });
           this.router.navigate(['/login']);
         },
@@ -117,7 +117,7 @@ export class ResetPasswordComponent implements OnInit {
             severity: 'error',
             summary: 'Помилка',
             detail: known
-              ? 'Посилання застаріле. Надішліть запит ще раз.'
+              ? 'Посилання застаріле. Надішли запит ще раз.'
               : 'Не вдалося встановити пароль.'
           });
         }

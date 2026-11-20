@@ -1,8 +1,8 @@
 using MediatR;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 
@@ -11,9 +11,9 @@ public sealed record GetKurinProfileQuery(Guid KurinKey) : IRequest<ServiceResul
 
 public sealed class GetKurinProfileQueryHandler : IRequestHandler<GetKurinProfileQuery, ServiceResult<KraiProfile>>
 {
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public GetKurinProfileQueryHandler(IKraiProfileProvider profiles)
+    public GetKurinProfileQueryHandler(IKraiProfileDirectory profiles)
     {
         _profiles = profiles;
     }
@@ -22,7 +22,7 @@ public sealed class GetKurinProfileQueryHandler : IRequestHandler<GetKurinProfil
     {
         var profile = await _profiles.GetForKurinAsync(request.KurinKey, cancellationToken);
         return profile is null
-            ? ServiceResult<KraiProfile>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin not found.")
+            ? ServiceResult<KraiProfile>.Failure(ResultType.NotFound, KraiErrors.KurinNotFound, "Kurin not found.")
             : new ServiceResult<KraiProfile>(ResultType.Success, profile);
     }
 }

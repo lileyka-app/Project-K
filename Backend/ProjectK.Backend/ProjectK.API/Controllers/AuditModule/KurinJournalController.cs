@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
-using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal.Get;
-using ProjectK.BusinessLogic.Modules.AuditModule.Models;
-using ProjectK.Common.Models.Enums;
+using ProjectK.API.Filters;
+using ProjectK.BusinessLogic.Modules.AuditModule.Features.Journal;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.AuditModule;
 
@@ -32,7 +33,7 @@ public class KurinJournalController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet]
     [ResourceAuthorize(ResourceType.KurinJournal, ResourceAction.Read, "route:kurinKey")]
-    [ProducesResponseType(typeof(KurinJournalPageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(KurinJournalPageDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Get(
         Guid kurinKey,

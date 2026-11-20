@@ -1,22 +1,20 @@
-using System;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Entities.AuthModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Rules.AuditModule;
 using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.AuditModule;
-using Xunit;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace ProjectK.API.Tests.Services;
@@ -35,7 +33,7 @@ public class KurinJournalStoreTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
-        _options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        _options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors().UseSqlite(_connection).Options;
 
         using var context = new AppDbContext(_options);
         context.Database.EnsureCreated();
@@ -57,7 +55,7 @@ public class KurinJournalStoreTests : IDisposable
             ActorName = "Марта",
             ActorRole = "KV:Vykhovnyk",
             Area = area,
-            Action = AuditActions.Award.Added,
+            Action = AuditActionNames.Award.Added,
             SubjectMemberKey = subjectMemberKey,
             SubjectGroupKey = subjectGroupKey,
             SubjectKey = Guid.NewGuid(),
@@ -75,7 +73,7 @@ public class KurinJournalStoreTests : IDisposable
     private async Task<IReadOnlyList<KurinAuditEvent>> ReadAsync(KurinJournalFilter filter, int skip = 0, int take = 50)
     {
         await using var context = new AppDbContext(_options);
-        return await new KurinJournalReader(context).ReadAsync(filter, skip, take);
+        return await new KurinJournalRepository(context).ReadAsync(filter, skip, take);
     }
 
     [Fact]
@@ -83,7 +81,7 @@ public class KurinJournalStoreTests : IDisposable
     {
         await using (var context = new AppDbContext(_options))
         {
-            new KurinAuditWriter(context).Add(Entry(DateTime.UtcNow));
+            new KurinAuditRepository(context).Add(Entry(DateTime.UtcNow));
             context.WaitlistEntries.Add(Waitlisted(Guid.NewGuid()));
 
             await new InfraUnitOfWork(context).SaveChangesAsync();
@@ -109,7 +107,7 @@ public class KurinJournalStoreTests : IDisposable
 
         await using (var context = new AppDbContext(_options))
         {
-            new KurinAuditWriter(context).Add(Entry(DateTime.UtcNow));
+            new KurinAuditRepository(context).Add(Entry(DateTime.UtcNow));
             context.WaitlistEntries.Add(Waitlisted(takenKey));
 
             await Assert.ThrowsAsync<DbUpdateException>(() => new InfraUnitOfWork(context).SaveChangesAsync());
@@ -203,13 +201,30 @@ public class KurinJournalStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task TheSweep_KeepsTheArchivesEntries_TheOnlyTraceOfWhatWasDeleted()
+    {
+        var now = DateTime.UtcNow;
+        var deletion = Entry(now.AddDays(-800), area: AuditArea.Archive);
+        await SeedAsync(deletion, Entry(now.AddDays(-800)));
+
+        var sweep = typeof(AuditCleanupBackgroundService).GetMethod("DeleteExpiredJournalAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
+        await using (var context = new AppDbContext(_options))
+        {
+            await (Task<int>)sweep.Invoke(null, [context, now.AddDays(-365), 100, CancellationToken.None])!;
+        }
+
+        await using var check = new AppDbContext(_options);
+        Assert.Equal([deletion.KurinAuditEventKey], await check.KurinAuditEvents.Select(e => e.KurinAuditEventKey).ToListAsync());
+    }
+
+    [Fact]
     public async Task TheDailyCleanup_KeepsTheJournalForAYear()
     {
         var now = DateTime.UtcNow;
         await SeedAsync(Entry(now.AddDays(-366)), Entry(now.AddDays(-200)));
 
         var services = new ServiceCollection();
-        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection));
+        services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_connection).AddAppDbContextInterceptors());
         var service = new AuditCleanupBackgroundService(
             services.BuildServiceProvider(), new Mock<ILogger<AuditCleanupBackgroundService>>().Object);
         var cleanup = typeof(AuditCleanupBackgroundService).GetMethod("CleanupOldRecordsAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -231,7 +246,7 @@ public class KurinJournalStoreTests : IDisposable
         await SeedAsync(first, second, sameRecord, Entry(now));
 
         await using var context = new AppDbContext(_options);
-        var reader = new KurinJournalReader(context);
+        var reader = new KurinJournalRepository(context);
         var read = await reader.GetForSubjectsAsync([first.SubjectKey, second.SubjectKey]);
 
         Assert.Equal(

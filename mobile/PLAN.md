@@ -226,7 +226,7 @@ Project-K/
 - `features/notificationsModule/models/app-notification.model.ts`.
 - `features/authModule/pages/login/login.ts`, `services/auth.interceptor.ts` (дочитати).
 - `shared/tile-board/tile-layout.service.ts`, `shared/empty-state`.
-- Backend: `ProjectK.API/Program.cs` (CORS), `Helpers/RefreshTokenCookie.cs`, `MfaTrustCookie.cs`, `AuthorizationBaselineMatrixTests`, `ProjectK.Architecture.Tests`.
+- Backend: `ProjectK.API/Program.cs` (CORS), `Cookies/RefreshTokenCookie.cs`, `MfaTrustCookie.cs`, `AuthorizationBaselineMatrixTests`, `ProjectK.Architecture.Tests`.
 - `.github/actions/release-info/action.yml`, `.github/workflows/{angular,dotnet,site,e2e,selfhost-docker}.yml`.
 - `docs/user/features/*` (dashboard, calendar-and-tasks, probes-and-badges, notifications, dues, score, member-card), `docs/user/roles/*`, `docs/user/account.md`.
 
@@ -699,7 +699,7 @@ Web Push (RFC 8030) з VAPID (RFC 8292) і шифруванням `aes128gcm` (R
   (`{notification: {title, body, icon, tag, data: {onActionClick: {default: {operation: 'navigateLastFocusedOrOpen', url}}}}}`),
   тож ngsw сам показує його і на тап відкриває (або переводить відкритий застосунок на) `url` під `/m/`.
   Відповідність типів і маршрутів — та сама, що в `features/leader/notification-route.ts`, на сервері в
-  `PushRoutes` (учасник → картка, вмілості на перевірку → черга, якщо це курінь, у якому застосунок, інакше
+  `PushRouteRules` (учасник → картка, вмілості на перевірку → черга, якщо це курінь, у якому застосунок, інакше
   дзвіночок; задача/подія → сторінка, видалена → список; решта → дзвіночок `/m/tabs/home/notifications`).
   `tag` — ключ дедуплікації (або тип), тож система замінює, а не складає стосом.
 - **Бекенд:** таблиця `WebPushSubscriptions` (endpoint унікальний, ключі `p256dh`/`auth`, user agent; каскадно з

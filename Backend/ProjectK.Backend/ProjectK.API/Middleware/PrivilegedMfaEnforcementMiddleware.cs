@@ -1,7 +1,7 @@
 using System.Security.Claims;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.BusinessLogic.Modules.IdentityModule;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Middleware;
 
@@ -19,7 +19,7 @@ public class PrivilegedMfaEnforcementMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IMfaEnforcementPolicy mfaEnforcementPolicy)
+    public async Task InvokeAsync(HttpContext context, IMfaEnforcementReader mfaEnforcementReader)
     {
         if (!RequiresMfaEnforcement(context))
         {
@@ -27,7 +27,7 @@ public class PrivilegedMfaEnforcementMiddleware
             return;
         }
 
-        if (!await mfaEnforcementPolicy.IsPrivilegedMfaRequiredAsync(context.RequestAborted))
+        if (!await mfaEnforcementReader.IsPrivilegedMfaRequiredAsync(context.RequestAborted))
         {
             await _next(context);
             return;
@@ -39,9 +39,11 @@ public class PrivilegedMfaEnforcementMiddleware
             return;
         }
 
+        // The standard failure shape; the clients tell this refusal from any other 403 by the code.
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         await context.Response.WriteAsJsonAsync(new
         {
+            error = IdentityErrors.PrivilegedMfaRequired,
             message = "MFA is required for privileged accounts."
         }, context.RequestAborted);
     }
@@ -59,7 +61,7 @@ public class PrivilegedMfaEnforcementMiddleware
 
         // Privileged = whole-kurin managers: Зв'язковий and admin. Курінний leads the провід but
         // holds nothing on members, so he is not privileged here.
-        return RolePermissionMap.GrantsWholeKurinManagement(
+        return RolePermissionRules.GrantsWholeKurinManagement(
             context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value));
     }
 

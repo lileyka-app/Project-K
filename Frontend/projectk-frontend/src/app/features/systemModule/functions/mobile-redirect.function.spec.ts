@@ -25,6 +25,21 @@ describe('mobileRedirect', () => {
       expect(mobileRedirect(facts({ path })).redirectTo, path).toBeNull();
     }
   });
+  it('should leave a shared card to the web: the app has no screen for it', () => {
+    for (const path of ['/v/token', '/c/token']) {
+      expect(mobileRedirect(facts({ path })).redirectTo, path).toBeNull();
+    }
+  });
+
+  it('should still send a page that only starts the same way to the app', () => {
+    expect(mobileRedirect(facts({ path: '/calendar' })).redirectTo).toBe('/m/tabs/calendar');
+  });
+
+  it('should keep a transfer code on the way to the app', () => {
+    expect(mobileRedirect(facts({ path: '/kurin/transfers', search: '?code=PL-4F7A2-9D4C1' })).redirectTo)
+      .toBe('/m/tabs/kurin/transfers?code=PL-4F7A2-9D4C1');
+  });
+
 
   it('should never bounce back into the app from the app\'s own path', () => {
     expect(mobileRedirect(facts({ path: '/m/' })).redirectTo).toBeNull();

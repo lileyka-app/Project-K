@@ -10,7 +10,7 @@ sidebar:
 
 ## Вхід і сесії
 
-`AuthController` (`AuthModule`), JWT Bearer з refresh-сесіями.
+`AuthController` (`IdentityModule`), JWT Bearer з refresh-сесіями.
 
 - `POST /register/kurin` — адмін відкриває курінь і запрошує його Звʼязкового (`InviteKurinFounderCommand`).
   Пароля в запиті немає: пишеться те саме, що й при схваленні заявки керівника, — курінь, схвалена
@@ -27,7 +27,10 @@ sidebar:
   цього пристрою минають другий крок, поки не зміниться security stamp акаунта.
 - `POST /refresh` · `POST /logout` — оновлення й завершення сесії. Сесія — рядок у
   `UserRefreshTokens`; вхід додає рядок, вихід завершує один, зміна пароля чи MFA завершує всі.
-  Вихід не чіпає `mfaTrust`. Рефреш наново читає діловодства з бази й поруч із токенами віддає
+  Вихід не чіпає `mfaTrust`. Зміни акаунта — новий пароль, підтверджена пошта,
+  призупинення — обривають усі сесії ще до відповіді (`RefreshTokenInvalidation`), а подія
+  `AccountSessionsEnded` вимикає й посилання на календар.
+  Рефреш наново читає діловодства з бази й поруч із токенами віддає
   `access` — `{ isAdmin, roles, permissions, kurinKey }` (`IAccessSnapshotFactory`, те саме, що й при
   вході), тож нові права доходять без перезаходу.
 - `POST /kurin-scope` — вибір активного куреня; токен доступу несе ролі саме для нього.
@@ -52,7 +55,7 @@ sidebar:
   `POST /waitlist/{key}/reject` — відхилити; `POST /waitlist/{key}/resend-invitation` — надіслати
   ще раз; `POST /invitation/resend` — те саме для будь-якого неактивованого акаунта;
 - `GET /invitation/{token}/validate` — перевірити токен;
-- `POST /activate` — задати пароль. Відповідь — `LoginUserResponse` з refresh-cookie: людина
+- `POST /activate` — задати пароль. Відповідь — `LoginUserDto` з refresh-cookie: людина
   одразу в застосунку;
 - `POST /password-reset/request` · `POST /password-reset/reset` — відновлення пароля. Запит також
   надсилає нове запрошення, якщо акаунт ще не активований.
@@ -65,10 +68,10 @@ sidebar:
 TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → `POST /mfa/recovery-codes`
 (резервні коди, за поточним паролем). `GET /mfa/status` каже, чи увімкнено і чи вимагається.
 
-**Примус для проводу:** `PrivilegedMfaEnforcementMiddleware` + `MfaEnforcementPolicy` вимагають
+**Примус для проводу:** `PrivilegedMfaEnforcementMiddleware` + `IMfaEnforcementReader` вимагають
 другий фактор для адміністратора і Звʼязкового на `Production` і `Staging`; `Security:EnforcePrivilegedMFA`
 керує цим на self-host. Ключ `E2E:BypassPrivilegedMfa` читається лише на тестових тирах. Гейт не ходить
-у базу: access-токен несе клейм `amr` (`mfa` / `pwd`, `AccessTokenClaims`), записаний при видачі —
+у базу: access-токен несе клейм `amr` (`mfa` / `pwd`, `AccessTokenClaimNames`), записаний при видачі —
 `login`, `refresh`, активація. Увімкнення MFA (`mfa/enable`) обриває всі сесії й одразу віддає нову
 (`Tokens` у відповіді + cookie), тож старий токен «лише пароль» не доживає до відмови; вимкнення теж
 обриває всі сесії, і токен без другого фактора живе щонайбільше `Jwt:ExpiresInMinutes`. Фронтенд:
@@ -78,9 +81,14 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 
 - `[Authorize(Policy = …)]` — грубі політики (`RequireUser`, `RequireAdmin`, `RequireKurinManagement`…).
 - `[ResourceAuthorize(ResourceType, ResourceAction, "route:key")]` — дозвіл на конкретний ресурс:
-  `RolePermissionMap` перекладає ролі з діловодств у дозволи зі скоупом (`KurinWide`, `OwnGroups`, `Own`),
+  `RolePermissionRules` перекладає ролі з діловодств у дозволи зі скоупом (`KurinWide`, `OwnGroups`, `Own`),
   а `AccessContextResolver` визначає, в якому курені людина стоїть і які діловодства тримає.
-- Активне закріплення впорядника за гуртком (`MentorAssignment`) трактується як діловодство впорядника в КВ.
+- Рішення приймає `ResourceAccessService` — одна точка на весь бекенд. Чи досягає дозвіл ресурсу
+  (весь курінь, свої гуртки, свій запис), рахує `ResourceScopeService`; «своє ніхто не підписує» —
+  `SignOffRules`; закритий юнацький запис старшого — `SeniorYouthRecordService`.
+- Активне закріплення впорядника за гуртком (`MentorAssignment`) трактується як діловодство впорядника
+  в КВ. Правило сказано раз — `MentorOfficeRules`; `LeadershipRepository` віддає лише тих, хто сидить
+  в офісі, а впорядника до них додає воно.
 - Обидві перевірки покриті тестом `AuthorizationBaselineMatrixTests`: кожна дія контролера має
   бути в матриці, інакше тест падає.
 
@@ -90,13 +98,13 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 перестороги кожного ступеня й підтверджує відзначення кожного рівня, хто видаляє підтверджені
 відзначення, підписує й знімає підписи проб, підтверджує вмілості, кому призначає події й задачі
 і хто читає журнал дій. Ці можливості
-описані в одній таблиці — `KurinCapabilities`; курінь зберігає лише відхилення від її значень за
+описані в одній таблиці — `KurinCapabilityRules`; курінь зберігає лише відхилення від її значень за
 замовчуванням у `Kurin.AccessPolicy`.
 
-- Дозволи людини = статична частина `RolePermissionMap` + гранти політики її куреня
+- Дозволи людини = статична частина `RolePermissionRules` + гранти політики її куреня
   (`IPermissionResolver`, у межах запиту — `ICurrentPermissions`). Політика кешується на хвилину й
   скидається при збереженні, тож сервер застосовує її з наступного ж запиту.
-- Рівні перевіряє обробник (`KurinCapabilities.GiveWarning(level)`, `ConfirmAward(level)`), решту —
+- Рівні перевіряє обробник (`KurinCapabilityRules.GiveWarning(level)`, `ConfirmAward(level)`), решту —
   `IResourceAccessService.CheckCapabilityAsync`.
 - `GET api/member/{key}/abilities` — що викликач може зробити з цією людиною (ступені пересторог,
   рівні відзначень, видалення, підпис і зняття підпису, вмілості, журнал). Клієнти беруть кнопки
@@ -110,14 +118,14 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
   кожну ціль через `CheckCapabilityAsync` у створенні й при додаванні цілі в редагуванні; дерево
   `GET api/agenda/{kurinKey}/assign-targets` будує ті самі рішення з `GetAssignReachAsync` і
   позначає кожну ціль (`canTarget` і в людей). Грубої політики за ролями тут нема (`RequireUser`):
-  хто не має жодного з чотирьох — 403 `AGENDA_AUTHOR_FORBIDDEN`, а клієнтський
+  хто не має жодного з чотирьох — 403 `AgendaAuthorForbidden`, а клієнтський
   `AgendaItem:Create:*` приходить із політики, тож кнопки «Нова подія/задача» зникають самі.
 
 ### Коли права змінились
 
 Токен доступу несе ролі на момент видачі (`iat`). Коли людині призначають чи знімають офіс або
 впорядництво, змінюють членство, роль адміністратора чи політику куреня, сервер позначає це в
-`IAccessChangeSignal`, і `AccessStaleHeaderMiddleware` додає до відповіді на старий токен
+`IAccessChangeStore`, і `AccessStaleHeaderMiddleware` додає до відповіді на старий токен
 `X-Access-Stale: 1`. Веб і телефон на цей заголовок тихо роблять рефреш і застосовують `access` —
 сайдбар і кнопки оновлюються без виходу. Позначки живуть у пам'яті процесу; на кількох інстансах
 запасні шляхи — рефреш після 403 `ResourceAccessDenied` (не частіше ніж раз на 30 с) і закінчення
@@ -144,7 +152,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 ## Особисті дані людини
 
 Пошта й телефон, дата народження (з роком і окремо день із місяцем), адреса й школа, контакти
-батьків і поля краю (`CardExtras`) — шість груп з `MemberDataFields`. Хто бачить кожну, вирішує
+батьків і поля краю (`CardExtras`) — шість груп з `MemberDataFieldRules`. Хто бачить кожну, вирішує
 політика куреня (`See*`): нікому, свій гурток (гуртки, які людина веде, і її власний) чи увесь курінь.
 
 - Маска одна — `MemberFieldMask` з `IMemberFieldAccess.ForViewerAsync`. Її накладають картка
@@ -157,7 +165,7 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
   би записати її в інший курінь, не спитавши. Статус акаунта (`AccountStatus`) — тим, хто може
   редагувати цю людину (`Member:Update`).
 - **Запис:** група, прихована від того, хто редагує, вважається ненадісланою — збережене значення
-  лишається, обовʼязковість не перевіряється (`HiddenDataOnWrite`).
+  лишається, обовʼязковість не перевіряється (`HiddenDataOnWriteRules`).
 - PDF-звіт куреня не маскується: його бачать лише ті, хто керує всім куренем, а вони закріплені на
   повний доступ (тест це тримає).
 
@@ -186,14 +194,16 @@ TOTP. `GET /mfa/setup` (секрет і QR) → `POST /mfa/enable` (код) → 
 | `PUT` / `DELETE api/kurin/{key}/score/events/{itemKey}/{occurrence}/not-held` — «Сходин не було» і зняти це | той, хто може відмітити присутність бодай одного юнака куреня (`GroupScore:Create` на гурток або на неприписаних); `PUT` відмовляє 409 `OccurrenceHasAttendance`, поки хтось відмічений |
 | `GET api/me/duties` — справи проводу (`items`, `hiddenCount`) | `RequireUser`; кожна справа — лише там, де офіси людини дають на неї право |
 | `POST api/me/duties/dismissed` `{ key, fingerprint }` — сховати справу для себе; `DELETE api/me/duties/dismissed?key=` — повернути одну чи (без `key`) усі | `RequireUser`; стосується лише рядків самого викликача |
+| `GET` / `POST api/me/life`, `PUT` / `DELETE api/me/life/{key}` — свої вишколи, табори й заходи; `GET api/me/life/pdf` — увесь життєпис одним PDF | `RequireUser`; лише записи самого викликача — чужий ключ відповідає 404 |
+| `GET api/member/{key}/abilities` → `dues` — чи можна читати вкладку людини | той самий `GroupDues:Read` через людину, що й `GET api/member/{key}/dues`; без нього картка вкладку не питає |
 
 ## Журнал дій
 
 `KurinAuditEvent` — хто, що й коли змінив у курені. Обробник пише запис через
 `IKurinAudit.RecordAsync` перед власним `SaveChangesAsync`, тож запис і зміна комітяться разом. Дія —
-рядок з `AuditActions`, розділ — `AuditArea`; зміни — `AuditChanges` (лише змінене, особисті поля як
+рядок з `AuditActionNames`, розділ — `AuditArea`; зміни — `AuditChangeRules` (лише змінене, особисті поля як
 «змінено» без значень). Історія на картці проби й вмілості читається з того ж журналу
-(`IKurinJournalReader`). Строк — 365 днів, див. [зберігання](/dev/operations/data-retention/).
+(`IAuditUnitOfWork.KurinJournal`). Строк — 365 днів, див. [зберігання](/dev/operations/data-retention/).
 
 ## Локальні дев-інструменти
 

@@ -28,13 +28,13 @@ const AMOUNT: Record<DuesRow['standing'], (balance: number, currency: string, lo
 
 const NOTE: Record<DuesRow['standing'], string> = {
   ok: 'боргу немає',
-  debt: 'борг — віддай скарбникові гуртка',
+  debt: 'борг — віддай скарбникові',
   surplus: 'надлишок — піде на наступний квартал'
 };
 
 /**
  * What the person owes, or has over, in every kurin that charges them. Debt is said plainly and in
- * red, and the way to settle it is in the line itself: the скарбник of their гурток.
+ * red, and the way to settle it is in the line itself: the скарбник who keeps their account.
  */
 @Component({
   selector: 'app-my-dues-tile',

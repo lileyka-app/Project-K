@@ -35,11 +35,13 @@
               }
             ],
             "styles": [
+              "node_modules/quill/dist/quill.snow.css",
               "src/styles.scss"
             ],
             "stylePreprocessorOptions": {
               "includePaths": ["node_modules"]
             },
+            "allowedCommonJsDependencies": ["jsqr"],
             "outputPath": {
               "base": "www",
               "browser": ""

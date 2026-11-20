@@ -5,11 +5,44 @@
   gap: 1.5rem;
 }
 
-/* Заголовок блоку всередині плитки — розмір заголовка картки (§3), рівень h2 лишається семантичним. */
-.setting-copy h2 {
+/* Заголовок блоку — розмір заголовка картки (§3); частина блоку на крок менша. */
+.settings-block > h2,
+.settings-block > .setting-copy h2 {
   margin: 0 0 0.5rem;
   font-size: var(--lil-text-h3);
   letter-spacing: var(--lil-tracking-h3);
+}
+
+.setting-copy h3 {
+  margin: 0 0 0.25rem;
+  font-size: var(--lil-text-body);
+  font-weight: 700;
+}
+
+.settings-block {
+  display: grid;
+  gap: 0;
+}
+
+/* Parts of one block, divided by a hairline rather than each sitting in its own tile. */
+.settings-part {
+  padding-block: 1rem;
+}
+
+.settings-part + .settings-part {
+  border-top: 1px solid var(--lil-line);
+}
+
+.settings-part:last-child {
+  padding-bottom: 0;
+}
+
+.settings-part > .setting-copy {
+  margin-bottom: 0.75rem;
+}
+
+.setting-row.settings-part > .setting-copy {
+  margin-bottom: 0;
 }
 
 .setting-copy p {
@@ -44,11 +77,23 @@
   color: var(--p-red-500);
 }
 
+/* Always in view at the bottom of the screen, so a change is not left behind unsaved. */
 .settings-actions {
+  position: sticky;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1.25rem;
+}
+
+.settings-actions__count {
+  margin-right: auto;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
 }
 
 @media (max-width: 640px) {
@@ -60,4 +105,29 @@
   .settings-actions {
     justify-content: stretch;
   }
+}
+
+.role-names {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.role-names__row {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.role-names__usual {
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
+/* The tiles sit in the page's own grid; the fieldset is only there to switch every control off for a reader. */
+.settings-fieldset {
+  border: 0;
+  display: contents;
+  margin: 0;
+  padding: 0;
 }

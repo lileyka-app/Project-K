@@ -3,13 +3,11 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 
@@ -20,7 +18,7 @@ public class KraiProfileEditorTests
     private readonly Mock<IBackendCache> _cache = new();
     private readonly Guid _admin = Guid.NewGuid();
     private readonly List<KraiProfileRevision> _added = [];
-    private readonly KraiProfileEditor _editor;
+    private readonly KraiProfileWriter _editor;
 
     public KraiProfileEditorTests()
     {
@@ -30,7 +28,7 @@ public class KraiProfileEditorTests
         _krais.Setup(r => r.AddProfileRevision(It.IsAny<KraiProfileRevision>())).Callback<KraiProfileRevision>(_added.Add);
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _editor = new KraiProfileEditor(_unitOfWork.Object, user.Object, _cache.Object);
+        _editor = new KraiProfileWriter(_unitOfWork.Object, user.Object, _cache.Object);
     }
 
     private void Latest(int revision, string json = "{}")
@@ -62,7 +60,7 @@ public class KraiProfileEditorTests
         saved.CreatedByUserKey.Should().Be(_admin);
         saved.Note.Should().Be("перше налаштування");
         saved.Json.Should().Be("""{"catalog":{"badgeSources":["cz","ua"]},"locale":{"currency":"CZK"},"dues":{"upstream":"krai"}}""");
-        _cache.Verify(c => c.Invalidate(BackendCachePolicies.KraiProfileReads), Times.Once);
+        _cache.Verify(c => c.Invalidate(BackendCacheRules.KraiProfileReads), Times.Once);
     }
 
     [Fact]
@@ -93,7 +91,7 @@ public class KraiProfileEditorTests
     {
         Latest(1);
 
-        var result = await _editor.SaveAsync("cz", 1, KraiProfileJson.Parse(json), null, default);
+        var result = await _editor.SaveAsync("cz", 1, KraiProfileJsonRules.Parse(json), null, default);
 
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("InvalidProfile");

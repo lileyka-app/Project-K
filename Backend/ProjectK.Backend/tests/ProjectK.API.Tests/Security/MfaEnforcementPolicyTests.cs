@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Common.Models;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Common.Rules.Shared;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -11,7 +11,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeFalse_InDevelopment()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment(Environments.Development),
             CreateConfiguration(),
             CreateSystemSettings(enforce: true).Object);
@@ -22,7 +22,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeFalse_WhenE2EBypassEnabled()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("E2E"),
             CreateConfiguration(bypassE2E: true),
             CreateSystemSettings(enforce: true).Object);
@@ -33,7 +33,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeTrue_InNonSelfHostProduction()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("Production"),
             CreateConfiguration(),
             CreateSystemSettings(enforce: false).Object);
@@ -44,7 +44,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeFalse_InSelfHostWhenSettingDisabled()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("SelfHost"),
             CreateConfiguration(),
             CreateSystemSettings(enforce: false).Object);
@@ -55,7 +55,7 @@ public class MfaEnforcementPolicyTests
     [Fact]
     public async Task IsPrivilegedMfaRequiredAsync_ShouldBeTrue_InSelfHostWhenSettingEnabled()
     {
-        var policy = new MfaEnforcementPolicy(
+        var policy = new MfaEnforcementReader(
             CreateEnvironment("SelfHost"),
             CreateConfiguration(),
             CreateSystemSettings(enforce: true).Object);
@@ -66,7 +66,7 @@ public class MfaEnforcementPolicyTests
     private static Mock<ISystemSettingsService> CreateSystemSettings(bool enforce)
     {
         var mock = new Mock<ISystemSettingsService>();
-        mock.Setup(x => x.GetBoolAsync(SystemSettingKeys.EnforcePrivilegedMfa, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+        mock.Setup(x => x.GetBoolAsync(SystemSettingNames.EnforcePrivilegedMfa, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(enforce);
         return mock;
     }

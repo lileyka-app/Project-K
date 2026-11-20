@@ -60,6 +60,9 @@ const PHONE_QUERY = '(max-width: 767px)';
 const reachOptions = (reaches: CapabilityReach[]): ReachOption[] =>
   reaches.map(value => ({ value, label: REACH_LABELS[value] }));
 
+/** Sections a senior kurin does not have; its cells still go back to the server untouched. */
+const YOUTH_ONLY_GROUPS: ReadonlySet<string> = new Set(['ProbesBadges']);
+
 const cellKey = (capability: string, audience: string) => `${capability}/${audience}`;
 
 /**
@@ -80,6 +83,10 @@ export class KurinAccessPolicyComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly kurinKey = input.required<string>();
+  /** The page is open for reading: every cell shows, none changes. */
+  readonly readOnly = input(false);
+  /** A youth kurin; an УСП or УПС one has no проби й вмілості and its people are not юнаки. */
+  readonly youthProgram = input(true);
 
   readonly loaded = signal(false);
   readonly failed = signal(false);
@@ -90,7 +97,7 @@ export class KurinAccessPolicyComponent implements OnInit {
   readonly phone = signal(false);
 
   readonly audiences = computed(() => (this.policy()?.audiences ?? [])
-    .map(audience => ({ audience, label: labelOf(AUDIENCE_LABELS, audience) })));
+    .map(audience => ({ audience, label: this.audienceLabel(audience) })));
 
   readonly groups = computed<AccessGroupView[]>(() => {
     const policy = this.policy();
@@ -100,9 +107,12 @@ export class KurinAccessPolicyComponent implements OnInit {
     const values = this.values();
     const groups: AccessGroupView[] = [];
     for (const capability of policy.capabilities) {
+      if (!this.youthProgram() && YOUTH_ONLY_GROUPS.has(capability.group)) {
+        continue;
+      }
       let group = groups.find(candidate => candidate.group === capability.group);
       if (!group) {
-        group = { group: capability.group, label: labelOf(CAPABILITY_GROUP_LABELS, capability.group), rows: [] };
+        group = { group: capability.group, label: this.groupLabel(capability.group), rows: [] };
         groups.push(group);
       }
       group.rows.push({
@@ -114,7 +124,7 @@ export class KurinAccessPolicyComponent implements OnInit {
           const value = values[cellKey(capability.key, cell.audience)] ?? cell.effective;
           return {
             audience: cell.audience,
-            audienceLabel: labelOf(AUDIENCE_LABELS, cell.audience),
+            audienceLabel: this.audienceLabel(cell.audience),
             value,
             defaultValue: cell.default,
             locked: cell.locked,
@@ -125,6 +135,13 @@ export class KurinAccessPolicyComponent implements OnInit {
       });
     }
     return groups;
+  });
+
+  /** How many cells on screen differ from what the server has. */
+  readonly changeCount = computed(() => {
+    const values = this.values();
+    return (this.policy()?.capabilities ?? []).reduce((sum, capability) => sum + capability.cells
+      .filter(cell => (values[cellKey(capability.key, cell.audience)] ?? cell.effective) !== cell.effective).length, 0);
   });
 
   /** Anything on screen that the server does not have yet. */
@@ -200,6 +217,14 @@ export class KurinAccessPolicyComponent implements OnInit {
       }
     }
     this.values.set(values);
+  }
+
+  private groupLabel(group: string): string {
+    return !this.youthProgram() && group === 'MemberData' ? 'Особисті дані' : labelOf(CAPABILITY_GROUP_LABELS, group);
+  }
+
+  private audienceLabel(audience: string): string {
+    return !this.youthProgram() && audience === 'Youth' ? 'Члени куреня' : labelOf(AUDIENCE_LABELS, audience);
   }
 
   private isLocked(capability: KurinCapability, audience: PolicyAudience): boolean {

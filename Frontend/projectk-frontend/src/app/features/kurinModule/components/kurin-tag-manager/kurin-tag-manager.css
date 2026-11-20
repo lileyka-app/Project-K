@@ -1,0 +1,20 @@
+.tag-manager { display: flex; flex-direction: column; gap: 0.9rem; }
+.tag-manager__head { align-items: center; display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; justify-content: space-between; }
+.tag-manager__hint { color: var(--p-text-muted-color); font-size: 0.85rem; }
+.tag-manager__empty { color: var(--p-text-muted-color); font-size: 0.9rem; margin: 0; }
+
+.tag-list { display: grid; gap: 0.4rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); list-style: none; margin: 0; padding: 0; }
+.tag-list__item { align-items: center; border: 1px solid var(--lil-line); border-radius: 8px; display: flex; gap: 0.6rem; padding: 0.35rem 0.4rem 0.35rem 0.75rem; }
+.tag-list__dot { border-radius: 50%; flex: 0 0 auto; height: 0.75rem; width: 0.75rem; }
+.tag-list__name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.tag-list__count { color: var(--p-text-muted-color); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.tag-list__actions { display: flex; gap: 0.1rem; margin-inline-start: auto; }
+
+.tag-form { display: flex; flex-direction: column; gap: 0.9rem; padding-top: 0.25rem; }
+.tag-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.tag-label { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
+.tag-form input { width: 100%; }
+.tag-swatches { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.tag-swatch { border: 1px solid transparent; border-radius: 50%; cursor: pointer; height: 1.6rem; width: 1.6rem; }
+.tag-swatch.is-active { box-shadow: 0 0 0 2px var(--p-content-background), 0 0 0 3px var(--p-text-color); }
+:host ::ng-deep .tag-people { width: 100%; }

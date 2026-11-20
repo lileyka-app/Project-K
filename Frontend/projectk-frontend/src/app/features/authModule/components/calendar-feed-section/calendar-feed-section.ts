@@ -64,8 +64,8 @@ export class CalendarFeedSectionComponent implements OnInit {
       header: 'Створити нове посилання?',
       message: 'Старе посилання перестане оновлюватися. Його доведеться видалити з календаря й додати нове.',
       icon: 'pi pi-refresh',
-      acceptLabel: 'Створити нове',
-      rejectLabel: 'Скасувати',
+      acceptButtonProps: { label: 'Створити нове' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => this.doIssue()
     });
   }
@@ -85,9 +85,8 @@ export class CalendarFeedSectionComponent implements OnInit {
       header: 'Вимкнути посилання?',
       message: 'Календар, підписаний на нього, перестане отримувати події з Лілейки.',
       icon: 'pi pi-ban',
-      acceptLabel: 'Вимкнути',
-      rejectLabel: 'Скасувати',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { label: 'Вимкнути', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.busy.set(true);
         this.feeds.disable().subscribe({

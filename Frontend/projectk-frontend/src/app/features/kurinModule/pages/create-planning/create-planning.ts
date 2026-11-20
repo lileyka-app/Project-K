@@ -64,7 +64,7 @@ import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto'
                 selectionMode="range"
                 [showIcon]="true"
                 dateFormat="dd.mm.yy"
-                placeholder="Виберіть період" />
+                placeholder="Вибери період" />
               </div>
             </div>
           </p-panel>
@@ -113,7 +113,7 @@ import { MemberLookupDto } from '../../models/requests/member/member-lookup.dto'
                                   selectionMode="range"
                                   dateFormat="dd.mm.yy"
                                   [readonlyInput]="true"
-                                  placeholder="Виберіть дати"
+                                  placeholder="Вибери дати"
                                   appendTo="body"
                                   [style]="{'width':'240px'}" />
                                   <p-button

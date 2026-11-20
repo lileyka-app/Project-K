@@ -4,9 +4,11 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ClientCacheService } from '../../../kurinModule/services/client-cache/client-cache.service';
 import { DUES_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../../../kurinModule/services/client-cache/cache-policy';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 import {
   GroupDuesDto,
   DuesGroupLinkDto,
+  DuesBoxRef,
   KurinDuesDto,
   MemberDuesDto,
   SetDuesConcessionRequest,
@@ -15,6 +17,7 @@ import {
   UpsertDuesEntryRequest
 } from '../../models/group-dues.dto';
 import { GrantDuesConcessionRequest, UpdateDuesConcessionGrantRequest } from '../../models/concession.dto';
+import { DuesChargeTiming } from '../../models/dues.enums';
 
 @Injectable({ providedIn: 'root' })
 export class DuesService {
@@ -35,7 +38,8 @@ export class DuesService {
     return this.cache.get(
       `${DUES_CACHE_PREFIX}member:${memberKey}`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<MemberDuesDto>(`${environment.apiUrl}/member/${memberKey}/dues`)
+      // A card's side tile: a refusal or a failure there is no news for the viewer.
+      () => this.http.get<MemberDuesDto>(`${environment.apiUrl}/member/${memberKey}/dues`, { context: requestFeedback('silent') })
     );
   }
 
@@ -84,20 +88,24 @@ export class DuesService {
     return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/rate`, request).pipe(this.invalidate());
   }
 
-  setConcession(groupKey: string, membershipKey: string, request: SetDuesConcessionRequest): Observable<unknown> {
-    return this.http.put(`${this.apiUrl}/${groupKey}/dues/members/${membershipKey}/concession`, request).pipe(this.invalidate());
+  setKurinChargeTiming(kurinKey: string, chargeTiming: DuesChargeTiming): Observable<unknown> {
+    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/settings`, { chargeTiming }).pipe(this.invalidate());
   }
 
-  grantConcession(groupKey: string, membershipKey: string, request: GrantDuesConcessionRequest): Observable<unknown> {
-    return this.http.post(`${this.apiUrl}/${groupKey}/dues/members/${membershipKey}/concessions`, request).pipe(this.invalidate());
+  setConcession(box: DuesBoxRef, membershipKey: string, request: SetDuesConcessionRequest): Observable<unknown> {
+    return this.http.put(`${this.boxUrl(box)}/members/${membershipKey}/concession`, request).pipe(this.invalidate());
   }
 
-  updateConcessionGrant(groupKey: string, grantKey: string, request: UpdateDuesConcessionGrantRequest): Observable<unknown> {
-    return this.http.put(`${this.apiUrl}/${groupKey}/dues/concessions/${grantKey}`, request).pipe(this.invalidate());
+  grantConcession(box: DuesBoxRef, membershipKey: string, request: GrantDuesConcessionRequest): Observable<unknown> {
+    return this.http.post(`${this.boxUrl(box)}/members/${membershipKey}/concessions`, request).pipe(this.invalidate());
   }
 
-  deleteConcessionGrant(groupKey: string, grantKey: string): Observable<unknown> {
-    return this.http.delete(`${this.apiUrl}/${groupKey}/dues/concessions/${grantKey}`).pipe(this.invalidate());
+  updateConcessionGrant(box: DuesBoxRef, grantKey: string, request: UpdateDuesConcessionGrantRequest): Observable<unknown> {
+    return this.http.put(`${this.boxUrl(box)}/concessions/${grantKey}`, request).pipe(this.invalidate());
+  }
+
+  deleteConcessionGrant(box: DuesBoxRef, grantKey: string): Observable<unknown> {
+    return this.http.delete(`${this.boxUrl(box)}/concessions/${grantKey}`).pipe(this.invalidate());
   }
 
   createEntry(groupKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {
@@ -114,6 +122,11 @@ export class DuesService {
 
   setEntryVerified(groupKey: string, entryKey: string, isVerified: boolean): Observable<unknown> {
     return this.http.put(`${this.apiUrl}/${groupKey}/dues/entries/${entryKey}/verified`, { isVerified }).pipe(this.invalidate());
+  }
+
+  /** A гурток's box, or a senior kurin's own: the same routes under either. */
+  private boxUrl(box: DuesBoxRef): string {
+    return 'groupKey' in box ? `${this.apiUrl}/${box.groupKey}/dues` : `${this.kurinApiUrl}/${box.kurinKey}/dues`;
   }
 
   /** Every write changes balances and boxes, so every cached read of dues goes. */

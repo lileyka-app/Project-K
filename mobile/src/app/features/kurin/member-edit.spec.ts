@@ -64,8 +64,15 @@ describe('member edit rules', () => {
     const existing = [{ plastLevelHistoryKey: 'pl1', memberKey: 'm1', plastLevel: 'Uchasnyk', dateAchieved: '2022-04-23' }];
     const dates = { ...rankDates(existing), Uchasnyk: '2022-04-24', Rozviduvach: '2024-01-02', Entry: '' };
     expect(rankHistories(existing, dates)).toEqual([
-      { plastLevelHistoryKey: 'pl1', memberKey: 'm1', plastLevel: 'Uchasnyk', dateAchieved: '2022-04-24' },
-      { plastLevel: 'Rozviduvach', dateAchieved: '2024-01-02' },
+      { plastLevelHistoryKey: 'pl1', memberKey: 'm1', plastLevel: 'Uchasnyk', dateAchieved: '2022-04-24', isPlastunka: false },
+      { plastLevel: 'Rozviduvach', dateAchieved: '2024-01-02', isPlastunka: false },
+    ]);
+  });
+
+  it('marks every ступінь a пластунка\'s and leaves the read-only catalogue id behind', () => {
+    const existing = [{ plastLevelHistoryKey: 'pl1', plastLevel: 'Starshoplastun', dateAchieved: '2016-12-03', catalogId: 'usp-starshyi-plastun' }];
+    expect(rankHistories(existing, { ...rankDates(existing) }, true)).toEqual([
+      { plastLevelHistoryKey: 'pl1', plastLevel: 'Starshoplastun', dateAchieved: '2016-12-03', isPlastunka: true },
     ]);
   });
 

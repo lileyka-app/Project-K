@@ -11,29 +11,29 @@
         @if (isScoped(membership)) {
           <a class="membership-kurin membership-link" routerLink="/kurin">
             {{ kurinTitle(membership) }}
-            @if (membership.kurinNamedAfter) {
-              <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
+            @if (namedLine(membership); as named) {
+              <span class="membership-named">{{ named }}</span>
             }
           </a>
         } @else if (isReachable(membership)) {
           <button type="button" class="membership-kurin membership-link" [disabled]="switchingTo() !== null" (click)="openKurin.emit(membership)">
             {{ kurinTitle(membership) }}
-            @if (membership.kurinNamedAfter) {
-              <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
+            @if (namedLine(membership); as named) {
+              <span class="membership-named">{{ named }}</span>
             }
             @if (switchingTo() === membership.kurinKey) { <i class="pi pi-spin pi-spinner" aria-hidden="true"></i> }
           </button>
         } @else {
           <span class="membership-kurin">
             {{ kurinTitle(membership) }}
-            @if (membership.kurinNamedAfter) {
-              <span class="membership-named">{{ membership.kurinNamedAfter }}</span>
+            @if (namedLine(membership); as named) {
+              <span class="membership-named">{{ named }}</span>
             }
           </span>
         }
         <span class="membership-facts">
           <p-tag [value]="branchLabels[membership.branch]" severity="secondary" />
-          <span>{{ kindLabels[membership.kind] }}</span>
+          <span>{{ kindLabel(membership.kind, membership.branch) }}</span>
           @if (membership.groupName) {
             @if (membership.groupKey && isScoped(membership)) {
               <a class="membership-link membership-link--group" [routerLink]="['/group', membership.groupKey]">
@@ -47,8 +47,10 @@
         </span>
         @if (canAct(membership)) {
           <span class="membership-actions">
-            <p-button label="Гурток" icon="pi pi-sitemap" variant="text" severity="secondary"
-              (onClick)="moveToGroup.emit(membership)" />
+            @if (hasGroups(membership)) {
+              <p-button label="Гурток" icon="pi pi-sitemap" variant="text" severity="secondary"
+                (onClick)="moveToGroup.emit(membership)" />
+            }
             <p-button label="Вивести" icon="pi pi-sign-out" variant="text" severity="secondary"
               (onClick)="leaveKurin.emit(membership)" />
           </span>

@@ -1,18 +1,20 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 
@@ -30,7 +32,7 @@ public class JoinKurinByPublicIdTests
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IGroupRepository> _groups = new();
-    private readonly Mock<IAccessChangeSignal> _accessChanges = new();
+    private readonly Mock<IAccessChangeStore> _accessChanges = new();
     private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     private readonly Guid _memberKey = Guid.NewGuid();
@@ -52,14 +54,15 @@ public class JoinKurinByPublicIdTests
 
         _members
             .Setup(d => d.FindByPublicIdAsync(Code, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberCard(_memberKey, Code, "Оксана", "Тестова", null, 1));
+            .ReturnsAsync(new MemberCard(_memberKey, Code, "Оксана", "Тестова", null));
         _members
             .Setup(d => d.FindAsync(_memberKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemberSummary(
-                _memberKey, Guid.NewGuid(), Guid.NewGuid(), null, "Оксана", "Тестова", "o@example.com", null));
+                _memberKey, Guid.NewGuid(), "Оксана", "Тестова", "o@example.com", null));
 
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, _accessChanges.Object, _journal.Audit);
-        _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object);
+        _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object, new MembershipAskRouting(_unitOfWork.Object, _members.Object));
     }
 
     [Fact]
@@ -81,7 +84,7 @@ public class JoinKurinByPublicIdTests
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Membership);
-        entry.Action.Should().Be(AuditActions.Membership.Joined);
+        entry.Action.Should().Be(AuditActionNames.Membership.Joined);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(opened.MembershipKey);
         entry.SubjectMemberKey.Should().Be(_memberKey);
@@ -127,27 +130,41 @@ public class JoinKurinByPublicIdTests
     }
 
     [Fact]
-    public async Task TheCard_ShouldSayHowManyKurinsButNotWhich()
+    public async Task TheLookup_ShouldNameTheKurinsTheyStandInNow_ByNumberOnly()
     {
+        // Since requests between kurins (JOIN-01) the asking kurin has to know whom it asks — the
+        // request names that kurin anyway. Still only the number: the card itself carries no kurin,
+        // no contacts, and nothing about kurins they once left.
+        var elsewhere = new Kurin(7);
+        _kurins.Setup(r => r.GetByKeyAsync(elsewhere.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(elsewhere);
+        _memberships
+            .Setup(r => r.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = elsewhere.KurinKey }]);
+
         var result = await _lookup.Handle(
             new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         result.Data!.Member.FullName.Should().Be("Оксана Тестова");
-        result.Data.Member.CurrentMembershipCount.Should().Be(1);
         result.Data.AlreadyInThisKurin.Should().BeFalse();
+        result.Data.CurrentKurins.Should().ContainSingle().Which.Number.Should().Be(7);
+        result.Data.Member.CurrentMembershipCount.Should().Be(1);
 
         // The card is a record with a fixed shape; this pins that nothing kurin-shaped crept into it.
         typeof(MemberCard).GetProperties().Select(p => p.Name)
             .Should().NotContain(name => name.Contains("Kurin", StringComparison.OrdinalIgnoreCase));
+
+        // What the client reads: the card as it always was, with the count the kurin adds to it.
+        typeof(MembershipCandidateMemberDto).GetProperties().Select(p => p.Name).Should().Equal(
+            "MemberKey", "PublicId", "FirstName", "LastName", "ProfilePhotoBlobName", "CurrentMembershipCount", "FullName");
     }
 
     [Fact]
     public async Task TheCard_ShouldSayWhenTheyAreAlreadyHere()
     {
         _memberships
-            .Setup(r => r.GetActiveAsync(_memberKey, _kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Membership { MemberKey = _memberKey, KurinKey = _kurinKey });
+            .Setup(r => r.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = _kurinKey }]);
 
         var result = await _lookup.Handle(
             new FindMemberByPublicIdQuery(_kurinKey, Code), CancellationToken.None);

@@ -42,4 +42,13 @@ describe('MyDuesTileComponent', () => {
     expect(el.querySelectorAll('.dues-tile__row--debt')).toHaveLength(1);
     expect(el.querySelectorAll('.dues-tile__row--ok')).toHaveLength(1);
   });
+
+  it('shows a senior without a гурток the rate of their quarter', () => {
+    fixture.componentRef.setInput('dues', [{ ...dues(-450), groupName: null, quarterRate: 450 }]);
+    fixture.detectChanges();
+
+    const row = fixture.componentInstance.rows()[0];
+    expect(fixture.componentInstance.rate(row)).toBe('450 ₴ за квартал');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('450 ₴ за квартал');
+  });
 });

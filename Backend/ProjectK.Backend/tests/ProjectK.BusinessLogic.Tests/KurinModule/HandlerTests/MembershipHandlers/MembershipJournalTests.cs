@@ -1,18 +1,19 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 
@@ -26,6 +27,7 @@ public class MembershipJournalTests
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IGroupRepository> _groups = new();
     private readonly Mock<IMemberDirectory> _members = new();
+    private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -41,28 +43,38 @@ public class MembershipJournalTests
 
         _unitOfWork.SetupGet(u => u.Memberships).Returns(_memberships.Object);
         _unitOfWork.SetupGet(u => u.Groups).Returns(_groups.Object);
+        _unitOfWork.SetupGet(u => u.MembershipRequests).Returns(NoMembershipRequests.Repository());
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _memberships.Setup(r => r.GetActiveAsync(_membership.MemberKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_membership);
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(_membership.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _groups.Setup(r => r.GetByKeyAsync(_sokoly.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_sokoly);
         _groups.Setup(r => r.GetByKeyAsync(_orly.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_orly);
         _members.Setup(d => d.FindAsync(_membership.MemberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_membership.MemberKey, null, _kurinKey, _sokoly.GroupKey, "Олесь", "Юнак", "o@x", null));
+            .ReturnsAsync(new MemberSummary(_membership.MemberKey, null, "Олесь", "Юнак", "o@x", null));
         _journal.Knows(_membership.MemberKey, _kurinKey, _sokoly.GroupKey, "Олесь", "Юнак");
     }
 
     private MoveToGroupCommandHandler Move() =>
-        new(_unitOfWork.Object, Mock.Of<IDomainEventPublisher>(), Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit);
+        new(_unitOfWork.Object, Mock.Of<IDomainEventPublisher>(), Mock.Of<IAccessChangeStore>(), _members.Object, _journal.Audit, _currentUser.Object);
+
+    private LeaveKurinCommandHandler Leave() =>
+        new(_unitOfWork.Object, Mock.Of<IAccessChangeStore>(), _members.Object, new MembershipMoves(_unitOfWork.Object, _journal.Audit, Mock.Of<IDomainEventPublisher>(), Mock.Of<IDuesDirectory>(), TimeProvider.System), _currentUser.Object);
+
+    private void SignedInAsThem()
+    {
+        var account = Guid.NewGuid();
+        _membership.UserKey = account;
+        _currentUser.SetupGet(c => c.UserId).Returns(account);
+    }
 
     [Fact]
     public async Task Leaving_IsRecordedWithTheGroupTheyLeftFrom()
     {
-        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit);
-
-        await handler.Handle(new LeaveKurinCommand(_membership.MemberKey, _kurinKey), default);
+        await Leave().Handle(new LeaveKurinCommand(_membership.MemberKey, _kurinKey), default);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Membership);
-        entry.Action.Should().Be(AuditActions.Membership.Left);
+        entry.Action.Should().Be(AuditActionNames.Membership.Left);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(_membership.MembershipKey);
         entry.SubjectMemberKey.Should().Be(_membership.MemberKey);
@@ -79,7 +91,7 @@ public class MembershipJournalTests
         await Move().Handle(new MoveToGroupCommand(_membership.MemberKey, _kurinKey, _orly.GroupKey), default);
 
         var entry = _journal.Entries.Should().ContainSingle().Subject;
-        entry.Action.Should().Be(AuditActions.Membership.MovedToGroup);
+        entry.Action.Should().Be(AuditActionNames.Membership.MovedToGroup);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectGroupKey.Should().Be(_sokoly.GroupKey);
         entry.Changes.Should().Equal(new AuditChange("group", "Соколи", "Орли"));
@@ -99,5 +111,45 @@ public class MembershipJournalTests
         await Move().Handle(new MoveToGroupCommand(_membership.MemberKey, _kurinKey, _sokoly.GroupKey), default);
 
         _journal.Entries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TakingThemselvesOut_IsRefused()
+    {
+        SignedInAsThem();
+
+        var result = await Leave().Handle(new LeaveKurinCommand(_membership.MemberKey, _kurinKey), default);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        result.ErrorCode.Should().Be("OwnMembership");
+        _membership.LeftAtUtc.Should().BeNull();
+        _journal.Entries.Should().BeEmpty();
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task MovingThemselves_IsRefused()
+    {
+        SignedInAsThem();
+
+        var result = await Move().Handle(new MoveToGroupCommand(_membership.MemberKey, _kurinKey, _orly.GroupKey), default);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        result.ErrorCode.Should().Be("OwnMembership");
+        _membership.GroupKey.Should().Be(_sokoly.GroupKey);
+        _journal.Entries.Should().BeEmpty();
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SomeoneElsesAccount_IsStillMoved()
+    {
+        _membership.UserKey = Guid.NewGuid();
+        _currentUser.SetupGet(c => c.UserId).Returns(Guid.NewGuid());
+
+        var result = await Move().Handle(new MoveToGroupCommand(_membership.MemberKey, _kurinKey, _orly.GroupKey), default);
+
+        result.Type.Should().Be(ResultType.Success);
+        _membership.GroupKey.Should().Be(_orly.GroupKey);
     }
 }

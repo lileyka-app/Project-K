@@ -3,14 +3,16 @@ using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Entities.ScoreModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
-using ProjectK.Common.Models.Dtos.ScoreModule.Requests;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.ScoreModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.ScoreModule;
 
@@ -56,7 +58,7 @@ public sealed class ScoreRuleHandlerTests
             .ReturnsAsync(ResourceAccessDecision.Allow());
 
         _handler = new SetScoreRuleCommandHandler(
-            new ScoreSettingsAccess(new ScoreAccess(user.Object, resourceAccess.Object)),
+            new ScoreAccess(user.Object, resourceAccess.Object),
             score.Object,
             user.Object,
             new FixedTimeProvider(new DateTimeOffset(2026, 10, 9, 12, 0, 0, TimeSpan.Zero)));
@@ -69,7 +71,7 @@ public sealed class ScoreRuleHandlerTests
         return rule;
     }
 
-    private Task<ServiceResult<object>> Set(int points, DateOnly from) =>
+    private Task<ServiceResult<MediatR.Unit>> Set(int points, DateOnly from) =>
         _handler.Handle(
             new SetScoreRuleCommand(Kurin, new SetScoreRuleRequest { Source = ScoreSource.Skill, Variant = 0, Points = points, FromDate = from }),
             CancellationToken.None);

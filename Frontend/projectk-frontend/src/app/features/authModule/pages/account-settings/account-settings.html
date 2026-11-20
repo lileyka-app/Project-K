@@ -3,12 +3,14 @@
     <header class="settings-header">
       <div>
         <h1>Налаштування акаунта</h1>
-        <p>Контактні дані, пароль, двофакторна автентифікація і календар.</p>
+        <p>Контактні дані, пароль, двофакторна автентифікація, картка і календар.</p>
       </div>
       @if (settings) {
         <p-tag [value]="roleTag.label" [severity]="roleTag.severity" />
       }
     </header>
+
+    <app-page-tabs [tabs]="tabs" label="Розділи налаштувань" />
 
     @if (loading || confirmingEmail) {
       <div class="settings-loading">
@@ -22,11 +24,7 @@
           <h2>Контакти</h2>
           @if (settings.memberKey) {
             <p>
-              Телефон оновлюється одразу і синхронізується з пов'язаною карткою учасника. Email зміниться тільки після підтвердження з нової адреси.
-            </p>
-          } @else {
-            <p>
-              Ці дані належать тільки акаунту, бо пов'язаної картки учасника немає.
+              Пошта зміниться після підтвердження з нової адреси.
             </p>
           }
         </div>
@@ -79,7 +77,7 @@
       <section class="settings-section">
         <div class="section-copy">
           <h2>Пароль</h2>
-          <p>Змініть пароль для входу. Поточна сесія поки лишається активною.</p>
+          <p>Зміни пароль для входу. Поточна сесія поки лишається активною.</p>
         </div>
 
         <form class="settings-form" (ngSubmit)="changePassword()">
@@ -114,7 +112,7 @@
           </div>
 
           <div class="field">
-            <label for="password-confirm">Повторіть новий пароль</label>
+            <label for="password-confirm">Повтори новий пароль</label>
             <p-password
               inputId="password-confirm"
               name="confirmPassword"
@@ -149,11 +147,11 @@
           } @else {
             @if (isPrivileged) {
               <p>
-                Для вашої ролі MFA є обов'язковим. Налаштуйте застосунок-автентифікатор, щоб акаунт лишався захищеним.
+                Для твоєї ролі MFA є обов'язковим. Налаштуй застосунок-автентифікатор, щоб акаунт лишався захищеним.
               </p>
             } @else {
               <p>
-                Ви можете увімкнути MFA для додаткового захисту акаунта.
+                Можеш увімкнути MFA для додаткового захисту акаунта.
               </p>
             }
           }
@@ -256,12 +254,24 @@
 
       <p-divider />
 
+      @if (settings.memberKey) {
+      <section class="settings-section" id="card">
+        <div class="section-copy">
+          <h2>Моя картка</h2>
+          <p>QR для перевірки й постійне посилання.</p>
+        </div>
+
+        <app-card-section />
+      </section>
+
+      <p-divider />
+      }
+
       <section class="settings-section" id="calendar">
         <div class="section-copy">
           <h2>Календар у Google, Apple, Outlook</h2>
           <p>
-            Твої події з Лілейки у твоєму календарі. Посилання одне на всі курені й оновлюється само: нові й змінені події
-            приходять без жодних дій.
+            Одне посилання на всі курені, оновлюється само.
           </p>
         </div>
 

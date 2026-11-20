@@ -1,18 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Entities.KurinModule;
 
+/// <summary>
+/// One person holding one role of a провід for a stretch of time. The person is named by key only:
+/// they belong to the member module, and the relationship is configured without a navigation.
+/// </summary>
 public class LeadershipHistory
 {
     public Guid LeadershipHistoryKey { get; set; }
 
     public Guid MemberKey { get; set; }
-    public Member Member { get; set; } = null!;
 
     public Guid LeadershipKey { get; set; }
     public Leadership Leadership { get; set; } = null!;

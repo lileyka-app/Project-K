@@ -139,12 +139,12 @@ function kurinApi(options: { canUpdate: (memberKey: string) => boolean; leads?: 
   const read = (path: string, memberMatch: RegExpExecArray | null): Answer | null => {
     switch (path) {
       case 'kurin/k1': return ok(kurin);
-      case 'group/groups': return ok(groups);
+      case 'kurin/k1/groups': return ok(groups);
       case 'group/g1': return ok(groups[0]);
-      case 'member/kurins/k1/members': return ok([ostap, marta, olena, ivan, andrii]);
-      case 'member/groups/g1/members': return ok([ostap, marta, ivan]);
-      case 'member/members/kv/k1': return ok([olena, andrii]);
-      case 'group/groups/k1/mentor-assignments':
+      case 'kurin/k1/members': return ok([ostap, marta, olena, ivan, andrii]);
+      case 'group/g1/members': return ok([ostap, marta, ivan]);
+      case 'kurin/k1/kv': return ok([olena, andrii]);
+      case 'kurin/k1/mentor-assignments':
         return ok([{ mentorAssignmentKey: 'ma1', mentorUserKey: 'u-m5', groupKey: 'g1', groupName: 'Соколи', assignedAtUtc: '2025-09-01T00:00:00Z', revokedAtUtc: null, member: andrii }]);
       case 'leadership/type/kurin/k1':
         return ok({ leadershipKey: 'l1', startDate: '2024-09-01', endDate: null, leadershipHistories: [office('h1', 'Kurinnuy', marta), office('h2', 'Pysar', ivan)] });
@@ -364,7 +364,8 @@ test('lets a reviewer confirm skills and awards', async ({ page }, info) => {
   await expect.poll(() => log.writes.find((w) => w.path === 'member/m2/badges/b-plav/review')?.body).toEqual({ isApproved: false, note: null });
   await page.getByRole('button', { name: 'Готово' }).click();
 
-  await page.getByTestId('award').filter({ hasText: 'Друге відзначення' }).click();
+  await page.getByTestId('award-block').filter({ hasText: 'Друге відзначення' }).click();
+  await page.getByTestId('award-grant').click();
   await expect(page.getByText('Очікує підтвердження')).toBeVisible();
   await shot(page, info.project.name, 'kurin-award');
   await page.getByTestId('approve-award').click();

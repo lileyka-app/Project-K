@@ -58,13 +58,13 @@ function kvApi(withLeadership = true): ExtraApi {
   const read = (path: string): Answer | null => {
     switch (path) {
       case 'kurin/k1': return ok(kurin);
-      case 'group/groups': return ok(groups);
+      case 'kurin/k1/groups': return ok(groups);
       case 'group/g1': return ok(groups[0]);
-      case 'member/kurins/k1/members': return ok(people);
-      case 'member/groups/g1/members': return ok([marta, ivan]);
-      case 'member/members/kv/k1': return ok(kvMembers);
-      case 'member/members/mentor-candidates/k1': return ok(people);
-      case 'group/groups/k1/mentor-assignments': return ok(assignments);
+      case 'kurin/k1/members': return ok(people);
+      case 'group/g1/members': return ok([marta, ivan]);
+      case 'kurin/k1/kv': return ok(kvMembers);
+      case 'kurin/k1/mentor-candidates': return ok(people);
+      case 'kurin/k1/mentor-assignments': return ok(assignments);
       case 'leadership/type/kurin/k1': return ok(leadership);
       case 'leadership/type/kv/k1': return ok(kv);
       case 'leadership/type/group/g1':
@@ -258,7 +258,7 @@ test('lets the курінний seat the kurin’s провід, all but himself
   await expect(sheet.getByTestId('seat-Skarbnyk')).toContainText('Коваль');
   await sheet.getByTestId('seat-Pysar').click();
   await picker(page).getByTestId('pick-none').click();
-  await expect(sheet.getByTestId('seat-Pysar')).toContainText('Не обсаджено');
+  await expect(sheet.getByTestId('seat-Pysar').locator('ion-note')).toHaveText('');
   await sheet.getByTestId('show-archive').click();
   await expect(sheet.getByTestId('archived-office')).toContainText('Коваль');
   await expect(sheet.getByTestId('archived-office')).toContainText('Курінний · 01.09.23 – 31.08.25');

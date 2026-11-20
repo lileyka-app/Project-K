@@ -1,0 +1,100 @@
+using FluentAssertions;
+using Moq;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Records.KurinModule;
+
+namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
+
+/// <summary>
+/// What the referent's tool reads: third-probers with a file or a closed second probe, only those
+/// the caller may sign, with their stages and counts.
+/// </summary>
+public class GetThirdProbersQueryTests
+{
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IProbeProjectRepository> _projects = new();
+    private readonly Mock<IProbeProgressRepository> _progress = new();
+    private readonly Mock<IBadgeProgressRepository> _badges = new();
+    private readonly Mock<IMembershipDirectory> _members = new();
+    private readonly Mock<IMemberProbeLine> _line = new();
+    private readonly Mock<IProbesAndBadgesAccess> _access = new();
+    private readonly Guid _kurinKey = Guid.NewGuid();
+    private readonly KurinPerson _withFile;
+    private readonly KurinPerson _justClosed;
+    private readonly KurinPerson _stillOnSecond;
+    private readonly KurinPerson _notMine;
+
+    public GetThirdProbersQueryTests()
+    {
+        _withFile = Person("Віталій", "Романюк");
+        _justClosed = Person("Остап", "Бондаренко");
+        _stillOnSecond = Person("Ігор", "Савчук");
+        _notMine = Person("Левко", "Шевченко");
+        var everyone = new[] { _withFile, _justClosed, _stillOnSecond, _notMine };
+
+        _unitOfWork.SetupGet(u => u.ProbeProjects).Returns(_projects.Object);
+        _unitOfWork.SetupGet(u => u.ProbeProgresses).Returns(_progress.Object);
+        _unitOfWork.SetupGet(u => u.BadgeProgresses).Returns(_badges.Object);
+        _members.Setup(m => m.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(everyone);
+        _line.Setup(l => l.ForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new ProbeSummaryDto("probe-2", "Друга", 10, 2, null, 2, "", ""),
+            new ProbeSummaryDto("probe-3", "Третя", 0, 0, null, 3, "", "")
+        ]);
+        _access.Setup(a => a.CanSignAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _access.Setup(a => a.CanSignAsync(_notMine.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        _projects.Setup(p => p.GetFilesForMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new ThirdProbeFile
+            {
+                MemberKey = _withFile.MemberKey, ProbeId = "probe-3", OpenedOn = new DateOnly(2026, 1, 1),
+                ApplicationSubmittedOn = new DateOnly(2025, 12, 1), CampKind = ThirdProbeCampKind.Kvt, Resume = "Шлях"
+            },
+            new ThirdProbeFile { MemberKey = _notMine.MemberKey, ProbeId = "probe-3" }
+        ]);
+        _projects.Setup(p => p.GetProjectsForMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new ProbeProject { MemberKey = _withFile.MemberKey, ProbeId = "probe-3", CompletedAtUtc = DateTime.UtcNow },
+            new ProbeProject { MemberKey = _withFile.MemberKey, ProbeId = "probe-3" },
+            new ProbeProject { MemberKey = _withFile.MemberKey, ProbeId = "probe-3", IsSpare = true }
+        ]);
+        _progress.Setup(p => p.GetByMemberKeysAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new ProbeProgress { MemberKey = _justClosed.MemberKey, ProbeId = "probe-2", CompletedAtUtc = new DateTime(2026, 5, 1) },
+            new ProbeProgress { MemberKey = _stillOnSecond.MemberKey, ProbeId = "probe-2", Status = ProbeProgressStatus.InProgress }
+        ]);
+        _badges.Setup(b => b.GetByMemberKeysAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new BadgeProgress { MemberKey = _withFile.MemberKey, Status = BadgeProgressStatus.Confirmed, ReviewedAtUtc = new DateTime(2026, 2, 1) },
+            new BadgeProgress { MemberKey = _withFile.MemberKey, Status = BadgeProgressStatus.Confirmed, ReviewedAtUtc = new DateTime(2025, 2, 1) }
+        ]);
+    }
+
+    private KurinPerson Person(string first, string last) => KurinPeople.Of(Guid.NewGuid(), null, _kurinKey, null, first, last, "x@example.com", null);
+
+    [Fact]
+    public async Task ListsTheThirdProbersTheCallerMaySign_WithStagesAndCounts()
+    {
+        var handler = new GetThirdProbersQueryHandler(_unitOfWork.Object, _members.Object, _line.Object, _access.Object);
+
+        var result = await handler.Handle(new GetThirdProbersQuery(_kurinKey), CancellationToken.None);
+
+        result.Data!.Select(p => p.LastName).Should().Equal("Бондаренко", "Романюк");
+        var vitalii = result.Data!.Single(p => p.MemberKey == _withFile.MemberKey);
+        vitalii.Stages.ApplicationSubmittedOn.Should().Be(new DateOnly(2025, 12, 1));
+        vitalii.Stages.OpenedOn.Should().Be(new DateOnly(2026, 1, 1));
+        (vitalii.MainProjects, vitalii.CompletedProjects, vitalii.BadgesDuringProbe).Should().Be((2, 1, 1));
+        // A КВТ is the camp without a name: it is one camp, and nobody is asked to name it.
+        (vitalii.HasCamp, vitalii.HasResume, vitalii.ReflectionConfirmed).Should().Be((true, true, false));
+        result.Data!.Single(p => p.MemberKey == _justClosed.MemberKey).Stages.OpenedOn.Should().BeNull();
+    }
+}

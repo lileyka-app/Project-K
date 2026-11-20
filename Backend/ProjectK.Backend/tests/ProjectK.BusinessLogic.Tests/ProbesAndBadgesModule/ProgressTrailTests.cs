@@ -1,19 +1,21 @@
 using Moq;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Get;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule;
 
@@ -45,11 +47,11 @@ public class ProgressTrailTests
     };
 
     [Theory]
-    [InlineData(AuditActions.Probe.Started, "NotStarted", "InProgress", "InProgress", ProbeProgressStatus.NotStarted, ProbeProgressStatus.InProgress)]
-    [InlineData(AuditActions.Probe.Completed, "InProgress", "Completed", "Completed", ProbeProgressStatus.InProgress, ProbeProgressStatus.Completed)]
-    [InlineData(AuditActions.Probe.Verified, "Completed", "Verified", "Verified", ProbeProgressStatus.Completed, ProbeProgressStatus.Verified)]
-    [InlineData(AuditActions.Probe.Unverified, "Verified", "Completed", "Unverify", ProbeProgressStatus.Verified, ProbeProgressStatus.Completed)]
-    [InlineData(AuditActions.Probe.Reopened, "Completed", "InProgress", "Unsign", ProbeProgressStatus.Completed, ProbeProgressStatus.InProgress)]
+    [InlineData(AuditActionNames.Probe.Started, "NotStarted", "InProgress", "InProgress", ProbeProgressStatus.NotStarted, ProbeProgressStatus.InProgress)]
+    [InlineData(AuditActionNames.Probe.Completed, "InProgress", "Completed", "Completed", ProbeProgressStatus.InProgress, ProbeProgressStatus.Completed)]
+    [InlineData(AuditActionNames.Probe.Verified, "Completed", "Verified", "Verified", ProbeProgressStatus.Completed, ProbeProgressStatus.Verified)]
+    [InlineData(AuditActionNames.Probe.Unverified, "Verified", "Completed", "Unverify", ProbeProgressStatus.Verified, ProbeProgressStatus.Completed)]
+    [InlineData(AuditActionNames.Probe.Reopened, "Completed", "InProgress", "Unsign", ProbeProgressStatus.Completed, ProbeProgressStatus.InProgress)]
     public void ForProbe_ShouldReadAJournalStatusChangeAsTheOldTrailItem(
         string action, string from, string to, string oldAction, ProbeProgressStatus fromStatus, ProbeProgressStatus toStatus)
     {
@@ -70,11 +72,11 @@ public class ProgressTrailTests
     }
 
     [Theory]
-    [InlineData(AuditActions.Badge.Submitted, null, "Submitted", "Submitted", null, BadgeProgressStatus.Submitted)]
-    [InlineData(AuditActions.Badge.Resubmitted, "Rejected", "Submitted", "Resubmitted", BadgeProgressStatus.Rejected, BadgeProgressStatus.Submitted)]
-    [InlineData(AuditActions.Badge.Confirmed, "Submitted", "Confirmed", "Confirmed", BadgeProgressStatus.Submitted, BadgeProgressStatus.Confirmed)]
-    [InlineData(AuditActions.Badge.Rejected, "Submitted", "Rejected", "Rejected", BadgeProgressStatus.Submitted, BadgeProgressStatus.Rejected)]
-    [InlineData(AuditActions.Badge.ConfirmationRemoved, "Confirmed", "Rejected", "RemovedConfirmed", BadgeProgressStatus.Confirmed, BadgeProgressStatus.Rejected)]
+    [InlineData(AuditActionNames.Badge.Submitted, null, "Submitted", "Submitted", null, BadgeProgressStatus.Submitted)]
+    [InlineData(AuditActionNames.Badge.Resubmitted, "Rejected", "Submitted", "Resubmitted", BadgeProgressStatus.Rejected, BadgeProgressStatus.Submitted)]
+    [InlineData(AuditActionNames.Badge.Confirmed, "Submitted", "Confirmed", "Confirmed", BadgeProgressStatus.Submitted, BadgeProgressStatus.Confirmed)]
+    [InlineData(AuditActionNames.Badge.Rejected, "Submitted", "Rejected", "Rejected", BadgeProgressStatus.Submitted, BadgeProgressStatus.Rejected)]
+    [InlineData(AuditActionNames.Badge.ConfirmationRemoved, "Confirmed", "Rejected", "RemovedConfirmed", BadgeProgressStatus.Confirmed, BadgeProgressStatus.Rejected)]
     public void ForBadge_ShouldReadAJournalStatusChangeAsTheOldTrailItem(
         string action, string? from, string to, string oldAction, BadgeProgressStatus? fromStatus, BadgeProgressStatus toStatus)
     {
@@ -95,10 +97,10 @@ public class ProgressTrailTests
         var progressKey = Guid.NewGuid();
         var journal = new[]
         {
-            Entry(progressKey, AuditActions.Probe.Verified, "Completed", "Verified", 20),
-            Entry(progressKey, AuditActions.Probe.PointSigned, null, null, 5),
-            Entry(Guid.NewGuid(), AuditActions.Probe.Completed, "InProgress", "Completed", 1),
-            Entry(progressKey, AuditActions.Probe.Completed, "InProgress", "Completed", 10)
+            Entry(progressKey, AuditActionNames.Probe.Verified, "Completed", "Verified", 20),
+            Entry(progressKey, AuditActionNames.Probe.PointSigned, null, null, 5),
+            Entry(Guid.NewGuid(), AuditActionNames.Probe.Completed, "InProgress", "Completed", 1),
+            Entry(progressKey, AuditActionNames.Probe.Completed, "InProgress", "Completed", 10)
         };
 
         var trail = ProgressTrail.ForProbe(progressKey, journal);
@@ -111,7 +113,7 @@ public class ProgressTrailTests
     {
         var progressKey = Guid.NewGuid();
 
-        var item = Assert.Single(ProgressTrail.ForBadge(progressKey, [Entry(progressKey, AuditActions.Badge.Confirmed, null, null, 0)]));
+        var item = Assert.Single(ProgressTrail.ForBadge(progressKey, [Entry(progressKey, AuditActionNames.Badge.Confirmed, null, null, 0)]));
 
         Assert.Null(item.FromStatus);
         Assert.Equal(BadgeProgressStatus.Confirmed, item.ToStatus);
@@ -127,9 +129,9 @@ public class ProgressTrailTests
         var third = new BadgeProgress { MemberKey = _memberKey, KurinKey = _kurinKey, BadgeId = "c", Status = BadgeProgressStatus.Draft };
         journal.Entries.AddRange(
         [
-            Entry(first.BadgeProgressKey, AuditActions.Badge.Submitted, null, "Submitted", 0),
-            Entry(first.BadgeProgressKey, AuditActions.Badge.Confirmed, "Submitted", "Confirmed", 1),
-            Entry(second.BadgeProgressKey, AuditActions.Badge.Submitted, null, "Submitted", 2)
+            Entry(first.BadgeProgressKey, AuditActionNames.Badge.Submitted, null, "Submitted", 0),
+            Entry(first.BadgeProgressKey, AuditActionNames.Badge.Confirmed, "Submitted", "Confirmed", 1),
+            Entry(second.BadgeProgressKey, AuditActionNames.Badge.Submitted, null, "Submitted", 2)
         ]);
 
         var progresses = new Mock<IBadgeProgressRepository>();
@@ -161,13 +163,13 @@ public class ProgressTrailTests
         var waiting = new BadgeProgress { MemberKey = _memberKey, KurinKey = _kurinKey, BadgeId = "a", Status = BadgeProgressStatus.Submitted };
         var alsoWaiting = new BadgeProgress { MemberKey = otherMember, KurinKey = _kurinKey, BadgeId = "b", Status = BadgeProgressStatus.Submitted };
         var done = new BadgeProgress { MemberKey = _memberKey, KurinKey = _kurinKey, BadgeId = "c", Status = BadgeProgressStatus.Confirmed };
-        journal.Entries.Add(Entry(waiting.BadgeProgressKey, AuditActions.Badge.Submitted, null, "Submitted", 0, "прошу"));
+        journal.Entries.Add(Entry(waiting.BadgeProgressKey, AuditActionNames.Badge.Submitted, null, "Submitted", 0, "прошу"));
 
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(x => x.GetByKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(x => x.GetPeopleInKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
         [
-            new MemberSummary(_memberKey, null, _kurinKey, null, "Олесь", "Юнак", "", null),
-            new MemberSummary(otherMember, null, _kurinKey, null, "Петро", "Юнак", "", null)
+            KurinPeople.Of(_memberKey, null, _kurinKey, null, "Олесь", "Юнак", "", null),
+            KurinPeople.Of(otherMember, null, _kurinKey, null, "Петро", "Юнак", "", null)
         ]);
         var progresses = new Mock<IBadgeProgressRepository>();
         progresses.Setup(x => x.GetByMemberKeysAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
@@ -179,8 +181,8 @@ public class ProgressTrailTests
             .ReturnsAsync(CapabilityReach.Kurin);
 
         var result = await new GetBadgeReviewQueueQueryHandler(
-                unitOfWork.Object, members.Object, user.Object, Mock.Of<IResourceScopeReader>(), FakeBlobReadLinks.Instance,
-                permissions.Object, journal.Reader)
+                UnitOfWorks.WithScopes(Mock.Of<IResourceScopeRepository>(), unitOfWork), members.Object, user.Object, FakeBlobReadLinks.Instance,
+                permissions.Object, journal.Reader, Mock.Of<IResourceScopeReader>())
             .Handle(new GetBadgeReviewQueueQuery(_kurinKey), CancellationToken.None);
 
         var read = Assert.Single(journal.SubjectReads);
@@ -197,9 +199,9 @@ public class ProgressTrailTests
         var progress = new ProbeProgress { MemberKey = _memberKey, KurinKey = _kurinKey, ProbeId = "probe-1", Status = ProbeProgressStatus.Verified };
         journal.Entries.AddRange(
         [
-            Entry(progress.ProbeProgressKey, AuditActions.Probe.PointSigned, null, null, 0),
-            Entry(progress.ProbeProgressKey, AuditActions.Probe.Completed, "InProgress", "Completed", 1),
-            Entry(progress.ProbeProgressKey, AuditActions.Probe.Verified, "Completed", "Verified", 2)
+            Entry(progress.ProbeProgressKey, AuditActionNames.Probe.PointSigned, null, null, 0),
+            Entry(progress.ProbeProgressKey, AuditActionNames.Probe.Completed, "InProgress", "Completed", 1),
+            Entry(progress.ProbeProgressKey, AuditActionNames.Probe.Verified, "Completed", "Verified", 2)
         ]);
 
         var probes = new Mock<IProbeProgressRepository>();
@@ -209,8 +211,8 @@ public class ProgressTrailTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.SetupGet(x => x.ProbeProgresses).Returns(probes.Object);
         unitOfWork.SetupGet(x => x.ProbePointProgresses).Returns(points.Object);
-        var members = new Mock<IMemberDirectory>();
-        members.Setup(x => x.FindKurinKeyAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(_kurinKey);
+        var members = new Mock<IMembershipDirectory>();
+        members.Setup(x => x.FindInYouthKurinAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(KurinPeople.In(_memberKey, _kurinKey));
 
         var result = await new GetProbeProgressQueryHandler(unitOfWork.Object, members.Object, journal.Reader)
             .Handle(new GetProbeProgressQuery(_memberKey, "probe-1"), CancellationToken.None);

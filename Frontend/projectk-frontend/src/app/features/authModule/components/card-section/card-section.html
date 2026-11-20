@@ -1,0 +1,50 @@
+<p-confirmDialog />
+
+@if (card(); as current) {
+  <div class="card-panel">
+    @if (!current.allowance.mayShare) {
+      <p class="card-panel__hint">Курінь ще не дозволив показувати картку.</p>
+    } @else {
+      <div class="card-panel__fields">
+        @for (field of fieldList; track field.name) {
+          <div class="card-panel__field">
+            <p-toggleswitch [ngModel]="shown(field.name)" (ngModelChange)="toggle(field.name, $event)"
+              [disabled]="!allowed(field.name)" [inputId]="'card-' + field.name" />
+            <label [for]="'card-' + field.name" [class.card-panel__off]="!allowed(field.name)">{{ field.label }}</label>
+          </div>
+        }
+      </div>
+
+      <div class="card-panel__actions">
+        <p-button label="Показати картку" icon="pi pi-qrcode" (onClick)="checkVisible.set(true)" />
+      </div>
+
+      @if (current.allowance.mayLink) {
+        <div class="card-panel__link">
+          <h3>Постійне посилання</h3>
+          @if (current.linkUrl; as url) {
+            <div class="card-panel__link-row">
+              <input pInputText type="text" [value]="url" readonly aria-label="Посилання на картку" (focus)="$any($event.target).select()" />
+              <p-button label="Копіювати" icon="pi pi-copy" severity="secondary" (onClick)="copy(url)" />
+            </div>
+            <div class="card-panel__actions">
+              <p-button label="Створити нове" icon="pi pi-refresh" severity="secondary" [loading]="busy()" (onClick)="issueLink()" />
+              <p-button label="Вимкнути" icon="pi pi-ban" severity="danger" [outlined]="true" [disabled]="busy()" (onClick)="disableLink()" />
+            </div>
+          } @else {
+            <div class="card-panel__actions">
+              <p-button label="Створити посилання" icon="pi pi-link" severity="secondary" [loading]="busy()" (onClick)="issueLink()" />
+            </div>
+          }
+        </div>
+      }
+
+      <div class="card-panel__preview">
+        <h3>Вигляд картки</h3>
+        <app-shared-card [card]="current.preview" />
+      </div>
+    }
+  </div>
+}
+
+<app-card-check-dialog [visible]="checkVisible()" (visibleChange)="checkVisible.set($event)" />

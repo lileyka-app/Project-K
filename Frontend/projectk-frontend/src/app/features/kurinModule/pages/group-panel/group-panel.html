@@ -27,7 +27,7 @@
                     accept="image/png,image/jpeg,image/webp"
                     (change)="onSilhouetteSelected($event)" />
                 @if (hasGroupEditActions && !profileEditMode) {
-                    <p-menu #groupEditMenu [model]="groupEditMenuItems" [popup]="true" appendTo="body" />
+                    <p-menu #groupEditMenu appMenuEnd [model]="groupEditMenuItems" [popup]="true" appendTo="body" />
                     <p-button
                         label="Редагувати"
                         type="button"
@@ -82,68 +82,47 @@
     </section>
 
     <section class="kurin-tile">
-        <app-member-list [type]="'group'" [typeKey]="groupKey" />
+        <app-member-list [type]="'group'" [typeKey]="groupKey"
+            [addLabel]="canManageMembers ? 'Додати учасника' : null" (add)="onMemberCreate()" />
     </section>
 </div>
 
-<p-dialog
+<app-image-crop-dialog
     [(visible)]="silhouetteDialogVisible"
-    [modal]="true"
-    [closable]="!silhouetteSaving"
-    [style]="{ width: 'min(96vw, 58rem)' }"
     header="Сильветка гуртка"
-    (onHide)="cancelSilhouetteEditor()">
-    <div class="silhouette-editor">
-        <div class="silhouette-editor__cropper">
-            <image-cropper [imageFile]="silhouetteImageFile"
-                [maintainAspectRatio]="true"
-                [aspectRatio]="1 / 1"
-                format="png"
-                [resizeToWidth]="1024"
-                [onlyScaleDown]="true"
-                (imageCropped)="onSilhouetteCropped($event)" />
-        </div>
-
-        <div class="silhouette-editor__side">
-            <div class="silhouette-preview">
-                @if (silhouettePreviewUrl) {
-                    <img [src]="silhouettePreviewUrl" alt="Попередній перегляд сильветки" />
-                }
-            </div>
-
-            <div class="silhouette-controls">
-                <label class="silhouette-control">
-                    <input type="checkbox" [(ngModel)]="silhouetteUseGrayscale" (ngModelChange)="onSilhouetteOptionsChange()" />
-                    <span>Чорно-біле</span>
-                </label>
-                <label class="silhouette-control">
-                    <input type="checkbox" [(ngModel)]="silhouetteUseOutline" (ngModelChange)="onSilhouetteOptionsChange()" />
-                    <span>Обводка</span>
-                </label>
-                <label class="silhouette-control silhouette-control--range">
-                    <span>Товщина</span>
-                    <input
-                        type="range"
-                        min="0"
-                        max="32"
-                        step="1"
-                        [(ngModel)]="silhouetteOutlineWidth"
-                        [disabled]="!silhouetteUseOutline"
-                        (ngModelChange)="onSilhouetteOptionsChange()" />
-                    <output>{{ silhouetteOutlineWidth }}</output>
-                </label>
-            </div>
-        </div>
+    [file]="silhouetteImageFile"
+    [saving]="silhouetteSaving"
+    [processing]="silhouetteProcessing"
+    [previewUrl]="silhouettePreviewUrl"
+    previewAlt="Попередній перегляд сильветки"
+    (cropped)="onSilhouetteCropped($event)"
+    (save)="uploadProcessedSilhouette()"
+    (cancelled)="cancelSilhouetteEditor()">
+    <div class="silhouette-controls">
+        <label class="silhouette-control">
+            <input type="checkbox" [(ngModel)]="silhouetteUseGrayscale" (ngModelChange)="onSilhouetteOptionsChange()" />
+            <span>Чорно-біле</span>
+        </label>
+        <label class="silhouette-control">
+            <input type="checkbox" [(ngModel)]="silhouetteUseOutline" (ngModelChange)="onSilhouetteOptionsChange()" />
+            <span>Обводка</span>
+        </label>
+        <label class="silhouette-control silhouette-control--range">
+            <span>Товщина</span>
+            <input
+                type="range"
+                min="0"
+                max="32"
+                step="1"
+                [(ngModel)]="silhouetteOutlineWidth"
+                [disabled]="!silhouetteUseOutline"
+                (ngModelChange)="onSilhouetteOptionsChange()" />
+            <output>{{ silhouetteOutlineWidth }}</output>
+        </label>
     </div>
 
-    <ng-template pTemplate="footer">
-        <div class="silhouette-dialog-actions">
-            <p-button label="Без обробки" type="button" severity="secondary" variant="text" [disabled]="silhouetteSaving" (onClick)="uploadOriginalSilhouette()" />
-            <p-button label="Скасувати" type="button" severity="secondary" [outlined]="true" [disabled]="silhouetteSaving" (onClick)="cancelSilhouetteEditor()" />
-            <p-button label="Завантажити" type="button" icon="pi pi-upload" [loading]="silhouetteSaving || silhouetteProcessing" [disabled]="silhouetteSaving || silhouetteProcessing" (onClick)="uploadProcessedSilhouette()" />
-        </div>
-    </ng-template>
-</p-dialog>
+    <p-button label="Без обробки" cropActions type="button" severity="secondary" variant="text" [disabled]="silhouetteSaving" (onClick)="uploadOriginalSilhouette()" />
+</app-image-crop-dialog>
 
 <p-dialog [(visible)]="mentorDialogVisible" [modal]="true" [closable]="true" [style]="{ width: 'min(92vw, 34rem)' }" header="Впорядники гуртка">
     <div class="mentor-dialog-body">

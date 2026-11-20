@@ -3,19 +3,20 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KraiModule.Services;
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.KraiModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
-using Xunit;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.AgendaModule;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.BusinessLogic.Tests.KraiModule;
 
@@ -24,7 +25,7 @@ public class KraiProfileProviderTests
     private readonly Mock<IKraiRepository> _krais = new();
     private readonly Mock<IKurinRepository> _kurins = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
-    private readonly KraiProfileProvider _provider;
+    private readonly KraiProfileDirectory _provider;
 
     public KraiProfileProviderTests()
     {
@@ -32,14 +33,14 @@ public class KraiProfileProviderTests
         cache.Setup(c => c.GetOrCreateAsync(
                 It.IsAny<CachePolicy>(),
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<Common.Models.KraiProfiles.KraiProfile?>>>(),
+                It.IsAny<Func<CancellationToken, Task<Common.Dtos.KraiModule.KraiProfile?>>>(),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<CacheScopeContext?>()))
-            .Returns((CachePolicy _, string _, Func<CancellationToken, Task<Common.Models.KraiProfiles.KraiProfile?>> factory, CancellationToken token, CacheScopeContext? _) => factory(token));
+            .Returns((CachePolicy _, string _, Func<CancellationToken, Task<Common.Dtos.KraiModule.KraiProfile?>> factory, CancellationToken token, CacheScopeContext? _) => factory(token));
 
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
-        _provider = new KraiProfileProvider(_unitOfWork.Object, cache.Object, NullLogger<KraiProfileProvider>.Instance);
+        _provider = new KraiProfileDirectory(_unitOfWork.Object, cache.Object, NullLogger<KraiProfileDirectory>.Instance);
     }
 
     private void Given(string code, string? json, int revision = 1)
@@ -61,7 +62,7 @@ public class KraiProfileProviderTests
         profile.Catalog.BadgeSources.Should().Equal("ua");
         profile.Catalog.HiddenBadges.Should().BeEmpty();
         profile.Locale.Currency.Should().Be("UAH");
-        profile.Locale.TimeZone.Should().Be(AgendaRecurrence.DefaultZone.Id);
+        profile.Locale.TimeZone.Should().Be(AgendaRecurrenceRules.DefaultZone.Id);
         profile.Locale.NumberLocale.Should().Be("uk-UA");
     }
 
@@ -103,9 +104,9 @@ public class KraiProfileProviderTests
 
         var card = (await _provider.GetForKraiAsync("cz"))!.CardFields;
 
-        card.ModeOf(KraiCardFields.MiddleName).Should().Be(KraiCardFields.Hidden);
-        card.ModeOf(KraiCardFields.PhoneNumber).Should().Be(KraiCardFields.Required);
-        card.ModeOf(KraiCardFields.School).Should().Be(KraiCardFields.Hidden);
+        card.ModeOf(KraiCardFieldNames.MiddleName).Should().Be(KraiCardFieldNames.Hidden);
+        card.ModeOf(KraiCardFieldNames.PhoneNumber).Should().Be(KraiCardFieldNames.Required);
+        card.ModeOf(KraiCardFieldNames.School).Should().Be(KraiCardFieldNames.Hidden);
         card.Fields.Should().NotContainKey("shoeSize");
         card.Extra.Select(field => field.Key).Should().Equal("visaType", "visaUntil");
         card.Extra[0].Required.Should().BeTrue();
@@ -173,8 +174,8 @@ public class KraiProfileProviderTests
 
         var card = (await _provider.GetForKurinAsync(kurin.KurinKey))!.CardFields;
 
-        card.ModeOf(KraiCardFields.MiddleName).Should().Be(KraiCardFields.Hidden);
-        card.ModeOf(KraiCardFields.PhoneNumber).Should().Be(KraiCardFields.Required);
+        card.ModeOf(KraiCardFieldNames.MiddleName).Should().Be(KraiCardFieldNames.Hidden);
+        card.ModeOf(KraiCardFieldNames.PhoneNumber).Should().Be(KraiCardFieldNames.Required);
         card.Extra.Select(field => field.Key).Should().Equal("visaType");
         (await _provider.GetForKraiAsync("cz"))!.CardFields.Extra.Should().HaveCount(2);
     }
@@ -192,16 +193,16 @@ public class KraiProfileProviderTests
 
         kurin.HiddenCardFields.Should().Be("""["note"]""");
         result.Data!.Should().Equal(
-            new KurinCardFieldResponse("middleName", "По батькові", false),
-            new KurinCardFieldResponse("address", "Адреса", false),
-            new KurinCardFieldResponse("school", "Школа", false),
-            new KurinCardFieldResponse("parents", "Контакти батьків", false),
-            new KurinCardFieldResponse("note", "Примітка", true));
+            new KurinCardFieldDto("middleName", "По батькові", false),
+            new KurinCardFieldDto("address", "Адреса", false),
+            new KurinCardFieldDto("school", "Школа", false),
+            new KurinCardFieldDto("parents", "Контакти батьків", false),
+            new KurinCardFieldDto("note", "Примітка", true));
 
         // Filed under the kurin itself, so an unscoped admin's change is kept too.
         var entry = journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Settings);
-        entry.Action.Should().Be(AuditActions.Settings.CardFieldsChanged);
+        entry.Action.Should().Be(AuditActionNames.Settings.CardFieldsChanged);
         entry.KurinKey.Should().Be(kurin.KurinKey);
         entry.SubjectKey.Should().Be(kurin.KurinKey);
         entry.Changes.Should().Equal(new AuditChange("hiddenFields", null, "Примітка"));
@@ -253,7 +254,7 @@ public class KraiProfileProviderTests
         var concessions = (await _provider.GetForKraiAsync("cz"))!.Dues.Concessions;
 
         concessions.Select(c => c.Key).Should().Equal("sibling", "free");
-        concessions[0].Parts.Should().Be(Common.Models.Enums.DuesParts.Stanytsia | Common.Models.Enums.DuesParts.Kurin);
+        concessions[0].Parts.Should().Be(Common.Enums.DuesModule.DuesParts.Stanytsia | Common.Enums.DuesModule.DuesParts.Kurin);
         concessions[0].Value.Should().Be(20);
     }
 }

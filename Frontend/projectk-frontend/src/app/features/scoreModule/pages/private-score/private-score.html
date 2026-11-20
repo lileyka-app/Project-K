@@ -12,12 +12,13 @@
     @if (data(); as d) {
       <div class="lil-page-head__actions">
         <app-score-period-select [periods]="d.periods" [period]="d.period" (periodChange)="changePeriod($event)" />
-        <p-button label="Таблиця" icon="pi pi-list" severity="secondary" [routerLink]="['/kurin', kurinKey, 'score']" [queryParams]="periodParams()" />
         <p-button label="Критерії" icon="pi pi-tags" severity="secondary" (onClick)="criteriaDialogVisible.set(true)" />
         <p-button label="Записати" icon="pi pi-plus" (onClick)="openEntryDialog()" />
       </div>
     }
   </header>
+
+  <app-page-tabs [tabs]="tabs" label="Розділи точкування" />
 
   @if (loading() && !data()) {
     <section class="kurin-tile">
@@ -40,7 +41,7 @@
             <div>
               <h2>Юнаки</h2>
               <span class="lil-count">{{ people().length }}</span>
-              <p>Публічні бали — як основа, поруч — ваші. Сюди не входить нічого з таблиці, і звідси нічого не йде в неї.</p>
+              <p>Публічні бали — як основа, поруч — твої. Сюди не входить нічого з таблиці, і звідси нічого не йде в неї.</p>
             </div>
             <div class="lil-tile-head__actions">
               <span class="private-search">

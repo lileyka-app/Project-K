@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.KurinModule;
@@ -31,19 +27,28 @@ public class KurinRepository : BaseEntityRepository<Kurin>, IKurinRepository
         return await Context.Kurins.FirstOrDefaultAsync(k => k.KurinKey == entityKey, cancellationToken);
     }
 
-    public async Task<Kurin?> GetByNumberAsync(string kraiCode, int number, CancellationToken token = default)
+    public async Task<Kurin?> GetByNumberAsync(string kraiCode, int number, CancellationToken token = default, KurinBranch branch = KurinBranch.UPYu)
     {
-        return await Context.Kurins.FirstOrDefaultAsync(k => k.KraiCode == kraiCode && k.Number == number, token);
+        return await Context.Kurins.FirstOrDefaultAsync(
+            k => k.KraiCode == kraiCode && k.Branches.Any(b => b.Branch == branch && b.Number == number),
+            token);
     }
 
-    public override async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Kurin>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await Context.Kurins.ToListAsync(cancellationToken);
     }
 
-    public async Task<bool> ExistsAsync(string kraiCode, int number, CancellationToken token = default)
+    public Task<bool> ExistsAsync(string kraiCode, int number, CancellationToken token = default)
+        => IsNumberTakenAsync(kraiCode, KurinBranch.UPYu, number, null, token);
+
+    public async Task<bool> IsNumberTakenAsync(string kraiCode, KurinBranch branch, int number, Guid? exceptKurinKey = null, CancellationToken token = default)
     {
-        return await Context.Kurins.AnyAsync(k => k.KraiCode == kraiCode && k.Number == number, token);
+        return await Context.Kurins.AnyAsync(
+            k => k.KraiCode == kraiCode
+                 && k.KurinKey != exceptKurinKey
+                 && k.Branches.Any(b => b.Branch == branch && b.Number == number),
+            token);
     }
 
     public async Task<IReadOnlyList<Kurin>> GetInKraiAsync(string kraiCode, CancellationToken token = default)

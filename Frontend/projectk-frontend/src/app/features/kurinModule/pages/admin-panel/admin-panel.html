@@ -3,17 +3,9 @@
         <div>
             <h1>Адміністрація</h1>
         </div>
-        <div class="lil-page-head__actions">
-            <span class="lil-attention-anchor">
-                <p-button label="Заявки" icon="pi pi-list" severity="secondary" [routerLink]="['/waitlist']" />
-                @if (waitlistAttention.pending() > 0) {
-                    <span class="lil-attention-dot" role="img" aria-label="Є заявки на розгляд"></span>
-                }
-            </span>
-            <p-button label="Користувачі" icon="pi pi-users" severity="secondary" [routerLink]="['/users']" />
-            <p-button label="Краї" icon="pi pi-map" severity="secondary" [routerLink]="['/krai']" />
-        </div>
     </header>
+
+    <app-page-tabs [tabs]="uladTabs" label="Улади" />
 
     <section class="kurin-tile">
     <p-table [value]="data" styleClass="project-table" rowGroupMode="subheader" groupRowsBy="kraiCode">
@@ -23,7 +15,7 @@
                     <h2>Курені</h2>
                     <p>{{ data.length }} у системі</p>
                 </div>
-                @if (data.length > 0) {
+                @if (data.length > 0 && !isSeniorUlad) {
                     <p-button (onClick)="onActionClick(null, 'create')" label="Створити курінь" icon="pi pi-plus" />
                 }
             </div>
@@ -45,10 +37,17 @@
         <ng-template #body let-item>
             <tr class="admin-kurin-row">
                 <td data-mobile-label="Курінь">
-                    <div class="kurin-number-cell">
-                        <span>{{ item.number ?? 'Підготовчий' }}</span>
-                        <small>{{ item.namedAfter ? 'ім. ' + item.namedAfter : (item.number === null ? 'ще без числа' : 'число куреня') }}</small>
-                    </div>
+                    @if (isSenior(item)) {
+                        <div class="kurin-number-cell">
+                            <span>{{ item.namedAfter || seniorTitle(item) }} <p-tag [value]="branchTags(item)" severity="info" class="kurin-branch-tag" /></span>
+                            <small>{{ item.namedAfter ? seniorTitle(item) : 'без назви' }}</small>
+                        </div>
+                    } @else {
+                        <div class="kurin-number-cell">
+                            <span>{{ item.number ?? 'Підготовчий' }} <p-tag value="УПЮ" severity="secondary" class="kurin-branch-tag" /></span>
+                            <small>{{ item.namedAfter ? 'ім. ' + item.namedAfter : (item.number === null ? 'ще без числа' : 'число куреня') }}</small>
+                        </div>
+                    }
                 </td>
                 <td class="admin-kurin-actions" data-mobile-label="Дії">
                     <p-splitButton label="Відкрити" icon="pi pi-arrow-right" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)" />
@@ -56,7 +55,10 @@
             </tr>
         </ng-template>
     </p-table>
-    @if (data.length === 0) {
+    @if (kurins.length > 0 && data.length === 0) {
+        <p class="admin-panel__none" data-testid="admin-ulad-empty">Куренів {{ uladLabel }} ще немає</p>
+    }
+    @if (kurins.length === 0) {
         <div class="admin-panel__empty">
             <app-empty-state
                 art="list"

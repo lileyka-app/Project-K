@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
-using ProjectK.Common.Security;
-using ProjectK.Common.Models.Enums;
+using ProjectK.API.Hosting;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Rules.Shared;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Seeding;
 
@@ -143,7 +143,7 @@ public sealed class E2ETestController : ControllerBase
         }
 
         if (!Request.Headers.TryGetValue(ResetTokenHeader, out var providedToken)
-            || !SecretComparer.Matches(providedToken.ToString(), expectedToken))
+            || !SecretComparisonRules.Matches(providedToken.ToString(), expectedToken))
         {
             return this.Failure(ResultType.Unauthorized, "InvalidResetToken", "Invalid E2E reset token.");
         }

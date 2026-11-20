@@ -36,11 +36,19 @@
           optionValue="value"
           [filter]="personOptions().length > 8"
           filterBy="label"
-          placeholder="Обери юнака"
+          [placeholder]="personPlaceholder()"
           appendTo="body"
           styleClass="w-full" />
         @if (personError; as message) {
           <p class="lil-dialog-error">{{ message }}</p>
+        }
+      </div>
+    }
+
+    @if (quickAmounts().length) {
+      <div class="dues-entry-field--wide dues-entry-quick" role="group" aria-label="Готові суми">
+        @for (quick of quickAmounts(); track quick.label) {
+          <p-button [label]="quick.label" severity="secondary" size="small" type="button" (onClick)="useAmount(quick.amount)" />
         }
       </div>
     }

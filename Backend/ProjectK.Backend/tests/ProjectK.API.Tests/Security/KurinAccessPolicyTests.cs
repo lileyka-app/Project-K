@@ -1,6 +1,7 @@
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -10,15 +11,15 @@ namespace ProjectK.API.Tests.Security;
 /// </summary>
 public class KurinAccessPolicyTests
 {
-    private static readonly string Zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
-    private static readonly string Vykhovnyk = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-    private static readonly string Hurtkovyy = SystemRole.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
+    private static readonly string Zvyazkovyi = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+    private static readonly string Vykhovnyk = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
+    private static readonly string Hurtkovyy = SystemRoleNames.ForOffice(LeadershipType.Group, LeadershipRole.Hurtkoviy);
 
     private static IEnumerable<string> EveryRole() =>
-        LeadershipOffices.All()
-            .Select(office => SystemRole.ForOffice(office.Type, office.Role))
-            .Append(SystemRole.Member)
-            .Append(SystemRole.Admin);
+        LeadershipOfficeRules.All()
+            .Select(office => SystemRoleNames.ForOffice(office.Type, office.Role))
+            .Append(SystemRoleNames.Member)
+            .Append(SystemRoleNames.Admin);
 
     private static Dictionary<string, IReadOnlyDictionary<string, string?>> Matrix(
         params (KurinCapability Capability, PolicyAudience Audience, CapabilityReach Reach)[] cells) =>
@@ -35,16 +36,16 @@ public class KurinAccessPolicyTests
 
     // Every cell a kurin may change, opened to the whole kurin.
     private static KurinAccessPolicy WideOpen() =>
-        Set(KurinCapabilities.All
-            .SelectMany(descriptor => KurinCapabilities.Audiences
+        Set(KurinCapabilityRules.All
+            .SelectMany(descriptor => KurinCapabilityRules.Audiences
                 .Where(audience => !descriptor.IsLocked(audience))
                 .Select(audience => (descriptor.Key, audience, CapabilityReach.Kurin)))
             .ToArray());
 
     // Every cell a kurin may change, closed.
     private static KurinAccessPolicy Closed() =>
-        Set(KurinCapabilities.All
-            .SelectMany(descriptor => KurinCapabilities.Audiences
+        Set(KurinCapabilityRules.All
+            .SelectMany(descriptor => KurinCapabilityRules.Audiences
                 .Where(audience => !descriptor.IsLocked(audience))
                 .Select(audience => (descriptor.Key, audience, CapabilityReach.None)))
             .ToArray());
@@ -52,15 +53,15 @@ public class KurinAccessPolicyTests
     [Fact]
     public void EveryCapability_HasOneRow_WithADefaultForEveryAudience()
     {
-        Assert.Equal(Enum.GetValues<KurinCapability>(), KurinCapabilities.All.Select(descriptor => descriptor.Key));
-        Assert.All(KurinCapabilities.All, descriptor =>
+        Assert.Equal(Enum.GetValues<KurinCapability>(), KurinCapabilityRules.All.Select(descriptor => descriptor.Key));
+        Assert.All(KurinCapabilityRules.All, descriptor =>
             Assert.Equal(Enum.GetValues<PolicyAudience>(), descriptor.Defaults.Keys.Order()));
     }
 
     [Fact]
     public void TheZvyazkovyi_IsLockedToTheWholeKurin_OnEverything()
     {
-        Assert.All(KurinCapabilities.All, descriptor =>
+        Assert.All(KurinCapabilityRules.All, descriptor =>
         {
             Assert.True(descriptor.IsLocked(PolicyAudience.Zvyazkovyi));
             Assert.Equal(CapabilityReach.Kurin, descriptor.Defaults[PolicyAudience.Zvyazkovyi]);
@@ -70,9 +71,12 @@ public class KurinAccessPolicyTests
     [Fact]
     public void OnlyDataRows_LetTheYouthColumnBeSet_AndActionsNeverReachYouths()
     {
-        Assert.All(KurinCapabilities.All, descriptor =>
+        Assert.All(KurinCapabilityRules.All, descriptor =>
         {
-            Assert.Equal(descriptor.Group == CapabilityGroup.MemberData, descriptor.YouthConfigurable);
+            // Seeing tags is data about a person too: a kurin may show everyone the table with tags.
+            Assert.Equal(
+                descriptor.Group == CapabilityGroup.MemberData || descriptor.Key == KurinCapability.SeeTags,
+                descriptor.YouthConfigurable);
             if (!descriptor.YouthConfigurable)
             {
                 Assert.Equal(CapabilityReach.None, descriptor.Defaults[PolicyAudience.Youth]);
@@ -89,15 +93,15 @@ public class KurinAccessPolicyTests
         // The coarse request policies (RequireKurinManagement, RequireGroupLeadership, planning
         // authoring) are decided from roles alone, without a kurin. A capability on these resources
         // would make them disagree with the resource check.
-        Assert.DoesNotContain(KurinCapabilities.All, descriptor => descriptor.Resource == coarse);
+        Assert.DoesNotContain(KurinCapabilityRules.All, descriptor => descriptor.Resource == coarse);
 
         foreach (var role in EveryRole())
         {
             foreach (var action in Enum.GetValues<ResourceAction>())
             {
-                var byDefault = RolePermissionMap.WidestScope(RolePermissionMap.Resolve([role]), coarse, action);
-                Assert.Equal(byDefault, RolePermissionMap.WidestScope(RolePermissionMap.Resolve([role], WideOpen()), coarse, action));
-                Assert.Equal(byDefault, RolePermissionMap.WidestScope(RolePermissionMap.Resolve([role], Closed()), coarse, action));
+                var byDefault = RolePermissionRules.WidestScope(RolePermissionRules.Resolve([role]), coarse, action);
+                Assert.Equal(byDefault, RolePermissionRules.WidestScope(RolePermissionRules.Resolve([role], WideOpen()), coarse, action));
+                Assert.Equal(byDefault, RolePermissionRules.WidestScope(RolePermissionRules.Resolve([role], Closed()), coarse, action));
             }
         }
     }
@@ -108,18 +112,18 @@ public class KurinAccessPolicyTests
         foreach (var role in EveryRole())
         {
             Assert.Equal(
-                RolePermissionMap.Resolve([role], KurinAccessPolicy.Default).ToHashSet(),
-                RolePermissionMap.Resolve([role]).ToHashSet());
+                RolePermissionRules.Resolve([role], KurinAccessPolicy.Default).ToHashSet(),
+                RolePermissionRules.Resolve([role]).ToHashSet());
         }
     }
 
     [Fact]
     public void StaticGrants_HoldNoConfigurablePair_ButTheSelfServiceOnes()
     {
-        foreach (var role in EveryRole().Where(role => role != SystemRole.Admin))
+        foreach (var role in EveryRole().Where(role => role != SystemRoleNames.Admin))
         {
-            var offending = RolePermissionMap.StaticGrants([role])
-                .Where(grant => grant.Scope != AccessScope.Own && KurinCapabilities.IsConfigurable(grant.Resource, grant.Action))
+            var offending = RolePermissionRules.StaticGrants([role])
+                .Where(grant => grant.Scope != AccessScope.Own && KurinCapabilityRules.IsConfigurable(grant.Resource, grant.Action))
                 .Select(grant => grant.ToClaimValue())
                 .ToList();
 
@@ -130,7 +134,7 @@ public class KurinAccessPolicyTests
     [Fact]
     public void AClosedPolicy_KeepsTheSelfServiceGrants()
     {
-        var permissions = RolePermissionMap.Resolve([SystemRole.Member], Closed());
+        var permissions = RolePermissionRules.Resolve([SystemRoleNames.Member], Closed());
 
         Assert.Contains(new Permission(ResourceType.MemberAward, ResourceAction.Delete, AccessScope.Own), permissions);
         Assert.Contains(new Permission(ResourceType.MemberAward, ResourceAction.Create, AccessScope.Own), permissions);
@@ -141,7 +145,7 @@ public class KurinAccessPolicyTests
     [Fact]
     public void TheBaselineRead_LeavesOutWhatThePolicyDecides()
     {
-        var permissions = RolePermissionMap.StaticGrants([SystemRole.Member]);
+        var permissions = RolePermissionRules.StaticGrants([SystemRoleNames.Member]);
 
         foreach (var resource in new[]
                  {
@@ -150,7 +154,7 @@ public class KurinAccessPolicyTests
                      ResourceType.KurinJournal
                  })
         {
-            Assert.Null(RolePermissionMap.WidestScope(permissions, resource, ResourceAction.Read));
+            Assert.Null(RolePermissionRules.WidestScope(permissions, resource, ResourceAction.Read));
         }
     }
 
@@ -163,7 +167,7 @@ public class KurinAccessPolicyTests
             {
                 Assert.Equal(
                     AccessScope.KurinWide,
-                    RolePermissionMap.WidestScope(RolePermissionMap.Resolve([SystemRole.Admin], Closed()), resource, action));
+                    RolePermissionRules.WidestScope(RolePermissionRules.Resolve([SystemRoleNames.Admin], Closed()), resource, action));
             }
         }
     }
@@ -180,9 +184,9 @@ public class KurinAccessPolicyTests
             (KurinCapability.ConfirmAward4, PolicyAudience.Vykhovnyk, CapabilityReach.None));
 
         AccessScope? Widest(string role, ResourceType resource, ResourceAction action) =>
-            RolePermissionMap.WidestScope(RolePermissionMap.Resolve([SystemRole.Member, role], policy), resource, action);
+            RolePermissionRules.WidestScope(RolePermissionRules.Resolve([SystemRoleNames.Member, role], policy), resource, action);
 
-        Assert.Equal(AccessScope.OwnGroups, Widest(SystemRole.Member, ResourceType.MemberContacts, ResourceAction.Read));
+        Assert.Equal(AccessScope.OwnGroups, Widest(SystemRoleNames.Member, ResourceType.MemberContacts, ResourceAction.Read));
         Assert.Equal(AccessScope.KurinWide, Widest(Hurtkovyy, ResourceType.MemberContacts, ResourceAction.Read));
         Assert.Null(Widest(Vykhovnyk, ResourceType.MemberAward, ResourceAction.Update));
         Assert.Equal(AccessScope.KurinWide, Widest(Zvyazkovyi, ResourceType.MemberAward, ResourceAction.Update));
@@ -225,16 +229,16 @@ public class KurinAccessPolicyTests
     [InlineData("Kurin.OtherKurin", new[] { PolicyAudience.KurinProvid, PolicyAudience.Youth })]
     [InlineData("Group.Hurtkoviy", new[] { PolicyAudience.Hurtkovyy, PolicyAudience.Youth })]
     [InlineData("Group.Pysar", new[] { PolicyAudience.GroupProvid, PolicyAudience.Youth })]
-    public void PolicyAudiences_FoldEachOfficeIntoItsColumn(string role, PolicyAudience[] expected)
+    public void PolicyAudienceRules_FoldEachOfficeIntoItsColumn(string role, PolicyAudience[] expected)
     {
-        Assert.Equal(expected.Order(), PolicyAudiences.For([role]).Order());
+        Assert.Equal(expected.Order(), PolicyAudienceRules.For([role]).Order());
     }
 
     [Fact]
     public void NoRoles_AreNoAudience()
     {
-        Assert.Empty(PolicyAudiences.For([]));
-        Assert.Empty(RolePermissionMap.Resolve([]));
+        Assert.Empty(PolicyAudienceRules.For([]));
+        Assert.Empty(RolePermissionRules.Resolve([]));
     }
 
     [Fact]
@@ -323,8 +327,8 @@ public class KurinAccessPolicyTests
     [Fact]
     public void Validate_AcceptsTheFullDefaultMatrix()
     {
-        var full = KurinCapabilities.All
-            .SelectMany(descriptor => KurinCapabilities.Audiences
+        var full = KurinCapabilityRules.All
+            .SelectMany(descriptor => KurinCapabilityRules.Audiences
                 .Select(audience => (descriptor.Key, audience, descriptor.Defaults[audience])))
             .ToArray();
 
@@ -377,7 +381,7 @@ public class KurinAccessPolicyTests
     [Fact]
     public void EveryDefault_IsAReachItsRowOffers()
     {
-        Assert.All(KurinCapabilities.All, descriptor =>
+        Assert.All(KurinCapabilityRules.All, descriptor =>
             Assert.All(descriptor.Defaults.Values, reach => Assert.True(descriptor.Offers(reach), $"{descriptor.Key}: {reach}")));
     }
 
@@ -385,7 +389,7 @@ public class KurinAccessPolicyTests
     [Fact]
     public void AssigningToTheWholeKurin_IsKurinOrNobody()
     {
-        Assert.Equal(new[] { CapabilityReach.None, CapabilityReach.Kurin }, KurinCapabilities.Get(KurinCapability.AssignKurin).Reaches);
+        Assert.Equal(new[] { CapabilityReach.None, CapabilityReach.Kurin }, KurinCapabilityRules.Get(KurinCapability.AssignKurin).Reaches);
         Assert.Single(KurinAccessPolicy.Validate(Matrix((KurinCapability.AssignKurin, PolicyAudience.Hurtkovyy, CapabilityReach.OwnGroup))));
         Assert.Empty(KurinAccessPolicy.Validate(Matrix((KurinCapability.AssignKurin, PolicyAudience.Hurtkovyy, CapabilityReach.Kurin))));
         Assert.Empty(KurinAccessPolicy.Validate(Matrix((KurinCapability.AssignGroups, PolicyAudience.Kurinnyy, CapabilityReach.OwnGroup))));
@@ -402,11 +406,11 @@ public class KurinAccessPolicyTests
     [InlineData(KurinCapability.AssignProvid, "KGGKKGGN")]
     public void TheAssigningRows_DefaultToWhatEachOfficeCoversItself(KurinCapability capability, string expected)
     {
-        var descriptor = KurinCapabilities.Get(capability);
+        var descriptor = KurinCapabilityRules.Get(capability);
 
         Assert.Equal(CapabilityGroup.Agenda, descriptor.Group);
         Assert.Equal((ResourceType.AgendaItem, ResourceAction.Create), (descriptor.Resource, descriptor.Action));
-        Assert.Equal(expected, string.Concat(KurinCapabilities.Audiences.Select(audience => descriptor.Defaults[audience] switch
+        Assert.Equal(expected, string.Concat(KurinCapabilityRules.Audiences.Select(audience => descriptor.Defaults[audience] switch
         {
             CapabilityReach.Kurin => 'K',
             CapabilityReach.OwnGroup => 'G',
@@ -423,8 +427,8 @@ public class KurinAccessPolicyTests
             (KurinCapability.AssignMembers, PolicyAudience.Hurtkovyy, CapabilityReach.None),
             (KurinCapability.AssignProvid, PolicyAudience.Hurtkovyy, CapabilityReach.None));
 
-        Assert.Equal(AccessScope.OwnGroups, RolePermissionMap.WidestScope(RolePermissionMap.Resolve([Hurtkovyy]), ResourceType.AgendaItem, ResourceAction.Create));
-        Assert.Null(RolePermissionMap.WidestScope(RolePermissionMap.Resolve([Hurtkovyy], closed), ResourceType.AgendaItem, ResourceAction.Create));
-        Assert.Null(RolePermissionMap.WidestScope(RolePermissionMap.Resolve([SystemRole.Member]), ResourceType.AgendaItem, ResourceAction.Create));
+        Assert.Equal(AccessScope.OwnGroups, RolePermissionRules.WidestScope(RolePermissionRules.Resolve([Hurtkovyy]), ResourceType.AgendaItem, ResourceAction.Create));
+        Assert.Null(RolePermissionRules.WidestScope(RolePermissionRules.Resolve([Hurtkovyy], closed), ResourceType.AgendaItem, ResourceAction.Create));
+        Assert.Null(RolePermissionRules.WidestScope(RolePermissionRules.Resolve([SystemRoleNames.Member]), ResourceType.AgendaItem, ResourceAction.Create));
     }
 }

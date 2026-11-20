@@ -2,22 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
-using ProjectK.Common.Entities.InfrastructureModule;
-using ProjectK.Common.Models.Settings;
+using ProjectK.Common.Entities.NotificationsModule;
+using ProjectK.Common.Options.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.WebPush;
-
-/// <summary>What became of one push.</summary>
-public enum WebPushOutcome
-{
-    Delivered,
-
-    /// <summary>The push service no longer knows the device (404/410): its row should go.</summary>
-    Gone,
-
-    /// <summary>Anything else — refused, throttled, unreachable. Logged; the row stays.</summary>
-    Failed
-}
 
 /// <summary>
 /// Sends one encrypted message to one device's push service (RFC 8030), signed with this server's
@@ -53,7 +41,7 @@ public sealed class WebPushSender
 
         // The server's own key first: a misconfigured pair must fail loudly, not pass for a dead device.
         var authorization = VapidAuthorization(endpoint);
-        var content = new ByteArrayContent(WebPushCrypto.Encrypt(payload, subscription.P256dh, subscription.Auth));
+        var content = new ByteArrayContent(WebPushCryptoRules.Encrypt(payload, subscription.P256dh, subscription.Auth));
         content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
         content.Headers.ContentEncoding.Add("aes128gcm");
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
@@ -76,7 +64,7 @@ public sealed class WebPushSender
     {
         try
         {
-            return WebPushCrypto.CreateVapidAuthorization(
+            return WebPushCryptoRules.CreateVapidAuthorization(
                 endpoint,
                 _options.EffectiveSubject,
                 _options.PublicKey!,

@@ -2,31 +2,54 @@
 <section class="kurin-tile kurin-header">
     <div class="kurin-header-main">
         <div class="kurin-number-slot">
-            <app-kurin-number [number]="kurinNumber" />
+            <app-kurin-mark [number]="kurinNumber" [branch]="kurinData?.branch" [emblemUrl]="kurinData?.emblemUrl" [name]="kurinData?.namedAfter" />
+            <input #emblemInput type="file" class="kurin-emblem-input" accept="image/png,image/jpeg,image/webp"
+                (change)="onEmblemPicked($event)" aria-label="Файл емблеми куреня" />
         </div>
 
         <div class="kurin-identity">
             <div class="kurin-identity__top">
                 <div class="kurin-title-block">
                     <h1 class="kurin-title">
-                        <span>{{ kurinData ? (kurinNumber === null ? 'Підготовчий' : kurinNumber) : '-' }} курінь</span>
-                        @if (kurinData?.namedAfter) {
-                            <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
+                        @if (isSenior) {
+                            <span>{{ kurinData?.namedAfter || seniorTitle }}</span>
+                        } @else {
+                            <span>{{ kurinData ? (kurinNumber === null ? 'Підготовчий' : kurinNumber) : '-' }} курінь</span>
+                            @if (kurinData?.namedAfter) {
+                                <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
+                            }
                         }
                     </h1>
-                    <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />
+                    @if (isSenior && kurinData?.namedAfter) {
+                        <p class="kurin-title__branches">{{ seniorTitle }}</p>
+                    } @else {
+                        <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />
+                    }
                 </div>
 
-                @if (hasKurinEditActions && !profileEditMode) {
-                    <p-menu #kurinEditMenu [model]="kurinEditMenuItems" [popup]="true" appendTo="body" />
-                    <p-button
-                        class="edit-profile-action"
-                        styleClass="edit-profile-button"
-                        label="Редагувати"
-                        icon="pi pi-pencil"
-                        severity="secondary"
-                        [loading]="reportDownloading"
-                        (onClick)="kurinEditMenu.toggle($event)" />
+                @if (!profileEditMode && (hasKurinEditActions || canManageGroups)) {
+                    <div class="kurin-head-actions">
+                        @if (canManageGroups) {
+                            <p-button
+                                label="Звіт PDF"
+                                icon="pi pi-file-pdf"
+                                severity="secondary"
+                                variant="text"
+                                [loading]="reportDownloading"
+                                [disabled]="!kurinKey"
+                                (onClick)="downloadReportPdf()" />
+                        }
+                        @if (hasKurinEditActions) {
+                            <p-menu #kurinEditMenu appMenuEnd [model]="kurinEditMenuItems" [popup]="true" appendTo="body" />
+                            <p-button
+                                class="edit-profile-action"
+                                styleClass="edit-profile-button"
+                                label="Редагувати"
+                                icon="pi pi-pencil"
+                                severity="secondary"
+                                (onClick)="onKurinEditClick($event, kurinEditMenu)" />
+                        }
+                    </div>
                 }
             </div>
 
@@ -92,6 +115,7 @@
 </section>
 
 <div class="group-panel">
+    @if (!isSenior) {
     <section class="kurin-tile">
         <p-table [value]="groups" styleClass="project-table">
             <ng-template #caption>
@@ -150,6 +174,7 @@
             </div>
         }
     </section>
+    }
 
     <div class="kurin-side-tiles">
         <section class="kurin-tile">
@@ -162,12 +187,8 @@
     </div>
 
     <section class="kurin-tile">
-        <app-member-list [type]="'kurin'" [typeKey]="kurinKey" />
-        @if (canManageMembers) {
-            <div class="mt-3">
-                <p-button label="Додати учасника куреня" (onClick)="onMemberCreate()" icon="pi pi-plus" />
-            </div>
-        }
+        <app-member-list [type]="'kurin'" [typeKey]="kurinKey"
+            [addLabel]="canManageMembers ? 'Додати учасника' : null" (add)="onMemberCreate()" />
     </section>
 </div>
 </div>
@@ -177,3 +198,13 @@
   [entity]="selectedGroup"
   [config]="groupPanelConfig"
   (actionPerformed)="onGroupManage($event)" />
+
+<app-image-crop-dialog
+  [(visible)]="emblemDialogVisible"
+  header="Емблема куреня"
+  [file]="emblemFile"
+  [aspectRatio]="null"
+  [saving]="emblemSaving"
+  previewAlt="Попередній перегляд емблеми"
+  (save)="uploadCroppedEmblem($event)"
+  (cancelled)="cancelEmblemCrop()" />

@@ -3,14 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Entities.AuthModule;
+using Microsoft.Extensions.Options;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.MemberModule;
+using ProjectK.Common.Options.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.IdentityModule;
+using ProjectK.Infrastructure.BackgroundServices;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Stores;
 
 namespace ProjectK.Infrastructure.Seeding;
 
@@ -34,7 +40,7 @@ public static class DataSeeder
         // 1. Seed the two roles the identity store still holds. Office roles are not among them:
         // what an office grants is worked out from the registry for the kurin the account is in,
         // and storing it on the account is what used to make it true everywhere at once.
-        foreach (var roleName in new[] { SystemRole.Admin, SystemRole.Member })
+        foreach (var roleName in new[] { SystemRoleNames.Admin, SystemRoleNames.Member })
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
@@ -69,7 +75,14 @@ public static class DataSeeder
 
         await ResetKurin1DataAsync(dbContext, userManager);
 
-        // 4. Seed comprehensive demo data (kurin, groups, mentors, members)
+        // 4. Seed comprehensive demo data (kurin, groups, mentors, members). The catalogue service
+        // starts after this, so without the built-in copy nobody would get a probe or a вмілість.
+        var catalog = scope.ServiceProvider.GetRequiredService<CatalogStore>();
+        if (!catalog.IsLoaded)
+        {
+            CatalogSyncBackgroundService.LoadBuiltIn(catalog, scope.ServiceProvider.GetRequiredService<IOptions<CatalogOptions>>().Value.BaseUrl);
+        }
+
         var demoSeeder = scope.ServiceProvider.GetRequiredService<IDemoDataSeeder>();
         await demoSeeder.SeedAsync();
 
@@ -113,7 +126,7 @@ public static class DataSeeder
     /// </summary>
     internal static async Task<bool> HasConfiguredAdministratorAsync(UserManager<AppUser> userManager)
     {
-        var administrators = await userManager.GetUsersInRoleAsync(SystemRole.Admin);
+        var administrators = await userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
         return administrators.Any(administrator => !IsSeededAdministrator(administrator));
     }
 
@@ -126,7 +139,7 @@ public static class DataSeeder
     /// </summary>
     private static async Task WarnWhenNoAdministratorAsync(IServiceProvider services, UserManager<AppUser> userManager)
     {
-        var administrators = await userManager.GetUsersInRoleAsync(SystemRole.Admin);
+        var administrators = await userManager.GetUsersInRoleAsync(SystemRoleNames.Admin);
         if (administrators.Count > 0)
         {
             return;
@@ -137,15 +150,21 @@ public static class DataSeeder
             .LogWarning("No administrator account exists yet; the first visitor is sent to the setup wizard to create one.");
     }
 
-    private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
-    {
-        // The seeder's kurin is number 1 of Україна. One moved to another край by hand on a dev
-        // database still holds the seeded accounts, and left alone it made the next run reuse them
-        // on top of the old rows; with no Ukrainian kurin 1, that one is the seeder's.
-        var kurin1 = await dbContext.Kurins
-            .Where(k => k.Number == 1)
+    /// <summary>
+    /// The kurin the reset wipes: УПЮ kurin 1 of Україна. One moved to another край by hand on a dev
+    /// database still holds the seeded accounts, and left alone it made the next run reuse them on
+    /// top of the old rows; with no Ukrainian kurin 1, that one is the seeder's. A УСП or УПС kurin 1
+    /// is someone else's and never matches: numbers are counted apart in each гілка.
+    /// </summary>
+    internal static Task<Kurin?> FindSeederKurinAsync(AppDbContext dbContext)
+        => dbContext.Kurins
+            .Where(k => k.Branch == KurinBranch.UPYu && k.Number == 1)
             .OrderBy(k => k.KraiCode == Krai.Ukraine ? 0 : 1)
             .FirstOrDefaultAsync();
+
+    private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
+    {
+        var kurin1 = await FindSeederKurinAsync(dbContext);
         if (kurin1 == null)
         {
             return;
@@ -153,6 +172,7 @@ public static class DataSeeder
 
         var kurinKey = kurin1.KurinKey;
         var groupKeys = await dbContext.Groups
+            .IgnoreQueryFilters()
             .Where(g => g.KurinKey == kurinKey)
             .Select(g => g.GroupKey)
             .ToListAsync();
@@ -166,7 +186,7 @@ public static class DataSeeder
         // An administrator is not demo data. The seeded one was spared here by address alone, which
         // spared exactly the account that is cheapest to recreate and none of the ones that are not:
         // an administrator configured by hand, who happens to stand in kurin 1, was deleted outright.
-        var administratorIds = (await userManager.GetUsersInRoleAsync(SystemRole.Admin))
+        var administratorIds = (await userManager.GetUsersInRoleAsync(SystemRoleNames.Admin))
             .Select(administrator => administrator.Id)
             .ToHashSet();
 
@@ -267,8 +287,9 @@ public static class DataSeeder
 
         // The seeder wipes its own demo kurin outright, people included — the reset exists to
         // give every run the same starting point, and these are not real people.
+        // Their memberships in other kurins too: the person goes, and one left behind shows up nameless there.
         var memberships = await dbContext.Memberships
-            .Where(ms => ms.KurinKey == kurinKey)
+            .Where(ms => ms.KurinKey == kurinKey || memberKeys.Contains(ms.MemberKey))
             .ToListAsync();
         dbContext.Memberships.RemoveRange(memberships);
 
@@ -278,6 +299,7 @@ public static class DataSeeder
         dbContext.Members.RemoveRange(members);
 
         var groups = await dbContext.Groups
+            .IgnoreQueryFilters()
             .Where(g => g.KurinKey == kurinKey)
             .ToListAsync();
         dbContext.Groups.RemoveRange(groups);

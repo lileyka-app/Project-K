@@ -3,10 +3,11 @@ using System.Net.Http.Json;
 using System.Net.Sockets;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using ProjectK.Common.Contracts.Shared;
 
 namespace ProjectK.Infrastructure.Services.GeoIP;
 
-public sealed class GeoIPService
+public sealed class GeoIPService : IGeoIPService
 {
     // The lookup sits in SecurityHardeningMiddleware, so every request pays for it.
     // Cap it well below the 100s HttpClient default: a slow or throttled provider must

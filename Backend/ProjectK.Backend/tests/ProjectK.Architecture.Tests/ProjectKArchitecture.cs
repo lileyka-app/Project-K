@@ -12,10 +12,10 @@ public static class ProjectKArchitecture
 {
     public static readonly ArchUnitNET.Domain.Architecture Loaded = new ArchLoader()
         .LoadAssemblies(
-            typeof(ProjectK.Common.Entities.KurinModule.Member).Assembly,
+            typeof(ProjectK.Common.Entities.MemberModule.Member).Assembly,
             typeof(ProjectK.Infrastructure.DbContexts.AppDbContext).Assembly,
             typeof(ProjectK.BusinessLogic.DependencyInjection).Assembly,
-            typeof(ProjectK.API.ServiceCollectionExtension).Assembly)
+            typeof(ProjectK.API.ServiceCollectionExtensions).Assembly)
         .Build();
 
     /// <summary>

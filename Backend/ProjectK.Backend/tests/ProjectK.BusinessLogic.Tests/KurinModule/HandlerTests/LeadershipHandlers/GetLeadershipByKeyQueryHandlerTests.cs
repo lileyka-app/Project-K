@@ -1,19 +1,12 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Leadership;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.MemberModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.LeadershipHandlers;
 
@@ -21,21 +14,16 @@ public class GetLeadershipByKeyHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ILeadershipRepository> _leadershipRepoMock = new();
-    // The real profile: EntityKey is derived by the mapping, so a stubbed IMapper
-    // would assert the stub rather than the behaviour.
-    private readonly IMapper _mapper = new MapperConfiguration(
-        cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        },
-        NullLoggerFactory.Instance).CreateMapper();
     private readonly GetLeadershipByKeyQueryHandler _handler;
 
     public GetLeadershipByKeyHandlerTests()
     {
         _unitOfWorkMock.Setup(u => u.Leaderships).Returns(_leadershipRepoMock.Object);
-        _handler = new GetLeadershipByKeyQueryHandler(_unitOfWorkMock.Object, _mapper);
+        var members = new Mock<IMemberDirectory>();
+        members
+            .Setup(m => m.GetLookupsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, MemberLookupDto>());
+        _handler = new GetLeadershipByKeyQueryHandler(_unitOfWorkMock.Object, members.Object);
     }
 
     private static Leadership BuildLeadership(LeadershipType type, Guid? kurinKey = null, Guid? groupKey = null) =>
@@ -46,18 +34,6 @@ public class GetLeadershipByKeyHandlerTests
             KurinKey = kurinKey,
             GroupKey = groupKey,
             StartDate = new DateOnly(2024, 1, 1)
-        };
-
-    private static LeadershipResponse BuildDto(Leadership entity) =>
-        new()
-        {
-            LeadershipKey = entity.LeadershipKey,
-            Type = entity.Type,
-            KurinKey = entity.KurinKey,
-            GroupKey = entity.GroupKey,
-            StartDate = entity.StartDate,
-            EndDate = entity.EndDate,
-            LeadershipHistories = []
         };
 
     [Fact]

@@ -134,7 +134,7 @@ function agendaApi(leader = false, busy = false): Fixtures {
     if (path.startsWith('agenda/item/')) {
       const key = path.split('/')[2];
       const found = [series, hike, knots, tent, done, ...archived].find((i) => i.agendaItemKey === key);
-      if (!found) return refuse(404, 'AGENDA_NOT_FOUND');
+      if (!found) return refuse(404, 'AgendaNotFound');
       // The item endpoint gives the series itself, not an occurrence.
       return ok(key === 'e1' ? { ...found, startUtc: found.seriesStartUtc, endUtc: found.seriesEndUtc, isRecurrenceInstance: false } : found);
     }
@@ -441,7 +441,10 @@ test('creates a task done by each person', async ({ page }, info) => {
   await form.getByTestId('targets').click();
   const picker = page.locator('ion-modal').filter({ hasText: 'Для кого' });
   await picker.locator('ion-searchbar input').fill('сокол');
-  await picker.locator('ion-checkbox').filter({ hasText: 'Увесь гурток' }).click();
+  // The list narrows just after the input: until then every гурток still has its own row.
+  const wholeGroup = picker.locator('ion-checkbox').filter({ hasText: 'Увесь гурток' });
+  await expect(wholeGroup).toHaveCount(1);
+  await wholeGroup.click();
   await picker.getByTestId('targets-done').click();
   await form.locator('ion-radio').filter({ hasText: 'Кожному окремо' }).click();
   await shot(page, info.project.name, 'agenda-task-form');

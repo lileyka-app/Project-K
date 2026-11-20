@@ -1,0 +1,6 @@
+<label [for]="inputId()" class="registry-search__label">{{ label() }}</label>
+<p-iconfield iconPosition="left">
+  <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+  <input pInputText type="search" [id]="inputId()" class="registry-search__input"
+    [ngModel]="value()" (ngModelChange)="value.set($event)" [placeholder]="placeholder()" />
+</p-iconfield>

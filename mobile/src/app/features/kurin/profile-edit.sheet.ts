@@ -16,6 +16,8 @@ import {
   IonSpinner,
   IonTitle,
   IonToggle,
+  IonSegment,
+  IonSegmentButton,
   IonToolbar,
   ModalController,
 } from '@ionic/angular';
@@ -148,6 +150,8 @@ export type ProfileEditResult = 'saved' | 'changed' | 'deleted' | { created: str
 @Component({
   selector: 'app-profile-edit-sheet',
   imports: [
+    IonSegment,
+    IonSegmentButton,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -289,6 +293,12 @@ export type ProfileEditResult = 'saved' | 'changed' | 'deleted' | { created: str
         <ion-list [inset]="true" data-testid="profile-ranks">
           <ion-list-header><ion-label>Пластові ступені</ion-label></ion-list-header>
           <ion-item-group>
+            <ion-item>
+              <ion-segment [value]="plastunka() ? 'plastunka' : 'plastun'" (ionChange)="plastunka.set($any($event).detail.value === 'plastunka')" data-testid="plastunka-switch">
+                <ion-segment-button value="plastun"><ion-label>Пластун</ion-label></ion-segment-button>
+                <ion-segment-button value="plastunka"><ion-label>Пластунка</ion-label></ion-segment-button>
+              </ion-segment>
+            </ion-item>
             @for (branch of branches; track branch.branch) {
               <ion-item>
                 <ion-toggle
@@ -422,6 +432,8 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
   /** The extra values as read, to send only what changed. */
   private loadedExtras: CardExtras = {};
   protected readonly dates = signal<RankDates>(rankDates([]));
+  /** Пластун or пластунка: every ступінь is drawn and named for one or the other (web isPlastunka). */
+  protected readonly plastunka = signal(false);
   protected readonly open = signal({ UPYu: false, USP: false, UPS: false });
   protected readonly draft = signal<WarningDraft>(NO_WARNING_CHANGES);
   protected readonly verification = signal<{ status: ProfileVerificationStatus; at: string | null }>({ status: 'Unverified', at: null });
@@ -505,6 +517,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     });
     const dates = rankDates(m.plastLevelHistories);
     this.dates.set(dates);
+    this.plastunka.set((m.plastLevelHistories ?? []).some((history) => history.isPlastunka));
     this.open.set(openBranches(dates));
     this.verification.set({ status: m.profileVerificationStatus ?? 'Unverified', at: m.profileVerifiedAtUtc ?? null });
     this.showEmail.set(canEditEmail(m, isAdmin));
@@ -690,7 +703,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     const form = { ...this.storedForm(), email: this.showEmail() ? this.form().email : (member.email ?? '') };
     // Someone who may not change the ступені sends them back as they were.
     const histories = this.canRanks()
-      ? rankHistories(member.plastLevelHistories, this.dates())
+      ? rankHistories(member.plastLevelHistories, this.dates(), this.plastunka())
       : (member.plastLevelHistories ?? []).filter((history) => history.dateAchieved);
     const photo = this.photo();
     let saved: MemberDto;
@@ -724,7 +737,7 @@ export class ProfileEditSheet implements OnInit, OnDestroy {
     if (!placement || !this.valid() || this.busy()) return;
     this.busy.set(true);
     const photo = this.photo();
-    const histories = this.canRanks() ? rankHistories([], this.dates()) : [];
+    const histories = this.canRanks() ? rankHistories([], this.dates(), this.plastunka()) : [];
     let created: MemberDto;
     try {
       created = await this.data.createMember(

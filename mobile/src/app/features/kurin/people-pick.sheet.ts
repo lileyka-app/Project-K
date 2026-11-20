@@ -34,7 +34,7 @@ const SEARCH_FROM = 9;
 
 /**
  * Picks people from a list, as the web's multiselect and select do: one (a провід office, with
- * «Не обсаджено») or several (виховники, people to add to a гурток). Dismisses with the picked
+ * «Нікого») or several (виховники, people to add to a гурток). Dismisses with the picked
  * keys, or null when cancelled.
  */
 @Component({
@@ -149,7 +149,7 @@ export class PeoplePickSheet implements OnInit {
   people: PickPerson[] = [];
   selected: string[] = [];
   multiple = false;
-  /** A single pick may also be nobody: this row says so (e.g. «Не обсаджено»). */
+  /** A single pick may also be nobody: this row says so (e.g. «Нікого»). */
   noneLabel: string | null = null;
   doneLabel = 'Готово';
   /** A multiple pick may come back empty (виховники: take everyone off). */

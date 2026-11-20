@@ -27,4 +27,6 @@ export interface MemberLookupDto {
      */
     mentoredGroupNames?: string[];
     warnings?: import('../../member-warning.dto').MemberWarningDto[];
+    /** Теги куреня на людині, які бачить той, хто дивиться. */
+    tagKeys?: string[];
 }

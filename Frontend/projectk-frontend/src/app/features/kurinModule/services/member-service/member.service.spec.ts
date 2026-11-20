@@ -77,7 +77,7 @@ describe('MemberService', () => {
       expect(res).toHaveLength(1);
     });
 
-    const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`);
     expect(req).toBeTruthy();
     expect(req.request.method).toBe('GET');
     req.flush([sampleMember]);
@@ -91,7 +91,7 @@ describe('MemberService', () => {
     service.getAll(groupKey).subscribe(res => firstResponse = res);
     service.getAll(groupKey).subscribe(res => secondResponse = res);
 
-    const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`);
     expect(req.request.method).toBe('GET');
     req.flush([sampleMember]);
 
@@ -102,20 +102,20 @@ describe('MemberService', () => {
       expect(res).toEqual([sampleMember]);
     });
 
-    httpMock.expectNone(`${apiUrl}/groups/${groupKey}/members`);
+    httpMock.expectNone(`${environment.apiUrl}/group/${groupKey}/members`);
   });
 
   it('update should invalidate member list cache', () => {
     const groupKey = 'g1';
 
     service.getAll(groupKey).subscribe();
-    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+    httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`).flush([sampleMember]);
 
     service.update(sampleMember.memberKey, sampleUpsert, null).subscribe();
     httpMock.expectOne(`${apiUrl}/${sampleMember.memberKey}`).flush(sampleMember);
 
     service.getAll(groupKey).subscribe();
-    const req = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`);
     expect(req.request.method).toBe('GET');
     req.flush([sampleMember]);
   });
@@ -127,7 +127,7 @@ describe('MemberService', () => {
       expect(res).toHaveLength(1);
     });
 
-    const req = httpMock.expectOne(`${apiUrl}/kurins/${kurinKey}/members`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/kurin/${kurinKey}/members`);
     expect(req.request.method).toBe('GET');
     req.flush([sampleMember]);
   });
@@ -216,7 +216,7 @@ describe('MemberService', () => {
       expect(res).toEqual(sampleMember);
     });
 
-    const req = httpMock.expectOne(`${apiUrl}/kurins/kurin-42/members`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/kurin/kurin-42/members`);
     expect(req.request.method).toBe('POST');
     req.flush(sampleMember);
   });
@@ -306,7 +306,7 @@ describe('MemberService', () => {
     };
 
     service.getAll(groupKey).subscribe();
-    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+    httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`).flush([sampleMember]);
 
     service.verifyProfile(sampleMember.memberKey, 'Checked').subscribe(res => {
       expect(res.profileVerificationStatus).toBe(MemberProfileVerificationStatus.VerifiedCurrent);
@@ -319,7 +319,7 @@ describe('MemberService', () => {
     verifyReq.flush(verifiedMember);
 
     service.getAll(groupKey).subscribe();
-    const listReq = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    const listReq = httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`);
     expect(listReq.request.method).toBe('GET');
     listReq.flush([verifiedMember]);
   });
@@ -333,7 +333,7 @@ describe('MemberService', () => {
     };
 
     service.getAll(groupKey).subscribe();
-    httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`).flush([sampleMember]);
+    httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`).flush([sampleMember]);
 
     service.resetProfileVerification(sampleMember.memberKey).subscribe(res => {
       expect(res.profileVerificationStatus).toBe(MemberProfileVerificationStatus.Unverified);
@@ -345,7 +345,7 @@ describe('MemberService', () => {
     resetReq.flush(resetMember);
 
     service.getAll(groupKey).subscribe();
-    const listReq = httpMock.expectOne(`${apiUrl}/groups/${groupKey}/members`);
+    const listReq = httpMock.expectOne(`${environment.apiUrl}/group/${groupKey}/members`);
     expect(listReq.request.method).toBe('GET');
     listReq.flush([resetMember]);
   });
@@ -356,7 +356,7 @@ describe('MemberService', () => {
       expect(res[0].userKey).toBe('u1');
     });
 
-    const req = httpMock.expectOne(`${apiUrl}/members/mentor-candidates/k-1`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/kurin/k-1/mentor-candidates`);
     expect(req.request.method).toBe('GET');
     req.flush([{ memberKey: 'm1', userKey: 'u1', firstName: 'Mentor', middleName: 'M', lastName: 'One' }]);
   });
@@ -370,13 +370,13 @@ describe('MemberService', () => {
       expect(res).toEqual(candidates);
     });
 
-    httpMock.expectOne(`${apiUrl}/members/mentor-candidates/k-1`).flush(candidates);
+    httpMock.expectOne(`${environment.apiUrl}/kurin/k-1/mentor-candidates`).flush(candidates);
 
     service.getMentorCandidates('k-1').subscribe(res => {
       expect(res).toEqual(candidates);
     });
 
-    httpMock.expectNone(`${apiUrl}/members/mentor-candidates/k-1`);
+    httpMock.expectNone(`${environment.apiUrl}/kurin/k-1/mentor-candidates`);
   });
 });
 

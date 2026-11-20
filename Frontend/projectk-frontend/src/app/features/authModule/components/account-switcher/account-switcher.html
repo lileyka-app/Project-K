@@ -33,6 +33,24 @@
                 </button>
             }
 
+            @if (invitationCount() > 0) {
+                <button type="button" class="account-switcher__row account-switcher__add" (click)="showInvitations()" data-testid="account-invitations">
+                    <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-envelope" aria-hidden="true"></span>
+                    <span class="account-switcher__title">Запрошення <span class="lil-count">{{ invitationCount() }}</span></span>
+                </button>
+            }
+
+            @if (hasOwnCode) {
+                <button type="button" class="account-switcher__row account-switcher__add" (click)="showCode()">
+                    <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-id-card" aria-hidden="true"></span>
+                    <span class="account-switcher__title">Мій код для переходу</span>
+                </button>
+                <button type="button" class="account-switcher__row account-switcher__add" (click)="showCard()">
+                    <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-qrcode" aria-hidden="true"></span>
+                    <span class="account-switcher__title">Показати картку</span>
+                </button>
+            }
+
             <button type="button" class="account-switcher__row account-switcher__add" (click)="addAccount()">
                 <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-user-plus" aria-hidden="true"></span>
                 <span class="account-switcher__title">Додати акаунт</span>
@@ -55,3 +73,6 @@
         <span class="account-switcher__chevron pi" [class.pi-angle-down]="open()" [class.pi-angle-up]="!open()" aria-hidden="true"></span>
     </button>
 </div>
+
+<app-transfer-code-dialog [visible]="codeVisible()" (visibleChange)="codeVisible.set($event)" />
+<app-card-check-dialog [visible]="cardVisible()" (visibleChange)="cardVisible.set($event)" />

@@ -62,6 +62,7 @@ import {
 } from './dues-format';
 import { DuesEntryForm, DuesKurinRateForm } from './dues-forms';
 import {
+  DuesChargeTiming,
   DuesEntryDto,
   DuesEntryKind,
   DuesTransferDto,
@@ -296,6 +297,34 @@ const DUES_ERRORS: Record<string, string> = {
                     <ion-item-group>
                       <ion-item>
                         <div class="rates" data-testid="rates">{{ ratesText() }}</div>
+                      </ion-item>
+                      <ion-item data-testid="charge-timing">
+                        @if (d.viewer.canSetRates) {
+                          <ion-select
+                            label="Як платимо"
+                            interface="action-sheet"
+                            cancelText="Скасувати"
+                            [value]="d.chargeTiming"
+                            [disabled]="saving()"
+                            (ionChange)="saveChargeTiming($any($event).detail.value)"
+                          >
+                            <ion-select-option value="InAdvance">Наперед</ion-select-option>
+                            <ion-select-option value="InArrears">За пройдений квартал</ion-select-option>
+                          </ion-select>
+                        } @else {
+                          <ion-label>Як платимо</ion-label>
+                          <ion-note slot="end">{{ d.chargeTiming === 'InArrears' ? 'За пройдений квартал' : 'Наперед' }}</ion-note>
+                        }
+                      </ion-item>
+                      <ion-item>
+                        <ion-label class="ion-text-wrap">
+                          <p>
+                            {{ d.chargeTiming === 'InArrears'
+                              ? 'Квартал нараховується, коли минув: на початку IV кв. платять за III.'
+                              : 'Квартал нараховується, щойно почався.' }}
+                            Неоплачений квартал, у якому людину виведено, знімається; оплачений лишається за нею.
+                          </p>
+                        </ion-label>
                       </ion-item>
                       @if (d.viewer.canSetRates) {
                         @if (standardArticles()) {
@@ -855,6 +884,12 @@ export class KurinDuesPage implements OnInit, OnDestroy {
     if (!done) return;
     this.rateOpen.set(false);
     await this.toasts.show('Збережено');
+  }
+
+  protected async saveChargeTiming(chargeTiming: DuesChargeTiming): Promise<void> {
+    if (!chargeTiming || chargeTiming === this.data()?.chargeTiming) return;
+    const done = await this.write(() => this.api.put(`${this.base()}/settings`, { chargeTiming }), 'Не вдалося зберегти. Спробуй ще раз.');
+    await this.toasts.show(done ? 'Збережено' : (this.formError() ?? 'Не вдалося зберегти. Спробуй ще раз.'), done ? undefined : 'danger');
   }
 
   private base(): string {

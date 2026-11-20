@@ -7,7 +7,7 @@
   @if (loading()) {
     <p class="cat-manager__empty">Завантаження…</p>
   } @else if (categories().length === 0) {
-    <p class="cat-manager__empty">Ще немає груп подій. Створіть першу — наприклад «Табір» чи «Сходини».</p>
+    <p class="cat-manager__empty">Ще немає груп подій. Створи першу — наприклад «Табір» чи «Сходини».</p>
   } @else {
     <ul class="cat-list">
       @for (category of categories(); track category.agendaCategoryKey) {

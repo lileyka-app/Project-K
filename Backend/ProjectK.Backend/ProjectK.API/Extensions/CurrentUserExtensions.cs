@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.Common.Extensions;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Extensions;
 
@@ -10,9 +10,11 @@ namespace ProjectK.API.Extensions;
 public static class CurrentUserExtensions
 {
     /// <summary>
-    /// The caller's user key, or <c>null</c> when the token carries no readable identity. Pair it with
+    /// The caller's user key, or <c>null</c> when the token carries no readable identity — an empty
+    /// key included, since no account has one. Pair it with
     /// <see cref="ServiceResultExtensions.UnreadableIdentity"/>:
     /// <code>if (this.UserKey() is not { } userKey) return this.UnreadableIdentity();</code>
     /// </summary>
-    public static Guid? UserKey(this ControllerBase controller) => controller.User.GetUserKey();
+    public static Guid? UserKey(this ControllerBase controller)
+        => controller.User.GetUserKey() is { } key && key != Guid.Empty ? key : null;
 }

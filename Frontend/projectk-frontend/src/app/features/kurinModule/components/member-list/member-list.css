@@ -116,3 +116,5 @@
         grid-template-columns: 1fr;
     }
 }
+.member-tags-cell { display: block; margin-top: 0.25rem; }
+.member-tags-cell:not(:has(li)) { display: none; }

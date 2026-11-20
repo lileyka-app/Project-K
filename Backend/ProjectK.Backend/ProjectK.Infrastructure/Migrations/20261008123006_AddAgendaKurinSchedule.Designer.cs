@@ -714,7 +714,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("KurinDuesRates");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.AppNotification", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.AppNotification", b =>
                 {
                     b.Property<Guid>("NotificationKey")
                         .ValueGeneratedOnAdd()
@@ -788,7 +788,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("AppNotifications");
                 });
 
-            modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.SystemSetting", b =>
+            modelBuilder.Entity("ProjectK.Common.Entities.NotificationsModule.SystemSetting", b =>
                 {
                     b.Property<string>("Key")
                         .HasMaxLength(100)

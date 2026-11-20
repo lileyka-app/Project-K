@@ -1,9 +1,10 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.API.Extensions;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
@@ -15,32 +16,33 @@ namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 [ApiController]
 public class ProbesCatalogController : ControllerBase
 {
-    private readonly IProbesCatalogService _probesCatalogService;
+    private readonly IMediator _mediator;
 
-    public ProbesCatalogController(IProbesCatalogService probesCatalogService)
+    public ProbesCatalogController(IMediator mediator)
     {
-        _probesCatalogService = probesCatalogService;
+        _mediator = mediator;
     }
 
     /// <summary>
     /// Lists probe definitions.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<ProbeSummaryResponse>), StatusCodes.Status200OK)]
-    public IActionResult GetAll()
+    [ProducesResponseType(typeof(IEnumerable<ProbeSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll()
     {
-        return Ok(_probesCatalogService.GetProbes());
+        var response = await _mediator.Send(new GetProbesQuery());
+        return response.ToActionResult(this);
     }
 
     /// <summary>
     /// Returns one probe with its points grouped as they are presented in the book.
     /// </summary>
     [HttpGet("{probeId}/grouped")]
-    [ProducesResponseType(typeof(GroupedProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupedProbeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetGroupedById(string probeId)
+    public async Task<IActionResult> GetGroupedById(string probeId)
     {
-        var groupedProbe = _probesCatalogService.GetGroupedProbeById(probeId);
-        return groupedProbe is null ? NotFound() : Ok(groupedProbe);
+        var response = await _mediator.Send(new GetGroupedProbeQuery(probeId));
+        return response.ToActionResult(this);
     }
 }

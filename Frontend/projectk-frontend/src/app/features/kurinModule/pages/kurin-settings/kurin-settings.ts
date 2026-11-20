@@ -1,6 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
-import { MessageService } from '@openng/optimus-ui/api';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -8,6 +7,8 @@ import { MessageModule } from '@openng/optimus-ui/message';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { InputNumberModule } from '@openng/optimus-ui/inputnumber';
+import { TagModule } from '@openng/optimus-ui/tag';
+import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { KurinNumberRange, OnboardingService } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { KurinDto } from '../../models/kurin.dto';
@@ -16,23 +17,52 @@ import { AgendaCategoryManagerComponent } from '../../components/agenda-category
 import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-policy/agenda-archive-policy';
 import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
 import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
+import { KurinCardSharingComponent } from '../../components/kurin-card-sharing/kurin-card-sharing';
 import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editions/kurin-probe-editions';
-import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { KurinTagSettingsComponent } from '../../components/kurin-tag-settings/kurin-tag-settings';
+import { hasYouthProgram, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { KurinBranchRequestComponent } from '../../components/kurin-branch-request/kurin-branch-request';
+import { kurinBranchesName } from '../../../../shared/functions/kurin-label.function';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { ROLE_DISPLAY_NAMES } from '../../models/role-display-name.model';
+import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
+import { countChanges, unsavedChangesLabel } from '../../../../shared/functions/count-changes.function';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../services/page-groups/page-groups.service';
+
+/** Ролі, які курінь може назвати по-своєму (сервер: KurinRoleNames.Renamable). Гурткових тут немає. */
+const RENAMABLE_ROLES: LeadershipRole[] = [
+  LeadershipRole.Zvyazkovyi, LeadershipRole.Kurinnuy, LeadershipRole.Pysar, LeadershipRole.Skarbnyk,
+  LeadershipRole.Suddya, LeadershipRole.Horunjiy, LeadershipRole.Gospodar, LeadershipRole.Hronikar,
+  LeadershipRole.Instruktor, LeadershipRole.Vykhovnyk, LeadershipRole.OtherKurin
+];
+
+/** Role names under their own keys, so a role cannot collide with a page setting of the same name. */
+function prefixed(names: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(names).map(([role, name]) => [`role:${role}`, name]));
+}
 
 @Component({
   selector: 'app-kurin-settings',
   imports: [
+    PageTabsComponent,
     FormsModule,
     ButtonModule,
     MessageModule,
     ToggleSwitchModule,
     CheckboxModule,
     InputNumberModule,
+    InputTextModule,
+    TagModule,
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
     KurinAccessPolicyComponent,
-    KurinProbeEditionsComponent
+    KurinProbeEditionsComponent,
+    KurinTagSettingsComponent,
+    KurinBranchRequestComponent,
+    KurinCardSharingComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -43,19 +73,47 @@ export class KurinSettingsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly kurinService = inject(KurinService);
   private readonly onboardingService = inject(OnboardingService);
-  private readonly messages = inject(MessageService);
   /** The archive terms are part of the page and go out with its one «Зберегти». */
   private readonly archivePolicy = viewChild<AgendaArchivePolicyComponent>('archivePolicy');
   private readonly cardFields = viewChild<KurinCardFieldsComponent>('cardFields');
   private readonly accessPolicy = viewChild<KurinAccessPolicyComponent>('accessPolicy');
   private readonly probeEditions = viewChild<KurinProbeEditionsComponent>('probeEditions');
+  private readonly tagSettings = viewChild<KurinTagSettingsComponent>('tagSettings');
+  private readonly cardSharing = viewChild<KurinCardSharingComponent>('cardSharing');
 
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
 
+  /** Рядки «Назви ролей»: звична назва і те, як її називає курінь (порожнє — звична). */
+  protected readonly renamableRoles = RENAMABLE_ROLES.map(role => ({ role, usual: ROLE_DISPLAY_NAMES[role] }));
+  protected roleNames: Record<string, string> = {};
+
+  private trimmedRoleNames(): Record<string, string> {
+    return Object.fromEntries(Object.entries(this.roleNames).map(([role, name]) => [role, name.trim()]).filter(([, name]) => name));
+  }
+
+  /** A senior kurin's numbers are the admin's to change, so its settings ask instead of edit. */
+  get isSenior(): boolean {
+    return isSeniorBranch(this.kurin?.branch);
+  }
+
+  get title(): string {
+    if (!this.kurin) return '-';
+    if (this.isSenior) return this.kurin.namedAfter || kurinBranchesName(this.kurin.branches);
+    return `${this.kurin.number ?? 'Підготовчий'} курінь`;
+  }
+
+  /** The КВ reads the page whole; only who may change the kurin edits it. */
+  readonly readOnly = !inject(PermissionService).canManageKurinSettings();
+
   kurinKey = '';
+  private readonly pageGroups = inject(PageGroups);
+  /** Налаштування куреня й акаунта — одне місце в меню, дві вкладки. */
+  tabs: PageTab[] = [];
   kurin: KurinDto | null = null;
   profileVerificationEnabled = false;
+  /** Точкування в цьому курені; вимкнене зникає з меню, плиток і сторінок, а бали лишаються. */
+  scoreEnabled = true;
   /** A підготовчий курінь has no number; clearing the box asks for one. */
   preparatory = false;
   number: number | null = null;
@@ -67,6 +125,7 @@ export class KurinSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.kurinKey = this.route.snapshot.paramMap.get('kurinKey') ?? '';
+    this.tabs = this.pageGroups.settings(this.kurinKey || null);
 
     if (!this.kurinKey) {
       this.errorMessage = 'Не вдалося визначити курінь для налаштувань.';
@@ -89,7 +148,7 @@ export class KurinSettingsComponent implements OnInit {
 
   get numberProblem(): string | null {
     if (this.preparatory || this.loading) return null;
-    if (this.number === null) return 'Впишіть число куреня або позначте його підготовчим.';
+    if (this.number === null) return 'Впиши число куреня або познач його підготовчим.';
     if (!this.keepsOwnNumber && (this.number < this.numberRange.min || this.number > this.numberRange.max)) {
       return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
     }
@@ -104,6 +163,8 @@ export class KurinSettingsComponent implements OnInit {
       next: (kurin) => {
         this.kurin = kurin;
         this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
+        this.scoreEnabled = kurin.scoreEnabled ?? true;
+        this.roleNames = { ...(kurin.roleNames ?? {}) };
         this.preparatory = kurin.number === null;
         this.number = kurin.number;
         this.loading = false;
@@ -127,8 +188,10 @@ export class KurinSettingsComponent implements OnInit {
 
     const request: KurinDto = {
       ...this.kurin,
+      roleNames: this.kurin?.canRenameRoles ? this.trimmedRoleNames() : this.kurin?.roleNames,
       number: this.preparatory ? null : this.number,
-      profileVerificationEnabled: this.profileVerificationEnabled
+      profileVerificationEnabled: this.profileVerificationEnabled,
+      scoreEnabled: this.scoreEnabled
     };
 
     this.saving = true;
@@ -137,20 +200,27 @@ export class KurinSettingsComponent implements OnInit {
     const cardFields = this.cardFields();
     const accessPolicy = this.accessPolicy();
     const probeEditions = this.probeEditions();
+    const tagSettings = this.tagSettings();
+    const cardSharing = this.cardSharing();
     forkJoin([
       this.kurinService.updateKurin(request),
       archive ? archive.save() : of(undefined),
       cardFields ? cardFields.save() : of(undefined),
       accessPolicy ? accessPolicy.save() : of(undefined),
-      probeEditions ? probeEditions.save() : of(undefined)
+      probeEditions ? probeEditions.save() : of(undefined),
+      tagSettings ? tagSettings.save() : of(undefined),
+      cardSharing ? cardSharing.save() : of(undefined)
     ]).subscribe({
       next: ([updated]) => {
         this.kurin = updated;
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;
+        this.scoreEnabled = updated.scoreEnabled ?? true;
+        this.roleNames = { ...(updated.roleNames ?? {}) };
+        rememberKurinRoleNames(updated.kurinKey, updated.roleNames);
         this.preparatory = updated.number === null;
         this.number = updated.number;
         this.saving = false;
-        this.messages.add({ severity: 'success', summary: 'Збережено' });
+        // «Збережено» comes from the request feedback, once for the click; a toast here would be a second one.
       },
       error: (error: HttpErrorResponse) => {
         console.error('Error saving kurin settings:', error);
@@ -163,11 +233,11 @@ export class KurinSettingsComponent implements OnInit {
   private saveFailure(code: string | undefined): string {
     switch (code) {
       case 'KurinNumberTaken':
-        return `Курінь з числом ${this.number} уже є в Лілейці. Перевірте число.`;
+        return `Курінь з числом ${this.number} уже є в Лілейці. Перевір число.`;
       case 'KurinNumberOutOfRange':
         return `Число куреня від ${this.numberRange.min} до ${this.numberRange.max}.`;
       case 'ProbeEditionNotOffered':
-        return 'Пробу гуртка не збережено: такої проби для вашого краю вже немає. Онови сторінку.';
+        return 'Пробу гуртка не збережено: такої проби для твого краю вже немає. Онови сторінку.';
       case 'AccessPolicyInvalid':
         return 'Права й видимість не збережено: сервер не прийняв цю таблицю. Онови сторінку й спробуй ще раз.';
       default:
@@ -178,4 +248,39 @@ export class KurinSettingsComponent implements OnInit {
   cancel(): void {
     this.router.navigate(['/kurin']);
   }
+
+  /**
+   * Everything on the page the server does not have yet: the page's own settings, one role name
+   * each, and whatever each section counts as its own.
+   */
+  changeCount(): number {
+    const kurin = this.kurin;
+    if (!kurin || this.loading) {
+      return 0;
+    }
+
+    const own = countChanges(
+      {
+        profileVerification: kurin.profileVerificationEnabled ?? false,
+        score: kurin.scoreEnabled ?? true,
+        number: kurin.number,
+        ...prefixed(kurin.canRenameRoles ? kurin.roleNames ?? {} : {})
+      },
+      {
+        profileVerification: this.profileVerificationEnabled,
+        score: this.scoreEnabled,
+        number: this.preparatory ? null : this.number,
+        ...prefixed(kurin.canRenameRoles ? this.trimmedRoleNames() : {})
+      });
+
+    return own
+      + (this.archivePolicy()?.changeCount() ?? 0)
+      + (this.cardFields()?.changeCount() ?? 0)
+      + (this.accessPolicy()?.changeCount() ?? 0)
+      + (this.probeEditions()?.changeCount() ?? 0)
+      + (this.tagSettings()?.changeCount() ?? 0)
+      + (this.cardSharing()?.changeCount() ?? 0);
+  }
+
+  protected readonly unsavedLabel = unsavedChangesLabel;
 }

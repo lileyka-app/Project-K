@@ -14,12 +14,15 @@ export const PREFER_WEB_KEY = 'lk.preferWeb';
 
 /**
  * Pages that stay on the web even on a phone: the app links to them (password reset, the join form)
- * or email links land there (activation, reset), they work without an account (privacy, about),
- * or they are not pages of this app at all.
+ * or email links land there (activation, reset), they work without an account (privacy, about,
+ * a shared card, which a phone's camera opens and the app has no screen for), or they are not pages
+ * of this app at all.
  */
 const STAY_ON_WEB = [
   '/m',
   '/api',
+  '/v',
+  '/c',
   '/activate',
   '/reset-password',
   '/forgot-password',

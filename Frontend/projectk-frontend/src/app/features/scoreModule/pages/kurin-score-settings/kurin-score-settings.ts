@@ -1,7 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
@@ -50,7 +52,7 @@ const RULE_HINTS: Partial<Record<ScoreSource, string>> = {
 @Component({
   selector: 'app-kurin-score-settings',
   imports: [
-    DatePipe, FormsModule, RouterLink, ButtonModule, SelectButtonModule, InputTextModule, DatePickerModule, DialogModule, TagModule,
+    DatePipe, FormsModule, PageTabsComponent, ButtonModule, SelectButtonModule, InputTextModule, DatePickerModule, DialogModule, TagModule,
     ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule, EmptyStateComponent
   ],
   providers: [ConfirmationService],
@@ -63,6 +65,9 @@ export class KurinScoreSettingsComponent implements OnInit {
   private readonly scores = inject(ScoreService);
   private readonly messages = inject(MessageService);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly pageGroups = inject(PageGroups);
+  /** Таблиця, Книга КВ і Налаштування — одне місце в меню, вкладки вгорі. */
+  tabs: PageTab[] = [];
 
   readonly points = points;
   readonly algorithmLabels = SCORE_ALGORITHM_LABELS;
@@ -147,6 +152,7 @@ export class KurinScoreSettingsComponent implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.kurinKey = params.get('kurinKey') ?? '';
+      this.tabs = this.kurinKey ? this.pageGroups.score(this.kurinKey) : [];
       this.load();
     });
   }
@@ -283,9 +289,9 @@ export class KurinScoreSettingsComponent implements OnInit {
 
   confirmDeleteStage(stage: ScoreStageDto): void {
     this.confirmation.confirm({
-      header: 'Видалити етап',
+      header: 'Видалити етап?',
       message: `«${stage.name}» зникне з переліку періодів. Бали не зачіпає.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {

@@ -1,48 +1,34 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using Xunit;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.GroupHandlers;
 
 public class GetGroupsHandlerTests
 {
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<IGroupRepository> _groupRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly GetGroupsQueryHandler _handler;
 
     public GetGroupsHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var config = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = config.CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
 
         _groupRepositoryMock = new Mock<IGroupRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
 
         _unitOfWorkMock.Setup(u => u.Groups).Returns(_groupRepositoryMock.Object);
 
-        _handler = new GetGroupsQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+        _handler = new GetGroupsQueryHandler(_unitOfWorkMock.Object, _links, CreateCache());
     }
 
     private static IBackendCache CreateCache() =>
@@ -155,8 +141,7 @@ public class GetGroupsHandlerTests
 
         // Assert
         result.Type.Should().Be(ResultType.Success);
-        var directlyMapped = _mapper.Map<IEnumerable<GroupResponse>>(groups);
-        result.Data.Should().BeEquivalentTo(directlyMapped);
+        result.Data!.Select(group => (group.GroupKey, group.Name, group.KurinKey)).Should().Equal(groups.Select(group => (group.GroupKey, group.Name, group.KurinKey)));
     }
 
     [Fact]

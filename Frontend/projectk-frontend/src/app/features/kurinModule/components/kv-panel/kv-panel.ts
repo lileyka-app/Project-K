@@ -25,8 +25,9 @@ import { holdsOffice } from '../../functions/system-role.function';
 import { toDateOnlyString } from '../../functions/to-date-only-string.function';
 import { LeadershipService } from '../../services/leadership-service/leadership.service';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
-import { memberDisplayName } from '../../functions/leadership-role-display.function';
+import { leadershipRoleDisplayName, memberDisplayName } from '../../functions/leadership-role-display.function';
 import { LeadershipDto, LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
+import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 
 interface MentorAssignmentRow {
   mentor: MemberLookupDto;
@@ -56,6 +57,7 @@ interface MentorAssignmentRow {
 export class KvPanelComponent implements OnChanges {
   readonly kurinKey = input('');
 
+  protected readonly features = inject(KurinFeaturesService);
   private readonly groupService = inject(GroupService);
   private readonly memberService = inject(MemberService);
   private readonly permissionService = inject(PermissionService);
@@ -275,13 +277,22 @@ export class KvPanelComponent implements OnChanges {
     });
   }
   // The гуртки decide, not the seat: a впорядник runs at least one, an інструктор none, and the
-  // Звʼязковий is himself either way.
+  // Звʼязковий is himself either way. Each is named the way the kurin renamed it, like everywhere else.
   getStatusLabel(row: MentorAssignmentRow): string {
     if (row.isManager) {
-      return "Зв'язковий";
+      return this.managerTitle;
     }
 
-    return row.groups.length ? 'Впорядник' : 'Інструктор';
+    return this.roleName(row.groups.length ? LeadershipRole.Vykhovnyk : LeadershipRole.Instruktor);
+  }
+
+  /** The kurin's name for its Звʼязковий: «Великий майстер» where it renamed the office. */
+  get managerTitle(): string {
+    return this.roleName(LeadershipRole.Zvyazkovyi);
+  }
+
+  private roleName(role: LeadershipRole): string {
+    return leadershipRoleDisplayName(role, this.kurinKey() || null);
   }
 
   getStatusSeverity(row: MentorAssignmentRow): 'danger' | 'success' | 'warn' {

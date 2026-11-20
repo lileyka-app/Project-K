@@ -1,0 +1,61 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ScoreModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
+
+namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
+
+public sealed record GetKurinScoreSettingsQuery(Guid KurinKey) : IRequest<ServiceResult<KurinScoreSettingsDto>>;
+
+public sealed class GetKurinScoreSettingsQueryHandler : IRequestHandler<GetKurinScoreSettingsQuery, ServiceResult<KurinScoreSettingsDto>>
+{
+    private readonly ScoreAccess _access;
+    private readonly ScoreBookReader _books;
+    private readonly IAgendaDirectory _agenda;
+
+    public GetKurinScoreSettingsQueryHandler(ScoreAccess access, ScoreBookReader books, IAgendaDirectory agenda)
+    {
+        _access = access;
+        _books = books;
+        _agenda = agenda;
+    }
+
+    public async Task<ServiceResult<KurinScoreSettingsDto>> Handle(GetKurinScoreSettingsQuery request, CancellationToken cancellationToken)
+    {
+        if (await _access.RefuseSettingsAsync<KurinScoreSettingsDto>(request.KurinKey, cancellationToken) is { } refused)
+        {
+            return refused;
+        }
+
+        var book = await _books.OpenAsync(request.KurinKey, cancellationToken);
+        var categories = await _agenda.GetCategoriesAsync(request.KurinKey, includeArchived: false, cancellationToken);
+
+        return new ServiceResult<KurinScoreSettingsDto>(ResultType.Success, new KurinScoreSettingsDto
+        {
+            KurinKey = request.KurinKey,
+            Algorithm = book.Algorithm,
+            AttendanceRates = categories
+                .OrderBy(c => c.Name)
+                .Select(c => new ScoreAttendanceRateDto
+                {
+                    AgendaCategoryKey = c.AgendaCategoryKey,
+                    CategoryName = c.Name,
+                    CategoryColorHex = c.ColorHex,
+                    CategoryIcon = c.Icon,
+                    Points = book.AttendanceRates.FirstOrDefault(r => r.AgendaCategoryKey == c.AgendaCategoryKey)?.Points ?? 0
+                })
+                .ToList(),
+            Rules = book.Rules
+                .Select(r => new ScoreRuleDto { Source = r.Source, Variant = r.Variant, FromDate = r.FromDate, Points = r.Points })
+                .ToList(),
+            Items = book.Items.Select(i => i.ToDto()).ToList(),
+            Stages = book.Stages
+                .OrderByDescending(s => s.FromDate)
+                .Select(s => new ScoreStageDto { ScoreStageKey = s.ScoreStageKey, Name = s.Name, FromDate = s.FromDate, ToDate = s.ToDate })
+                .ToList()
+        });
+    }
+}

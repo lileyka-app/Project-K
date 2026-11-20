@@ -23,10 +23,13 @@ export type KurinCapability =
   | 'AssignGroups'
   | 'AssignMembers'
   | 'AssignProvid'
-  | 'ReadJournal';
+  | 'AssignTags'
+  | 'ReadJournal'
+  | 'SeeTags'
+  | 'ManageTags';
 
 /** The section of the settings page a capability sits in. */
-export type CapabilityGroup = 'MemberData' | 'WarningsAwards' | 'ProbesBadges' | 'Agenda' | 'Journal';
+export type CapabilityGroup = 'MemberData' | 'WarningsAwards' | 'ProbesBadges' | 'Agenda' | 'Journal' | 'Tags';
 
 /** A column of the policy: who a capability is given to. */
 export type PolicyAudience =
@@ -66,7 +69,10 @@ export const CAPABILITY_LABELS: Record<KurinCapability, string> = {
   AssignGroups: 'Призначати гурткам',
   AssignMembers: 'Призначати окремим людям',
   AssignProvid: 'Призначати проводу й КВ',
-  ReadJournal: 'Бачити журнал дій'
+  AssignTags: 'Призначати всім з тегом',
+  ReadJournal: 'Бачити журнал дій',
+  SeeTags: 'Бачити теги людей',
+  ManageTags: 'Заводити теги й ставити їх людям'
 };
 
 export const CAPABILITY_GROUP_LABELS: Record<CapabilityGroup, string> = {
@@ -74,7 +80,8 @@ export const CAPABILITY_GROUP_LABELS: Record<CapabilityGroup, string> = {
   WarningsAwards: 'Перестороги й відзначення',
   ProbesBadges: 'Проби й вмілості',
   Agenda: 'Події й задачі',
-  Journal: 'Журнал дій'
+  Journal: 'Журнал дій',
+  Tags: 'Теги'
 };
 
 export const AUDIENCE_LABELS: Record<PolicyAudience, string> = {

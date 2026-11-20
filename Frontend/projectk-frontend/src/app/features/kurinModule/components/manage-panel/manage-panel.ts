@@ -35,6 +35,8 @@ export interface ManagePanelConfig {
   createFactory?: () => any;
   displayName?: (entity: any) => string;
   mapOut?(raw: any): any;
+  /** What the delete action is called and what follows it, where it is not a plain, final delete. */
+  deleteAction?: { verb: string; question: string; note: string };
 }
 
 @Component({
@@ -210,7 +212,7 @@ export class ManagePanelComponent implements OnChanges {
     switch (this.parameter()) {
       case 'create': return 'Створити';
       case 'update': return 'Оновити';
-      case 'delete': return 'Видалити';
+      case 'delete': return this.config()?.deleteAction?.verb ?? 'Видалити';
       default: return 'OK';
     }
   }

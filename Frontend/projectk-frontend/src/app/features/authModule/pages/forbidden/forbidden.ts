@@ -14,5 +14,8 @@ import { ButtonModule } from '@openng/optimus-ui/button';
   styleUrl: './forbidden.css'
 })
 export class ForbiddenComponent {
-  readonly isNoYouthProgram = inject(ActivatedRoute).snapshot.data['reason'] === 'youthProgram';
+  private readonly route = inject(ActivatedRoute).snapshot;
+  readonly isNoYouthProgram = this.route.data['reason'] === 'youthProgram';
+  /** Можливість, яку курінь вимкнув у налаштуваннях: «score». */
+  readonly featureOff = this.route.data['reason'] === 'featureOff' ? this.route.paramMap.get('feature') : null;
 }

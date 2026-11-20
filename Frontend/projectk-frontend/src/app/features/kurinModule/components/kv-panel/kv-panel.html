@@ -8,7 +8,7 @@
 
         <div class="lil-tile-head__actions">
           <div class="kv-archive-toggle">
-            <span>Архів</span>
+            <span>Колишні</span>
             <p-toggleswitch [(ngModel)]="showArchived" />
           </div>
 
@@ -26,7 +26,7 @@
               icon="pi pi-refresh"
               [text]="true"
               [rounded]="true"
-              pTooltip="Передати роль зв'язкового" ariaLabel="Передати роль зв'язкового"
+              [pTooltip]="'Передати роль: ' + managerTitle" [ariaLabel]="'Передати роль: ' + managerTitle"
               tooltipPosition="bottom"
               (onClick)="openTransferDialog()" />
           }
@@ -38,8 +38,10 @@
       <tr>
         <th scope="col">Учасник</th>
         <th scope="col">Статус</th>
-        <th scope="col">Гуртки</th>
-        @if (canManageKv) {
+        @if (features.hasGroups()) {
+          <th scope="col">Гуртки</th>
+        }
+        @if (canManageKv && features.hasGroups()) {
           <th scope="col" class="kv-actions">Дії</th>
         }
       </tr>
@@ -58,6 +60,7 @@
         <td data-mobile-label="Статус">
           <p-tag [value]="getStatusLabel(row)" [severity]="getStatusSeverity(row)" [rounded]="true" />
         </td>
+        @if (features.hasGroups()) {
         <td data-mobile-label="Гуртки">
           @if (row.groups.length) {
             <div class="kv-group-tags">
@@ -69,7 +72,8 @@
             <span class="kv-muted">Без призначених гуртків</span>
           }
         </td>
-        @if (canManageKv) {
+        }
+        @if (canManageKv && features.hasGroups()) {
           <td class="kv-actions" data-mobile-label="Дії">
             <p-button
               icon="pi pi-pencil"
@@ -85,7 +89,7 @@
 
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td [attr.colspan]="canManageKv ? 4 : 3" class="lil-empty-cell">
+        <td [attr.colspan]="features.hasGroups() ? (canManageKv ? 4 : 3) : 2" class="lil-empty-cell">
           <app-empty-state
             art="list"
             title="У КВ поки нікого"
@@ -97,7 +101,7 @@
 
   @if (showArchived) {
     <div class="kv-archive">
-      <h4>Архів впорядників</h4>
+      <h4>Колишні впорядники</h4>
       @if (archivedAssignments.length) {
         <div class="kv-archive-list">
           @for (assignment of archivedAssignments; track assignment.mentorAssignmentKey) {
@@ -117,7 +121,7 @@
           }
         </div>
       } @else {
-        <p class="kv-muted">Архів призначень порожній.</p>
+        <p class="kv-muted">Колишніх впорядників немає.</p>
       }
     </div>
   }
@@ -139,7 +143,7 @@
       optionValue="value"
       [filter]="true"
       filterBy="label"
-      placeholder="Оберіть учасника"
+      placeholder="Обери учасника"
       [style]="{ width: '100%' }" />
 
     <label for="groupSelect">Гуртки</label>
@@ -152,7 +156,7 @@
       [filter]="true"
       filterBy="label"
       display="chip"
-      placeholder="Оберіть гуртки"
+      placeholder="Обери гуртки"
       [style]="{ width: '100%' }" />
     <p class="kv-muted">З гуртком людина — впорядник, без гуртка — інструктор КВ.</p>
   </div>
@@ -170,9 +174,9 @@
   [modal]="true"
   [closable]="true"
   [style]="{ width: 'min(92vw, 34rem)' }"
-  header="Передати роль зв'язкового">
+  [header]="'Передати роль: ' + managerTitle">
   <div class="kv-dialog-body">
-    <label for="managerSelect">Новий зв'язковий</label>
+    <label for="managerSelect">Кому</label>
     <p-select
       inputId="managerSelect"
       [options]="managerTransferOptions"
@@ -181,9 +185,9 @@
       optionValue="value"
       [filter]="true"
       filterBy="label"
-      placeholder="Оберіть учасника"
+      placeholder="Обери учасника"
       [style]="{ width: '100%' }" />
-    <p class="kv-muted">Поточний Звʼязковий втратить цю роль. У КВ він лишиться впорядником, лише якщо за ним закріплені гуртки.</p>
+    <p class="kv-muted">Поточний {{ managerTitle }} втратить цю роль. У КВ він лишиться впорядником, лише якщо за ним закріплені гуртки.</p>
   </div>
 
   <ng-template pTemplate="footer">

@@ -1,0 +1,84 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
+
+namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
+
+/// <summary>
+/// Puts the spare project in place of a main one, which becomes the spare. Both stay as written;
+/// only which one counts changes.
+/// </summary>
+public sealed record SwapSpareProjectCommand(Guid MemberKey, string ProbeId, Guid SpareKey, Guid MainKey)
+    : IRequest<ServiceResult<ThirdProbeDto>>;
+
+public sealed class SwapSpareProjectCommandHandler : IRequestHandler<SwapSpareProjectCommand, ServiceResult<ThirdProbeDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IProbesAndBadgesAccess _access;
+    private readonly IKurinAudit _audit;
+    private readonly IProbesCatalogReader _probes;
+    private readonly IThirdProbeReader _reader;
+
+    public SwapSpareProjectCommandHandler(
+        IUnitOfWork unitOfWork,
+        IProbesAndBadgesAccess access,
+        IKurinAudit audit,
+        IProbesCatalogReader probes,
+        IThirdProbeReader reader)
+    {
+        _unitOfWork = unitOfWork;
+        _access = access;
+        _audit = audit;
+        _probes = probes;
+        _reader = reader;
+    }
+
+    public async Task<ServiceResult<ThirdProbeDto>> Handle(SwapSpareProjectCommand request, CancellationToken cancellationToken)
+    {
+        var probeId = request.ProbeId.Trim();
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        {
+            return refused;
+        }
+
+        var all = await _unitOfWork.ProbeProjects.GetForMemberProbeAsync(request.MemberKey, probeId, cancellationToken);
+        var spare = all.FirstOrDefault(p => p.ProbeProjectKey == request.SpareKey && p.IsSpare);
+        var main = all.FirstOrDefault(p => p.ProbeProjectKey == request.MainKey && !p.IsSpare);
+        if (spare is null || main is null)
+        {
+            return ServiceResult<ThirdProbeDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProjectNotFound, "No such project in this probe.");
+        }
+
+        var sharedAfter = all.Count(p => p != main && !p.IsSpare && p.IsShared) + (spare.IsShared ? 1 : 0);
+        if (sharedAfter > ProbeProjectRules.MaxSharedMainProjects)
+        {
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(
+                ProbesAndBadgesErrors.TooManyShared, $"At most {ProbeProjectRules.MaxSharedMainProjects} of the main projects may be shared.");
+        }
+
+        spare.IsSpare = false;
+        main.IsSpare = true;
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Probe,
+                AuditActionNames.Probe.ProjectsSwapped,
+                spare.ProbeProjectKey,
+                ProgressAuditNames.Probe(_probes, probeId),
+                request.MemberKey,
+                AuditChangeRules.Of(("project", main.Title, spare.Title))),
+            cancellationToken);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return new ServiceResult<ThirdProbeDto>(ResultType.Success, await _reader.ReadAsync(request.MemberKey, probeId, cancellationToken));
+    }
+}

@@ -1,4 +1,4 @@
-using ProjectK.Common.Interfaces.Modules.DuesModule;
+using ProjectK.Common.Contracts.DuesModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 

@@ -1,9 +1,8 @@
 using Moq;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Authorization.KurinPolicy;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -16,14 +15,14 @@ public class CurrentUserPermissionExtensionsTests
     private static ICurrentUserContext Zvyazkovyi()
     {
         var user = new Mock<ICurrentUserContext>();
-        user.SetupGet(x => x.Roles).Returns([SystemRole.Member, SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
+        user.SetupGet(x => x.Roles).Returns([SystemRoleNames.Member, SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi)]);
         return user.Object;
     }
 
     public static TheoryData<ResourceType, ResourceAction> ConfigurablePairs()
     {
         var data = new TheoryData<ResourceType, ResourceAction>();
-        foreach (var pair in KurinCapabilities.All.Select(descriptor => (descriptor.Resource, descriptor.Action)).Distinct())
+        foreach (var pair in KurinCapabilityRules.All.Select(descriptor => (descriptor.Resource, descriptor.Action)).Distinct())
         {
             data.Add(pair.Resource, pair.Action);
         }
@@ -50,7 +49,7 @@ public class CurrentUserPermissionExtensionsTests
     {
         var offending = Zvyazkovyi().StaticPermissions()
             .Where(permission => permission.Scope != AccessScope.Own
-                                 && KurinCapabilities.IsConfigurable(permission.Resource, permission.Action))
+                                 && KurinCapabilityRules.IsConfigurable(permission.Resource, permission.Action))
             .ToList();
 
         Assert.Empty(offending);

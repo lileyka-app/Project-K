@@ -4,7 +4,6 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -13,8 +12,8 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using ProjectK.API.Middleware;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.Infrastructure.Services.Jwt;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -99,7 +98,7 @@ public class PrivilegedMfaGateHttpTests
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing" });
             builder.WebHost.UseTestServer();
 
-            var policy = new Mock<IMfaEnforcementPolicy>();
+            var policy = new Mock<IMfaEnforcementReader>();
             policy.Setup(p => p.IsPrivilegedMfaRequiredAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
             builder.Services.AddSingleton(policy.Object);
 

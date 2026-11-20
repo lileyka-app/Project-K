@@ -1,7 +1,7 @@
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Records.ProbesAndBadgesModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -15,9 +15,9 @@ public sealed class DuesDirectory : IDuesDirectory
 {
     private readonly DuesLedgerReader _ledgers;
     private readonly TimeProvider _time;
-    private readonly IKraiProfileProvider _profiles;
+    private readonly IKraiProfileDirectory _profiles;
 
-    public DuesDirectory(DuesLedgerReader ledgers, TimeProvider time, IKraiProfileProvider profiles)
+    public DuesDirectory(DuesLedgerReader ledgers, TimeProvider time, IKraiProfileDirectory profiles)
     {
         _ledgers = ledgers;
         _time = time;
@@ -35,5 +35,42 @@ public sealed class DuesDirectory : IDuesDirectory
                 .Select(q => new PaidQuarterRecord(account.MembershipKey, q.Quarter.Index, q.Quarter.Next().FirstDay.AddDays(-1))))
             .Distinct()
             .ToList();
+    }
+
+    public async Task<decimal> GetOwedAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
+    {
+        if (membershipKeys.Count == 0)
+        {
+            return 0;
+        }
+
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
+        var current = (await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).QuarterOf(_time.GetUtcNow());
+        return ledger.Accounts()
+            .Where(account => membershipKeys.Contains(account.MembershipKey))
+            .SelectMany(account => account.Quarters)
+            .Where(q => q.Quarter < current && q.Balance < 0)
+            .Sum(q => -q.Balance);
+    }
+
+    public async Task<bool> HasLedgerAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
+    {
+        if (membershipKeys.Count == 0)
+        {
+            return false;
+        }
+
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
+        return ledger.Accounts().Any(account => membershipKeys.Contains(account.MembershipKey) && (account.Charged != 0 || account.Payments != 0));
+    }
+
+    public async Task<bool> GroupBoxSettledAsync(Guid kurinKey, Guid groupKey, CancellationToken cancellationToken = default)
+    {
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
+        var accounts = ledger.Accounts();
+        var handover = ledger.KurinBox(accounts).Handovers.FirstOrDefault(h => h.GroupKey == groupKey);
+        return ledger.GroupBox(groupKey, accounts).Box.Total == 0
+               && (handover is null || handover.Outstanding == 0)
+               && !accounts.Any(account => account.GroupKey == groupKey && account.Balance < 0);
     }
 }

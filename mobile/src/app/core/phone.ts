@@ -1,4 +1,4 @@
-import { CountryCode, getCountries, isPossiblePhoneNumber, parsePhoneNumberFromString } from 'libphonenumber-js';
+import { CountryCode, getCountries, getCountryCallingCode, parsePhoneNumberFromString } from 'libphonenumber-js';
 
 /** The country a number without «+» is read in when the край does not name one. */
 export const DEFAULT_PHONE_COUNTRY: CountryCode = 'UA';
@@ -22,10 +22,20 @@ export function toStoredPhone(text: string | null | undefined, country: CountryC
   return parsePhoneNumberFromString(typed, country)?.number ?? typed;
 }
 
+/**
+ * How many digits a number has with its calling code, the same for every country: E.164 allows at
+ * most 15, and no country's numbers come shorter than 7. A country's own lengths are not checked,
+ * so a number from any край goes through. The web and the server hold the same bounds.
+ */
+export const PHONE_DIGITS = { min: 7, max: 15 } as const;
+
 /** Whether a typed number could be a real one; empty counts as fine, a required check is separate. */
 export function isPossiblePhone(text: string | null | undefined, country: CountryCode): boolean {
   const stored = toStoredPhone(text, country);
-  return !stored || isPossiblePhoneNumber(stored);
+  if (!stored) return true;
+  const digits = stored.startsWith('+') ? stored : getCountryCallingCode(country) + stored;
+  const count = digits.replaceAll(/\D/g, '').length;
+  return count >= PHONE_DIGITS.min && count <= PHONE_DIGITS.max;
 }
 
 /** A stored number for reading: +420 777 123 456. Anything the library cannot read is shown as it is. */

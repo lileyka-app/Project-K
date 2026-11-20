@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Dtos.NotificationsModule;
+using ProjectK.Common.Records.NotificationsModule;
 
 namespace ProjectK.Infrastructure.Services.Feedback;
 
@@ -25,7 +26,7 @@ public sealed class LogProblemReporter : IProblemReporter
         _logger.LogWarning(
             "Problem report (no tracker configured): {Title}\n{Body}",
             report.Title,
-            GitHubIssueBody.Compose(report, _apiVersion));
+            GitHubIssueBodyRules.Compose(report, _apiVersion));
 
         return Task.FromResult(new ProblemReportReceipt(null, null));
     }

@@ -1,15 +1,11 @@
 using System.Net;
-using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using FluentValidation;
-using MediatR;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.TestHost;
@@ -18,25 +14,28 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
-using ProjectK.API.Controllers.AuthModule;
+using ProjectK.API.Controllers.IdentityModule;
+using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Behaviors;
-using ProjectK.BusinessLogic.Modules.AuthModule.Features.Onboarding.SubmitWaitlistRegistration;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.MemberModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Services.Events;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Entities.IdentityModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.MemberModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -143,27 +142,6 @@ public class OnboardingBaselineHttpIntegrationTests
     }
 
     [Fact]
-    public async Task Mentor_ShouldBeAllowedToAccessAssignedGroup_WhenMultiGroupModelIsImplemented()
-    {
-        // This test represents the target behavior where a mentor can access a group they are explicitly assigned to,
-        // even if it's not their primary group.
-        await using var host = await OnboardingBaselineTestHost.StartAsync("Group.Hurtkoviy");
-
-        var groupKey = Guid.NewGuid();
-        var kurinKey = Guid.NewGuid();
-
-        // Find the mocks from the host (we need to expose them or set them up in StartAsync)
-        // Since they are registered as Singletons, we can't easily change them here without exposing them.
-        // I will update StartAsync to pre-configure a "known" group for this test.
-
-        var response = await host.Client.GetAsync($"/api/kurin/kurins/groups/{groupKey}");
-
-        // For this baseline test, we just want to ensure it's not a 403. 
-        // 404 is also acceptable as "Not 403", but we aimed for OK.
-        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
     public async Task WaitlistRegistration_ShouldAnswerBadRequest_ForAMalformedApplication()
     {
         await using var host = await OnboardingBaselineTestHost.StartAsync();
@@ -253,10 +231,16 @@ public class OnboardingBaselineHttpIntegrationTests
             mockWaitlistRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<WaitlistEntry> { dummyWaitlistEntry }.AsEnumerable());
 
             mockMemberRepo.Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((Member?)null);
-            mockMemberRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Member>().AsEnumerable());
+            // The person activation opens is read back by account, as the database would answer.
+            Member? opened = null;
+            mockMemberRepo.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
+                .Callback<Member, CancellationToken>((member, _) => opened = member);
+            mockMemberRepo.Setup(r => r.GetSummaryByUserKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Guid userKey, CancellationToken _) => opened is { } m && m.UserKey == userKey
+                    ? new MemberSummary(m.MemberKey, m.UserKey, m.FirstName, m.LastName, m.Email, null)
+                    : null);
 
             mockInvitationRepo.Setup(r => r.GetByTokenAsync("valid-token-123", It.IsAny<CancellationToken>())).ReturnsAsync(dummyInvitation);
-            mockInvitationRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Invitation> { dummyInvitation }.AsEnumerable());
 
             mockGroupRepo.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Guid key, CancellationToken _) => new Group("Test", Guid.NewGuid()) { GroupKey = key });
@@ -293,21 +277,23 @@ public class OnboardingBaselineHttpIntegrationTests
             builder.Services.AddSingleton(new Mock<INotificationService>().Object);
             mockUserManager.Setup(m => m.GetUsersInRoleAsync(It.IsAny<string>())).ReturnsAsync(new List<AppUser>());
             // Activation answers with a session now; the factory is the part of sign-in the host does not build.
-            var mockLoginResponses = new Mock<ILoginResponseFactory>();
+            var mockLoginResponses = new Mock<ILoginResponseService>();
             mockLoginResponses
                 .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email ?? string.Empty });
+                .ReturnsAsync((AppUser user, CancellationToken _) => Logins.Empty with { UserKey = user.Id, Email = user.Email ?? string.Empty });
             builder.Services.AddSingleton(mockLoginResponses.Object);
             builder.Services.AddSingleton(mockUserManager.Object);
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton(new Mock<IRefreshTokenStore>().Object);
             builder.Services.AddSingleton(new Mock<ICalendarFeedStore>().Object);
             builder.Services.AddSingleton(new Mock<IBackendCache>().Object);
+            builder.Services.AddSingleton(new Mock<IBlobReadLinks>().Object);
             builder.Services.AddScoped<RefreshTokenInvalidation>();
             builder.Services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
             builder.Services.AddScoped<IDomainEventPublisher, InProcessDomainEventPublisher>();
             builder.Services.AddScoped<IMemberDirectory, MemberDirectory>();
             builder.Services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+            builder.Services.AddScoped<IKurinFounderWriter, KurinFounderWriter>();
 
             builder.Services.AddMediatR(cfg =>
             {

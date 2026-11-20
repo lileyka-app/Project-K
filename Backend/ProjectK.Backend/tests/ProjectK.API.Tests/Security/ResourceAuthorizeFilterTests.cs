@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Options;
 using Moq;
-using ProjectK.API.Helpers;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.API.Filters;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 

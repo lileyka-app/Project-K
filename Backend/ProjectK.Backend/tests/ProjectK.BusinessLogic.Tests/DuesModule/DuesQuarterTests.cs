@@ -1,6 +1,6 @@
 using FluentAssertions;
-using ProjectK.Common.Models.Dues;
-using Xunit;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.DuesModule;
 
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
@@ -31,16 +31,16 @@ public class DuesQuarterTests
     [Fact]
     public void PlastYear_TheThirdQuarterStaysWithTheYearThatEnds()
     {
-        PlastYear.Of(new DuesQuarter(2025, 3)).Should().Be(2024);
-        PlastYear.Of(new DuesQuarter(2025, 4)).Should().Be(2025);
-        PlastYear.Of(new DuesQuarter(2026, 3)).Should().Be(2025);
+        PlastYearRules.Of(new DuesQuarter(2025, 3)).Should().Be(2024);
+        PlastYearRules.Of(new DuesQuarter(2025, 4)).Should().Be(2025);
+        PlastYearRules.Of(new DuesQuarter(2026, 3)).Should().Be(2025);
     }
 
     [Fact]
     public void PlastYear_25_26_IsTheFourthOf2025AndTheFirstThreeOf2026()
     {
-        PlastYear.QuartersOf(2025).Should().Equal(
+        PlastYearRules.QuartersOf(2025).Should().Equal(
             new DuesQuarter(2025, 4), new DuesQuarter(2026, 1), new DuesQuarter(2026, 2), new DuesQuarter(2026, 3));
-        PlastYear.Label(2025).Should().Be("25–26");
+        PlastYearRules.Label(2025).Should().Be("25–26");
     }
 }

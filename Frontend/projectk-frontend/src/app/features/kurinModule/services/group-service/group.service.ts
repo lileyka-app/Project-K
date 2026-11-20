@@ -40,7 +40,7 @@ export class GroupService {
     return this.cache.get(
       `${GROUP_CACHE_PREFIX}list:kurin:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<GroupDto[]>(`${this.apiUrl}/groups`, { params: { kurinKey } })
+      () => this.http.get<GroupDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/groups`)
     );
   }
 
@@ -106,7 +106,7 @@ export class GroupService {
     return this.cache.get(
       `${GROUP_CACHE_PREFIX}mentor-assignments:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
-      () => this.http.get<MentorAssignmentDto[]>(`${this.apiUrl}/groups/${kurinKey}/mentor-assignments`)
+      () => this.http.get<MentorAssignmentDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/mentor-assignments`)
     );
   }
 

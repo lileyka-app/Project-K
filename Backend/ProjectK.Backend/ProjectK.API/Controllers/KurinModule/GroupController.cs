@@ -1,33 +1,24 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.API.Models.Requests;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.ProbeEdition;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Silhouette;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Upsert;
+using ProjectK.API.Uploads;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Assign;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Revoke;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Models.Dtos;
-using ProjectK.Common.Models.Dtos.KurinModule;
-using ProjectK.Common.Models.Dtos.KurinModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.KurinModule;
+using ProjectK.Common.Dtos.KurinModule.Requests;
+using ProjectK.Common.Dtos.MemberModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.KurinModule;
 
 /// <summary>
 /// Groups within a kurin, and the mentors assigned to them.
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/group")]
 [ApiController]
 public class GroupController : ControllerBase
 {
@@ -42,9 +33,9 @@ public class GroupController : ControllerBase
     /// Returns one group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("{groupKey}")]
+    [HttpGet("{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByKey(Guid groupKey)
     {
@@ -57,7 +48,7 @@ public class GroupController : ControllerBase
     /// Answers whether a group exists, without returning it.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("exists/{groupKey}")]
+    [HttpGet("exists/{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -72,9 +63,9 @@ public class GroupController : ControllerBase
     /// Lists the groups of one kurin.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("groups")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "query:kurinKey")]
-    [ProducesResponseType(typeof(IEnumerable<GroupResponse>), StatusCodes.Status200OK)]
+    [HttpGet("~/api/kurin/{kurinKey:guid}/groups")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IEnumerable<GroupDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAll(Guid kurinKey)
     {
@@ -83,13 +74,20 @@ public class GroupController : ControllerBase
         return response.ToActionResult(this);
     }
 
+    /// <summary>Old address of <see cref="GetAll"/>, kept for PWAs still on the previous build; drop in 1.5.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("groups")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "query:kurinKey")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public Task<IActionResult> GetAllByQuery([FromQuery] Guid kurinKey) => GetAll(kurinKey);
+
     /// <summary>
     /// Creates a group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPost]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Create, "arg:request.KurinKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] CreateGroupRequest request)
@@ -105,7 +103,7 @@ public class GroupController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -143,32 +141,14 @@ public class GroupController : ControllerBase
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
     [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken)
-    {
-        var file = form.File;
-        if (file == null || file.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        if (ImageUploadRules.Refusal(file) is { } refusal)
-        {
-            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
-        }
-
-        var bytes = await file.ToByteArrayAsync(cancellationToken);
-        if (bytes == null || bytes.Length == 0)
-        {
-            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
-        }
-
-        var command = new UploadGroupSilhouetteCommand(groupKey, bytes, file.FileName);
-        var response = await _mediator.Send(command, cancellationToken);
-        return response.ToActionResult(this);
-    }
+    public Task<IActionResult> UploadSilhouette(Guid groupKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken) =>
+        this.SendImageAsync(
+            form.File,
+            (bytes, fileName) => _mediator.Send(new UploadGroupSilhouetteCommand(groupKey, bytes, fileName), cancellationToken),
+            cancellationToken);
 
     /// <summary>
     /// Removes the group's silhouette image.
@@ -176,7 +156,7 @@ public class GroupController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpDelete("{groupKey:guid}/silhouette")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Update, "route:groupKey")]
-    [ProducesResponseType(typeof(GroupResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSilhouette(Guid groupKey, CancellationToken cancellationToken)
     {
@@ -186,10 +166,11 @@ public class GroupController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes a group.
+    /// Dissolves a group. Its people stay in the kurin without a гурток; the гурток, its провід and
+    /// that провід's history stay in the kurin's archive.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpDelete("{groupKey}")]
+    [HttpDelete("{groupKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Delete, "route:groupKey")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -205,7 +186,7 @@ public class GroupController : ControllerBase
     /// Lists the mentors assigned to a group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("{groupKey}/mentors")]
+    [HttpGet("{groupKey:guid}/mentors")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Read, "route:groupKey")]
     [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMentors(Guid groupKey)
@@ -219,7 +200,9 @@ public class GroupController : ControllerBase
     /// Lists mentor assignments across the whole kurin.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpGet("groups/{kurinKey}/mentor-assignments")]
+    [HttpGet("~/api/kurin/{kurinKey:guid}/mentor-assignments")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
+    [HttpGet("groups/{kurinKey:guid}/mentor-assignments")]
     [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IEnumerable<MentorAssignmentDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKurinMentorAssignments(Guid kurinKey)
@@ -233,7 +216,7 @@ public class GroupController : ControllerBase
     /// Assigns a mentor to a group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpPost("{groupKey}/mentors/{mentorUserKey}")]
+    [HttpPost("{groupKey:guid}/mentors/{mentorUserKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     public async Task<IActionResult> AssignMentor(Guid groupKey, Guid mentorUserKey)
@@ -247,13 +230,29 @@ public class GroupController : ControllerBase
     /// Removes a mentor's assignment to a group.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpDelete("{groupKey}/mentors/{mentorUserKey}")]
+    [HttpDelete("{groupKey:guid}/mentors/{mentorUserKey:guid}")]
     [ResourceAuthorize(ResourceType.Group, ResourceAction.Manage, "route:groupKey")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     public async Task<IActionResult> RevokeMentor(Guid groupKey, Guid mentorUserKey)
     {
         var command = new RevokeMentorCommand(mentorUserKey, groupKey);
         var response = await _mediator.Send(command);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Lists the members eligible to be assigned as mentors.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("~/api/kurin/{kurinKey:guid}/mentor-candidates")]
+    // Old address, kept for PWAs still on the previous build; drop in 1.5.
+    [HttpGet("~/api/member/members/mentor-candidates/{kurinKey:guid}")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IEnumerable<MemberLookupDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetKurinMentorCandidates(Guid kurinKey)
+    {
+        var request = new GetKurinMentorCandidatesQuery(kurinKey);
+        var response = await _mediator.Send(request);
         return response.ToActionResult(this);
     }
 }

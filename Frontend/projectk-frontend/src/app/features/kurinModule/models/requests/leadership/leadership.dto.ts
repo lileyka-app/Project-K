@@ -16,6 +16,8 @@ export interface LeadershipHistoryDto {
     role: string;
     leadershipType?: 'Kurin' | 'Group' | 'KV' | 'kurin' | 'group' | 'kv' | null;
     groupName?: string | null;
+    /** The kurin the office is in; a card carries offices from every kurin the person stands in. */
+    kurinKey?: string | null;
     startDate: string;
     endDate: string | null;
     member: MemberLookupDto;

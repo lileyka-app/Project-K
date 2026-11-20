@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.DuesModule;
-using Xunit;
 
 namespace ProjectK.Infrastructure.Tests.DuesModule;
 
@@ -17,7 +17,7 @@ public class DuesEntryTrailPersistenceTests
     [Fact]
     public async Task AnEventAddedToALoadedEntry_IsInserted()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var entryKey = Guid.NewGuid();

@@ -1,0 +1,7 @@
+.member-tags { align-items: center; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.member-tags__none { color: var(--p-text-muted-color); font-size: 0.85rem; margin: 0; }
+.member-tags__form { display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.25rem; }
+.member-tags__label { color: var(--p-text-muted-color); font-size: 0.8rem; font-weight: 650; }
+:host ::ng-deep .member-tags__select { width: 100%; }
+.member-tags__option { align-items: center; display: inline-flex; gap: 0.45rem; }
+.member-tags__dot { border-radius: 50%; height: 0.6rem; width: 0.6rem; }

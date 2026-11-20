@@ -1,0 +1,207 @@
+using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Moq;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Features.Onboarding;
+using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Entities.KraiModule;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Options.KraiModule;
+using ProjectK.Common.Options.KurinModule;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.Shared;
+
+namespace ProjectK.BusinessLogic.Tests.IdentityModule.HandlerTests.Onboarding;
+
+public class ApproveWaitlistEntryHandlerTests
+{
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IWaitlistRepository> _waitlist = new();
+    private readonly Mock<IKurinRepository> _kurins = new();
+    private readonly Mock<IKraiRepository> _krais = new();
+    private readonly Mock<IAccountProvisioningService> _provisioning = new();
+    private readonly Mock<IBackendCache> _cache = new();
+    private readonly Mock<IEmailService> _email = new();
+    private readonly ApproveWaitlistEntryCommandHandler _handler;
+    private Kurin? _openedKurin;
+
+    public ApproveWaitlistEntryHandlerTests()
+    {
+        _unitOfWork.Setup(x => x.WaitlistEntries).Returns(_waitlist.Object);
+        _unitOfWork.Setup(x => x.Kurins).Returns(_kurins.Object);
+        _unitOfWork.Setup(x => x.Krais).Returns(_krais.Object);
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _kurins
+            .Setup(x => x.Create(It.IsAny<Kurin>(), It.IsAny<CancellationToken>()))
+            .Callback<Kurin, CancellationToken>((kurin, _) => _openedKurin = kurin);
+        _provisioning
+            .Setup(x => x.ProvisionAsync(It.IsAny<AccountProvisioningRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ServiceResult<AccountProvisioningResult>(
+                ResultType.Success, new AccountProvisioningResult(Guid.NewGuid(), Guid.NewGuid(), "token")));
+
+        _handler = new ApproveWaitlistEntryCommandHandler(
+            _unitOfWork.Object,
+            _provisioning.Object,
+            _email.Object,
+            new Mock<ICurrentUserContext>().Object,
+            Options.Create(new KurinNumberOptions()),
+            Options.Create(new KraiOptions()),
+            _cache.Object,
+            NullLogger<ApproveWaitlistEntryCommandHandler>.Instance);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldStillApprove_WhenTheLetterDoesNotGo()
+    {
+        var entry = Given(claimed: "47");
+        _email
+            .Setup(x => x.SendInvitationEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("API key is invalid"));
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        // The approval is stored before the letter; a throw used to become a 500, and the retry a 409.
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.InvitationSent.Should().BeFalse();
+        entry.VerificationStatus.Should().Be(WaitlistVerificationStatus.ApprovedForInvitation);
+        entry.InvitationSentAtUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldMarkTheLetterSent_WhenItGoes()
+    {
+        var entry = Given(claimed: "47");
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        result.Data!.InvitationSent.Should().BeTrue();
+        entry.InvitationSentAtUtc.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldOpenTheClaimedNumber_WhenItIsFree()
+    {
+        var entry = Given(claimed: "47");
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _openedKurin!.Number.Should().Be(47);
+        entry.FoundedKurinKey.Should().Be(_openedKurin.KurinKey);
+        // The admin's cached list of kurins must show the one just opened.
+        _cache.Verify(x => x.Invalidate(BackendCacheRules.KurinReads), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldOpenInTheDefaultKrai_WhenNobodyPickedOne()
+    {
+        var entry = Given(claimed: "47");
+
+        await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        _openedKurin!.KraiCode.Should().Be(Krai.Ukraine);
+        entry.KraiCode.Should().Be(Krai.Ukraine);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldOpenInTheApplicantsKrai_AndCheckTheNumberThere()
+    {
+        var entry = Given(claimed: "47", krai: Krai.Poland);
+        // Ukraine's kurin 47 does not stand in the way of Poland's.
+        _kurins.Setup(x => x.ExistsAsync(Krai.Ukraine, 47, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _openedKurin!.KraiCode.Should().Be(Krai.Poland);
+        _kurins.Verify(x => x.ExistsAsync(Krai.Poland, 47, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldOpenInTheAdminsKrai_WhenTheyChangeIt()
+    {
+        var entry = Given(claimed: "47", krai: Krai.Ukraine);
+        _krais.Setup(x => x.ExistsAsync(Krai.Poland, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey, " PL "), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _openedKurin!.KraiCode.Should().Be(Krai.Poland);
+        entry.KraiCode.Should().Be(Krai.Poland);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefuse_WhenTheAdminsKraiIsUnknown()
+    {
+        var entry = Given(claimed: "47");
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey, "zz"), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("KraiNotFound");
+        _provisioning.Verify(x => x.ProvisionAsync(It.IsAny<AccountProvisioningRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldOpenAPreparatoryKurin_WhenTheApplicantLeadsOne()
+    {
+        var entry = Given(claimed: null, preparatory: true);
+
+        await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        _openedKurin!.Number.Should().BeNull();
+    }
+
+    // The first outside applicant wrote "0" before the form knew about підготовчі курені.
+    [Theory]
+    [InlineData("0")]
+    [InlineData("1153")]
+    public async Task Handle_ShouldOpenAPreparatoryKurin_WhenTheClaimIsOutsideTheRange(string claimed)
+    {
+        var entry = Given(claimed);
+
+        await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        _openedKurin!.Number.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefuse_WhenTheClaimedNumberIsTaken()
+    {
+        var entry = Given(claimed: "47");
+        _kurins.Setup(x => x.ExistsAsync("ua", 47, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await _handler.Handle(new ApproveWaitlistEntryCommand(entry.WaitlistEntryKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("KurinNumberTaken");
+        _provisioning.Verify(x => x.ProvisionAsync(It.IsAny<AccountProvisioningRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private WaitlistEntry Given(string? claimed, bool preparatory = false, string? krai = null)
+    {
+        var entry = new WaitlistEntry
+        {
+            WaitlistEntryKey = Guid.NewGuid(),
+            FirstName = "Olena",
+            LastName = "Lviv",
+            Email = "olena@example.com",
+            IsKurinLeaderCandidate = true,
+            ClaimedKurinNameOrNumber = claimed,
+            IsPreparatoryKurin = preparatory,
+            KraiCode = krai,
+            VerificationStatus = WaitlistVerificationStatus.Submitted
+        };
+        _waitlist.Setup(x => x.GetByKeyAsync(entry.WaitlistEntryKey, It.IsAny<CancellationToken>())).ReturnsAsync(entry);
+        return entry;
+    }
+}

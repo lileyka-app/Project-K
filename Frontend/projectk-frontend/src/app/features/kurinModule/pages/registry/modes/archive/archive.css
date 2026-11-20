@@ -1,0 +1,93 @@
+.archive-head {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.archive-head__tools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.archive-head__tools app-registry-search {
+  width: 12rem;
+}
+
+.archive-date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.archive-name {
+  font-weight: 600;
+}
+
+.archive-leaders {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+}
+
+.archive-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.archive-actions p-tag {
+  margin-right: 0.25rem;
+}
+
+.archive-danger {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 2;
+}
+
+.archive-danger__row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  width: 100%;
+}
+
+.archive-danger__title {
+  font-weight: 700;
+}
+
+.archive-danger__clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.archive-danger__left {
+  flex: 1;
+}
+
+.archive-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.archive-form__who {
+  font-weight: 700;
+  margin: 0;
+}
+
+.archive-form__dates {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+@media (max-width: 640px) {
+  .archive-head__tools app-registry-search {
+    width: 100%;
+  }
+}
+
+/* The danger zone opens from above the archive, apart from the tables it deletes from. */
+.archive-bar {
+  display: flex;
+  justify-content: flex-end;
+}

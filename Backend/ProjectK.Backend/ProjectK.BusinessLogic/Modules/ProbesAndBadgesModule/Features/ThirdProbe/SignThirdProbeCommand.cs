@@ -1,0 +1,137 @@
+using MediatR;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.AuditModule;
+using ProjectK.Common.Records.Shared;
+using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.Shared;
+
+namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.ThirdProbe;
+
+/// <summary>
+/// Confirms or takes back one part of the third probe. Confirming is the kurin's
+/// <see cref="Common.Enums.IdentityModule.KurinCapability.SignProbe"/>, taking back its
+/// <see cref="Common.Enums.IdentityModule.KurinCapability.UnsignProbe"/>, the same pair
+/// that signs and unsigns probe points.
+/// </summary>
+public sealed record SignThirdProbeCommand(
+    Guid MemberKey,
+    string ProbeId,
+    ThirdProbeSignPart Part,
+    bool Sign,
+    Guid? ProjectKey = null,
+    string? Comment = null) : IRequest<ServiceResult<ThirdProbeDto>>;
+
+public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProbeCommand, ServiceResult<ThirdProbeDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IProbesAndBadgesAccess _access;
+    private readonly ICurrentMember _actors;
+    private readonly IKurinAudit _audit;
+    private readonly IProbesCatalogReader _probes;
+    private readonly IThirdProbeReader _reader;
+
+    public SignThirdProbeCommandHandler(
+        IUnitOfWork unitOfWork,
+        IProbesAndBadgesAccess access,
+        ICurrentMember actors,
+        IKurinAudit audit,
+        IProbesCatalogReader probes,
+        IThirdProbeReader reader)
+    {
+        _unitOfWork = unitOfWork;
+        _access = access;
+        _actors = actors;
+        _audit = audit;
+        _probes = probes;
+        _reader = reader;
+    }
+
+    public async Task<ServiceResult<ThirdProbeDto>> Handle(SignThirdProbeCommand request, CancellationToken cancellationToken)
+    {
+        var probeId = request.ProbeId.Trim();
+        var memberKey = request.MemberKey;
+        if (await ProbeProjectWriteRules.RefuseAsync<ThirdProbeDto>(
+                _access, memberKey, probeId, cancellationToken,
+                access => request.Sign ? access.CanSignAsync(memberKey, cancellationToken) : access.CanUnsignAsync(memberKey, cancellationToken))
+            is { } refused)
+        {
+            return refused;
+        }
+
+        var comment = TextRules.TrimOrNull(request.Comment);
+        if (comment?.Length > ProbeProjectRules.MaxCommentLength)
+        {
+            return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.FieldTooLong, $"A comment holds at most {ProbeProjectRules.MaxCommentLength} characters.");
+        }
+
+        var actor = await _actors.ActorAsync(cancellationToken);
+        var at = request.Sign ? DateTime.UtcNow : (DateTime?)null;
+        var by = request.Sign ? actor.UserKey : null;
+        var name = request.Sign ? actor.Name : null;
+        Guid subjectKey;
+        string subject;
+
+        if (request.Part == ThirdProbeSignPart.Reflection)
+        {
+            var file = await _unitOfWork.ProbeProjects.GetFileAsync(memberKey, probeId, cancellationToken);
+            if (request.Sign && file?.ReflectionOn is null)
+            {
+                return ProbeProjectWriteRules.Refuse<ThirdProbeDto>(ProbesAndBadgesErrors.NothingToConfirm, "Write down when the reflection took place first.");
+            }
+
+            if (file is not null)
+            {
+                (file.ReflectionConfirmedAtUtc, file.ReflectionConfirmedByUserKey, file.ReflectionConfirmedByName) = (at, by, name);
+            }
+
+            subjectKey = file?.ThirdProbeFileKey ?? Guid.Empty;
+            subject = "reflection";
+        }
+        else
+        {
+            var project = request.ProjectKey is { } key ? await _unitOfWork.ProbeProjects.GetWithImagesAsync(key, cancellationToken) : null;
+            if (project is null || project.MemberKey != memberKey || project.ProbeId != probeId)
+            {
+                return ServiceResult<ThirdProbeDto>.Failure(ResultType.NotFound, ProbesAndBadgesErrors.ProjectNotFound, "No such project in this probe.");
+            }
+
+            if (request.Part == ThirdProbeSignPart.ProjectApproval)
+            {
+                (project.ApprovedAtUtc, project.ApprovedByUserKey, project.ApprovedByName) = (at, by, name);
+            }
+            else
+            {
+                (project.CompletedAtUtc, project.CompletedByUserKey, project.CompletedByName) = (at, by, name);
+                project.CommandantComment = request.Sign ? comment : null;
+            }
+
+            subjectKey = project.ProbeProjectKey;
+            subject = project.Title;
+        }
+
+        await _audit.RecordAsync(
+            new AuditRecord(
+                AuditArea.Probe,
+                AuditActionNames.Probe.ThirdProbe(request.Part.ToString(), request.Sign),
+                subjectKey,
+                ProgressAuditNames.Probe(_probes, probeId),
+                memberKey,
+                request.Sign ? AuditChangeRules.Added((Field(request.Part), subject)) : AuditChangeRules.Removed((Field(request.Part), subject)),
+                comment),
+            cancellationToken);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return new ServiceResult<ThirdProbeDto>(ResultType.Success, await _reader.ReadAsync(memberKey, probeId, cancellationToken));
+    }
+
+    private static string Field(ThirdProbeSignPart part) => part == ThirdProbeSignPart.Reflection ? "reflection" : "project";
+}

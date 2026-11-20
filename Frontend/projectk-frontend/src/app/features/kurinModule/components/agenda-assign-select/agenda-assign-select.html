@@ -7,6 +7,6 @@
   [filter]="true"
   filterBy="label"
   containerStyleClass="agenda-assign-select"
-  placeholder="Оберіть курінь, гуртки або учасників"
+  [placeholder]="features.hasGroups() ? 'Обери курінь, гуртки, учасників або теги' : 'Обери курінь, учасників або теги'"
   appendTo="body"
   emptyMessage="Немає доступних цілей" />

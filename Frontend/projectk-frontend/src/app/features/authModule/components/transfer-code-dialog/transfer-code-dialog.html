@@ -1,0 +1,25 @@
+<p-dialog
+  header="Мій код для переходу"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: 'min(96vw, 26rem)' }">
+
+  <div class="transfer-code">
+    @if (code(); as value) {
+      @if (qr(); as image) {
+        <img class="transfer-code__qr" [src]="image" alt="QR-код для переходу" data-testid="transfer-qr" />
+      }
+      <span class="transfer-code__value" data-testid="transfer-code">{{ value }}</span>
+      <p-button label="Скопіювати" icon="pi pi-copy" (onClick)="copy(value)" />
+    } @else if (failed()) {
+      <span class="transfer-code__fallback">Код не завантажився. Закрий і відкрий це вікно ще раз.</span>
+    } @else {
+      <span class="pi pi-spin pi-spinner transfer-code__loading" aria-label="Завантажую код"></span>
+    }
+
+  </div>
+</p-dialog>

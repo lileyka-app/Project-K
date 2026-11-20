@@ -28,8 +28,10 @@ import {
   flag,
   grid,
   home,
+  idCard,
   informationCircle,
   key,
+  mail,
   notifications,
   openOutline,
   options,
@@ -183,6 +185,20 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
               }
             </ion-item>
           }
+          @if (me.memberKey) {
+            <ion-item [button]="true" [detail]="true" (click)="openCard('check')" data-testid="show-card">
+              <ion-icon class="lk-tile" slot="start" name="qr-code" aria-hidden="true" style="--lk-tile: #0e6e4e" />
+              <ion-label>Показати картку</ion-label>
+            </ion-item>
+            <ion-item [button]="true" [detail]="true" (click)="openCard('transfer')" data-testid="transfer-code">
+              <ion-icon class="lk-tile" slot="start" name="id-card" aria-hidden="true" style="--lk-tile: #8e8e93" />
+              <ion-label>Мій код для переходу</ion-label>
+            </ion-item>
+          }
+          <ion-item [button]="true" [detail]="true" (click)="openScan()" data-testid="scan">
+            <ion-icon class="lk-tile" slot="start" name="scan" aria-hidden="true" style="--lk-tile: #5e5ce6" />
+            <ion-label>Сканувати QR</ion-label>
+          </ion-item>
           <ion-item [button]="true" [detail]="false" (click)="addAccount()" data-testid="add-account">
             <ion-icon class="lk-tile" slot="start" name="person-add" aria-hidden="true" style="--lk-tile: #8e8e93" />
             <ion-label>Додати акаунт</ion-label>
@@ -239,6 +255,19 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
                 >Сповіщення на телефон</ion-toggle
               >
             }
+          </ion-item>
+        }
+        @if (invitationCount() > 0) {
+          <ion-item
+            [button]="true"
+            [detail]="true"
+            [class.current]="current() === 'invitations'"
+            (click)="open('/tabs/more/invitations')"
+            data-testid="invitations-row"
+          >
+            <ion-icon class="lk-tile" slot="start" name="mail" aria-hidden="true" style="--lk-tile: #34c759" />
+            <ion-label>Запрошення</ion-label>
+            <ion-note slot="end">{{ invitationCount() }}</ion-note>
           </ion-item>
         }
         @if (scopes.options().length > 1) {
@@ -301,6 +330,8 @@ export class NavMenu implements OnInit {
   protected readonly member = signal<MemberDto | null>(null);
   private readonly duesGroups = signal<{ groupKey: string; groupName: string }[]>([]);
   protected readonly leaving = signal(false);
+  /** Kurins waiting on the person's own answer: the row shows only while there are some. */
+  protected readonly invitationCount = signal(0);
   private readonly savedAccounts = signal<SavedAccount[]>([]);
   /** The account being switched to, while the server answers. */
   protected readonly switching = signal<string | null>(null);
@@ -335,7 +366,7 @@ export class NavMenu implements OnInit {
   );
   protected readonly current = computed(() => {
     const url = this.url();
-    const own = ['appearance', 'kurins', 'privacy'].find((page) => url.startsWith(`/tabs/more/${page}`));
+    const own = ['appearance', 'kurins', 'privacy', 'invitations'].find((page) => url.startsWith(`/tabs/more/${page}`));
     if (own) return own;
     if (url.startsWith('/tabs/more/profile')) return 'profile';
     return currentEntry(this.entries(), url);
@@ -368,8 +399,10 @@ export class NavMenu implements OnInit {
       flag,
       grid,
       home,
+      idCard,
       informationCircle,
       key,
+      mail,
       notifications,
       openOutline,
       options,
@@ -395,6 +428,10 @@ export class NavMenu implements OnInit {
       () => undefined, // The switcher shows only «Додати акаунт».
     );
     if (user.memberKey) {
+      this.kurinApi.myInvitations().then(
+        (invitations) => this.invitationCount.set(invitations.length),
+        () => undefined, // No row.
+      );
       this.me.member(user.memberKey).then(
         (member) => this.member.set(member),
         () => undefined, // The row keeps the email.
@@ -463,6 +500,20 @@ export class NavMenu implements OnInit {
         () => undefined,
       );
     }
+  }
+
+  /**
+   * «Моя картка» (web card-check-dialog and transfer-code-dialog): the QR to be checked by, or the
+   * transfer code the person hands to the Звʼязковий of the kurin that takes them in.
+   */
+  protected async openCard(part: 'check' | 'transfer'): Promise<void> {
+    if (this.drawer()) await this.menus.close();
+    await this.router.navigate(['/tabs/more/card'], { queryParams: { part } });
+  }
+
+  protected async openScan(): Promise<void> {
+    if (this.drawer()) await this.menus.close();
+    await this.router.navigateByUrl('/tabs/more/scan');
   }
 
   protected async addAccount(): Promise<void> {

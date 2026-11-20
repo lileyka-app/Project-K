@@ -95,10 +95,11 @@ export function closeBranch(dates: RankDates, branch: RankBranch): RankDates {
  * The ступені to send: every achieved one, an existing row keeping its key so the server updates it
  * rather than adding another (web buildPlastLevelsPayload).
  */
-export function rankHistories(existing: PlastLevelHistoryDto[] | null | undefined, dates: RankDates): PlastLevelHistoryDto[] {
+export function rankHistories(existing: PlastLevelHistoryDto[] | null | undefined, dates: RankDates, isPlastunka = false): PlastLevelHistoryDto[] {
   return RANK_FIELDS.filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(dates[f.level] ?? '')).map((f) => {
     const row = (existing ?? []).find((h) => h.plastLevel === f.level);
-    return row ? { ...row, dateAchieved: dates[f.level] } : { plastLevel: f.level, dateAchieved: dates[f.level] };
+    const { catalogId: _readOnly, ...stored } = row ?? { plastLevel: f.level };
+    return { ...stored, dateAchieved: dates[f.level], isPlastunka };
   });
 }
 
@@ -319,7 +320,7 @@ export interface PhotoChange {
  * The address, school and parents' contacts go only when changed: they are private, so someone who could not see them
  * read them blank, and one left out keeps what the server has. Emptied, they go as '' to clear.
  */
-/** The fields of the form each group of hidden data covers (the server's MemberDataFields). */
+/** The fields of the form each group of hidden data covers (the server's MemberDataFieldRules). */
 const HIDDEN_FIELDS: Record<Exclude<MemberDataGroup, 'birthday' | 'extras'>, readonly (keyof MemberForm)[]> = {
   contacts: ['email', 'phoneNumber'],
   birthDate: ['dateOfBirth'],
@@ -362,7 +363,7 @@ export function memberFormData(
 export type NewMemberPlacement = { groupKey: string } | { kurinKey: string };
 
 /**
- * The multipart body of `POST member` (a гурток) or `POST member/kurins/{k}/members` (the kurin),
+ * The multipart body of `POST member` (a гурток) or `POST kurin/{k}/members` (the kurin),
  * as the web's create sends it. Every new member gets an account: the letter is how they get in
  * (web createUserAccount, always on).
  */

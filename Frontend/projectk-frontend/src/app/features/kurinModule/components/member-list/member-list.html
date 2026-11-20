@@ -123,6 +123,9 @@
               <span class="text-sm">Картками</span>
               <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
             </div>
+            @if (addLabel()) {
+              <p-button [label]="addLabel()!" icon="pi pi-plus" size="small" (onClick)="add.emit()" data-testid="member-list-add" />
+            }
           </div>
         </div>
 
@@ -152,7 +155,7 @@
         
         <ng-template #caption>
           <div class="lil-tile-head">
-              @if (type() === 'kurin') { <h2 class="member-list-title">Всі учасники куреня</h2> }
+              @if (type() === 'kurin') { <h2 class="member-list-title">Учасники куреня</h2> }
               @else { <h2 class="member-list-title">Учасники гуртка</h2> }
 
               <div class="member-list-controls lil-tile-head__actions">
@@ -169,6 +172,9 @@
                     <span class="text-sm">Картками</span>
                     <p-toggleswitch [(ngModel)]="showGroupCardView" (onChange)="onGroupCardViewToggleChange()" />
                   </div>
+                }
+                @if (addLabel()) {
+                  <p-button [label]="addLabel()!" icon="pi pi-plus" size="small" (onClick)="add.emit()" data-testid="member-list-add" />
                 }
               </div>
           </div>
@@ -190,6 +196,9 @@
               <span class="member-name-cell">
                 <a class="member-name-link" [routerLink]="['/member', member.memberKey]">{{ member.lastName }} {{ member.firstName }} {{ member.middleName }}</a>
                 <app-profile-verification-badge [status]="member.profileVerificationStatus" />
+              </span>
+              <span class="member-tags-cell">
+                <app-kurin-tag-chips [keys]="member.tagKeys" [compact]="true" />
               </span>
             </td>
             <td data-mobile-label="Статус">

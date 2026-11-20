@@ -143,14 +143,14 @@ describe('SidebarMenuComponent', () => {
           builds.push(items);
           if (builds.length === 1) {
             authStateSubject.next({ ...youth, permissions: ['Kurin:Update:KurinWide'], roles: ['KV.Zvyazkovyi'] });
-          } else if (items.some(item => item.label === 'Налаштування куреня')) {
+          } else if (items.some(item => (item.label === 'Налаштування' && String(item.routerLink?.[0]).endsWith('/settings') && String(item.routerLink?.[0]).startsWith('/kurin/')))) {
             resolve();
           }
         });
       });
 
       await settingsShown;
-      expect(builds[0].some(item => item.label === 'Налаштування куреня')).toBe(false);
+      expect(builds[0].some(item => (item.label === 'Налаштування' && String(item.routerLink?.[0]).endsWith('/settings') && String(item.routerLink?.[0]).startsWith('/kurin/')))).toBe(false);
     });
 
     it('should set email$ to null when state is null', () => new Promise<void>(done => {
@@ -191,28 +191,29 @@ describe('SidebarMenuComponent', () => {
       const items = await itemsAt('/kurin');
 
       const kurin = items.find(item => item.label === 'Курінь');
-      expect(kurin?.styleClass).toBe('lil-menu-item--current');
+      expect(kurin?.styleClass).toContain('lil-menu-item--current');
     });
 
     it('marks only one item, preferring the longest matching path', async () => {
       const items = await itemsAt('/kurin/kurin-1/settings');
 
-      const marked = items.filter(item => item.styleClass === 'lil-menu-item--current');
+      const marked = items.filter(item => item.styleClass?.includes('lil-menu-item--current'));
       expect(marked).toHaveLength(1);
-      expect(marked[0].label).toBe('Налаштування куреня');
+      expect(marked[0].label).toBe('Налаштування');
     });
 
     it('ignores query strings when matching', async () => {
       const items = await itemsAt('/planning/kurin-1?tab=all');
 
-      const planning = items.find(item => item.label === 'Планування');
-      expect(planning?.styleClass).toBe('lil-menu-item--current');
+      // Планування is a tab of the «Календар» page: its item lights up.
+      const calendar = items.find(item => item.label === 'Календар');
+      expect(calendar?.styleClass).toContain('lil-menu-item--current');
     });
 
     it('marks nothing when the url belongs to no menu item', async () => {
       const items = await itemsAt('/some/unrelated/page');
 
-      expect(items.every(item => item.styleClass === undefined)).toBe(true);
+      expect(items.every(item => !item.styleClass?.includes('lil-menu-item--current'))).toBe(true);
     });
   });
 
@@ -289,9 +290,9 @@ describe('SidebarMenuComponent', () => {
       });
 
       component.items$.subscribe(items => {
-        const settingsItem = items.find(item => item.label === 'Налаштування куреня');
+        const settingsItem = items.find(item => item.label === 'Налаштування');
         expect(settingsItem).toBeDefined();
-        expect(settingsItem?.routerLink).toEqual(['/kurin', 'kurin-456', 'settings']);
+        expect(settingsItem?.routerLink).toEqual(['/kurin/kurin-456/settings']);
         done();
       });
     }));
@@ -313,11 +314,9 @@ describe('SidebarMenuComponent', () => {
       });
 
       component.items$.subscribe(items => {
-        const settingsItem = items.find(item => item.label === 'РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ РєСѓСЂРµРЅСЏ');
-        void settingsItem;
-        const settingsLinkItem = items.find(item => JSON.stringify(item.routerLink) === JSON.stringify(['/kurin', 'kurin-456', 'settings']));
+        const settingsLinkItem = items.find(item => JSON.stringify(item.routerLink) === JSON.stringify(['/kurin/kurin-456/settings']));
         expect(settingsLinkItem).toBeDefined();
-        expect(settingsLinkItem?.routerLink).toEqual(['/kurin', 'kurin-456', 'settings']);
+        expect(settingsLinkItem?.label).toBe('Налаштування');
         done();
       });
     }));
@@ -339,8 +338,9 @@ describe('SidebarMenuComponent', () => {
       });
 
       component.items$.subscribe(items => {
-        const settingsItem = items.find(item => item.label === 'Налаштування куреня');
-        expect(settingsItem).toBeUndefined();
+        // Without the right to read the kurin's settings the item opens the account's.
+        const settingsItem = items.find(item => item.label === 'Налаштування');
+        expect(settingsItem?.routerLink).toEqual(['/settings/account']);
         done();
       });
     }));
@@ -514,15 +514,34 @@ describe('SidebarMenuComponent', () => {
       return new Promise(resolve => component.items$.subscribe(items => resolve(items)));
     }
 
-    it('lists «Журнал дій» right after the skills moderation for whoever may read it', async () => {
+    it('lists «Журнал дій» with the kurin block, after «Вкладка», for whoever may read it', async () => {
       const items = await itemsFor(['BadgeProgress:Update:KurinWide', 'KurinJournal:Read:KurinWide']);
       const labels = items.map(item => item.label);
       const journal = items.find(item => item.label === 'Журнал дій');
 
-      expect(labels.indexOf('Журнал дій')).toBe(labels.indexOf('Модерація вмілостей') + 1);
+      expect(labels.indexOf('Журнал дій')).toBeLessThan(labels.indexOf('Календар'));
+      expect(labels.indexOf('Модерація вмілостей')).toBeGreaterThan(labels.indexOf('Календар'));
       expect(journal?.icon).toBe('pi pi-history');
       journal?.command?.({});
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/kurin', 'kurin-456', 'journal']);
+    });
+
+    it('draws a line above each block: kurin, what it does, and the common items', async () => {
+      const items = await itemsFor(['KurinJournal:Read:KurinWide']);
+      const starts = items.filter(item => item.styleClass?.includes('lil-menu-item--group-start')).map(item => item.label);
+
+      expect(starts).toEqual(['Курінь', 'Календар', 'Налаштування']);
+    });
+
+    it('has one «Реєстр» for склад, переходи, архів and імпорт, for whoever has any of them', async () => {
+      const zvyazkovyi = (await itemsFor(['Group:Manage:KurinWide', 'KurinArchive:Read:KurinWide', 'Kurin:Update:KurinWide'])).map(item => item.label);
+      const hurtkovyi = (await itemsFor(['Group:Update:OwnGroups', 'KurinArchive:Read:OwnGroups'])).map(item => item.label);
+      const member = (await itemsFor([])).map(item => item.label);
+
+      expect(zvyazkovyi.filter(label => label === 'Реєстр')).toHaveLength(1);
+      expect(zvyazkovyi.some(label => ['Склад куреня', 'Імпорт складу', 'Архів куреня'].includes(label as string))).toBe(false);
+      expect(hurtkovyi).toContain('Реєстр');
+      expect(member).not.toContain('Реєстр');
     });
 
     it('hides «Журнал дій» from whoever the kurin does not let read it', async () => {

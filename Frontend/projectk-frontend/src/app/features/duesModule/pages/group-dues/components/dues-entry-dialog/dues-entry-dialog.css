@@ -16,3 +16,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.dues-entry-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

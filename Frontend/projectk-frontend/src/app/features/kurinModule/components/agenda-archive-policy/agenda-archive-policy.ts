@@ -4,6 +4,7 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { map, Observable, throwError } from 'rxjs';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
+import { countChanges } from '../../../../shared/functions/count-changes.function';
 
 /**
  * How long a kurin's done tasks stay on the board, and how long its archive is kept. Deleting for
@@ -27,6 +28,8 @@ export class AgendaArchivePolicyComponent implements OnInit {
   protected autoArchiveDays = 30;
   protected purge = true;
   protected purgeDays = 365;
+  /** The terms as the server last had them. */
+  private baseline: object | null = null;
 
   ngOnInit(): void {
     this.agenda.getArchivePolicy(this.kurinKey()).subscribe({
@@ -35,10 +38,20 @@ export class AgendaArchivePolicyComponent implements OnInit {
         this.autoArchiveDays = policy.autoArchiveAfterDays ?? 30;
         this.purge = policy.purgeAfterDays !== null;
         this.purgeDays = policy.purgeAfterDays ?? 365;
+        this.baseline = this.onScreen();
         this.loaded.set(true);
       },
       error: () => this.loaded.set(true)
     });
+  }
+
+  /** How many terms differ from what the server has. */
+  changeCount(): number {
+    return this.loaded() ? countChanges(this.baseline, this.onScreen()) : 0;
+  }
+
+  private onScreen(): object {
+    return { autoArchive: this.autoArchive, autoArchiveDays: this.autoArchiveDays, purge: this.purge, purgeDays: this.purgeDays };
   }
 
   protected valid(): boolean {
@@ -63,6 +76,8 @@ export class AgendaArchivePolicyComponent implements OnInit {
     if (!policy) {
       return throwError(() => new Error('Строк — від 1 до 3650 днів'));
     }
-    return this.agenda.setArchivePolicy(this.kurinKey(), policy).pipe(map(() => undefined));
+    return this.agenda.setArchivePolicy(this.kurinKey(), policy).pipe(map(() => {
+      this.baseline = this.onScreen();
+    }));
   }
 }

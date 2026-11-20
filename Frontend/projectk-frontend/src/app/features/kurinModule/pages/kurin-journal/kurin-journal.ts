@@ -278,7 +278,8 @@ function entryView(entry: KurinJournalEntryDto, moment: Date): JournalEntryView 
     actor: entry.actorName?.trim() || 'Система',
     role: journalRoleLabel(entry.actorRole),
     sentence: journalActionLabel(entry),
-    subjectLabel: entry.subjectLabel,
+    // A membership is labelled with the person, who is also linked beside it: name them once.
+    subjectLabel: entry.subjectLabel === entry.subjectMemberName ? '' : entry.subjectLabel,
     memberKey: entry.subjectMemberKey,
     memberName: entry.subjectMemberName,
     changes: (entry.changes ?? []).map(journalChangeView),

@@ -1,7 +1,8 @@
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.Common.Dtos.AuditModule;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.AuditModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Rules.AuditModule;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
@@ -15,24 +16,24 @@ public static class ProgressTrail
 {
     private static readonly Dictionary<string, (string Action, ProbeProgressStatus To)> ProbeActions = new(StringComparer.Ordinal)
     {
-        [AuditActions.Probe.Started] = ("InProgress", ProbeProgressStatus.InProgress),
-        [AuditActions.Probe.Completed] = ("Completed", ProbeProgressStatus.Completed),
-        [AuditActions.Probe.Verified] = ("Verified", ProbeProgressStatus.Verified),
-        [AuditActions.Probe.Unverified] = ("Unverify", ProbeProgressStatus.Completed),
-        [AuditActions.Probe.Reopened] = ("Unsign", ProbeProgressStatus.InProgress)
+        [AuditActionNames.Probe.Started] = ("InProgress", ProbeProgressStatus.InProgress),
+        [AuditActionNames.Probe.Completed] = ("Completed", ProbeProgressStatus.Completed),
+        [AuditActionNames.Probe.Verified] = ("Verified", ProbeProgressStatus.Verified),
+        [AuditActionNames.Probe.Unverified] = ("Unverify", ProbeProgressStatus.Completed),
+        [AuditActionNames.Probe.Reopened] = ("Unsign", ProbeProgressStatus.InProgress)
     };
 
     private static readonly Dictionary<string, (string Action, BadgeProgressStatus To)> BadgeActions = new(StringComparer.Ordinal)
     {
-        [AuditActions.Badge.Submitted] = ("Submitted", BadgeProgressStatus.Submitted),
-        [AuditActions.Badge.Resubmitted] = ("Resubmitted", BadgeProgressStatus.Submitted),
-        [AuditActions.Badge.Confirmed] = ("Confirmed", BadgeProgressStatus.Confirmed),
-        [AuditActions.Badge.Rejected] = ("Rejected", BadgeProgressStatus.Rejected),
-        [AuditActions.Badge.ConfirmationRemoved] = ("RemovedConfirmed", BadgeProgressStatus.Rejected)
+        [AuditActionNames.Badge.Submitted] = ("Submitted", BadgeProgressStatus.Submitted),
+        [AuditActionNames.Badge.Resubmitted] = ("Resubmitted", BadgeProgressStatus.Submitted),
+        [AuditActionNames.Badge.Confirmed] = ("Confirmed", BadgeProgressStatus.Confirmed),
+        [AuditActionNames.Badge.Rejected] = ("Rejected", BadgeProgressStatus.Rejected),
+        [AuditActionNames.Badge.ConfirmationRemoved] = ("RemovedConfirmed", BadgeProgressStatus.Rejected)
     };
 
     /// <summary>The status changes of one проба, oldest first, out of <paramref name="journal"/>.</summary>
-    public static IReadOnlyCollection<ProbeProgressAuditEventResponse> ForProbe(Guid probeProgressKey, IEnumerable<KurinAuditEvent> journal) =>
+    public static IReadOnlyCollection<ProbeProgressAuditEventDto> ForProbe(Guid probeProgressKey, IEnumerable<KurinAuditEvent> journal) =>
         journal
             .Where(entry => entry.SubjectKey == probeProgressKey && ProbeActions.ContainsKey(entry.Action))
             .OrderBy(entry => entry.OccurredAtUtc)
@@ -40,7 +41,7 @@ public static class ProgressTrail
             {
                 var (action, to) = ProbeActions[entry.Action];
                 var status = StatusChange(entry);
-                return new ProbeProgressAuditEventResponse(
+                return new ProbeProgressAuditEventDto(
                     entry.KurinAuditEventKey,
                     Parse<ProbeProgressStatus>(status?.From),
                     Parse<ProbeProgressStatus>(status?.To) ?? to,
@@ -54,7 +55,7 @@ public static class ProgressTrail
             .ToList();
 
     /// <summary>The status changes of one вмілість, oldest first, out of <paramref name="journal"/>.</summary>
-    public static IReadOnlyCollection<BadgeProgressAuditEventResponse> ForBadge(Guid badgeProgressKey, IEnumerable<KurinAuditEvent> journal) =>
+    public static IReadOnlyCollection<BadgeProgressAuditEventDto> ForBadge(Guid badgeProgressKey, IEnumerable<KurinAuditEvent> journal) =>
         journal
             .Where(entry => entry.SubjectKey == badgeProgressKey && BadgeActions.ContainsKey(entry.Action))
             .OrderBy(entry => entry.OccurredAtUtc)
@@ -62,7 +63,7 @@ public static class ProgressTrail
             {
                 var (action, to) = BadgeActions[entry.Action];
                 var status = StatusChange(entry);
-                return new BadgeProgressAuditEventResponse(
+                return new BadgeProgressAuditEventDto(
                     entry.KurinAuditEventKey,
                     Parse<BadgeProgressStatus>(status?.From),
                     Parse<BadgeProgressStatus>(status?.To) ?? to,

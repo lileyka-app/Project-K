@@ -1,13 +1,15 @@
-﻿import type { MockedObject } from 'vitest';
+import { MessageService } from '@openng/optimus-ui/api';
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { KurinPanelComponent } from './kurin-panel';
 import { GroupService } from '../../services/group-service/group.service';
+import { KurinDto } from '../../models/kurin.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { GroupDto } from '../../models/group.dto';
@@ -55,7 +57,8 @@ describe('KurinPanelComponent', () => {
     } as MockedObject<GroupService>;
     kurinService = {
       getByKey: vi.fn(),
-      downloadReportPdf: vi.fn()
+      downloadReportPdf: vi.fn(),
+      uploadEmblem: vi.fn()
     } as MockedObject<KurinService>;
     memberService = {
       getAll: vi.fn(),
@@ -85,6 +88,7 @@ describe('KurinPanelComponent', () => {
     await TestBed.configureTestingModule({
       imports: [KurinPanelComponent],
       providers: [
+        MessageService,
         { provide: ActivatedRoute, useValue: {} },
         { provide: GroupService, useValue: groupService },
         { provide: KurinService, useValue: kurinService },
@@ -159,25 +163,53 @@ describe('KurinPanelComponent', () => {
     expect(kurinService.getByKey).toHaveBeenCalledWith('k2');
   });
 
+  describe('emblem', () => {
+    function pick(file: File): void {
+      component.onEmblemPicked({ target: { files: [file], value: 'x' } } as unknown as Event);
+    }
+
+    it('opens the crop before anything is uploaded', () => {
+      component.kurinKey = 'k1';
+      const file = new File(['img'], 'shield.jpg', { type: 'image/jpeg' });
+
+      pick(file);
+
+      expect(component.emblemDialogVisible).toBe(true);
+      expect(component.emblemFile).toBe(file);
+      expect(kurinService.uploadEmblem).not.toHaveBeenCalled();
+    });
+
+    it('uploads the cropped area as PNG and closes the crop', () => {
+      component.kurinKey = 'k1';
+      kurinService.uploadEmblem.mockReturnValue(of({ kurinKey: 'k1', emblemUrl: 'e.png' } as KurinDto));
+      pick(new File(['img'], 'shield.jpg', { type: 'image/jpeg' }));
+
+      component.uploadCroppedEmblem(new Blob(['png'], { type: 'image/png' }));
+
+      const sent = kurinService.uploadEmblem.mock.calls[0][1] as File;
+      expect(sent.name).toBe('shield.png');
+      expect(sent.type).toBe('image/png');
+      expect(component.emblemDialogVisible).toBe(false);
+      expect(component.emblemFile).toBeUndefined();
+    });
+  });
+
   describe('prepareItemActions', () => {
-    it('sets Update/Delete actions', () => {
+    it('sets the edit and dissolve actions', () => {
       component.prepareItemActions(mockGroups[0]);
       expect(component.actions).toHaveLength(2);
       expect(component.actions[0].label).toBe('Редагувати');
-      expect(component.actions[1].label).toBe('Видалити');
+      expect(component.actions[1].label).toBe('Розформувати');
     });
   });
 
   describe('kurinEditMenuItems', () => {
-    it('exposes kurin profile and report export actions', () => {
+    it('holds only what edits the kurin: its data, and the emblem of a senior kurin', () => {
       component.kurinKey = 'k1';
       component.canEditKurinProfile = true;
       component.canManageGroups = true;
 
-      expect(component.kurinEditMenuItems.map(item => item.label)).toEqual([
-        'Редагування даних куреня',
-        'Експорт звіту куреня'
-      ]);
+      expect(component.kurinEditMenuItems.map(item => item.label)).toEqual(['Дані куреня']);
     });
 
     it('keeps same reference until menu state changes', () => {
@@ -195,16 +227,16 @@ describe('KurinPanelComponent', () => {
       expect(component.kurinEditMenuItems).not.toBe(first);
     });
 
-    it('exposes kurin settings action for managers', () => {
+    it('opens the one thing to edit at once instead of a menu of one', () => {
       component.kurinKey = 'k1';
-      component.canManageKurinSettings = true;
+      component.canEditKurinProfile = true;
+      const menu = { toggle: vi.fn() };
+      const start = vi.spyOn(component, 'startProfileEdit');
 
-      const settingsItem = component.kurinEditMenuItems.find(item => item.label === 'Налаштування куреня');
+      component.onKurinEditClick(new Event('click'), menu);
 
-      expect(settingsItem).toBeTruthy();
-      settingsItem?.command?.({ originalEvent: new Event('click'), item: settingsItem });
-
-      expect(router.navigate).toHaveBeenCalledWith(['/kurin', 'k1', 'settings']);
+      expect(start).toHaveBeenCalled();
+      expect(menu.toggle).not.toHaveBeenCalled();
     });
   });
 
@@ -251,6 +283,13 @@ describe('KurinPanelComponent', () => {
       component.onGroupManage({ action: 'delete', entity });
       expect(groupService.delete).toHaveBeenCalledWith('g1');
       expect(groupService.getAllByKurinKey).toHaveBeenCalled();
+    });
+
+    it('delete says why a гурток with money in its box stays', () => {
+      groupService.delete.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { error: 'GroupBoxNotSettled' } })));
+      const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+      component.onGroupManage({ action: 'delete', entity: { groupKey: 'g1', name: 'Alpha', kurinKey: 'k1', kurinNumber: 10 } });
+      expect(add).toHaveBeenCalledWith({ severity: 'error', summary: 'У скриньці гуртка ще є гроші чи борги' });
     });
   });
 

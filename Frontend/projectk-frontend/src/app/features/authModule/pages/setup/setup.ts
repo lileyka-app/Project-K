@@ -62,7 +62,7 @@ export class SetupComponent {
         this.router.navigate(authState ? authenticatedHomeRoute(authState) : ['/']);
       },
       error: (err) => {
-        let errorMessage = 'Не вдалося ініціалізувати систему. Спробуйте ще раз.';
+        let errorMessage = 'Не вдалося ініціалізувати систему. Спробуй ще раз.';
         if (err.error && typeof err.error === 'object' && err.error.message) {
           errorMessage = err.error.message;
         } else if (err.error && typeof err.error === 'string') {

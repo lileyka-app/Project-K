@@ -2,12 +2,13 @@ import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberCardComponent } from './member-card';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { MessageService } from '@openng/optimus-ui/api';
 import { MemberService } from '../../services/member-service/member.service';
 import { MemberDto } from '../../models/member.dto';
+import { MembershipDto } from '../../models/membership.dto';
 import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { MembershipKind } from '../../models/enums/membership-kind.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
@@ -26,9 +27,13 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { KurinDto } from '../../models/kurin.dto';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
+import { MemberWarningDto } from '../../models/member-warning.dto';
+import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { LifeStoryService } from '../../services/life-story/life-story.service';
+import { actInKurin, rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
@@ -44,7 +49,9 @@ describe('MemberCardComponent', () => {
   let entityServiceSpy: MockedObject<EntityService>;
   let routerSpy: MockedObject<Router>;
   let duesServiceSpy: MockedObject<DuesService>;
+  let lifeStorySpy: MockedObject<LifeStoryService>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
+  let routeStub: { paramMap: Observable<ParamMap>; snapshot: { data: Record<string, unknown>; params: Record<string, string> } };
 
   const memberKey = 'abc123';
   /** What the kurin's defaults give a впорядник over his own гурток. */
@@ -53,7 +60,8 @@ describe('MemberCardComponent', () => {
     awards: { confirm: [1, 2, 3, 4], remove: false },
     probes: { sign: true, unsign: true },
     badges: { review: true },
-    journal: false
+    journal: false,
+    dues: true
   };
   const member: MemberDto = {
     memberKey,
@@ -76,7 +84,9 @@ describe('MemberCardComponent', () => {
       getMemberships: vi.fn(),
       getAbilities: vi.fn(),
       verifyProfile: vi.fn(),
-      resetProfileVerification: vi.fn()
+      resetProfileVerification: vi.fn(),
+      confirmLevel: vi.fn(),
+      rejectLevel: vi.fn()
     } as MockedObject<MemberService>;
     kurinServiceSpy = {
       getByKey: vi.fn(),
@@ -109,13 +119,20 @@ describe('MemberCardComponent', () => {
       checkEntityAccess: vi.fn()
     } as MockedObject<EntityService>;
     routerSpy = {
-      navigate: vi.fn()
-    } as MockedObject<Router>;
+      navigate: vi.fn(),
+      // The card's tabs are router links; they read these and change nothing here.
+      events: of(),
+      createUrlTree: vi.fn(() => ({})),
+      serializeUrl: vi.fn(() => ''),
+      isActive: vi.fn(() => false)
+    } as unknown as MockedObject<Router>;
     duesServiceSpy = {
       getMemberDues: vi.fn()
     } as MockedObject<DuesService>;
     duesServiceSpy.getMemberDues.mockReturnValue(of({ hasAccount: false } as MemberDuesDto));
+    lifeStorySpy = { entries: vi.fn().mockReturnValue(of([])), save: vi.fn(), remove: vi.fn(), downloadPdf: vi.fn() } as unknown as MockedObject<LifeStoryService>;
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
+    routeStub = { paramMap: paramMapSubject.asObservable(), snapshot: { data: {}, params: { memberKey } } };
 
     badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.mockImplementation((url: string | null) => url);
     authServiceSpy.getAuthStateValue.mockReturnValue({
@@ -201,7 +218,8 @@ describe('MemberCardComponent', () => {
         { provide: EntityService, useValue: entityServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: DuesService, useValue: duesServiceSpy },
-        { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
+        { provide: LifeStoryService, useValue: lifeStorySpy },
+        { provide: ActivatedRoute, useValue: routeStub }
       ]
     }).compileComponents();
   });
@@ -789,6 +807,148 @@ describe('MemberCardComponent', () => {
     });
   });
 
+  describe('пластовий життєпис', () => {
+    const seniorHere = {
+      membershipKey: 'ms-now',
+      kurinKey: member.kurinKey,
+      kurinNumber: 5,
+      branch: KurinBranch.USP,
+      kurinNamedAfter: 'Орден Хрестоносців',
+      groupKey: null,
+      groupName: null,
+      kind: MembershipKind.Youth,
+      joinedAtUtc: '2022-09-15T00:00:00Z',
+      leftAtUtc: null,
+      isCurrent: true
+    };
+    const youthBefore = { ...seniorHere, membershipKey: 'ms-before', kurinKey: 'kurin-youth', kurinNumber: 1, branch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна', leftAtUtc: '2022-06-30T00:00:00Z', isCurrent: false };
+    const senior: MemberDto = {
+      ...member,
+      plastLevelHistories: [
+        { plastLevel: PlastLevel.Uchasnyk, dateAchieved: '2016-10-08' },
+        { plastLevel: PlastLevel.Skob, dateAchieved: '2020-07-18' },
+        { plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2022-10-01' }
+      ],
+      latestPlastLevel: PlastLevel.Starshoplastun,
+      ulad: KurinBranch.USP,
+      leadershipHistories: [
+        { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', kurinKey: 'kurin-youth', startDate: '2020-09-01', endDate: '2022-06-30', member: null as never }
+      ]
+    };
+
+    function openLife(asZvyazkovyi: boolean): void {
+      routeStub.snapshot.data = { view: 'life' };
+      authServiceSpy.getAuthStateValue.mockReturnValue({
+        userKey: 'user-zv',
+        memberKey: 'someone-else',
+        email: 'zv@example.com',
+        isAdmin: false,
+        permissions: asZvyazkovyi ? ['Group:Manage:KurinWide', 'Member:Update:KurinWide'] : ['Group:Update:OwnGroups'],
+        roles: [],
+        kurinKey: member.kurinKey,
+        accessToken: 'token'
+      });
+      memberServiceSpy.getByKey.mockReturnValue(of(senior));
+      memberServiceSpy.getMemberships.mockReturnValue(of([seniorHere, youthBefore]));
+      createComponent();
+      fixture.detectChanges();
+    }
+
+    it('показує юнацьке старшого, якого картка не показує, і запитує його', () => {
+      openLife(true);
+
+      expect(component.hasYouthProgram).toBe(false);
+      expect(component.showsYouthRecord).toBe(true);
+      expect(memberProgressServiceSpy.getBadgeProgresses).toHaveBeenCalledWith(memberKey);
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="life-head"]')).not.toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="senior-kurin-tile"]')).toBeNull();
+    });
+
+    it('розкладає ступені по етапах і називає ролі куренем, де їх тримали', () => {
+      openLife(true);
+
+      expect(component.lifeStages.map(stage => [stage.branch, stage.levels.map(level => level.title)])).toEqual([
+        ['УПЮ', ['пл. уч.', 'пл. скоб']],
+        ['УСП', ['ст. пл.']]
+      ]);
+      expect(component.lifeOffices.map(office => office.kurin)).toEqual(['к. ч. 1']);
+    });
+
+    it('юнацьке старшого виправляє лише Звʼязковий куреня, де той стоїть зараз', () => {
+      openLife(true);
+      expect(component.youthRecordLocked).toBe(false);
+    });
+
+    it('впорядникові юнацьке старшого лише для перегляду', () => {
+      openLife(false);
+      expect(component.youthRecordLocked).toBe(true);
+    });
+
+    it('відзначення УПЮ старшого Звʼязковий не додає й не править, лише розглядає', () => {
+      openLife(true);
+      expect(component.youthRecordLocked).toBe(false);
+      expect(component.canEditYouthAwards).toBe(false);
+    });
+
+    it('поки юнацьке членство в курені УПЮ відкрите, людина ще юнак', () => {
+      routeStub.snapshot.data = { view: 'life' };
+      memberServiceSpy.getByKey.mockReturnValue(of(senior));
+      memberServiceSpy.getMemberships.mockReturnValue(of([seniorHere, { ...youthBefore, leftAtUtc: null, isCurrent: true }]));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.isClosedYouthRecord).toBe(false);
+      expect(component.youthRecordLocked).toBe(false);
+    });
+
+    it('невдале збереження відзначення показує помилку', () => {
+      openLife(true);
+      vi.spyOn(component.memberAwardService, 'upsertAward').mockReturnValue(throwError(() => new Error('boom')));
+      const add = vi.spyOn(component.messageService, 'add');
+
+      component.onSaveAward({} as never);
+
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error', summary: 'Не вдалося зберегти відзначення' }));
+    });
+
+    it('у юнака лише етап УПЮ', () => {
+      routeStub.snapshot.data = { view: 'life' };
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, plastLevelHistories: [{ plastLevel: PlastLevel.Uchasnyk, dateAchieved: '2024-10-01' }] }));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.lifeStages.map(stage => stage.branch)).toEqual(['УПЮ']);
+      expect(component.youthRecordLocked).toBe(false);
+    });
+
+    it('життєпис — у «Ще» лише на своїй картці', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, memberKey: 'test-member-key' }));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.moreMenuItems.map(item => item.label)).toContain('Пластовий життєпис');
+    });
+
+    it('на чужій картці життєпису в меню немає', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.moreMenuItems.map(item => item.label)).not.toContain('Пластовий життєпис');
+    });
+
+    it('у життєписі — свої вишколи й табори', () => {
+      routeStub.snapshot.data = { view: 'life' };
+      lifeStorySpy.entries.mockReturnValue(of([{ memberLifeEntryKey: 'e1', kind: 'Training', course: 'Kvz', title: null, number: 12, startDate: '2024-07-01', endDate: '2024-07-10', place: null, commandant: 'Ярема', role: null }]));
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(lifeStorySpy.entries).toHaveBeenCalled();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('12-й КВЗ');
+    });
+  });
+
   describe('гілка куреня', () => {
     const membershipIn = (branch: KurinBranch) => ({
       membershipKey: 'ms-1',
@@ -805,7 +965,7 @@ describe('MemberCardComponent', () => {
     });
 
     it('у курені УСП проби й вмілості не показуються і навіть не запитуються', () => {
-      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, ulad: KurinBranch.USP }));
       memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.USP)]));
 
       createComponent();
@@ -816,6 +976,52 @@ describe('MemberCardComponent', () => {
       expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
     });
 
+    it('у курені УСП картка своя: курінь і роль, відзначення, перестороги — без юнацьких плиток і «Впорядництва»', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of({
+        ...member,
+        leadershipHistories: [
+          { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', startDate: '2025-09-01', endDate: null, member: null as never },
+          { leadershipHistoryKey: 'h2', leadershipKey: 'l2', role: 'Hurtkoviy', leadershipType: 'Group', startDate: '2025-09-01', endDate: null, member: null as never }
+        ]
+      }));
+      memberServiceSpy.getMemberships.mockReturnValue(of([{
+        ...membershipIn(KurinBranch.USP),
+        kurinNamedAfter: 'Орден Хрестоносців',
+        numbering: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }]
+      }]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      const element = fixture.nativeElement as HTMLElement;
+      expect(component.isSeniorKurinCard).toBe(true);
+      expect(component.seniorKurinName).toBe('Орден Хрестоносців');
+      expect(component.seniorKurinBranches).toBe('5-й курінь УСП · 20-й курінь УПС');
+      expect(component.currentOffices.map(o => o.role)).toEqual(['Pysar']);
+      expect(element.querySelector('[data-testid="senior-kurin-tile"]')).not.toBeNull();
+      expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+      expect(element.querySelector('[data-testid="senior-warnings-tile"]')).not.toBeNull();
+    });
+
+    it('ролі з іншого куреня на картці немає, а свою курінь називає своїм словом', () => {
+      rememberKurinRoleNames('kurin1', { Pysar: 'Скриптор' });
+      memberServiceSpy.getByKey.mockReturnValue(of({
+        ...member,
+        leadershipHistories: [
+          { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', kurinKey: 'kurin1', startDate: '2025-09-01', endDate: null, member: null as never },
+          { leadershipHistoryKey: 'h2', leadershipKey: 'l2', role: 'Kurinnuy', leadershipType: 'Kurin', kurinKey: 'kurin2', startDate: '2025-09-01', endDate: null, member: null as never }
+        ]
+      }));
+      memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.USP)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.currentOffices.map(o => o.role)).toEqual(['Pysar']);
+      expect(component.officeLabel(component.currentOffices[0])).toBe('Скриптор');
+      actInKurin(null);
+    });
+
     it('у юнацькому курені все на місці', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
@@ -824,11 +1030,12 @@ describe('MemberCardComponent', () => {
       fixture.detectChanges();
 
       expect(component.hasYouthProgram).toBe(true);
+      expect(component.isSeniorKurinCard).toBe(false);
       expect(badgesCatalogServiceSpy.getAll).toHaveBeenCalled();
     });
 
     it('гілку бере членство в тому курені, де ми дивимось людину', () => {
-      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, ulad: KurinBranch.USP }));
       memberServiceSpy.getMemberships.mockReturnValue(of([
         { ...membershipIn(KurinBranch.UPYu), kurinKey: 'kurin-elsewhere', membershipKey: 'ms-2' },
         membershipIn(KurinBranch.USP)
@@ -846,6 +1053,7 @@ describe('MemberCardComponent', () => {
       memberServiceSpy.getByKey.mockReturnValue(of({
         ...member,
         latestPlastLevel: PlastLevel.Starshoplastun,
+        ulad: KurinBranch.USP,
         plastLevelHistories: [{ plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2024-05-01' }]
       }));
       memberServiceSpy.getMemberships.mockReturnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
@@ -860,6 +1068,126 @@ describe('MemberCardComponent', () => {
       expect(renderedText()).not.toContain('Здобуті вмілості');
       expect(renderedText()).not.toContain('Відзначення УПЮ');
       expect(renderedText().toLowerCase()).not.toContain('скоро');
+    });
+
+    describe('сеніор, що веде курінь УПЮ', () => {
+      const zvyazkovyi = {
+        ...member,
+        latestPlastLevel: PlastLevel.Senior,
+        ulad: KurinBranch.UPS,
+        isAdult: true,
+        plastLevelHistories: [
+          { plastLevel: PlastLevel.Skob, dateAchieved: '2002-06-01' },
+          { plastLevel: PlastLevel.Senior, dateAchieved: '2015-04-26' }
+        ]
+      };
+
+      function openAs(memberKey: string): void {
+        authServiceSpy.getAuthStateValue.mockReturnValue({
+          userKey: 'user-viewer',
+          memberKey,
+          email: 'viewer@example.com',
+          isAdmin: false,
+          permissions: ['Group:Manage:KurinWide', 'Member:Update:KurinWide'],
+          roles: [],
+          kurinKey: member.kurinKey,
+          accessToken: 'token'
+        });
+        memberServiceSpy.getByKey.mockReturnValue(of(zvyazkovyi));
+        memberServiceSpy.getMemberships.mockReturnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
+        createComponent();
+        fixture.detectChanges();
+      }
+
+      it('показує поточний ступінь — сеніора, а не скоба 2002 року', () => {
+        openAs(member.memberKey);
+
+        const highest = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="degree-highest"]');
+        expect(highest?.textContent).toContain('пл. сен.');
+        expect(highest?.textContent).not.toContain('скоб');
+      });
+
+      it('веде свої старші відзначення сам, і в курені УПЮ', () => {
+        openAs(member.memberKey);
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(component.isSeniorKurinCard).toBe(false);
+        expect(component.showsSeniorAwards).toBe(true);
+        expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+        expect(element.querySelector('[data-testid="senior-award-add"]')).not.toBeNull();
+      });
+
+      it('провід куреня УПЮ бачить його старші відзначення, але не вносить їх', () => {
+        openAs('someone-else');
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+        expect(element.querySelector('[data-testid="senior-award-add"]')).toBeNull();
+      });
+
+      it('неповнолітній старший на своїй картці в курені УПЮ старших відзначень собі не вносить', () => {
+        authServiceSpy.getAuthStateValue.mockReturnValue({
+          userKey: 'user-viewer', memberKey: member.memberKey, email: 'viewer@example.com', isAdmin: false,
+          permissions: [], roles: [], kurinKey: member.kurinKey, accessToken: 'token'
+        });
+        memberServiceSpy.getByKey.mockReturnValue(of({ ...zvyazkovyi, isAdult: false }));
+        memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
+        createComponent();
+        fixture.detectChanges();
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+        expect(element.querySelector('[data-testid="senior-award-add"]')).toBeNull();
+      });
+    });
+
+    describe('ступінь, що чекає', () => {
+      const waiting = {
+        ...member,
+        latestPlastLevel: PlastLevel.Skob,
+        ulad: KurinBranch.UPYu,
+        plastLevelHistories: [
+          { plastLevelHistoryKey: 'lvl-skob', plastLevel: PlastLevel.Skob, dateAchieved: '2021-06-01' },
+          { plastLevelHistoryKey: 'lvl-sp', plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2025-09-01', awaitsConfirmation: true }
+        ]
+      };
+
+      function openAs(memberKey: string, permissions: string[]): void {
+        authServiceSpy.getAuthStateValue.mockReturnValue({
+          userKey: 'user-viewer', memberKey, email: 'viewer@example.com', isAdmin: false,
+          permissions, roles: [], kurinKey: member.kurinKey, accessToken: 'token'
+        });
+        memberServiceSpy.getByKey.mockReturnValue(of(waiting));
+        memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
+        createComponent();
+        fixture.detectChanges();
+      }
+
+      it('стоїть окремо з позначкою і не стає поточним ступенем', () => {
+        openAs(member.memberKey, []);
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(element.querySelector('[data-testid="degree-highest"]')?.textContent).toContain('пл. скоб');
+        expect(element.querySelector('[data-testid="degree-waiting"]')?.textContent).toContain('чекає підтвердження');
+        expect(component.hasYouthProgram).toBe(true);
+        expect(element.textContent).not.toContain('Підтвердити');
+      });
+
+      it('Звʼязковий підтверджує його з картки', () => {
+        memberServiceSpy.confirmLevel.mockReturnValue(of({ plastLevel: PlastLevel.Starshoplastun }));
+        openAs('someone-else', ['Group:Manage:KurinWide', 'Member:Update:KurinWide']);
+
+        expect(component.canConfirmLevels).toBe(true);
+        component.confirmLevel('lvl-sp');
+
+        expect(memberServiceSpy.confirmLevel).toHaveBeenCalledWith(member.memberKey, 'lvl-sp');
+      });
+
+      it('впорядник без права на весь курінь не відповідає', () => {
+        openAs('someone-else', ['Group:Update:OwnGroups']);
+
+        expect(component.canConfirmLevels).toBe(false);
+      });
     });
 
     it('юнак у курені УПЮ бачить відзначення УПЮ, а впорядництва в нього немає', () => {
@@ -883,6 +1211,7 @@ describe('MemberCardComponent', () => {
       numberLocale: 'uk-UA',
       currentQuarter: { year: 2026, number: 4 },
       balance: -300,
+      owedToLeave: 0,
       quarterRate: { stanytsia: 240, krai: 0, kurin: 15, group: 45, total: 300 },
       isConcessionNow: false,
       concessionNamesNow: [],
@@ -907,6 +1236,26 @@ describe('MemberCardComponent', () => {
       expect(renderedText()).not.toContain('Каса гуртка');
     });
 
+    it('на своїй картці показує вкладку й в інших куренях, з уладом людини там', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({
+        hasAccount: false,
+        elsewhere: [{
+          kurinKey: 'orden', kurinNumber: 20, kurinNamedAfter: 'Орден Хрестоносців', branch: KurinBranch.UPS,
+          numbering: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }],
+          currency: 'UAH', numberLocale: 'uk-UA', balance: -400
+        }]
+      })));
+
+      createComponent();
+      fixture.detectChanges();
+
+      const elsewhere = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="dues-elsewhere"]')?.textContent ?? '';
+      expect(elsewhere).toContain('Орден Хрестоносців · УПС');
+      expect(elsewhere).toContain('−400 ₴');
+      expect(renderedText()).not.toContain('Сплачено');
+    });
+
     it('сплачено — зелена плашка; впорядникові є кнопка в касу гуртка', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0, canOpenGroupDues: true })));
@@ -916,6 +1265,51 @@ describe('MemberCardComponent', () => {
 
       expect(renderedText()).toContain('Сплачено');
       expect(renderedText()).toContain('Каса гуртка');
+    });
+
+    // Борг з людиною не йде: «Вивести» пояснює, що спершу треба сплатити, і не пропонує вивести.
+    it('із боргом «Вивести» каже про вкладку замість підтвердження', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: -600, owedToLeave: 300 })));
+      createComponent();
+      fixture.detectChanges();
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
+
+      component.confirmLeaveKurin({ kurinKey: member.kurinKey, kurinNumber: 1 } as MembershipDto);
+
+      const options = confirm.mock.calls[0][0];
+      expect(options.header).toBe('Спершу — вкладка');
+      expect(options.message).toContain('300 ₴');
+      expect(options.rejectVisible).toBe(false);
+      expect(options.accept).toBeUndefined();
+    });
+
+    it('без боргу «Вивести» питає підтвердження', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0 })));
+      createComponent();
+      fixture.detectChanges();
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
+
+      component.confirmLeaveKurin({ kurinKey: member.kurinKey, kurinNumber: 1 } as MembershipDto);
+
+      expect(confirm.mock.calls[0][0].header).toBe('Вивести з куреня');
+    });
+
+    it('старший курінь у підтвердженні й на відзначеннях названо його іменем, юнацький — номером', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0 })));
+      const orden = { kurinKey: member.kurinKey, kurinNumber: 5, branch: KurinBranch.USP, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto;
+      const upyu = { kurinKey: 'kurin9', kurinNumber: 47, branch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна' } as MembershipDto;
+      memberServiceSpy.getMemberships.mockReturnValue(of([orden, upyu]));
+      createComponent();
+      fixture.detectChanges();
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
+
+      component.confirmLeaveKurin(orden);
+
+      expect(confirm.mock.calls[0][0].message).toContain('Членство (Орден Хрестоносців)');
+      expect(component.kurinStamps).toEqual({ [member.kurinKey]: 'Орден Хрестоносців', kurin9: 'к. ч. 47' });
     });
 
     // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.
@@ -928,6 +1322,17 @@ describe('MemberCardComponent', () => {
 
       expect(component.dues).toBeNull();
       expect(renderedText()).not.toContain('за квартал');
+    });
+
+    it('не питає чужої вкладки, коли права на неї немає', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      memberServiceSpy.getAbilities.mockReturnValue(of({ ...leaderAbilities, dues: false }));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(duesServiceSpy.getMemberDues).not.toHaveBeenCalled();
+      expect(component.dues).toBeNull();
     });
   });
 
@@ -978,6 +1383,20 @@ describe('MemberCardComponent', () => {
   });
 
   describe('verification and перестороги', () => {
+    const activeWarning: MemberWarningDto = {
+      memberWarningKey: 'w-1',
+      memberKey,
+      level: MemberWarningLevel.Level1,
+      issuedAtUtc: '2026-01-01T00:00:00Z',
+      expiresAtUtc: '2999-01-01T00:00:00Z',
+      issuedByUserKey: 'someone'
+    };
+
+    const headButtons = () => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.member-actions button'));
+    const headButtonLabels = () => headButtons().map(button => button.textContent?.trim() ?? '').filter(text => !!text);
+    const headButton = (ariaLabel: string) => headButtons().find(button => button.getAttribute('aria-label') === ariaLabel) ?? null;
+    const menuLabels = () => component.moreMenuItems.map(item => item.label);
+
     function createAsReviewer(loaded: MemberDto) {
       memberServiceSpy.getByKey.mockReturnValue(of(loaded));
       createComponent();
@@ -997,6 +1416,15 @@ describe('MemberCardComponent', () => {
       expect(component.canManageWarnings).toBe(false);
     });
 
+    it('lets the Звʼязковий place someone else, but not take themselves out or move their own гурток', () => {
+      createAsReviewer(member);
+      vi.spyOn(component.permissionService, 'canManageWholeKurin').mockReturnValue(true);
+      expect(component.canManagePlacement).toBe(true);
+
+      component.member = { ...member, memberKey: 'test-member-key' };
+      expect(component.canManagePlacement).toBe(false);
+    });
+
     it('offers neither to someone who may not edit the member', () => {
       entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
       memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
@@ -1012,7 +1440,8 @@ describe('MemberCardComponent', () => {
 
       expect(component.canEditMember).toBe(false);
       expect(component.canManageWarnings).toBe(true);
-      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Перестороги');
+      expect(menuLabels()).toEqual(['Перестороги']);
+      expect(headButton('Ще')).not.toBeNull();
     });
 
     it('offers the journal filtered to the member when the kurin lets the viewer read it', () => {
@@ -1028,7 +1457,57 @@ describe('MemberCardComponent', () => {
       createAsReviewer(member);
 
       expect(component.journalKurinKey).toBeNull();
-      expect(fixture.nativeElement.querySelector('[data-testid="member-journal"]')).toBeNull();
+      expect(menuLabels()).not.toContain('Журнал дій');
+    });
+
+    it('keeps «Редагувати» as the one main action and the rarer ones under «Ще»', () => {
+      memberServiceSpy.getAbilities.mockReturnValue(of({ ...leaderAbilities, journal: true }));
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified });
+
+      expect(headButtonLabels()).toEqual(['Редагувати', 'Верифікувати']);
+      expect(headButton('Ще')).not.toBeNull();
+      expect(menuLabels()).toEqual(['Перестороги', 'Журнал дій']);
+    });
+
+    it('moves verification under «Ще» once the profile is verified', () => {
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent });
+
+      expect(headButtonLabels()).toEqual(['Редагувати']);
+      expect(menuLabels()[0]).toBe('Зняти верифікацію');
+    });
+
+    it('asks to verify again when the data changed after verification', () => {
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedStale });
+
+      expect(headButtonLabels()).toContain('Верифікувати');
+      expect(menuLabels()).not.toContain('Зняти верифікацію');
+    });
+
+    it('leaves no head actions to whoever may do nothing to the member', () => {
+      entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
+      memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
+      createAsReviewer(member);
+
+      expect(headButtonLabels()).toEqual([]);
+      expect(headButton('Ще')).toBeNull();
+    });
+
+    it('opens перестороги from the dots for whoever gives them', () => {
+      createAsReviewer({ ...member, warnings: [activeWarning] });
+
+      const dots = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.member-warning-indicator');
+      expect(dots?.getAttribute('aria-label')).toBe('Перестороги');
+      dots!.click();
+      expect(component.isWarningsDialogVisible).toBe(true);
+    });
+
+    it('keeps the dots a mark for whoever does not give перестороги', () => {
+      memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
+      createAsReviewer({ ...member, warnings: [activeWarning] });
+
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('.member-warning-indicator')).not.toBeNull();
+      expect(host.querySelector('button.member-warning-indicator')).toBeNull();
     });
 
     it('verifies the profile after asking', () => {

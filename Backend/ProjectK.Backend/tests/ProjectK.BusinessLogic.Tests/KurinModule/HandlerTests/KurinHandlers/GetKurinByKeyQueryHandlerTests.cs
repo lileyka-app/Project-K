@@ -1,64 +1,41 @@
-using ProjectK.BusinessLogic.Tests.TestHelpers;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
-using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.AuthModule;
+using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using Xunit;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
 public class GetKurinByKeyHandlerTests
 {
-    private readonly IMapper _mapper;
+    private readonly IBlobReadLinks _links;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IAppUserRepository> _appUserRepositoryMock = new();
     private readonly Mock<IMembershipRepository> _membershipRepositoryMock = new();
 
     private readonly GetKurinByKeyQueryHandler _handler;
 
     public GetKurinByKeyHandlerTests()
     {
-        var loggerFactory = LoggerFactory.Create(builder => { });
-        var config = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, loggerFactory);
-        _mapper = config.CreateMapper();
+        _links = FakeBlobReadLinks.Instance;
 
         _kurinRepositoryMock = new Mock<IKurinRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
 
         _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
 
-        _appUserRepositoryMock
-            .Setup(x => x.CountActiveAsync(
-                It.IsAny<IReadOnlyCollection<Guid>?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
-        _unitOfWorkMock.Setup(uow => uow.Users).Returns(_appUserRepositoryMock.Object);
-
         _membershipRepositoryMock
-            .Setup(x => x.GetAccountKeysInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Guid>());
+            .Setup(x => x.CountCurrentInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
         _unitOfWorkMock.Setup(uow => uow.Memberships).Returns(_membershipRepositoryMock.Object);
 
-        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _mapper, CreateCache());
+        _handler = new GetKurinByKeyQueryHandler(_unitOfWorkMock.Object, _links, CreateCache(), new MembershipDirectory(_unitOfWorkMock.Object));
     }
 
     private static IBackendCache CreateCache() =>
@@ -145,8 +122,22 @@ public class GetKurinByKeyHandlerTests
         result.Data.KurinKey.Should().Be(kurinKey);
         result.Data.Number.Should().Be(456);
 
-        var directlyMapped = _mapper.Map<KurinResponse>(kurin);
-        result.Data.Should().BeEquivalentTo(directlyMapped);
+        result.Data.Should().BeEquivalentTo(new { KurinKey = kurinKey, Number = 456, kurin.KraiCode, kurin.Branch, CurrentUserCount = 0, EmblemUrl = (string?)null, IsPreparatory = false });
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportEveryoneWhoBelongsToTheKurinNow()
+    {
+        var kurinKey = Guid.NewGuid();
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(456) { KurinKey = kurinKey });
+        _membershipRepositoryMock
+            .Setup(x => x.CountCurrentInKurinAsync(kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(7);
+
+        var result = await _handler.Handle(new GetKurinByKeyQuery(kurinKey), default);
+
+        result.Data!.CurrentUserCount.Should().Be(7);
     }
 
     [Fact]

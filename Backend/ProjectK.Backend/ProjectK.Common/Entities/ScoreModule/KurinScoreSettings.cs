@@ -1,4 +1,5 @@
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.Shared;
+using ProjectK.Common.Enums.ScoreModule;
 
 namespace ProjectK.Common.Entities.ScoreModule;
 

@@ -32,7 +32,7 @@ import {
 } from '@ionic/angular';
 import { HeaderActions } from '../nav/header-actions';
 import { addIcons } from 'ionicons';
-import { arrowDown, checkbox, chevronForward, star, wallet } from 'ionicons/icons';
+import { arrowDown, checkbox, chevronForward, ribbon, star, wallet } from 'ionicons/icons';
 import { AuthService } from '../auth/auth.service';
 import { GlassEffects } from '../ui/glass';
 import { dayLabel, greeting, money, timeLabel, todayLabel } from '../me/labels';
@@ -506,7 +506,7 @@ export class HomePage implements OnInit, OnDestroy, ViewWillEnter {
   protected readonly dutiesTotal = computed(() => (valueOf(this.dutyList())?.items ?? []).reduce((sum, d) => sum + d.count, 0));
 
   constructor() {
-    addIcons({ chevronForward, star, arrowDown, wallet, checkbox });
+    addIcons({ chevronForward, star, arrowDown, wallet, checkbox, ribbon });
     // The RSVP segments come and go with the events; each gets the iOS glass lens (no-op on md).
     afterRenderEffect(() => {
       this.upcoming();

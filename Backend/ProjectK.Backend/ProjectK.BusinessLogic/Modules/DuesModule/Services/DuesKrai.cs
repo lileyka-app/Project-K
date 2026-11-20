@@ -1,8 +1,7 @@
-using ProjectK.BusinessLogic.Modules.KurinModule.Services;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Models.Dues;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.KraiProfiles;
+using ProjectK.Common.Dtos.KraiModule;
+using ProjectK.Common.Enums.DuesModule;
+using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.AgendaModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -15,7 +14,7 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 public sealed record DuesKrai(string Currency, string NumberLocale, TimeZoneInfo Zone, KraiDuesSettings Dues)
 {
     /// <summary>How Lilejka counted before краї had profiles.</summary>
-    public static DuesKrai Default { get; } = new("UAH", "uk-UA", AgendaRecurrence.DefaultZone, KraiDuesSettings.Default);
+    public static DuesKrai Default { get; } = new("UAH", "uk-UA", AgendaRecurrenceRules.DefaultZone, KraiDuesSettings.Default);
 
     /// <summary>The day it is in the край when the clock reads <paramref name="now"/>.</summary>
     public DateOnly Today(DateTimeOffset now) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, Zone).DateTime);
@@ -41,16 +40,4 @@ public sealed record DuesKrai(string Currency, string NumberLocale, TimeZoneInfo
         DuesEntryKind.TransferToKrai => Dues.PaysKrai,
         _ => true
     };
-}
-
-public static class DuesKrais
-{
-    public static async Task<DuesKrai> DuesKraiForKurinAsync(this IKraiProfileProvider profiles, Guid kurinKey, CancellationToken cancellationToken)
-    {
-        var profile = await profiles.GetForKurinAsync(kurinKey, cancellationToken);
-        return profile is null ? DuesKrai.Default : profile.ToDuesKrai();
-    }
-
-    public static DuesKrai ToDuesKrai(this KraiProfile profile) =>
-        new(profile.Locale.Currency, profile.Locale.NumberLocale, AgendaRecurrence.ResolveZone(profile.Locale.TimeZone), profile.Dues);
 }

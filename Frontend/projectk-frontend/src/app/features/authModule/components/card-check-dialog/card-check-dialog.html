@@ -1,0 +1,28 @@
+<p-dialog
+  header="Моя картка"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: 'min(96vw, 24rem)' }">
+
+  <div class="card-check">
+    @if (notAllowed()) {
+      <span class="pi pi-lock card-check__icon" aria-hidden="true"></span>
+      <p class="card-check__lead">Курінь ще не дозволив показувати картку.</p>
+    } @else if (code(); as value) {
+      <img class="card-check__qr" [src]="value.qrCode" alt="QR-код картки" data-testid="card-qr" />
+      <span class="card-check__timer" data-testid="card-timer">Новий QR за {{ countdown() }}</span>
+    } @else if (failed()) {
+      <p class="card-check__lead">QR не завантажився.</p>
+    } @else {
+      <span class="pi pi-spin pi-spinner card-check__icon" aria-label="Завантажую QR"></span>
+    }
+
+    <a class="card-check__settings" routerLink="/settings/account" fragment="card" (click)="visible.set(false)">
+      Налаштувати картку
+    </a>
+  </div>
+</p-dialog>

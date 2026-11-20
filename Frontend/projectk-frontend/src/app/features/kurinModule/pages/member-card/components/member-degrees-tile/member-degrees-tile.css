@@ -1,0 +1,77 @@
+.degree-highest {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.degree-highest-image {
+  flex: none;
+  width: 6.5rem;
+  height: 7.5rem;
+  object-fit: contain;
+}
+
+.degree-highest-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.degree-highest-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.degree-highest-image.degree-image--empty {
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+}
+
+.degree-date,
+.degree-empty {
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}
+
+.degree-empty {
+  margin: 0;
+}
+
+.degree-waiting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.degree-waiting-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--p-content-border-color);
+}
+
+.degree-waiting-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.degree-waiting-title {
+  font-weight: 600;
+}
+
+.degree-waiting-actions {
+  display: flex;
+  gap: 0.5rem;
+}

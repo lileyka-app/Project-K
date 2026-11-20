@@ -1,8 +1,9 @@
-using ProjectK.BusinessLogic.Modules.DuesModule.Models;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Dtos.DuesModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Records.KurinModule;
+using ProjectK.Common.Rules.MemberModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -15,18 +16,24 @@ public sealed class DuesNames
     private readonly IReadOnlyDictionary<Guid, KurinMembershipRecord> _memberships;
     private readonly IReadOnlyDictionary<Guid, string> _byMember;
     private readonly IReadOnlyDictionary<Guid, string> _byAccount;
+    private readonly IReadOnlyDictionary<Guid, Guid> _accountOfMember;
 
     private DuesNames(
         IReadOnlyDictionary<Guid, KurinMembershipRecord> memberships,
         IReadOnlyDictionary<Guid, string> byMember,
         IReadOnlyDictionary<Guid, string> byAccount,
+        IReadOnlyDictionary<Guid, Guid> accountOfMember,
         IReadOnlyList<DuesPersonDto> people)
     {
         _memberships = memberships;
         _byMember = byMember;
         _byAccount = byAccount;
+        _accountOfMember = accountOfMember;
         People = people;
     }
+
+    /// <summary>What a personal account in the kurin's own box is called where a гурток's name would stand.</summary>
+    public const string KurinBox = "Каса куреня";
 
     /// <summary>Everyone in the kurin, for pickers.</summary>
     public IReadOnlyList<DuesPersonDto> People { get; }
@@ -40,7 +47,7 @@ public sealed class DuesNames
         CancellationToken cancellationToken)
     {
         var inKurin = (await memberships.GetInKurinAsync(kurinKey, cancellationToken)).ToDictionary(m => m.MembershipKey);
-        var people = await members.GetByKurinAsync(kurinKey, cancellationToken);
+        var people = (await memberships.GetPeopleInKurinAsync(kurinKey, cancellationToken)).Select(p => p.Person).ToList();
 
         // The kurin's people are those who stand in it now, but its dues still hold everyone who left
         // or moved on with a debt; read those by key, or their rows in «вибулі з боргом» say «—».
@@ -53,8 +60,9 @@ public sealed class DuesNames
 
         return new DuesNames(
             inKurin,
-            named.GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().FullName),
-            named.Where(p => p.UserKey.HasValue).GroupBy(p => p.UserKey!.Value).ToDictionary(g => g.Key, g => g.First().FullName),
+            MemberSummaryNames.ByMember(named),
+            MemberSummaryNames.ByAccount(named),
+            named.Where(p => p.UserKey.HasValue).GroupBy(p => p.MemberKey).ToDictionary(g => g.Key, g => g.First().UserKey!.Value),
             people.OrderBy(p => p.FullName).Select(p => new DuesPersonDto { MemberKey = p.MemberKey, FullName = p.FullName }).ToList());
     }
 
@@ -62,6 +70,9 @@ public sealed class DuesNames
         _memberships.TryGetValue(membershipKey, out var m) && _byMember.TryGetValue(m.MemberKey, out var name) ? name : "—";
 
     public string? OfMember(Guid? memberKey) => memberKey is { } key ? _byMember.GetValueOrDefault(key) : null;
+
+    /// <summary>The account a person signs in with, if they have one — what tag visibility is decided by.</summary>
+    public Guid? AccountOf(Guid memberKey) => _accountOfMember.TryGetValue(memberKey, out var key) ? key : null;
 
     public string? OfAccount(Guid? userKey) => userKey is { } key ? _byAccount.GetValueOrDefault(key) : null;
 

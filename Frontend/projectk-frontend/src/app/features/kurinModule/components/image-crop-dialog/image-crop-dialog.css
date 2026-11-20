@@ -1,0 +1,54 @@
+.crop-editor {
+    display: grid;
+    grid-template-columns: minmax(18rem, 1fr) minmax(16rem, 22rem);
+    gap: 1rem;
+    align-items: start;
+}
+
+.crop-editor__cropper {
+    min-width: 0;
+}
+
+.crop-editor__side {
+    display: grid;
+    gap: 1rem;
+}
+
+.crop-preview {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    width: 100%;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: 0.75rem;
+    background: var(--p-surface-50);
+    overflow: hidden;
+}
+
+.crop-preview img {
+    width: min(100%, 18rem);
+    height: min(100%, 18rem);
+    object-fit: contain;
+}
+
+.crop-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .crop-editor {
+        grid-template-columns: 1fr;
+    }
+
+    .crop-dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .crop-dialog-actions p-button,
+    :host ::ng-deep .crop-dialog-actions .p-button {
+        width: 100%;
+    }
+}

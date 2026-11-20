@@ -1,3 +1,4 @@
+import { KurinNumbering } from '../core/kurin-label';
 /** The web's shapes (Frontend authModule/models), kept in step so both read the same session. */
 export interface AuthState {
   userKey: string;
@@ -94,6 +95,8 @@ export interface KurinScopeOption {
   /** Null for a підготовчий курінь. */
   kurinNumber: number | null;
   branch: KurinBranch;
+  /** Every гілка with the kurin's number there, main one first. */
+  branches?: KurinNumbering[];
   namedAfter?: string | null;
   kind: MembershipKind;
 }

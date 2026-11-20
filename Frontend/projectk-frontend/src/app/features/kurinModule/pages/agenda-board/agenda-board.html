@@ -1,20 +1,17 @@
 <div class="lil-page">
   <header class="lil-page-head">
     <div>
-      <h1>{{ view() === 'archive' ? 'Архів задач' : 'Задачі' }}</h1>
+      <h1>Задачі</h1>
     </div>
     <div class="lil-page-head__actions">
-      @if (view() === 'archive') {
-        <p-button label="До дошки" icon="pi pi-arrow-left" severity="secondary" variant="text" (click)="closeArchive()" />
-      } @else {
-        <p-button label="Архів" icon="pi pi-inbox" severity="secondary" variant="text" (click)="openArchive()" />
-        <!-- Порожній стан нижче має ту саму дію, тож у шапці вона є лише коли є що показати (§10). -->
-        @if (canManage() && !(isEmpty() && !filtered())) {
-          <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
-        }
+      <!-- Порожній стан нижче має ту саму дію, тож у шапці вона є лише коли є що показати (§10). -->
+      @if (view() === 'board' && canManage() && !(isEmpty() && !filtered())) {
+        <p-button label="Нова задача" icon="pi pi-plus" (click)="openCreate()" />
       }
     </div>
   </header>
+
+  <app-page-tabs [tabs]="tabs()" label="Дошка й архів" />
 
   @if (view() === 'board') {
     <section class="kurin-tile">
@@ -190,9 +187,7 @@
         <app-empty-state
           art="list"
           [title]="archiveSearch.trim() ? 'Нічого не знайдено' : 'Архів порожній'"
-          [body]="archiveSearch.trim() ? 'Жодна задача в архіві не підходить під пошук.' : 'Сюди потрапляють зроблені задачі — самі чи кнопкою «В архів» на картці.'">
-          <p-button label="До дошки" icon="pi pi-arrow-left" severity="secondary" (click)="closeArchive()" />
-        </app-empty-state>
+          [body]="archiveSearch.trim() ? 'Жодна задача в архіві не підходить під пошук.' : 'Сюди потрапляють зроблені задачі.'" />
       } @else {
         <ul class="agenda-archive__list">
           @for (task of archive(); track task.agendaItemKey) {

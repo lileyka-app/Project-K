@@ -24,7 +24,24 @@ export interface DeltaAttributes {
 interface Segment {
   text: string;
   attributes: DeltaAttributes;
+  isPicture?: boolean;
 }
+
+/**
+ * How pictures are written. A report keeps the address the upload returned; a probe project
+ * stores a key instead, since its links are signed and expire.
+ */
+export interface DeltaMarkdownOptions {
+  /** The alt text of every picture. */
+  imageAlt?: string;
+  /** What goes between the parentheses for an embed, or null to leave the picture out. */
+  imageTarget?: (src: string) => string | null;
+}
+
+const REPORT_PICTURES: Required<DeltaMarkdownOptions> = {
+  imageAlt: 'скриншот',
+  imageTarget: src => src
+};
 
 interface Line {
   segments: Segment[];
@@ -36,8 +53,8 @@ interface Line {
  * not HTML: a public tracker shows Markdown as written, and the server never has to sanitise
  * markup it did not produce. Images are the embeds the upload endpoint returned.
  */
-export function quillDeltaToMarkdown(ops: DeltaOp[]): string {
-  const lines = splitIntoLines(ops);
+export function quillDeltaToMarkdown(ops: DeltaOp[], options: DeltaMarkdownOptions = {}): string {
+  const lines = splitIntoLines(ops, { ...REPORT_PICTURES, ...options });
   const out: string[] = [];
   let ordinal = 0;
   let inCodeBlock = false;
@@ -75,13 +92,13 @@ export function isDeltaBlank(ops: DeltaOp[]): boolean {
   return quillDeltaToMarkdown(ops).length === 0;
 }
 
-function splitIntoLines(ops: DeltaOp[]): Line[] {
+function splitIntoLines(ops: DeltaOp[], pictures: Required<DeltaMarkdownOptions>): Line[] {
   const lines: Line[] = [];
   let current: Segment[] = [];
 
   for (const op of ops) {
     if (typeof op.insert !== 'string') {
-      const picture = pictureSegment(op.insert.image);
+      const picture = pictureSegment(op.insert.image, pictures);
       if (picture) {
         current.push(picture);
       }
@@ -113,11 +130,12 @@ function splitIntoLines(ops: DeltaOp[]): Line[] {
  * A stored picture becomes a Markdown image. A data: URL is the editor's own inlining of a file,
  * megabytes of base64 that no tracker wants and the description limit refuses, so it is dropped.
  */
-function pictureSegment(image: string | undefined): Segment | null {
+function pictureSegment(image: string | undefined, pictures: Required<DeltaMarkdownOptions>): Segment | null {
   if (!image || image.startsWith('data:')) {
     return null;
   }
-  return { text: `![скриншот](${image})`, attributes: {} };
+  const target = pictures.imageTarget(image);
+  return target ? { text: `![${pictures.imageAlt}](${target})`, attributes: {}, isPicture: true } : null;
 }
 
 function plainText(segments: Segment[]): string {
@@ -125,8 +143,8 @@ function plainText(segments: Segment[]): string {
 }
 
 function inlineMarkdown(segments: Segment[]): string {
-  return segments.map(({ text, attributes }) => {
-    if (text.startsWith('![скриншот](')) {
+  return segments.map(({ text, attributes, isPicture }) => {
+    if (isPicture) {
       return text;
     }
 

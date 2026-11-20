@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using ProjectK.Infrastructure.Services.Telemetry;
 
 namespace ProjectK.API.Middleware;

@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, computed, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { kindLabel } from '../account/account.labels';
 import {
   ActionSheetController,
   IonBackButton,
@@ -25,7 +26,7 @@ import {
   NavController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, alertCircle, checkmarkCircle, gitNetwork, lockClosed, logOut, medal, ribbon } from 'ionicons/icons';
+import { add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, pin, ribbon } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { formatPhone } from '../../core/phone';
 import { apiErrorText } from '../../core/api';
@@ -33,19 +34,17 @@ import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
 import { dateLabel, dayMonthLabel } from '../../me/labels';
 import { AwardSheet } from './award.sheet';
+import { SeniorAwardSheet } from './senior-award.sheet';
+import { AwardBlocksSheet, AwardBlocksResult } from './award-blocks.sheet';
 import {
-  AwardGroup,
   BRANCH_LABELS,
   DUES_KIND_LABELS,
-  MEMBERSHIP_KIND_LABELS,
   ProbeRow,
   SkillView,
   activeWarning,
-  awardGroups,
   awardTitle,
   awardWeight,
   bornOn,
-  currentOffices,
   dateOnly,
   duesAmountLabel,
   duesMoney,
@@ -62,6 +61,16 @@ import {
   progressStatus,
   quarterLabel,
   officeTag,
+  seniorAwardBlocks,
+  groupAwardGrants,
+  orderAwardBlocks,
+  AwardBlockRow,
+  currentDegree,
+  mayConfirmLevels,
+  waitingDegrees,
+  isSeniorPerson,
+  officesIn,
+  membershipOf,
   roleTone,
   type RoleTag,
   shortDate,
@@ -69,6 +78,7 @@ import {
   startedProbeIds,
   utcDate,
   warningText,
+  warningRows,
 } from './kurin.labels';
 import {
   BadgeCatalogItemDto,
@@ -76,6 +86,7 @@ import {
   CardFields,
   GroupDto,
   MemberAwardDto,
+  CatalogHonour,
   MemberDataGroup,
   MemberDto,
   MemberDuesDto,
@@ -88,7 +99,8 @@ import { DEFAULT_CARD_FIELDS, cardExtraRows } from './member-edit';
 import { RoleTags } from './role-tags';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { SkillsSheet } from './skills.sheet';
-import { inKurin, kurinLabel } from '../../core/kurin-label';
+import { KurinTags, KurinTagsDto } from './kurin-tags';
+import { isSeniorBranch, kurinBranchesName, kurinLabel } from '../../core/kurin-label';
 
 interface Skills {
   catalog: BadgeCatalogItemDto[];
@@ -98,6 +110,8 @@ interface Skills {
 }
 
 const STANDING: Record<string, string | null> = { Current: null, Moved: 'переведений', Left: 'вибув' };
+/** Why a person who owes cannot be released (`MemberOwesDues`). */
+const OWES_DUES_TEXT = 'Борг не переходить разом із нею: вивести можна, коли вкладку сплачено повністю.';
 
 /** What a field the kurin hides from this viewer says instead of its value. */
 
@@ -111,6 +125,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
 @Component({
   selector: 'app-member',
   imports: [
+    KurinTags,
     RoleTags,
     IonHeader,
     IonToolbar,
@@ -136,6 +151,9 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
   ],
   host: { '[class.lk-embedded]': 'own()' },
   styles: `
+    ion-item.past {
+      opacity: 0.75;
+    }
     app-role-tags.inline {
       margin-top: 0;
     }
@@ -191,6 +209,74 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
     }
     .dots span.on {
       background: var(--lk-danger);
+    }
+    .degree-top {
+      width: 72px;
+      height: 84px;
+      object-fit: contain;
+      margin-inline-end: 16px;
+    }
+    .blocks-item {
+      --padding-start: 12px;
+      --inner-padding-end: 12px;
+    }
+    .award-blocks {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px 0;
+    }
+    .award-block {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 4px 8px;
+      border: 1px solid var(--lk-border, rgba(127, 127, 127, 0.25));
+      border-radius: 14px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: center;
+    }
+    .award-block img,
+    .award-block > ion-icon:not(.award-pin) {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+    }
+    .award-block span {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .award-block small {
+      font-size: 11px;
+      color: var(--lk-muted);
+    }
+    .award-block .award-pending {
+      color: var(--ion-color-warning-shade);
+    }
+    .award-count {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--ion-color-primary);
+      color: var(--ion-color-primary-contrast);
+      font-size: 11px;
+      font-style: normal;
+    }
+    .award-pin {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 14px;
+      height: 14px;
+      color: var(--ion-color-primary);
     }
     .thumb {
       width: 36px;
@@ -287,6 +373,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
               </h1>
               @if (m.middleName) { <p>{{ m.middleName }}</p> }
               <ion-badge class="lk-tag--info">{{ level() }}</ion-badge>
+              <app-kurin-tags [all]="kurinTags()" [keys]="m.tagKeys" />
               @if (warning(); as w) {
                 <span class="warning" data-testid="warning">
                   <span class="dots" aria-hidden="true">
@@ -403,17 +490,27 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
               <ion-list [inset]="true" data-testid="awards">
                 <ion-list-header><ion-label>Відзначення УПЮ</ion-label></ion-list-header>
                 <ion-item-group>
-                  @for (group of awards(); track group.level) {
-                    <ion-item [button]="canOpenAward(group.latest)" [detail]="canOpenAward(group.latest)" (click)="openAward(group.latest)" data-testid="award">
-                      @if (awardImage(group.latest); as src) { <img class="thumb" slot="start" [src]="src" alt="" /> }
-                      @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
-                      <ion-label class="ion-text-wrap">
-                        <h3>{{ awardTitle(group.level) }}{{ group.count > 1 ? ' ×' + group.count : '' }}</h3>
-                        <p>{{ shortDate(dateOnly(group.latest.dateAcquired)) }}</p>
-                      </ion-label>
-                      @if (isPending(group.latest)) { <ion-note slot="end">очікує</ion-note> }
+                  @if (youthBlocks().length) {
+                  <ion-item lines="none" class="blocks-item">
+                    <div class="award-blocks">
+                      @for (block of youthBlocks().slice(0, 3); track block.key) {
+                        <button type="button" class="award-block" (click)="openYouthBlock(block.key, false)" data-testid="award-block">
+                          @if (block.pinned) { <ion-icon class="award-pin" name="pin" aria-label="Закріплене" /> }
+                          @if (block.grants.length > 1) { <em class="award-count">×{{ block.grants.length }}</em> }
+                          @if (block.imageUrl) { <img [src]="block.imageUrl" alt="" /> } @else { <ion-icon name="medal" aria-hidden="true" /> }
+                          <span>{{ block.title }}</span>
+                          <small>{{ block.section ? block.section + ' · ' : '' }}{{ shortDate(dateOnly(block.grants[0].award.dateAcquired)) }}</small>
+                          @if (block.pending) { <small class="award-pending">очікує</small> }
+                        </button>
+                      }
+                    </div>
+                  </ion-item>
+                  @if (youthBlocks().length > 3) {
+                    <ion-item [button]="true" [detail]="true" (click)="openYouthBlock(null, true)" data-testid="awards-all">
+                      <ion-label>Переглянути всі ({{ youthBlocks().length }})</ion-label>
                     </ion-item>
-                  } @empty {
+                  }
+                  } @else {
                     <ion-item><ion-label>Немає здобутих відзначень.</ion-label></ion-item>
                   }
                   @if (canEdit()) {
@@ -426,7 +523,125 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
               </ion-list>
             }
 
-            @if (staffOffices().length || mentoredGroups().length) {
+            <ion-list [inset]="true" data-testid="degrees">
+              <ion-list-header><ion-label>Ступені</ion-label></ion-list-header>
+              <ion-item-group>
+                @if (highestDegree(); as top) {
+                  <ion-item data-testid="degree-highest">
+                    @if (top.imageUrl) { <img class="degree-top" slot="start" [src]="top.imageUrl" alt="" /> }
+                    @else { <ion-icon class="degree-top" slot="start" name="flag" aria-hidden="true" /> }
+                    <ion-label class="ion-text-wrap">
+                      <h2>{{ top.title }}</h2>
+                      @if (top.date) { <p>{{ shortDate(top.date) }}</p> }
+                    </ion-label>
+                  </ion-item>
+                } @else if (!waitingDegrees().length) {
+                  <ion-item><ion-label>Ступенів ще немає.</ion-label></ion-item>
+                }
+                @for (row of waitingDegrees(); track row.key) {
+                  <ion-item data-testid="degree-waiting">
+                    <ion-label class="ion-text-wrap">
+                      <h3>{{ row.title }}</h3>
+                      @if (row.date) { <p>{{ shortDate(row.date) }}</p> }
+                    </ion-label>
+                    <ion-badge slot="end" class="lk-tag--warn">чекає підтвердження</ion-badge>
+                  </ion-item>
+                  @if (canConfirmLevels()) {
+                    <ion-item lines="full" data-testid="degree-waiting-actions">
+                      <ion-button
+                        slot="start"
+                        size="small"
+                        [disabled]="!!levelAnswering()"
+                        [attr.aria-label]="'Підтвердити: ' + row.title"
+                        (click)="confirmLevel(row.key)">Підтвердити</ion-button>
+                      <ion-button
+                        slot="end"
+                        size="small"
+                        fill="outline"
+                        color="medium"
+                        [disabled]="!!levelAnswering()"
+                        [attr.aria-label]="'Відхилити: ' + row.title"
+                        (click)="rejectLevel(row.key)">Відхилити</ion-button>
+                    </ion-item>
+                  }
+                }
+              </ion-item-group>
+            </ion-list>
+
+            @if (seniorHere(); as here) {
+              <ion-list [inset]="true" data-testid="senior-kurin">
+                <ion-list-header><ion-label>У курені</ion-label></ion-list-header>
+                <ion-item-group>
+                  <ion-item>
+                    <ion-label class="ion-text-wrap"><h3>{{ seniorName(here) }}</h3>@if (seniorBranches(here); as branches) { <p>{{ branches }}</p> }</ion-label>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>У курені з</ion-label>
+                    <ion-note slot="end">{{ here.joinedAtUtc.slice(8, 10) }}.{{ here.joinedAtUtc.slice(5, 7) }}.{{ here.joinedAtUtc.slice(0, 4) }}</ion-note>
+                  </ion-item>
+                  @for (office of seniorOffices(); track office.leadershipHistoryKey) {
+                    <ion-item>
+                      <ion-label><app-role-tags class="inline" [tags]="[officeTag(office)]" /></ion-label>
+                      <ion-note slot="end">з {{ office.startDate.slice(0, 4) }}</ion-note>
+                    </ion-item>
+                  }
+                </ion-item-group>
+              </ion-list>
+            }
+
+            @if (seniorPerson()) {
+              <ion-list [inset]="true" data-testid="senior-awards">
+                <ion-list-header><ion-label>Відзначення</ion-label></ion-list-header>
+                <ion-item-group>
+                  @if (seniorBlocks().length) {
+                  <ion-item lines="none" class="blocks-item">
+                    <div class="award-blocks">
+                      @for (block of seniorBlocks().slice(0, 3); track block.key) {
+                        <button type="button" class="award-block" (click)="openSeniorBlock(block.key, false)" data-testid="award-block">
+                          @if (block.pinned) { <ion-icon class="award-pin" name="pin" aria-label="Закріплене" /> }
+                          @if (block.grants.length > 1) { <em class="award-count">×{{ block.grants.length }}</em> }
+                          @if (block.imageUrl) { <img [src]="block.imageUrl" alt="" /> } @else { <ion-icon name="medal" aria-hidden="true" /> }
+                          <span>{{ block.title }}</span>
+                          <small>{{ block.section ? block.section + ' · ' : '' }}{{ shortDate(dateOnly(block.grants[0].award.dateAcquired)) }}</small>
+                          @if (block.pending) { <small class="award-pending">очікує</small> }
+                        </button>
+                      }
+                    </div>
+                  </ion-item>
+                  @if (seniorBlocks().length > 3) {
+                    <ion-item [button]="true" [detail]="true" (click)="openSeniorBlock(null, true)" data-testid="awards-all">
+                      <ion-label>Переглянути всі ({{ seniorBlocks().length }})</ion-label>
+                    </ion-item>
+                  }
+                  } @else {
+                    <ion-item><ion-label class="ion-text-wrap">Відзначень ще немає.</ion-label></ion-item>
+                  }
+                  @if (canAddSeniorAward()) {
+                    <ion-item [button]="true" [detail]="false" (click)="openSeniorAward(null)" data-testid="add-senior-award">
+                      <ion-icon slot="start" name="add" color="primary" aria-hidden="true" />
+                      <ion-label color="primary">Додати відзначення</ion-label>
+                    </ion-item>
+                  }
+                </ion-item-group>
+              </ion-list>
+            }
+
+            @if (seniorHere()) {
+              <ion-list [inset]="true" data-testid="senior-warnings">
+                <ion-list-header><ion-label>Перестороги</ion-label></ion-list-header>
+                <ion-item-group>
+                  @for (row of seniorWarnings(); track row.key) {
+                    <ion-item [class.past]="!row.active">
+                      <ion-label class="ion-text-wrap"><h3>{{ row.title }}</h3><p>{{ row.line }}</p></ion-label>
+                    </ion-item>
+                  } @empty {
+                    <ion-item><ion-label>Пересторог немає.</ion-label></ion-item>
+                  }
+                </ion-item-group>
+              </ion-list>
+            }
+
+            @if (!seniorHere() && (staffOffices().length || mentoredGroups().length)) {
               <ion-list [inset]="true" data-testid="staff">
                 <ion-list-header><ion-label>Впорядництво</ion-label></ion-list-header>
                 <ion-item-group>
@@ -455,6 +670,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
               <ion-list [inset]="true" data-testid="dues">
                 <ion-list-header><ion-label>Вкладка</ion-label></ion-list-header>
                 <ion-item-group>
+                  @if (d.hasAccount) {
                   <ion-item>
                     <ion-label class="ion-text-wrap">
                       <span class="balance" [class.ok]="d.balance >= 0" [class.debt]="d.balance < 0">{{ balanceTitle(d) }}</span>
@@ -478,6 +694,13 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                     </ion-item>
                   } @empty {
                     <ion-item><ion-label>Внесків ще не записано.</ion-label></ion-item>
+                  }
+                  }
+                  @for (other of duesElsewhere(); track other.key) {
+                    <ion-item data-testid="dues-elsewhere">
+                      <ion-label class="ion-text-wrap">{{ other.kurin }}</ion-label>
+                      <ion-note slot="end" [class.debt]="other.balance < 0">{{ other.amount }}</ion-note>
+                    </ion-item>
                   }
                   @if (d.canOpenGroupDues && d.currentGroupKey) {
                     <ion-item [button]="true" [detail]="true" [routerLink]="['/tabs/kurin/group', d.currentGroupKey, 'dues']">
@@ -580,6 +803,8 @@ export class MemberPage implements OnInit {
   /** What the kurin's policy lets this person do to the member (web member-card abilities). */
   protected readonly abilities = signal<MemberAbilities>(NO_ABILITIES);
   protected readonly verificationEnabled = signal(false);
+  /** The kurin's tags, to name the keys on the person. */
+  protected readonly kurinTags = signal<KurinTagsDto | null>(null);
   /** What the kurin's край asks on the card; null until read (the edit sheet then reads it itself). */
   private readonly cardFields = signal<CardFields | null>(null);
   protected readonly placing = signal(false);
@@ -642,9 +867,130 @@ export class MemberPage implements OnInit {
   protected readonly skillPreview = computed(() => [...this.skillViews().confirmed.slice(0, 3), ...this.skillViews().pending].slice(0, 4));
   protected readonly skillCounts = computed(() => `${this.skillViews().confirmed.length} · очікують ${this.skillViews().pending.length}`);
   protected readonly probeList = computed(() => valueOf(this.probes()) ?? []);
-  protected readonly awards = computed<AwardGroup[]>(() => awardGroups(this.memberValue()?.awards));
+  /** The membership here when the kurin is УСП or УПС: the card then shows the kurin, role, awards and перестороги of a senior. */
+  protected readonly seniorHere = computed<MembershipDto | null>(() => {
+    const m = this.memberValue();
+    const list = this.membershipList();
+    const here = list.find((x) => x.isCurrent && x.kurinKey === m?.kurinKey) ?? list.find((x) => x.isCurrent);
+    return here && isSeniorBranch(here.branch) ? here : null;
+  });
+  /** Every current role but a гурток's, by the names the kurin gave them. */
+  protected readonly seniorOffices = computed(() =>
+    officesIn(this.memberValue()?.leadershipHistories, this.memberValue()?.kurinKey).filter((h) => (h.leadershipType ?? '').toLowerCase() !== 'group'),
+  );
+  protected readonly seniorWarnings = computed(() => warningRows(this.memberValue()?.warnings));
+  /** The catalogue's ступені and senior відзначення: names and pictures for the card. */
+  private readonly honours = signal<CatalogHonour[]>([]);
+  protected readonly seniorBlocks = computed(() => seniorAwardBlocks(this.memberValue()?.awards, this.honours(), this.canChangeSeniorAward()));
+  /** The УПЮ відзначення as blocks: one per level, every grant of it inside (web member-awards-tile blocks). */
+  protected readonly youthBlocks = computed(() => {
+    const visible = (this.memberValue()?.awards ?? []).filter((award) => {
+      const status = progressStatus(award.status);
+      return !!award.level && (status === 'Submitted' || status === 'Confirmed');
+    });
+    return orderAwardBlocks(
+      [...groupAwardGrants(visible, (award) => award.level!).values()].map((grants) => ({
+        key: grants[0].level!,
+        title: this.awardTitle(grants[0].level!),
+        imageUrl: this.awardImage(grants[0]),
+        section: '',
+        grants: grants.map((award) => ({ award, pending: this.isPending(award), canOpen: this.canOpenAward(award) })),
+        pinned: grants.some((award) => award.isPinned),
+        pending: grants.some((award) => this.isPending(award)),
+        pin: { level: grants[0].level },
+      })),
+    );
+  });
+  /** Only the current ступінь, the highest on the whole ladder, large; the whole way is the пластовий життєпис's (web member-degrees-tile). */
+  protected readonly highestDegree = computed(() => currentDegree(this.memberValue()?.plastLevelHistories, this.honours()));
+  /** Ступені, що чекають на Звʼязкового (web member-degrees-tile waiting). */
+  protected readonly waitingDegrees = computed(() => waitingDegrees(this.memberValue()?.plastLevelHistories, this.honours()));
+  /** The Звʼязковий of a kurin the person stands in, on someone else's card (web canConfirmLevels). */
+  protected readonly canConfirmLevels = computed(() =>
+    mayConfirmLevels(kurinAccess(this.auth.user()).manageWholeKurin, this.scopedKurin, this.membershipList(), this.isOwnCard()));
+  /** The ступінь whose answer is on its way. */
+  protected readonly levelAnswering = signal<string | null>(null);
+
+  protected openYouthBlock(key: string | null, all: boolean): Promise<void> {
+    return this.openBlocks(this.youthBlocks(), key, all, (award) => this.openAward(award));
+  }
+
+  protected openSeniorBlock(key: string | null, all: boolean): Promise<void> {
+    return this.openBlocks(this.seniorBlocks(), key, all, (award) => this.openSeniorAward(award));
+  }
+
+  private async openBlocks(blocks: AwardBlockRow[], key: string | null, all: boolean, open: (award: MemberAwardDto) => Promise<void>): Promise<void> {
+    const memberKey = this.key();
+    if (!memberKey) return;
+    const modal = await this.modals.create({
+      component: AwardBlocksSheet,
+      componentProps: { blocks, startKey: key, all, ownCard: this.isOwnCard() },
+      presentingElement: this.presenting(),
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss<AwardBlocksResult>();
+    if (data?.open) await open(data.open);
+    else if (data?.pin) {
+      try {
+        await this.data.pinAward({ ...data.pin.pin, pinned: !data.pin.pinned });
+        await settle(this.data.member(memberKey), this.member);
+      } catch (error) {
+        await this.toasts.show(apiErrorText(error, 'Не вдалося закріпити. Спробуй ще раз.'), 'danger');
+      }
+    }
+  }
+  /**
+   * A senior person (web isSeniorPerson): their current ступінь is старший пластун or a сеніор's, or the
+   * card is a senior kurin's. A сеніор who leads an УПЮ kurin keeps their senior відзначення too.
+   */
+  protected readonly seniorPerson = computed(() => {
+    const m = this.memberValue();
+    return !!this.seniorHere() || (!!m && this.memberships().state !== 'loading' && isSeniorPerson(m, this.membershipList()));
+  });
+  /** In a senior kurin its провід records them too; elsewhere a senior person records only their own, once 18. */
+  protected readonly canAddSeniorAward = computed(() => (this.seniorHere() ? this.canEdit() : this.isOwnCard() && !!this.memberValue()?.isAdult));
+  /** A senior відзначення is changed by the person, or in a senior kurin by whoever may remove awards (web canChange). */
+  protected readonly canChangeSeniorAward = computed(() => this.isOwnCard() || (!!this.seniorHere() && this.abilities().awards.remove));
+
+  protected async openSeniorAward(award: MemberAwardDto | null): Promise<void> {
+    const key = this.key();
+    if (!key || (award ? !this.canChangeSeniorAward() : !this.canAddSeniorAward())) return;
+    const honours = this.honours().length ? this.honours() : await this.loadHonours();
+    if (!honours.length) {
+      await this.toasts.show('Каталог зараз недоступний. Спробуй пізніше.', 'danger');
+      return;
+    }
+    const modal = await this.modals.create({
+      component: SeniorAwardSheet,
+      componentProps: { memberKey: key, award, honours },
+      presentingElement: this.presenting(),
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss<boolean>();
+    if (data) await settle(this.data.member(key), this.member);
+  }
+
+  private async loadHonours(): Promise<CatalogHonour[]> {
+    try {
+      const honours = await this.data.honours();
+      this.honours.set(honours);
+      return honours;
+    } catch {
+      return [];
+    }
+  }
+
+  protected seniorName(m: MembershipDto): string {
+    return m.kurinNamedAfter || kurinLabel(m.kurinNumber, m.branch);
+  }
+
+  protected seniorBranches(m: MembershipDto): string | null {
+    if (!m.kurinNamedAfter) return null;
+    return m.numbering?.length ? kurinBranchesName(m.numbering) : kurinLabel(m.kurinNumber, m.branch);
+  }
+
   protected readonly staffOffices = computed(() =>
-    currentOffices(this.memberValue()?.leadershipHistories).filter((h) => (h.leadershipType ?? '').toLowerCase() === 'kv'),
+    officesIn(this.memberValue()?.leadershipHistories, this.memberValue()?.kurinKey).filter((h) => (h.leadershipType ?? '').toLowerCase() === 'kv'),
   );
   /** A гурток opens only from the kurin the viewer is in (another kurin's page would refuse them). */
   protected readonly mentoredGroups = computed(() => {
@@ -659,10 +1005,11 @@ export class MemberPage implements OnInit {
   protected readonly pastMemberships = computed(() => this.membershipList().filter((m) => !m.isCurrent));
 
   constructor() {
-    addIcons({ add, alertCircle, checkmarkCircle, gitNetwork, lockClosed, logOut, medal, ribbon });
+    addIcons({ add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, pin, ribbon });
   }
 
   ngOnInit(): void {
+    void this.loadHonours();
     const key = this.own() ? (this.auth.user()?.memberKey ?? null) : this.route.snapshot.paramMap.get('memberKey');
     this.key.set(key);
     if (!key) {
@@ -688,7 +1035,7 @@ export class MemberPage implements OnInit {
   }
 
   protected awardImage(award: MemberAwardDto): string | null {
-    return this.images.award(award, awardWeight(award.level), progressStatus(award.status) === 'Confirmed');
+    return award.level ? this.images.award(award, awardWeight(award.level), progressStatus(award.status) === 'Confirmed') : null;
   }
 
   protected isPending(award: MemberAwardDto): boolean {
@@ -702,11 +1049,22 @@ export class MemberPage implements OnInit {
 
   protected balanceHint(d: MemberDuesDto): string {
     if (d.balance === 0) return 'боргу немає';
-    return d.balance < 0 ? 'борг — віддай скарбникові гуртка' : 'надлишок — піде на наступний квартал';
+    return d.balance < 0 ? 'борг — віддай скарбникові' : 'надлишок — піде на наступний квартал';
   }
 
+  /** The person's other kurins, each with their line there and the balance in its own currency (web duesElsewhere). */
+  protected readonly duesElsewhere = computed(() => (this.dues()?.elsewhere ?? []).map((other) => ({
+    key: other.kurinKey,
+    kurin: `${isSeniorBranch(other.branch) && other.kurinNamedAfter ? other.kurinNamedAfter : kurinLabel(other.kurinNumber, other.branch)} · ${BRANCH_LABELS[other.branch] ?? other.branch}`,
+    balance: other.balance,
+    amount: other.balance === 0 ? 'сплачено' : `${other.balance > 0 ? '+' : ''}${duesMoney(other.balance, other.currency, other.numberLocale)}`,
+  })));
+
+  /** Whose вкладка it is, «Орден Хрестоносців · УПС», then the quarter (web duesKurinLine). */
   protected duesLine(d: MemberDuesDto): string {
-    return [quarterLabel(d.currentQuarter), d.quarterRate ? `${this.money(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
+    const here = this.membershipList().find((m) => m.kurinKey === d.kurinKey && m.isCurrent);
+    const line = here ? `${isSeniorBranch(here.branch) ? this.seniorName(here) : kurinLabel(here.kurinNumber)} · ${this.branchLabel(here)}` : null;
+    return [line, quarterLabel(d.currentQuarter), d.quarterRate ? `${this.money(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
       .filter(Boolean)
       .join(' · ');
   }
@@ -725,6 +1083,7 @@ export class MemberPage implements OnInit {
   }
 
   protected kurinTitle(m: MembershipDto): string {
+    if (isSeniorBranch(m.branch)) return this.seniorName(m);
     return m.kurinNamedAfter ? `${kurinLabel(m.kurinNumber)} · ім. ${m.kurinNamedAfter}` : kurinLabel(m.kurinNumber);
   }
 
@@ -733,7 +1092,7 @@ export class MemberPage implements OnInit {
   }
 
   protected membershipLine(m: MembershipDto): string {
-    return [this.branchLabel(m), MEMBERSHIP_KIND_LABELS[m.kind] ?? m.kind, m.groupName, membershipPeriod(m)].filter(Boolean).join(' · ');
+    return [this.branchLabel(m), kindLabel(m.kind, m.branch), m.groupName, membershipPeriod(m)].filter(Boolean).join(' · ');
   }
 
   /**
@@ -741,7 +1100,7 @@ export class MemberPage implements OnInit {
    * the viewer acts in; another kurin's memberships are its own провід's.
    */
   protected canPlace(m: MembershipDto): boolean {
-    return this.canManagePlacement() && m.isCurrent && m.kurinKey === this.scopedKurin;
+    return this.canManagePlacement() && !this.isOwnCard() && m.isCurrent && m.kurinKey === this.scopedKurin;
   }
 
   /** Another гурток of the same kurin, or none (web «Гурток» dialog with «Поза гуртком»). */
@@ -786,6 +1145,44 @@ export class MemberPage implements OnInit {
     }
   }
 
+  /** «Підтвердити» a waiting ступінь (web member-card confirmLevel); the card is read again, its улад may have changed. */
+  protected async confirmLevel(levelKey: string): Promise<void> {
+    const key = this.key();
+    if (!key || this.levelAnswering()) return;
+    await this.answerLevel(key, levelKey, () => this.data.confirmLevel(key, levelKey));
+  }
+
+  /** «Відхилити» asks first, as on the web, and the ступінь leaves the card. */
+  protected async rejectLevel(levelKey: string): Promise<void> {
+    const key = this.key();
+    if (!key || this.levelAnswering()) return;
+    const sheet = await this.sheets.create({
+      header: 'Відхилити ступінь?',
+      subHeader: 'Ступінь зникне з картки.',
+      buttons: [
+        { text: 'Відхилити', role: 'destructive', data: 'reject' },
+        { text: 'Скасувати', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
+    const { data } = await sheet.onWillDismiss();
+    if (data !== 'reject') return;
+    await this.answerLevel(key, levelKey, () => this.data.rejectLevel(key, levelKey));
+  }
+
+  private async answerLevel(key: string, levelKey: string, send: () => Promise<void>): Promise<void> {
+    this.levelAnswering.set(levelKey);
+    try {
+      await send();
+    } catch (error) {
+      await this.toasts.show(apiErrorText(error, 'Не вдалося зберегти. Спробуй ще раз.'), 'danger');
+      return;
+    } finally {
+      this.levelAnswering.set(null);
+    }
+    await this.load(key);
+  }
+
   /**
    * «Вивести з куреня», confirmed as on the web. Not a deletion, and the sheet says so: the fear of
    * losing the history is what kept people who had long left in their kurin.
@@ -793,10 +1190,16 @@ export class MemberPage implements OnInit {
   protected async confirmLeave(m: MembershipDto): Promise<void> {
     const key = this.key();
     if (!key || this.placing()) return;
+    // Debt does not leave with the person (web member-card): said before the tap, not after.
+    const d = this.dues();
+    if (d && d.kurinKey === m.kurinKey && d.owedToLeave > 0) {
+      await this.toasts.show(`Людина винна куреню ${this.money(d.owedToLeave)} за квартали, що минули. ${OWES_DUES_TEXT}`, 'danger');
+      return;
+    }
     const sheet = await this.sheets.create({
       header: 'Вивести з куреня',
       subHeader:
-        `Членство в ${inKurin(m.kurinNumber)} буде закрите. Людина, її проби, вмілості й відзначення ` +
+        `${membershipOf(m)} буде закрите. Людина, її проби, вмілості й відзначення ` +
         'лишаються — вони належать їй, а не куреню.',
       buttons: [
         { text: 'Вивести', role: 'destructive', data: 'leave' },
@@ -810,11 +1213,14 @@ export class MemberPage implements OnInit {
     try {
       await this.data.leaveKurin(m.kurinKey, key);
     } catch (error) {
-      await this.toasts.show(apiErrorText(error, 'Не вдалося вивести. Спробуй ще раз.'), 'danger');
+      await this.toasts.show(
+        apiErrorText(error, 'Не вдалося вивести. Спробуй ще раз.', { MemberOwesDues: `Людина винна куреню вкладку за квартали, що минули. ${OWES_DUES_TEXT}` }),
+        'danger',
+      );
       this.placing.set(false);
       return;
     }
-    await this.toasts.show(`Членство в ${inKurin(m.kurinNumber)} закрито.`);
+    await this.toasts.show(`${membershipOf(m)} закрито.`);
     try {
       // The card as it is now: the membership moves to «Раніше».
       const [member, memberships] = await Promise.all([this.data.member(key), this.data.memberships(key)]);
@@ -908,13 +1314,23 @@ export class MemberPage implements OnInit {
       ),
       // A youth may read only their own вкладка: for anyone else the server refuses and the tile stays away.
       this.data.dues(key).then(
-        (dues) => this.dues.set(dues?.hasAccount ? dues : null),
+        (dues) => this.dues.set(dues?.hasAccount || dues?.elsewhere?.length ? dues : null),
         () => this.dues.set(null),
       ),
-      member.then(() => Promise.all([this.loadVerificationToggle(), this.loadCardFields()])),
+      member.then(() => Promise.all([this.loadVerificationToggle(), this.loadCardFields(), this.loadKurinTags()])),
       // Skills and probes wait for both: the branch comes from the ступінь and the kurin.
       Promise.all([member, memberships]).then(() => (this.youth() ? Promise.all([this.loadSkills(key), this.loadProbes(key)]) : null)),
     ]);
+  }
+
+  private async loadKurinTags(): Promise<void> {
+    const kurinKey = this.memberValue()?.kurinKey;
+    if (!kurinKey) return;
+    try {
+      this.kurinTags.set(await this.data.kurinTags(kurinKey));
+    } catch {
+      this.kurinTags.set(null);
+    }
   }
 
   private async loadVerificationToggle(): Promise<void> {

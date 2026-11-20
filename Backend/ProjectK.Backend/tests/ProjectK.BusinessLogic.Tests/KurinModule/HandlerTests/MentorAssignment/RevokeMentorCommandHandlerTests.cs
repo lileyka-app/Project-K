@@ -1,20 +1,18 @@
 using FluentAssertions;
 using Moq;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.MentorAssignment.Revoke;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.AuditModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.MemberModule;
-using ProjectK.Common.Models.Audit;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
-using Xunit;
+using ProjectK.Common.Enums.AuditModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.MemberModule;
+using ProjectK.Common.Rules.AuditModule;
 using MentorAssignmentEntity = ProjectK.Common.Entities.KurinModule.MentorAssignment;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MentorAssignment;
@@ -51,9 +49,9 @@ public class RevokeMentorCommandHandlerTests
         _groups.Setup(r => r.GetByKeyAsync(_group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_group);
         _assignments.Setup(r => r.GetSpecificAssignmentAsync(_mentorUserKey, _group.GroupKey, It.IsAny<CancellationToken>())).ReturnsAsync(_assignment);
         _members.Setup(d => d.FindByAccountAsync(_mentorUserKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberSummary(_mentorMemberKey, _mentorUserKey, _kurinKey, null, "Марта", "Впорядниця", "m@x", null));
+            .ReturnsAsync(new MemberSummary(_mentorMemberKey, _mentorUserKey, "Марта", "Впорядниця", "m@x", null));
 
-        _handler = new RevokeMentorCommandHandler(_uow.Object, Mock.Of<IBackendCache>(), Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit);
+        _handler = new RevokeMentorCommandHandler(_uow.Object, Mock.Of<IBackendCache>(), Mock.Of<IAccessChangeStore>(), _members.Object, _journal.Audit);
     }
 
     [Fact]
@@ -64,7 +62,7 @@ public class RevokeMentorCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         var entry = _journal.Entries.Should().ContainSingle().Subject;
         entry.Area.Should().Be(AuditArea.Office);
-        entry.Action.Should().Be(AuditActions.Office.MentorRevoked);
+        entry.Action.Should().Be(AuditActionNames.Office.MentorRevoked);
         entry.KurinKey.Should().Be(_kurinKey);
         entry.SubjectKey.Should().Be(_assignment.MentorAssignmentKey);
         entry.SubjectMemberKey.Should().Be(_mentorMemberKey);

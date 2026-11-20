@@ -1,6 +1,8 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.BusinessLogic.Modules.IdentityModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Extensions;
 
@@ -40,15 +42,19 @@ public static class ServiceResultExtensions
         if (EqualityComparer<T?>.Default.Equals(result.Data, default) && result.Type is not (ResultType.Success or ResultType.Created))
         {
             var (code, message) = DefaultFailure(result.Type);
-            return ServiceResult<object>.Failure(result.Type, code, message).ToActionResult(controller);
+            return ServiceResult<Unit>.Failure(result.Type, code, message).ToActionResult(controller);
         }
+
+        // A result with no data is ServiceResult<Unit>; it answers exactly as the old <object> null did
+        // (204 No Content), so moving a handler to Unit never changes what the client receives.
+        object? data = result.Data is Unit ? null : result.Data;
 
         return result.Type switch
         {
-            ResultType.Success => controller.Ok(result.Data),
+            ResultType.Success => controller.Ok(data),
             ResultType.Created => result.CreatedAtActionName != null
-                ? controller.CreatedAtAction(result.CreatedAtActionName, result.CreatedAtRouteValues, result.Data)
-                : controller.Created(string.Empty, result.Data),
+                ? controller.CreatedAtAction(result.CreatedAtActionName, result.CreatedAtRouteValues, data)
+                : controller.Created(string.Empty, data),
             ResultType.BadRequest => controller.BadRequest(result.Data),
             ResultType.NotFound => controller.NotFound(result.Data),
             ResultType.Conflict => controller.Conflict(new object[] { "The entity that was attempted to be created already exists.", result.Data! }),
@@ -78,9 +84,9 @@ public static class ServiceResultExtensions
         ResultType type,
         string errorCode,
         string errorMessage)
-        => ServiceResult<object>.Failure(type, errorCode, errorMessage).ToActionResult(controller);
+        => ServiceResult<Unit>.Failure(type, errorCode, errorMessage).ToActionResult(controller);
 
     /// <summary>The caller's identity claim is missing or unreadable.</summary>
     public static IActionResult UnreadableIdentity(this ControllerBase controller)
-        => controller.Failure(ResultType.Unauthorized, "InvalidToken", "The access token carries no readable user identity.");
+        => controller.Failure(ResultType.Unauthorized, IdentityErrors.InvalidToken, "The access token carries no readable user identity.");
 }

@@ -4,7 +4,6 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
@@ -13,19 +12,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
+using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Records.IdentityModule;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -94,16 +89,16 @@ public class ResourceAuthorizationHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeReader>();
+            var scopeReader = ScopeFacts.Repository();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, memberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(memberKurinKey, null, null));
 
-            builder.Services.AddScoped(_ => scopeReader.Object);
+            builder.Services.AddScoped(_ => Mock.Of<ProjectK.Common.Contracts.Shared.IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object));
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
             builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
-            builder.Services.AddSingleton<IKurinAccessPolicyProvider>(new FixedKurinAccessPolicyProvider());
+            builder.Services.AddSingleton<IKurinAccessPolicyReader>(new FixedKurinAccessPolicyProvider());
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
 

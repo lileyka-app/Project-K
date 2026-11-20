@@ -66,7 +66,7 @@ function planningApi(options: { leader?: boolean; empty?: boolean } = {}): Extra
     }
     if (method === 'POST' && path === 'planning') return ok('s3');
     if (method === 'POST' && path === 'agenda') return ok('a1');
-    if (method === 'GET' && path === 'member/members/kv/k1') return ok(kv);
+    if (method === 'GET' && path === 'kurin/k1/kv') return ok(kv);
     return null;
   };
 }

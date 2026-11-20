@@ -1,17 +1,15 @@
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
-using ProjectK.BusinessLogic.MappingProfiles;
-using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Enums;
-using Xunit;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.Shared;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.KurinHandlers;
 
@@ -24,18 +22,12 @@ public class SetKurinKraiCommandHandlerTests
 
     public SetKurinKraiCommandHandlerTests()
     {
-        var mapper = new MapperConfiguration(cfg =>
-        {
-            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
-            cfg.AddProfile(new KurinModuleProfile());
-        }, LoggerFactory.Create(_ => { })).CreateMapper();
-
         _krais.Setup(r => r.ExistsAsync(It.IsIn("ua", "cz"), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         _unitOfWork.Setup(u => u.Krais).Returns(_krais.Object);
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _handler = new SetKurinKraiCommandHandler(_unitOfWork.Object, mapper, new Mock<IBackendCache>().Object);
+        _handler = new SetKurinKraiCommandHandler(_unitOfWork.Object, FakeBlobReadLinks.Instance, new Mock<IBackendCache>().Object, Mock.Of<IMembershipDirectory>());
     }
 
     private Kurin Given(int? number, string krai = "ua")
@@ -61,7 +53,7 @@ public class SetKurinKraiCommandHandlerTests
     public async Task Handle_ShouldRefuse_WhenTheNumberIsTakenInTheTargetKrai()
     {
         var kurin = Given(12);
-        _kurins.Setup(r => r.ExistsAsync("cz", 12, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _kurins.Setup(r => r.IsNumberTakenAsync("cz", KurinBranch.UPYu, 12, kurin.KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await _handler.Handle(new SetKurinKraiCommand(kurin.KurinKey, "cz"), default);
 
@@ -79,7 +71,7 @@ public class SetKurinKraiCommandHandlerTests
         var result = await _handler.Handle(new SetKurinKraiCommand(kurin.KurinKey, "cz"), default);
 
         result.Type.Should().Be(ResultType.Success);
-        _kurins.Verify(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _kurins.Verify(r => r.IsNumberTakenAsync(It.IsAny<string>(), It.IsAny<KurinBranch>(), It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -1,0 +1,102 @@
+<div class="flex flex-col gap-4" [attr.data-testid]="'life-' + mode()">
+    <div class="lil-tile-head">
+        <h2>{{ heading }}</h2>
+        <p-button icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary"
+            [ariaLabel]="mode() === 'training' ? 'Додати вишкіл' : 'Додати табір чи захід'"
+            (onClick)="open(null)" [attr.data-testid]="'life-' + mode() + '-add'" />
+    </div>
+
+    @if (rows().length) {
+    <ul class="life-entries">
+        @for (row of rows(); track row.entry.memberLifeEntryKey) {
+        <li>
+            <button type="button" class="life-entries__row" (click)="open(row.entry)">
+                <span class="life-entries__title">
+                    {{ row.title }}
+                    @if (row.kind) { <span class="life-entries__kind">{{ row.kind }}</span> }
+                </span>
+                <span class="life-entries__meta">{{ row.meta }}</span>
+            </button>
+        </li>
+        }
+    </ul>
+    } @else {
+    <app-empty-state art="list" [title]="mode() === 'training' ? 'Вишколів ще немає' : 'Таборів і заходів ще немає'" />
+    }
+</div>
+
+<p-dialog
+    [(visible)]="dialogVisible"
+    [header]="editing ? lifeTitle : (mode() === 'training' ? 'Новий вишкіл' : 'Новий табір чи захід')"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: 'min(94vw, 32rem)' }"
+    [focusOnShow]="false"
+>
+    <div class="life-form">
+        @if (mode() === 'training') {
+        <div class="life-form__field">
+            <label for="life-course">Вишкіл</label>
+            <p-select inputId="life-course" [options]="courses" optionLabel="label" optionValue="value"
+                [(ngModel)]="course" placeholder="Обери" appendTo="body" styleClass="w-full" />
+        </div>
+        } @else {
+        <div class="life-form__field">
+            <label for="life-kind">Що</label>
+            <p-select inputId="life-kind" [options]="outingKinds" optionLabel="label" optionValue="value"
+                [(ngModel)]="kind" appendTo="body" styleClass="w-full" />
+        </div>
+        }
+
+        @if (needsTitle) {
+        <div class="life-form__field">
+            <label for="life-title">Назва</label>
+            <input id="life-title" pInputText [(ngModel)]="title" maxlength="160" class="w-full" />
+        </div>
+        }
+
+        @if (mode() === 'training') {
+        <div class="life-form__field">
+            <label for="life-number">Число вишколу</label>
+            <p-inputNumber inputId="life-number" [(ngModel)]="number" [min]="1" [max]="9999" [useGrouping]="false" placeholder="12" />
+        </div>
+        }
+
+        <div class="life-form__dates">
+            <div class="life-form__field">
+                <label for="life-start">Від</label>
+                <p-datepicker inputId="life-start" [showOnFocus]="false" [(ngModel)]="startDate" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" />
+            </div>
+            <div class="life-form__field">
+                <label for="life-end">До</label>
+                <p-datepicker inputId="life-end" [showOnFocus]="false" [(ngModel)]="endDate" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" [minDate]="startDate" [showClear]="true" />
+            </div>
+        </div>
+
+        <div class="life-form__field">
+            <label for="life-place">Місце</label>
+            <input id="life-place" pInputText [(ngModel)]="place" maxlength="120" class="w-full" />
+        </div>
+
+        <div class="life-form__field">
+            <label for="life-commandant">Комендант</label>
+            <input id="life-commandant" pInputText [(ngModel)]="commandant" maxlength="120" class="w-full" />
+        </div>
+
+        <div class="life-form__field">
+            <label for="life-role">Роль</label>
+            <input id="life-role" pInputText [(ngModel)]="role" maxlength="80" placeholder="учасник" class="w-full" />
+        </div>
+    </div>
+
+    <ng-template #footer>
+        <div class="life-form__footer">
+            @if (editing) {
+            <p-button icon="pi pi-trash" ariaLabel="Видалити" severity="danger" [outlined]="true" (click)="delete()" />
+            }
+            <p-button label="Зберегти" icon="pi pi-save" [disabled]="!canSave" (click)="submit()" [attr.data-testid]="'life-' + mode() + '-save'" />
+        </div>
+    </ng-template>
+</p-dialog>

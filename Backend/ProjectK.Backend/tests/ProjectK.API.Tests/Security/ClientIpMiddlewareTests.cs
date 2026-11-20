@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.API.Middleware;
 
 namespace ProjectK.API.Tests.Security;

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 
 namespace ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
@@ -40,20 +40,6 @@ public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgr
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<ProbePointProgress>> GetByMemberKeysAsync(IEnumerable<Guid> memberKeys, CancellationToken cancellationToken = default)
-    {
-        var keys = memberKeys as IReadOnlyCollection<Guid> ?? memberKeys.ToList();
-        if (keys.Count == 0)
-        {
-            return Array.Empty<ProbePointProgress>();
-        }
-
-        return await Context.ProbePointProgresses
-            .Where(x => keys.Contains(x.MemberKey))
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-    }
-
     public async Task<IEnumerable<ProbePointProgress>> GetByMemberAndProbeAsync(
         Guid memberKey,
         string probeId,
@@ -63,11 +49,6 @@ public class ProbePointProgressRepository : BaseEntityRepository<ProbePointProgr
             .Where(x => x.MemberKey == memberKey && x.ProbeId == probeId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-    }
-
-    public override Task<IEnumerable<ProbePointProgress>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetByMemberAndProbeAsync instead.");
     }
 
     public override async Task<bool> ExistsAsync(Guid entityKey, CancellationToken cancellationToken = default)

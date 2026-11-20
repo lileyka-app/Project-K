@@ -1,35 +1,46 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuditModule;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
-using ProjectK.Common.Models.Settings;
+using Microsoft.Extensions.Logging;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Entities.IdentityModule;
+using ProjectK.Common.Options.IdentityModule;
+using ProjectK.Common.Options.NotificationsModule;
+using ProjectK.Common.Options.ProbesAndBadgesModule;
+using ProjectK.Common.Options.Shared;
 using ProjectK.Infrastructure.BackgroundServices;
+using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Logging;
-using ProjectK.Infrastructure.Reports;
-using ProjectK.Infrastructure.Repositories;
+using ProjectK.Infrastructure.Persistence.Interceptors;
 using ProjectK.Infrastructure.Repositories.AuditModule;
-using ProjectK.Infrastructure.Repositories.AuthModule;
-using ProjectK.Infrastructure.Repositories.InfrastructureModule;
+using ProjectK.Infrastructure.Repositories.IdentityModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
-using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.Seeding;
-using ProjectK.Infrastructure.Services;
+using ProjectK.Infrastructure.Seeding.Demo;
+using ProjectK.Infrastructure.Services.Blobs;
+using ProjectK.Infrastructure.Services.Cards;
 using ProjectK.Infrastructure.Services.Catalog;
-using ProjectK.Infrastructure.Services.EmailService;
+using ProjectK.Infrastructure.Services.Email;
 using ProjectK.Infrastructure.Services.Feedback;
 using ProjectK.Infrastructure.Services.GeoIP;
-using ProjectK.Infrastructure.Services.JwtService;
+using ProjectK.Infrastructure.Services.Jwt;
+using ProjectK.Infrastructure.Services.Qr;
+using ProjectK.Infrastructure.Services.Reports;
 using ProjectK.Infrastructure.Services.Spreadsheets;
 using ProjectK.Infrastructure.Services.Telemetry;
 using ProjectK.Infrastructure.Services.WebPush;
-using ProjectK.Infrastructure.UnitOfWork;
+using ProjectK.Infrastructure.Stores;
 using Resend;
 
 namespace ProjectK.Infrastructure;
@@ -39,8 +50,22 @@ namespace ProjectK.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Registers the database, Identity, blob storage and every other outside system this project talks
+    /// to, with the options they read.
+    /// </summary>
+    /// <remarks>
+    /// Call it before the host's <c>AddAuthentication</c>: <c>AddIdentity</c> sets the default schemes to
+    /// its cookies, and only a later <c>AddAuthentication</c> puts the bearer scheme back on top.
+    /// </remarks>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        AddPersistence(services, configuration);
+        AddBlobStorage(services, configuration);
+
+        services.Configure<SecurityMonitoringOptions>(configuration.GetSection(SecurityMonitoringOptions.SectionName));
+        services.Configure<TelegramOptions>(configuration.GetSection(TelegramOptions.SectionName));
+
         // Data access. Repositories are reached only through IUnitOfWork, which owns their lifetime
         // and shares the request DbContext, so they are deliberately not registered individually.
         services.AddScoped<UnitOfWork.UnitOfWork>();
@@ -51,28 +76,27 @@ public static class DependencyInjection
         // The same for money: only the dues module can reach its tables.
         services.AddScoped<IDuesUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
         services.AddScoped<IScoreUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
-        services.AddScoped<IResourceScopeReader, ResourceScopeReader>();
         // The journal writes on the request context and is saved by whoever saves the request.
-        services.AddScoped<IKurinAuditWriter, KurinAuditWriter>();
-        services.AddScoped<IKurinJournalReader, KurinJournalReader>();
+        services.AddScoped<IAuditUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork.UnitOfWork>());
 
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
         services.AddScoped<ICalendarFeedStore, CalendarFeedStore>();
         services.AddSingleton<IQrCodeService, QrCodeService>();
+        services.AddSingleton<ICardTokenSigner, CardTokenSigner>();
 
         services.AddHostedService<AuditCleanupBackgroundService>();
         services.AddHostedService<MemberWarningExpiryBackgroundService>();
         services.AddHostedService<AgendaArchiveBackgroundService>();
         services.AddHostedService<DemoResetBackgroundService>();
 
-        services.AddScoped<IKurinReportSource, KurinReportSource>();
         services.AddScoped<IKurinReportMedia, KurinReportMediaService>();
         services.AddSingleton<IKurinReportPdfRenderer, KurinReportPdfRenderer>();
+        services.AddSingleton<ILifeStoryPdfRenderer, LifeStoryPdfRenderer>();
         services.AddSingleton<ISpreadsheetWriter, ClosedXmlSpreadsheetWriter>();
         services.AddSingleton<ISpreadsheetReader, ClosedXmlSpreadsheetReader>();
 
-        services.AddScoped<GeoIPService>();
+        services.AddScoped<IGeoIPService, GeoIPService>();
         services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();
         services.AddSingleton<IActivityLogger, ActivityLogger>();
 
@@ -83,6 +107,80 @@ public static class DependencyInjection
         AddTelemetry(services, configuration);
 
         return services;
+    }
+
+    private static void AddPersistence(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddIdentity<AppUser, AppRole>(options =>
+        {
+            // Strict unless a local config opts out explicitly. A missing key used to read as
+            // "no digit, no upper case, no symbol" — which is what a fresh self-host got, since
+            // its appsettings never mentioned the key at all.
+            var securePasswordOption =
+                !bool.TryParse(configuration["DebugMode:SecurePasswordOptions"], out var configured)
+                || configured;
+
+            options.Password.RequiredLength = 8;
+            options.Password.RequireDigit = securePasswordOption;
+            options.Password.RequireNonAlphanumeric = securePasswordOption;
+            options.Password.RequireUppercase = securePasswordOption;
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
+
+        services.AddDbContext<AppDbContext>(opt =>
+        {
+            opt.UseSqlServer(
+                configuration.GetConnectionString("DefaultConnection"),
+                b => b.MigrationsAssembly("ProjectK.Infrastructure"));
+            opt.AddAppDbContextInterceptors();
+        });
+    }
+
+    /// <summary>
+    /// Photos, emblems, silhouettes and project images live in one blob container. What the database
+    /// still points at is gathered from every reference provider, so the orphan cleanup knows what to keep.
+    /// </summary>
+    private static void AddBlobStorage(IServiceCollection services, IConfiguration configuration)
+    {
+        var blobOptions = new BlobStorageOptions
+        {
+            ConnectionString = configuration.GetConnectionString("BlobStorage") ?? "UseDevelopmentStorage=true",
+            ContainerName = configuration[$"{BlobStorageOptions.SectionName}:ContainerName"] ?? "photos",
+            PublicBaseUrl = configuration[$"{BlobStorageOptions.SectionName}:PublicBaseUrl"]
+        };
+        services.AddScoped<MemberPhotoReferenceReader>();
+        services.AddScoped<GroupSilhouetteReferenceReader>();
+        services.AddScoped<KurinEmblemReferenceReader>();
+        services.AddScoped<ProbeProjectImageReferenceReader>();
+        services.AddScoped<IPhotoReferenceReader>(sp =>
+        {
+            var providers = new IPhotoReferenceReader[]
+            {
+                sp.GetRequiredService<MemberPhotoReferenceReader>(),
+                sp.GetRequiredService<GroupSilhouetteReferenceReader>(),
+                sp.GetRequiredService<KurinEmblemReferenceReader>(),
+                sp.GetRequiredService<ProbeProjectImageReferenceReader>()
+            };
+
+            return new CompositePhotoReferenceReader(providers);
+        });
+
+        services.AddSingleton(blobOptions);
+        services.AddSingleton<IBlobReadLinks, SignedBlobReadLinks>();
+
+        services.Configure<OrphanCleanupOptions>(configuration.GetSection(OrphanCleanupOptions.SectionName));
+
+        services.AddScoped<IPhotoService, AzureBlobPhotoService>(sp =>
+        {
+            var opts = sp.GetRequiredService<BlobStorageOptions>();
+            return new AzureBlobPhotoService(
+                opts,
+                sp.GetRequiredService<IBlobReadLinks>(),
+                sp.GetRequiredService<ILogger<AzureBlobPhotoService>>());
+        });
+
+        services.AddHostedService<OrphanPhotoCleanupBackgroundService>();
     }
 
     /// <summary>
@@ -111,9 +209,9 @@ public static class DependencyInjection
     /// </summary>
     private static void AddFeedback(IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<FeedbackOptions>(configuration.GetSection("Feedback"));
+        services.Configure<FeedbackOptions>(configuration.GetSection(FeedbackOptions.SectionName));
 
-        if (string.IsNullOrWhiteSpace(configuration["Feedback:GitHub:Token"]))
+        if (string.IsNullOrWhiteSpace(configuration[$"{FeedbackOptions.SectionName}:GitHub:Token"]))
         {
             services.AddScoped<IProblemReporter, LogProblemReporter>();
             return;
@@ -161,6 +259,7 @@ public static class DependencyInjection
         services.AddSingleton<IBadgesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddSingleton<IProbesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddSingleton<ICatalogKraiNames>(sp => sp.GetRequiredService<CatalogStore>());
+        services.AddSingleton<IHonoursCatalog>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddHttpClient(CatalogClient.HttpClientName, client => client.Timeout = timeout);
         services.AddSingleton<CatalogClient>();
         services.AddSingleton<IAwardImagesCatalog, CatalogAwardImages>();
@@ -169,7 +268,10 @@ public static class DependencyInjection
 
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)
     {
-        var provider = configuration["Email:Provider"] ?? "Mock";
+        // The business logic reads it too: BaseUrl is the frontend address its links are built on.
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+
+        var provider = configuration[$"{EmailOptions.SectionName}:Provider"] ?? "Mock";
         if (!provider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
         {
             services.AddScoped<IEmailService, MockEmailService>();
@@ -178,7 +280,7 @@ public static class DependencyInjection
 
         services.AddOptions();
         services.AddHttpClient<IResend, ResendClient>();
-        services.Configure<ResendClientOptions>(options => options.ApiToken = configuration["Email:ApiKey"]!);
+        services.Configure<ResendClientOptions>(options => options.ApiToken = configuration[$"{EmailOptions.SectionName}:ApiKey"]!);
         services.AddTransient<IResend, ResendClient>();
         services.AddScoped<IEmailService, ResendEmailService>();
     }

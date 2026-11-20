@@ -5,7 +5,7 @@ import { PlastLevel } from './plast-level.enum';
  * Порядок, у якому людина проходить ступені, і що з них курінь кожної гілки звично записує.
  *
  * Порядок живе тут, а не в самому enum: ступінь зберігається числом, і числа заморожені —
- * `Prykhylnyk` дописаний останнім, хоч на драбині стоїть другим. Дзеркалить `PlastLadder` на бекенді.
+ * `Prykhylnyk` дописаний останнім, хоч на драбині стоїть другим. Дзеркалить `PlastLadderRules` на бекенді.
  */
 export const PLAST_LADDER: readonly PlastLevel[] = [
   PlastLevel.Entry,
@@ -61,6 +61,22 @@ export function defaultLevelsFor(branch: KurinBranch | null | undefined): readon
   }
 }
 
+/**
+ * Ступені, за якими курінь рахує чисельність: від початку його гілки. Не накопичувально, як
+ * `defaultLevelsFor`: людина стоїть на одному ступені, а в старшому курені юнацьких рядків нема кому
+ * заповнювати — хто там є, йде в «Без ступеня / інший». Дзеркалить `PlastLadderRules.TallyFor`.
+ */
+export function tallyLevelsFor(branch: KurinBranch | null | undefined): readonly PlastLevel[] {
+  switch (branch) {
+    case KurinBranch.USP:
+      return PLAST_LADDER.slice(6);
+    case KurinBranch.UPS:
+      return PLAST_LADDER.slice(7);
+    default:
+      return THROUGH_YOUTH;
+  }
+}
+
 const SENIOR_LEVELS: ReadonlySet<PlastLevel> = new Set<PlastLevel>([PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.SeniorDovirja, PlastLevel.SeniorKerivnytstva]);
 
 /** Гілка, до якої належить сам ступінь: ст. пл. — УСП, будь-який сеніорський — УПС, решта — УПЮ. */
@@ -77,19 +93,4 @@ export function highestLevel(levels: readonly PlastLevel[]): PlastLevel | null {
   return levels.reduce<PlastLevel | null>(
     (best, level) => best === null || PLAST_LADDER.indexOf(level) > PLAST_LADDER.indexOf(best) ? level : best,
     null);
-}
-
-/**
- * Гілка самої людини там, де на неї дивляться. Старший ступінь переважає курінь: впорядник у курені
- * УПЮ — сам старший пластун чи сеніор, і юнацький вишкіл йому не належить. Без старшого ступеня
- * вирішує гілка куреня.
- */
-export function personalBranch(
-  levels: readonly PlastLevel[],
-  membershipBranch: KurinBranch | null | undefined
-): KurinBranch {
-  const top = highestLevel(levels);
-  const levelBranch = top === null ? KurinBranch.UPYu : branchOfLevel(top);
-
-  return levelBranch !== KurinBranch.UPYu ? levelBranch : membershipBranch ?? KurinBranch.UPYu;
 }

@@ -13,24 +13,30 @@ import { PlanningSessionDto } from '../../models/planning-session.dto';
 import { PlanningDetailComponent } from '../../components/planning-detail/planning-detail';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../services/page-groups/page-groups.service';
 
 @Component({
   selector: 'app-planning-list',
-  imports: [TableModule, ButtonModule, TagModule, TooltipModule, ConfirmDialogModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
+  imports: [PageTabsComponent, TableModule, ButtonModule, TagModule, TooltipModule, ConfirmDialogModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
   providers: [ConfirmationService],
   template: `
     <p-confirmdialog />
-    <div class="planning-page">
-      <section class="kurin-tile">
-        <div class="planning-header">
-          <h1 class="planning-title">Планування таборів</h1>
-          @if (canCreatePlanning && sessions().length) {
-            <p-button
-              label="Створити нове"
-              icon="pi pi-plus"
-              (click)="createNew()" />
-          }
+    <div class="lil-page">
+      <header class="lil-page-head">
+        <div>
+          <h1>Планування</h1>
         </div>
+        @if (canCreatePlanning && sessions().length) {
+          <div class="lil-page-head__actions">
+            <p-button label="Нове планування" icon="pi pi-plus" (click)="createNew()" />
+          </div>
+        }
+      </header>
+
+      <app-page-tabs [tabs]="tabs" label="Календар і планування" />
+
+      <section class="kurin-tile">
 
         <p-table [value]="sessions()" styleClass="project-table planning-table">
           <ng-template pTemplate="header">
@@ -87,28 +93,6 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .planning-page {
-      margin-inline: auto;
-      padding-block: 2rem;
-      width: min(100% - 2rem, 72rem);
-    }
-
-    .planning-header {
-      align-items: center;
-      display: flex;
-      gap: 1rem;
-      justify-content: space-between;
-      padding-bottom: 1rem;
-    }
-
-    .planning-title {
-      color: var(--p-text-color);
-      font-size: 1.5rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin: 0;
-    }
-
     .planning-name {
       font-weight: 650;
     }
@@ -127,13 +111,6 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     :host ::ng-deep .planning-table .p-datatable-table {
       width: 100% !important;
       min-width: 0 !important;
-    }
-
-    @media (max-width: 768px) {
-      .planning-header {
-        align-items: stretch;
-        flex-direction: column;
-      }
     }
 
     @media (max-width: 640px) {
@@ -195,6 +172,9 @@ export class PlanningListComponent implements OnInit {
   selectedSessionId: string | null = null;
 
   kurinKey = '';
+  private readonly pageGroups = inject(PageGroups);
+  /** Календар і Планування — одне місце в меню, дві вкладки. */
+  tabs: PageTab[] = [];
 
   get canCreatePlanning(): boolean {
     return this.permissionService.canCreatePlanning();
@@ -203,6 +183,7 @@ export class PlanningListComponent implements OnInit {
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       this.kurinKey = params.get('kurinKey')!;
+      this.tabs = this.pageGroups.calendar(this.kurinKey);
     });
     this.loadData();
   }

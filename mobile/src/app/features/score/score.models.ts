@@ -1,7 +1,7 @@
 import { AgendaRsvpStatus } from '../../me/me.models';
 
 // Kept in step with the web's scoreModule/models/score.dto.ts and score.enums.ts, which mirror
-// ProjectK.Common/Models/Dtos/ScoreModule and the KurinScoreController (api/kurin/{kurinKey}/score).
+// ProjectK.Common/Dtos/ScoreModule and the KurinScoreController (api/kurin/{kurinKey}/score).
 
 /** Mirrors `ScoreSource` on the backend; enums travel as strings. */
 export type ScoreSource = 'Attendance' | 'Item' | 'Free' | 'Skill' | 'ProbePoint' | 'Probe' | 'Dues' | 'Warning';

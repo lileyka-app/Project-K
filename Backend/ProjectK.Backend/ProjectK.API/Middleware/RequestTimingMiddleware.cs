@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Http;
 
 namespace ProjectK.API.Middleware;
 

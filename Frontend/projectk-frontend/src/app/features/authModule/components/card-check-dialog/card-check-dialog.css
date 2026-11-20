@@ -1,0 +1,37 @@
+.card-check {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  text-align: center;
+}
+
+.card-check__qr {
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: var(--lil-radius-lg);
+  max-width: 16rem;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.card-check__timer {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-check__lead {
+  color: var(--lil-ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.card-check__icon {
+  color: var(--lil-faint);
+  font-size: 2rem;
+}
+
+.card-check__settings {
+  font-size: var(--lil-text-caption);
+}

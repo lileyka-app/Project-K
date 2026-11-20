@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Rules.IdentityModule;
 
 namespace ProjectK.API.Authorization;
 
@@ -35,12 +35,12 @@ public static class AuthorizationPolicies
     /// </summary>
     public static AuthorizationOptions AddProjectPolicies(this AuthorizationOptions options)
     {
-        options.AddPolicy(RequireAdmin, policy => policy.RequireRole(SystemRole.Admin));
+        options.AddPolicy(RequireAdmin, policy => policy.RequireRole(SystemRoleNames.Admin));
 
 
-        options.AddPolicy(RequireKurinManagement, ByRoles(RolePermissionMap.GrantsWholeKurinManagement));
-        options.AddPolicy(RequireGroupLeadership, ByRoles(RolePermissionMap.GrantsGroupLeadership));
-        options.AddPolicy(RequirePlanningAuthor, ByRoles(RolePermissionMap.GrantsPlanningAuthoring));
+        options.AddPolicy(RequireKurinManagement, ByRoles(RolePermissionRules.GrantsWholeKurinManagement));
+        options.AddPolicy(RequireGroupLeadership, ByRoles(RolePermissionRules.GrantsGroupLeadership));
+        options.AddPolicy(RequirePlanningAuthor, ByRoles(RolePermissionRules.GrantsPlanningAuthoring));
 
         options.AddPolicy(RequireUser,
             policy => policy.RequireAssertion(context => context.User.Identity?.IsAuthenticated == true));

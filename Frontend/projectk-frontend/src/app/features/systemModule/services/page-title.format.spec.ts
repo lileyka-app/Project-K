@@ -1,3 +1,4 @@
+import { KurinBranch } from '../../kurinModule/models/enums/kurin-branch.enum';
 import {
   composePageTitle,
   formatGroupTitle,
@@ -18,6 +19,7 @@ describe('page title formatting', () => {
 
     it('accepts zero as a real number', () => {
       expect(formatKurinTitle(0)).toBe('к. ч. 0');
+      expect(formatKurinTitle(5, KurinBranch.USP)).toBe('5-й курінь УСП');
     });
   });
 

@@ -376,7 +376,7 @@ const SEARCH_FROM = 9;
                     <p>{{ levelOf(member) }}</p>
                     <app-role-tags [tags]="roleTags(member)" />
                   </ion-label>
-                  @if (manager()) {
+                  @if (manager() && !isMe(member)) {
                     <ion-button
                       slot="end"
                       fill="clear"
@@ -395,7 +395,7 @@ const SEARCH_FROM = 9;
                     </ion-button>
                   }
                 </ion-item>
-                @if (manager()) {
+                @if (manager() && !isMe(member)) {
                   <ion-item-options side="end">
                     <ion-item-option color="primary" (click)="moveMember(member)">Перевести</ion-item-option>
                     <ion-item-option color="danger" (click)="removeMember(member)">Прибрати</ion-item-option>
@@ -541,7 +541,8 @@ export class GroupPage implements OnInit {
     this.busy.set('add');
     let people: MemberLookupDto[];
     try {
-      people = addableToGroup(await this.data.kurinMembers(kurinKey), this.groupKey, valueOf(this.members()) ?? []);
+      people = addableToGroup(await this.data.kurinMembers(kurinKey), this.groupKey, valueOf(this.members()) ?? [])
+        .filter((member) => !this.isMe(member));
     } catch (error) {
       await this.toasts.show(apiErrorText(error, 'Не вдалося прочитати учасників куреня.'), 'danger');
       this.busy.set(null);
@@ -579,6 +580,11 @@ export class GroupPage implements OnInit {
       added === data.length ? `Додано до гуртка: ${added}.` : `Додано ${added} з ${data.length}. Решту не вдалося — спробуй ще раз.`,
       added === data.length ? undefined : 'danger',
     );
+  }
+
+  /** Nobody moves themselves between гуртки; the server refuses it too. */
+  protected isMe(member: Pick<MemberLookupDto, 'memberKey'>): boolean {
+    return member.memberKey === this.auth.user()?.memberKey;
   }
 
   protected async memberActions(member: MemberLookupDto): Promise<void> {

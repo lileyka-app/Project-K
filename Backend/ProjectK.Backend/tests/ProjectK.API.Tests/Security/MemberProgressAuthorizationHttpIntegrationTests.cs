@@ -4,9 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,25 +13,20 @@ using Microsoft.Extensions.Options;
 using Moq;
 using ProjectK.API.Authorization;
 using ProjectK.API.Controllers.ProbesAndBadgesModule;
-using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.API.Tests.TestHelpers;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.BusinessLogic.Modules.AuthModule.Services;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Review;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Submit;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.Get;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe.UpdateStatus;
-using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
+using ProjectK.BusinessLogic.Modules.IdentityModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Probe;
 using ProjectK.BusinessLogic.Services.Caching;
-using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Extensions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Models.Authorization;
-using ProjectK.Common.Models.Enums;
-using ProjectK.Common.Models.Records;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.Shared;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.IdentityModule;
+using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -227,71 +220,50 @@ public class MemberProgressAuthorizationHttpIntegrationTests
 
             builder.Services.AddAuthorization(options => options.AddProjectPolicies());
 
-            var scopeReader = new Mock<IResourceScopeReader>();
+            var scopeReader = ScopeFacts.Repository();
             scopeReader
                 .Setup(x => x.GetScopeAsync(ResourceType.Member, targetMemberKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceScope(targetMemberKurinKey, targetMemberGroupKey, Guid.NewGuid()));
 
             scopeReader
-                .Setup(x => x.GetLedGroupKeysAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[] { currentUserGroupKey });
+                .Setup(x => x.GetLedGroupSourcesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ScopeFacts.Leading(new[] { currentUserGroupKey }));
 
             var mediator = new Mock<IMediator>();
             mediator
                 .Setup(x => x.Send(It.IsAny<GetBadgeProgressesQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<IEnumerable<BadgeProgressResponse>>(ResultType.Success, []));
+                .ReturnsAsync(new ServiceResult<IEnumerable<BadgeProgressDto>>(ResultType.Success, []));
 
             mediator
                 .Setup(x => x.Send(It.IsAny<SubmitBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
+                .ReturnsAsync(new ServiceResult<BadgeProgressDto>(
                     ResultType.Success,
-                    new BadgeProgressResponse
-                    {
-                        BadgeProgressKey = Guid.NewGuid(),
-                        MemberKey = targetMemberKey,
-                        KurinKey = targetMemberKurinKey,
-                        BadgeId = "badge-1",
-                        Status = BadgeProgressStatus.Submitted
-                    }));
+                    ProgressDtos.Badge(targetMemberKey, targetMemberKurinKey, "badge-1", BadgeProgressStatus.Submitted)));
 
             mediator
                 .Setup(x => x.Send(It.IsAny<ReviewBadgeProgressCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<BadgeProgressResponse>(
+                .ReturnsAsync(new ServiceResult<BadgeProgressDto>(
                     ResultType.Success,
-                    new BadgeProgressResponse
-                    {
-                        BadgeProgressKey = Guid.NewGuid(),
-                        MemberKey = targetMemberKey,
-                        KurinKey = targetMemberKurinKey,
-                        BadgeId = "badge-1",
-                        Status = BadgeProgressStatus.Confirmed
-                    }));
+                    ProgressDtos.Badge(targetMemberKey, targetMemberKurinKey, "badge-1", BadgeProgressStatus.Confirmed)));
 
             mediator
                 .Setup(x => x.Send(It.IsAny<GetProbeProgressQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
+                .ReturnsAsync(new ServiceResult<ProbeProgressDto>(
                     ResultType.Success,
-                    ProbeProgressResponse.CreateNotStarted(targetMemberKey, targetMemberKurinKey, "probe-1")));
+                    ProgressDtos.Probe(targetMemberKey, targetMemberKurinKey, "probe-1")));
 
             mediator
                 .Setup(x => x.Send(It.IsAny<UpdateProbeProgressStatusCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceResult<ProbeProgressResponse>(
+                .ReturnsAsync(new ServiceResult<ProbeProgressDto>(
                     ResultType.Success,
-                    new ProbeProgressResponse
-                    {
-                        ProbeProgressKey = Guid.NewGuid(),
-                        MemberKey = targetMemberKey,
-                        KurinKey = targetMemberKurinKey,
-                        ProbeId = "probe-1",
-                        Status = ProbeProgressStatus.Completed
-                    }));
+                    ProgressDtos.Probe(targetMemberKey, targetMemberKurinKey, "probe-1", ProbeProgressStatus.Completed)));
 
-            builder.Services.AddScoped(_ => scopeReader.Object);
+            builder.Services.AddScoped(_ => Mock.Of<ProjectK.Common.Contracts.Shared.IUnitOfWork>(u => u.ResourceScopes == scopeReader.Object));
             builder.Services.AddSingleton(mediator.Object);
             builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
             builder.Services.AddScoped<IResourceAccessService, ResourceAccessService>();
             builder.Services.AddScoped<ICurrentPermissions, CurrentPermissions>();
-            builder.Services.AddSingleton<IKurinAccessPolicyProvider>(new FixedKurinAccessPolicyProvider());
+            builder.Services.AddSingleton<IKurinAccessPolicyReader>(new FixedKurinAccessPolicyProvider());
             builder.Services.AddMemoryCache();
             builder.Services.AddSingleton<IBackendCache, MemoryBackendCache>();
 

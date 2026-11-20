@@ -75,7 +75,7 @@ export class PageTitleService {
       case 'kurin': {
         const kurinKey = params['kurinKey'] ?? this.authService.getAuthStateValue()?.kurinKey;
         if (kurinKey) {
-          this.publish(token, this.kurinService.getByKey(kurinKey), kurin => formatKurinTitle(kurin.number));
+          this.publish(token, this.kurinService.getByKey(kurinKey), kurin => formatKurinTitle(kurin.number, kurin.branch, kurin.namedAfter));
         }
         break;
       }

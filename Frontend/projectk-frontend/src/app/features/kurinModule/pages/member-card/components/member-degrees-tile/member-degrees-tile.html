@@ -1,0 +1,63 @@
+<div class="flex flex-col gap-4" data-testid="degrees-tile">
+    <div class="lil-tile-head">
+        <h2>Ступені</h2>
+        @if (canEdit()) {
+            <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Змінити ступені" (onClick)="edit.emit()" data-testid="degrees-edit" />
+        }
+    </div>
+
+    @if (highest(); as top) {
+        <div class="degree-highest" data-testid="degree-highest">
+            @if (top.imageUrl) {
+                <img class="degree-highest-image" [src]="top.imageUrl" [alt]="top.title" loading="lazy" />
+            } @else {
+                <span class="degree-highest-image degree-image--empty pi pi-flag" aria-hidden="true"></span>
+            }
+            <div class="degree-highest-text">
+                <span class="degree-highest-title">{{ top.title }}</span>
+                @if (top.date) {
+                    <span class="degree-date">{{ top.date | date: 'dd.MM.yyyy' }}</span>
+                }
+            </div>
+        </div>
+    } @else if (!waiting().length) {
+        <p class="degree-empty">Ступенів ще немає</p>
+    }
+
+    @if (waiting().length) {
+        <ul class="degree-waiting" data-testid="degrees-waiting">
+            @for (row of waiting(); track row.key) {
+                <li class="degree-waiting-row" data-testid="degree-waiting">
+                    <div class="degree-waiting-text">
+                        <span class="degree-waiting-title">{{ row.title }}</span>
+                        @if (row.date) {
+                            <span class="degree-date">{{ row.date | date: 'dd.MM.yyyy' }}</span>
+                        }
+                        <p-tag value="чекає підтвердження" severity="warn" />
+                    </div>
+                    @if (canConfirm()) {
+                        <div class="degree-waiting-actions">
+                            <p-button
+                                label="Підтвердити"
+                                icon="pi pi-check"
+                                size="small"
+                                [ariaLabel]="'Підтвердити: ' + row.title"
+                                [loading]="busyKey() === row.key"
+                                [disabled]="!!busyKey()"
+                                (onClick)="confirm.emit(row.key)" />
+                            <p-button
+                                label="Відхилити"
+                                icon="pi pi-times"
+                                size="small"
+                                severity="secondary"
+                                [outlined]="true"
+                                [ariaLabel]="'Відхилити: ' + row.title"
+                                [disabled]="!!busyKey()"
+                                (onClick)="reject.emit(row.key)" />
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</div>

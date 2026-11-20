@@ -1,0 +1,46 @@
+<div class="branch-request">
+  <p class="branch-request__current">{{ current() }}</p>
+
+  @if (open(); as request) {
+    <p-message severity="warn" icon="pi pi-clock" styleClass="w-full">
+      Чекає рішення адміністратора: {{ name(request.wantedBranches) }}
+      · {{ request.requestedAtUtc | localUtcDate:'short' }}
+    </p-message>
+  }
+
+  @if (editing()) {
+    <div class="branch-request__form">
+      <div class="branch-request__row">
+        <p-checkbox [(ngModel)]="inUsp" [binary]="true" inputId="request-usp" [disabled]="sending()" />
+        <label for="request-usp" class="branch-request__label">УСП</label>
+        <p-inputNumber [(ngModel)]="uspNumber" [useGrouping]="false" [min]="numberRange().min" [max]="numberRange().max"
+          [disabled]="!inUsp || sending()" inputId="request-usp-number" placeholder="Число в УСП" ariaLabel="Число куреня в УСП" />
+      </div>
+      <div class="branch-request__row">
+        <p-checkbox [(ngModel)]="inUps" [binary]="true" inputId="request-ups" [disabled]="sending()" />
+        <label for="request-ups" class="branch-request__label">УПС</label>
+        <p-inputNumber [(ngModel)]="upsNumber" [useGrouping]="false" [min]="numberRange().min" [max]="numberRange().max"
+          [disabled]="!inUps || sending()" inputId="request-ups-number" placeholder="Число в УПС" ariaLabel="Число куреня в УПС" />
+      </div>
+      <div class="branch-request__note">
+        <label for="request-note">Коментар для адміністратора (не обовʼязково)</label>
+        <textarea pTextarea id="request-note" rows="2" maxlength="1000" [(ngModel)]="note" [disabled]="sending()"></textarea>
+      </div>
+      @if (problem()) {
+        <small class="branch-request__problem">{{ problem() }}</small>
+      }
+      <div class="branch-request__actions">
+        <p-button label="Скасувати" severity="secondary" variant="text" [disabled]="sending()" (onClick)="editing.set(false)" />
+        <p-button label="Надіслати запит" icon="pi pi-send" severity="secondary" [loading]="sending()" (onClick)="send()" />
+      </div>
+    </div>
+  } @else {
+    <div>
+      <p-button
+        [label]="open() ? 'Подати інший запит' : 'Подати запит'"
+        icon="pi pi-pencil"
+        severity="secondary"
+        (onClick)="startEditing()" />
+    </div>
+  }
+</div>

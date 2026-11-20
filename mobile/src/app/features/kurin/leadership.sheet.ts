@@ -204,7 +204,7 @@ export class LeadershipSheet implements OnInit {
         people: people.map((member): PickPerson => ({ key: member.memberKey, member })),
         selected: current.map((m) => m.memberKey),
         multiple: several,
-        noneLabel: several ? null : 'Не обсаджено',
+        noneLabel: several ? null : 'Нікого',
         emptyText: this.kind === 'kurin' ? 'У курені ще нікого немає.' : 'У гуртку ще нікого немає.',
       },
       presentingElement: this.host.closest('ion-modal') ?? undefined,

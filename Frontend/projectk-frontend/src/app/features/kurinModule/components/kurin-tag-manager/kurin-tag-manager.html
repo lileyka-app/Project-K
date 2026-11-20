@@ -1,0 +1,99 @@
+<div class="tag-manager">
+  <div class="tag-manager__head">
+    <span class="tag-manager__hint">Теги розрізняють людей поза гуртками: рівні, належність, власні ступені куреня. До {{ max() }} тегів на людину.</span>
+    <p-button label="Новий тег" icon="pi pi-plus" size="small" severity="secondary" (onClick)="openCreate()" />
+  </div>
+
+  @if (tags().length === 0) {
+    <p class="tag-manager__empty">Тегів ще немає. Заведи перший — наприклад «Новики» чи «Ступінь І».</p>
+  } @else {
+    <ul class="tag-list">
+      @for (tag of tags(); track tag.kurinTagKey) {
+        <li class="tag-list__item">
+          <span class="tag-list__dot" [style.background]="tag.colorHex" aria-hidden="true"></span>
+          <span class="tag-list__name">{{ tag.name }}</span>
+          <span class="tag-list__count">{{ tag.memberCount ?? 0 }}</span>
+          <span class="tag-list__actions">
+            <p-button icon="pi pi-users" severity="secondary" variant="text" size="small"
+              [ariaLabel]="'Кому поставити тег «' + tag.name + '»'" (onClick)="openPeople(tag)" />
+            <p-button icon="pi pi-pencil" severity="secondary" variant="text" size="small"
+              [ariaLabel]="'Змінити тег «' + tag.name + '»'" (onClick)="openEdit(tag)" />
+            <p-button icon="pi pi-trash" severity="danger" variant="text" size="small"
+              [ariaLabel]="'Видалити тег «' + tag.name + '»'" (onClick)="remove(tag)" />
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+<p-dialog
+  [visible]="editVisible()"
+  (visibleChange)="editVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(92vw, 26rem)' }"
+  [header]="editing ? 'Змінити тег' : 'Новий тег'">
+  <div class="tag-form">
+    <div class="tag-field">
+      <label class="tag-label" for="tag-name">Назва</label>
+      <input id="tag-name" pInputText [(ngModel)]="name" maxlength="40" />
+    </div>
+    <div class="tag-field">
+      <span class="tag-label" id="tag-color-label">Колір</span>
+      <div class="tag-swatches" role="radiogroup" aria-labelledby="tag-color-label">
+        @for (color of palette(); track color) {
+          <button
+            type="button"
+            role="radio"
+            class="tag-swatch"
+            [class.is-active]="colorHex === color"
+            [attr.aria-checked]="colorHex === color"
+            [style.background]="color"
+            [attr.aria-label]="colorNames[color] ?? color"
+            (click)="colorHex = color"></button>
+        }
+      </div>
+    </div>
+    @if (error(); as message) {
+      <p-message severity="error" size="small">{{ message }}</p-message>
+    }
+  </div>
+  <ng-template #footer>
+    <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="editVisible.set(false)" />
+    <p-button label="Зберегти" icon="pi pi-check" [loading]="saving()" (onClick)="saveTag()" />
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [visible]="peopleVisible()"
+  (visibleChange)="peopleVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(92vw, 30rem)' }"
+  [header]="'Хто має тег «' + (peopleTag?.name ?? '') + '»'">
+  <div class="tag-form">
+    <label class="tag-label" for="tag-people">Люди куреня</label>
+    <p-multiselect
+      inputId="tag-people"
+      [options]="peopleOptions()"
+      [(ngModel)]="people"
+      optionLabel="name"
+      optionValue="memberKey"
+      optionDisabled="disabled"
+      display="chip"
+      [filter]="true"
+      filterPlaceholder="Пошук за прізвищем"
+      placeholder="Обери людей"
+      appendTo="body"
+      styleClass="tag-people" />
+    <small class="tag-manager__hint">Кого не вибрати, той уже має {{ max() }} тегів.</small>
+    @if (error(); as message) {
+      <p-message severity="error" size="small">{{ message }}</p-message>
+    }
+  </div>
+  <ng-template #footer>
+    <p-button label="Скасувати" severity="secondary" variant="text" (onClick)="peopleVisible.set(false)" />
+    <p-button label="Зберегти" icon="pi pi-check" [loading]="saving()" (onClick)="savePeople()" />
+  </ng-template>
+</p-dialog>

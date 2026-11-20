@@ -1,6 +1,6 @@
 using FluentValidation;
-using ProjectK.Common.Models.Dtos.DuesModule.Requests;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.DuesModule.Requests;
+using ProjectK.Common.Enums.DuesModule;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 
@@ -22,13 +22,15 @@ public static class DuesEntryRules
     };
 
     /// <summary>
-    /// Kinds the kurin's own box may hold. Nothing personal: people pay their гурток, and what
-    /// reaches the kurin arrives as a гурток's transfer, not as an operation written here.
+    /// Kinds the kurin's own box may hold. Personal ones only in a kurin without гуртки (checked
+    /// against the kurin, not here): elsewhere people pay their гурток, and what reaches the kurin
+    /// arrives as a гурток's transfer, not as an operation written here.
     /// </summary>
     public static readonly IReadOnlySet<DuesEntryKind> KurinKinds = new HashSet<DuesEntryKind>
     {
         DuesEntryKind.Expense, DuesEntryKind.OtherIncome, DuesEntryKind.Exchange, DuesEntryKind.TransferToStanytsia,
-        DuesEntryKind.TransferToKrai
+        DuesEntryKind.TransferToKrai,
+        DuesEntryKind.Contribution, DuesEntryKind.Refund, DuesEntryKind.Correction
     };
 
     public static void Apply(AbstractValidator<UpsertDuesEntryRequest> validator, TimeProvider time, IReadOnlySet<DuesEntryKind> allowedKinds)
@@ -58,23 +60,5 @@ public static class DuesEntryRules
         validator.RuleFor(r => r.CounterMethod).Null()
             .When(r => r.Kind != DuesEntryKind.Exchange);
         validator.RuleFor(r => r.Note).MaximumLength(500);
-    }
-}
-
-/// <summary>An operation as a гурток's box accepts it.</summary>
-public sealed class UpsertDuesEntryRequestValidator : AbstractValidator<UpsertDuesEntryRequest>
-{
-    public UpsertDuesEntryRequestValidator(TimeProvider time)
-    {
-        DuesEntryRules.Apply(this, time, DuesEntryRules.GroupKinds);
-    }
-}
-
-/// <summary>An operation as the kurin's own box accepts it.</summary>
-public sealed class UpsertKurinDuesEntryRequestValidator : AbstractValidator<UpsertDuesEntryRequest>
-{
-    public UpsertKurinDuesEntryRequestValidator(TimeProvider time)
-    {
-        DuesEntryRules.Apply(this, time, DuesEntryRules.KurinKinds);
     }
 }

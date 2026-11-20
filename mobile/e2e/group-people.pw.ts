@@ -43,15 +43,15 @@ function peopleApi(opts: { canCreate: boolean; withLeadership: boolean }): Extra
   const read = (path: string): Answer | null => {
     switch (path) {
       case 'kurin/k1': return ok(kurin);
-      case 'group/groups': return ok(groups);
+      case 'kurin/k1/groups': return ok(groups);
       case 'group/g1': return ok(groups[0]);
-      case 'member/kurins/k1/members': return ok(people);
-      case 'member/groups/g1/members': return ok(people.filter((p) => p.groupKey === 'g1'));
-      case 'member/members/mentor-candidates/k1': return ok(kv);
+      case 'kurin/k1/members': return ok(people);
+      case 'group/g1/members': return ok(people.filter((p) => p.groupKey === 'g1'));
+      case 'kurin/k1/mentor-candidates': return ok(kv);
       case 'group/g1/mentors': return ok(mentors);
       case 'leadership/type/group/g1': return ok(leadership);
-      case 'member/members/kv/k1':
-      case 'group/groups/k1/mentor-assignments':
+      case 'kurin/k1/kv':
+      case 'kurin/k1/mentor-assignments':
       case 'kurin/k1/dues/groups':
         return ok([]);
     }
@@ -107,7 +107,8 @@ test('lets the Звʼязковий add people from the kurin, move one on and t
   const log = await signIn(page, member, peopleApi({ canCreate: true, withLeadership: true }), ZVYAZKOVYI);
   await openGroup(page);
   await expect(page.getByTestId('group-new-member')).toBeVisible();
-  await expect(page.getByTestId('member-actions')).toHaveCount(2);
+  // The Звʼязковий (m1) stands in this гурток too: no move or take-out on their own row.
+  await expect(page.getByTestId('member-actions')).toHaveCount(1);
 
   // «Додати з куреня»: those in no гурток first, then those elsewhere, with where they are now.
   await page.getByTestId('add-from-kurin').click();
@@ -177,7 +178,7 @@ test('lets the Звʼязковий pick the виховники and seat the п�
   await page.getByTestId('setup-leadership').click();
   const form = page.locator('ion-modal app-leadership-sheet');
   await expect(form.getByTestId('seat-Hurtkoviy')).toContainText('Шевчук');
-  await expect(form.getByTestId('seat-Pysar')).toContainText('Не обсаджено');
+  await expect(form.getByTestId('seat-Pysar').locator('ion-note')).toHaveText('');
   await expect(form.getByTestId('save-leadership')).toHaveAttribute('disabled', '');
   await form.getByTestId('seat-Pysar').click();
   const seat = picker(page);
@@ -206,8 +207,8 @@ test('lets a Виховник seat a first провід and add a new member, bu
   await page.getByTestId('setup-leadership').click();
   const form = page.locator('ion-modal app-leadership-sheet');
   await form.getByTestId('seat-Hurtkoviy').click();
-  // «Не обсаджено» is ticked while nobody holds the office.
-  await expect(picker(page).getByTestId('pick-none')).toContainText('Не обсаджено');
+  // «Нікого» is ticked while nobody holds the office.
+  await expect(picker(page).getByTestId('pick-none')).toContainText('Нікого');
   await picker(page).getByTestId('pick-person').filter({ hasText: 'Шевчук' }).click();
   await form.getByTestId('save-leadership').click();
   await expect.poll(() => writes(log, 'POST', 'leadership')[0]?.body).toMatchObject({

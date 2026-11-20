@@ -1,3 +1,9 @@
+.admin-panel__none {
+    margin: 0;
+    padding: 1rem 0.25rem;
+    color: var(--p-text-muted-color);
+}
+
 .admin-kurin-actions {
     text-align: right;
     width: 12rem;
@@ -10,6 +16,11 @@
 
 .kurin-number-cell span {
     font-weight: 700;
+}
+
+.kurin-branch-tag {
+    margin-left: 0.4rem;
+    vertical-align: middle;
 }
 
 .kurin-number-cell small {

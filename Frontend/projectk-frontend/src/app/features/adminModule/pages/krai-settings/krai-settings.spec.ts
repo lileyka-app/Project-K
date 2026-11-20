@@ -100,16 +100,28 @@ describe('KraiSettingsComponent', () => {
     expect(component.dirty()).toBe(false);
   });
 
-  it('shows the server explanation when someone saved first', () => {
+  it('words the failure by its code when someone saved first', () => {
     vi.spyOn(messages, 'add').mockReturnValue(undefined);
     profiles.save.mockReturnValue(throwError(() => new HttpErrorResponse({
-      status: 409, error: { error: 'ProfileChanged', message: 'Профіль змінили, поки ти його редагував. Онови сторінку.' }
+      status: 409, error: { error: 'ProfileChanged', message: 'The profile was saved by someone else since this edit began; reload it.' }
     })));
 
     component.setOffered('ua-1', false);
     component.save();
 
-    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Профіль змінили, поки ти його редагував. Онови сторінку.' }));
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Профіль уже змінили. Онови сторінку.' }));
+  });
+
+  it('falls back to its own text for a code it does not know, never the server message', () => {
+    vi.spyOn(messages, 'add').mockReturnValue(undefined);
+    profiles.save.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 400, error: { error: 'SomethingNew', message: 'Developer text.' }
+    })));
+
+    component.setOffered('ua-1', false);
+    component.save();
+
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Не вдалося зберегти профіль.' }));
   });
 
   it('saves the currency, number format and time zone, leaving what it does not edit', () => {

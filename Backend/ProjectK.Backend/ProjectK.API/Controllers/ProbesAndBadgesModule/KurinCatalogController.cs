@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
-using ProjectK.API.Helpers;
+using ProjectK.API.Filters;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Catalog;
-using ProjectK.Common.Models.Catalog;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Dtos.ProbesAndBadgesModule;
+using ProjectK.Common.Enums.IdentityModule;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 

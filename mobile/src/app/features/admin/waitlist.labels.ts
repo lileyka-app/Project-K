@@ -1,4 +1,5 @@
 import { utcDate } from '../kurin/kurin.labels';
+import { KurinNumbering, kurinBranchesName } from '../../core/kurin-label';
 
 /** Where an application stands (API WaitlistVerificationStatus, sent as its name). */
 export type WaitlistStatus = 'Submitted' | 'NeedsManualVerification' | 'Verified' | 'Rejected' | 'ApprovedForInvitation';
@@ -15,6 +16,9 @@ export interface WaitlistEntry {
   regionOrCountry?: string | null;
   isKurinLeaderCandidate: boolean;
   claimedKurinNameOrNumber?: string | null;
+  /** A senior kurin's numbers in УСП and УПС: one kurin in both гілки. */
+  claimedUspNumber?: number | null;
+  claimedUpsNumber?: number | null;
   /** A `WaitlistStatus` name, or the enum's number from an older API (web normalizeWaitlistStatus). */
   verificationStatus: number | string;
   requestedAtUtc: string;
@@ -82,8 +86,14 @@ export function waitlistSections(entries: WaitlistEntry[]): WaitlistSection[] {
 /** The line under a name: where they are from and what they claim. */
 export function waitlistLine(entry: WaitlistEntry): string {
   const place = [entry.stanytsia, entry.regionOrCountry].map((part) => part?.trim()).filter(Boolean).join(', ');
-  const claim = entry.isKurinLeaderCandidate
-    ? `претендує на курінь ${entry.claimedKurinNameOrNumber?.trim() || '—'}`
-    : 'звичайний учасник';
+  const senior: KurinNumbering[] = [
+    ...(entry.claimedUspNumber != null ? [{ branch: 'USP' as const, number: entry.claimedUspNumber }] : []),
+    ...(entry.claimedUpsNumber != null ? [{ branch: 'UPS' as const, number: entry.claimedUpsNumber }] : []),
+  ];
+  const claim = !entry.isKurinLeaderCandidate
+    ? 'звичайний учасник'
+    : senior.length
+      ? `претендує на ${kurinBranchesName(senior)}`
+      : `претендує на курінь ${entry.claimedKurinNameOrNumber?.trim() || '—'}`;
   return [place, claim].filter(Boolean).join(' · ');
 }

@@ -1,12 +1,12 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.AgendaModule;
 using ProjectK.Common.Entities.KurinModule;
-using ProjectK.Common.Entities.KurinModule.Agenda;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Entities.MemberModule;
+using ProjectK.Common.Enums.KurinModule;
+using ProjectK.Common.Enums.AgendaModule;
 using ProjectK.Infrastructure.DbContexts;
-using Xunit;
+using ProjectK.Infrastructure.Persistence.Interceptors;
+using ProjectK.Infrastructure.Tests.MemberModule.RepositoryTests.Integration;
 using InfraUnitOfWork = ProjectK.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace ProjectK.Infrastructure.Tests.KurinModule.RepositoryTests.Integration;
@@ -15,7 +15,7 @@ public class GroupRepositoryIntegrationTests
 {
     private AppDbContext CreateInMemoryDbContext()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>().AddAppDbContextInterceptors()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         return new AppDbContext(options);
@@ -146,18 +146,6 @@ public class GroupRepositoryIntegrationTests
 
         var exists = await uow.Groups.ExistsAsync(group.GroupKey);
         Assert.True(exists);
-    }
-
-    [Fact]
-    public async Task GetAllAsync_Parameterless_ShouldThrowNotSupported()
-    {
-        using var context = CreateInMemoryDbContext();
-        var uow = new InfraUnitOfWork(context);
-
-        await Assert.ThrowsAsync<NotSupportedException>(async () =>
-        {
-            await uow.Groups.GetAllAsync();
-        });
     }
 
     /// <summary>

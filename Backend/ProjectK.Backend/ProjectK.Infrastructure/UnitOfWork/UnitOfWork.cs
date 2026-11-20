@@ -1,33 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using ProjectK.Common.Exceptions;
-using ProjectK.Common.Interfaces;
-using ProjectK.Common.Interfaces.Modules.AuthModule;
-using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
-using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
-using ProjectK.Common.Interfaces.Modules.KraiModule;
-using ProjectK.Common.Interfaces.Modules.KurinModule;
-using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.AgendaModule;
+using ProjectK.Common.Contracts.AuditModule;
+using ProjectK.Common.Contracts.DuesModule;
+using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KraiModule;
+using ProjectK.Common.Contracts.KurinModule;
+using ProjectK.Common.Contracts.MemberModule;
+using ProjectK.Common.Contracts.NotificationsModule;
+using ProjectK.Common.Contracts.ProbesAndBadgesModule;
+using ProjectK.Common.Contracts.ScoreModule;
+using ProjectK.Common.Contracts.Shared;
 using ProjectK.Infrastructure.DbContexts;
-using ProjectK.Infrastructure.Repositories;
-using ProjectK.Infrastructure.Repositories.AuthModule;
-using ProjectK.Infrastructure.Repositories.KraiModule;
+using ProjectK.Infrastructure.Repositories.AgendaModule;
+using ProjectK.Infrastructure.Repositories.AuditModule;
 using ProjectK.Infrastructure.Repositories.DuesModule;
-using ProjectK.Infrastructure.Repositories.ScoreModule;
-using ProjectK.Infrastructure.Repositories.InfrastructureModule;
+using ProjectK.Infrastructure.Repositories.IdentityModule;
+using ProjectK.Infrastructure.Repositories.KraiModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
+using ProjectK.Infrastructure.Repositories.MemberModule;
+using ProjectK.Infrastructure.Repositories.NotificationsModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.Repositories.ScoreModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork
+public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScoreUnitOfWork, IAuditUnitOfWork
 {
     private readonly AppDbContext _context;
 
@@ -37,19 +35,27 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IKurinRepository _kurins;
     private IGroupRepository _groups;
     private IMembershipRepository _memberships;
+    private IMembershipRequestRepository _membershipRequests;
+    private IMemberCardShareRepository _memberCardShares;
+    private IKurinCardSharingRepository _kurinCardSharing;
     private IMemberRepository _members;
     private ILeadershipRepository _leaderships;
+    private IKurinArchiveRepository _archive;
     private IPlanningSessionRepository _planningSessions;
     private IAgendaItemRepository _agendaItems;
     private IAgendaCategoryRepository _agendaCategories;
+    private IKurinTagRepository _kurinTags;
     private IAgendaResponseRepository _agendaResponses;
     private IBadgeProgressRepository _badgeProgresses;
     private IProbeProgressRepository _probeProgresses;
     private IProbePointProgressRepository _probePointProgresses;
+    private IProbeProjectRepository _probeProjects;
     private IMentorAssignmentRepository _mentorAssignments;
     private IMemberWarningRepository _memberWarnings;
     private IMemberAwardRepository _memberAwards;
+    private IMemberLifeEntryRepository _memberLifeEntries;
     private IWaitlistRepository _waitlistEntries;
+    private IKurinBranchRequestRepository _kurinBranchRequests;
     private IInvitationRepository _invitations;
     private IAppNotificationRepository _appNotifications;
     private IWebPushSubscriptionRepository _webPushSubscriptions;
@@ -63,6 +69,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IDuesConcessionGrantRepository _duesConcessionGrants;
     private IDuesChargeRepository _duesCharges;
     private IDuesEntryRepository _duesEntries;
+    private IKurinDuesSettingsRepository _kurinDuesSettings;
     private IKurinScoreSettingsRepository _kurinScoreSettings;
     private IScoreRuleRepository _scoreRules;
     private IScoreAttendanceRateRepository _scoreAttendanceRates;
@@ -76,25 +83,37 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IPrivateScoreCriterionRepository _privateScoreCriteria;
     private IPrivateScoreEntryRepository _privateScoreEntries;
 
+    private IResourceScopeRepository? _resourceScopes;
+    private IKurinReportRepository? _kurinReports;
+    private IKurinAuditRepository? _kurinAudit;
+    private IKurinJournalRepository? _kurinJournal;
     private IKraiRepository _krais;
 
     public IKraiRepository Krais => _krais ??= new KraiRepository(_context);
     public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
+    public IKurinBranchRequestRepository KurinBranchRequests => _kurinBranchRequests ??= new KurinBranchRequestRepository(_context);
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
     public IMembershipRepository Memberships => _memberships ??= new MembershipRepository(_context);
+    public IMembershipRequestRepository MembershipRequests => _membershipRequests ??= new MembershipRequestRepository(_context);
+    public IMemberCardShareRepository MemberCardShares => _memberCardShares ??= new MemberCardShareRepository(_context);
+    public IKurinCardSharingRepository KurinCardSharing => _kurinCardSharing ??= new KurinCardSharingRepository(_context);
     public IMemberRepository Members => _members ??= new MemberRepository(_context);
     public IAppUserRepository Users => _users ??= new AppUserRepository(_context);
     public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);
+    public IKurinArchiveRepository Archive => _archive ??= new KurinArchiveRepository(_context);
     public IPlanningSessionRepository PlanningSessions => _planningSessions ??= new PlanningSessionRepository(_context);
     public IAgendaItemRepository AgendaItems => _agendaItems ??= new AgendaItemRepository(_context);
     public IAgendaCategoryRepository AgendaCategories => _agendaCategories ??= new AgendaCategoryRepository(_context);
+    public IKurinTagRepository KurinTags => _kurinTags ??= new KurinTagRepository(_context);
     public IAgendaResponseRepository AgendaResponses => _agendaResponses ??= new AgendaResponseRepository(_context);
     public IBadgeProgressRepository BadgeProgresses => _badgeProgresses ??= new BadgeProgressRepository(_context);
     public IProbeProgressRepository ProbeProgresses => _probeProgresses ??= new ProbeProgressRepository(_context);
     public IProbePointProgressRepository ProbePointProgresses => _probePointProgresses ??= new ProbePointProgressRepository(_context);
+    public IProbeProjectRepository ProbeProjects => _probeProjects ??= new ProbeProjectRepository(_context);
     public IMentorAssignmentRepository MentorAssignments => _mentorAssignments ??= new MentorAssignmentRepository(_context);
     public IMemberWarningRepository MemberWarnings => _memberWarnings ??= new MemberWarningRepository(_context);
     public IMemberAwardRepository MemberAwards => _memberAwards ??= new MemberAwardRepository(_context);
+    public IMemberLifeEntryRepository MemberLifeEntries => _memberLifeEntries ??= new MemberLifeEntryRepository(_context);
     public IWaitlistRepository WaitlistEntries => _waitlistEntries ??= new WaitlistRepository(_context);
     public IInvitationRepository Invitations => _invitations ??= new InvitationRepository(_context);
     public IAppNotificationRepository AppNotifications => _appNotifications ??= new AppNotificationRepository(_context);
@@ -108,6 +127,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IDuesConcessionGrantRepository DuesConcessionGrants => _duesConcessionGrants ??= new DuesConcessionGrantRepository(_context);
     public IDuesChargeRepository DuesCharges => _duesCharges ??= new DuesChargeRepository(_context);
     public IDuesEntryRepository DuesEntries => _duesEntries ??= new DuesEntryRepository(_context);
+    public IKurinDuesSettingsRepository KurinDuesSettings => _kurinDuesSettings ??= new KurinDuesSettingsRepository(_context);
     public IKurinScoreSettingsRepository KurinScoreSettings => _kurinScoreSettings ??= new KurinScoreSettingsRepository(_context);
     public IScoreRuleRepository ScoreRules => _scoreRules ??= new ScoreRuleRepository(_context);
     public IScoreAttendanceRateRepository ScoreAttendanceRates => _scoreAttendanceRates ??= new ScoreAttendanceRateRepository(_context);
@@ -120,6 +140,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IScoreTrailEventRepository ScoreTrailEvents => _scoreTrailEvents ??= new ScoreTrailEventRepository(_context);
     public IPrivateScoreCriterionRepository PrivateScoreCriteria => _privateScoreCriteria ??= new PrivateScoreCriterionRepository(_context);
     public IPrivateScoreEntryRepository PrivateScoreEntries => _privateScoreEntries ??= new PrivateScoreEntryRepository(_context);
+    public IResourceScopeRepository ResourceScopes => _resourceScopes ??= new ResourceScopeRepository(_context);
+    public IKurinReportRepository KurinReports => _kurinReports ??= new KurinReportRepository(_context);
+    public IKurinAuditRepository KurinAudit => _kurinAudit ??= new KurinAuditRepository(_context);
+    public IKurinJournalRepository KurinJournal => _kurinJournal ??= new KurinJournalRepository(_context);
 
     public UnitOfWork(AppDbContext context)
     {
@@ -141,6 +165,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
             }
 
             throw new DuplicateRowException(exception);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new StaleRowException(exception);
         }
     }
 

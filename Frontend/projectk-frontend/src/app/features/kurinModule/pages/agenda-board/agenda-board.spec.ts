@@ -43,7 +43,7 @@ describe('AgendaBoardComponent', () => {
       providers: [
         provideNoopAnimations(),
         { provide: AgendaService, useValue: agenda },
-        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ kurinKey: 'k1' })) } },
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ kurinKey: 'k1' })), queryParamMap: of(convertToParamMap({})) } },
         { provide: PermissionService, useValue: { canManageAgenda: () => false } },
         { provide: MessageService, useValue: {
             add: vi.fn()

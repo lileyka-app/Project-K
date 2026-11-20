@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Xunit;
 
 namespace ProjectK.API.Tests.TestHelpers;
 

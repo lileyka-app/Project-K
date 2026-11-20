@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Enums.KurinModule;
 
 namespace ProjectK.Common.Entities.KurinModule;
 
@@ -17,7 +12,4 @@ public class Leadership
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
-
-    public Kurin? Kurin { get; set; }
-    public Group? Group { get; set; }
 }

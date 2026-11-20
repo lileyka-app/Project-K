@@ -1,0 +1,43 @@
+.branch-request {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.branch-request__current {
+  margin: 0;
+  font-weight: 600;
+}
+
+.branch-request__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.branch-request__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.branch-request__label {
+  width: 2.5rem;
+}
+
+.branch-request__note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.branch-request__problem {
+  color: var(--p-red-500);
+}
+
+.branch-request__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
