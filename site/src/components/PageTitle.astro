@@ -1,0 +1,58 @@
+---
+// Заголовок сторінки з її міткою («Нове», «Застаріле»…). У режимі рев'ю під ним — рядок: з чим
+// порівняно і скільки змінено, з посиланням на перелік усіх змін `/review`.
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+import { PAGE_STATUSES } from '../doc-status';
+import { isReviewActive, reviewBase, reviewBaseName } from '../../scripts/doc-review.mjs';
+import type { ShownStatus } from '../route-middleware';
+
+const shown = (Astro.locals as { docStatus?: ShownStatus | null }).docStatus ?? null;
+const review = isReviewActive() ? shown?.review ?? null : null;
+const base = isReviewActive() && Astro.url.pathname !== '/review' && Astro.url.pathname !== '/review/' ?`${reviewBaseName()} · ${reviewBase()?.slice(0, 8) ?? '—'}` : null;
+
+function changes(r: NonNullable<typeof review>) {
+	if (r.kind === 'new') {
+		return 'нова сторінка — у базі її немає';
+	}
+	const parts = [`+${r.added} / −${r.removed} рядків`];
+	if (r.images) {
+		parts.push(`картинок змінено: ${r.images}`);
+	}
+	return parts.join(', ');
+}
+---
+
+<div class="doc-title">
+	<Default />
+	{shown && <span class={`sl-badge doc-status doc-status-${shown.status}`}>{PAGE_STATUSES[shown.status].label}</span>}
+</div>
+{
+	base && (
+		<p class="doc-review-strip print:hidden">
+			Рев'ю: порівняно з <code>{base}</code> · {review ? changes(review) : 'без змін'} ·{' '}
+			<a href="/review">усі зміни</a>
+		</p>
+	)
+}
+
+<style>
+	.doc-title {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 0.75rem;
+	}
+	.doc-title :global(h1) {
+		margin-bottom: 0;
+	}
+	.doc-title .sl-badge {
+		margin-top: 1rem;
+		font-size: var(--sl-text-sm);
+		padding: 0.125rem 0.5rem;
+	}
+	.doc-review-strip {
+		margin-top: 0.5rem;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+</style>

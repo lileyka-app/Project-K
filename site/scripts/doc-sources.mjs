@@ -135,3 +135,45 @@ export function listSources() {
 		})
 		.sort((a, b) => a.section.localeCompare(b.section) * -1 || a.url.localeCompare(b.url));
 }
+
+function escapeYaml(text) {
+	return `'${text.replaceAll("'", "''")}'`;
+}
+
+/** Посилання між кореневими документами → адреси на сайті; решта як є. */
+export function rewriteLinks(markdown) {
+	return markdown.replace(/\]\(([^)\s#]+)(#[^)]*)?\)/g, (match, target, hash = '') => {
+		const key = target.replace(/^\.\//, '');
+		const mapped = linkMap.get(key);
+		return mapped ? `](${mapped}${hash})` : match;
+	});
+}
+
+/**
+ * Кореневий документ так, як його кладе на сайт `sync-docs`: заголовок із `# H1` іде у frontmatter,
+ * зверху — примітка «Джерело», посилання між документами переписано. Тим самим користується рев'ю,
+ * щоб порівнювати з базою те, що читач справді бачить.
+ */
+export function renderRootDocBody({ from, to }, text) {
+	let markdown = text.replace(/^﻿/, '').replaceAll('\r\n', '\n');
+	let title = to.split('/').pop().replace(/\.md$/, '');
+	const heading = markdown.match(/^# (.+)$/m);
+	if (heading) {
+		title = heading[1].trim();
+		markdown = markdown.replace(heading[0], '').replace(/^\n+/, '');
+	}
+	const note = [
+		`:::note[Джерело]`,
+		`Ця сторінка збирається з [\`${from}\`](https://github.com/lileyka-app/Project-K/blob/main/${from}) у репозиторії. Правити треба там.`,
+		':::',
+		'',
+	].join('\n');
+	return { title, body: `${note}\n${rewriteLinks(markdown)}` };
+}
+
+/** Повний файл кореневого документа для `src/content/docs`: frontmatter і тіло. */
+export function renderRootDoc(doc, text) {
+	const { title, body } = renderRootDocBody(doc, text);
+	const frontmatter = ['---', `title: ${escapeYaml(title)}`, `description: ${escapeYaml(doc.description)}`, 'sidebar:', `  order: ${doc.order}`, '---', ''].join('\n');
+	return `${frontmatter}\n${body}`;
+}

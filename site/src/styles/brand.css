@@ -421,3 +421,104 @@
     display: none;
   }
 }
+
+/* ── Мітки сторінок довідки (src/doc-status.ts) ─────────────────────────────────────────────
+   «Нове» — як тег «Admin» (primary-50 / primary); «Оновлено» — як тег «Незабаром»
+   (accent-50 / accent-700); «Застаріле» і «Буде прибрано» — нейтральні line / muted. */
+:root {
+  --doc-new-bg: #EAF3EE;
+  --doc-new-text: #0E6E4E;
+  --doc-updated-bg: #FBE9DC;
+  --doc-updated-text: #A8541B;
+  --doc-muted-border: #E4E8E6;
+  --doc-muted-text: #6E7873;
+}
+
+:root[data-theme='dark'] {
+  --doc-new-bg: #1D2E27;
+  --doc-new-text: #34C48D;
+  --doc-updated-bg: #2A1F16;
+  --doc-updated-text: #EE9A5A;
+  --doc-muted-border: #232A27;
+  --doc-muted-text: #9BA8A2;
+}
+
+.sl-badge.doc-status {
+  --sl-color-border-badge: transparent;
+  font-family: var(--sl-font);
+  font-weight: 600;
+}
+
+.sl-badge.doc-status-new {
+  --sl-color-bg-badge: var(--doc-new-bg);
+  --sl-color-text-badge: var(--doc-new-text);
+}
+
+.sl-badge.doc-status-updated {
+  --sl-color-bg-badge: var(--doc-updated-bg);
+  --sl-color-text-badge: var(--doc-updated-text);
+}
+
+.sl-badge.doc-status-deprecated,
+.sl-badge.doc-status-removal {
+  --sl-color-bg-badge: transparent;
+  --sl-color-border-badge: var(--doc-muted-border);
+  --sl-color-text-badge: var(--doc-muted-text);
+}
+
+.sl-badge.doc-status-removal {
+  text-decoration: line-through;
+}
+
+/* ── Режим рев'ю (src/integrations/review-plugin.mjs): лише під dev чи DOCS_REVIEW=1 ───────── */
+.sl-markdown-content .doc-review-changed {
+  background: var(--doc-updated-bg);
+  border-inline-start: 3px solid var(--doc-updated-text);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  margin-inline: -0.75rem;
+}
+
+.sl-markdown-content .doc-review-was {
+  margin-top: 0.5rem;
+  font-size: var(--sl-text-sm);
+}
+
+.sl-markdown-content .doc-review-was > summary {
+  cursor: pointer;
+  color: var(--doc-updated-text);
+  font-weight: 600;
+}
+
+.sl-markdown-content .doc-review-was > :not(summary),
+.sl-markdown-content .doc-review-removed > :not(.doc-review-label) {
+  opacity: 0.75;
+}
+
+.sl-markdown-content .doc-review-was img,
+.sl-markdown-content .doc-review-removed img {
+  outline: 2px dashed var(--doc-muted-border);
+}
+
+.sl-markdown-content .doc-review-removed {
+  border-inline-start: 3px solid var(--doc-muted-border);
+  padding: 0.25rem 0.75rem;
+  margin-inline: -0.75rem;
+  text-decoration: line-through;
+  color: var(--doc-muted-text);
+}
+
+.sl-markdown-content .doc-review-label {
+  font-size: var(--sl-text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* On the current sidebar item Starlight paints badge text white on the green row: outline instead. */
+.sidebar-content a[aria-current='page'] > .sl-badge.doc-status {
+  background-color: transparent;
+  border-color: currentColor;
+  color: inherit;
+}
