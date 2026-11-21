@@ -21,10 +21,12 @@
         <p-button icon="pi pi-chevron-right" severity="secondary" [text]="true" [rounded]="true" (click)="next()" ariaLabel="Далі" />
         <span class="agenda-toolbar__title">{{ viewTitle() }}</span>
       </div>
-      <span class="agenda-toolbar__schedules">
-        <p-toggleswitch inputId="agenda-show-schedules" [(ngModel)]="showSchedules" (onChange)="onShowSchedulesChange()" />
-        <label for="agenda-show-schedules">Графіки гуртків</label>
-      </span>
+      @if (features.hasGroups()) {
+        <span class="agenda-toolbar__schedules">
+          <p-toggleswitch inputId="agenda-show-schedules" [(ngModel)]="showSchedules" (onChange)="onShowSchedulesChange()" />
+          <label for="agenda-show-schedules">Графіки гуртків</label>
+        </span>
+      }
       <p-selectButton
         [options]="viewOptions"
         [ngModel]="currentView()"

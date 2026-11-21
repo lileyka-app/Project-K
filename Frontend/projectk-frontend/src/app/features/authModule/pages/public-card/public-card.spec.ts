@@ -83,6 +83,6 @@ describe('PublicCardComponent', () => {
 
     expect(cards.linked).toHaveBeenCalledWith('tok');
     expect(text).toContain('Картку не знайдено');
-    expect(text).toContain('Посилання вимкнене.');
+    expect(text).toContain('Посилання вимкнене або картку закрито.');
   });
 });

@@ -869,7 +869,7 @@ describe('MemberCardComponent', () => {
 
       expect(component.lifeStages.map(stage => [stage.branch, stage.levels.map(level => level.title)])).toEqual([
         ['УПЮ', ['пл. уч.', 'пл. скоб']],
-        ['УСП', ['ст. пл.']]
+        ['УСП', ['ст. пл. скоб']]
       ]);
       expect(component.lifeOffices.map(office => office.kurin)).toEqual(['к. ч. 1']);
     });

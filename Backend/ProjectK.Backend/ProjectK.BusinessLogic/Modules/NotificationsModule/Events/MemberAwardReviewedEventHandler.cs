@@ -28,8 +28,8 @@ public sealed class MemberAwardReviewedEventHandler
                 Severity = raised.IsApproved ? AppNotificationSeverity.Success : AppNotificationSeverity.Warn,
                 Title = raised.IsApproved ? "Відзначення затверджено" : "Відзначення не затверджено",
                 Body = raised.IsApproved
-                    ? "Ваше відзначення затверджено."
-                    : "Ваше відзначення не затверджено. Перегляньте зауваження.",
+                    ? "Твоє відзначення затверджено."
+                    : "Твоє відзначення не затверджено. Переглянь зауваження.",
                 EntityType = "MemberAward",
                 EntityKey = raised.MemberAwardKey,
                 Route = $"/member/{raised.MemberKey}",

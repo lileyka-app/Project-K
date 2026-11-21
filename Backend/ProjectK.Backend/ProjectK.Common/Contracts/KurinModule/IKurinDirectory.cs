@@ -24,6 +24,9 @@ public interface IKurinDirectory
     /// <summary>The kurin's own names for its roles, every role named; null when there is no such kurin.</summary>
     Task<IReadOnlyDictionary<LeadershipRole, string>?> GetRoleNamesAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
+    /// <summary>Whether the kurin has гуртки: every kurin but a senior one; true for a kurin there is no record of.</summary>
+    Task<bool> HasGroupsAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
     /// <summary>Whether the kurin keeps точкування on; true for a kurin there is no record of, as every kurin did before the switch.</summary>
     Task<bool> IsScoreEnabledAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 

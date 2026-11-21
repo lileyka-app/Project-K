@@ -36,9 +36,11 @@ import {
   gitNetwork,
   globe,
   home,
+  key,
   lockClosed,
   logoGithub,
   openOutline,
+  people,
   pricetag,
   refresh,
   shieldCheckmark,
@@ -478,6 +480,33 @@ export class AboutPage implements OnInit {
       releases: [{ tag: 'v1.1' }, { tag: 'v1.1.9' }],
       icon: 'home',
     },
+    {
+      when: 'Жовтень 2026',
+      title: '1.2: краї',
+      body:
+        'Курінь належить до краю, а край має свій профіль: вмілості, валюта вкладки, час, картка учасника. ' +
+        'Перший після України — край Чехія. Далі статті внесків куреня, внески від краю й пільги.',
+      releases: [{ tag: 'v1.2' }, { tag: 'v1.2.2' }],
+      icon: 'globe',
+    },
+    {
+      when: 'Жовтень 2026',
+      title: '1.3: права й журнал дій',
+      body:
+        'Курінь сам вирішує, хто що бачить і робить, кожну зміну видно в журналі дій, а нові права ' +
+        'доходять без перезаходу. Календар у Google, Apple чи Outlook. Далі редакції проб і курені за запрошенням.',
+      releases: [{ tag: 'v1.3' }, { tag: 'v1.3.1' }],
+      icon: 'key',
+    },
+    {
+      when: 'Листопад 2026',
+      title: '1.4: старші курені',
+      body:
+        'Курені УСП і УПС без гуртків, зі своїми назвами ролей і внеском кожного члена. ' +
+        'Мітки для людей, переходи між куренями й архів куреня.',
+      releases: [{ tag: 'v1.4' }],
+      icon: 'people',
+    },
   ];
 
   constructor() {
@@ -499,6 +528,8 @@ export class AboutPage implements OnInit {
       gitNetwork,
       star,
       home,
+      key,
+      people,
     });
   }
 

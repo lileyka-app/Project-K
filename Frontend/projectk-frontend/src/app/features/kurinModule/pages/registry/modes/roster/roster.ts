@@ -106,7 +106,11 @@ export class RosterComponent implements OnInit {
   readonly staff = computed(() => this.found().filter(member => member.isStaff));
 
   /** Ті самі колонки, але закріплення попереду й без власного гуртка. */
-  readonly staffColumns = computed(() => staffColumnsOf(this.visibleColumns()));
+  /** A senior kurin has no гуртки, so its виховний склад leads none: no column for them. */
+  readonly staffColumns = computed(() => {
+    const columns = staffColumnsOf(this.visibleColumns());
+    return this.hasGroups() ? columns : columns.filter(column => column.id !== 'mentoredGroups');
+  });
 
   /**
    * Чисельність за ступенями — лише юнацтво: впорядники рахуються як кадра, не як склад юнаків.

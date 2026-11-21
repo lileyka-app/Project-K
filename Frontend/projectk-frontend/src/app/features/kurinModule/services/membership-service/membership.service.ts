@@ -73,6 +73,8 @@ export interface MembershipAskOfferDto {
   askKurins: MembershipRequestKurinDto[];
   /** Старший курінь, а людина ще в УПЮ: просити не можна. */
   stillYouth?: boolean;
+  /** «Прийняти ще й до нас»: не до другого старшого куреня. */
+  alongsideAllowed?: boolean;
 }
 
 /** Людина за кодом: картка, курені, де вона стоїть зараз (лише номери), і що можна запропонувати. */

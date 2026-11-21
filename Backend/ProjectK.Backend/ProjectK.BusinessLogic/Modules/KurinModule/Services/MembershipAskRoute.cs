@@ -16,10 +16,14 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Services;
 /// The asking kurin is senior and the person is still in УПЮ: nothing may be sent. Read by the asking screen
 /// before it offers a button, and refused by the server whatever the screen says.
 /// </param>
+/// <param name="AlongsideAllowed">
+/// «Прийняти ще й до нас» is possible: never into a second senior kurin (<c>SeniorMembershipRules</c>).
+/// </param>
 public sealed record MembershipAskRoute(
     bool ToSenior,
     bool JoinsAtOnce,
     bool PersonAnswers,
     bool TransferAllowed,
     IReadOnlyList<Guid> AskableKurinKeys,
-    bool StillYouth = false);
+    bool StillYouth = false,
+    bool AlongsideAllowed = true);

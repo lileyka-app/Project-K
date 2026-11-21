@@ -19,6 +19,11 @@ const none: MenuContext = { youthKurin: true, duesGroups: [] };
 const labels = (s: AuthState, context = none) => menuEntries(s, context).map((entry) => entry.label);
 
 describe('menuEntries', () => {
+  it('leaves «Точкування» out where the kurin keeps none', () => {
+    expect(labels(state({}), { ...none, scoreEnabled: false })).not.toContain('Точкування');
+    expect(labels(state({}), { ...none, scoreEnabled: true })).toContain('Точкування');
+  });
+
   it('gives a youth the web sidebar of a youth, in its order', () => {
     expect(labels(state({}))).toEqual([
       'Головна',

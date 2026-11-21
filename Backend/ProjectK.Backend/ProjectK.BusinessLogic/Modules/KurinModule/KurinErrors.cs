@@ -111,6 +111,9 @@ public static class KurinErrors
     public const string SeniorKurinTakesMembers = "SeniorKurinTakesMembers";
     public const string PersonStillYouth = "PersonStillYouth";
     public const string TransferAcrossLines = "TransferAcrossLines";
+
+    /// <summary>A person stands in one senior kurin at most; another one takes them only by «перевести».</summary>
+    public const string SecondSeniorKurin = "SecondSeniorKurin";
     public const string MemberNotHere = "MemberNotHere";
 
     /// <summary>A roster is read for a гурток or for a kurin, never both and never neither.</summary>

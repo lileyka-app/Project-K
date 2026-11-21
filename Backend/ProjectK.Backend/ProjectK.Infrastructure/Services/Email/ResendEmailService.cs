@@ -59,15 +59,15 @@ public class ResendEmailService : IEmailService
     {
         var activationUrl = $"{_settings.BaseUrl}/activate/{token}";
         var letter = new Letter(
-            Title: "Вас запрошено до Лілейки",
+            Title: "Тебе запрошено до Лілейки",
             Paragraphs:
             [
-                "Для вас створено акаунт у Лілейці — системі обліку куреня. Щоб активувати його і встановити пароль, натисніть кнопку нижче.",
-                $"Посилання діє {OnboardingRules.InvitationLifetimeDays} днів. Якщо воно прострочиться, нове можна замовити на сторінці входу через «Забули пароль».",
+                "Для тебе створено акаунт у Лілейці — системі обліку куреня. Щоб активувати його і встановити пароль, натисни кнопку нижче.",
+                $"Посилання діє {OnboardingRules.InvitationLifetimeDays} днів. Якщо воно прострочиться, нове можна замовити на сторінці входу через «Забув пароль».",
             ],
             ButtonText: "Активувати акаунт",
             Url: activationUrl,
-            Footer: "Якщо ви не чекали цього листа, просто не звертайте на нього уваги — без активації акаунт не запрацює.");
+            Footer: "Якщо лист прийшов несподівано, просто не зважай на нього — без активації акаунт не запрацює.");
 
         await SendAsync(to, "Лілейка · запрошення до системи", Frame(letter), PlainText(letter), cancellationToken);
     }
@@ -81,12 +81,12 @@ public class ResendEmailService : IEmailService
             Title: "Відновлення пароля",
             Paragraphs:
             [
-                "Ми отримали запит на зміну пароля до вашого акаунта в Лілейці. Щоб обрати новий пароль, натисніть кнопку нижче.",
+                "Ми отримали запит на зміну пароля до твого акаунта в Лілейці. Щоб обрати новий пароль, натисни кнопку нижче.",
                 "Посилання діє обмежений час.",
             ],
             ButtonText: "Встановити новий пароль",
             Url: resetUrl,
-            Footer: "Якщо ви не просили змінити пароль, нічого робити не треба — ваш пароль лишається чинним.");
+            Footer: "Якщо зміну пароля просив не ти, нічого робити не треба — твій пароль лишається чинним.");
 
         await SendAsync(to, "Лілейка · відновлення пароля", Frame(letter), PlainText(letter), cancellationToken);
     }
@@ -97,12 +97,12 @@ public class ResendEmailService : IEmailService
             Title: "Підтвердження зміни пошти",
             Paragraphs:
             [
-                $"Ми отримали запит змінити пошту вашого акаунта в Лілейці з {currentEmail} на {to}. Щоб підтвердити нову адресу, натисніть кнопку нижче.",
-                "Поки ви не підтвердите, вхід лишається за старою адресою.",
+                $"Ми отримали запит змінити пошту твого акаунта в Лілейці з {currentEmail} на {to}. Щоб підтвердити нову адресу, натисни кнопку нижче.",
+                "Поки ти не підтвердиш, вхід лишається за старою адресою.",
             ],
             ButtonText: "Підтвердити пошту",
             Url: confirmationUrl,
-            Footer: "Якщо ви не просили змінити пошту, нічого робити не треба — акаунт лишається за старою адресою.");
+            Footer: "Якщо зміну пошти просив не ти, нічого робити не треба — акаунт лишається за старою адресою.");
 
         await SendAsync(to, "Лілейка · підтвердження зміни пошти", Frame(letter), PlainText(letter), cancellationToken);
     }
@@ -114,7 +114,7 @@ public class ResendEmailService : IEmailService
             Title: "Нова заявка на розгляд",
             Paragraphs:
             [
-                $"{applicantName} ({kurin}) подає заявку на Лілейку. Заявка чекає на ваше рішення: схвалити і надіслати запрошення або відхилити.",
+                $"{applicantName} ({kurin}) подає заявку на Лілейку. Заявка чекає на твоє рішення: схвалити і надіслати запрошення або відхилити.",
                 "Поки заявку не розглянуто, людина не може увійти в систему.",
             ],
             ButtonText: "Переглянути заявки",
@@ -131,7 +131,7 @@ public class ResendEmailService : IEmailService
             Paragraphs:
             [
                 $"{kurin} просить змінити свої улади й числа: {wanted}.",
-                "Запит чекає на ваше рішення поруч із заявками: схвалити або відхилити.",
+                "Запит чекає на твоє рішення поруч із заявками: схвалити або відхилити.",
             ],
             ButtonText: "Переглянути запити",
             Url: $"{_settings.BaseUrl}/waitlist",
@@ -150,7 +150,7 @@ public class ResendEmailService : IEmailService
         lines.AddRange(letter.Paragraphs.Select(paragraph => paragraph + Environment.NewLine));
         lines.Add($"{letter.ButtonText}: {letter.Url}");
         lines.Add(string.Empty);
-        lines.Add("Не бачите наших листів? Перевірте теку «Спам» і додайте адресу відправника до контактів.");
+        lines.Add("Не бачиш наших листів? Перевір теку «Спам» і додай адресу відправника до контактів.");
         lines.Add(string.Empty);
         lines.Add(letter.Footer);
         lines.Add("Лілейка · система обліку куреня. Лист надіслано автоматично.");
@@ -199,9 +199,9 @@ public class ResendEmailService : IEmailService
                   </td>
                 </tr>
               </table>
-              <p style='margin:0 0 8px;font-size:14px;line-height:1.5;color:#5B6763;'>Якщо кнопка не працює, скопіюйте це посилання в браузер:</p>
+              <p style='margin:0 0 8px;font-size:14px;line-height:1.5;color:#5B6763;'>Якщо кнопка не працює, скопіюй це посилання в браузер:</p>
               <p style='margin:0 0 24px;font-size:13px;line-height:1.5;word-break:break-all;'><a href='{encodedUrl}' style='color:#0E6E4E;'>{encodedUrl}</a></p>
-              <p style='margin:0 0 24px;font-size:14px;line-height:1.5;color:#5B6763;'>Не бачите наших листів? Перевірте теку «Спам» і додайте адресу відправника до контактів.</p>
+              <p style='margin:0 0 24px;font-size:14px;line-height:1.5;color:#5B6763;'>Не бачиш наших листів? Перевір теку «Спам» і додай адресу відправника до контактів.</p>
             </td>
           </tr>
           <tr>

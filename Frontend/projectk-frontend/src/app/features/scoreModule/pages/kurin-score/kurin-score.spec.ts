@@ -40,6 +40,8 @@ describe('KurinScoreComponent', () => {
       row({ groupKey: 'sokoly', groupName: 'Соколи', place: 1, score: 10, otherScore: 20, youthPoints: 20, youthCount: 2, average: 10, canOpen: true }),
       row({ groupKey: 'levy', groupName: 'Леви', place: 2, score: 3, otherScore: 12, youthPoints: 12, youthCount: 4, average: 3, groupPoints: 5 })
     ],
+    hasGroups: true,
+    people: [],
     viewer: { canScore: true, canManage: false }
   };
 
@@ -88,6 +90,24 @@ describe('KurinScoreComponent', () => {
 
     expect(scores.getKurinScore).toHaveBeenCalledWith('k1', { year: 2025 });
     queryParams.next(convertToParamMap({}));
+  });
+
+  it('у старшому курені ранжує людей, а не гуртки', () => {
+    create({
+      ...data,
+      groups: [],
+      hasGroups: false,
+      people: [
+        { membershipKey: 'm1', memberKey: 'p1', fullName: 'Петро Коваль', standing: 'Current', total: 8, bySource: {} },
+        { membershipKey: 'm2', memberKey: 'p2', fullName: 'Олена Бойко', standing: 'Left', total: 2, bySource: {} }
+      ]
+    });
+
+    expect(text()).toContain('Петро Коваль');
+    expect(text()).toContain('вибув');
+    expect(text()).toContain('людей: 2');
+    expect(text()).not.toContain('Гуртків поки немає');
+    expect(component.personBarWidth({ membershipKey: 'm2', memberKey: 'p2', fullName: '', standing: 'Left', total: 2, bySource: {} })).toBe('25%');
   });
 
   it('без балів пояснює, де їх ставити', () => {

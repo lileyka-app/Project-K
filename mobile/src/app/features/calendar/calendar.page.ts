@@ -28,6 +28,8 @@ import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
 import { add, chevronBack, chevronForward, time } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
+import { isSeniorBranch } from '../../core/kurin-label';
+import { KurinScopes } from '../../nav/kurin-scopes.service';
 import { FAILED_TEXT, Loaded } from '../../core/loaded';
 import { GlassEffects } from '../../ui/glass';
 import { AgendaItemDto } from '../agenda/agenda.models';
@@ -557,16 +559,18 @@ const LIST_DAYS = 60;
           }
         }
 
-        <ion-list [inset]="true">
-          <ion-item-group>
-            <ion-item>
-              <ion-toggle [checked]="showSchedules()" (ionChange)="setSchedules($event)" justify="space-between" data-testid="schedules">
-                Графіки гуртків
-              </ion-toggle>
-            </ion-item>
-          </ion-item-group>
-        </ion-list>
-        <p class="note">Сходини всіх гуртків куреня поруч із твоїми подіями.</p>
+        @if (hasGroups()) {
+          <ion-list [inset]="true">
+            <ion-item-group>
+              <ion-item>
+                <ion-toggle [checked]="showSchedules()" (ionChange)="setSchedules($event)" justify="space-between" data-testid="schedules">
+                  Графіки гуртків
+                </ion-toggle>
+              </ion-item>
+            </ion-item-group>
+          </ion-list>
+          <p class="note">Сходини всіх гуртків куреня поруч із твоїми подіями.</p>
+        }
 
         <ion-list [inset]="true">
           <ion-item-group>
@@ -651,6 +655,9 @@ export class CalendarPage implements ViewWillEnter, OnDestroy {
   /** The chosen day; the month, week or day on screen is the one it falls in. */
   protected readonly selected = signal(this.today);
   protected readonly showSchedules = signal(readSchedules());
+  private readonly scopes = inject(KurinScopes);
+  /** A senior kurin has no гуртки, so no «Графіки гуртків» switch; unknown counts as having them. */
+  protected readonly hasGroups = computed(() => !isSeniorBranch(this.scopes.current()?.branch ?? null));
   /** The view that steps back and forth (all but the list), as a one-item list for the nav's @for. */
   protected readonly steppedView = computed(() => {
     const view = this.view();
@@ -744,6 +751,7 @@ export class CalendarPage implements ViewWillEnter, OnDestroy {
 
   constructor() {
     addIcons({ add, chevronBack, chevronForward, time });
+    void this.scopes.load();
     effect(() => {
       this.rangeKey();
       untracked(() => void this.load());

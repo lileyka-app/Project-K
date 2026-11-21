@@ -21,6 +21,8 @@ function kurinScore(year: number) {
   return {
     kurinKey: 'k1', algorithm: 'Average', period: period(year), periods,
     groups: [groupRow('g1', 'Соколи', 1, 14.5, true), groupRow('g2', 'Вовки', 2, 11, false), groupRow('g3', 'Лиси', 3, 6.25, false)],
+    hasGroups: true,
+    people: [],
     viewer: { canScore: true, canManage: false },
   };
 }

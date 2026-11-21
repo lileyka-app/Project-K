@@ -205,11 +205,18 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
                 continue;
             }
 
-            // A senior kurin takes in someone already known only the way «Переведення» would: at once,
+            // A senior kurin takes in someone already known only the way «Переходи» would: at once,
             // or not from a file at all — the person answers, or their kurin does, and nobody still in УПЮ.
             if (match is not null && !placesInGroups && await SeniorRefusalAsync(match.MemberKey, request.KurinKey, cancellationToken) is { } refusal)
             {
                 results.Add(new RowResult(row.Number, row.DisplayName, RowOutcome.Rejected, refusal));
+                continue;
+            }
+
+            // Nor does a УПЮ kurin take someone straight from another kurin: that kurin is asked first.
+            if (match is not null && placesInGroups && await StandsElsewhereAsync(match.MemberKey, cancellationToken))
+            {
+                results.Add(new RowResult(row.Number, row.DisplayName, RowOutcome.Rejected, StandsElsewhere));
                 continue;
             }
 
@@ -255,8 +262,13 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
             return "Людина ще в УПЮ.";
         }
 
-        return route.JoinsAtOnce ? null : "Людина вже є в Лілейці: запроси її в «Переведеннях».";
+        return route.JoinsAtOnce ? null : "Людина вже є в Лілейці: запроси її в «Переходах».";
     }
+
+    private const string StandsElsewhere = "Людина стоїть в іншому курені: попроси її в «Переходах».";
+
+    private async Task<bool> StandsElsewhereAsync(Guid memberKey, CancellationToken cancellationToken)
+        => (await _kurinData.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken)).Count > 0;
 
     private async Task<HashSet<Guid>> MemberKeysInKurinAsync(Guid kurinKey, CancellationToken cancellationToken)
     {
@@ -342,7 +354,7 @@ public sealed class ImportRosterCommandHandler : IRequestHandler<ImportRosterCom
         return result.Type switch
         {
             ResultType.Success or ResultType.Created when result.Data is { Sent: false } =>
-                new Invitation(false, "Акаунт відкрито, але лист не надіслано — надішліть його з картки людини."),
+                new Invitation(false, "Акаунт відкрито, але лист не надіслано — надішли його з картки людини."),
             ResultType.Success or ResultType.Created => new Invitation(true, null),
             ResultType.Conflict => Invitation.NotApplicable,
             _ => new Invitation(false, "Запис створено, але акаунт відкрити не вдалося.")

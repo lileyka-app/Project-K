@@ -9,6 +9,7 @@ using ProjectK.Common.Enums.Shared;
 using ProjectK.Common.Records.AuditModule;
 using ProjectK.Common.Records.Shared;
 using ProjectK.Common.Rules.AuditModule;
+using ProjectK.Common.Rules.KurinModule;
 using MembershipEntity = ProjectK.Common.Entities.KurinModule.Membership;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership;
@@ -112,6 +113,15 @@ public sealed class JoinKurinCommandHandler : IRequestHandler<JoinKurinCommand, 
         {
             return ServiceResult<Guid>.Failure(
                 ResultType.Conflict, KurinErrors.StandsInAnotherKurin, "They stand in another kurin; ask that kurin with a membership request.");
+        }
+
+        var standsIn = (await _unitOfWork.Memberships.GetRecordsForMemberAsync(memberKey, cancellationToken))
+            .Where(m => m.LeftAtUtc is null)
+            .Select(m => m.Branch);
+        if (SeniorMembershipRules.WouldStandInTwo(kurin.Branch, standsIn))
+        {
+            return ServiceResult<Guid>.Failure(
+                ResultType.Conflict, KurinErrors.SecondSeniorKurin, "They already stand in a senior kurin.");
         }
 
         var membership = new MembershipEntity

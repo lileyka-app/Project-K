@@ -152,9 +152,9 @@ type Step = 'password' | 'code';
         <div class="links">
           @if (step() === 'password' && addingAccount) {
             <a href="" (click)="$event.preventDefault(); cancel()" data-testid="cancel-add">Скасувати</a>
-            <a [href]="forgotUrl" [attr.target]="outTarget" rel="noopener" data-testid="forgot">Забули пароль?</a>
+            <a [href]="forgotUrl" [attr.target]="outTarget" rel="noopener" data-testid="forgot">Забув пароль?</a>
           } @else if (step() === 'password') {
-            <a [href]="forgotUrl" [attr.target]="outTarget" rel="noopener" data-testid="forgot">Забули пароль?</a>
+            <a [href]="forgotUrl" [attr.target]="outTarget" rel="noopener" data-testid="forgot">Забув пароль?</a>
             <a [href]="joinUrl" [attr.target]="outTarget" rel="noopener" data-testid="join">Подати заявку</a>
           } @else {
             <a href="" (click)="$event.preventDefault(); back()">Назад</a>
