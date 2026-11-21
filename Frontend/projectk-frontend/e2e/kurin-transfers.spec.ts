@@ -147,7 +147,7 @@ test.describe('Moving people between kurins', () => {
     try {
       await openTransfersAs(page, home.zvyazkovyi);
       const row = requestRow(page, person.fullName);
-      await expect(row).toContainText(/7-й курінь УСП.* просить прийняти ще й до себе/);
+      await expect(row).toContainText(/191-й курінь УСП.* просить прийняти ще й до себе/);
       await expect(row).not.toContainText('к. ч. 7');
     } finally {
       await withdraw(request, senior, asked);

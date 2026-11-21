@@ -314,9 +314,9 @@ describe('senior warning rows', () => {
 
 describe('membership in a line of text', () => {
   it('names a senior kurin by its own name and a УПЮ kurin by its number', () => {
-    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Сторожі Горган' } as MembershipDto)).toBe('Членство (Сторожі Горган)');
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
-    expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
+    expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Данила Ясеня' } as MembershipDto)).toBe('Членство в курені ч. 47');
   });
 });
 

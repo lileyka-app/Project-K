@@ -7,7 +7,7 @@ import { e2eUsers, E2eUser } from './test-users';
 
 /**
  * Kurin tags (TAG-01…03). Tags are switched on and off per kurin, and the senior dues suite reads the
- * seeded tags of «Орден Хрестоносців», so every test here opens a kurin of its own and touches no
+ * seeded tags of «Сторожі Горган», so every test here opens a kurin of its own and touches no
  * seeded tag.
  */
 export interface TagKurin {

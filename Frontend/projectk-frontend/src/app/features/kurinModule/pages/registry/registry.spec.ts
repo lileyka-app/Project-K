@@ -55,12 +55,12 @@ describe('RegistryComponent', () => {
   it('names a senior kurin by its name and every гілка', () => {
     allowed = ['roster'];
     kurin = {
-      kurinKey: 'k1', number: 5, branch: KurinBranch.USP, namedAfter: 'Орден Хрестоносців',
+      kurinKey: 'k1', number: 5, branch: KurinBranch.USP, namedAfter: 'Сторожі Горган',
       branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 25 }]
     };
     const fixture = create();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Орден Хрестоносців · 5-й курінь УСП · 25-й курінь УПС');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Сторожі Горган · 5-й курінь УСП · 25-й курінь УПС');
   });
 
   it('shows a гурток\'s провід only their modes, and asks nothing about requests', () => {

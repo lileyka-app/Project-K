@@ -11,7 +11,7 @@ namespace ProjectK.BusinessLogic.Tests.CommonTests;
 public class MembershipLineTests
 {
     private static MembershipRecord InOrden(params KurinNumbering[] branches) => new(
-        Guid.NewGuid(), Guid.NewGuid(), 5, KurinBranch.USP, "Орден Хрестоносців", null, null,
+        Guid.NewGuid(), Guid.NewGuid(), 5, KurinBranch.USP, "Сторожі Горган", null, null,
         MembershipKind.Youth, DateTime.UtcNow, null, branches);
 
     [Fact]

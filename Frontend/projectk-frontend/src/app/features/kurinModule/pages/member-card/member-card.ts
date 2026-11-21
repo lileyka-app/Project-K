@@ -317,7 +317,7 @@ export class MemberCardComponent implements OnInit {
     this.router.navigate(['/group', groupKey, 'dues']);
   }
 
-  /** Whose вкладка this is: the kurin and the person's line in it, «Орден Хрестоносців · УПС». */
+  /** Whose вкладка this is: the kurin and the person's line in it, «Сторожі Горган · УПС». */
   get duesKurinLine(): string | null {
     const here = this.memberships.find(m => m.kurinKey === this.dues?.kurinKey && m.isCurrent)
       ?? this.memberships.find(m => m.kurinKey === this.dues?.kurinKey);

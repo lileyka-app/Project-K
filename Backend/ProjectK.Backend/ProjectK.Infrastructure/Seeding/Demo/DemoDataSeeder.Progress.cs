@@ -88,7 +88,8 @@ public partial class DemoDataSeeder
     /// <summary>
     /// Signs the first <paramref name="fraction"/> of a probe's points the way the виховник would
     /// have over the months since the person joined, then moves the probe to
-    /// <paramref name="status"/> with the same trail the status handler leaves.
+    /// <paramref name="status"/> with the same trail the status handler leaves. A past
+    /// <paramref name="window"/> replaces «the last year and a half up to a few days ago».
     /// </summary>
     private void SignPoints(
         Person person,
@@ -97,7 +98,8 @@ public partial class DemoDataSeeder
         Person mentor,
         Guid kurinKey,
         ProbeProgressStatus status,
-        Person? verifier)
+        Person? verifier,
+        (DateTime From, DateTime To)? window = null)
     {
         var total = probe.PointIds.Count;
         if (total == 0)
@@ -110,8 +112,8 @@ public partial class DemoDataSeeder
             : Math.Clamp((int)Math.Round(total * fraction), 1, Math.Max(1, total));
 
         var mentorRole = SystemRoleNames.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk);
-        var firstSignature = Later(person.JoinedAtUtc.AddDays(30), DaysAgo(540));
-        var lastSignature = DaysAgo(_random.Next(3, 40));
+        var firstSignature = window?.From ?? Later(person.JoinedAtUtc.AddDays(30), DaysAgo(540));
+        var lastSignature = window?.To ?? DaysAgo(_random.Next(3, 40));
         if (lastSignature <= firstSignature)
         {
             lastSignature = firstSignature.AddDays(1);
@@ -177,7 +179,8 @@ public partial class DemoDataSeeder
         Person mentor,
         Guid kurinKey,
         bool awaitingReview,
-        bool refused)
+        bool refused,
+        (DateTime From, DateTime To)? window = null)
     {
         var confirmedCount = person.Level switch
         {
@@ -198,7 +201,9 @@ public partial class DemoDataSeeder
                 break;
             }
 
-            var submittedAt = Later(person.JoinedAtUtc.AddDays(60), DaysAgo(_random.Next(30, 400)));
+            var submittedAt = window is { } past
+                ? past.From.AddDays(_random.Next(0, Math.Max(1, (int)(past.To - past.From).TotalDays)))
+                : Later(person.JoinedAtUtc.AddDays(60), DaysAgo(_random.Next(30, 400)));
             var reviewedAt = submittedAt.AddDays(_random.Next(1, 10));
             var note = Pick(BadgeConfirmNotes);
             var progress = new BadgeProgress

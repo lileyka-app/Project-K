@@ -19,7 +19,7 @@ export function kurinShortLabel(option: Pick<KurinScopeOption, 'kurinNumber'> & 
 
 /**
  * «к. ч. 7 ім. Сірого Лева», as the web's my-kurins tile names a kurin; a senior kurin by all its
- * гілки after its own name, «Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС».
+ * гілки after its own name, «Сторожі Горган · 5-й курінь УСП · 20-й курінь УПС».
  */
 export function kurinLabel(option: Pick<KurinScopeOption, 'kurinNumber' | 'namedAfter'> & Partial<Pick<KurinScopeOption, 'branch' | 'branches'>>): string {
   if (isSeniorBranch(option.branch)) {
