@@ -47,7 +47,7 @@ import { YouthAwardDto, isYouthAward } from '../../models/member-award.dto';
 import { MemberSeniorAwardsTileComponent } from './components/member-senior-awards-tile/member-senior-awards-tile';
 import { LifeEntriesTileComponent, LifeEntrySave } from './components/life-entries-tile/life-entries-tile';
 import { LifeStoryService } from '../../services/life-story/life-story.service';
-import { LifeEntryDto } from '../../models/life-entry.dto';
+import { LifeEntryDto, lifeEntryTitle } from '../../models/life-entry.dto';
 import { AwardBlock } from './components/award-blocks/award-blocks.function';
 import { MemberDegreesTileComponent } from './components/member-degrees-tile/member-degrees-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
@@ -931,8 +931,18 @@ export class MemberCardComponent implements OnInit {
   }
 
   onDeleteLifeEntry(key: string): void {
-    this.lifeStory.remove(key).subscribe({
-      next: () => this.lifeEntries = this.lifeEntries.filter(e => e.memberLifeEntryKey !== key)
+    const entry = this.lifeEntries.find(e => e.memberLifeEntryKey === key);
+    this.confirmationService.confirm({
+      header: 'Видалити запис?',
+      message: entry ? `«${lifeEntryTitle(entry)}» зникне з життєпису.` : 'Запис зникне з життєпису.',
+      icon: 'pi pi-trash',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Видалити', severity: 'danger' },
+      accept: () => {
+        this.lifeStory.remove(key).subscribe({
+          next: () => this.lifeEntries = this.lifeEntries.filter(e => e.memberLifeEntryKey !== key)
+        });
+      }
     });
   }
 

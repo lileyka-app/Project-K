@@ -18,9 +18,13 @@ export const REQUEST_KIND_OPTIONS: { label: string; value: MembershipRequestKind
   { label: 'Прийняти ще й до нас', value: 'AlsoJoin' }
 ];
 
-/** Між УПЮ і старшими куренями нікого не переводять: лише «прийняти ще й до нас». */
+/**
+ * Між УПЮ і старшими куренями нікого не переводять: лише «прийняти ще й до нас». А до другого старшого
+ * куреня не приймають «ще й»: людина стоїть лише в одному, тож її тільки переводять.
+ */
 export function kindOptionsFor(offer: MembershipAskOfferDto | null | undefined): { label: string; value: MembershipRequestKind }[] {
-  return offer?.transferAllowed ? REQUEST_KIND_OPTIONS : REQUEST_KIND_OPTIONS.filter(o => o.value === 'AlsoJoin');
+  const alongside = offer?.alongsideAllowed ?? true;
+  return REQUEST_KIND_OPTIONS.filter(o => o.value === 'Transfer' ? !!offer?.transferAllowed : alongside);
 }
 
 /** The kind a fresh form opens on: «перевести» where it is possible at all. */
@@ -52,6 +56,7 @@ const REQUEST_ERRORS: Record<string, string> = {
   RequestClosed: 'На цей запит уже відповіли, його скасовано або минув строк.',
   MemberNotHere: 'Людини вже немає в курені.',
   TransferAcrossLines: 'Між УПЮ і старшими куренями не переводять. Можна лише прийняти ще й до нас.',
+  SecondSeniorKurin: 'Людина вже в старшому курені. Її можна лише перевести.',
   SeniorKurinTakesMembers: 'Старший курінь приймає лише членом.',
   PersonStillYouth: 'Людина ще в УПЮ.'
 };

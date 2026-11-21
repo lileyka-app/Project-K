@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Entities.KraiModule;
@@ -7,6 +8,7 @@ using ProjectK.Common.Entities.MemberModule;
 using ProjectK.Common.Enums.DuesModule;
 using ProjectK.Common.Enums.KurinModule;
 using ProjectK.Common.Records.DuesModule;
+using ProjectK.Common.Rules.KraiModule;
 
 namespace ProjectK.Infrastructure.Seeding.Demo;
 
@@ -110,8 +112,8 @@ public partial class DemoDataSeeder
 
     /// <summary>
     /// The demo край takes вкладка both ways, so a kurin can send its край статті straight. Saved as a
-    /// revision of the край's profile, the way the край's settings page would, and only while the
-    /// profile is still empty.
+    /// revision of the край's profile, the way the край's settings page would, keeping whatever else the
+    /// profile says; a край that already takes it straight is left as it is.
     /// </summary>
     private async Task LetTheDemoKraiTakeDuesStraightAsync(CancellationToken cancellationToken)
     {
@@ -119,16 +121,22 @@ public partial class DemoDataSeeder
             .Where(r => r.KraiCode == Krai.Ukraine)
             .OrderByDescending(r => r.Revision)
             .FirstOrDefaultAsync(cancellationToken);
-        if (latest is not null && latest.Json.Trim() != "{}")
+        var profile = latest is null || string.IsNullOrWhiteSpace(latest.Json)
+            ? new JsonObject()
+            : JsonNode.Parse(latest.Json) as JsonObject ?? new JsonObject();
+        var dues = profile["dues"] as JsonObject ?? new JsonObject();
+        if (dues["upstream"]?.GetValue<string>() is KraiDuesNames.Both or KraiDuesNames.Krai)
         {
             return;
         }
 
+        dues["upstream"] = KraiDuesNames.Both;
+        profile["dues"] = dues;
         _dbContext.KraiProfileRevisions.Add(new KraiProfileRevision
         {
             KraiCode = Krai.Ukraine,
             Revision = (latest?.Revision ?? 0) + 1,
-            Json = """{"dues":{"upstream":"both"}}""",
+            Json = profile.ToJsonString(),
             Note = "Демо: курені передають і станиці, і краю"
         });
         await _dbContext.SaveChangesAsync(cancellationToken);

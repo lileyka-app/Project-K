@@ -53,6 +53,8 @@ public class ImportRosterHandlerTests
             .ReturnsAsync(() => _knownPeople);
         _memberships.Setup(r => r.GetRecordsInKurinAsync(KurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _peopleHere);
+        _memberships.Setup(r => r.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
         _kurinData.Setup(u => u.Memberships).Returns(_memberships.Object);
 
         _kurinData.Setup(u => u.Kurins).Returns(_kurins.Object);
@@ -122,7 +124,7 @@ public class ImportRosterHandlerTests
     /// </summary>
     [Theory]
     [InlineData(KurinBranch.UPYu, PlastLevel.Skob, "Людина ще в УПЮ.")]
-    [InlineData(null, PlastLevel.Starshoplastun, "Людина вже є в Лілейці: запроси її в «Переведеннях».")]
+    [InlineData(null, PlastLevel.Starshoplastun, "Людина вже є в Лілейці: запроси її в «Переходах».")]
     public async Task ASeniorKurin_DoesNotTakeAKnownPersonStraightFromAFile(KurinBranch? standsIn, PlastLevel level, string reason)
     {
         var memberKey = Guid.NewGuid();
@@ -308,6 +310,25 @@ public class ImportRosterHandlerTests
 
         report.Data!.AttachedCount.Should().Be(1);
         report.Data.CreatedCount.Should().Be(0);
+    }
+
+    /// <summary>Someone who stands in another kurin is asked for through it, in «Переходи», not taken from a file.</summary>
+    [Fact]
+    public async Task SomeoneStandingInAnotherKurin_IsNotTakenFromAFile()
+    {
+        var memberKey = Guid.NewGuid();
+        _knownPeople =
+        [
+            new MemberIdentity(memberKey, "Іван", "Петренко", "ivan@example.com", "0501112233", new DateOnly(2010, 1, 1))
+        ];
+        _memberships.Setup(r => r.GetActiveForMemberAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = memberKey, KurinKey = Guid.NewGuid(), Kind = MembershipKind.Youth }]);
+
+        var report = await RunAsync([Row(2, "Петренко", "Іван", "01.01.2010", "скоб", "22.04.2024", "Ведмеді", "2", "ivan@example.com")]);
+
+        report.Data!.AttachedCount.Should().Be(0);
+        report.Data.Rows.Single().Outcome.Should().Be(RowOutcome.Rejected);
+        _sender.Verify(s => s.Send(It.IsAny<JoinKurinCommand>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>A name alone is not a match — one станиця can hold two Іван Петренки.</summary>

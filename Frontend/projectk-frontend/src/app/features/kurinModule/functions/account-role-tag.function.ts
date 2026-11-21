@@ -1,3 +1,4 @@
+import { KurinBranch, isSeniorBranch } from '../models/enums/kurin-branch.enum';
 import { LeadershipRole } from '../models/enums/leadership-role.enum';
 import { getLeadershipRoleSortWeight } from './leadership-role-order.function';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from './leadership-role-display.function';
@@ -9,6 +10,11 @@ export interface AccountRoleTag {
 }
 
 export const GENERIC_MEMBER_TAG: AccountRoleTag = { label: 'Учасник', severity: 'info' };
+
+/** A member with no office, in the kurin's own words: a УСП or УПС kurin has members (membershipKindLabel). */
+export function memberTag(branch?: KurinBranch | null): AccountRoleTag {
+  return isSeniorBranch(branch) ? { label: 'Член куреня', severity: 'info' } : GENERIC_MEMBER_TAG;
+}
 
 /**
  * The office to show when an account holds several. Ordered by the same weights the member list
@@ -46,10 +52,11 @@ export interface RoleTier {
 
 /**
  * The signed-in account's tag, as the sidebar footer and the account page show it: its office first,
- * else the tier its permissions give it ("Провід куреня", "Гуртковий провід"), else a member.
+ * else the tier its permissions give it ("Провід куреня", "Гуртковий провід"), else a member — named
+ * as the membership names one in the kurin's `branch`.
  */
-export function signedInRoleTag(tier: RoleTier, systemRoles: string[]): AccountRoleTag {
-  let fallback = GENERIC_MEMBER_TAG;
+export function signedInRoleTag(tier: RoleTier, systemRoles: string[], branch?: KurinBranch | null): AccountRoleTag {
+  let fallback = memberTag(branch);
   if (tier.canManageWholeKurin()) {
     fallback = { label: 'Провід куреня', severity: 'warn' };
   } else if (tier.canLeadGroups()) {

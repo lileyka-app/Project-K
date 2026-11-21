@@ -1,15 +1,21 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Contracts.IdentityModule;
+using ProjectK.Common.Contracts.KurinModule;
 using ProjectK.Common.Dtos.ScoreModule;
 using ProjectK.Common.Dtos.ScoreModule.Requests;
 using ProjectK.Common.Enums.IdentityModule;
+using ProjectK.Common.Enums.ScoreModule;
 using ProjectK.Common.Enums.Shared;
+using ProjectK.Common.Records.ScoreModule;
 using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.ScoreModule.Features.Kurin;
 
-/// <summary>The table of гуртки for a period — what the whole kurin sees.</summary>
+/// <summary>
+/// The kurin's table for a period — what the whole kurin sees: the гуртки, or, in a senior kurin that
+/// has none, its people.
+/// </summary>
 public sealed record GetKurinScoreQuery(Guid KurinKey, ScorePeriodQuery Period) : IRequest<ServiceResult<KurinScoreDto>>;
 
 public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQuery, ServiceResult<KurinScoreDto>>
@@ -17,12 +23,14 @@ public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQue
     private readonly ScoreAccess _access;
     private readonly ScoreBookReader _books;
     private readonly IResourceAccessService _resourceAccess;
+    private readonly IKurinDirectory _kurins;
 
-    public GetKurinScoreQueryHandler(ScoreAccess access, ScoreBookReader books, IResourceAccessService resourceAccess)
+    public GetKurinScoreQueryHandler(ScoreAccess access, ScoreBookReader books, IResourceAccessService resourceAccess, IKurinDirectory kurins)
     {
         _access = access;
         _books = books;
         _resourceAccess = resourceAccess;
+        _kurins = kurins;
     }
 
     public async Task<ServiceResult<KurinScoreDto>> Handle(GetKurinScoreQuery request, CancellationToken cancellationToken)
@@ -49,6 +57,8 @@ public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQue
 
         canScore |= await _access.MayScoreAsync(request.KurinKey, null, ResourceAction.Create, cancellationToken);
 
+        var hasGroups = await _kurins.HasGroupsAsync(request.KurinKey, cancellationToken);
+
         return new ServiceResult<KurinScoreDto>(ResultType.Success, new KurinScoreDto
         {
             KurinKey = request.KurinKey,
@@ -56,11 +66,41 @@ public sealed class GetKurinScoreQueryHandler : IRequestHandler<GetKurinScoreQue
             Period = resolved.Dto,
             Periods = book.Periods(),
             Groups = rows,
+            HasGroups = hasGroups,
+            People = hasGroups ? [] : People(book, resolved.Period),
             Viewer = new KurinScoreViewerDto
             {
                 CanScore = canScore,
                 CanManage = await _access.MayManageAsync(request.KurinKey, cancellationToken)
             }
         });
+    }
+
+    /// <summary>Everyone in the kurin now, and anyone who has left but earned something in the period.</summary>
+    private static List<ScorePersonRowDto> People(ScoreBook book, ScorePeriod period)
+    {
+        var scored = book.Ledger.People(period).ToDictionary(p => p.MembershipKey);
+        return book.CurrentYouths()
+            .Select(y => y.Membership.MembershipKey)
+            .Concat(scored.Keys)
+            .Distinct()
+            .Where(book.Memberships.ContainsKey)
+            .Select(key =>
+            {
+                var membership = book.Memberships[key];
+                var total = scored.GetValueOrDefault(key);
+                return new ScorePersonRowDto
+                {
+                    MembershipKey = key,
+                    MemberKey = membership.MemberKey,
+                    FullName = book.NameOfMembership(key),
+                    Standing = membership.LeftAtUtc is null ? "Current" : "Left",
+                    Total = total?.Total ?? 0,
+                    BySource = total?.BySource ?? new Dictionary<ScoreSource, int>()
+                };
+            })
+            .OrderByDescending(p => p.Total)
+            .ThenBy(p => p.FullName)
+            .ToList();
     }
 }

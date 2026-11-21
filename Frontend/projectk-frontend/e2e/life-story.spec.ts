@@ -39,7 +39,7 @@ test.describe('Свій пластовий життєпис', () => {
     await expect(page).toHaveURL(new RegExp(`/member/${kozakKey}/life`));
 
     await expect(stageNames(page)).toHaveText(['УПЮ', 'УСП']);
-    await expect(levelsTile(page).locator('.life-stage__level')).toHaveText(['Вступ до Пласту', 'Пластун учасник', 'Пластун розвідувач', 'Пластун скоб', 'Старший пластун']);
+    await expect(levelsTile(page).locator('.life-stage__level')).toHaveText(['Вступ до Пласту', 'Пластун учасник', 'Пластун розвідувач', 'Пластун скоб', 'Старший пластун скоб']);
 
     const trainings = page.getByTestId('life-training');
     await page.getByTestId('life-training-add').click();

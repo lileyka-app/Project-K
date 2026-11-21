@@ -6,7 +6,10 @@ using ProjectK.Common.Records.Shared;
 
 namespace ProjectK.BusinessLogic.Modules.MemberModule.Features.Card;
 
-/// <summary>The card behind a permanent link; not-found once the link is off or no longer allowed.</summary>
+/// <summary>
+/// The card behind a permanent link; not-found once the link is off or no longer allowed, and a link
+/// no longer allowed is dropped then and there.
+/// </summary>
 public sealed record ReadLinkedCardQuery(string Token) : IRequest<ServiceResult<PublicCardDto>>;
 
 public sealed class ReadLinkedCardQueryHandler : IRequestHandler<ReadLinkedCardQuery, ServiceResult<PublicCardDto>>
@@ -29,8 +32,12 @@ public sealed class ReadLinkedCardQueryHandler : IRequestHandler<ReadLinkedCardQ
         }
 
         var allowance = await _cards.AllowanceAsync(share.MemberKey, cancellationToken);
-        return allowance.MayLink
-            ? await _cards.SharedAsync(share.MemberKey, allowance, null, cancellationToken)
-            : MemberErrors.NoCard<PublicCardDto>();
+        if (!allowance.MayLink)
+        {
+            await _cards.ForgetLinkAsync(share, cancellationToken);
+            return MemberErrors.NoCard<PublicCardDto>();
+        }
+
+        return await _cards.SharedAsync(share.MemberKey, allowance, null, cancellationToken);
     }
 }

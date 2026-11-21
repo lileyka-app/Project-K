@@ -27,7 +27,7 @@ public sealed class MemberProfileVerifiedEventHandler
                 Type = AppNotificationType.MemberProfileVerified,
                 Severity = AppNotificationSeverity.Success,
                 Title = "Профільні дані підтверджено",
-                Body = "Ваші профільні дані підтверджено як актуальні.",
+                Body = "Твої профільні дані підтверджено як актуальні.",
                 EntityType = "Member",
                 EntityKey = raised.MemberKey,
                 Route = $"/member/{raised.MemberKey}",

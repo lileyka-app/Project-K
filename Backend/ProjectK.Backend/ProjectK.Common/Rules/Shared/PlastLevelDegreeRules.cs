@@ -23,6 +23,27 @@ public static class PlastLevelDegreeRules
             [PlastLevel.SeniorKerivnytstva] = ("ups-senior-kerivnytstva", "ups-seniorka-kerivnytstva"),
         };
 
+    /// <summary>
+    /// The скоб a старший пластун carries from УПЮ — the гетьманський before the plain one; null without
+    /// either. It goes with the ступінь: «ст. пл. скоб», drawn as the скоб.
+    /// </summary>
+    public static PlastLevel? CarriedSkob(IEnumerable<PlastLevel> held)
+    {
+        var levels = held.ToHashSet();
+        return levels.Contains(PlastLevel.HetmanskiySkob) ? PlastLevel.HetmanskiySkob
+            : levels.Contains(PlastLevel.Skob) ? PlastLevel.Skob
+            : null;
+    }
+
+    /// <summary>How the carried скоб reads after «Старший пластун» or «Старша пластунка».</summary>
+    public static string CarriedSkobName(PlastLevel skob, bool isPlastunka) => (skob, isPlastunka) switch
+    {
+        (PlastLevel.HetmanskiySkob, false) => "гетьманський скоб",
+        (PlastLevel.HetmanskiySkob, true) => "гетьманська вірлиця",
+        (_, false) => "скоб",
+        (_, true) => "вірлиця"
+    };
+
     /// <summary>The catalogue id, or null for a level with no відзнака (<see cref="PlastLevel.Entry"/>).</summary>
     public static string? CatalogId(PlastLevel level, bool isPlastunka) =>
         Ids.TryGetValue(level, out var ids) ? (isPlastunka ? ids.Plastunka : ids.Plastun) : null;

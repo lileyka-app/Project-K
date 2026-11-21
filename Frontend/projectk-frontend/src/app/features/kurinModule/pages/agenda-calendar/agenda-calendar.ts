@@ -16,6 +16,7 @@ import timeGridPlugin from '@fullcalendar/angular/timegrid';
 import ukLocale from 'fullcalendar/locales/uk';
 import { MessageService } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
+import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { AgendaItemDialogComponent } from '../../components/agenda-item-dialog/agenda-item-dialog';
 import { AgendaItemDto, UpdateAgendaItemRequest } from '../../models/agenda';
@@ -45,6 +46,8 @@ export class AgendaCalendarComponent implements OnInit {
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  /** A senior kurin has no гуртки, so no «Графіки гуртків» switch. */
+  protected readonly features = inject(KurinFeaturesService);
 
   private readonly calendar = viewChild(FullCalendarComponent);
 

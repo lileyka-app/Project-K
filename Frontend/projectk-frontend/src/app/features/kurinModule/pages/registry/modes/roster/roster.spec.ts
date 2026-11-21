@@ -171,6 +171,20 @@ describe('RosterComponent', () => {
     expect(text).not.toContain('Впорядники');
   });
 
+  it('should list a senior kurin виховний склад apart, without the гуртки column', () => {
+    load([
+      member({ lastName: 'Сеньйор', latestPlastLevel: PlastLevel.SeniorPratsi }),
+      member({ lastName: 'Звʼязковий', isStaff: true })
+    ], KurinBranch.UPS);
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Виховний склад');
+    expect(text).toContain('Звʼязковий');
+    expect(text).not.toContain('Впорядники');
+    expect(component.staffColumns().some(column => column.id === 'mentoredGroups')).toBe(false);
+  });
+
   /**
    * Головне в цій задачі. Виведеного не видно в жодному читанні складу — усі вони фільтрують
    * закриті членства, — тож без цього списку помилковий клік прибирав людину назовсім.

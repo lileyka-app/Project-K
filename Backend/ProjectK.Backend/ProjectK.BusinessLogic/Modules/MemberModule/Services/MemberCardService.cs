@@ -134,11 +134,32 @@ public sealed class MemberCardService
     {
         var allowance = await AllowanceAsync(memberKey, cancellationToken);
         var share = await _unitOfWork.MemberCardShares.GetForMemberAsync(memberKey, cancellationToken);
+        if (share is not null && !allowance.MayLink)
+        {
+            await ForgetLinkAsync(share, cancellationToken);
+        }
+
         var chosen = share?.Fields ?? MemberCardShare.DefaultFields;
         var preview = await ReadAsync(memberKey, chosen & allowance.MaxFields, null, cancellationToken);
         var link = allowance.MayLink && share?.LinkToken is { } token ? SiteUrl(LinkPath + token) : null;
 
         return new MyCardDto(allowance, chosen, link, link is null ? null : share!.LinkIssuedAtUtc, preview!);
+    }
+
+    /// <summary>
+    /// Drops a link the person may no longer have, the moment a read finds it so: otherwise a link
+    /// handed out long ago would come back to life on its own once the kurin allows links again.
+    /// </summary>
+    public async Task ForgetLinkAsync(MemberCardShare share, CancellationToken cancellationToken)
+    {
+        if (share.LinkToken is null)
+        {
+            return;
+        }
+
+        share.LinkToken = null;
+        share.LinkIssuedAtUtc = null;
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>The card with just <paramref name="fields"/>; null when the person does not exist.</summary>
@@ -165,7 +186,7 @@ public sealed class MemberCardService
         if (fields.HasFlag(CardField.Level)
             && await _members.GetCurrentDegreeAsync(memberKey, cancellationToken) is { } degree)
         {
-            level = PlastLevelNames.Of(degree.Level);
+            level = PlastLevelNames.Of(degree.Level, degree.CarriedSkob);
             levelImage = degree.CatalogId is { } id ? _honours.GetById(id)?.ImageUrl : null;
         }
 

@@ -181,19 +181,25 @@ public class MemberCardServiceTests
         result.Type.Should().Be(ResultType.NotFound);
     }
 
+    /// <summary>
+    /// A link read while links are not allowed is dropped then: a link handed out long ago does not come
+    /// back to life by itself once the kurin allows links again.
+    /// </summary>
     [Fact]
-    public async Task ALinkedCard_IsGone_WhenLinksAreNotAllowed()
+    public async Task ALinkedCard_IsGone_WhenLinksAreNotAllowed_AndTheLinkWithIt()
     {
         Born(14);
         StandsIn(_kurinA);
         Allows(_kurinA, CardField.Kurin, link: false);
+        var share = new MemberCardShare { MemberKey = _person, LinkToken = "link", LinkIssuedAtUtc = DateTime.UtcNow };
         _shares.Setup(r => r.GetByLinkTokenAsync("link", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemberCardShare { MemberKey = _person, LinkToken = "link" });
+            .ReturnsAsync(() => share.LinkToken == "link" ? share : null);
 
         (await Linked().Handle(new ReadLinkedCardQuery("link"), default)).Type.Should().Be(ResultType.NotFound);
+        share.LinkToken.Should().BeNull();
 
         _settings[0].MinorsMayLink = true;
-        (await Linked().Handle(new ReadLinkedCardQuery("link"), default)).Type.Should().Be(ResultType.Success);
+        (await Linked().Handle(new ReadLinkedCardQuery("link"), default)).Type.Should().Be(ResultType.NotFound);
     }
 
     [Fact]
@@ -231,6 +237,22 @@ public class MemberCardServiceTests
 
         card!.Level.Should().Be("пл. уч.");
         card.LevelImageUrl.Should().Be("https://catalog.test/uchasnyk.svg");
+    }
+
+    /// <summary>A старший пластун with a скоб from УПЮ shows as one, drawn as the скоб.</summary>
+    [Fact]
+    public async Task AStarshyiPlastun_WithASkob_ShowsTheSkob()
+    {
+        Born(18);
+        _members.Setup(m => m.GetCurrentDegreeAsync(_person, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CurrentDegree(PlastLevel.Starshoplastun, "upyu-skob", PlastLevel.Skob));
+        _honours.Setup(h => h.GetById("upyu-skob"))
+            .Returns(new CatalogHonour("upyu-skob", HonourKind.Degree, "Пластун скоб", "upyu", "upyu", 4, "https://catalog.test/skob.svg"));
+
+        var card = await Cards().ReadAsync(_person, CardField.Level, null, default);
+
+        card!.Level.Should().Be("ст. пл. скоб");
+        card.LevelImageUrl.Should().Be("https://catalog.test/skob.svg");
     }
 
     [Fact]

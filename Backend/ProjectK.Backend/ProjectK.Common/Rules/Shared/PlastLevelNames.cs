@@ -23,6 +23,17 @@ public static class PlastLevelNames
     /// <summary>The ступінь's name, or its enum name if a new one was added and not named here.</summary>
     public static string Of(PlastLevel level) => Labels.GetValueOrDefault(level, level.ToString());
 
+    /// <summary>
+    /// The current ступінь's name: a старший пластун with a скоб from УПЮ is «ст. пл. скоб» or
+    /// «ст. пл. гетьм. скоб» (<see cref="PlastLevelDegreeRules.CarriedSkob"/>).
+    /// </summary>
+    public static string Of(PlastLevel level, PlastLevel? carriedSkob) => (level, carriedSkob) switch
+    {
+        (PlastLevel.Starshoplastun, PlastLevel.HetmanskiySkob) => "ст. пл. гетьм. скоб",
+        (PlastLevel.Starshoplastun, PlastLevel.Skob) => "ст. пл. скоб",
+        _ => Of(level)
+    };
+
     private static readonly IReadOnlyDictionary<PlastLevel, string> Labels =
         new Dictionary<PlastLevel, string>
         {

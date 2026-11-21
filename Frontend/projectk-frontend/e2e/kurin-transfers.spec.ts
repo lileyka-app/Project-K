@@ -170,7 +170,7 @@ test.describe('Youth and senior kurins', () => {
     await expect(page.getByText(person.fullName)).toBeVisible();
     await expect(page.getByText('Відповідає сама людина')).toBeVisible();
     await expect(page.getByText('Перевести до нас')).toHaveCount(0);
-    await expect(page.getByText('У вашому курені як')).toHaveCount(0);
+    await expect(page.getByText('У твоєму курені як')).toHaveCount(0);
     await page.getByRole('button', { name: 'Надіслати запрошення' }).click();
     await expect(requestRow(page, person.fullName)).toContainText('Запрошення людині');
 
