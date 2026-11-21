@@ -89,9 +89,9 @@ describe('AdminPanelComponent', () => {
       expect(component.kurinCountInKrai('ua')).toBe(2);
     });
 
-    const orden = { kurinKey: 'orden', number: 5, kraiCode: 'ua', branch: KurinBranch.USP, namedAfter: 'Орден Хрестоносців',
+    const orden = { kurinKey: 'orden', number: 5, kraiCode: 'ua', branch: KurinBranch.USP, namedAfter: 'Сторожі Горган',
       branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }] } as KurinDto;
-    const chorty = { kurinKey: 'chorty', number: 7, kraiCode: 'ua', branch: KurinBranch.USP, namedAfter: 'Лісові Чорти',
+    const chorty = { kurinKey: 'chorty', number: 7, kraiCode: 'ua', branch: KurinBranch.USP, namedAfter: 'Вітролови',
       branches: [{ branch: KurinBranch.USP, number: 7 }] } as KurinDto;
     const youth = { kurinKey: 'youth', number: 5, kraiCode: 'ua', branch: KurinBranch.UPYu, branches: [{ branch: KurinBranch.UPYu, number: 5 }] } as KurinDto;
     const rowsText = () => [...(fixture.nativeElement as HTMLElement).querySelectorAll('.admin-kurin-row')]
@@ -127,7 +127,7 @@ describe('AdminPanelComponent', () => {
     it('names the kurins in the form as before', () => {
       const senior = orden;
       expect(component.managePanelConfig.displayName!(youth)).toBe('Курінь ч. 5 УПЮ');
-      expect(component.managePanelConfig.displayName!(senior)).toBe('Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС');
+      expect(component.managePanelConfig.displayName!(senior)).toBe('Сторожі Горган · 5-й курінь УСП · 20-й курінь УПС');
     });
 
     it('offers the краї as choices in the kurin form', () => {

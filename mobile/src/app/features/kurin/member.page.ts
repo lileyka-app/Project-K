@@ -1060,7 +1060,7 @@ export class MemberPage implements OnInit {
     amount: other.balance === 0 ? 'сплачено' : `${other.balance > 0 ? '+' : ''}${duesMoney(other.balance, other.currency, other.numberLocale)}`,
   })));
 
-  /** Whose вкладка it is, «Орден Хрестоносців · УПС», then the quarter (web duesKurinLine). */
+  /** Whose вкладка it is, «Сторожі Горган · УПС», then the quarter (web duesKurinLine). */
   protected duesLine(d: MemberDuesDto): string {
     const here = this.membershipList().find((m) => m.kurinKey === d.kurinKey && m.isCurrent);
     const line = here ? `${isSeniorBranch(here.branch) ? this.seniorName(here) : kurinLabel(here.kurinNumber)} · ${this.branchLabel(here)}` : null;

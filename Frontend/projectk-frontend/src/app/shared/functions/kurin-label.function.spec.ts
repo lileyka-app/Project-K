@@ -37,14 +37,14 @@ describe('kurinBranchesName', () => {
 
 describe('kurinGroupTitle', () => {
   it('names the улад, so the same number in УПЮ and УСП reads as two kurins', () => {
-    expect(kurinGroupTitle({ number: 5, branch: KurinBranch.UPYu, namedAfter: 'Олени Степанів' })).toBe('Курінь ч. 5 УПЮ ім. Олени Степанів');
+    expect(kurinGroupTitle({ number: 5, branch: KurinBranch.UPYu, namedAfter: 'Ярини Березняк' })).toBe('Курінь ч. 5 УПЮ ім. Ярини Березняк');
     expect(kurinGroupTitle({ number: 5 })).toBe('Курінь ч. 5 УПЮ');
     expect(kurinGroupTitle({
       number: 5,
       branch: KurinBranch.USP,
       branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }],
-      namedAfter: 'Орден Хрестоносців'
-    })).toBe('Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС');
+      namedAfter: 'Сторожі Горган'
+    })).toBe('Сторожі Горган · 5-й курінь УСП · 20-й курінь УПС');
     expect(kurinGroupTitle({ number: null })).toBe('Підготовчий курінь УПЮ');
   });
 });

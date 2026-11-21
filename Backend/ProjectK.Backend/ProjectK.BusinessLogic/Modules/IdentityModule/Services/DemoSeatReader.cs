@@ -52,7 +52,16 @@ public sealed class DemoSeatReader
             _ => throw new ArgumentOutOfRangeException(nameof(role))
         };
 
-        var holders = await _unitOfWork.Leaderships.GetActiveOfficeMemberKeysAsync([office], kurinKey, cancellationToken: cancellationToken);
+        IEnumerable<Guid> holders = await _unitOfWork.Leaderships.GetActiveOfficeMemberKeysAsync([office], kurinKey, cancellationToken: cancellationToken);
+        if (role == DevRole.Vykhovnyk)
+        {
+            // The holders come in no set order; a виховник without a гурток shows an almost empty demo.
+            var leading = (await _unitOfWork.MentorAssignments.GetActiveMentorsInKurinAsync(kurinKey, cancellationToken))
+                .Select(mentor => mentor.MemberKey)
+                .ToHashSet();
+            holders = holders.OrderByDescending(leading.Contains).ThenBy(memberKey => memberKey);
+        }
+
         foreach (var memberKey in holders)
         {
             var accountKey = await _members.FindAccountKeyAsync(memberKey, cancellationToken);

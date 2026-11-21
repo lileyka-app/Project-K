@@ -58,11 +58,11 @@ describe('PublicCardComponent', () => {
   it('names a senior kurin by its own name first, without «ім.»', () => {
     cards.checked.mockReturnValue(of({
       ...card,
-      kurins: [{ number: 5, namedAfter: 'Орден Хрестоносців', groupName: null, branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 25 }] }]
+      kurins: [{ number: 5, namedAfter: 'Сторожі Горган', groupName: null, branches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 25 }] }]
     }));
     const text = (create('check').nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('Орден Хрестоносців · 5-й курінь УСП · 25-й курінь УПС');
+    expect(text).toContain('Сторожі Горган · 5-й курінь УСП · 25-й курінь УПС');
     expect(text).not.toContain('ім. Орден');
   });
 

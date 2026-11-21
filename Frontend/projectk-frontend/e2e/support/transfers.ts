@@ -13,10 +13,10 @@ import { E2eUser, e2eUsers } from './test-users';
 const password = 'User@12345';
 
 /**
- * The Звʼязковий of «Лісові Чорти», the seeded 7-й курінь УСП (DemoDataSeeder.Senior). Used only over
+ * The Звʼязковий of «Вітролови», the seeded 191-й курінь УСП (DemoDataSeeder.Senior). Used only over
  * the API, to send a request whose kurin must read by its гілка.
  */
-export const seniorZvyazkovyi: E2eUser = { role: 'manager', email: 'chorty@projectk.com', password };
+export const seniorZvyazkovyi: E2eUser = { role: 'manager', email: 'vitrolovy@projectk.com', password };
 
 export interface FreshKurin {
   kurinKey: string;

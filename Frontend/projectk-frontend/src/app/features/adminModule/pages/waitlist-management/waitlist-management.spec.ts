@@ -36,7 +36,7 @@ function branchRequest(overrides: Partial<KurinBranchRequestDto>): KurinBranchRe
     kurinBranchRequestKey: 'req-1',
     kurinKey: 'kurin-1',
     kraiCode: 'ua',
-    kurinNamedAfter: 'Лісові Чорти',
+    kurinNamedAfter: 'Вітролови',
     currentBranches: [{ branch: KurinBranch.USP, number: 7 }],
     wantedBranches: [{ branch: KurinBranch.USP, number: 7 }, { branch: KurinBranch.UPS, number: 21 }],
     note: null,

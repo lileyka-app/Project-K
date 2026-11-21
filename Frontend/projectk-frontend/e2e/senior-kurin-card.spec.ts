@@ -17,7 +17,7 @@ import { closeLastPrimeDialog } from './support/ui';
  * A senior kurin's card as its зв'язковий sees it (BRANCH-03, AWARD-02): the kurin and the role under
  * the kurin's own names, перестороги, the highest ступінь only, and senior відзначення in blocks.
  *
- * Signs in as the seeded зв'язковий of «Орден Хрестоносців», so it runs in one project and in order.
+ * Signs in as the seeded зв'язковий of «Сторожі Горган», so it runs in one project and in order.
  */
 test.describe.configure({ mode: 'serial' });
 
@@ -35,9 +35,9 @@ test.describe('Senior kurin card', () => {
     await openMemberCard(page, await memberKeyByEmail(request, ordenLeader, kurinKey, ordenScriptorEmail));
 
     const kurinTile = page.getByTestId('senior-kurin-tile');
-    await expect(kurinTile.getByRole('heading', { name: 'Орден Хрестоносців' })).toBeVisible();
-    await expect(kurinTile).toContainText('5-й курінь УСП');
-    await expect(kurinTile).toContainText('20-й курінь УПС');
+    await expect(kurinTile.getByRole('heading', { name: 'Сторожі Горган' })).toBeVisible();
+    await expect(kurinTile).toContainText('187-й курінь УСП');
+    await expect(kurinTile).toContainText('173-й курінь УПС');
     await expect(kurinTile).toContainText('Скриптор');
     await expect(kurinTile).not.toContainText('Писар');
 

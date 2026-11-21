@@ -14,33 +14,33 @@ using ProjectK.Common.Rules.KurinModule;
 namespace ProjectK.Infrastructure.Seeding.Demo;
 
 /// <summary>
-/// Senior kurins beside the УПЮ one: Орден Хрестоносців, one kurin in two гілки (5-й УСП and 20-й
+/// Senior kurins beside the УПЮ one: Сторожі Горган, one kurin in two гілки (187-й УСП and 173-й
 /// УПС), a УСП kurin waiting on its request to join УПС too, and a senior kurin's application on the
 /// waitlist. Their Зв'язкові have fixed addresses so the demo can name them:
-/// <c>orden@projectk.com</c> and <c>chorty@projectk.com</c>.
+/// <c>storozhi@projectk.com</c> and <c>vitrolovy@projectk.com</c>.
 /// </summary>
 public partial class DemoDataSeeder
 {
-    internal const string OrdenEmail = "orden@projectk.com";
-    internal const string ChortyEmail = "chorty@projectk.com";
+    internal const string OrdenEmail = "storozhi@projectk.com";
+    internal const string ChortyEmail = "vitrolovy@projectk.com";
 
     /// <summary>The Зв'язковий of the УПЮ kurin that shares the Order's number in УСП.</summary>
-    internal const string SameNumberYouthEmail = "kurin5@projectk.com";
+    internal const string SameNumberYouthEmail = "kurin187@projectk.com";
 
     private async Task SeedSeniorKurinsAsync(CancellationToken cancellationToken)
     {
         var orden = await EnsureSeniorKurinAsync(
-            [new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)],
-            "Орден Хрестоносців",
+            [new KurinNumbering(KurinBranch.USP, 187), new KurinNumbering(KurinBranch.UPS, 173)],
+            "Сторожі Горган",
             "Львів",
-            "Старший курінь у двох уладах: 5-й курінь УСП і 20-й курінь УПС. Один склад, одна домівка, "
-            + "сходини щочетверга й мандрівки Карпатами.",
+            "Старший курінь у двох уладах: 187-й курінь УСП і 173-й курінь УПС. Один склад, одна домівка, "
+            + "сходини щочетверга й мандрівки Горганами.",
             cancellationToken);
         var ordenLeader = await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
         var ordenMembers = new List<Member>();
         foreach (var (first, last, login, year) in OrdenMembers)
         {
-            ordenMembers.Add(await EnsureSeniorMemberAsync(orden.KurinKey, first, last, $"orden.{login}@projectk.com", year, cancellationToken));
+            ordenMembers.Add(await EnsureSeniorMemberAsync(orden.KurinKey, first, last, $"storozhi.{login}@projectk.com", year, cancellationToken));
         }
 
         // The Order calls its писар «Скриптор»: same role, same rights, its own word.
@@ -53,8 +53,8 @@ public partial class DemoDataSeeder
         await SeedSeniorDuesAsync(orden, ordenLeader, ordenMembers, ordenLeadership, cancellationToken);
 
         var chorty = await EnsureSeniorKurinAsync(
-            [new KurinNumbering(KurinBranch.USP, 7)],
-            "Лісові Чорти",
+            [new KurinNumbering(KurinBranch.USP, 191)],
+            "Вітролови",
             "Тернопіль",
             "Курінь УСП. Від минулого року частина куреня вже сеньйори, тож курінь просить і числа в УПС.",
             cancellationToken);
@@ -67,9 +67,9 @@ public partial class DemoDataSeeder
             {
                 KurinKey = chorty.KurinKey,
                 RequestedByUserKey = chortyLink.UserKey!.Value,
-                UspNumber = 7,
-                UpsNumber = 12,
-                Note = "Половина куреня вже сеньйори, а число 12 в УПС вільне — підтверджено з краєм.",
+                UspNumber = 191,
+                UpsNumber = 179,
+                Note = "Половина куреня вже сеньйори, а число 179 в УПС вільне — підтверджено з краєм.",
                 RequestedAtUtc = _now.AddDays(-1)
             });
         }
@@ -90,8 +90,8 @@ public partial class DemoDataSeeder
                 Stanytsia = "Івано-Франківськ",
                 KraiCode = Krai.Ukraine,
                 IsKurinLeaderCandidate = true,
-                ClaimedUspNumber = 9,
-                ClaimedUpsNumber = 31,
+                ClaimedUspNumber = 193,
+                ClaimedUpsNumber = 181,
                 RequestedAtUtc = _now.AddHours(-5)
             });
         }
@@ -100,7 +100,7 @@ public partial class DemoDataSeeder
     }
 
     /// <summary>
-    /// A УПЮ kurin with the Order's УСП number. Each улад counts its own, so 5-й курінь УПЮ and 5-й
+    /// A УПЮ kurin with the Order's УСП number. Each улад counts its own, so 187-й курінь УПЮ and 187-й
     /// курінь УСП are two kurins, and the admin pages have to keep them apart. Its зв'язкова is a
     /// сеніорка with her вірлиця of 2002 on record: her card shows the сеніорка, and she keeps her own
     /// senior відзначення in this УПЮ kurin.
@@ -108,8 +108,8 @@ public partial class DemoDataSeeder
     private async Task SeedSameNumberYouthKurinAsync(CancellationToken cancellationToken)
     {
         var kurin = await EnsureSeniorKurinAsync(
-            [new KurinNumbering(KurinBranch.UPYu, 5)],
-            "Олени Степанів",
+            [new KurinNumbering(KurinBranch.UPYu, 187)],
+            "Ярини Березняк",
             "Львів",
             "Курінь УПЮ. Сходини щосуботи в домівці на Личаківській.",
             cancellationToken);
