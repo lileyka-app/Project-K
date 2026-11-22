@@ -7,20 +7,20 @@ import { ActivatedMemberAccount, createActivatedMemberAccount, scenarioEmail, sc
 import { E2eUser } from './test-users';
 
 /**
- * The demo seed's senior kurin «Орден Хрестоносців» (5-й УСП · 20-й УПС): its зв'язковий, and the
+ * The demo seed's senior kurin «Сторожі Горган» (187-й УСП · 173-й УПС): its зв'язковий, and the
  * people the read-only checks look at. The Order calls its писар «Скриптор».
  */
 export const ordenLeader: E2eUser = {
   role: 'manager',
-  email: 'orden@projectk.com',
+  email: 'storozhi@projectk.com',
   password: process.env.E2E_DEFAULT_PASSWORD ?? 'User@12345'
 };
 
 /** The Order's писар — «Скриптор», a пластунка. */
-export const ordenScriptorEmail = 'orden.fedoriv@projectk.com';
+export const ordenScriptorEmail = 'storozhi.fedoriv@projectk.com';
 
 /** Carries a running пересторога beside one that has run out. */
-export const ordenWarnedEmail = 'orden.lysiak@projectk.com';
+export const ordenWarnedEmail = 'storozhi.lysiak@projectk.com';
 
 const password = 'Senior@12345';
 

@@ -29,7 +29,7 @@ public sealed class MembershipAskRouting
             kurins.Add((await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken)).ToRequestKurinDto(kurinKey));
         }
 
-        return new MembershipAskOfferDto(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins, route.StillYouth);
+        return new MembershipAskOfferDto(route.ToSenior, route.JoinsAtOnce, route.PersonAnswers, route.TransferAllowed, kurins, route.StillYouth, route.AlongsideAllowed);
     }
 
     public async Task<MembershipAskRoute> ResolveAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken)
@@ -42,7 +42,10 @@ public sealed class MembershipAskRouting
             .Where(m => m.LeftAtUtc is null && m.KurinKey != toKurinKey)
             .ToList();
 
-        var route = Route(toSenior, memberUserKey.HasValue, open);
+        var route = Route(toSenior, memberUserKey.HasValue, open) with
+        {
+            AlongsideAllowed = toKurin is null || !SeniorMembershipRules.WouldStandInTwo(toKurin.Branch, open.Select(m => m.Branch))
+        };
         if (!toSenior)
         {
             return route;

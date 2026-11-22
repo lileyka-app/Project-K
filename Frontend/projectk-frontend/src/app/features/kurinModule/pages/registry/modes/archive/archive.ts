@@ -395,7 +395,7 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
   confirmDeleteMembership(membership: ArchivedMembershipDto): void {
     this.confirmDelete(
       'Видалити членство?',
-      `${membership.memberName}, ${archiveDate(membership.joinedOn)} – ${archiveDate(membership.leftOn)}: членство, ролі за цей час і гуртки. Проби, вмілості й вкладка лишаються.`,
+      `${membership.memberName}, ${archiveDate(membership.joinedOn)} – ${archiveDate(membership.leftOn)}: членство, ролі за цей час і гуртки. Проби й вмілості лишаються. Членство з вкладкою не видаляється.`,
       ticket => this.archiveService.deleteMembership(this.kurinKey, membership.membershipKey, ticket));
   }
 

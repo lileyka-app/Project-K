@@ -5,6 +5,7 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { of, Subject } from 'rxjs';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { AgendaItemDto } from '../../models/agenda';
+import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { AgendaCalendarComponent } from './agenda-calendar';
 
@@ -39,6 +40,7 @@ describe('AgendaCalendarComponent — графіки гуртків', () => {
         { provide: AgendaService, useValue: agenda },
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ kurinKey: 'k1' })) } },
         { provide: PermissionService, useValue: { canManageAgenda: () => false, canScore: () => false } },
+        { provide: KurinFeaturesService, useValue: { hasGroups: () => true, isSenior: () => false } },
         { provide: MessageService, useValue: {
             add: vi.fn()
           } }

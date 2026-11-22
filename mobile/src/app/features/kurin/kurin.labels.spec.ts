@@ -314,9 +314,9 @@ describe('senior warning rows', () => {
 
 describe('membership in a line of text', () => {
   it('names a senior kurin by its own name and a УПЮ kurin by its number', () => {
-    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Сторожі Горган' } as MembershipDto)).toBe('Членство (Сторожі Горган)');
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
-    expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
+    expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Данила Ясеня' } as MembershipDto)).toBe('Членство в курені ч. 47');
   });
 });
 
@@ -333,8 +333,8 @@ describe('ступені й старші відзначення з катало�
 
   it('shows each membership its own ladder, named and drawn for a пластунка', () => {
     expect(degreeRows(histories, YOUTH_LADDER, [...honours]).map((r) => r.title)).toEqual(['Пластунка вірлиця']);
-    expect(degreeRows(histories, SENIOR_LADDER, [...honours]).map((r) => [r.title, r.imageUrl])).toEqual([['Старша пластунка', 'https://catalog.test/spl.svg']]);
-    expect(degreeRows(histories, SENIOR_LADDER, []).map((r) => r.title)).toEqual(['ст. пл.']);
+    expect(degreeRows(histories, SENIOR_LADDER, [...honours]).map((r) => [r.title, r.imageUrl])).toEqual([['Старша пластунка вірлиця', 'https://catalog.test/spl.svg']]);
+    expect(degreeRows(histories, SENIOR_LADDER, []).map((r) => r.title)).toEqual(['ст. пл. вірлиця']);
   });
 
   it('shows the current ступінь, the highest on the whole ladder: a сеніор over the скоб of 2002', () => {
@@ -343,7 +343,8 @@ describe('ступені й старші відзначення з катало�
       { plastLevel: 'Senior', dateAchieved: '2015-04-26' },
     ];
     expect(currentDegree(zvyazkovyi, [])?.title).toBe('пл. сен.');
-    expect(currentDegree(histories, [...honours])?.title).toBe('Старша пластунка');
+    expect(currentDegree(histories, [...honours])?.title).toBe('Старша пластунка вірлиця');
+    expect(currentDegree([{ plastLevel: 'HetmanskiySkob', catalogId: 'g' }, { plastLevel: 'Starshoplastun' }], [{ id: 'g', kind: 'Degree', title: 'Гетьманський пластун скоб', group: 'upyu', ulad: 'upyu', order: 8, imageUrl: 'https://catalog.test/g.png' }])).toMatchObject({ title: 'ст. пл. гетьманський скоб', imageUrl: 'https://catalog.test/g.png' });
     expect(currentDegree([], [])).toBeNull();
     expect(currentDegree([{ plastLevel: 'Skob' }, { plastLevel: 'Senior', awaitsConfirmation: true }], [])?.title).not.toBe('пл. сен.');
   });

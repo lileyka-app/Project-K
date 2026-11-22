@@ -37,7 +37,7 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
     the confirm dialog; the asking kurin, the person's kurin and the person are notified;
   - «перевести» after the confirm dialog leaves the person in the asking kurin only;
   - a person owing the kurin for past quarters cannot be let go (the approve button is disabled);
-  - a senior kurin asking reads «7-й курінь УСП», not «к. ч. 7» (seeded `chorty@projectk.com`, over
+  - a senior kurin asking reads «191-й курінь УСП», not «к. ч. 227» (seeded `vitrolovy@projectk.com`, over
     the API only, its request withdrawn afterwards);
   - a виховник sees the kurin settings read-only («Лише перегляд», no «Зберегти»);
   - a member without kurin management is sent to `/forbidden` from «Переходи», by its address and the old one.
@@ -47,8 +47,8 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - kurin-level profile, group, KV, leadership and member controls by role;
   - group action menu contents by role and assigned mentor scope;
   - planning create/delete controls by role.
-- Check the senior kurin card (`senior-kurin-card.spec.ts`, chromium only: it signs in as the seeded `orden@projectk.com`):
-  - the kurin tile with both branches, and the role by the kurin's own name («Скриптор» in «Орден Хрестоносців»);
+- Check the senior kurin card (`senior-kurin-card.spec.ts`, chromium only: it signs in as the seeded `storozhi@projectk.com`):
+  - the kurin tile with both branches, and the role by the kurin's own name («Скриптор» in «Сторожі Горган»);
   - перестороги, a running one before one that has run out;
   - «Ступені» shows only the highest ступінь, drawn as a пластунка's;
   - own senior відзначення: pinned first, repeats in one block with «×2» and what each was for;
@@ -75,7 +75,7 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - «Моя вкладка» on a senior's home page names the quarter's rate by their tag;
   - a senior without the treasurer's rights gets `/forbidden` on the kurin's dues and 403 from its API.
 - Check that a debt for past quarters keeps a person in the kurin: «Вивести» on a debtor's card in the
-  seeded Орден Хрестоносців names the debt and the release is refused (chromium only — it signs in as
+  seeded Сторожі Горган names the debt and the release is refused (chromium only — it signs in as
   the Order's seeded Зв'язковий and changes nothing).
 - Check the «Архів» mode of the «Реєстр» (`kurin-archive.spec.ts`), each test in a kurin of its own from `e2e/support/kurin-archive.ts`:
   - the Звʼязковий has all four tabs (Склад, Переходи, Архів, Імпорт), sees former roles and memberships and corrects a closed membership's dates;

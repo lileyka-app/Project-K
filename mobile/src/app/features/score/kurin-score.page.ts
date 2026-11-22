@@ -27,12 +27,14 @@ import {
   SCORE_ALGORITHM_LABELS,
   ScoreGroupRowDto,
   ScorePeriodQuery,
+  ScorePersonRowDto,
 } from './score.models';
 import { ScoreService } from './score.service';
 
 /**
  * The table of гуртки (the web's kurin-score): the one page of точкування the whole kurin sees.
- * A гурток's row opens its own page for those the server lets in. The period lives in the query
+ * A гурток's row opens its own page for those the server lets in. A senior kurin has no гуртки, so
+ * its table is of people. The period lives in the query
  * string so the link to a гурток keeps it. «Точкування КВ» and «Налаштування» stay on the web.
  */
 @Component({
@@ -175,11 +177,52 @@ import { ScoreService } from './score.service';
           @default {
             @if (value(); as d) {
               <p class="subline" data-testid="score-subline">
-                {{ d.period.label }} · {{ algorithmLabels[d.algorithm].toLowerCase() }}
+                {{ d.period.label }}
+                @if (d.hasGroups) {
+                  · {{ algorithmLabels[d.algorithm].toLowerCase() }}
+                } @else {
+                  · людей: {{ d.people.length }}
+                }
               </p>
               <app-score-period [periods]="d.periods" [period]="d.period" (periodChange)="changePeriod($event)" />
 
-              @if (!d.groups.length) {
+              @if (!d.hasGroups) {
+                @if (!d.people.length) {
+                  <p class="empty">Людей поки немає.</p>
+                } @else {
+                  <ion-list [inset]="true">
+                    <ion-list-header><ion-label>Люди</ion-label></ion-list-header>
+                    <ion-item-group>
+                      @for (person of d.people; track person.membershipKey; let i = $index) {
+                        <ion-item data-testid="score-person">
+                          <span
+                            slot="start"
+                            class="place"
+                            [class.first]="i === 0 && person.total > 0"
+                            [class.podium]="i > 0 && i < 3 && person.total > 0"
+                            >{{ i + 1 }}</span
+                          >
+                          <ion-label>
+                            <h2>{{ person.fullName }}</h2>
+                            @if (person.standing === 'Left') {
+                              <p>вибув</p>
+                            }
+                            <div class="bar" aria-hidden="true">
+                              <div [class.lead]="i === 0" [style.width]="personBarWidth(person)"></div>
+                            </div>
+                          </ion-label>
+                          <span slot="end" class="total" [class.minus]="person.total < 0">{{ score(person.total) }}</span>
+                        </ion-item>
+                      }
+                    </ion-item-group>
+                  </ion-list>
+                  @if (!peopleScored()) {
+                    <p class="note">Балів за цей період ще немає. Присутність відмічають на події в календарі — там же дають додаткові бали.</p>
+                  } @else if (d.viewer.canScore) {
+                    <p class="note">Відмічати присутність і давати бали — на події в календарі, кнопка «Точкування».</p>
+                  }
+                }
+              } @else if (!d.groups.length) {
                 <p class="empty">Гуртків поки немає: спершу гуртки, потім бали.</p>
               } @else {
                 <ion-list [inset]="true">
@@ -255,6 +298,9 @@ export class KurinScorePage {
     () => (this.value()?.groups ?? []).filter((g) => g.score !== 0 || g.youthPoints !== 0).length,
   );
 
+  private readonly peopleLeader = computed(() => Math.max(0, ...(this.value()?.people ?? []).map((p) => p.total)));
+  protected readonly peopleScored = computed(() => (this.value()?.people ?? []).some((p) => p.total !== 0));
+
   constructor() {
     this.route.queryParams.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe((params) => {
       this.period.set(periodQueryFromParams(params));
@@ -275,6 +321,11 @@ export class KurinScorePage {
   protected barWidth(group: ScoreGroupRowDto): string {
     const leader = this.leader();
     return leader > 0 && group.score > 0 ? `${Math.round((group.score / leader) * 100)}%` : '0%';
+  }
+
+  protected personBarWidth(person: ScorePersonRowDto): string {
+    const leader = this.peopleLeader();
+    return leader > 0 && person.total > 0 ? `${Math.round((person.total / leader) * 100)}%` : '0%';
   }
 
   protected otherLabel(group: ScoreGroupRowDto): string {

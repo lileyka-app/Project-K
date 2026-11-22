@@ -28,7 +28,7 @@ public sealed class MemberWarningAssignedEventHandler
                 Type = AppNotificationType.MemberWarningAssigned,
                 Severity = AppNotificationSeverity.Warn,
                 Title = "Пересторогу призначено",
-                Body = $"До вашого профілю додано {WarningLevelName(raised.Level)}.",
+                Body = $"До твого профілю додано {WarningLevelName(raised.Level)}.",
                 EntityType = "MemberWarning",
                 EntityKey = raised.MemberWarningKey,
                 Route = $"/member/{raised.MemberKey}",

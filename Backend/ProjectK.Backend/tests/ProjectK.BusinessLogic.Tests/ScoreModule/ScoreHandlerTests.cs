@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Entry;
+using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Kurin;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Sheet;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -236,6 +237,44 @@ public class ScoreHandlerTests
             .Handle(new GetAttendanceSheetQuery(Kurin, Skhodyny, Start), CancellationToken.None);
 
         result.Data!.People.Single(p => p.MembershipKey == _taras).IsAssigned.Should().Be(tarasAimedAt);
+    }
+
+    private GetKurinScoreQueryHandler TableReader(KurinBranch branch)
+    {
+        var kurins = new Mock<IKurinRepository>();
+        kurins.Setup(k => k.GetByKeyAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(new Kurin(1, branch) { KurinKey = Kurin });
+        _unitOfWork.SetupGet(u => u.Kurins).Returns(kurins.Object);
+        return new GetKurinScoreQueryHandler(Access(), Books(), _resourceAccess.Object, KurinDirectories.Over(_unitOfWork.Object));
+    }
+
+    [Fact]
+    public async Task TheTable_OfASeniorKurin_IsItsPeople()
+    {
+        var noGroups = new Mock<IGroupRepository>();
+        noGroups.Setup(g => g.GetAllAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _unitOfWork.SetupGet(u => u.Groups).Returns(noGroups.Object);
+        _memberships.Clear();
+        _people.Clear();
+        var olena = Youth("Олена", null);
+        var petro = Youth("Петро", null);
+        _entries.Add(new ScoreEntry { KurinKey = Kurin, MembershipKey = petro, Points = 5, OccurredOn = new DateOnly(2026, 10, 1) });
+
+        var result = await TableReader(KurinBranch.USP).Handle(new GetKurinScoreQuery(Kurin, new ScorePeriodQuery()), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.HasGroups.Should().BeFalse();
+        result.Data.Groups.Should().BeEmpty();
+        result.Data.People.Select(p => (p.MembershipKey, p.Total)).Should().Equal((petro, 5), (olena, 0));
+    }
+
+    [Fact]
+    public async Task TheTable_OfAYouthKurin_IsItsGroups_WithoutPeople()
+    {
+        var result = await TableReader(KurinBranch.UPYu).Handle(new GetKurinScoreQuery(Kurin, new ScorePeriodQuery()), CancellationToken.None);
+
+        result.Data!.HasGroups.Should().BeTrue();
+        result.Data.Groups.Should().HaveCount(2);
+        result.Data.People.Should().BeEmpty();
     }
 
     [Fact]

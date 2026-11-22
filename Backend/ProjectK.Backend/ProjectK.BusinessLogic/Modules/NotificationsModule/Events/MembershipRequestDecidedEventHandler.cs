@@ -43,10 +43,10 @@ public sealed class MembershipRequestDecidedEventHandler : INotificationHandler<
                 Title = raised.Approved ? "Запит підтверджено" : "Запит відхилено",
                 Body = answeredByPerson
                     ? raised.Approved
-                        ? $"{raised.MemberName} прийняв запрошення і тепер у вашому курені."
+                        ? $"{raised.MemberName} прийняв запрошення і тепер у твоєму курені."
                         : $"{raised.MemberName} відхилив запрошення."
                     : raised.Approved
-                        ? $"{from} підтвердив: {raised.MemberName} тепер у вашому курені."
+                        ? $"{from} підтвердив: {raised.MemberName} тепер у твоєму курені."
                         : $"{from} відхилив запит: {raised.MemberName} лишається там.",
                 EntityType = "MembershipRequest",
                 EntityKey = raised.MembershipRequestKey,

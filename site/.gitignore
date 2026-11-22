@@ -27,3 +27,5 @@ src/content/docs/dev/
 # the static demo of the app, placed here by scripts/build-site.sh
 public/demo/
 public/assets/
+# old pictures for «Як було» in docs review mode (scripts/doc-review.mjs)
+public/_review/

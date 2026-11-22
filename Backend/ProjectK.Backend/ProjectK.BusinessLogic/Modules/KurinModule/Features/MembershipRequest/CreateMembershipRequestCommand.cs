@@ -129,6 +129,14 @@ public sealed class CreateMembershipRequestCommandHandler
                 "Youth and senior kurins do not take people from each other; ask to take them in alongside.");
         }
 
+        if (request.Kind == MembershipRequestKind.AlsoJoin && !route.AlongsideAllowed)
+        {
+            return ServiceResult<MembershipRequestSentDto>.Failure(
+                ResultType.BadRequest,
+                KurinErrors.SecondSeniorKurin,
+                "They already stand in a senior kurin; ask to transfer them.");
+        }
+
         Guid? fromKurinKey = null;
         if (!route.PersonAnswers)
         {

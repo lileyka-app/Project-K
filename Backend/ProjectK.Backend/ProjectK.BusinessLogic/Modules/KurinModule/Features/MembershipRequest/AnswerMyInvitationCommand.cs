@@ -65,11 +65,20 @@ public sealed class AnswerMyInvitationCommandHandler : IRequestHandler<AnswerMyI
         if (request.Accept)
         {
             // A senior kurin takes nobody still in УПЮ — asked before that rule, or a ступінь withdrawn since.
-            if ((await _routing.ResolveAsync(asked.MemberKey, asked.ToKurinKey, cancellationToken)).StillYouth)
+            var route = await _routing.ResolveAsync(asked.MemberKey, asked.ToKurinKey, cancellationToken);
+            if (route.StillYouth)
             {
                 asked.Lapse(now);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return ServiceResult<Unit>.Failure(ResultType.Conflict, KurinErrors.PersonStillYouth, "You are still in УПЮ; a senior kurin does not take you yet.");
+            }
+
+            // An invitation only adds a kurin; one into a second senior kurin lapses.
+            if (!route.AlongsideAllowed)
+            {
+                asked.Lapse(now);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                return ServiceResult<Unit>.Failure(ResultType.Conflict, KurinErrors.SecondSeniorKurin, "You already stand in a senior kurin; only a transfer takes you to another.");
             }
 
             asked.Close(MembershipRequestStatus.Approved, now, _currentUser.UserId);

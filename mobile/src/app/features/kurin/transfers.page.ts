@@ -42,7 +42,7 @@ const STATUS: Record<MembershipRequestStatus, string> = {
 
 /** The API's request error codes, in the web's words (web transfers ERRORS). */
 const ERRORS: Record<string, string> = {
-  AlreadyAMember: 'Ця людина вже у вашому курені.',
+  AlreadyAMember: 'Ця людина вже у твоєму курені.',
   RequestPending: 'Запит щодо цієї людини вже чекає відповіді.',
   ChooseKurin: 'Людина стоїть у кількох куренях — вибери, кого питати.',
   NotInThatKurin: 'Людина вже не стоїть у тому курені. Знайди її за кодом ще раз.',
@@ -51,6 +51,7 @@ const ERRORS: Record<string, string> = {
   MemberNotHere: 'Людини вже немає в курені.',
   NoSuchCode: 'Такого коду немає. Перевір його з людиною.',
   TransferAcrossLines: 'Між УПЮ і старшими куренями не переводять. Можна лише прийняти ще й до нас.',
+  SecondSeniorKurin: 'Людина вже в старшому курені. Її можна лише перевести.',
   SeniorKurinTakesMembers: 'Старший курінь приймає лише членом.',
   PersonStillYouth: 'Людина ще в УПЮ.',
 };
@@ -135,7 +136,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches
               </ion-label>
             </ion-item>
             @if (!c.alreadyInThisKurin) {
-              @if (c.offer.transferAllowed) {
+              @if (c.offer.transferAllowed && c.offer.alongsideAllowed !== false) {
                 <ion-item>
                   <ion-select label="Що просимо" interface="action-sheet" cancelText="Скасувати" [(ngModel)]="kind">
                     <ion-select-option value="Transfer">Перевести до нас</ion-select-option>
@@ -157,7 +158,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches
               }
               @if (!c.offer.seniorKurin) {
                 <ion-item>
-                  <ion-select label="У вашому курені як" interface="action-sheet" cancelText="Скасувати" [(ngModel)]="membershipKind">
+                  <ion-select label="У твоєму курені як" interface="action-sheet" cancelText="Скасувати" [(ngModel)]="membershipKind">
                     <ion-select-option value="Youth">Юнак</ion-select-option>
                     <ion-select-option value="Staff">Впорядник</ion-select-option>
                   </ion-select>
@@ -221,7 +222,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches
             } @empty {
               <ion-item>
                 <ion-label class="ion-text-wrap">
-                  <p>{{ part() === 'incoming' ? 'Запитів від інших куренів немає.' : 'Ви ще нікого не просили.' }}</p>
+                  <p>{{ part() === 'incoming' ? 'Запитів від інших куренів немає.' : 'Ще нікого не просили.' }}</p>
                 </ion-label>
               </ion-item>
             }
@@ -285,7 +286,7 @@ export class TransfersPage implements OnInit {
   }
 
   protected whereNow(c: MembershipCandidateDto): string {
-    if (c.alreadyInThisKurin) return 'Уже у вашому курені.';
+    if (c.alreadyInThisKurin) return 'Уже в твоєму курені.';
     if (!c.currentKurins.length) return 'Ніде не стоїть';
     return `Зараз у ${c.currentKurins.map(kurinNo).join(', ')}`;
   }
@@ -319,11 +320,11 @@ export class TransfersPage implements OnInit {
     try {
       const sent = await this.data.requestMembership(this.kurinKey, {
         publicId: c.member.publicId,
-        kind: c.offer.transferAllowed ? this.kind : 'AlsoJoin',
+        kind: !c.offer.transferAllowed ? 'AlsoJoin' : c.offer.alongsideAllowed === false ? 'Transfer' : this.kind,
         membershipKind: c.offer.seniorKurin ? 'Youth' : this.membershipKind,
         fromKurinKey: asked,
       });
-      await this.toasts.show(sentText(sent, `${c.member.fullName} тепер у вашому курені.`));
+      await this.toasts.show(sentText(sent, `${c.member.fullName} тепер у твоєму курені.`));
       this.candidate.set(null);
       this.code = '';
       this.part.set('outgoing');
@@ -389,8 +390,8 @@ export class TransfersPage implements OnInit {
       if (!from) return;
     }
 
-    let kind: MembershipRequestKind = 'AlsoJoin';
-    if (from && offer.transferAllowed) {
+    let kind: MembershipRequestKind = offer.transferAllowed && offer.alongsideAllowed === false ? 'Transfer' : 'AlsoJoin';
+    if (from && offer.transferAllowed && offer.alongsideAllowed !== false) {
       const chosen = await this.choose<MembershipRequestKind>(name, `Зараз у ${kurinNo(from)}`, [
         { text: 'Перевести до нас', data: 'Transfer' },
         { text: 'Прийняти ще й до нас', data: 'AlsoJoin' },
@@ -401,7 +402,7 @@ export class TransfersPage implements OnInit {
 
     const membershipKind = offer.seniorKurin
       ? 'Youth'
-      : await this.choose<'Youth' | 'Staff'>(name, offer.joinsAtOnce ? 'Ніде не стоїть. У курені як' : 'У вашому курені як', [
+      : await this.choose<'Youth' | 'Staff'>(name, offer.joinsAtOnce ? 'Ніде не стоїть. У курені як' : 'У твоєму курені як', [
           { text: 'Юнак', data: 'Youth' },
           { text: 'Впорядник', data: 'Staff' },
         ]);
@@ -415,7 +416,7 @@ export class TransfersPage implements OnInit {
         membershipKind,
         fromKurinKey: from?.kurinKey ?? null,
       });
-      await this.toasts.show(sentText(sent, `${name} знову у вашому курені.`));
+      await this.toasts.show(sentText(sent, `${name} знову у твоєму курені.`));
       await this.load();
     } catch (error) {
       await this.toasts.show(apiErrorText(error, 'Не вдалося. Спробуй ще раз.', ERRORS), 'danger');

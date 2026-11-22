@@ -90,7 +90,7 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
         var sections = new List<LifeStorySection>
         {
             new("Членства", memberships.OrderBy(m => m.JoinedAtUtc).Select(MembershipRow).ToList()),
-            new("Ступені", (box.Levels ?? []).Where(l => !l.AwaitsConfirmation).OrderBy(l => l.DateAchieved).Select(LevelRow).ToList()),
+            new("Ступені", LevelRows(box.Levels ?? [])),
             new("Ролі", (box.Offices ?? []).OrderBy(o => o.StartDate).Select(o => OfficeRow(o, memberships, roleNames)).ToList()),
             new("Відзначення", (box.Awards ?? [])
                 .Where(a => a.Status == BadgeProgressStatus.Confirmed)
@@ -148,12 +148,24 @@ public sealed class ExportMyLifePdfQueryHandler : IRequestHandler<ExportMyLifePd
             Join(detail));
     }
 
-    private LifeStoryRow LevelRow(PlastLevelHistoryDto level)
+    private List<LifeStoryRow> LevelRows(IEnumerable<PlastLevelHistoryDto> levels)
+    {
+        var counted = levels.Where(l => !l.AwaitsConfirmation).OrderBy(l => l.DateAchieved).ToList();
+        var skob = PlastLevelDegreeRules.CarriedSkob(counted.Select(l => l.PlastLevel));
+        return counted.Select(level => LevelRow(level, skob)).ToList();
+    }
+
+    private LifeStoryRow LevelRow(PlastLevelHistoryDto level, PlastLevel? carriedSkob)
     {
         // The day of joining has no ступінь of its own to name; the card calls it the same.
         var title = level.PlastLevel == PlastLevel.Entry ? "Вступ до Пласту"
             : level.CatalogId is { } id && _honours.GetById(id) is { } honour ? honour.Title
             : PlastLevelNames.Of(level.PlastLevel);
+        if (level.PlastLevel == PlastLevel.Starshoplastun && carriedSkob is { } skob)
+        {
+            title = $"{title} {PlastLevelDegreeRules.CarriedSkobName(skob, level.IsPlastunka)}";
+        }
+
         return new LifeStoryRow(Day(level.DateAchieved), title, KurinBranchNames.Label(PlastLadderRules.BranchOf(level.PlastLevel)));
     }
 

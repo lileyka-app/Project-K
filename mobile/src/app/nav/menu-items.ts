@@ -17,9 +17,11 @@ export interface MenuEntry {
   help?: true;
 }
 
-/** What the menu needs beyond the session: the kurin's branch and the гуртки whose box one keeps. */
+/** What the menu needs beyond the session: the kurin's branch, its точкування and the гуртки whose box one keeps. */
 export interface MenuContext {
   youthKurin: boolean;
+  /** False once the kurin is read and keeps no точкування; unknown counts as on, as on the web. */
+  scoreEnabled?: boolean;
   duesGroups: { groupKey: string; groupName: string }[];
 }
 
@@ -78,8 +80,10 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
     { key: 'calendar', label: 'Календар', icon: 'calendar', tile: '#ff3b30', link: '/tabs/calendar' },
     { key: 'tasks', label: 'Задачі', icon: 'checkbox', tile: '#34c759', link: '/tabs/tasks' },
     { key: 'planning', label: 'Планування', icon: 'time', tile: '#30b0c7', link: '/tabs/calendar/planning' },
-    { key: 'score', label: 'Точкування', icon: 'trophy', tile: '#f4b400', link: '/tabs/kurin/score' },
   );
+  if (context.scoreEnabled ?? true) {
+    items.push({ key: 'score', label: 'Точкування', icon: 'trophy', tile: '#f4b400', link: '/tabs/kurin/score' });
+  }
   if (access.reviewSkills && context.youthKurin) {
     items.push({
       key: 'review',

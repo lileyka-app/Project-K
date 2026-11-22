@@ -106,6 +106,10 @@ export interface KurinScoreDto {
   period: ScorePeriodDto;
   periods: ScorePeriodsDto;
   groups: ScoreGroupRowDto[];
+  /** False for a senior kurin: no гуртки, the table is of people. */
+  hasGroups: boolean;
+  /** Filled only where the kurin has no гуртки. */
+  people: ScorePersonRowDto[];
   viewer: { canScore: boolean; canManage: boolean };
 }
 

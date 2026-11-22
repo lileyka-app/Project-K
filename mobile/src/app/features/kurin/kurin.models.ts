@@ -546,6 +546,8 @@ export interface MembershipAskOfferDto {
   personAnswers: boolean;
   transferAllowed: boolean;
   askKurins: MembershipRequestKurinDto[];
+  /** «Прийняти ще й до нас»: не до другого старшого куреня. */
+  alongsideAllowed?: boolean;
 }
 
 export interface MembershipCandidateDto {

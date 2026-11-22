@@ -34,6 +34,10 @@ public sealed class KurinDirectory : IKurinDirectory
             ? KurinRoleNames.Read(kurin.RoleNames)
             : null;
 
+    public async Task<bool> HasGroupsAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+        => await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken) is not { } kurin
+            || !KurinBranchSetRules.IsSenior(kurin.Branch);
+
     public async Task<bool> IsScoreEnabledAsync(Guid kurinKey, CancellationToken cancellationToken = default)
         => (await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken))?.IsScoreEnabled ?? true;
 

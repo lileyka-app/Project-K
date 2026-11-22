@@ -8,7 +8,7 @@
       } @else {
         <p class="return-dialog__hint">Зараз у {{ standsIn(p.standsIn) }}</p>
 
-        @if (p.offer.transferAllowed) {
+        @if (kindOptions().length > 1) {
           <div class="lil-dialog-field">
             <span class="lil-dialog-label" id="return-kind">Що просимо</span>
             <p-selectbutton [options]="kindOptions()" [ngModel]="kind()" (ngModelChange)="kind.set($event)"

@@ -329,6 +329,7 @@ export class NavMenu implements OnInit {
   protected readonly user = this.auth.user;
   protected readonly member = signal<MemberDto | null>(null);
   private readonly duesGroups = signal<{ groupKey: string; groupName: string }[]>([]);
+  private readonly scoreEnabled = signal(true);
   protected readonly leaving = signal(false);
   /** Kurins waiting on the person's own answer: the row shows only while there are some. */
   protected readonly invitationCount = signal(0);
@@ -362,6 +363,7 @@ export class NavMenu implements OnInit {
       // Unknown until the kurins come: the web shows the item rather than hide one the person may use.
       youthKurin: hasYouthProgram(this.scopes.current()?.branch ?? null),
       duesGroups: this.duesGroups(),
+      scoreEnabled: this.scoreEnabled(),
     }).filter((entry) => entry.key !== 'profile'),
   );
   protected readonly current = computed(() => {
@@ -439,6 +441,12 @@ export class NavMenu implements OnInit {
     }
     // An admin outside a kurin decides on applications (web sidebar-menu): the «Заявки» dot.
     if (user.isAdmin && !user.kurinKey) this.waitlist.refreshPending();
+    if (user.kurinKey) {
+      this.kurinApi.kurin(user.kurinKey).then(
+        (kurin) => this.scoreEnabled.set(kurin.scoreEnabled ?? true),
+        () => undefined, // As on the web: unread, the item stays.
+      );
+    }
     if (user.kurinKey && kurinAccess(user).seeGroupDues) {
       this.kurinApi.duesGroups(user.kurinKey).then(
         (groups) => this.duesGroups.set(groups),

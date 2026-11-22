@@ -157,6 +157,25 @@ describe('TransfersComponent', () => {
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ summary: 'Запрошення надіслано' }));
   });
 
+  it('only transfers a person from another senior kurin: nobody stands in two', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    memberships.candidate.mockReturnValue(of(candidate([kurin(1)], {
+      seniorKurin: true, transferAllowed: true, alongsideAllowed: false
+    })));
+
+    component.code.set('PL-4F7A2-9D4A1');
+    component.find();
+    fixture.detectChanges();
+
+    expect(text(fixture)).not.toContain('Що просимо');
+    expect(text(fixture)).not.toContain('Прийняти ще й до нас');
+    component.send();
+    expect(memberships.createRequest).toHaveBeenCalledWith('k15', {
+      publicId: 'PL-4F7A2-9D4A1', kind: 'Transfer', membershipKind: 'Youth', fromKurinKey: 'k1'
+    });
+  });
+
   it('says a person still in УПЮ is not a senior kurin\'s to ask, and offers nothing to send', () => {
     const fixture = create();
     const component = fixture.componentInstance;

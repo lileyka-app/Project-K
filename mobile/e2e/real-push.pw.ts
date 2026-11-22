@@ -47,10 +47,10 @@ test('the API serves its key and keeps a device until it asks to stop', async ({
     headers,
     data: { endpoint, expirationTime: null, keys },
   });
-  expect(subscribe.status()).toBe(200);
+  expect(subscribe.status()).toBe(204);
   // Again, as on every app start: the same device is refreshed, not doubled.
   const again = await request.post(`${realApi}/notifications/push/subscriptions`, { headers, data: { endpoint, keys } });
-  expect(again.status()).toBe(200);
+  expect(again.status()).toBe(204);
 
   const elsewhere = await request.post(`${realApi}/notifications/push/subscriptions`, {
     headers,
@@ -90,7 +90,7 @@ test('the «Меню» switch registers this device with the real API', async ({
   await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await row.getByTestId('push-toggle').click();
   await expect(row).toHaveAttribute('data-state', 'on');
-  expect(calls).toContain('POST 200');
+  expect(calls).toContain('POST 204');
   await page.screenshot({ path: `test-results/pwa-screens/${info.project.name}-real-push-on.png`, scale: 'css' });
 
   await row.getByTestId('push-toggle').click();

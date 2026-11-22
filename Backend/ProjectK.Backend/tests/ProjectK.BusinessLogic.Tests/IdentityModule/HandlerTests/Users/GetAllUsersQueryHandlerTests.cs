@@ -118,7 +118,7 @@ public class GetAllUsersQueryHandlerTests
                 [userId] =
                 [
                     new MembershipRecord(
-                        Guid.NewGuid(), kurinKey, 5, KurinBranch.USP, "Орден Хрестоносців",
+                        Guid.NewGuid(), kurinKey, 5, KurinBranch.USP, "Сторожі Горган",
                         null, null, MembershipKind.Staff, DateTime.UtcNow, null,
                         [new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)])
                 ]
@@ -128,7 +128,7 @@ public class GetAllUsersQueryHandlerTests
 
         Assert.Equal(kurinKey, userDto.KurinKey);
         Assert.Equal(KurinBranch.USP, userDto.KurinBranch);
-        Assert.Equal("Орден Хрестоносців", userDto.KurinNamedAfter);
+        Assert.Equal("Сторожі Горган", userDto.KurinNamedAfter);
         Assert.Equal([new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)], userDto.KurinBranches);
     }
 

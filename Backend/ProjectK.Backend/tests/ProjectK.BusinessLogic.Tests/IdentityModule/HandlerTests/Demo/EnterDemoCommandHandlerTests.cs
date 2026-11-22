@@ -41,7 +41,9 @@ public class EnterDemoCommandHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         unitOfWork.Setup(u => u.Leaderships).Returns(_leaderships.Object);
-        unitOfWork.Setup(u => u.MentorAssignments).Returns(Mock.Of<IMentorAssignmentRepository>());
+        var mentors = new Mock<IMentorAssignmentRepository>();
+        mentors.Setup(r => r.GetActiveMentorsInKurinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        unitOfWork.Setup(u => u.MentorAssignments).Returns(mentors.Object);
         _unitOfWork = unitOfWork.Object;
         _kurins.Setup(k => k.GetByNumberAsync("ua", 1, It.IsAny<CancellationToken>())).ReturnsAsync(_demoKurin);
         _loginResponses

@@ -130,7 +130,7 @@ public class KurinBranchRequestHandlerTests
     [Fact]
     public async Task Submit_ShouldSaveTheRequest_AndTellTheAdministrators()
     {
-        var kurin = Given(new Kurin(5, KurinBranch.USP) { NamedAfter = "Орден Хрестоносців" });
+        var kurin = Given(new Kurin(5, KurinBranch.USP) { NamedAfter = "Сторожі Горган" });
 
         var result = await Submitter().Handle(new SubmitKurinBranchRequestCommand(kurin.KurinKey, 5, 20, "  Ми вже рік у УПС  "), default);
 
@@ -140,7 +140,7 @@ public class KurinBranchRequestHandlerTests
             It.Is<KurinBranchRequest>(request => request.UspNumber == 5 && request.UpsNumber == 20 && request.Note == "Ми вже рік у УПС" && request.RequestedByUserKey == _userKey),
             It.IsAny<CancellationToken>()), Times.Once);
         _events.Verify(e => e.PublishAsync(
-            It.Is<KurinBranchRequestSubmitted>(raised => raised.Kurin == "«Орден Хрестоносців» · 5-й курінь УСП" && raised.Wanted == "5-й курінь УСП · 20-й курінь УПС"),
+            It.Is<KurinBranchRequestSubmitted>(raised => raised.Kurin == "«Сторожі Горган» · 5-й курінь УСП" && raised.Wanted == "5-й курінь УСП · 20-й курінь УПС"),
             It.IsAny<CancellationToken>()), Times.Once);
         kurin.Numbering.Should().ContainSingle("nothing changes before an administrator approves");
     }

@@ -130,6 +130,24 @@ public class JoinKurinByPublicIdTests
     }
 
     [Fact]
+    public async Task SomeoneInASeniorKurin_ShouldNotJoinASecondOne()
+    {
+        _kurins
+            .Setup(r => r.GetByKeyAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Kurin(42, KurinBranch.USP) { KurinKey = _kurinKey });
+        _memberships
+            .Setup(r => r.GetRecordsForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new MembershipRecord(Guid.NewGuid(), Guid.NewGuid(), 7, KurinBranch.UPS, null, null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-1), null)]);
+
+        var result = await _join.Handle(
+            new JoinKurinCommand(_memberKey, _kurinKey, null), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("SecondSeniorKurin");
+        _memberships.Verify(r => r.Open(It.IsAny<Membership>()), Times.Never);
+    }
+
+    [Fact]
     public async Task TheLookup_ShouldNameTheKurinsTheyStandInNow_ByNumberOnly()
     {
         // Since requests between kurins (JOIN-01) the asking kurin has to know whom it asks — the

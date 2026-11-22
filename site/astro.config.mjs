@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import mermaid from 'astro-mermaid';
 import docsEditor from './src/integrations/docs-editor.mjs';
+import docsReview from './src/integrations/docs-review.mjs';
 
 // Сайт Лілейки: візитка + довідка. Довідка не пишеться тут — вона живе в `docs/user/` у корені
 // репозиторію і копіюється сюди скриптом `scripts/sync-docs.mjs` перед dev і build, тож одна
@@ -12,6 +13,8 @@ export default defineConfig({
 	integrations: [
 		// Лише під `astro dev`: сторінка /editor — джерело зліва, сторінка справа.
 		docsEditor(),
+		// Рев'ю довідки: мітки «Нове» / «Оновлено», підсвітка змін і /review. Під dev, або з DOCS_REVIEW=1.
+		docsReview(),
 		// Діаграми в довідці: ```mermaid у markdown рендериться в браузері й перемикає тему разом
 		// із сайтом. Має стояти перед starlight, інакше блок забере підсвітка коду.
 		mermaid({
@@ -41,7 +44,7 @@ export default defineConfig({
 			favicon: '/favicon.svg',
 			customCss: ['./src/styles/brand.css'],
 			// Під dev «Правити» веде на джерело в репозиторії: у /editor і у VS Code. Зібраний сайт — як був.
-			components: { EditLink: './src/components/EditLink.astro' },
+			components: { EditLink: './src/components/EditLink.astro', PageTitle: './src/components/PageTitle.astro' },
 			// Two trees in one sidebar: the user one open, the developer one folded until asked for.
 			// The middleware only keeps prev/next from stepping across the border between them.
 			routeMiddleware: './src/route-middleware.ts',

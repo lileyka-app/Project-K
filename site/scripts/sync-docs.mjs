@@ -14,7 +14,7 @@ import { spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, watch, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { linkMap, repo, rootDocs } from './doc-sources.mjs';
+import { renderRootDoc, repo, rootDocs } from './doc-sources.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const content = resolve(here, '../src/content/docs');
@@ -31,50 +31,16 @@ function copyTree(from, to) {
 	return 1;
 }
 
-function escapeYaml(text) {
-	return `'${text.replaceAll("'", "''")}'`;
-}
-
-function rewriteLinks(markdown) {
-	return markdown.replace(/\]\(([^)\s#]+)(#[^)]*)?\)/g, (match, target, hash = '') => {
-		const key = target.replace(/^\.\//, '');
-		const mapped = linkMap.get(key);
-		return mapped ? `](${mapped}${hash})` : match;
-	});
-}
-
-function importRootDoc({ from, to, order, description }) {
-	const source = resolve(repo, from);
+function importRootDoc(doc) {
+	const source = resolve(repo, doc.from);
 	if (!existsSync(source)) {
-		console.warn(`sync-docs: пропущено ${from} — файла немає`);
+		console.warn(`sync-docs: пропущено ${doc.from} — файла немає`);
 		return 0;
 	}
 
-	let markdown = readFileSync(source, 'utf8').replace(/^﻿/, '').replaceAll('\r\n', '\n');
-	let title = to.split('/').pop().replace(/\.md$/, '');
-	const heading = markdown.match(/^# (.+)$/m);
-	if (heading) {
-		title = heading[1].trim();
-		markdown = markdown.replace(heading[0], '').replace(/^\n+/, '');
-	}
-
-	const frontmatter = [
-		'---',
-		`title: ${escapeYaml(title)}`,
-		`description: ${escapeYaml(description)}`,
-		'sidebar:',
-		`  order: ${order}`,
-		'---',
-		'',
-		`:::note[Джерело]`,
-		`Ця сторінка збирається з [\`${from}\`](https://github.com/lileyka-app/Project-K/blob/main/${from}) у репозиторії. Правити треба там.`,
-		':::',
-		'',
-	].join('\n');
-
-	const target = resolve(content, to);
+	const target = resolve(content, doc.to);
 	mkdirSync(dirname(target), { recursive: true });
-	writeFileSync(target, frontmatter + rewriteLinks(markdown));
+	writeFileSync(target, renderRootDoc(doc, readFileSync(source, 'utf8')));
 	return 1;
 }
 
