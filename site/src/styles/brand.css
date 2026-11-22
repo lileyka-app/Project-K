@@ -52,6 +52,8 @@
 :root {
   --sl-font: 'Manrope', system-ui, -apple-system, sans-serif;
   --lil-font-hand: 'Neucha', cursive;
+  /* Ширше за типові 18.75rem: довгі назви сторінок з міткою не переносяться на два рядки. */
+  --sl-sidebar-width: 21rem;
 
   /* Темна тема */
   --sl-color-accent-low: #084733;
@@ -508,12 +510,37 @@
   color: var(--doc-muted-text);
 }
 
+.sl-markdown-content .doc-review-shot {
+  border: 2px dashed var(--doc-muted-border);
+  border-radius: 0.5rem;
+  padding: 1.5rem 1rem;
+  color: var(--doc-muted-text);
+  font-size: var(--sl-text-sm);
+  text-align: center;
+}
+
 .sl-markdown-content .doc-review-label {
   font-size: var(--sl-text-xs);
   font-weight: 600;
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+/* Мітка — перед назвою: так мітки стоять в одну колонку, а не губляться в кінці довгих назв. */
+.sidebar-content a:has(> .sl-badge.doc-status) {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.sidebar-content a > .sl-badge.doc-status {
+  order: -1;
+  flex-shrink: 0;
+}
+
+.sidebar-content a:has(> .sl-badge.doc-status) > span:not(.sl-badge) {
+  margin-inline-end: 0;
 }
 
 /* On the current sidebar item Starlight paints badge text white on the green row: outline instead. */

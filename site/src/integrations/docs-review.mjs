@@ -5,7 +5,7 @@
 // (наприклад, для превʼю на рев'ю). Зібраний для проду сайт про нього не знає: ні підсвітки, ні
 // `/review`, ні міток, які в мапі статусів позначено як лише для рев'ю.
 import { rmSync } from 'node:fs';
-import { reviewMdastPlugin } from './review-plugin.mjs';
+import { reviewMdastPlugin, shotMdastPlugin } from './review-plugin.mjs';
 
 export default function docsReview() {
 	return {
@@ -28,7 +28,7 @@ export default function docsReview() {
 					logger.warn(`підсвітка змін працює лише на Sätteri, а тут ${processor?.name ?? 'нічого'}: лишаються мітки й /review`);
 				} else {
 					// Перед Starlight: її примітки й якорі заголовків бачать уже обгорнуті блоки.
-					processor.options.mdastPlugins = [reviewMdastPlugin, ...(processor.options.mdastPlugins ?? [])];
+					processor.options.mdastPlugins = [shotMdastPlugin, reviewMdastPlugin, ...(processor.options.mdastPlugins ?? [])];
 				}
 				injectRoute({ pattern: '/review', entrypoint: new URL('./review-page.astro', import.meta.url) });
 				logger.info(`рев'ю довідки ввімкнено: база ${process.env.DOCS_REVIEW_BASE || 'origin/main'}, перелік змін — /review`);

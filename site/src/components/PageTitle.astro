@@ -1,5 +1,5 @@
 ---
-// Заголовок сторінки з її міткою («Нове», «Застаріле»…). У режимі рев'ю під ним — рядок: з чим
+// Заголовок сторінки з її міткою («Нове», «Застаріле»…) перед ним. У режимі рев'ю під ним — рядок: з чим
 // порівняно і скільки змінено, з посиланням на перелік усіх змін `/review`.
 import Default from '@astrojs/starlight/components/PageTitle.astro';
 import { PAGE_STATUSES } from '../doc-status';
@@ -23,8 +23,8 @@ function changes(r: NonNullable<typeof review>) {
 ---
 
 <div class="doc-title">
-	<Default />
 	{shown && <span class={`sl-badge doc-status doc-status-${shown.status}`}>{PAGE_STATUSES[shown.status].label}</span>}
+	<Default />
 </div>
 {
 	base && (

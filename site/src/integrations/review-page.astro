@@ -5,7 +5,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { getCollection } from 'astro:content';
 import { sourceOfContentPath } from '../../scripts/doc-sources.mjs';
 import { contentStamp, pageReview, reviewBase, reviewBaseName } from '../../scripts/doc-review.mjs';
-import { PAGE_STATUSES, type PageStatus } from '../doc-status';
+import { PAGE_STATUSES, isExpiredNew, newestRelease, type PageStatus } from '../doc-status';
 
 export const prerender = true;
 
@@ -20,14 +20,17 @@ interface Row {
 }
 
 const rows: Row[] = [];
-for (const entry of await getCollection('docs')) {
+const entries = await getCollection('docs');
+const newest = newestRelease(entries.map((entry) => entry.data.since));
+for (const entry of entries) {
 	const contentPath = entry.filePath?.replace(/\\/g, '/').replace(/^.*?src\/content\/docs\//, '');
 	const source = contentPath ? sourceOfContentPath(contentPath) : null;
 	if (!source) {
 		continue;
 	}
 	const review = pageReview(source);
-	const declared = (entry.data.status as PageStatus | undefined) ?? null;
+	const status = entry.data.status as PageStatus | undefined;
+	const declared = status && !isExpiredNew(status, entry.data.since, newest) ? status : null;
 	if (!review && !declared) {
 		continue;
 	}

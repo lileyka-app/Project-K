@@ -163,6 +163,35 @@ function reviewPlugin(source, before) {
  * Запис для `mdastPlugins`: фабрика, що вирішує на кожен документ. Не сторінка довідки, нова
  * сторінка чи вимкнене рев'ю — плагін для цього документа не вмикається зовсім.
  */
+const SHOT = /^<!--\s*скрін:\s*([\s\S]*?)\s*-->$/;
+const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/**
+ * Місце під скрін, якого ще немає: у джерелі це `<!-- скрін: імʼя.png — що на ньому -->`. У проді
+ * коментар лишається невидимим, у рев'ю стає пунктирною рамкою, щоб брак скріну було видно.
+ */
+export function shotMdastPlugin(factory) {
+	if (!isReviewActive() || !contentPathOf(factory.fileURL)) {
+		return null;
+	}
+	return {
+		name: 'lileyka-docs-review-shots',
+		before(root, context) {
+			const walk = (node) => {
+				for (const child of node.children ?? []) {
+					const match = child.type === 'html' ? SHOT.exec(child.value.trim()) : null;
+					if (match) {
+						context.setProperty(child, 'value', `<div class="doc-review-shot">Скрін: ${escapeHtml(match[1])}</div>`);
+					} else {
+						walk(child);
+					}
+				}
+			};
+			walk(root);
+		},
+	};
+}
+
 export function reviewMdastPlugin(factory) {
 	if (!isReviewActive()) {
 		return null;
