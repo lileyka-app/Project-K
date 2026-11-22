@@ -130,6 +130,28 @@ export function imageChange(path) {
 	return before === workingBlob(path) ? null : 'changed';
 }
 
+const reviewWritten = new Set();
+
+/**
+ * Пише картинку в `public/_review/` під її git-хешем. Імʼя залежить лише від вмісту, тож наявний файл
+ * не переписується (`wx`), а без окремої перевірки існування немає гонки між нею й записом.
+ */
+function reviewFile(sha, path, read) {
+	const name = `${sha}${extname(path).toLowerCase()}`;
+	if (!reviewWritten.has(name)) {
+		mkdirSync(publicReview, { recursive: true });
+		try {
+			writeFileSync(resolve(publicReview, name), read(), { flag: 'wx' });
+		} catch (error) {
+			if (error.code !== 'EEXIST') {
+				throw error;
+			}
+		}
+		reviewWritten.add(name);
+	}
+	return `/_review/${name}`;
+}
+
 /**
  * Картинка з бази як файл у `public/_review/`, щоб «Як було» показало стару. Повертає адресу на
  * сайті, або null, коли в базі картинки немає.
@@ -139,13 +161,7 @@ export function baseImageUrl(path) {
 	if (!sha) {
 		return null;
 	}
-	const name = `${sha}${extname(path).toLowerCase()}`;
-	const target = resolve(publicReview, name);
-	if (!existsSync(target)) {
-		mkdirSync(publicReview, { recursive: true });
-		writeFileSync(target, git(['cat-file', 'blob', sha], 'buffer'));
-	}
-	return `/_review/${name}`;
+	return reviewFile(sha, path, () => git(['cat-file', 'blob', sha], 'buffer'));
 }
 
 /** Теперішня картинка як файл у `public/_review/` — для блоків «Як було», що її показують. */
@@ -154,13 +170,7 @@ export function workingImageUrl(path) {
 	if (!sha) {
 		return null;
 	}
-	const name = `${sha}${extname(path).toLowerCase()}`;
-	const target = resolve(publicReview, name);
-	if (!existsSync(target)) {
-		mkdirSync(publicReview, { recursive: true });
-		writeFileSync(target, readFileSync(resolve(repo, path)));
-	}
-	return `/_review/${name}`;
+	return reviewFile(sha, path, () => readFileSync(resolve(repo, path)));
 }
 
 const IMAGE_REF = /!\[[^\]]*\]\(([^)\s]+)[^)]*\)/g;
