@@ -9,13 +9,14 @@ import { combineLatest } from 'rxjs';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { ScorePeriodSelectComponent } from '../../components/score-period-select/score-period-select';
 import { periodParams, periodQueryFromParams, points, score } from '../../functions/score-format.function';
-import { KurinScoreDto, ScoreGroupRowDto, ScorePeriodQuery } from '../../models/score.dto';
+import { KurinScoreDto, ScoreGroupRowDto, ScorePeriodQuery, ScorePersonRowDto } from '../../models/score.dto';
 import { SCORE_ALGORITHM_HINTS, SCORE_ALGORITHM_LABELS, ScoreAlgorithm } from '../../models/score.enums';
 import { ScoreService } from '../../services/score-service/score.service';
 
 /**
  * The table of гуртки — the one page of точкування the whole kurin sees. A гурток's row opens its
- * own page for those who score it. The period lives in the query string so links keep it.
+ * own page for those who score it. A senior kurin has no гуртки, so its table is of people. The
+ * period lives in the query string so links keep it.
  */
 @Component({
   selector: 'app-kurin-score',
@@ -53,6 +54,10 @@ export class KurinScoreComponent implements OnInit {
 
   readonly scored = computed(() => (this.data()?.groups ?? []).filter(g => g.score !== 0 || g.youthPoints !== 0).length);
 
+  readonly peopleLeader = computed(() => Math.max(0, ...(this.data()?.people ?? []).map(p => p.total)));
+
+  readonly peopleScored = computed(() => (this.data()?.people ?? []).some(p => p.total !== 0));
+
   ngOnInit(): void {
     combineLatest([this.route.paramMap, this.route.queryParamMap]).subscribe(([params, query]) => {
       this.kurinKey = params.get('kurinKey') ?? '';
@@ -88,6 +93,11 @@ export class KurinScoreComponent implements OnInit {
   barWidth(group: ScoreGroupRowDto): string {
     const leader = this.leader();
     return leader > 0 && group.score > 0 ? `${Math.round((group.score / leader) * 100)}%` : '0%';
+  }
+
+  personBarWidth(person: ScorePersonRowDto): string {
+    const leader = this.peopleLeader();
+    return leader > 0 && person.total > 0 ? `${Math.round((person.total / leader) * 100)}%` : '0%';
   }
 
   otherLabel(group: ScoreGroupRowDto): string {

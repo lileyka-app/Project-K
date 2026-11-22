@@ -595,6 +595,68 @@ public class MembershipRequestTests
         result.Data!.PersonAnswers.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task ASeniorKurin_TakesSomeoneFromAnotherSeniorKurin_OnlyByTransfer()
+    {
+        Senior(_kurinA);
+        Senior(_kurinB);
+        HoldsASeniorLevel();
+        ActingIn(_kurinB);
+        StandsIn(_kurinA);
+
+        var offer = await Routing().OfferAsync(_person, _kurinB, default);
+        offer.TransferAllowed.Should().BeTrue();
+        offer.AlongsideAllowed.Should().BeFalse();
+
+        (await AskFromB(MembershipRequestKind.AlsoJoin)).ErrorCode.Should().Be("SecondSeniorKurin");
+        (await AskFromB(MembershipRequestKind.Transfer)).Type.Should().Be(ResultType.Created);
+        _created.Should().ContainSingle().Which.Kind.Should().Be(MembershipRequestKind.Transfer);
+    }
+
+    [Fact]
+    public async Task ASeniorMember_MayStillBeAskedAlongside_ByAYouthKurin()
+    {
+        Senior(_kurinA);
+        StandsIn(_kurinA);
+
+        (await Routing().OfferAsync(_person, _kurinB, default)).AlongsideAllowed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ApprovingAlsoJoin_IntoASecondSeniorKurin_IsRefused_AndLapses()
+    {
+        Senior(_kurinA);
+        Senior(_kurinB);
+        HoldsASeniorLevel();
+        ActingIn(_kurinA);
+        var inA = StandsIn(_kurinA);
+        var request = Asked(MembershipRequestKind.AlsoJoin);
+
+        var result = await Decide().Handle(new DecideMembershipRequestCommand(_kurinA, request.MembershipRequestKey, Approve: true), default);
+
+        result.ErrorCode.Should().Be("SecondSeniorKurin");
+        request.IsOpen(Now.UtcDateTime).Should().BeFalse();
+        inA.LeftAtUtc.Should().BeNull();
+        _opened.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ApprovingATransfer_BetweenSeniorKurins_MovesThePerson()
+    {
+        Senior(_kurinA);
+        Senior(_kurinB);
+        HoldsASeniorLevel();
+        ActingIn(_kurinA);
+        var inA = StandsIn(_kurinA);
+        var request = Asked(MembershipRequestKind.Transfer);
+
+        var result = await Decide().Handle(new DecideMembershipRequestCommand(_kurinA, request.MembershipRequestKey, Approve: true), default);
+
+        result.Type.Should().Be(ResultType.Success);
+        inA.LeftAtUtc.Should().NotBeNull();
+        _opened.Should().ContainSingle(m => m.KurinKey == _kurinB);
+    }
+
     // ── The person's own answer ─────────────────────────────────────────────────────────────────
 
     private MembershipRequest Invitation()
@@ -622,6 +684,22 @@ public class MembershipRequestTests
         invitation.Status.Should().Be(MembershipRequestStatus.Approved);
         _opened.Should().ContainSingle().Which.KurinKey.Should().Be(_kurinB);
         kept.LeftAtUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AcceptingAnInvitation_IntoASecondSeniorKurin_IsRefused()
+    {
+        Senior(_kurinB);
+        Senior(_kurinC);
+        HoldsASeniorLevel();
+        StandsIn(_kurinC);
+        var invitation = Invitation();
+
+        var result = await Answer().Handle(new AnswerMyInvitationCommand(invitation.MembershipRequestKey, Accept: true), default);
+
+        result.ErrorCode.Should().Be("SecondSeniorKurin");
+        invitation.IsOpen(Now.UtcDateTime).Should().BeFalse();
+        _opened.Should().BeEmpty();
     }
 
     [Fact]

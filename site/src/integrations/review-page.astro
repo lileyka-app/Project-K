@@ -1,0 +1,156 @@
+---
+// /review — перелік усього, що в довідці нове, змінене чи позначене, відносно бази. Лише в режимі
+// рев'ю. Позначка «вичитано» живе в браузері рецензента і скидається, щойно сторінку змінили.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { getCollection } from 'astro:content';
+import { sourceOfContentPath } from '../../scripts/doc-sources.mjs';
+import { contentStamp, pageReview, reviewBase, reviewBaseName } from '../../scripts/doc-review.mjs';
+import { PAGE_STATUSES, isExpiredNew, newestRelease, type PageStatus } from '../doc-status';
+
+export const prerender = true;
+
+interface Row {
+	href: string;
+	title: string;
+	source: string;
+	stamp: string;
+	status: PageStatus;
+	declared: PageStatus | null;
+	note: string;
+}
+
+const rows: Row[] = [];
+const entries = await getCollection('docs');
+const newest = newestRelease(entries.map((entry) => entry.data.since));
+for (const entry of entries) {
+	const contentPath = entry.filePath?.replace(/\\/g, '/').replace(/^.*?src\/content\/docs\//, '');
+	const source = contentPath ? sourceOfContentPath(contentPath) : null;
+	if (!source) {
+		continue;
+	}
+	const review = pageReview(source);
+	const status = entry.data.status as PageStatus | undefined;
+	const declared = status && !isExpiredNew(status, entry.data.since, newest) ? status : null;
+	if (!review && !declared) {
+		continue;
+	}
+	const note = !review
+		? 'без змін'
+		: review.kind === 'new'
+			? 'нова'
+			: `+${review.added} / −${review.removed} рядків${review.images ? `, картинок: ${review.images}` : ''}`;
+	rows.push({
+		href: `/${entry.id}/`,
+		title: entry.data.title,
+		source,
+		stamp: contentStamp(source),
+		status: declared ?? (review!.kind as PageStatus),
+		declared,
+		note,
+	});
+}
+
+const order: PageStatus[] = ['new', 'updated', 'deprecated', 'removal'];
+const groups = order
+	.map((status) => ({ status, rows: rows.filter((row) => row.status === status).sort((a, b) => a.href.localeCompare(b.href)) }))
+	.filter((group) => group.rows.length);
+const base = `${reviewBaseName()} · ${reviewBase()?.slice(0, 8) ?? 'не знайдено'}`;
+---
+
+<StarlightPage frontmatter={{ title: "Рев'ю довідки", description: 'Що змінилося відносно бази', tableOfContents: false }}>
+	<p>
+		Порівняно з <code>{base}</code>. Інша база — змінна <code>DOCS_REVIEW_BASE</code>. На сторінці змінене
+		стоїть на теплому тлі, «Як було» розгортає старий текст, прибране — закреслене.
+	</p>
+	<p class="review-progress" data-review-progress></p>
+	{
+		groups.map((group) => (
+			<section>
+				<h2>
+					{PAGE_STATUSES[group.status].label} · {group.rows.length}
+				</h2>
+				<ul class="review-list">
+					{group.rows.map((row) => (
+						<li>
+							<label>
+								<input type="checkbox" data-review-key={`${row.source}@${row.stamp}`} />
+								<span class="sr-only">вичитано</span>
+							</label>
+							<a href={row.href}>{row.title}</a>
+							<span class="review-note">{row.note}</span>
+							<code class="review-source">{row.source}</code>
+						</li>
+					))}
+				</ul>
+			</section>
+		))
+	}
+	{groups.length === 0 && <p>Відносно бази нічого не змінилося.</p>}
+</StarlightPage>
+
+<script>
+	const STORE = 'lileyka-docs-review';
+	const read = (): Record<string, boolean> => {
+		try {
+			return JSON.parse(localStorage.getItem(STORE) ?? '{}');
+		} catch {
+			return {};
+		}
+	};
+	const write = (state: Record<string, boolean>) => {
+		try {
+			localStorage.setItem(STORE, JSON.stringify(state));
+		} catch {
+			/* Without storage the boxes just do not survive a reload. */
+		}
+	};
+	const boxes = [...document.querySelectorAll<HTMLInputElement>('[data-review-key]')];
+	const progress = document.querySelector<HTMLElement>('[data-review-progress]');
+	const render = () => {
+		if (progress) {
+			const done = boxes.filter((box) => box.checked).length;
+			progress.textContent = `Вичитано ${done} з ${boxes.length}`;
+		}
+	};
+	const state = read();
+	for (const box of boxes) {
+		box.checked = Boolean(state[box.dataset.reviewKey!]);
+		box.addEventListener('change', () => {
+			const next = read();
+			if (box.checked) {
+				next[box.dataset.reviewKey!] = true;
+			} else {
+				delete next[box.dataset.reviewKey!];
+			}
+			write(next);
+			render();
+		});
+	}
+	render();
+</script>
+
+<style>
+	.review-list {
+		list-style: none;
+		padding: 0;
+	}
+	.review-list li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.25rem 0.75rem;
+		padding: 0.5rem 0;
+		border-bottom: 1px solid var(--sl-color-gray-5);
+	}
+	.review-note {
+		color: var(--sl-color-gray-3);
+		font-size: var(--sl-text-sm);
+	}
+	.review-source {
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+	}
+	.review-progress {
+		font-weight: 600;
+	}
+</style>

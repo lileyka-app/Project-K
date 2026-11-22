@@ -57,8 +57,8 @@ export interface KurinNaming {
 }
 
 /**
- * A kurin with its name on one line: "к. ч. 47 ім. Івана Богуна" for УПЮ. A senior kurin goes by its
- * own name first and its гілки after: "Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС".
+ * A kurin with its name on one line: "к. ч. 47 ім. Данила Ясеня" for УПЮ. A senior kurin goes by its
+ * own name first and its гілки after: "Сторожі Горган · 5-й курінь УСП · 20-й курінь УПС".
  */
 export function kurinWithName(kurin: KurinNaming): string {
   if (kurin.branch && isSeniorBranch(kurin.branch)) {
@@ -71,7 +71,7 @@ export function kurinWithName(kurin: KurinNaming): string {
 
 /**
  * A kurin heading a group in a list, where УПЮ and senior kurins sit side by side: «Курінь ч. 5 УПЮ
- * ім. Івана Богуна», and a senior one by its name and гілки, «Орден Хрестоносців · 5-й курінь УСП».
+ * ім. Данила Ясеня», and a senior one by its name and гілки, «Сторожі Горган · 5-й курінь УСП».
  */
 export function kurinGroupTitle(kurin: KurinNaming): string {
   if (kurin.branch && isSeniorBranch(kurin.branch)) {
@@ -91,8 +91,8 @@ export function compareKurinsByBranch(a: KurinNaming, b: KurinNaming): number {
 }
 
 /**
- * The first of two lines naming a kurin: a senior kurin's own name ("Орден Хрестоносців"), or its
- * гілки when it has none; a УПЮ kurin as before, "к. ч. 47 ім. Івана Богуна".
+ * The first of two lines naming a kurin: a senior kurin's own name ("Сторожі Горган"), or its
+ * гілки when it has none; a УПЮ kurin as before, "к. ч. 47 ім. Данила Ясеня".
  */
 export function kurinHeadline(kurin: KurinNaming): string {
   if (kurin.branch && isSeniorBranch(kurin.branch)) {

@@ -813,7 +813,7 @@ describe('MemberCardComponent', () => {
       kurinKey: member.kurinKey,
       kurinNumber: 5,
       branch: KurinBranch.USP,
-      kurinNamedAfter: 'Орден Хрестоносців',
+      kurinNamedAfter: 'Сторожі Горган',
       groupKey: null,
       groupName: null,
       kind: MembershipKind.Youth,
@@ -821,7 +821,7 @@ describe('MemberCardComponent', () => {
       leftAtUtc: null,
       isCurrent: true
     };
-    const youthBefore = { ...seniorHere, membershipKey: 'ms-before', kurinKey: 'kurin-youth', kurinNumber: 1, branch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна', leftAtUtc: '2022-06-30T00:00:00Z', isCurrent: false };
+    const youthBefore = { ...seniorHere, membershipKey: 'ms-before', kurinKey: 'kurin-youth', kurinNumber: 1, branch: KurinBranch.UPYu, kurinNamedAfter: 'Данила Ясеня', leftAtUtc: '2022-06-30T00:00:00Z', isCurrent: false };
     const senior: MemberDto = {
       ...member,
       plastLevelHistories: [
@@ -869,7 +869,7 @@ describe('MemberCardComponent', () => {
 
       expect(component.lifeStages.map(stage => [stage.branch, stage.levels.map(level => level.title)])).toEqual([
         ['УПЮ', ['пл. уч.', 'пл. скоб']],
-        ['УСП', ['ст. пл.']]
+        ['УСП', ['ст. пл. скоб']]
       ]);
       expect(component.lifeOffices.map(office => office.kurin)).toEqual(['к. ч. 1']);
     });
@@ -986,7 +986,7 @@ describe('MemberCardComponent', () => {
       }));
       memberServiceSpy.getMemberships.mockReturnValue(of([{
         ...membershipIn(KurinBranch.USP),
-        kurinNamedAfter: 'Орден Хрестоносців',
+        kurinNamedAfter: 'Сторожі Горган',
         numbering: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }]
       }]));
 
@@ -995,7 +995,7 @@ describe('MemberCardComponent', () => {
 
       const element = fixture.nativeElement as HTMLElement;
       expect(component.isSeniorKurinCard).toBe(true);
-      expect(component.seniorKurinName).toBe('Орден Хрестоносців');
+      expect(component.seniorKurinName).toBe('Сторожі Горган');
       expect(component.seniorKurinBranches).toBe('5-й курінь УСП · 20-й курінь УПС');
       expect(component.currentOffices.map(o => o.role)).toEqual(['Pysar']);
       expect(element.querySelector('[data-testid="senior-kurin-tile"]')).not.toBeNull();
@@ -1241,7 +1241,7 @@ describe('MemberCardComponent', () => {
       duesServiceSpy.getMemberDues.mockReturnValue(of(dues({
         hasAccount: false,
         elsewhere: [{
-          kurinKey: 'orden', kurinNumber: 20, kurinNamedAfter: 'Орден Хрестоносців', branch: KurinBranch.UPS,
+          kurinKey: 'orden', kurinNumber: 20, kurinNamedAfter: 'Сторожі Горган', branch: KurinBranch.UPS,
           numbering: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }],
           currency: 'UAH', numberLocale: 'uk-UA', balance: -400
         }]
@@ -1251,7 +1251,7 @@ describe('MemberCardComponent', () => {
       fixture.detectChanges();
 
       const elsewhere = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="dues-elsewhere"]')?.textContent ?? '';
-      expect(elsewhere).toContain('Орден Хрестоносців · УПС');
+      expect(elsewhere).toContain('Сторожі Горган · УПС');
       expect(elsewhere).toContain('−400 ₴');
       expect(renderedText()).not.toContain('Сплачено');
     });
@@ -1299,8 +1299,8 @@ describe('MemberCardComponent', () => {
     it('старший курінь у підтвердженні й на відзначеннях названо його іменем, юнацький — номером', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0 })));
-      const orden = { kurinKey: member.kurinKey, kurinNumber: 5, branch: KurinBranch.USP, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto;
-      const upyu = { kurinKey: 'kurin9', kurinNumber: 47, branch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна' } as MembershipDto;
+      const orden = { kurinKey: member.kurinKey, kurinNumber: 5, branch: KurinBranch.USP, kurinNamedAfter: 'Сторожі Горган' } as MembershipDto;
+      const upyu = { kurinKey: 'kurin9', kurinNumber: 47, branch: KurinBranch.UPYu, kurinNamedAfter: 'Данила Ясеня' } as MembershipDto;
       memberServiceSpy.getMemberships.mockReturnValue(of([orden, upyu]));
       createComponent();
       fixture.detectChanges();
@@ -1308,8 +1308,8 @@ describe('MemberCardComponent', () => {
 
       component.confirmLeaveKurin(orden);
 
-      expect(confirm.mock.calls[0][0].message).toContain('Членство (Орден Хрестоносців)');
-      expect(component.kurinStamps).toEqual({ [member.kurinKey]: 'Орден Хрестоносців', kurin9: 'к. ч. 47' });
+      expect(confirm.mock.calls[0][0].message).toContain('Членство (Сторожі Горган)');
+      expect(component.kurinStamps).toEqual({ [member.kurinKey]: 'Сторожі Горган', kurin9: 'к. ч. 47' });
     });
 
     // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.

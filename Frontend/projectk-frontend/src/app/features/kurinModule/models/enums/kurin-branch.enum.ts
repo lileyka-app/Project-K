@@ -15,7 +15,7 @@ export const KURIN_BRANCH_LABELS: Record<KurinBranch, string> = {
 
 /**
  * Гілка куреня і його число в ній. Старший курінь може бути в двох гілках з різними числами:
- * Орден Хрестоносців — 5-й курінь УСП і 20-й курінь УПС.
+ * Сторожі Горган — 5-й курінь УСП і 20-й курінь УПС.
  */
 export interface KurinNumbering {
   branch: KurinBranch;

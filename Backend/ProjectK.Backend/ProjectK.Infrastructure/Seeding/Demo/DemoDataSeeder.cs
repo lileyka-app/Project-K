@@ -169,7 +169,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
             _dbContext.Kurins.Add(kurin);
         }
 
-        kurin.NamedAfter = "Івана Богуна";
+        kurin.NamedAfter = "Данила Ясеня";
         kurin.Stanytsia = "Люксембург";
         kurin.RegionOrCountry = "Люксембург";
         kurin.SetBranches([new KurinNumbering(KurinBranch.UPYu, KurinNumber)]);

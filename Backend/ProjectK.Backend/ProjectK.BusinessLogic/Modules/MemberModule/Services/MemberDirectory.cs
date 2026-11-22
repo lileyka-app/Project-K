@@ -59,6 +59,13 @@ public sealed class MemberDirectory : IMemberDirectory
         }
 
         var entry = counted.First(h => h.PlastLevel == highest);
+        if (highest == PlastLevel.Starshoplastun
+            && PlastLevelDegreeRules.CarriedSkob(counted.Select(h => h.PlastLevel)) is { } skob)
+        {
+            var skobEntry = counted.First(h => h.PlastLevel == skob);
+            return new CurrentDegree(highest, PlastLevelDegreeRules.CatalogId(skob, skobEntry.IsPlastunka), skob);
+        }
+
         return new CurrentDegree(highest, PlastLevelDegreeRules.CatalogId(highest, entry.IsPlastunka));
     }
 

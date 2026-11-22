@@ -53,7 +53,7 @@ public class ResendEmailServiceTests
         Assert.Equal("hello@lileyka.example", message.ReplyTo);
         // The text part says the same and carries the link, so an HTML-only letter never leaves.
         Assert.Contains("Активувати акаунт: https://lileyka.example/activate/tok+en", message.TextBody);
-        Assert.Contains("Вас запрошено до Лілейки", message.TextBody);
+        Assert.Contains("Тебе запрошено до Лілейки", message.TextBody);
         Assert.DoesNotContain("<", message.TextBody);
         _output.WriteLine("INVITATION-HTML-BEGIN");
         _output.WriteLine(message.HtmlBody);

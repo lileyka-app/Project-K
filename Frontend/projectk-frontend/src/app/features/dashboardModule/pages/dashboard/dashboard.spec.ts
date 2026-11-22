@@ -39,7 +39,7 @@ describe('DashboardComponent', () => {
 
   const kurins: KurinScopeOption[] = [
     { kurinKey: 'k2', kurinNumber: 7, branch: KurinBranch.USP, namedAfter: null, kind: MembershipKind.Staff },
-    { kurinKey: 'k1', kurinNumber: 1, branch: KurinBranch.UPYu, namedAfter: 'ім. Івана Богуна', kind: MembershipKind.Youth }
+    { kurinKey: 'k1', kurinNumber: 1, branch: KurinBranch.UPYu, namedAfter: 'ім. Данила Ясеня', kind: MembershipKind.Youth }
   ];
 
   const groups: MyGroupDto[] = [

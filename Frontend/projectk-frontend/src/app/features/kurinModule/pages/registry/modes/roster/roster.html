@@ -62,7 +62,7 @@
     }
 
     <p-button
-      label="Вивантажити"
+      label="Вивантажити весь склад"
       icon="pi pi-download"
       severity="secondary"
       [loading]="exporting()"
@@ -165,7 +165,7 @@
   </p-table>
   </section>
 
-  @if (hasGroups()) {
+  @if (hasGroups() || staff().length) {
   <section class="kurin-tile">
   <p-table
     [value]="staff()"
@@ -178,7 +178,7 @@
     <ng-template #caption>
       <div class="lil-tile-head">
         <div>
-          <h2>Впорядники</h2>
+          <h2>{{ hasGroups() ? 'Впорядники' : 'Виховний склад' }}</h2>
           <span class="lil-count">{{ staff().length }}</span>
         </div>
       </div>

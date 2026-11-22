@@ -7,9 +7,9 @@ import { getSeniorDues, moneyText, owedForPastQuarters } from './support/senior-
 import { E2eUser } from './support/test-users';
 
 // A person who owes for quarters already over stays in the kurin (DUES-06 with stream C's check).
-// A fresh person owes nothing for the past, so this reads the seeded Орден Хрестоносців and changes
+// A fresh person owes nothing for the past, so this reads the seeded Сторожі Горган and changes
 // nothing in it: the release is refused before anything is written.
-const orden: E2eUser = { role: 'manager', email: 'orden@projectk.com', password: process.env.E2E_DEFAULT_PASSWORD ?? 'User@12345' };
+const orden: E2eUser = { role: 'manager', email: 'storozhi@projectk.com', password: process.env.E2E_DEFAULT_PASSWORD ?? 'User@12345' };
 
 test.describe('Senior kurin dues: a debt keeps a person in the kurin', () => {
   test('«Вивести» on a debtor\'s card names the debt and releases nobody', async ({ page, request }, testInfo) => {

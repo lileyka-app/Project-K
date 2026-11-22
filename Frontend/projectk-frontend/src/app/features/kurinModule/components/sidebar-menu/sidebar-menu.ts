@@ -16,7 +16,7 @@ import { AccountSwitcherComponent } from '../../../authModule/components/account
 import { InstallOnPhoneDialogComponent } from '../../../systemModule/components/install-on-phone-dialog/install-on-phone-dialog';
 import { InstallAppService } from '../../../systemModule/services/install-app-service/install-app.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
-import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { KurinBranch, hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { DuesGroupLinkDto } from '../../../duesModule/models/group-dues.dto';
 import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
@@ -29,9 +29,10 @@ import { RegistryModes } from '../../pages/registry/registry-modes';
 interface KurinMenuFeatures {
   youth: boolean;
   score: boolean;
+  branch: KurinBranch | null;
 }
 
-const ALL_FEATURES: KurinMenuFeatures = { youth: true, score: true };
+const ALL_FEATURES: KurinMenuFeatures = { youth: true, score: true, branch: null };
 
 /** Marks the first item of a block so the menu draws a line above it. */
 function startsGroup(block: MenuItem[]): MenuItem[] {
@@ -104,8 +105,12 @@ export class SidebarMenuComponent implements OnChanges {
       this.email$ = this.state$().pipe(
         map(state => state?.email ?? null)
       );
+      // The member's word waits on the kurin's гілка: «Учасник» first, «Член куреня» once a senior kurin is read.
       this.roleTag$ = this.state$().pipe(
-        map(state => this.currentRoleTag(state))
+        switchMap(state => this.features$(state?.kurinKey ?? null).pipe(
+          startWith(ALL_FEATURES),
+          map(features => this.currentRoleTag(state, features.branch))
+        ))
       );
     }
   }
@@ -161,7 +166,7 @@ export class SidebarMenuComponent implements OnChanges {
     }
 
     return this.kurinService.getByKey(kurinKey).pipe(
-      map(kurin => ({ youth: hasYouthProgram(kurin.branch), score: kurin.scoreEnabled ?? true })),
+      map(kurin => ({ youth: hasYouthProgram(kurin.branch), score: kurin.scoreEnabled ?? true, branch: kurin.branch ?? null })),
       // Не змогли прочитати курінь — не привід ховати пункт меню, який людина має право бачити.
       catchError(() => of(ALL_FEATURES))
     );
@@ -380,7 +385,7 @@ export class SidebarMenuComponent implements OnChanges {
    * rather than the tier "Провід куреня", coloured by the member list's rule. The tiers are the
    * fallback for accounts that hold no office.
    */
-  private currentRoleTag(state: AuthState | null): AccountRoleTag {
-    return signedInRoleTag(this.permissionService, state?.roles ?? []);
+  private currentRoleTag(state: AuthState | null, branch: KurinBranch | null): AccountRoleTag {
+    return signedInRoleTag(this.permissionService, state?.roles ?? [], branch);
   }
 }

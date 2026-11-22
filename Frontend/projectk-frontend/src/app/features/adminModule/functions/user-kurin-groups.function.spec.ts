@@ -15,15 +15,15 @@ function user(userId: string, kurin: Partial<UserDto> | null): UserDto {
   };
 }
 
-const youth5 = { kurinKey: 'youth-5', kurinNumber: 5, kurinBranch: KurinBranch.UPYu, kurinBranches: [{ branch: KurinBranch.UPYu, number: 5 }], kurinNamedAfter: 'Олени Степанів' };
+const youth5 = { kurinKey: 'youth-5', kurinNumber: 5, kurinBranch: KurinBranch.UPYu, kurinBranches: [{ branch: KurinBranch.UPYu, number: 5 }], kurinNamedAfter: 'Ярини Березняк' };
 const orden = {
   kurinKey: 'orden',
   kurinNumber: 5,
   kurinBranch: KurinBranch.USP,
   kurinBranches: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }],
-  kurinNamedAfter: 'Орден Хрестоносців'
+  kurinNamedAfter: 'Сторожі Горган'
 };
-const youth1 = { kurinKey: 'youth-1', kurinNumber: 1, kurinBranch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна' };
+const youth1 = { kurinKey: 'youth-1', kurinNumber: 1, kurinBranch: KurinBranch.UPYu, kurinNamedAfter: 'Данила Ясеня' };
 
 describe('usersByKurin', () => {
   it('keeps 5-й курінь УПЮ and 5-й курінь УСП apart, each under its own name', () => {
@@ -31,8 +31,8 @@ describe('usersByKurin', () => {
 
     const groups = [...new Map(rows.map(row => [row.group, row.groupTitle])).entries()];
     expect(groups).toEqual([
-      ['youth-5', 'Курінь ч. 5 УПЮ ім. Олени Степанів'],
-      ['orden', 'Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС']
+      ['youth-5', 'Курінь ч. 5 УПЮ ім. Ярини Березняк'],
+      ['orden', 'Сторожі Горган · 5-й курінь УСП · 20-й курінь УПС']
     ]);
     expect(rows.filter(row => row.group === 'orden').map(row => row.userId)).toEqual(['a', 'c']);
   });
@@ -53,7 +53,7 @@ describe('usersByKurin', () => {
     expect([...new Set(rows.map(row => row.groupTitle))]).toEqual([
       'Курінь ч. 5 УПЮ · Україна',
       'Курінь ч. 5 УПЮ · Чехія',
-      'Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС'
+      'Сторожі Горган · 5-й курінь УСП · 20-й курінь УПС'
     ]);
     // Without the names yet, the code still tells them apart.
     expect(usersByKurin([user('ua', lviv5), user('cz', praha5)]).map(row => row.groupTitle)).toEqual(['Курінь ч. 5 УПЮ · ua', 'Курінь ч. 5 УПЮ · cz']);

@@ -147,7 +147,7 @@ test.describe('Moving people between kurins', () => {
     try {
       await openTransfersAs(page, home.zvyazkovyi);
       const row = requestRow(page, person.fullName);
-      await expect(row).toContainText(/7-й курінь УСП.* просить прийняти ще й до себе/);
+      await expect(row).toContainText(/191-й курінь УСП.* просить прийняти ще й до себе/);
       await expect(row).not.toContainText('к. ч. 7');
     } finally {
       await withdraw(request, senior, asked);
@@ -170,7 +170,7 @@ test.describe('Youth and senior kurins', () => {
     await expect(page.getByText(person.fullName)).toBeVisible();
     await expect(page.getByText('Відповідає сама людина')).toBeVisible();
     await expect(page.getByText('Перевести до нас')).toHaveCount(0);
-    await expect(page.getByText('У вашому курені як')).toHaveCount(0);
+    await expect(page.getByText('У твоєму курені як')).toHaveCount(0);
     await page.getByRole('button', { name: 'Надіслати запрошення' }).click();
     await expect(requestRow(page, person.fullName)).toContainText('Запрошення людині');
 

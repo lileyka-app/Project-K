@@ -7,7 +7,7 @@ import { e2eUsers, E2eUser } from './test-users';
 
 /**
  * Kurin tags (TAG-01…03). Tags are switched on and off per kurin, and the senior dues suite reads the
- * seeded tags of «Орден Хрестоносців», so every test here opens a kurin of its own and touches no
+ * seeded tags of «Сторожі Горган», so every test here opens a kurin of its own and touches no
  * seeded tag.
  */
 export interface TagKurin {
@@ -121,7 +121,7 @@ export async function openTagManager(page: Page): Promise<Locator> {
 export async function openRegistry(page: Page): Promise<void> {
   await page.goto('/kurin/registry');
   await expect(page.getByRole('heading', { name: 'Реєстр' })).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole('button', { name: 'Вивантажити' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Вивантажити весь склад' })).toBeEnabled();
 }
 
 /** The registry cells of a column; the phone layout drops the header row but keeps these labels. */
@@ -147,6 +147,6 @@ export async function closeOverlayIn(form: Locator): Promise<void> {
 /** Presses «Вивантажити» and returns the columns the page asked the file for. */
 export async function exportedColumns(page: Page): Promise<string[]> {
   const exported = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/registry/export'));
-  await page.getByRole('button', { name: 'Вивантажити' }).click();
+  await page.getByRole('button', { name: 'Вивантажити весь склад' }).click();
   return ((await exported).postDataJSON() as { columns: string[] }).columns;
 }

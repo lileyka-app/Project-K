@@ -77,7 +77,7 @@
             @for (k of c.currentKurins; track k.kurinKey; let last = $last) { {{ kurinName(k) }}@if (!last) {, } }
           </p>
 
-          @if (c.offer.transferAllowed) {
+          @if (kindOptions().length > 1) {
             <div class="lil-dialog-field">
               <span class="lil-dialog-label" id="transfer-kind">Що просимо</span>
               <p-selectbutton [options]="kindOptions()" [ngModel]="kind()" (ngModelChange)="kind.set($event)"

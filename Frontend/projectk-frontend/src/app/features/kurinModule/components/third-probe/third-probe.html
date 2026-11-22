@@ -108,7 +108,7 @@
         @for (office of offices(); track $index) {
         <p class="tp-line">{{ office.role }}@if (office.where) { · {{ office.where }} } <span class="tp-muted">· {{ office.dates }}</span></p>
         } @empty {
-        <p class="tp-muted text-xs">Ролей у курені за цей час немає. Їх додає провід у «Діловодстві».</p>
+        <p class="tp-muted text-xs">Ролей у курені за цей час немає. Їх додає провід на сторінці куреня.</p>
         }
     </section>
 

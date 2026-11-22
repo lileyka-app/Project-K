@@ -221,7 +221,7 @@ public class MemberNotificationHandlersTests
             It.Is<NotificationRequest>(request =>
                 request.RecipientUserKey == ownerUserKey
                 && request.Severity == AppNotificationSeverity.Warn
-                && request.Body == $"До вашого профілю додано {expected}."
+                && request.Body == $"До твого профілю додано {expected}."
                 && request.EntityKey == warningKey
                 && request.DeduplicationKey == $"member-warning:{warningKey}"),
             It.IsAny<CancellationToken>()),

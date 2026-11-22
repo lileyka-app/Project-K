@@ -31,12 +31,12 @@ describe('ступені на картці', () => {
   it('юнацька картка — драбина УПЮ, старша — УСП/УПС; назва й відзнака з каталогу, для пластунки свої', () => {
     expect(degreeRows(histories, YOUTH_LADDER, honours).map(r => r.title)).toEqual(['Пластунка вірлиця']);
     const senior = degreeRows(histories, SENIOR_LADDER, honours);
-    expect(senior.map(r => [r.title, r.imageUrl])).toEqual([['Старша пластунка', 'https://catalog.test/spl.svg']]);
+    expect(senior.map(r => [r.title, r.imageUrl])).toEqual([['Старша пластунка вірлиця', 'https://catalog.test/spl.svg']]);
     expect(senior[0].date?.getFullYear()).toBe(2016);
   });
 
   it('без каталогу ступінь лишається зі своєю назвою й без рисунка', () => {
-    expect(degreeRows(histories, SENIOR_LADDER, [])).toEqual([expect.objectContaining({ title: 'ст. пл.', imageUrl: '' })]);
+    expect(degreeRows(histories, SENIOR_LADDER, [])).toEqual([expect.objectContaining({ title: 'ст. пл. вірлиця', imageUrl: '' })]);
   });
 });
 

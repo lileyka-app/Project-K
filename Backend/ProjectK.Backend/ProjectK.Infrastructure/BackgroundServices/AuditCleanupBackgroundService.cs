@@ -25,6 +25,9 @@ public class AuditCleanupBackgroundService : BackgroundService
     /// <summary>How long a duty someone hid from their «Справи» stays hidden at most; then it shows again if it still waits.</summary>
     internal const int DismissedDutyRetentionDays = 30;
 
+    /// <summary>How long a request between kurins is kept once it was answered, withdrawn or lapsed; the membership keeps the history.</summary>
+    internal const int ClosedMembershipRequestRetentionDays = 30;
+
     /// <summary>How long the kurin's journal keeps an entry: a year, the owner's decision.</summary>
     internal const int JournalRetentionDays = 365;
 
@@ -146,6 +149,17 @@ public class AuditCleanupBackgroundService : BackgroundService
 
         if (deletedDismissals > 0)
             _logger.LogInformation("Cleaned up {Count} old DismissedDuties.", deletedDismissals);
+
+        // 9. Cleanup requests between kurins closed or lapsed more than 30 days ago
+        var membershipRequestRetentionDate = now.AddDays(-ClosedMembershipRequestRetentionDays);
+        var deletedRequests = await dbContext.MembershipRequests
+            .Where(r =>
+                (r.DecidedAtUtc.HasValue && r.DecidedAtUtc < membershipRequestRetentionDate) ||
+                (!r.DecidedAtUtc.HasValue && r.ExpiresAtUtc < membershipRequestRetentionDate))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (deletedRequests > 0)
+            _logger.LogInformation("Cleaned up {Count} closed MembershipRequests.", deletedRequests);
     }
 
     /// <summary>

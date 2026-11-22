@@ -11,8 +11,14 @@ import {
   MembershipService
 } from '../../../kurinModule/services/membership-service/membership.service';
 
-function stillYouth(error: unknown): boolean {
-  return error instanceof HttpErrorResponse && (error.error as { error?: string } | null)?.error === 'PersonStillYouth';
+const ANSWER_ERRORS: Record<string, string> = {
+  PersonStillYouth: 'Ти ще в УПЮ.',
+  SecondSeniorKurin: 'Ти вже в старшому курені.'
+};
+
+function answerError(error: unknown): string {
+  const code = error instanceof HttpErrorResponse ? (error.error as { error?: string } | null)?.error : undefined;
+  return (code && ANSWER_ERRORS[code]) || failureDetail(error);
 }
 
 /**
@@ -52,7 +58,7 @@ export class InvitationsComponent implements OnInit {
       },
       error: (error: unknown) => {
         this.answering.set(null);
-        this.messages.add({ severity: 'error', summary: 'Не вдалося відповісти', detail: stillYouth(error) ? 'Ти ще в УПЮ.' : failureDetail(error) });
+        this.messages.add({ severity: 'error', summary: 'Не вдалося відповісти', detail: answerError(error) });
         this.load();
       }
     });

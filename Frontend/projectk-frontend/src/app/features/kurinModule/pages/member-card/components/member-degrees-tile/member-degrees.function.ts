@@ -20,9 +20,22 @@ export const SENIOR_LADDER: readonly PlastLevel[] = [
  */
 export const DEGREE_LADDER: readonly PlastLevel[] = [...YOUTH_LADDER, ...SENIOR_LADDER];
 
+/** How the скоб reads after «Старший пластун» / «Старша пластунка». */
+const CARRIED_SKOB_NAMES: Record<PlastLevel.Skob | PlastLevel.HetmanskiySkob, { plastun: string; plastunka: string }> = {
+  [PlastLevel.Skob]: { plastun: 'скоб', plastunka: 'вірлиця' },
+  [PlastLevel.HetmanskiySkob]: { plastun: 'гетьманський скоб', plastunka: 'гетьманська вірлиця' }
+};
+
+/** The скоб a старший пластун carries from УПЮ: the гетьманський before the plain one. */
+function carriedSkob(histories: readonly PlastLevelHistoryDto[]): PlastLevelHistoryDto | undefined {
+  return histories.find(history => history.plastLevel === PlastLevel.HetmanskiySkob)
+    ?? histories.find(history => history.plastLevel === PlastLevel.Skob);
+}
+
 /** A ступінь as the card shows it. */
 export interface DegreeRow {
   key: string;
+  level: PlastLevel;
   title: string;
   imageUrl: string;
   date: Date | null;
@@ -38,14 +51,26 @@ export function degreeRows(
   honours: readonly CatalogHonour[]
 ): DegreeRow[] {
   const byId = new Map(honours.map(item => [item.id, item]));
+  const all = histories ?? [];
+  const titleOf = (history: PlastLevelHistoryDto) => {
+    const item = history.catalogId ? byId.get(history.catalogId) : undefined;
+    return item?.title ?? PLAST_LEVEL_DISPLAY_MAP[history.plastLevel] ?? history.plastLevel;
+  };
+  const skob = carriedSkob(all);
   return ladder
-    .map(level => (histories ?? []).find(history => history.plastLevel === level))
+    .map(level => all.find(history => history.plastLevel === level))
     .filter((history): history is PlastLevelHistoryDto => !!history)
     .map(history => {
       const item = history.catalogId ? byId.get(history.catalogId) : undefined;
+      // «Старший пластун скоб», «Старша пластунка гетьманська вірлиця»: the УПЮ скоб goes with the ступінь.
+      const names = skob ? CARRIED_SKOB_NAMES[skob.plastLevel as PlastLevel.Skob | PlastLevel.HetmanskiySkob] : undefined;
+      const title = history.plastLevel === PlastLevel.Starshoplastun && names
+        ? `${titleOf(history)} ${(history.isPlastunka ?? skob?.isPlastunka) ? names.plastunka : names.plastun}`
+        : titleOf(history);
       return {
         key: history.plastLevelHistoryKey ?? history.plastLevel,
-        title: item?.title ?? PLAST_LEVEL_DISPLAY_MAP[history.plastLevel] ?? history.plastLevel,
+        level: history.plastLevel,
+        title,
         imageUrl: item?.imageUrl ?? '',
         date: parseDateOnlyString(history.dateAchieved ?? null)
       };
@@ -60,5 +85,12 @@ export function currentDegree(
   histories: readonly PlastLevelHistoryDto[] | null | undefined,
   honours: readonly CatalogHonour[]
 ): DegreeRow | null {
-  return degreeRows(histories, DEGREE_LADDER, honours).at(-1) ?? null;
+  const rows = degreeRows(histories, DEGREE_LADDER, honours);
+  const current = rows.at(-1) ?? null;
+  // A старший пластун with a скоб wears the скоб: its picture, the старшопластунство's day.
+  const skob = carriedSkob(histories ?? []);
+  const skobRow = skob && rows.find(row => row.level === skob.plastLevel);
+  return current?.level === PlastLevel.Starshoplastun && skobRow?.imageUrl
+    ? { ...current, imageUrl: skobRow.imageUrl }
+    : current;
 }

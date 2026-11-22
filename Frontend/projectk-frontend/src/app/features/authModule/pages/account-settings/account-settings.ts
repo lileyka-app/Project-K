@@ -19,6 +19,7 @@ import { PasswordRulesComponent } from '../../../../shared/password-rules/passwo
 import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input';
 import { passwordMeetsRules } from '../../../../shared/functions/password-rules.function';
 import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/account-role-tag.function';
+import { KurinFeaturesService } from '../../../kurinModule/services/kurin-features-service/kurin-features.service';
 import { PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
 import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
 
@@ -50,6 +51,7 @@ export class AccountSettingsComponent implements OnInit {
   private readonly mfaEnforcer = inject(MfaEnforcerService);
   private readonly messageService = inject(MessageService);
   private readonly permissionService = inject(PermissionService);
+  private readonly kurinFeatures = inject(KurinFeaturesService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -82,7 +84,7 @@ export class AccountSettingsComponent implements OnInit {
 
   /** The same tag the sidebar footer shows, not the raw role name the settings endpoint answers with. */
   get roleTag(): AccountRoleTag {
-    return signedInRoleTag(this.permissionService, this.authService.getAuthStateValue()?.roles ?? []);
+    return signedInRoleTag(this.permissionService, this.authService.getAuthStateValue()?.roles ?? [], this.kurinFeatures.branch());
   }
 
   get canSaveProfile(): boolean {
